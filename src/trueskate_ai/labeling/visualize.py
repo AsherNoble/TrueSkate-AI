@@ -48,6 +48,7 @@ class LabelVisualizer:
                     touch2_active=bool(int(row["touch2_active"])),
                     touch2_x=float(row["touch2_x"]),
                     touch2_y=float(row["touch2_y"]),
+                    spin_control_active=bool(int(row.get("spin_control_active", 0))),
                 ))
         return states
 
@@ -201,6 +202,8 @@ class LabelVisualizer:
         y_offset = int(30 * (h / 800))
 
         lines = [f"F{state.frame_number}"]
+        if state.spin_control_active:
+            lines.append("SPIN")
         if state.touch1_active:
             lines.append(f"T1: ({state.touch1_x:.3f}, {state.touch1_y:.3f})")
         if state.touch2_active:
@@ -212,5 +215,6 @@ class LabelVisualizer:
             y = y_offset + i * int(y_offset * 1.2)
             # Background rectangle for readability
             (tw, th), _ = cv2.getTextSize(line, font, scale, thick)
+            color = (0, 255, 255) if line == "SPIN" else self.COLOR_TEXT  # yellow for SPIN
             cv2.rectangle(frame, (5, y - th - 4), (10 + tw, y + 4), self.COLOR_TEXT_BG, -1)
-            cv2.putText(frame, line, (8, y), font, scale, self.COLOR_TEXT, thick)
+            cv2.putText(frame, line, (8, y), font, scale, color, thick)
