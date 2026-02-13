@@ -44,6 +44,23 @@ class TraceExtractorConfig:
     warm_hue_upper: int = 35
     warm_hue_lower_wrap: int = 170  # hues above this also count as warm
 
+    # Spin control button detection
+    # Reference resolution for spin button coordinates
+    spin_button_ref_w: int = 750
+    spin_button_ref_h: int = 1624
+    # Icon region crop bounds (pixels at reference resolution)
+    spin_button_x_min: int = 5
+    spin_button_x_max: int = 85
+    spin_button_y_min: int = 615
+    spin_button_y_max: int = 695
+    # Mean Sobel gradient magnitude (on equalized crop) below this = active
+    spin_button_gradient_threshold: float = 108.0
+    # Glow exclusion region when spin button is active (at reference resolution)
+    spin_glow_x_min: int = 0
+    spin_glow_x_max: int = 130
+    spin_glow_y_min: int = 540
+    spin_glow_y_max: int = 720
+
 
 @dataclass
 class TouchState:
@@ -56,6 +73,7 @@ class TouchState:
     touch2_active: bool = False
     touch2_x: float = 0.0
     touch2_y: float = 0.0
+    spin_control_active: bool = False
 
     def as_row(self) -> list:
         """Return as a flat list for CSV output."""
@@ -63,11 +81,12 @@ class TouchState:
             self.frame_number,
             int(self.touch1_active), self.touch1_x, self.touch1_y,
             int(self.touch2_active), self.touch2_x, self.touch2_y,
+            int(self.spin_control_active),
         ]
 
     @staticmethod
     def csv_header() -> str:
-        return "frame_number,touch1_active,touch1_x,touch1_y,touch2_active,touch2_x,touch2_y"
+        return "frame_number,touch1_active,touch1_x,touch1_y,touch2_active,touch2_x,touch2_y,spin_control_active"
 
 
 @dataclass
@@ -269,6 +288,49 @@ class TraceExtractor:
 
         return [True] * len(positions), positions
 
+    def _detect_spin_button(self, gray_frame: np.ndarray) -> bool:
+        """Detect whether the spin control button is pressed via gradient magnitude.
+
+        The spin button icon shrinks when held, reducing edge detail in the icon
+        region. We equalize contrast first to make the measurement independent
+        of background brightness, then compute mean Sobel gradient magnitude.
+        Active (shrunk) icons produce lower gradient than inactive (full-size).
+        """
+        cfg = self.config
+        h, w = gray_frame.shape[:2]
+        scale_x = w / cfg.spin_button_ref_w
+        scale_y = h / cfg.spin_button_ref_h
+
+        x1 = int(cfg.spin_button_x_min * scale_x)
+        x2 = int(cfg.spin_button_x_max * scale_x)
+        y1 = int(cfg.spin_button_y_min * scale_y)
+        y2 = int(cfg.spin_button_y_max * scale_y)
+
+        crop = gray_frame[y1:y2, x1:x2]
+        crop_eq = cv2.equalizeHist(crop)
+        gx = cv2.Sobel(crop_eq, cv2.CV_64F, 1, 0, ksize=3)
+        gy = cv2.Sobel(crop_eq, cv2.CV_64F, 0, 1, ksize=3)
+        grad_mean = float(np.sqrt(gx ** 2 + gy ** 2).mean())
+
+        active = grad_mean < cfg.spin_button_gradient_threshold
+        logger.debug("Spin button: grad_mean=%.1f → %s", grad_mean, "ACTIVE" if active else "inactive")
+        return active
+
+    def _apply_spin_glow_mask(self, hud_mask: np.ndarray, h: int, w: int) -> np.ndarray:
+        """Return a copy of hud_mask with the spin button glow region masked out."""
+        cfg = self.config
+        scale_x = w / cfg.spin_button_ref_w
+        scale_y = h / cfg.spin_button_ref_h
+
+        x1 = int(cfg.spin_glow_x_min * scale_x)
+        x2 = int(cfg.spin_glow_x_max * scale_x)
+        y1 = int(cfg.spin_glow_y_min * scale_y)
+        y2 = int(cfg.spin_glow_y_max * scale_y)
+
+        masked = hud_mask.copy()
+        masked[y1:y2, x1:x2] = 0
+        return masked
+
     @staticmethod
     def _dist(a: tuple[float, float], b: tuple[float, float]) -> float:
         return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
@@ -286,6 +348,14 @@ class TraceExtractor:
         h, w = bgr_frame.shape[:2]
         hud_mask = self._ensure_hud_mask(h, w)
 
+        # Detect spin button state before trace extraction
+        gray_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2GRAY)
+        spin_active = self._detect_spin_button(gray_frame)
+
+        # If spin button is held, exclude its glow from trace detection
+        if spin_active:
+            hud_mask = self._apply_spin_glow_mask(hud_mask, h, w)
+
         hsv_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2HSV)
         color_mask = self._extract_color_mask(hsv_frame, hud_mask)
         hotspot = self._compute_hotspot(hsv_frame, hud_mask)
@@ -300,7 +370,7 @@ class TraceExtractor:
         actives, positions = self._assign_touches(active_blobs, h, w)
 
         # Build touch state
-        state = TouchState(frame_number=frame_number)
+        state = TouchState(frame_number=frame_number, spin_control_active=spin_active)
         if len(actives) >= 1 and actives[0]:
             state.touch1_active = True
             state.touch1_x = round(positions[0][0], 6)
@@ -315,10 +385,11 @@ class TraceExtractor:
         self._prev_touches = positions if positions else []
 
         logger.debug(
-            "Frame %d: t1=%s (%.3f, %.3f) t2=%s (%.3f, %.3f) blobs=%d active=%d",
+            "Frame %d: t1=%s (%.3f, %.3f) t2=%s (%.3f, %.3f) spin=%s blobs=%d active=%d",
             frame_number,
             state.touch1_active, state.touch1_x, state.touch1_y,
             state.touch2_active, state.touch2_x, state.touch2_y,
+            state.spin_control_active,
             len(blobs), len(active_blobs),
         )
 

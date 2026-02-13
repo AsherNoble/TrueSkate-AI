@@ -104,8 +104,8 @@ class VideoLabeler:
     def save_tensor(states: list[TouchState], output_path: str | Path) -> None:
         """Save touch states as a PyTorch tensor file (.pt).
 
-        Tensor shape: (N, 6) where columns are:
-        [touch1_active, touch1_x, touch1_y, touch2_active, touch2_x, touch2_y]
+        Tensor shape: (N, 7) where columns are:
+        [touch1_active, touch1_x, touch1_y, touch2_active, touch2_x, touch2_y, spin_control_active]
 
         Args:
             states: List of TouchState from label_video().
@@ -118,7 +118,8 @@ class VideoLabeler:
 
         data = np.array([
             [int(s.touch1_active), s.touch1_x, s.touch1_y,
-             int(s.touch2_active), s.touch2_x, s.touch2_y]
+             int(s.touch2_active), s.touch2_x, s.touch2_y,
+             int(s.spin_control_active)]
             for s in states
         ], dtype=np.float32)
 
