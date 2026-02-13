@@ -9,7 +9,7 @@ if len(sys.argv) < 2:
 
 video = sys.argv[1]
 
-fps = 120  # Frames per second to extract
+fps = 60  # Screen Recordings are at 60fps so no additional benefit from fps > 60
 
 video_path = f'/Users/ashernoble/Projects/Training_Data/Sorted/{video}'
 base = os.path.basename(video_path).rsplit('.', 1)[0]
