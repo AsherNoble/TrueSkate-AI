@@ -4,9 +4,16 @@ import signal
 import sys
 import requests
 import socket
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
-DEVICE_UDID = "REDACTED"
+load_dotenv()
+
+DEVICE_UDID = os.environ.get("IPHONE_UDID")
+if not DEVICE_UDID:
+    print("Error: IPHONE_UDID not set. Copy .env.example to .env and fill in your device UDID.")
+    sys.exit(1)
 WDA_PROJECT_PATH = Path.home() / "Projects" / "WebDriverAgent"
 WDA_HEALTH_CHECK_URL = "http://localhost:8100/status"
 WDA_STARTUP_TIMEOUT = 60  # Increased timeout for WDA startup
