@@ -154,6 +154,7 @@ def start_wda():
         "-project", str(WDA_PROJECT_PATH / "WebDriverAgent.xcodeproj"),
         "-scheme", "WebDriverAgentRunner",
         "-destination", f"id={DEVICE_UDID}",
+        "-allowProvisioningUpdates",
         "test"
     ]
 
