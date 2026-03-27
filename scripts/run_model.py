@@ -36,10 +36,11 @@ def connect_and_launch():
 if __name__ == "__main__":
     driver = connect_and_launch()
 
-    time.sleep(10)
+    time.sleep(1.5)
     long_press(driver, 350, 752, duration=0.5)
+    print("Long press")
 
-    swipe(driver, 100, 300, 100, 600, duration=0.001)
+    # swipe(driver, 100, 300, 100, 600, duration=0.001)
     print("Executed touch actions")
 
     # time.sleep(5)
