@@ -1,11 +1,11 @@
 import sys
 import cv2
-from trueskate_ai.sim.score_reader import detect_trick
+from trueskate_ai.sim.trick_info_reader import detect_trick
 
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python scripts/run_score_reader.py <image_path>")
+        print("Usage: python scripts/run_trick_info_reader.py <image_path>")
         sys.exit(1)
 
     image_path = sys.argv[1]
