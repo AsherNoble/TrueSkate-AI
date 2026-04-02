@@ -1,4 +1,7 @@
 import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
 import cv2
 from trueskate_ai.sim.trick_info_reader import detect_trick
 
