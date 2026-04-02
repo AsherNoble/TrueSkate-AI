@@ -157,13 +157,13 @@ def curved_drag(driver, points, *, total_duration=0.5, easing=None):
     actions = ActionChains(driver, devices=[finger])
 
     x0, y0 = points[0]
-    actions.w3c_actions.pointer_action.move_to_location(x0, y0)
-    actions.w3c_actions.pointer_action.pointer_down()
+    finger.create_pointer_move(x=x0, y=y0, duration=0)
+    finger.create_pointer_down()
 
     for (x, y), dur in zip(points[1:], durations):
-        actions.w3c_actions.pointer_action.move_to_location(x, y, duration=dur)
+        finger.create_pointer_move(x=x, y=y, duration=dur)
 
-    actions.w3c_actions.pointer_action.pointer_up()
+    finger.create_pointer_up(0)
     actions.perform()
 
 
