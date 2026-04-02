@@ -1,9 +1,15 @@
 # scripts/control_trueskate.py
+import sys
+import os
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 from appium import webdriver
 from appium.options.ios import XCUITestOptions
 import time
-import os
 from dotenv import load_dotenv
+
+from src.trueskate_ai.sim.touch_actions import tap, swipe, long_press, curved_drag
 
 load_dotenv()
 
@@ -30,9 +36,16 @@ def connect_and_launch():
 if __name__ == "__main__":
     driver = connect_and_launch()
 
-    # Example: tap screen
-    driver.execute_script('mobile: tap', {'x': 200, 'y': 400})
-    print("Tapped screen")
+    time.sleep(1.5)
+    long_press(driver, 350, 752, duration=0.5)
 
-    time.sleep(5)
-    driver.quit()
+    time.sleep(0.5)
+
+    curved_drag(driver, [(30, 500), (60, 400), (90, 300), (120, 200), (300, 150)], total_duration=2)
+    # print("Long press")
+
+    # swipe(driver, 100, 300, 100, 600, duration=0.001)
+    print("Executed touch actions")
+
+    # time.sleep(5)
+    # driver.quit()
