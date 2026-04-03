@@ -9,7 +9,7 @@ from appium.options.ios import XCUITestOptions
 import time
 from dotenv import load_dotenv
 
-from src.trueskate_ai.sim.touch_actions import tap, swipe, long_press, curved_drag
+from src.trueskate_ai.sim.touch_actions import tap, swipe, long_press, curved_drag, reset_position
 
 load_dotenv()
 
@@ -39,9 +39,11 @@ if __name__ == "__main__":
     time.sleep(1.5)
     long_press(driver, 350, 752, duration=0.5)
 
-    time.sleep(0.5)
+    time.sleep(3)
 
-    curved_drag(driver, [(30, 500), (60, 400), (90, 300), (120, 200), (300, 150)], total_duration=2)
+    reset_position(driver)
+
+    # curved_drag(driver, [(30, 500), (60, 400), (90, 300), (120, 200), (300, 150)], total_duration=2)
     # print("Long press")
 
     # swipe(driver, 100, 300, 100, 600, duration=0.001)

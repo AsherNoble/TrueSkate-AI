@@ -84,6 +84,11 @@ def drag(driver, start_x, start_y, end_x, end_y, *, duration=1.0):
     })
 
 
+def reset_position(driver):
+    """Tap the reset button to return the board to its starting position."""
+    driver.tap([(187, 50)])
+
+
 def two_finger_tap(driver, x, y):
     """Two-finger tap at (x, y) in logical points."""
     driver.execute_script('mobile: twoFingerTap', {'x': x, 'y': y})
