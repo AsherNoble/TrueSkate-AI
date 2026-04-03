@@ -12,8 +12,6 @@ from trueskate_ai.sim.trick_info_reader import detect_trick
 EXTRACTED_FRAMES = Path(__file__).parent.parent / "data" / "extracted_frames"
 SAMPLE_SIZE = 50
 
-random.seed(42)
-
 all_frames = [
     (p.parent.name, p.name, p)
     for p in EXTRACTED_FRAMES.rglob("img_*.jpg")
