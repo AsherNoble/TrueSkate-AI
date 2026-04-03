@@ -13,7 +13,7 @@ fps = 60  # Screen Recordings are at 60fps so no additional benefit from fps > 6
 
 video_path = f'/Users/ashernoble/Projects/Training_Data/Sorted/{video}'
 base = os.path.basename(video_path).rsplit('.', 1)[0]
-output_video_path = f'/Users/ashernoble/Projects/TrueSkate-AI/data/extracted_frames/{base}_{fps}fps'
+output_video_path = f'/Users/ashernoble/Projects/TrueSkate-AI/data/extracted_frames/{base}'
 os.makedirs(output_video_path, exist_ok=True)
 
 
