@@ -9,13 +9,34 @@ import pytesseract
 from .known_tricks import KNOWN_TRICKS
 
 
+def _match_component(ocr_line: str) -> str | None:
+    """Fuzzy match a single OCR line against KNOWN_TRICKS with modifier handling."""
+    words = ocr_line.split()
+    if not words:
+        return None
+
+    modifier = None
+    mod_match = difflib.get_close_matches(words[0], ["FAKIE", "SWITCH"], n=1, cutoff=0.5)
+    if mod_match:
+        modifier = mod_match[0]
+        ocr_line = " ".join(words[1:])
+
+    matches = difflib.get_close_matches(ocr_line, KNOWN_TRICKS, n=1, cutoff=0.4)
+    if matches:
+        return f"{modifier} {matches[0]}" if modifier else matches[0]
+
+    logging.warning("trick_info_reader: no match for OCR output %r", ocr_line)
+    return None
+
+
 def detect_trick(frame: np.ndarray) -> str | None:
-    """Detect trick name from a 750x1624 game frame.
+    """Detect trick name (or combo) from a 750x1624 game frame.
 
     Finds green pixels in a wide search band to anchor the notification,
     then crops tightly above the green band to isolate the trick name.
+    Multiple lines are treated as a combo and joined with " + ".
 
-    Returns the matched trick name (e.g. "540 FLIP") or None.
+    Returns e.g. "KICKFLIP + CROOKED GRIND" or None.
     """
     search = frame[250:600, :]
     g = search[:, :, 1].astype(np.int32)
@@ -31,7 +52,7 @@ def detect_trick(frame: np.ndarray) -> str | None:
     green_x_max = int(xs.max())
 
     h, w = frame.shape[:2]
-    y0 = max(0, green_y_min - 80)
+    y0 = max(0, green_y_min - 100)
     y1 = green_y_min
     x0 = max(0, green_x_min - 150)
     x1 = min(w, green_x_max + 150)
@@ -60,20 +81,10 @@ def detect_trick(frame: np.ndarray) -> str | None:
     if not candidates:
         return None
 
-    trick = " ".join(candidates)
+    matched_components = [_match_component(c) for c in candidates]
+    matched_components = [m for m in matched_components if m is not None]
 
-    words = trick.split()
-    modifier = None
-    if words:
-        mod_match = difflib.get_close_matches(words[0], ["FAKIE", "SWITCH"], n=1, cutoff=0.5)
-        if mod_match:
-            modifier = mod_match[0]
-            trick = " ".join(words[1:])
+    if not matched_components:
+        return None
 
-    matches = difflib.get_close_matches(trick, KNOWN_TRICKS, n=1, cutoff=0.4)
-    if matches:
-        result = matches[0]
-        return f"{modifier} {result}" if modifier else result
-
-    logging.warning("trick_info_reader: no match for OCR output %r", trick)
-    return None
+    return " + ".join(matched_components)
