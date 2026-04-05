@@ -5,9 +5,11 @@ detection, and maps the result to a scalar reward.
 
 Reward tiers:
     1.0  — "360 FLIP" (exact, no modifiers)
-    0.5  — Close variant: stance modifier, overrotated flip, or a major component
-    0.3  — Related trick (ollie, heelflip, shove-it, varial flip)
-    0.1  — Any other recognized trick
+    0.5  — Trick contains a flip/spin/shove keyword (FLIP, HEEL, KICK, HARD,
+           LASER, VARIAL, INWARD, NIGHTMARE, IMPOSSIBLE, DOLPHIN, DRAGON,
+           SHOVE, SPIN, GAZELLE, 360, 540, 720)
+    0.3  — Trick contains OLLIE, NOLLIE, or 180
+    0.1  — Any other recognized trick (grinds, slides, manuals, etc.)
     0.0  — None (no trick detected)
 
 For combo tricks (e.g. "KICKFLIP + CROOKED GRIND"), each component is
@@ -73,33 +75,21 @@ def _score_component(trick: str) -> float:
     if "360 FLIP" in trick and not any(m in trick for m in _MODIFIERS):
         return 1.0
 
-    # --- Tier 0.5: correct trick with modifier, or major components ---
-    # Check specific phrases first, then KICKFLIP guarded against "VARIAL KICKFLIP".
-    _TIER_0_5_PHRASES = (
-        "FAKIE 360 FLIP",
-        "SWITCH 360 FLIP",
-        "360 DOUBLE FLIP",
-        "360 TRIPLE FLIP",
-        "360 SHOVE-IT",
-        "360 SHOVE IT",
-        "VARIAL KICKFLIP",
+    # --- Tier 0.5: any trick sharing flip/spin/shove mechanics ---
+    _TIER_0_5_KEYWORDS = (
+        "FLIP", "HEEL", "KICK", "HARD", "LASER", "VARIAL", "INWARD",
+        "NIGHTMARE", "IMPOSSIBLE", "DOLPHIN", "DRAGON", "SHOVE", "SPIN",
+        "GAZELLE", "360", "540", "720",
     )
-    if any(t in trick for t in _TIER_0_5_PHRASES):
+    if any(kw in trick for kw in _TIER_0_5_KEYWORDS):
         return 0.5
 
-    # --- Tier 0.3: related flip or rotation tricks ---
-    _TIER_0_3 = (
-        "SHOVE-IT",
-        "SHOVE IT",
-        "HEELFLIP",
-        "OLLIE",
-        "KICKFLIP",
-        "VARIAL HEELFLIP",
-    )
-    if any(t in trick for t in _TIER_0_3):
+    # --- Tier 0.3: basic air tricks ---
+    _TIER_0_3_KEYWORDS = ("OLLIE", "NOLLIE", "180")
+    if any(kw in trick for kw in _TIER_0_3_KEYWORDS):
         return 0.3
 
-    # --- Tier 0.1: any other recognized trick ---
+    # --- Tier 0.1: any other recognized trick (grinds, slides, manuals, etc.) ---
     return 0.1
 
 
@@ -134,13 +124,20 @@ if __name__ == "__main__":
         ("FAKIE 360 FLIP",         0.5),
         ("SWITCH 360 FLIP",        0.5),
         ("360 DOUBLE FLIP",        0.5),
+        ("KICKFLIP",               0.5),
+        ("INWARD HEELFLIP",        0.5),
+        ("HARD FLIP",              0.5),
+        ("LASER FLIP",             0.5),
         ("VARIAL KICKFLIP",        0.5),
-        ("360 SHOVE-IT",           0.5),
-        ("SHOVE-IT",               0.3),
+        ("360 POP SHOVE-IT",       0.5),
+        ("540 POP SHOVE-IT",       0.5),
+        ("IMPOSSIBLE",             0.5),
+        ("BACKSIDE 360",           0.5),
+        ("BIG SPIN",               0.5),
         ("OLLIE",                  0.3),
-        ("KICKFLIP",               0.3),
-        ("HEELFLIP",               0.3),
-        ("KICKFLIP + 50-50 GRIND", 0.3),
+        ("NOLLIE",                 0.3),
+        ("BACKSIDE 180",           0.3),
+        ("KICKFLIP + 50-50 GRIND", 0.5),
         (None,                     0.0),
     ]
 
