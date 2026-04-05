@@ -65,8 +65,19 @@ logging.basicConfig(
 # Driver
 # ---------------------------------------------------------------------------
 
+_BUNDLE_ID = "com.trueaxis.skate"
+
+# query_app_state() return values (XCUITest / iOS)
+_APP_STATE_FOREGROUND = 4
+
+
 def connect_driver() -> webdriver.Remote:
-    """Connect to Appium and launch True Skate.
+    """Connect to Appium, reusing True Skate if it is already in the foreground.
+
+    Uses no_reset=True so Appium never stops or reinstalls the app.
+    After connecting, queries the app state:
+      - Already in foreground (state 4): proceed without touching it.
+      - Otherwise: activate it and wait briefly for the UI to settle.
 
     Reads IPHONE_UDID from the environment (via .env).
 
@@ -83,14 +94,23 @@ def connect_driver() -> webdriver.Remote:
     options = XCUITestOptions()
     options.platform_name = "iOS"
     options.automation_name = "XCUITest"
-    options.bundle_id = "com.trueaxis.skate"
+    options.bundle_id = _BUNDLE_ID
     options.udid = udid
     options.wda_local_port = 8100
     options.use_prebuilt_wda = True
     options.skip_log_capture = True
+    options.no_reset = True  # never stop/reinstall the app
 
     driver = webdriver.Remote("http://127.0.0.1:4723", options=options)
-    print("Connected to True Skate via Appium.")
+
+    state = driver.query_app_state(_BUNDLE_ID)
+    if state == _APP_STATE_FOREGROUND:
+        print("True Skate is already open — reusing.")
+    else:
+        print(f"True Skate not in foreground (state={state}) — activating.")
+        driver.activate_app(_BUNDLE_ID)
+        time.sleep(1.5)  # wait for the game UI to settle
+
     return driver
 
 
