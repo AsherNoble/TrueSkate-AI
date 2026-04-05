@@ -195,11 +195,25 @@ def main() -> None:
                 # Wait for board to settle after previous reset
                 time.sleep(args.settle_time)
 
-                # Execute gestures on device
-                execute_action(driver, np.array(candidate))
+                reward = 0.0
+                trick_name = None
+                try:
+                    # Execute gestures on device
+                    execute_action(driver, np.array(candidate))
 
-                # Capture screenshot and score
-                reward, trick_name = get_reward(driver, wait_time=args.wait_time)
+                    # Capture screenshot and score
+                    reward, trick_name = get_reward(driver, wait_time=args.wait_time)
+                except Exception as exc:
+                    logging.warning("candidate %d failed: %s", candidate_idx, exc)
+                    eval_num += 1
+                    print(
+                        f"[eval {eval_num}/{args.max_evals} | gen {generation}] "
+                        f"ERROR: {exc} — assigning reward=0.0"
+                    )
+                    rewards.append(0.0)
+                    reset_position(driver)
+                    continue
+
                 rewards.append(reward)
                 eval_num += 1
 

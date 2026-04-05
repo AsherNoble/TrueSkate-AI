@@ -109,6 +109,8 @@ def clamp_params(params: np.ndarray) -> np.ndarray:
     Returns:
         New array with each value clipped to [min, max] per PARAM_BOUNDS.
     """
+    midpoints = (PARAM_BOUNDS[:, 0] + PARAM_BOUNDS[:, 1]) / 2
+    params = np.where(np.isfinite(params), params, midpoints)
     return np.clip(params, PARAM_BOUNDS[:, 0], PARAM_BOUNDS[:, 1])
 
 
