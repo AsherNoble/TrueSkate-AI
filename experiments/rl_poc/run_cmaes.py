@@ -187,14 +187,11 @@ def main() -> None:
     best_params: np.ndarray = INITIAL_MEAN.copy()
 
     try:
-        while not es.stop() and eval_num < args.max_evals:
+        while not es.stop():
             solutions = es.ask()
             rewards = []
 
             for candidate_idx, candidate in enumerate(solutions):
-                if eval_num >= args.max_evals:
-                    break
-
                 # Wait for board to settle after previous reset
                 time.sleep(args.settle_time)
 
@@ -233,13 +230,12 @@ def main() -> None:
                 reset_position(driver)
 
             # Feed negated rewards to CMA-ES (it minimizes)
-            if rewards:
-                es.tell(solutions[:len(rewards)], [-r for r in rewards])
-                es.disp()
+            es.tell(solutions, [-r for r in rewards])
+            es.disp()
 
             # Generation summary
-            gen_best = max(rewards) if rewards else 0.0
-            gen_mean = float(np.mean(rewards)) if rewards else 0.0
+            gen_best = max(rewards)
+            gen_mean = float(np.mean(rewards))
             print(
                 f"--- gen {generation} complete | "
                 f"best={gen_best:.2f} mean={gen_mean:.2f} ---"
@@ -258,6 +254,10 @@ def main() -> None:
                 print(f"Checkpoint saved at generation {generation}.")
 
             generation += 1
+
+            # --max-evals is a minimum: exit cleanly after the generation that crosses it
+            if eval_num >= args.max_evals:
+                break
 
     except KeyboardInterrupt:
         print("\nInterrupted by user.")
