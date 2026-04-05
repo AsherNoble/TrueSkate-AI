@@ -187,7 +187,7 @@ def main() -> None:
     best_params: np.ndarray = INITIAL_MEAN.copy()
 
     try:
-        while not es.stop():
+        while eval_num < args.max_evals:
             solutions = es.ask()
             rewards = []
 
@@ -232,6 +232,12 @@ def main() -> None:
             # Feed negated rewards to CMA-ES (it minimizes)
             es.tell(solutions, [-r for r in rewards])
             es.disp()
+
+            # CMA-ES convergence is informational only — the sparse reward
+            # landscape looks flat to CMA-ES long before we've found the trick.
+            stop_conditions = es.stop()
+            if stop_conditions:
+                print(f"WARNING: CMA-ES convergence condition(s) fired (continuing): {stop_conditions}")
 
             # Generation summary
             gen_best = max(rewards)
