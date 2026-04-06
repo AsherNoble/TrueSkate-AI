@@ -3,7 +3,7 @@
 After each action attempt, captures a screenshot, runs OCR-based trick
 detection, and maps the result to a scalar reward.
 
-Reward tiers:
+Reward tiers (for landed tricks):
     1.0   — "360 FLIP" (exact, no modifiers)
     0.75  — 360 FLIP with a modifier, or NIGHTMARE flip
     0.6   — Flip tricks (FLIP, HEEL, KICK, HARD, LASER, VARIAL, INWARD,
@@ -12,6 +12,8 @@ Reward tiers:
     0.2   — Basic air tricks (OLLIE, NOLLIE, 180)
     0.1   — Any other recognized trick (grinds, slides, manuals, etc.)
     0.0   — None (no trick detected)
+
+Failed tricks receive a 0.4× multiplier on the base tier reward.
 
 For combo tricks (e.g. "KICKFLIP + CROOKED GRIND"), each component is
 evaluated independently and the maximum reward is returned.
@@ -29,48 +31,65 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from trueskate_ai.sim.trick_info_reader import detect_trick  # noqa: E402
+from trueskate_ai.sim.trick_info_reader import TrickResult, detect_trick  # noqa: E402
 
 
-def capture_and_detect(driver) -> str | None:
-    """Capture a screenshot and run trick OCR on it.
+def capture_and_detect(driver) -> TrickResult | None:
+    """Capture 5 screenshots spaced 0.25s apart and run trick OCR on each.
+
+    Takes screenshots at t=0, t=0.25, t=0.5, t=0.75, t=1.0 seconds. Returns
+    the first non-None TrickResult found, or None if all 5 fail to detect a trick.
 
     Args:
         driver: Appium WebDriver instance.
 
     Returns:
-        Detected trick string (e.g. "360 FLIP", "KICKFLIP + CROOKED GRIND")
-        or None if no trick was found.
+        TrickResult(trick=..., status="landed"|"failed") or None.
     """
-    png_bytes = driver.get_screenshot_as_png()
-    arr = np.frombuffer(png_bytes, dtype=np.uint8)
-    frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-    return detect_trick(frame)
+    for capture_idx in range(5):
+        if capture_idx > 0:
+            time.sleep(0.25)
+
+        png_bytes = driver.get_screenshot_as_png()
+        arr = np.frombuffer(png_bytes, dtype=np.uint8)
+        frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+
+        result = detect_trick(frame)
+        if result is not None:
+            return result
+
+    return None
 
 
-def compute_reward(trick_name: str | None) -> float:
-    """Map a detected trick string to a scalar reward.
+def compute_reward(result: TrickResult | None) -> float:
+    """Map a TrickResult to a scalar reward.
 
     For combo tricks joined with " + ", each component is scored and the
     maximum reward across components is returned.
 
+    Failed tricks receive a 0.4× multiplier on the base tier reward.
+
     Args:
-        trick_name: Output of detect_trick() — e.g. "360 FLIP",
-            "KICKFLIP + CROOKED GRIND", or None.
+        result: Output of detect_trick() — a TrickResult or None.
 
     Returns:
         Scalar reward in [0.0, 1.0].
     """
-    if trick_name is None:
+    if result is None:
         return 0.0
 
-    components = [c.strip() for c in trick_name.split(" + ")]
-    return max(_score_component(c) for c in components)
+    components = [c.strip() for c in result.trick.split(" + ")]
+    base_reward = max(_score_component(c) for c in components)
+
+    # Apply 0.4× multiplier for failed tricks
+    if result.status == "failed":
+        return base_reward * 0.4
+
+    return base_reward
 
 
 def _score_component(trick: str) -> float:
     """Score a single (non-combo) trick string. First match wins."""
-    trick = trick.replace("540", "360")
     _MODIFIERS = ("FAKIE", "SWITCH", "DOUBLE", "TRIPLE", "NOLLIE")
 
     # --- Tier 1.0: exact target, no modifiers ---
@@ -109,25 +128,26 @@ def _score_component(trick: str) -> float:
     return 0.1
 
 
-def get_reward(driver, wait_time: float = 1.5) -> tuple[float, str | None]:
+def get_reward(driver, wait_time: float = 0.0) -> tuple[float, TrickResult | None]:
     """Wait for the trick notification, capture, and return the reward.
 
     This is the main entry point called by the CMA-ES optimization loop.
+    Captures 5 screenshots spaced 0.25s apart (total ~1.0s after initial wait).
 
     Args:
         driver: Appium WebDriver instance.
-        wait_time: Seconds to wait after gestures finish before screenshotting.
+        wait_time: Seconds to wait after gestures finish before first screenshot.
             The game needs time to display the trick name notification.
-            Default 1.5s — may need tuning.
+            Default 0.8s — multi-capture approach tolerates variance in notification timing.
 
     Returns:
-        Tuple of (reward, trick_name) where reward is a float in [0.0, 1.0]
-        and trick_name is the raw OCR result (or None).
+        Tuple of (reward, result) where reward is a float in [0.0, 1.0]
+        and result is a TrickResult(trick, status) or None.
     """
     time.sleep(wait_time)
-    trick_name = capture_and_detect(driver)
-    reward = compute_reward(trick_name)
-    return reward, trick_name
+    result = capture_and_detect(driver)
+    reward = compute_reward(result)
+    return reward, result
 
 
 # ---------------------------------------------------------------------------
@@ -136,41 +156,52 @@ def get_reward(driver, wait_time: float = 1.5) -> tuple[float, str | None]:
 
 if __name__ == "__main__":
     test_cases = [
-        ("360 FLIP",               1.0),
-        ("FAKIE 360 FLIP",         0.75),
-        ("SWITCH 360 FLIP",        0.75),
-        ("360 DOUBLE FLIP",        0.75),
-        ("360 TRIPLE FLIP",        0.75),
-        ("NOLLIE 360 FLIP",        0.75),
-        ("540 FLIP",               1.0),
-        ("540 DOUBLE FLIP",        0.75),
-        ("NIGHTMARE FLIP",         0.75),
-        ("KICKFLIP",               0.6),
-        ("INWARD HEELFLIP",        0.6),
-        ("HARD FLIP",              0.6),
-        ("LASER FLIP",             0.6),
-        ("VARIAL KICKFLIP",        0.6),
-        ("IMPOSSIBLE",             0.6),
-        ("360 POP SHOVE-IT",       0.4),
-        ("540 POP SHOVE-IT",       0.4),
-        ("FS POP SHOVE-IT",        0.4),
-        ("POP SHOVE-IT",           0.4),
-        ("BIG SPIN",               0.4),
-        ("BACKSIDE 360",           0.4),
-        ("OLLIE",                  0.2),
-        ("NOLLIE",                 0.2),
-        ("BACKSIDE 180",           0.2),
-        ("KICKFLIP + 50-50 GRIND", 0.6),
-        (None,                     0.0),
+        # Landed tricks
+        ("360 FLIP", "landed",               1.0),
+        ("FAKIE 360 FLIP", "landed",         0.75),
+        ("SWITCH 360 FLIP", "landed",        0.75),
+        ("360 DOUBLE FLIP", "landed",        0.75),
+        ("360 TRIPLE FLIP", "landed",        0.75),
+        ("NOLLIE 360 FLIP", "landed",        0.75),
+        ("540 FLIP", "landed",               0.6),
+        ("540 DOUBLE FLIP", "landed",        0.6),
+        ("NIGHTMARE FLIP", "landed",         0.75),
+        ("KICKFLIP", "landed",               0.6),
+        ("INWARD HEELFLIP", "landed",        0.6),
+        ("HARD FLIP", "landed",              0.6),
+        ("LASER FLIP", "landed",             0.6),
+        ("VARIAL KICKFLIP", "landed",        0.6),
+        ("IMPOSSIBLE", "landed",             0.6),
+        ("360 POP SHOVE-IT", "landed",       0.4),
+        ("540 POP SHOVE-IT", "landed",       0.4),
+        ("FS POP SHOVE-IT", "landed",        0.4),
+        ("POP SHOVE-IT", "landed",           0.4),
+        ("BIG SPIN", "landed",               0.4),
+        ("BACKSIDE 360", "landed",           0.4),
+        ("OLLIE", "landed",                  0.2),
+        ("NOLLIE", "landed",                 0.2),
+        ("BACKSIDE 180", "landed",           0.2),
+        ("KICKFLIP + 50-50 GRIND", "landed", 0.6),
+        # Failed tricks (0.4× multiplier)
+        ("360 FLIP", "failed",               0.4),
+        ("540 DOUBLE FLIP", "failed",        0.24),
+        ("KICKFLIP", "failed",               0.24),
+        ("360 POP SHOVE-IT", "failed",       0.16),
+        # No trick
+        (None, None,                         0.0),
     ]
 
     all_passed = True
-    for trick, expected in test_cases:
-        actual = compute_reward(trick)
-        status = "PASS" if actual == expected else "FAIL"
-        if status == "FAIL":
+    for trick, status, expected in test_cases:
+        result = TrickResult(trick=trick, status=status) if trick is not None else None
+        actual = compute_reward(result)
+        expected_rounded = round(expected, 2)
+        actual_rounded = round(actual, 2)
+        test_status = "PASS" if actual_rounded == expected_rounded else "FAIL"
+        if test_status == "FAIL":
             all_passed = False
-        print(f"  [{status}] compute_reward({trick!r:30s}) = {actual:.2f}  (expected {expected:.2f})")
+        label = f"{trick!r} ({status})" if trick is not None else "None"
+        print(f"  [{test_status}] compute_reward({label:35s}) = {actual:.2f}  (expected {expected:.2f})")
 
     print()
     print("All tests passed." if all_passed else "FAILURES detected.")

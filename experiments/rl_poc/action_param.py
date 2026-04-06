@@ -30,20 +30,20 @@ import numpy as np
 _BOUNDS_RAW = [
     # Slot 1
     [0, 414],    # x0
-    [448, 896],  # y0
+    [448, 750],  # y0  — capped at 750 to avoid the iOS home indicator zone
     [0, 414],    # x1
-    [448, 896],  # y1
+    [448, 750],  # y1
     [0, 414],    # x2
-    [448, 896],  # y2
+    [448, 750],  # y2
     [0.03, 0.8], # duration
     [0.3, 3.0],  # easing_power
     # Slot 2
     [0, 414],    # x0
-    [448, 896],  # y0
+    [448, 750],  # y0
     [0, 414],    # x1
-    [448, 896],  # y1
+    [448, 750],  # y1
     [0, 414],    # x2
-    [448, 896],  # y2
+    [448, 750],  # y2
     [0.03, 0.8], # duration
     [0.3, 3.0],  # easing_power
     # Delay
@@ -58,8 +58,8 @@ PARAM_BOUNDS: np.ndarray = np.array(_BOUNDS_RAW, dtype=np.float64)
 # Initial mean — informed prior for a 360 flip
 # ---------------------------------------------------------------------------
 
-# Slot 1: scoop — horizontal left-to-right swipe from the tail area
-_SCOOP = [150, 780, 250, 770, 350, 760, 0.25, 1.0]
+# Slot 1: scoop — horizontal left-to-right swipe across the tail (~x=140, y=590)
+_SCOOP = [120, 590, 220, 585, 320, 580, 0.25, 1.0]
 # Slot 2: flick — north-easterly swipe from right-of-center board
 _FLICK = [270, 680, 320, 620, 370, 560, 0.08, 1.0]
 # Delay: almost immediate — scoop and flick happen in quick succession

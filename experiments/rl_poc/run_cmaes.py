@@ -9,7 +9,7 @@ Usage:
 Options:
     --max-evals   Total evaluations before stopping (default: 1800)
     --seed        CMA-ES random seed (default: 42)
-    --wait-time   Seconds to wait for trick text after gestures (default: 1.5)
+    --wait-time   Seconds to wait for trick text after gestures (default: 0.0)
     --settle-time Seconds to wait after reset before next attempt (default: 0.5)
     --log-dir     Log directory (default: experiments/rl_poc/logs)
 """
@@ -151,8 +151,8 @@ def main() -> None:
                         help="Total evaluations before stopping (default: 1800)")
     parser.add_argument("--seed", type=int, default=42,
                         help="CMA-ES random seed (default: 42)")
-    parser.add_argument("--wait-time", type=float, default=1.5,
-                        help="Seconds to wait for trick text after gestures (default: 1.5)")
+    parser.add_argument("--wait-time", type=float, default=0.0,
+                        help="Seconds to wait for trick text after gestures (default: 0.0)")
     parser.add_argument("--settle-time", type=float, default=0.5,
                         help="Seconds to wait after reset before next attempt (default: 0.5)")
     parser.add_argument("--log-dir", type=Path,
@@ -196,13 +196,13 @@ def main() -> None:
                 time.sleep(args.settle_time)
 
                 reward = 0.0
-                trick_name = None
+                trick_result = None
                 try:
                     # Execute gestures on device
                     execute_action(driver, np.array(candidate))
 
                     # Capture screenshot and score
-                    reward, trick_name = get_reward(driver, wait_time=args.wait_time)
+                    reward, trick_result = get_reward(driver, wait_time=args.wait_time)
                 except Exception as exc:
                     logging.warning("candidate %d failed: %s", candidate_idx, exc)
                     eval_num += 1
@@ -217,10 +217,13 @@ def main() -> None:
                 rewards.append(reward)
                 eval_num += 1
 
+                trick_str = trick_result.trick if trick_result else None
+                trick_status = trick_result.status if trick_result else None
+
                 # Console progress line
                 print(
                     f"[eval {eval_num}/{args.max_evals} | gen {generation}] "
-                    f"reward={reward:.1f}  trick={trick_name}"
+                    f"reward={reward:.1f}  trick={trick_str}  status={trick_status}"
                 )
 
                 # Per-evaluation JSONL record
@@ -229,7 +232,8 @@ def main() -> None:
                     "candidate_idx": candidate_idx,
                     "eval_num": eval_num,
                     "reward": reward,
-                    "trick_name": trick_name,
+                    "trick_name": trick_str,
+                    "trick_status": trick_status,
                     "params": [round(float(p), 2) for p in candidate],
                     "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                 })
@@ -237,7 +241,7 @@ def main() -> None:
                 # Track global best
                 if reward > best_reward:
                     best_reward = reward
-                    best_trick = trick_name
+                    best_trick = trick_str
                     best_params = np.array(candidate)
 
                 # Reset board for next candidate
