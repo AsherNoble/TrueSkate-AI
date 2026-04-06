@@ -196,13 +196,13 @@ def main() -> None:
                 time.sleep(args.settle_time)
 
                 reward = 0.0
-                trick_name = None
+                trick_result = None
                 try:
                     # Execute gestures on device
                     execute_action(driver, np.array(candidate))
 
                     # Capture screenshot and score
-                    reward, trick_name = get_reward(driver, wait_time=args.wait_time)
+                    reward, trick_result = get_reward(driver, wait_time=args.wait_time)
                 except Exception as exc:
                     logging.warning("candidate %d failed: %s", candidate_idx, exc)
                     eval_num += 1
@@ -217,10 +217,13 @@ def main() -> None:
                 rewards.append(reward)
                 eval_num += 1
 
+                trick_str = trick_result.trick if trick_result else None
+                trick_status = trick_result.status if trick_result else None
+
                 # Console progress line
                 print(
                     f"[eval {eval_num}/{args.max_evals} | gen {generation}] "
-                    f"reward={reward:.1f}  trick={trick_name}"
+                    f"reward={reward:.1f}  trick={trick_str}  status={trick_status}"
                 )
 
                 # Per-evaluation JSONL record
@@ -229,7 +232,8 @@ def main() -> None:
                     "candidate_idx": candidate_idx,
                     "eval_num": eval_num,
                     "reward": reward,
-                    "trick_name": trick_name,
+                    "trick_name": trick_str,
+                    "trick_status": trick_status,
                     "params": [round(float(p), 2) for p in candidate],
                     "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                 })
@@ -237,7 +241,7 @@ def main() -> None:
                 # Track global best
                 if reward > best_reward:
                     best_reward = reward
-                    best_trick = trick_name
+                    best_trick = trick_str
                     best_params = np.array(candidate)
 
                 # Reset board for next candidate

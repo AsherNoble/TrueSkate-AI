@@ -1,12 +1,18 @@
 import difflib
 import logging
 import re
+from typing import Literal, NamedTuple
 
 import cv2
 import numpy as np
 import pytesseract
 
 from .known_tricks import KNOWN_TRICKS
+
+
+class TrickResult(NamedTuple):
+    trick: str
+    status: Literal["landed", "failed"]
 
 
 def _match_component(ocr_line: str) -> str | None:
@@ -29,33 +35,58 @@ def _match_component(ocr_line: str) -> str | None:
     return None
 
 
-def detect_trick(frame: np.ndarray) -> str | None:
-    """Detect trick name (or combo) from a 750x1624 game frame.
+def _find_anchor(search: np.ndarray) -> tuple[np.ndarray, Literal["landed", "failed"]] | None:
+    """Find the notification anchor band (green = landed, red = failed).
 
-    Finds green pixels in a wide search band to anchor the notification,
-    then crops tightly above the green band to isolate the trick name.
-    Multiple lines are treated as a combo and joined with " + ".
+    Args:
+        search: Cropped frame slice (frame[250:600, :]) in BGR.
 
-    Returns e.g. "KICKFLIP + CROOKED GRIND" or None.
+    Returns:
+        (mask, status) where mask is a bool array over search and status is
+        "landed" or "failed", or None if neither colour is found.
     """
-    search = frame[250:600, :]
+    r = search[:, :, 2].astype(np.int32)
     g = search[:, :, 1].astype(np.int32)
-    r = search[:, :, 0].astype(np.int32)
-    b = search[:, :, 2].astype(np.int32)
-    green_mask = (g > 180) & (r < 120) & (b < 120)
-    if green_mask.sum() < 20:
-        return None
+    b = search[:, :, 0].astype(np.int32)
 
-    ys, xs = np.where(green_mask)
-    green_y_min = int(ys.min()) + 250
-    green_x_min = int(xs.min())
-    green_x_max = int(xs.max())
+    green_mask = (g > 180) & (r < 120) & (b < 120)
+    if green_mask.sum() >= 20:
+        return green_mask, "landed"
+
+    red_mask = (r > 180) & (g < 80) & (b < 80)
+    if red_mask.sum() >= 20:
+        return red_mask, "failed"
+
+    return None
+
+
+def _ocr_above_anchor(
+    frame: np.ndarray,
+    mask: np.ndarray,
+    anchor_y_offset: int,
+    status: Literal["landed", "failed"],
+) -> TrickResult | None:
+    """Crop above the anchor band, run OCR, and return a TrickResult.
+
+    Args:
+        frame: Full BGR frame.
+        mask: Boolean mask over frame[anchor_y_offset:anchor_y_offset+mask.shape[0], :].
+        anchor_y_offset: Row in frame where the search band starts (250).
+        status: "landed" or "failed" — determines TrickResult.status.
+
+    Returns:
+        TrickResult or None if no trick text is found.
+    """
+    ys, xs = np.where(mask)
+    anchor_y_min = int(ys.min()) + anchor_y_offset
+    anchor_x_min = int(xs.min())
+    anchor_x_max = int(xs.max())
 
     h, w = frame.shape[:2]
-    y0 = max(0, green_y_min - 100)
-    y1 = green_y_min
-    x0 = max(0, green_x_min - 150)
-    x1 = min(w, green_x_max + 150)
+    y0 = max(0, anchor_y_min - 100)
+    y1 = anchor_y_min
+    x0 = max(0, anchor_x_min - 150)
+    x1 = min(w, anchor_x_max + 150)
 
     band = frame[y0:y1, x0:x1]
     upscaled = cv2.resize(band, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
@@ -80,6 +111,9 @@ def detect_trick(frame: np.ndarray) -> str | None:
             continue
         if _BANNER_WORDS & set(cleaned.split()):
             continue
+        # For failed detections the word "FAILED" appears in the crop — discard it.
+        if difflib.get_close_matches(cleaned, ["FAILED"], n=1, cutoff=0.7):
+            continue
         candidates.append(cleaned)
 
     if not candidates:
@@ -91,4 +125,28 @@ def detect_trick(frame: np.ndarray) -> str | None:
     if not matched_components:
         return None
 
-    return " + ".join(matched_components)
+    trick = " + ".join(matched_components)
+    logging.info("trick_info_reader: %s — %s", status, trick)
+    return TrickResult(trick=trick, status=status)
+
+
+def detect_trick(frame: np.ndarray) -> TrickResult | None:
+    """Detect trick name (or combo) from a 750x1624 game frame.
+
+    Finds green pixels (landed) or red pixels (failed) in a wide search
+    band to anchor the score notification, then crops tightly above the
+    anchor to isolate the trick name. Multiple lines are treated as a
+    combo and joined with " + ".
+
+    Returns e.g. TrickResult(trick="KICKFLIP + CROOKED GRIND", status="landed")
+    or None if no notification is visible.
+    """
+    _ANCHOR_Y_OFFSET = 250
+    search = frame[_ANCHOR_Y_OFFSET:600, :]
+
+    result = _find_anchor(search)
+    if result is None:
+        return None
+
+    mask, status = result
+    return _ocr_above_anchor(frame, mask, _ANCHOR_Y_OFFSET, status)

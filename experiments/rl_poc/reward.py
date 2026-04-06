@@ -29,18 +29,17 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from trueskate_ai.sim.trick_info_reader import detect_trick  # noqa: E402
+from trueskate_ai.sim.trick_info_reader import TrickResult, detect_trick  # noqa: E402
 
 
-def capture_and_detect(driver) -> str | None:
+def capture_and_detect(driver) -> TrickResult | None:
     """Capture a screenshot and run trick OCR on it.
 
     Args:
         driver: Appium WebDriver instance.
 
     Returns:
-        Detected trick string (e.g. "360 FLIP", "KICKFLIP + CROOKED GRIND")
-        or None if no trick was found.
+        TrickResult(trick=..., status="landed"|"failed") or None.
     """
     png_bytes = driver.get_screenshot_as_png()
     arr = np.frombuffer(png_bytes, dtype=np.uint8)
@@ -48,23 +47,22 @@ def capture_and_detect(driver) -> str | None:
     return detect_trick(frame)
 
 
-def compute_reward(trick_name: str | None) -> float:
-    """Map a detected trick string to a scalar reward.
+def compute_reward(result: TrickResult | None) -> float:
+    """Map a TrickResult to a scalar reward.
 
     For combo tricks joined with " + ", each component is scored and the
     maximum reward across components is returned.
 
     Args:
-        trick_name: Output of detect_trick() — e.g. "360 FLIP",
-            "KICKFLIP + CROOKED GRIND", or None.
+        result: Output of detect_trick() — a TrickResult or None.
 
     Returns:
         Scalar reward in [0.0, 1.0].
     """
-    if trick_name is None:
+    if result is None:
         return 0.0
 
-    components = [c.strip() for c in trick_name.split(" + ")]
+    components = [c.strip() for c in result.trick.split(" + ")]
     return max(_score_component(c) for c in components)
 
 
@@ -109,7 +107,7 @@ def _score_component(trick: str) -> float:
     return 0.1
 
 
-def get_reward(driver, wait_time: float = 1.5) -> tuple[float, str | None]:
+def get_reward(driver, wait_time: float = 1.5) -> tuple[float, TrickResult | None]:
     """Wait for the trick notification, capture, and return the reward.
 
     This is the main entry point called by the CMA-ES optimization loop.
@@ -121,13 +119,13 @@ def get_reward(driver, wait_time: float = 1.5) -> tuple[float, str | None]:
             Default 1.5s — may need tuning.
 
     Returns:
-        Tuple of (reward, trick_name) where reward is a float in [0.0, 1.0]
-        and trick_name is the raw OCR result (or None).
+        Tuple of (reward, result) where reward is a float in [0.0, 1.0]
+        and result is a TrickResult(trick, status) or None.
     """
     time.sleep(wait_time)
-    trick_name = capture_and_detect(driver)
-    reward = compute_reward(trick_name)
-    return reward, trick_name
+    result = capture_and_detect(driver)
+    reward = compute_reward(result)
+    return reward, result
 
 
 # ---------------------------------------------------------------------------
@@ -166,7 +164,8 @@ if __name__ == "__main__":
 
     all_passed = True
     for trick, expected in test_cases:
-        actual = compute_reward(trick)
+        result = TrickResult(trick=trick, status="landed") if trick is not None else None
+        actual = compute_reward(result)
         status = "PASS" if actual == expected else "FAIL"
         if status == "FAIL":
             all_passed = False
