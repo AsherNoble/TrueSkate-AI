@@ -67,7 +67,7 @@ def detect_trick(frame: np.ndarray) -> str | None:
     config = "--psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :-"
     raw = pytesseract.image_to_string(crop, config=config)
 
-    _BANNER_WORDS = {"TRUE", "SKATE", "SUPER", "CROWN", "STREET", "LEAGUE", "SLS"}
+    _BANNER_WORDS = {"TRUE", "SKATE", "SUPER", "CROWN", "STREET", "LEAGUE", "SLS", "CALIFORNIA", "SKATEPARKS", "SANTA", "CRUZ", "GLASSHOUSE"}
 
     candidates = []
     for line in raw.splitlines():
