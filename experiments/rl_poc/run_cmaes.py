@@ -49,7 +49,7 @@ from appium.options.ios import XCUITestOptions
 from dotenv import load_dotenv
 
 from action_param import INITIAL_MEAN, INITIAL_SIGMA, PARAM_BOUNDS, execute_action
-from reward import get_reward
+from reward import NoveltyTracker, get_reward
 from trueskate_ai.sim.touch_actions import reset_position
 
 # ---------------------------------------------------------------------------
@@ -186,6 +186,7 @@ def main() -> None:
     best_reward = 0.0
     best_trick: str | None = None
     best_params: np.ndarray = INITIAL_MEAN.copy()
+    novelty_tracker = NoveltyTracker()
 
     try:
         while eval_num < args.max_evals:
@@ -198,12 +199,15 @@ def main() -> None:
 
                 reward = 0.0
                 trick_result = None
+                novelty_bonus = 0.0
                 try:
                     # Execute gestures on device
                     execute_action(driver, np.array(candidate))
 
                     # Capture screenshot and score
-                    reward, trick_result = get_reward(driver, wait_time=args.wait_time)
+                    reward, trick_result, novelty_bonus = get_reward(
+                        driver, wait_time=args.wait_time, tracker=novelty_tracker
+                    )
                 except Exception as exc:
                     logging.warning("candidate %d failed: %s", candidate_idx, exc)
                     eval_num += 1
@@ -224,7 +228,7 @@ def main() -> None:
                 # Console progress line
                 print(
                     f"[eval {eval_num}/{args.max_evals} | gen {generation}] "
-                    f"reward={reward:.1f}  trick={trick_str}  status={trick_status}"
+                    f"reward={reward:.2f}  trick={trick_str}  status={trick_status}"
                 )
 
                 # Per-evaluation JSONL record
@@ -233,6 +237,7 @@ def main() -> None:
                     "candidate_idx": candidate_idx,
                     "eval_num": eval_num,
                     "reward": reward,
+                    "novelty_bonus": round(novelty_bonus, 4),
                     "trick_name": trick_str,
                     "trick_status": trick_status,
                     "params": [round(float(p), 2) for p in candidate],

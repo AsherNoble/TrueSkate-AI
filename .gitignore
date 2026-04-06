@@ -79,3 +79,6 @@ htmlcov/
 # Environment
 .env
 .env.local
+
+# Experiments
+experiments/rl_poc/experiment_journal.md

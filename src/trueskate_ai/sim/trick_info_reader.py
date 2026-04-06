@@ -31,6 +31,16 @@ def _match_component(ocr_line: str) -> str | None:
         modifier = mod_match[0]
         ocr_line = " ".join(words[1:])
 
+    # Guard: bare rotation numbers ("360", "540", etc.) must not be fuzzy-
+    # matched — they'd inflate to "360 FLIP" etc.  Reconstruct with modifier
+    # and return directly if the combo is in KNOWN_TRICKS.
+    if re.fullmatch(r"\d+", ocr_line):
+        candidate = f"{modifier} {ocr_line}" if modifier else ocr_line
+        if candidate in KNOWN_TRICKS:
+            return candidate
+        logging.warning("trick_info_reader: bare rotation %r not in KNOWN_TRICKS", candidate)
+        return None
+
     matches = difflib.get_close_matches(ocr_line, KNOWN_TRICKS, n=1, cutoff=0.4)
     if matches:
         if modifier and not matches[0].startswith(modifier):
