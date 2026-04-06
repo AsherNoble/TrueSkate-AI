@@ -35,7 +35,10 @@ from trueskate_ai.sim.trick_info_reader import TrickResult, detect_trick  # noqa
 
 
 def capture_and_detect(driver) -> TrickResult | None:
-    """Capture a screenshot and run trick OCR on it.
+    """Capture 5 screenshots spaced 0.25s apart and run trick OCR on each.
+
+    Takes screenshots at t=0, t=0.25, t=0.5, t=0.75, t=1.0 seconds. Returns
+    the first non-None TrickResult found, or None if all 5 fail to detect a trick.
 
     Args:
         driver: Appium WebDriver instance.
@@ -43,10 +46,20 @@ def capture_and_detect(driver) -> TrickResult | None:
     Returns:
         TrickResult(trick=..., status="landed"|"failed") or None.
     """
-    png_bytes = driver.get_screenshot_as_png()
-    arr = np.frombuffer(png_bytes, dtype=np.uint8)
-    frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-    return detect_trick(frame)
+    for capture_idx in range(5):
+        if capture_idx > 0:
+            time.sleep(0.25)
+
+        png_bytes = driver.get_screenshot_as_png()
+        arr = np.frombuffer(png_bytes, dtype=np.uint8)
+        frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        cv2.imwrite(f"/Users/ashernoble/Projects/TrueSkate-AI/tmp/capture_{capture_idx}.png", frame)
+
+        result = detect_trick(frame)
+        if result is not None:
+            return result
+
+    return None
 
 
 def compute_reward(result: TrickResult | None) -> float:
@@ -116,16 +129,17 @@ def _score_component(trick: str) -> float:
     return 0.1
 
 
-def get_reward(driver, wait_time: float = 1.5) -> tuple[float, TrickResult | None]:
+def get_reward(driver, wait_time: float = 0.8) -> tuple[float, TrickResult | None]:
     """Wait for the trick notification, capture, and return the reward.
 
     This is the main entry point called by the CMA-ES optimization loop.
+    Captures 5 screenshots spaced 0.25s apart (total ~1.0s after initial wait).
 
     Args:
         driver: Appium WebDriver instance.
-        wait_time: Seconds to wait after gestures finish before screenshotting.
+        wait_time: Seconds to wait after gestures finish before first screenshot.
             The game needs time to display the trick name notification.
-            Default 1.5s — may need tuning.
+            Default 0.8s — multi-capture approach tolerates variance in notification timing.
 
     Returns:
         Tuple of (reward, result) where reward is a float in [0.0, 1.0]
