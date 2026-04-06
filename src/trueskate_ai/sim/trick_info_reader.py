@@ -21,6 +21,10 @@ def _match_component(ocr_line: str) -> str | None:
     if not words:
         return None
 
+    # Exact match before modifier stripping (handles "BACKSIDE 360" etc.)
+    if ocr_line in KNOWN_TRICKS:
+        return ocr_line
+
     modifier = None
     mod_match = difflib.get_close_matches(words[0], ["FAKIE", "SWITCH", "BACKSIDE", "FRONTSIDE"], n=1, cutoff=0.5)
     if mod_match:
