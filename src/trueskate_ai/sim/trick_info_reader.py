@@ -22,7 +22,7 @@ def _match_component(ocr_line: str) -> str | None:
         return None
 
     modifier = None
-    mod_match = difflib.get_close_matches(words[0], ["FAKIE", "SWITCH"], n=1, cutoff=0.5)
+    mod_match = difflib.get_close_matches(words[0], ["FAKIE", "SWITCH", "BACKSIDE", "FRONTSIDE"], n=1, cutoff=0.5)
     if mod_match:
         modifier = mod_match[0]
         ocr_line = " ".join(words[1:])
@@ -51,11 +51,23 @@ def _find_anchor(search: np.ndarray) -> tuple[np.ndarray, Literal["landed", "fai
 
     green_mask = (g > 180) & (r < 120) & (b < 120)
     if green_mask.sum() >= 20:
+        logging.debug("anchor search: green=%d, red=— (skipped)", green_mask.sum())
         return green_mask, "landed"
 
+    # Filter red pixels to the center third of the frame horizontally.
+    # The FAILED notification is centered; stadium walls and sponsor bars
+    # appear at the edges, so this eliminates most false positives.
+    w = search.shape[1]
+    center_col = np.zeros_like(r, dtype=bool)
+    center_col[:, w // 3 : 2 * w // 3] = True
+
     red_mask = (r > 180) & (g < 80) & (b < 80)
-    if red_mask.sum() >= 20:
-        return red_mask, "failed"
+    red_filtered = red_mask & center_col
+
+    logging.debug("anchor search: green=%d, red=%d (filtered)", green_mask.sum(), red_filtered.sum())
+
+    if red_filtered.sum() >= 50:
+        return red_filtered, "failed"
 
     return None
 
@@ -103,6 +115,15 @@ def _ocr_above_anchor(
     candidates = []
     for line in raw.splitlines():
         cleaned = re.sub(r"[^A-Z0-9 :-]", "", line.upper()).strip()
+        # Tesseract merges letter-digit and digit-letter boundaries — split them.
+        cleaned = re.sub(r'([A-Z])(\d)', r'\1 \2', cleaned)
+        cleaned = re.sub(r'(\d)([A-Z])', r'\1 \2', cleaned)
+        # Normalize OCR rotation number misreads:
+        #   "560" is a common misread of "360" (3 ↔ 5 confusion at small size).
+        cleaned = re.sub(r'\b560\b', '360', cleaned)
+        #   Any x40 number (140, 240, etc.) is a misread of "540" — the only
+        #   valid x40 rotation in True Skate. "540" itself maps to itself.
+        cleaned = re.sub(r'\b\d40\b', '540', cleaned)
         if not cleaned:
             continue
         if "SCORE" in cleaned:

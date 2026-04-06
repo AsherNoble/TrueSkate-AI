@@ -78,7 +78,6 @@ def compute_reward(result: TrickResult | None) -> float:
 
 def _score_component(trick: str) -> float:
     """Score a single (non-combo) trick string. First match wins."""
-    trick = trick.replace("540", "360")
     _MODIFIERS = ("FAKIE", "SWITCH", "DOUBLE", "TRIPLE", "NOLLIE")
 
     # --- Tier 1.0: exact target, no modifiers ---
@@ -151,8 +150,8 @@ if __name__ == "__main__":
         ("360 DOUBLE FLIP", "landed",        0.75),
         ("360 TRIPLE FLIP", "landed",        0.75),
         ("NOLLIE 360 FLIP", "landed",        0.75),
-        ("540 FLIP", "landed",               1.0),
-        ("540 DOUBLE FLIP", "landed",        0.75),
+        ("540 FLIP", "landed",               0.6),
+        ("540 DOUBLE FLIP", "landed",        0.6),
         ("NIGHTMARE FLIP", "landed",         0.75),
         ("KICKFLIP", "landed",               0.6),
         ("INWARD HEELFLIP", "landed",        0.6),
@@ -172,7 +171,7 @@ if __name__ == "__main__":
         ("KICKFLIP + 50-50 GRIND", "landed", 0.6),
         # Failed tricks (0.4× multiplier)
         ("360 FLIP", "failed",               0.4),
-        ("540 DOUBLE FLIP", "failed",        0.3),
+        ("540 DOUBLE FLIP", "failed",        0.24),
         ("KICKFLIP", "failed",               0.24),
         ("360 POP SHOVE-IT", "failed",       0.16),
         # No trick
