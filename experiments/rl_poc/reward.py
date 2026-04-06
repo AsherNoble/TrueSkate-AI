@@ -53,7 +53,6 @@ def capture_and_detect(driver) -> TrickResult | None:
         png_bytes = driver.get_screenshot_as_png()
         arr = np.frombuffer(png_bytes, dtype=np.uint8)
         frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-        cv2.imwrite(f"/Users/ashernoble/Projects/TrueSkate-AI/tmp/capture_{capture_idx}.png", frame)
 
         result = detect_trick(frame)
         if result is not None:
@@ -129,7 +128,7 @@ def _score_component(trick: str) -> float:
     return 0.1
 
 
-def get_reward(driver, wait_time: float = 0.8) -> tuple[float, TrickResult | None]:
+def get_reward(driver, wait_time: float = 0.0) -> tuple[float, TrickResult | None]:
     """Wait for the trick notification, capture, and return the reward.
 
     This is the main entry point called by the CMA-ES optimization loop.

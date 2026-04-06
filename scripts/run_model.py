@@ -37,7 +37,7 @@ if __name__ == "__main__":
     driver = connect_and_launch()
 
     time.sleep(1.5)
-    long_press(driver, 350, 752, duration=0.5)
+    long_press(driver, 350, 752, duration=0.5)  # skip the loading screen
 
     time.sleep(3)
 

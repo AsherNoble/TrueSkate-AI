@@ -9,7 +9,7 @@ Usage:
 Options:
     --max-evals   Total evaluations before stopping (default: 1800)
     --seed        CMA-ES random seed (default: 42)
-    --wait-time   Seconds to wait for trick text after gestures (default: 1.5)
+    --wait-time   Seconds to wait for trick text after gestures (default: 0.0)
     --settle-time Seconds to wait after reset before next attempt (default: 0.5)
     --log-dir     Log directory (default: experiments/rl_poc/logs)
 """
@@ -151,8 +151,8 @@ def main() -> None:
                         help="Total evaluations before stopping (default: 1800)")
     parser.add_argument("--seed", type=int, default=42,
                         help="CMA-ES random seed (default: 42)")
-    parser.add_argument("--wait-time", type=float, default=1.5,
-                        help="Seconds to wait for trick text after gestures (default: 1.5)")
+    parser.add_argument("--wait-time", type=float, default=0.0,
+                        help="Seconds to wait for trick text after gestures (default: 0.0)")
     parser.add_argument("--settle-time", type=float, default=0.5,
                         help="Seconds to wait after reset before next attempt (default: 0.5)")
     parser.add_argument("--log-dir", type=Path,

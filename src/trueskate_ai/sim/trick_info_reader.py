@@ -29,7 +29,9 @@ def _match_component(ocr_line: str) -> str | None:
 
     matches = difflib.get_close_matches(ocr_line, KNOWN_TRICKS, n=1, cutoff=0.4)
     if matches:
-        return f"{modifier} {matches[0]}" if modifier else matches[0]
+        if modifier and not matches[0].startswith(modifier):
+            return f"{modifier} {matches[0]}"
+        return matches[0]
 
     logging.warning("trick_info_reader: no match for OCR output %r", ocr_line)
     return None
