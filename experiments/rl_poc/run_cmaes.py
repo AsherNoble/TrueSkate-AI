@@ -177,6 +177,7 @@ def main() -> None:
             "seed": args.seed,
             "maxiter": args.max_evals,  # generous ceiling; real stop is max_evals
             "verbose": -9,             # suppress CMA-ES internal printing
+            "popsize": 24,             # 2× default for noisy objective
         },
     )
 

@@ -8,7 +8,8 @@ Reward tiers (for landed tricks):
     0.75  — 360 FLIP with a modifier, or NIGHTMARE flip
     0.6   — Flip tricks (FLIP, HEEL, KICK, HARD, LASER, VARIAL, INWARD,
             IMPOSSIBLE, DOLPHIN, DRAGON)
-    0.4   — Rotation tricks (SHOVE, SPIN, GAZELLE, 360, 540, 720)
+    0.5   — 360+ rotation tricks (360, 540, 720, SPIN, GAZELLE)
+    0.3   — Shove-it tricks (SHOVE)
     0.2   — Basic air tricks (OLLIE, NOLLIE, 180)
     0.1   — Any other recognized trick (grinds, slides, manuals, etc.)
     0.0   — None (no trick detected)
@@ -81,9 +82,9 @@ def compute_reward(result: TrickResult | None) -> float:
     components = [c.strip() for c in result.trick.split(" + ")]
     base_reward = max(_score_component(c) for c in components)
 
-    # Apply 0.4× multiplier for failed tricks
+    # Apply score reduction multiplier for failed tricks
     if result.status == "failed":
-        return base_reward * 0.4
+        return base_reward * (base_reward - 0.1)  # tiered (failed 360 flip yields 0.9)
 
     return base_reward
 
@@ -106,25 +107,24 @@ def _score_component(trick: str) -> float:
     if "NIGHTMARE" in trick:
         return 0.75
 
-    # --- Tier 0.6: flip tricks (flip component is mechanically critical) ---
+    # --- Tier 0.5: flip tricks (flip component is mechanically critical) ---
     _FLIP_KEYWORDS = (
         "FLIP", "HEEL", "KICK", "HARD", "LASER", "VARIAL", "INWARD",
         "IMPOSSIBLE", "DOLPHIN", "DRAGON",
     )
     if any(kw in trick for kw in _FLIP_KEYWORDS):
-        return 0.6
+        return 0.5
 
-    # --- Tier 0.4: rotation tricks (right rotation but no flip) ---
-    _ROTATION_KEYWORDS = ("SHOVE", "SPIN", "GAZELLE", "360", "540", "720")
+    # --- Tier 0.3: 360+ rotation tricks (no flip) ---
+    _ROTATION_KEYWORDS = ("SPIN", "GAZELLE", "360", "540", "720")
     if any(kw in trick for kw in _ROTATION_KEYWORDS):
-        return 0.4
+        return 0.3
 
-    # --- Tier 0.2: basic air tricks ---
-    _AIR_KEYWORDS = ("OLLIE", "NOLLIE", "180")
-    if any(kw in trick for kw in _AIR_KEYWORDS):
+    # --- Tier 0.2: 180 tricks (easier than full rotations) ---
+    if "180" in trick:
         return 0.2
 
-    # --- Tier 0.1: any other recognized trick (grinds, slides, manuals, etc.) ---
+    # --- Tier 0.1: any other recognized trick (ollies, nollies, manuals, etc.) ---
     return 0.1
 
 
@@ -172,12 +172,12 @@ if __name__ == "__main__":
         ("LASER FLIP", "landed",             0.6),
         ("VARIAL KICKFLIP", "landed",        0.6),
         ("IMPOSSIBLE", "landed",             0.6),
-        ("360 POP SHOVE-IT", "landed",       0.4),
-        ("540 POP SHOVE-IT", "landed",       0.4),
-        ("FS POP SHOVE-IT", "landed",        0.4),
-        ("POP SHOVE-IT", "landed",           0.4),
-        ("BIG SPIN", "landed",               0.4),
-        ("BACKSIDE 360", "landed",           0.4),
+        ("360 POP SHOVE-IT", "landed",       0.5),
+        ("540 POP SHOVE-IT", "landed",       0.5),
+        ("FS POP SHOVE-IT", "landed",        0.3),
+        ("POP SHOVE-IT", "landed",           0.3),
+        ("BIG SPIN", "landed",               0.5),
+        ("BACKSIDE 360", "landed",           0.5),
         ("OLLIE", "landed",                  0.2),
         ("NOLLIE", "landed",                 0.2),
         ("BACKSIDE 180", "landed",           0.2),
@@ -186,7 +186,7 @@ if __name__ == "__main__":
         ("360 FLIP", "failed",               0.4),
         ("540 DOUBLE FLIP", "failed",        0.24),
         ("KICKFLIP", "failed",               0.24),
-        ("360 POP SHOVE-IT", "failed",       0.16),
+        ("360 POP SHOVE-IT", "failed",       0.2),
         # No trick
         (None, None,                         0.0),
     ]
