@@ -3,7 +3,7 @@
 After each action attempt, captures a screenshot, runs OCR-based trick
 detection, and maps the result to a scalar reward.
 
-Reward tiers:
+Reward tiers (for landed tricks):
     1.0   — "360 FLIP" (exact, no modifiers)
     0.75  — 360 FLIP with a modifier, or NIGHTMARE flip
     0.6   — Flip tricks (FLIP, HEEL, KICK, HARD, LASER, VARIAL, INWARD,
@@ -12,6 +12,8 @@ Reward tiers:
     0.2   — Basic air tricks (OLLIE, NOLLIE, 180)
     0.1   — Any other recognized trick (grinds, slides, manuals, etc.)
     0.0   — None (no trick detected)
+
+Failed tricks receive a 0.4× multiplier on the base tier reward.
 
 For combo tricks (e.g. "KICKFLIP + CROOKED GRIND"), each component is
 evaluated independently and the maximum reward is returned.
@@ -53,6 +55,8 @@ def compute_reward(result: TrickResult | None) -> float:
     For combo tricks joined with " + ", each component is scored and the
     maximum reward across components is returned.
 
+    Failed tricks receive a 0.4× multiplier on the base tier reward.
+
     Args:
         result: Output of detect_trick() — a TrickResult or None.
 
@@ -63,7 +67,13 @@ def compute_reward(result: TrickResult | None) -> float:
         return 0.0
 
     components = [c.strip() for c in result.trick.split(" + ")]
-    return max(_score_component(c) for c in components)
+    base_reward = max(_score_component(c) for c in components)
+
+    # Apply 0.4× multiplier for failed tricks
+    if result.status == "failed":
+        return base_reward * 0.4
+
+    return base_reward
 
 
 def _score_component(trick: str) -> float:
@@ -134,42 +144,52 @@ def get_reward(driver, wait_time: float = 1.5) -> tuple[float, TrickResult | Non
 
 if __name__ == "__main__":
     test_cases = [
-        ("360 FLIP",               1.0),
-        ("FAKIE 360 FLIP",         0.75),
-        ("SWITCH 360 FLIP",        0.75),
-        ("360 DOUBLE FLIP",        0.75),
-        ("360 TRIPLE FLIP",        0.75),
-        ("NOLLIE 360 FLIP",        0.75),
-        ("540 FLIP",               1.0),
-        ("540 DOUBLE FLIP",        0.75),
-        ("NIGHTMARE FLIP",         0.75),
-        ("KICKFLIP",               0.6),
-        ("INWARD HEELFLIP",        0.6),
-        ("HARD FLIP",              0.6),
-        ("LASER FLIP",             0.6),
-        ("VARIAL KICKFLIP",        0.6),
-        ("IMPOSSIBLE",             0.6),
-        ("360 POP SHOVE-IT",       0.4),
-        ("540 POP SHOVE-IT",       0.4),
-        ("FS POP SHOVE-IT",        0.4),
-        ("POP SHOVE-IT",           0.4),
-        ("BIG SPIN",               0.4),
-        ("BACKSIDE 360",           0.4),
-        ("OLLIE",                  0.2),
-        ("NOLLIE",                 0.2),
-        ("BACKSIDE 180",           0.2),
-        ("KICKFLIP + 50-50 GRIND", 0.6),
-        (None,                     0.0),
+        # Landed tricks
+        ("360 FLIP", "landed",               1.0),
+        ("FAKIE 360 FLIP", "landed",         0.75),
+        ("SWITCH 360 FLIP", "landed",        0.75),
+        ("360 DOUBLE FLIP", "landed",        0.75),
+        ("360 TRIPLE FLIP", "landed",        0.75),
+        ("NOLLIE 360 FLIP", "landed",        0.75),
+        ("540 FLIP", "landed",               1.0),
+        ("540 DOUBLE FLIP", "landed",        0.75),
+        ("NIGHTMARE FLIP", "landed",         0.75),
+        ("KICKFLIP", "landed",               0.6),
+        ("INWARD HEELFLIP", "landed",        0.6),
+        ("HARD FLIP", "landed",              0.6),
+        ("LASER FLIP", "landed",             0.6),
+        ("VARIAL KICKFLIP", "landed",        0.6),
+        ("IMPOSSIBLE", "landed",             0.6),
+        ("360 POP SHOVE-IT", "landed",       0.4),
+        ("540 POP SHOVE-IT", "landed",       0.4),
+        ("FS POP SHOVE-IT", "landed",        0.4),
+        ("POP SHOVE-IT", "landed",           0.4),
+        ("BIG SPIN", "landed",               0.4),
+        ("BACKSIDE 360", "landed",           0.4),
+        ("OLLIE", "landed",                  0.2),
+        ("NOLLIE", "landed",                 0.2),
+        ("BACKSIDE 180", "landed",           0.2),
+        ("KICKFLIP + 50-50 GRIND", "landed", 0.6),
+        # Failed tricks (0.4× multiplier)
+        ("360 FLIP", "failed",               0.4),
+        ("540 DOUBLE FLIP", "failed",        0.3),
+        ("KICKFLIP", "failed",               0.24),
+        ("360 POP SHOVE-IT", "failed",       0.16),
+        # No trick
+        (None, None,                         0.0),
     ]
 
     all_passed = True
-    for trick, expected in test_cases:
-        result = TrickResult(trick=trick, status="landed") if trick is not None else None
+    for trick, status, expected in test_cases:
+        result = TrickResult(trick=trick, status=status) if trick is not None else None
         actual = compute_reward(result)
-        status = "PASS" if actual == expected else "FAIL"
-        if status == "FAIL":
+        expected_rounded = round(expected, 2)
+        actual_rounded = round(actual, 2)
+        test_status = "PASS" if actual_rounded == expected_rounded else "FAIL"
+        if test_status == "FAIL":
             all_passed = False
-        print(f"  [{status}] compute_reward({trick!r:30s}) = {actual:.2f}  (expected {expected:.2f})")
+        label = f"{trick!r} ({status})" if trick is not None else "None"
+        print(f"  [{test_status}] compute_reward({label:35s}) = {actual:.2f}  (expected {expected:.2f})")
 
     print()
     print("All tests passed." if all_passed else "FAILURES detected.")
