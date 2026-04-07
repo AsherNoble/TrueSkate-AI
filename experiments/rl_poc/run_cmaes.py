@@ -64,6 +64,7 @@ logging.basicConfig(
     level=logging.WARNING,
     format="%(levelname)s %(name)s: %(message)s",
 )
+logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +179,7 @@ class FrameRecorder:
         return self._frames
 
 
-def _save_composites(frames: list[np.ndarray], eval_dir: Path, chunk_size: int = 12) -> int:
+def _save_composites(frames: list[np.ndarray], eval_dir: Path, chunk_size: int = 3) -> int:
     """Max-pool frames into chunks, save each as a grayscale PNG. Returns composite count."""
     n_complete = len(frames) // chunk_size
     if n_complete == 0:
