@@ -4,16 +4,14 @@ After each action attempt, captures a screenshot, runs OCR-based trick
 detection, and maps the result to a scalar reward.
 
 Reward tiers (for landed tricks):
-    1.0   — "360 FLIP" (exact, no modifiers)
-    0.75  — 360 FLIP with a modifier, or NIGHTMARE flip
-    0.6   — Flip tricks (FLIP, HEEL, KICK, HARD, LASER, VARIAL, INWARD,
-            IMPOSSIBLE, DOLPHIN, DRAGON)
-    0.4   — Rotation tricks (SHOVE, SPIN, GAZELLE, 360, 540, 720)
-    0.2   — Basic air tricks (OLLIE, NOLLIE, 180)
-    0.1   — Any other recognized trick (grinds, slides, manuals, etc.)
-    0.0   — None (no trick detected)
+    1.0   — "360 FLIP" exact, no modifiers (FAKIE/SWITCH/DOUBLE/TRIPLE/NOLLIE/BACKSIDE)
+    0.8   — 360 FLIP with a modifier (FAKIE, SWITCH, NOLLIE, BACKSIDE, DOUBLE, TRIPLE, etc.)
+    0.6   — VARIAL FLIP variants (VARIAL FLIP, VARIAL DOUBLE/TRIPLE/QUAD FLIP),
+            KICKFLIP (standalone), NIGHTMARE FLIP
+    0.3   — 360 POP SHOVE-IT, BACKSIDE 360 (no flip component)
+    0.0   — Everything else (heelflips, hard flips, laser flips, ollies, grinds, etc.)
 
-Failed tricks receive a 0.4× multiplier on the base tier reward.
+Failed tricks receive base * (base - 0.1) for all tricks.
 
 For combo tricks (e.g. "KICKFLIP + CROOKED GRIND"), each component is
 evaluated independently and the maximum reward is returned.
@@ -32,6 +30,43 @@ if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from trueskate_ai.sim.trick_info_reader import TrickResult, detect_trick  # noqa: E402
+
+
+class RepetitionPenalty:
+    """Tracks landed trick counts and returns a multiplier that penalises repeats.
+
+    Multiplier formula: 1 / (1 + count) — first landing gives 1.0 (no penalty),
+    second gives 0.5, third 0.33, tenth 0.09. Base reward can only go down.
+
+    "360 FLIP" and "BACKSIDE 360 FLIP" are exempt: they always return 1.0 so
+    the target signal is never reduced.
+
+    Only landed tricks are counted (failed tricks don't feed the counts).
+    """
+
+    _NO_PENALTY = frozenset({"360 FLIP", "BACKSIDE 360 FLIP"})
+
+    def __init__(self) -> None:
+        self._counts: dict[str, int] = {}
+
+    def get_multiplier_and_record(self, trick_name: str) -> float:
+        """Return penalty multiplier for this trick and increment its landed count.
+
+        Args:
+            trick_name: The trick string from TrickResult.trick.
+
+        Returns:
+            Multiplier in (0, 1]. 1.0 for exempt tricks or first landing.
+        """
+        if trick_name in self._NO_PENALTY:
+            return 1.0
+        count = self._counts.get(trick_name, 0)
+        self._counts[trick_name] = count + 1
+        return 1.0 / (1 + count)
+
+    def count(self, trick_name: str) -> int:
+        """Return how many times trick_name has been landed so far."""
+        return self._counts.get(trick_name, 0)
 
 
 def capture_and_detect(driver) -> TrickResult | None:
@@ -67,7 +102,8 @@ def compute_reward(result: TrickResult | None) -> float:
     For combo tricks joined with " + ", each component is scored and the
     maximum reward across components is returned.
 
-    Failed tricks receive a 0.4× multiplier on the base tier reward.
+    Failed and unknown tricks receive base * (base - 0.1) — tiered penalty.
+    "unknown" is returned when a white anchor is detected (ambiguous outcome).
 
     Args:
         result: Output of detect_trick() — a TrickResult or None.
@@ -81,55 +117,53 @@ def compute_reward(result: TrickResult | None) -> float:
     components = [c.strip() for c in result.trick.split(" + ")]
     base_reward = max(_score_component(c) for c in components)
 
-    # Apply 0.4× multiplier for failed tricks
-    if result.status == "failed":
-        return base_reward * 0.4
+    if result.status in ("failed", "unknown"):
+        return base_reward * (base_reward - 0.1)  # tiered (failed 360 flip yields 0.9)
 
     return base_reward
 
 
 def _score_component(trick: str) -> float:
     """Score a single (non-combo) trick string. First match wins."""
-    _MODIFIERS = ("FAKIE", "SWITCH", "DOUBLE", "TRIPLE", "NOLLIE")
+    _MODIFIERS = ("FAKIE", "SWITCH", "DOUBLE", "TRIPLE", "NOLLIE", "BACKSIDE")
 
-    # --- Tier 1.0: exact target, no modifiers ---
+    # --- Tier 1.0: 360 FLIP exact, no modifiers ---
     if "360 FLIP" in trick and not any(m in trick for m in _MODIFIERS):
         return 1.0
 
-    # --- Tier 0.75: 360 FLIP with a modifier, or nightmare flip ---
-    # "360 DOUBLE FLIP" / "360 TRIPLE FLIP" don't contain the exact substring
-    # "360 FLIP", so also check for "360" + "FLIP" co-occurring with a modifier.
+    # --- Tier 0.8: 360 FLIP with a modifier ---
+    # "360 DOUBLE FLIP" / "360 TRIPLE FLIP" don't contain the substring "360 FLIP",
+    # so also check for "360" + "FLIP" co-occurring with any modifier.
     if "360 FLIP" in trick and any(m in trick for m in _MODIFIERS):
-        return 0.75
+        return 0.8
     if "360" in trick and "FLIP" in trick and any(m in trick for m in _MODIFIERS):
-        return 0.75
-    if "NIGHTMARE" in trick:
-        return 0.75
+        return 0.8
 
-    # --- Tier 0.6: flip tricks (flip component is mechanically critical) ---
-    _FLIP_KEYWORDS = (
-        "FLIP", "HEEL", "KICK", "HARD", "LASER", "VARIAL", "INWARD",
-        "IMPOSSIBLE", "DOLPHIN", "DRAGON",
-    )
-    if any(kw in trick for kw in _FLIP_KEYWORDS):
+    # --- Tier 0.6: VARIAL FLIP variants, standalone KICKFLIP, NIGHTMARE FLIP ---
+    # VARIAL FLIP: has VARIAL + FLIP but is not a VARIAL KICKFLIP or VARIAL HEELFLIP
+    if "VARIAL" in trick and "FLIP" in trick and "KICKFLIP" not in trick and "HEELFLIP" not in trick:
+        return 0.6
+    if "KICKFLIP" in trick and "VARIAL" not in trick:
+        return 0.6
+    if "NIGHTMARE" in trick:
         return 0.6
 
-    # --- Tier 0.4: rotation tricks (right rotation but no flip) ---
-    _ROTATION_KEYWORDS = ("SHOVE", "SPIN", "GAZELLE", "360", "540", "720")
-    if any(kw in trick for kw in _ROTATION_KEYWORDS):
-        return 0.4
+    # --- Tier 0.3: 360 POP SHOVE-IT, BACKSIDE 360 (no flip) ---
+    if "360" in trick and "SHOVE" in trick:
+        return 0.3
+    if "BACKSIDE" in trick and "360" in trick and "FLIP" not in trick:
+        return 0.3
 
-    # --- Tier 0.2: basic air tricks ---
-    _AIR_KEYWORDS = ("OLLIE", "NOLLIE", "180")
-    if any(kw in trick for kw in _AIR_KEYWORDS):
-        return 0.2
-
-    # --- Tier 0.1: any other recognized trick (grinds, slides, manuals, etc.) ---
-    return 0.1
+    # --- Everything else ---
+    return 0.0
 
 
-def get_reward(driver, wait_time: float = 0.0) -> tuple[float, TrickResult | None]:
-    """Wait for the trick notification, capture, and return the reward.
+def get_reward(
+    driver,
+    wait_time: float = 0.0,
+    penalty: RepetitionPenalty | None = None,
+) -> tuple[float, TrickResult | None, float]:
+    """Wait for the trick notification, capture, score, and return the reward.
 
     This is the main entry point called by the CMA-ES optimization loop.
     Captures 5 screenshots spaced 0.25s apart (total ~1.0s after initial wait).
@@ -137,17 +171,24 @@ def get_reward(driver, wait_time: float = 0.0) -> tuple[float, TrickResult | Non
     Args:
         driver: Appium WebDriver instance.
         wait_time: Seconds to wait after gestures finish before first screenshot.
-            The game needs time to display the trick name notification.
-            Default 0.8s — multi-capture approach tolerates variance in notification timing.
+        penalty: Optional RepetitionPenalty. When provided, landed tricks receive
+            a diminishing multiplier and their count is incremented.
 
     Returns:
-        Tuple of (reward, result) where reward is a float in [0.0, 1.0]
-        and result is a TrickResult(trick, status) or None.
+        Tuple of (reward, result, multiplier):
+            reward     — base reward * multiplier, float.
+            result     — TrickResult(trick, status) or None.
+            multiplier — factor applied to base reward (1.0 if no penalty or failed).
     """
     time.sleep(wait_time)
     result = capture_and_detect(driver)
-    reward = compute_reward(result)
-    return reward, result
+    base = compute_reward(result)
+
+    multiplier = 1.0
+    if penalty is not None and result is not None and result.status == "landed":
+        multiplier = penalty.get_multiplier_and_record(result.trick)
+
+    return base * multiplier, result, multiplier
 
 
 # ---------------------------------------------------------------------------
@@ -156,39 +197,49 @@ def get_reward(driver, wait_time: float = 0.0) -> tuple[float, TrickResult | Non
 
 if __name__ == "__main__":
     test_cases = [
-        # Landed tricks
-        ("360 FLIP", "landed",               1.0),
-        ("FAKIE 360 FLIP", "landed",         0.75),
-        ("SWITCH 360 FLIP", "landed",        0.75),
-        ("360 DOUBLE FLIP", "landed",        0.75),
-        ("360 TRIPLE FLIP", "landed",        0.75),
-        ("NOLLIE 360 FLIP", "landed",        0.75),
-        ("540 FLIP", "landed",               0.6),
-        ("540 DOUBLE FLIP", "landed",        0.6),
-        ("NIGHTMARE FLIP", "landed",         0.75),
-        ("KICKFLIP", "landed",               0.6),
-        ("INWARD HEELFLIP", "landed",        0.6),
-        ("HARD FLIP", "landed",              0.6),
-        ("LASER FLIP", "landed",             0.6),
-        ("VARIAL KICKFLIP", "landed",        0.6),
-        ("IMPOSSIBLE", "landed",             0.6),
-        ("360 POP SHOVE-IT", "landed",       0.4),
-        ("540 POP SHOVE-IT", "landed",       0.4),
-        ("FS POP SHOVE-IT", "landed",        0.4),
-        ("POP SHOVE-IT", "landed",           0.4),
-        ("BIG SPIN", "landed",               0.4),
-        ("BACKSIDE 360", "landed",           0.4),
-        ("OLLIE", "landed",                  0.2),
-        ("NOLLIE", "landed",                 0.2),
-        ("BACKSIDE 180", "landed",           0.2),
-        ("KICKFLIP + 50-50 GRIND", "landed", 0.6),
-        # Failed tricks (0.4× multiplier)
-        ("360 FLIP", "failed",               0.4),
-        ("540 DOUBLE FLIP", "failed",        0.24),
-        ("KICKFLIP", "failed",               0.24),
-        ("360 POP SHOVE-IT", "failed",       0.16),
+        # Tier 1.0 — 360 FLIP exact
+        ("360 FLIP", "landed",                1.0),
+        # Tier 0.8 — 360 FLIP with modifier
+        ("FAKIE 360 FLIP", "landed",          0.8),
+        ("SWITCH 360 FLIP", "landed",         0.8),
+        ("NOLLIE 360 FLIP", "landed",         0.8),
+        ("BACKSIDE 360 FLIP", "landed",       0.8),
+        ("360 DOUBLE FLIP", "landed",         0.8),
+        ("360 TRIPLE FLIP", "landed",         0.8),
+        # Tier 0.6 — VARIAL FLIP, KICKFLIP, NIGHTMARE
+        ("VARIAL FLIP", "landed",             0.6),
+        ("VARIAL DOUBLE FLIP", "landed",      0.6),
+        ("VARIAL TRIPLE FLIP", "landed",      0.6),
+        ("KICKFLIP", "landed",                0.6),
+        ("NIGHTMARE FLIP", "landed",          0.6),
+        # Tier 0.3 — 360 POP SHOVE-IT, BACKSIDE 360
+        ("360 POP SHOVE-IT", "landed",        0.3),
+        ("BACKSIDE 360", "landed",            0.3),
+        # Tier 0.0 — everything else
+        ("HARD FLIP", "landed",               0.0),
+        ("LASER FLIP", "landed",              0.0),
+        ("HEELFLIP", "landed",                0.0),
+        ("VARIAL KICKFLIP", "landed",         0.0),
+        ("540 FLIP", "landed",                0.0),
+        ("540 POP SHOVE-IT", "landed",        0.0),
+        ("POP SHOVE-IT", "landed",            0.0),
+        ("OLLIE", "landed",                   0.0),
+        ("BACKSIDE 180", "landed",            0.0),
+        # Combo — max component wins
+        ("KICKFLIP + 50-50 GRIND", "landed",  0.6),
+        # Failed tricks — all use base * (base - 0.1)
+        ("360 FLIP", "failed",                0.9),    # 1.0 * 0.9
+        ("360 DOUBLE FLIP", "failed",         0.56),   # 0.8 * 0.7
+        ("KICKFLIP", "failed",                0.3),    # 0.6 * 0.5
+        ("360 POP SHOVE-IT", "failed",        0.06),   # 0.3 * 0.2
+        ("BACKSIDE 360", "failed",            0.06),   # 0.3 * 0.2
+        ("HARD FLIP", "failed",               0.0),    # 0.0 * -0.1 = 0.0
+        # Unknown status (white anchor) — same formula as failed
+        ("KICKFLIP", "unknown",               0.3),    # 0.6 * 0.5
+        ("360 FLIP", "unknown",               0.9),    # 1.0 * 0.9
+        ("HARD FLIP", "unknown",              0.0),    # 0.0 * -0.1 = 0.0
         # No trick
-        (None, None,                         0.0),
+        (None, None,                          0.0),
     ]
 
     all_passed = True
@@ -204,4 +255,29 @@ if __name__ == "__main__":
         print(f"  [{test_status}] compute_reward({label:35s}) = {actual:.2f}  (expected {expected:.2f})")
 
     print()
-    print("All tests passed." if all_passed else "FAILURES detected.")
+    print("All base reward tests passed." if all_passed else "FAILURES detected.")
+
+    print("\n=== RepetitionPenalty multiplier tests ===")
+    penalty = RepetitionPenalty()
+    multiplier_cases = [
+        # (trick, status, expected_multiplier, description)
+        ("KICKFLIP",         "landed", round(1.0 / 1, 4), "first landing  → 1.0"),
+        ("KICKFLIP",         "landed", round(1.0 / 2, 4), "second landing → 0.5"),
+        ("KICKFLIP",         "landed", round(1.0 / 3, 4), "third landing  → 0.33"),
+        ("OLLIE",            "landed", round(1.0 / 1, 4), "new trick      → 1.0"),
+        ("KICKFLIP",         "failed", 1.0,               "failed         — no penalty, no count"),
+        ("360 FLIP",         "landed", 1.0,               "exempt         — always 1.0"),
+        ("BACKSIDE 360 FLIP","landed", 1.0,               "exempt         — always 1.0"),
+    ]
+    penalty_passed = True
+    for trick, status, expected_mult, desc in multiplier_cases:
+        result = TrickResult(trick=trick, status=status)
+        mult = penalty.get_multiplier_and_record(result.trick) if result.status == "landed" else 1.0
+        actual_mult = round(mult, 4)
+        test_status = "PASS" if actual_mult == expected_mult else "FAIL"
+        if test_status == "FAIL":
+            penalty_passed = False
+        print(f"  [{test_status}] {desc:40s} multiplier={actual_mult:.4f}  (expected {expected_mult:.4f})")
+
+    print()
+    print("All multiplier tests passed." if penalty_passed else "MULTIPLIER FAILURES detected.")

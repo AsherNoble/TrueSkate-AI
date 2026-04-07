@@ -11,17 +11,23 @@ Options:
     --seed        CMA-ES random seed (default: 42)
     --wait-time   Seconds to wait for trick text after gestures (default: 0.0)
     --settle-time Seconds to wait after reset before next attempt (default: 0.5)
+    --pop-size    CMA-ES population size — evals per generation (default: 24)
     --log-dir     Log directory (default: experiments/rl_poc/logs)
 """
 import argparse
+import io
 import json
 import logging
 import os
 import pickle
 import sys
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
+
+import requests
+from PIL import Image
 
 # ---------------------------------------------------------------------------
 # Path setup — must happen before local imports
@@ -49,7 +55,7 @@ from appium.options.ios import XCUITestOptions
 from dotenv import load_dotenv
 
 from action_param import INITIAL_MEAN, INITIAL_SIGMA, PARAM_BOUNDS, execute_action
-from reward import get_reward
+from reward import RepetitionPenalty, get_reward
 from trueskate_ai.sim.touch_actions import reset_position
 
 # ---------------------------------------------------------------------------
@@ -59,6 +65,7 @@ logging.basicConfig(
     level=logging.WARNING,
     format="%(levelname)s %(name)s: %(message)s",
 )
+logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
 
 
 # ---------------------------------------------------------------------------
@@ -66,12 +73,13 @@ logging.basicConfig(
 # ---------------------------------------------------------------------------
 
 _BUNDLE_ID = "com.trueaxis.skate"
+_MJPEG_PORT = 9100
 
 # query_app_state() return values (XCUITest / iOS)
 _APP_STATE_FOREGROUND = 4
 
 
-def connect_driver() -> webdriver.Remote:
+def connect_driver() -> tuple[webdriver.Remote, str]:
     """Connect to Appium, reusing True Skate if it is already in the foreground.
 
     Uses no_reset=True so Appium never stops or reinstalls the app.
@@ -82,7 +90,7 @@ def connect_driver() -> webdriver.Remote:
     Reads IPHONE_UDID from the environment (via .env).
 
     Returns:
-        Appium WebDriver instance.
+        (driver, mjpeg_url) — Appium WebDriver and WDA MJPEG stream URL.
     """
     load_dotenv(_REPO_ROOT / ".env")
     udid = os.environ.get("IPHONE_UDID")
@@ -100,6 +108,7 @@ def connect_driver() -> webdriver.Remote:
     options.use_prebuilt_wda = True
     options.skip_log_capture = True
     options.no_reset = True  # never stop/reinstall the app
+    options.set_capability("mjpegServerPort", _MJPEG_PORT)
 
     driver = webdriver.Remote("http://127.0.0.1:4723", options=options)
 
@@ -111,19 +120,22 @@ def connect_driver() -> webdriver.Remote:
         driver.activate_app(_BUNDLE_ID)
         time.sleep(1.5)  # wait for the game UI to settle
 
-    return driver
+    mjpeg_url = f"http://127.0.0.1:{_MJPEG_PORT}"
+    return driver, mjpeg_url
 
 
 # ---------------------------------------------------------------------------
 # Logging helpers
 # ---------------------------------------------------------------------------
 
-def _open_log(log_dir: Path) -> tuple[Path, object]:
-    """Create the run JSONL log file and return (path, file handle)."""
-    log_dir.mkdir(parents=True, exist_ok=True)
+def _open_log(log_dir: Path) -> tuple[Path, Path, object]:
+    """Create a run folder with JSONL log and frames/ subdir. Returns (run_dir, log_path, file_handle)."""
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_path = log_dir / f"run_{run_id}.jsonl"
-    return log_path, log_path.open("w", buffering=1)  # line-buffered
+    run_dir = log_dir / "runs" / f"run_{run_id}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "frames").mkdir(exist_ok=True)
+    log_path = run_dir / f"run_{run_id}.jsonl"
+    return run_dir, log_path, log_path.open("w", buffering=1)  # line-buffered
 
 
 def _write_log(fh, record: dict) -> None:
@@ -131,11 +143,92 @@ def _write_log(fh, record: dict) -> None:
     fh.write(json.dumps(record) + "\n")
 
 
-def _save_checkpoint(es, log_dir: Path, generation: int) -> None:
-    """Pickle the CMA-ES object to a checkpoint file."""
-    path = log_dir / f"checkpoint_gen{generation}.pkl"
+def _save_checkpoint(es, run_dir: Path, generation: int) -> None:
+    """Pickle the CMA-ES object to a checkpoint file inside the run folder."""
+    path = run_dir / f"checkpoint_gen{generation}.pkl"
     with path.open("wb") as f:
         pickle.dump(es, f)
+
+
+class FrameRecorder:
+    """Reads 210×455 grayscale frames from WDA's MJPEG stream during an eval.
+
+    Connects to the MJPEG server started by WDA, extracts JPEG frames by
+    scanning for SOI/EOI markers (0xFF 0xD8 / 0xFF 0xD9), and decodes each
+    to a 210×455 grayscale numpy array. Typical throughput: 30–60 fps.
+    """
+
+    def __init__(self):
+        self._thread: threading.Thread | None = None
+        self._stop_flag = False
+        self._frames: list[np.ndarray] = []
+        self._response: requests.Response | None = None
+
+    def start(self, mjpeg_url: str) -> None:
+        self._stop_flag = False
+        self._frames = []
+        self._response = None
+        self._thread = threading.Thread(
+            target=self._capture_loop, args=(mjpeg_url,), daemon=True
+        )
+        self._thread.start()
+
+    def _capture_loop(self, mjpeg_url: str) -> None:
+        buf = b""
+        try:
+            resp = requests.get(mjpeg_url, stream=True, timeout=5)
+            self._response = resp
+            for chunk in resp.iter_content(chunk_size=4096):
+                if self._stop_flag:
+                    break
+                buf += chunk
+                # Extract complete JPEG frames via SOI (0xFF 0xD8) / EOI (0xFF 0xD9) markers
+                while True:
+                    start_idx = buf.find(b"\xff\xd8")
+                    if start_idx == -1:
+                        buf = b""
+                        break
+                    end_idx = buf.find(b"\xff\xd9", start_idx + 2)
+                    if end_idx == -1:
+                        buf = buf[start_idx:]  # preserve partial frame
+                        break
+                    jpeg_bytes = buf[start_idx : end_idx + 2]
+                    buf = buf[end_idx + 2:]
+                    try:
+                        img = Image.open(io.BytesIO(jpeg_bytes)).convert("L").resize((210, 455), Image.LANCZOS)
+                        self._frames.append(np.array(img, dtype=np.uint8))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        finally:
+            self._response = None
+
+    def stop(self) -> list[np.ndarray]:
+        self._stop_flag = True
+        resp = self._response
+        if resp is not None:
+            try:
+                resp.close()
+            except Exception:
+                pass
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+            self._thread = None
+        return self._frames
+
+
+def _save_composites(frames: list[np.ndarray], eval_dir: Path, chunk_size: int = 3) -> int:
+    """Max-pool frames into chunks, save each as a grayscale PNG. Returns composite count."""
+    n_complete = len(frames) // chunk_size
+    if n_complete == 0:
+        return 0
+    eval_dir.mkdir(parents=True, exist_ok=True)
+    for idx in range(n_complete):
+        chunk = frames[idx * chunk_size : (idx + 1) * chunk_size]
+        composite = np.max(np.stack(chunk, axis=0), axis=0)  # (210, 455) uint8
+        Image.fromarray(composite, mode="L").save(eval_dir / f"frame_{idx:02d}.png")
+    return n_complete
 
 
 # ---------------------------------------------------------------------------
@@ -155,15 +248,19 @@ def main() -> None:
                         help="Seconds to wait for trick text after gestures (default: 0.0)")
     parser.add_argument("--settle-time", type=float, default=0.5,
                         help="Seconds to wait after reset before next attempt (default: 0.5)")
+    parser.add_argument("--pop-size", type=int, default=24,
+                        help="CMA-ES population size — evals per generation (default: 24)")
     parser.add_argument("--log-dir", type=Path,
                         default=_HERE / "logs",
                         help="Log directory (default: experiments/rl_poc/logs)")
     args = parser.parse_args()
 
-    log_path, log_fh = _open_log(args.log_dir)
+    run_dir, log_path, log_fh = _open_log(args.log_dir)
+    print(f"Run folder: {run_dir}")
     print(f"Logging to {log_path}")
 
-    driver = connect_driver()
+    driver, mjpeg_url = connect_driver()
+    print(f"MJPEG stream: {mjpeg_url}")
 
     # CMA-ES bounds format: [list of lower bounds, list of upper bounds]
     bounds = [PARAM_BOUNDS[:, 0].tolist(), PARAM_BOUNDS[:, 1].tolist()]
@@ -177,6 +274,7 @@ def main() -> None:
             "seed": args.seed,
             "maxiter": args.max_evals,  # generous ceiling; real stop is max_evals
             "verbose": -9,             # suppress CMA-ES internal printing
+            "popsize": args.pop_size,
         },
     )
 
@@ -185,6 +283,7 @@ def main() -> None:
     best_reward = 0.0
     best_trick: str | None = None
     best_params: np.ndarray = INITIAL_MEAN.copy()
+    repetition_penalty = RepetitionPenalty()
 
     try:
         while eval_num < args.max_evals:
@@ -197,13 +296,20 @@ def main() -> None:
 
                 reward = 0.0
                 trick_result = None
+                repetition_multiplier = 1.0
+                recorder = FrameRecorder()
                 try:
+                    recorder.start(mjpeg_url)
+
                     # Execute gestures on device
                     execute_action(driver, np.array(candidate))
 
-                    # Capture screenshot and score
-                    reward, trick_result = get_reward(driver, wait_time=args.wait_time)
+                    # Score the attempt
+                    reward, trick_result, repetition_multiplier = get_reward(
+                        driver, wait_time=args.wait_time, penalty=repetition_penalty
+                    )
                 except Exception as exc:
+                    recorder.stop()
                     logging.warning("candidate %d failed: %s", candidate_idx, exc)
                     eval_num += 1
                     print(
@@ -214,8 +320,15 @@ def main() -> None:
                     reset_position(driver)
                     continue
 
+                raw_frames = recorder.stop()
                 rewards.append(reward)
                 eval_num += 1
+
+                # Stack raw frames into max composites and save
+                eval_dir_name = f"eval_{eval_num:05d}"
+                n_composites = _save_composites(
+                    raw_frames, run_dir / "frames" / eval_dir_name
+                )
 
                 trick_str = trick_result.trick if trick_result else None
                 trick_status = trick_result.status if trick_result else None
@@ -223,7 +336,8 @@ def main() -> None:
                 # Console progress line
                 print(
                     f"[eval {eval_num}/{args.max_evals} | gen {generation}] "
-                    f"reward={reward:.1f}  trick={trick_str}  status={trick_status}"
+                    f"reward={reward:.2f}  trick={trick_str}  status={trick_status}  "
+                    f"raw_frames={len(raw_frames)} composites={n_composites}"
                 )
 
                 # Per-evaluation JSONL record
@@ -232,9 +346,12 @@ def main() -> None:
                     "candidate_idx": candidate_idx,
                     "eval_num": eval_num,
                     "reward": reward,
+                    "repetition_multiplier": round(repetition_multiplier, 4),
                     "trick_name": trick_str,
                     "trick_status": trick_status,
                     "params": [round(float(p), 2) for p in candidate],
+                    "frame_dir": eval_dir_name,
+                    "n_composites": n_composites,
                     "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                 })
 
@@ -274,7 +391,7 @@ def main() -> None:
 
             # Checkpoint every 10 generations
             if (generation + 1) % 10 == 0:
-                _save_checkpoint(es, args.log_dir, generation)
+                _save_checkpoint(es, run_dir, generation)
                 print(f"Checkpoint saved at generation {generation}.")
 
             generation += 1
@@ -295,7 +412,7 @@ def main() -> None:
         print(f"  Best params       : {[round(float(p), 2) for p in best_params]}")
 
         # Final checkpoint
-        _save_checkpoint(es, args.log_dir, generation)
+        _save_checkpoint(es, run_dir, generation)
         print(f"Final checkpoint saved.")
 
         log_fh.close()

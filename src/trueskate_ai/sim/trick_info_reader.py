@@ -12,7 +12,7 @@ from .known_tricks import KNOWN_TRICKS
 
 class TrickResult(NamedTuple):
     trick: str
-    status: Literal["landed", "failed"]
+    status: Literal["landed", "failed", "unknown"]
 
 
 def _match_component(ocr_line: str) -> str | None:
@@ -31,6 +31,16 @@ def _match_component(ocr_line: str) -> str | None:
         modifier = mod_match[0]
         ocr_line = " ".join(words[1:])
 
+    # Guard: bare rotation numbers ("360", "540", etc.) must not be fuzzy-
+    # matched — they'd inflate to "360 FLIP" etc.  Reconstruct with modifier
+    # and return directly if the combo is in KNOWN_TRICKS.
+    if re.fullmatch(r"\d+", ocr_line):
+        candidate = f"{modifier} {ocr_line}" if modifier else ocr_line
+        if candidate in KNOWN_TRICKS:
+            return candidate
+        logging.warning("trick_info_reader: bare rotation %r not in KNOWN_TRICKS", candidate)
+        return None
+
     matches = difflib.get_close_matches(ocr_line, KNOWN_TRICKS, n=1, cutoff=0.4)
     if matches:
         if modifier and not matches[0].startswith(modifier):
@@ -41,15 +51,15 @@ def _match_component(ocr_line: str) -> str | None:
     return None
 
 
-def _find_anchor(search: np.ndarray) -> tuple[np.ndarray, Literal["landed", "failed"]] | None:
-    """Find the notification anchor band (green = landed, red = failed).
+def _find_anchor(search: np.ndarray) -> tuple[np.ndarray, Literal["landed", "failed", "unknown"]] | None:
+    """Find the notification anchor band (green = landed, red = failed, white = unknown).
 
     Args:
         search: Cropped frame slice (frame[250:600, :]) in BGR.
 
     Returns:
         (mask, status) where mask is a bool array over search and status is
-        "landed" or "failed", or None if neither colour is found.
+        "landed", "failed", or "unknown", or None if no colour is found.
     """
     r = search[:, :, 2].astype(np.int32)
     g = search[:, :, 1].astype(np.int32)
@@ -60,8 +70,8 @@ def _find_anchor(search: np.ndarray) -> tuple[np.ndarray, Literal["landed", "fai
         logging.debug("anchor search: green=%d, red=— (skipped)", green_mask.sum())
         return green_mask, "landed"
 
-    # Filter red pixels to the center third of the frame horizontally.
-    # The FAILED notification is centered; stadium walls and sponsor bars
+    # Filter red and white pixels to the center third of the frame horizontally.
+    # The FAILED/UNKNOWN notification is centered; stadium walls and sponsor bars
     # appear at the edges, so this eliminates most false positives.
     w = search.shape[1]
     center_col = np.zeros_like(r, dtype=bool)
@@ -75,6 +85,12 @@ def _find_anchor(search: np.ndarray) -> tuple[np.ndarray, Literal["landed", "fai
     if red_filtered.sum() >= 50:
         return red_filtered, "failed"
 
+    white_mask = (r > 200) & (g > 200) & (b > 200)
+    white_filtered = white_mask & center_col
+
+    if white_filtered.sum() >= 50:
+        return white_filtered, "unknown"
+
     return None
 
 
@@ -82,7 +98,7 @@ def _ocr_above_anchor(
     frame: np.ndarray,
     mask: np.ndarray,
     anchor_y_offset: int,
-    status: Literal["landed", "failed"],
+    status: Literal["landed", "failed", "unknown"],
 ) -> TrickResult | None:
     """Crop above the anchor band, run OCR, and return a TrickResult.
 

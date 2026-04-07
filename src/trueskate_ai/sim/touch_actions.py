@@ -172,3 +172,37 @@ def curved_drag(driver, points, *, total_duration=0.5, easing=None):
     actions.perform()
 
 
+def build_curved_drag(finger, points, *, total_duration=0.5, easing=None):
+    """Append curved-drag pointer actions to an existing PointerInput.
+
+    Same path/easing logic as curved_drag(), but does not create its own
+    PointerInput or call perform() — use this to compose multiple fingers
+    into a single ActionChains.perform() call.
+
+    Args:
+        finger: PointerInput device to append actions to.
+        points: list of (x, y) tuples in logical points — at least 2.
+        total_duration: total gesture time in seconds.
+        easing: optional function mapping [0,1] -> [0,1]. See curved_drag().
+    """
+    if len(points) < 2:
+        raise ValueError("build_curved_drag needs at least 2 points")
+
+    n_segments = len(points) - 1
+    total_ms = int(total_duration * 1000)
+
+    if easing is None:
+        durations = [max(1, total_ms // n_segments)] * n_segments
+    else:
+        durations = _easing_to_segment_durations(n_segments, total_ms, easing)
+
+    x0, y0 = points[0]
+    finger.create_pointer_move(x=x0, y=y0, duration=0)
+    finger.create_pointer_down()
+
+    for (x, y), dur in zip(points[1:], durations):
+        finger.create_pointer_move(x=x, y=y, duration=dur)
+
+    finger.create_pointer_up(0)
+
+

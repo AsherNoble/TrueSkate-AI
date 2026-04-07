@@ -21,6 +21,8 @@ import time
 from pathlib import Path
 
 import numpy as np
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.actions.pointer_input import PointerInput
 
 # ---------------------------------------------------------------------------
 # Bounds
@@ -47,7 +49,7 @@ _BOUNDS_RAW = [
     [0.03, 0.8], # duration
     [0.3, 3.0],  # easing_power
     # Delay
-    [0.0, 0.8],  # delay 1→2
+    [-0.3, 0.8], # delay 1→2
 ]
 # fmt: on
 
@@ -58,12 +60,14 @@ PARAM_BOUNDS: np.ndarray = np.array(_BOUNDS_RAW, dtype=np.float64)
 # Initial mean — informed prior for a 360 flip
 # ---------------------------------------------------------------------------
 
-# Slot 1: scoop — horizontal left-to-right swipe across the tail (~x=140, y=590)
-_SCOOP = [120, 590, 220, 585, 320, 580, 0.25, 1.0]
-# Slot 2: flick — north-easterly swipe from right-of-center board
-_FLICK = [270, 680, 320, 620, 370, 560, 0.08, 1.0]
-# Delay: almost immediate — scoop and flick happen in quick succession
-_DELAY = [0.03]
+# Slot 1: scoop — left-to-right arc across the TAIL (y~680, not 575)
+_SCOOP = [100, 680, 220, 690, 340, 675, 0.06, 1.2]
+
+# Slot 2: flick — upward-left diagonal from mid-board (the kickflip component)
+_FLICK = [270, 590, 220, 530, 160, 470, 0.05, 0.7]
+
+# Delay: slight overlap — flick starts just before scoop finishes
+_DELAY = [-0.02]
 
 INITIAL_MEAN: np.ndarray = np.array(_SCOOP + _FLICK + _DELAY, dtype=np.float64)
 """17-element informed prior for a plausible 360 flip."""
@@ -146,11 +150,30 @@ def unpack_action(params: np.ndarray) -> dict:
     return {"gestures": gestures, "delays": delays}
 
 
+APPIUM_LATENCY_OFFSET = 0.8
+"""Approximate Appium/WDA round-trip latency in seconds, subtracted when
+computing pause durations so delay values reflect true real-world timing."""
+
+# Static pre-execution push parameters (not optimized by CMA-ES)
+_PUSH_PRE_DELAY = 0.5
+"""Delay before each trick execution during which the push occurs (seconds)."""
+_PUSH_START = (350, 224)
+"""Push start position: right side, upper half (x=350, y=224)."""
+_PUSH_END = (350, 672)
+"""Push end position: right side, lower half (x=350, y=672)."""
+_PUSH_DURATION = 0.02
+"""Push duration (seconds)."""
+_PUSH_EASING = 2.0
+"""Push easing power — accelerating (slow start, fast end) for realistic push dynamics."""
+
+
 def execute_action(driver, params: np.ndarray) -> None:
     """Clamp, unpack, and execute a 17-float action on the device.
 
-    Executes two gesture slots sequentially via curved_drag(), with a
-    time.sleep() inter-gesture delay between them.
+    Fires three gesture slots in a single W3C Actions perform() call:
+      - finger0: scoop (slot 1)
+      - finger1: flick (slot 2), offset by latency-adjusted delay
+      - finger2: static downward push (right side), occurring during pre-delay
 
     Args:
         driver: Appium WebDriver instance.
@@ -160,16 +183,54 @@ def execute_action(driver, params: np.ndarray) -> None:
     if str(_repo_root / "src") not in sys.path:
         sys.path.insert(0, str(_repo_root / "src"))
 
-    from trueskate_ai.sim.touch_actions import curved_drag  # noqa: PLC0415
+    from trueskate_ai.sim.touch_actions import build_curved_drag  # noqa: PLC0415
 
     action = unpack_action(clamp_params(params))
+    g0, g1 = action["gestures"]
+    delay = action["delays"][0]
 
-    for i, gesture in enumerate(action["gestures"]):
-        power = gesture["easing_power"]
-        easing_fn = (lambda t, p=power: t ** p) if power != 1.0 else None
-        curved_drag(driver, gesture["points"], total_duration=gesture["duration"], easing=easing_fn)
-        if i < len(action["delays"]):
-            time.sleep(action["delays"][i])
+    p0 = g0["easing_power"]
+    easing0 = (lambda t, p=p0: t ** p) if p0 != 1.0 else None
+    p1 = g1["easing_power"]
+    easing1 = (lambda t, p=p1: t ** p) if p1 != 1.0 else None
+    push_easing = lambda t: t ** _PUSH_EASING  # accelerating (ease_in)
+
+    # --- Step 1: static push (single-finger, separate perform) ---
+    # Must be a separate perform() call — bundling 3 fingers in one perform()
+    # triggers iOS's system three-finger gesture (undo/redo), swallowing all touches
+    # before True Skate sees them.
+    finger2 = PointerInput("touch", "finger2")
+    build_curved_drag(
+        finger2, [_PUSH_START, _PUSH_END],
+        total_duration=_PUSH_DURATION, easing=push_easing
+    )
+    ActionChains(driver, devices=[finger2]).perform()
+
+    # Wait out the remaining pre-delay after the push finishes
+    remaining_pre_delay = _PUSH_PRE_DELAY - _PUSH_DURATION
+    if remaining_pre_delay > 0:
+        time.sleep(remaining_pre_delay)
+
+    # --- Step 2: scoop + flick (two-finger perform) ---
+    finger0 = PointerInput("touch", "finger0")
+    finger1 = PointerInput("touch", "finger1")
+
+    # Slot 1 on finger0
+    build_curved_drag(finger0, g0["points"], total_duration=g0["duration"], easing=easing0)
+
+    # Offset finger1 start: slot1 duration + delay, minus Appium latency
+    # WDA requires a pointerMove before any pause, so position finger1 first.
+    finger1.create_pointer_move(x=g1["points"][0][0], y=g1["points"][0][1], duration=0)
+    adjusted_delay = delay - APPIUM_LATENCY_OFFSET
+    pause_secs = max(0.0, g0["duration"] + adjusted_delay)
+    if pause_secs > 0:
+        finger1.create_pause(pause_secs)
+
+    # Slot 2 on finger1
+    build_curved_drag(finger1, g1["points"], total_duration=g1["duration"], easing=easing1)
+
+    # Scoop + flick execute simultaneously
+    ActionChains(driver, devices=[finger0, finger1]).perform()
 
 
 # ---------------------------------------------------------------------------
