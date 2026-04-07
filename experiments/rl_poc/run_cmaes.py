@@ -14,14 +14,18 @@ Options:
     --log-dir     Log directory (default: experiments/rl_poc/logs)
 """
 import argparse
+import io
 import json
 import logging
 import os
 import pickle
 import sys
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
+
+from PIL import Image
 
 # ---------------------------------------------------------------------------
 # Path setup — must happen before local imports
@@ -118,12 +122,14 @@ def connect_driver() -> webdriver.Remote:
 # Logging helpers
 # ---------------------------------------------------------------------------
 
-def _open_log(log_dir: Path) -> tuple[Path, object]:
-    """Create the run JSONL log file and return (path, file handle)."""
-    log_dir.mkdir(parents=True, exist_ok=True)
+def _open_log(log_dir: Path) -> tuple[Path, Path, object]:
+    """Create a run folder with JSONL log and frames/ subdir. Returns (run_dir, log_path, file_handle)."""
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_path = log_dir / f"run_{run_id}.jsonl"
-    return log_path, log_path.open("w", buffering=1)  # line-buffered
+    run_dir = log_dir / "runs" / f"run_{run_id}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "frames").mkdir(exist_ok=True)
+    log_path = run_dir / f"run_{run_id}.jsonl"
+    return run_dir, log_path, log_path.open("w", buffering=1)  # line-buffered
 
 
 def _write_log(fh, record: dict) -> None:
@@ -131,11 +137,57 @@ def _write_log(fh, record: dict) -> None:
     fh.write(json.dumps(record) + "\n")
 
 
-def _save_checkpoint(es, log_dir: Path, generation: int) -> None:
-    """Pickle the CMA-ES object to a checkpoint file."""
-    path = log_dir / f"checkpoint_gen{generation}.pkl"
+def _save_checkpoint(es, run_dir: Path, generation: int) -> None:
+    """Pickle the CMA-ES object to a checkpoint file inside the run folder."""
+    path = run_dir / f"checkpoint_gen{generation}.pkl"
     with path.open("wb") as f:
         pickle.dump(es, f)
+
+
+class FrameRecorder:
+    """Captures 84×84 grayscale screenshots on a daemon thread during an eval."""
+
+    def __init__(self):
+        self._driver = None
+        self._thread: threading.Thread | None = None
+        self._stop_flag = False
+        self._frames: list[np.ndarray] = []
+
+    def start(self, driver) -> None:
+        self._driver = driver
+        self._stop_flag = False
+        self._frames = []
+        self._thread = threading.Thread(target=self._capture_loop, daemon=True)
+        self._thread.start()
+
+    def _capture_loop(self) -> None:
+        while not self._stop_flag:
+            try:
+                png_bytes = self._driver.get_screenshot_as_png()
+                img = Image.open(io.BytesIO(png_bytes)).convert("L").resize((84, 84), Image.LANCZOS)
+                self._frames.append(np.array(img, dtype=np.uint8))
+            except Exception:
+                pass  # swallow transient capture errors; loop continues until stop_flag
+
+    def stop(self) -> list[np.ndarray]:
+        self._stop_flag = True
+        if self._thread is not None:
+            self._thread.join()
+            self._thread = None
+        return self._frames
+
+
+def _save_composites(frames: list[np.ndarray], eval_dir: Path, chunk_size: int = 12) -> int:
+    """Max-pool frames into chunks, save each as a grayscale PNG. Returns composite count."""
+    n_complete = len(frames) // chunk_size
+    if n_complete == 0:
+        return 0
+    eval_dir.mkdir(parents=True, exist_ok=True)
+    for idx in range(n_complete):
+        chunk = frames[idx * chunk_size : (idx + 1) * chunk_size]
+        composite = np.max(np.stack(chunk, axis=0), axis=0)  # (84, 84) uint8
+        Image.fromarray(composite, mode="L").save(eval_dir / f"frame_{idx:02d}.png")
+    return n_complete
 
 
 # ---------------------------------------------------------------------------
@@ -160,7 +212,8 @@ def main() -> None:
                         help="Log directory (default: experiments/rl_poc/logs)")
     args = parser.parse_args()
 
-    log_path, log_fh = _open_log(args.log_dir)
+    run_dir, log_path, log_fh = _open_log(args.log_dir)
+    print(f"Run folder: {run_dir}")
     print(f"Logging to {log_path}")
 
     driver = connect_driver()
@@ -200,15 +253,19 @@ def main() -> None:
                 reward = 0.0
                 trick_result = None
                 novelty_bonus = 0.0
+                recorder = FrameRecorder()
                 try:
+                    recorder.start(driver)
+
                     # Execute gestures on device
                     execute_action(driver, np.array(candidate))
 
-                    # Capture screenshot and score
+                    # Score the attempt
                     reward, trick_result, novelty_bonus = get_reward(
                         driver, wait_time=args.wait_time, tracker=novelty_tracker
                     )
                 except Exception as exc:
+                    recorder.stop()
                     logging.warning("candidate %d failed: %s", candidate_idx, exc)
                     eval_num += 1
                     print(
@@ -219,8 +276,15 @@ def main() -> None:
                     reset_position(driver)
                     continue
 
+                raw_frames = recorder.stop()
                 rewards.append(reward)
                 eval_num += 1
+
+                # Stack raw frames into max composites and save
+                eval_dir_name = f"eval_{eval_num:05d}"
+                n_composites = _save_composites(
+                    raw_frames, run_dir / "frames" / eval_dir_name
+                )
 
                 trick_str = trick_result.trick if trick_result else None
                 trick_status = trick_result.status if trick_result else None
@@ -228,7 +292,8 @@ def main() -> None:
                 # Console progress line
                 print(
                     f"[eval {eval_num}/{args.max_evals} | gen {generation}] "
-                    f"reward={reward:.2f}  trick={trick_str}  status={trick_status}"
+                    f"reward={reward:.2f}  trick={trick_str}  status={trick_status}  "
+                    f"raw_frames={len(raw_frames)} composites={n_composites}"
                 )
 
                 # Per-evaluation JSONL record
@@ -241,6 +306,8 @@ def main() -> None:
                     "trick_name": trick_str,
                     "trick_status": trick_status,
                     "params": [round(float(p), 2) for p in candidate],
+                    "frame_dir": eval_dir_name,
+                    "n_composites": n_composites,
                     "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                 })
 
@@ -280,7 +347,7 @@ def main() -> None:
 
             # Checkpoint every 10 generations
             if (generation + 1) % 10 == 0:
-                _save_checkpoint(es, args.log_dir, generation)
+                _save_checkpoint(es, run_dir, generation)
                 print(f"Checkpoint saved at generation {generation}.")
 
             generation += 1
@@ -301,7 +368,7 @@ def main() -> None:
         print(f"  Best params       : {[round(float(p), 2) for p in best_params]}")
 
         # Final checkpoint
-        _save_checkpoint(es, args.log_dir, generation)
+        _save_checkpoint(es, run_dir, generation)
         print(f"Final checkpoint saved.")
 
         log_fh.close()
