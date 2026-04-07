@@ -125,6 +125,9 @@ def compute_reward(result: TrickResult | None) -> float:
 
 def _score_component(trick: str) -> float:
     """Score a single (non-combo) trick string. First match wins."""
+    if "FRONTSIDE" in trick or trick.startswith("FS ") or " FS " in trick:
+        return 0.0
+
     _MODIFIERS = ("FAKIE", "SWITCH", "DOUBLE", "TRIPLE", "NOLLIE", "BACKSIDE")
 
     # --- Tier 1.0: 360 FLIP exact, no modifiers ---
