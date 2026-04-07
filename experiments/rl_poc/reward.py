@@ -102,7 +102,8 @@ def compute_reward(result: TrickResult | None) -> float:
     For combo tricks joined with " + ", each component is scored and the
     maximum reward across components is returned.
 
-    Failed tricks receive base * (base - 0.1) — tiered penalty.
+    Failed and unknown tricks receive base * (base - 0.1) — tiered penalty.
+    "unknown" is returned when a white anchor is detected (ambiguous outcome).
 
     Args:
         result: Output of detect_trick() — a TrickResult or None.
@@ -116,7 +117,7 @@ def compute_reward(result: TrickResult | None) -> float:
     components = [c.strip() for c in result.trick.split(" + ")]
     base_reward = max(_score_component(c) for c in components)
 
-    if result.status == "failed":
+    if result.status in ("failed", "unknown"):
         return base_reward * (base_reward - 0.1)  # tiered (failed 360 flip yields 0.9)
 
     return base_reward
@@ -233,6 +234,10 @@ if __name__ == "__main__":
         ("360 POP SHOVE-IT", "failed",        0.06),   # 0.3 * 0.2
         ("BACKSIDE 360", "failed",            0.06),   # 0.3 * 0.2
         ("HARD FLIP", "failed",               0.0),    # 0.0 * -0.1 = 0.0
+        # Unknown status (white anchor) — same formula as failed
+        ("KICKFLIP", "unknown",               0.3),    # 0.6 * 0.5
+        ("360 FLIP", "unknown",               0.9),    # 1.0 * 0.9
+        ("HARD FLIP", "unknown",              0.0),    # 0.0 * -0.1 = 0.0
         # No trick
         (None, None,                          0.0),
     ]
