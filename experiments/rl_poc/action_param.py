@@ -189,20 +189,6 @@ def execute_action(driver, params: np.ndarray) -> None:
     g0, g1 = action["gestures"]
     delay = action["delays"][0]
 
-    # Debug: print scoop, flick, and delay
-    print(
-        f"\n[SCOOP]\n"
-        f"  points:  {[f'({p[0]:.0f}, {p[1]:.0f})' for p in g0['points']]}\n"
-        f"  duration: {g0['duration']:.3f}s\n"
-        f"  easing:   {g0['easing_power']:.2f}\n"
-        f"[FLICK]\n"
-        f"  points:  {[f'({p[0]:.0f}, {p[1]:.0f})' for p in g1['points']]}\n"
-        f"  duration: {g1['duration']:.3f}s\n"
-        f"  easing:   {g1['easing_power']:.2f}\n"
-        f"[DELAY]\n"
-        f"  {delay:.3f}s (+ {_PUSH_PRE_DELAY:.3f}s static pre-delay)\n"
-    )
-
     p0 = g0["easing_power"]
     easing0 = (lambda t, p=p0: t ** p) if p0 != 1.0 else None
     p1 = g1["easing_power"]
