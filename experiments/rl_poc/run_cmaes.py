@@ -26,6 +26,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import requests
 from PIL import Image
 
 # ---------------------------------------------------------------------------
@@ -72,12 +73,13 @@ logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
 # ---------------------------------------------------------------------------
 
 _BUNDLE_ID = "com.trueaxis.skate"
+_MJPEG_PORT = 9100
 
 # query_app_state() return values (XCUITest / iOS)
 _APP_STATE_FOREGROUND = 4
 
 
-def connect_driver() -> webdriver.Remote:
+def connect_driver() -> tuple[webdriver.Remote, str]:
     """Connect to Appium, reusing True Skate if it is already in the foreground.
 
     Uses no_reset=True so Appium never stops or reinstalls the app.
@@ -88,7 +90,7 @@ def connect_driver() -> webdriver.Remote:
     Reads IPHONE_UDID from the environment (via .env).
 
     Returns:
-        Appium WebDriver instance.
+        (driver, mjpeg_url) — Appium WebDriver and WDA MJPEG stream URL.
     """
     load_dotenv(_REPO_ROOT / ".env")
     udid = os.environ.get("IPHONE_UDID")
@@ -106,6 +108,7 @@ def connect_driver() -> webdriver.Remote:
     options.use_prebuilt_wda = True
     options.skip_log_capture = True
     options.no_reset = True  # never stop/reinstall the app
+    options.set_capability("mjpegServerPort", _MJPEG_PORT)
 
     driver = webdriver.Remote("http://127.0.0.1:4723", options=options)
 
@@ -117,7 +120,8 @@ def connect_driver() -> webdriver.Remote:
         driver.activate_app(_BUNDLE_ID)
         time.sleep(1.5)  # wait for the game UI to settle
 
-    return driver
+    mjpeg_url = f"http://127.0.0.1:{_MJPEG_PORT}"
+    return driver, mjpeg_url
 
 
 # ---------------------------------------------------------------------------
@@ -147,34 +151,69 @@ def _save_checkpoint(es, run_dir: Path, generation: int) -> None:
 
 
 class FrameRecorder:
-    """Captures 84×84 grayscale screenshots on a daemon thread during an eval."""
+    """Reads 210×455 grayscale frames from WDA's MJPEG stream during an eval.
+
+    Connects to the MJPEG server started by WDA, extracts JPEG frames by
+    scanning for SOI/EOI markers (0xFF 0xD8 / 0xFF 0xD9), and decodes each
+    to a 210×455 grayscale numpy array. Typical throughput: 30–60 fps.
+    """
 
     def __init__(self):
-        self._driver = None
         self._thread: threading.Thread | None = None
         self._stop_flag = False
         self._frames: list[np.ndarray] = []
+        self._response: requests.Response | None = None
 
-    def start(self, driver) -> None:
-        self._driver = driver
+    def start(self, mjpeg_url: str) -> None:
         self._stop_flag = False
         self._frames = []
-        self._thread = threading.Thread(target=self._capture_loop, daemon=True)
+        self._response = None
+        self._thread = threading.Thread(
+            target=self._capture_loop, args=(mjpeg_url,), daemon=True
+        )
         self._thread.start()
 
-    def _capture_loop(self) -> None:
-        while not self._stop_flag:
-            try:
-                png_bytes = self._driver.get_screenshot_as_png()
-                img = Image.open(io.BytesIO(png_bytes)).convert("L").resize((84, 84), Image.LANCZOS)
-                self._frames.append(np.array(img, dtype=np.uint8))
-            except Exception:
-                pass  # swallow transient capture errors; loop continues until stop_flag
+    def _capture_loop(self, mjpeg_url: str) -> None:
+        buf = b""
+        try:
+            resp = requests.get(mjpeg_url, stream=True, timeout=5)
+            self._response = resp
+            for chunk in resp.iter_content(chunk_size=4096):
+                if self._stop_flag:
+                    break
+                buf += chunk
+                # Extract complete JPEG frames via SOI (0xFF 0xD8) / EOI (0xFF 0xD9) markers
+                while True:
+                    start_idx = buf.find(b"\xff\xd8")
+                    if start_idx == -1:
+                        buf = b""
+                        break
+                    end_idx = buf.find(b"\xff\xd9", start_idx + 2)
+                    if end_idx == -1:
+                        buf = buf[start_idx:]  # preserve partial frame
+                        break
+                    jpeg_bytes = buf[start_idx : end_idx + 2]
+                    buf = buf[end_idx + 2:]
+                    try:
+                        img = Image.open(io.BytesIO(jpeg_bytes)).convert("L").resize((210, 455), Image.LANCZOS)
+                        self._frames.append(np.array(img, dtype=np.uint8))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        finally:
+            self._response = None
 
     def stop(self) -> list[np.ndarray]:
         self._stop_flag = True
+        resp = self._response
+        if resp is not None:
+            try:
+                resp.close()
+            except Exception:
+                pass
         if self._thread is not None:
-            self._thread.join()
+            self._thread.join(timeout=2.0)
             self._thread = None
         return self._frames
 
@@ -187,7 +226,7 @@ def _save_composites(frames: list[np.ndarray], eval_dir: Path, chunk_size: int =
     eval_dir.mkdir(parents=True, exist_ok=True)
     for idx in range(n_complete):
         chunk = frames[idx * chunk_size : (idx + 1) * chunk_size]
-        composite = np.max(np.stack(chunk, axis=0), axis=0)  # (84, 84) uint8
+        composite = np.max(np.stack(chunk, axis=0), axis=0)  # (210, 455) uint8
         Image.fromarray(composite, mode="L").save(eval_dir / f"frame_{idx:02d}.png")
     return n_complete
 
@@ -220,7 +259,8 @@ def main() -> None:
     print(f"Run folder: {run_dir}")
     print(f"Logging to {log_path}")
 
-    driver = connect_driver()
+    driver, mjpeg_url = connect_driver()
+    print(f"MJPEG stream: {mjpeg_url}")
 
     # CMA-ES bounds format: [list of lower bounds, list of upper bounds]
     bounds = [PARAM_BOUNDS[:, 0].tolist(), PARAM_BOUNDS[:, 1].tolist()]
@@ -259,7 +299,7 @@ def main() -> None:
                 repetition_multiplier = 1.0
                 recorder = FrameRecorder()
                 try:
-                    recorder.start(driver)
+                    recorder.start(mjpeg_url)
 
                     # Execute gestures on device
                     execute_action(driver, np.array(candidate))

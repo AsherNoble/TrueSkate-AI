@@ -120,9 +120,22 @@ def compute_reward(result: TrickResult | None) -> float:
     base_reward = max(_score_component(c) for c in components)
 
     if result.status == "failed":
+        if any(_is_failed_exempt(c) for c in components):
+            return base_reward + 0.1  # exempt: score 0.1 above landed tier, no failure multiplier —— encourages flipping
         return base_reward * (base_reward - 0.1)  # tiered (failed 360 flip yields 0.9)
 
     return base_reward
+
+
+def _is_failed_exempt(trick: str) -> bool:
+    """Return True for failed tricks that bypass the failure multiplier.
+
+    Exempt: BACKSIDE 360 (no flip) and 360 POP SHOVE-IT variants.
+    These score 0.1 above their landed tier to reward proximity to the target.
+    """
+    backside_360 = "BACKSIDE" in trick and "360" in trick and "FLIP" not in trick
+    shove_360 = "360" in trick and "SHOVE" in trick
+    return backside_360 or shove_360
 
 
 def _score_component(trick: str) -> float:
@@ -233,7 +246,9 @@ if __name__ == "__main__":
         ("360 FLIP", "failed",               0.9),   # 1.0 * 0.9
         ("540 DOUBLE FLIP", "failed",        0.2),   # 0.5 * 0.4
         ("KICKFLIP", "failed",               0.2),   # 0.5 * 0.4
-        ("360 POP SHOVE-IT", "failed",       0.06),  # 0.3 * 0.2
+        # Exempt failed tricks — base + 0.1, no failure multiplier
+        ("360 POP SHOVE-IT", "failed",       0.4),   # 0.3 + 0.1
+        ("BACKSIDE 360", "failed",           0.4),   # 0.3 + 0.1
         # No trick
         (None, None,                         0.0),
     ]
