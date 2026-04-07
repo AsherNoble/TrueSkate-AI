@@ -11,6 +11,7 @@ Options:
     --seed        CMA-ES random seed (default: 42)
     --wait-time   Seconds to wait for trick text after gestures (default: 0.0)
     --settle-time Seconds to wait after reset before next attempt (default: 0.5)
+    --pop-size    CMA-ES population size — evals per generation (default: 24)
     --log-dir     Log directory (default: experiments/rl_poc/logs)
 """
 import argparse
@@ -207,6 +208,8 @@ def main() -> None:
                         help="Seconds to wait for trick text after gestures (default: 0.0)")
     parser.add_argument("--settle-time", type=float, default=0.5,
                         help="Seconds to wait after reset before next attempt (default: 0.5)")
+    parser.add_argument("--pop-size", type=int, default=24,
+                        help="CMA-ES population size — evals per generation (default: 24)")
     parser.add_argument("--log-dir", type=Path,
                         default=_HERE / "logs",
                         help="Log directory (default: experiments/rl_poc/logs)")
@@ -230,7 +233,7 @@ def main() -> None:
             "seed": args.seed,
             "maxiter": args.max_evals,  # generous ceiling; real stop is max_evals
             "verbose": -9,             # suppress CMA-ES internal printing
-            "popsize": 24,             # 2× default for noisy objective
+            "popsize": args.pop_size,
         },
     )
 
