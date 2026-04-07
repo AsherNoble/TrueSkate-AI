@@ -170,7 +170,7 @@ def _score_component(trick: str) -> float:
         return 0.3
 
     # --- Tier 0.2: 180 tricks ---
-    if "180" or "SHOVE" in trick:
+    if "180" or "SHOVE-IT" in trick:
         return 0.2
 
     # --- Tier 0.1: any other recognized trick (shoves, ollies, grinds, etc.) ---

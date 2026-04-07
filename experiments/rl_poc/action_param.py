@@ -17,6 +17,7 @@ Easing power controls the velocity profile passed to curved_drag():
 Screen: 414×896 logical points (iPhone 11 @2x).
 """
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -153,13 +154,26 @@ APPIUM_LATENCY_OFFSET = 0.8
 """Approximate Appium/WDA round-trip latency in seconds, subtracted when
 computing pause durations so delay values reflect true real-world timing."""
 
+# Static pre-execution push parameters (not optimized by CMA-ES)
+_PUSH_PRE_DELAY = 0.5
+"""Delay before each trick execution during which the push occurs (seconds)."""
+_PUSH_START = (350, 224)
+"""Push start position: right side, upper half (x=350, y=224)."""
+_PUSH_END = (350, 672)
+"""Push end position: right side, lower half (x=350, y=672)."""
+_PUSH_DURATION = 0.02
+"""Push duration (seconds)."""
+_PUSH_EASING = 2.0
+"""Push easing power — accelerating (slow start, fast end) for realistic push dynamics."""
+
 
 def execute_action(driver, params: np.ndarray) -> None:
     """Clamp, unpack, and execute a 17-float action on the device.
 
-    Fires both gesture slots in a single W3C Actions perform() call using
-    two PointerInput devices. Finger1 is offset by a pause computed from
-    slot 1's duration plus the latency-adjusted delay.
+    Fires three gesture slots in a single W3C Actions perform() call:
+      - finger0: scoop (slot 1)
+      - finger1: flick (slot 2), offset by latency-adjusted delay
+      - finger2: static downward push (right side), occurring during pre-delay
 
     Args:
         driver: Appium WebDriver instance.
@@ -186,14 +200,32 @@ def execute_action(driver, params: np.ndarray) -> None:
         f"  duration: {g1['duration']:.3f}s\n"
         f"  easing:   {g1['easing_power']:.2f}\n"
         f"[DELAY]\n"
-        f"  {delay:.3f}s\n"
+        f"  {delay:.3f}s (+ {_PUSH_PRE_DELAY:.3f}s static pre-delay)\n"
     )
 
     p0 = g0["easing_power"]
     easing0 = (lambda t, p=p0: t ** p) if p0 != 1.0 else None
     p1 = g1["easing_power"]
     easing1 = (lambda t, p=p1: t ** p) if p1 != 1.0 else None
+    push_easing = lambda t: t ** _PUSH_EASING  # accelerating (ease_in)
 
+    # --- Step 1: static push (single-finger, separate perform) ---
+    # Must be a separate perform() call — bundling 3 fingers in one perform()
+    # triggers iOS's system three-finger gesture (undo/redo), swallowing all touches
+    # before True Skate sees them.
+    finger2 = PointerInput("touch", "finger2")
+    build_curved_drag(
+        finger2, [_PUSH_START, _PUSH_END],
+        total_duration=_PUSH_DURATION, easing=push_easing
+    )
+    ActionChains(driver, devices=[finger2]).perform()
+
+    # Wait out the remaining pre-delay after the push finishes
+    remaining_pre_delay = _PUSH_PRE_DELAY - _PUSH_DURATION
+    if remaining_pre_delay > 0:
+        time.sleep(remaining_pre_delay)
+
+    # --- Step 2: scoop + flick (two-finger perform) ---
     finger0 = PointerInput("touch", "finger0")
     finger1 = PointerInput("touch", "finger1")
 
@@ -211,9 +243,8 @@ def execute_action(driver, params: np.ndarray) -> None:
     # Slot 2 on finger1
     build_curved_drag(finger1, g1["points"], total_duration=g1["duration"], easing=easing1)
 
-    # Single perform — both fingers execute simultaneously
-    actions = ActionChains(driver, devices=[finger0, finger1])
-    actions.perform()
+    # Scoop + flick execute simultaneously
+    ActionChains(driver, devices=[finger0, finger1]).perform()
 
 
 # ---------------------------------------------------------------------------
