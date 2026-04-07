@@ -35,37 +35,37 @@ if str(_REPO_ROOT / "src") not in sys.path:
 from trueskate_ai.sim.trick_info_reader import TrickResult, detect_trick  # noqa: E402
 
 
-class NoveltyTracker:
-    """Tracks landed trick counts and returns diminishing novelty bonuses.
+class RepetitionPenalty:
+    """Tracks landed trick counts and returns a multiplier that penalises repeats.
 
-    Bonus formula: 0.2 / (1 + count) — first time a trick lands scores +0.2,
-    second time +0.1, third time +0.067, etc.
+    Multiplier formula: 1 / (1 + count) — first landing gives 1.0 (no penalty),
+    second gives 0.5, third 0.33, tenth 0.09. Base reward can only go down.
 
-    "360 FLIP" and "BACKSIDE 360 FLIP" are exempt: they keep their base reward
-    unchanged so the target signal is never diluted by novelty math.
+    "360 FLIP" and "BACKSIDE 360 FLIP" are exempt: they always return 1.0 so
+    the target signal is never reduced.
 
     Only landed tricks are counted (failed tricks don't feed the counts).
     """
 
-    _NO_BONUS = frozenset({"360 FLIP", "BACKSIDE 360 FLIP"})
+    _NO_PENALTY = frozenset({"360 FLIP", "BACKSIDE 360 FLIP"})
 
     def __init__(self) -> None:
         self._counts: dict[str, int] = {}
 
-    def get_bonus_and_record(self, trick_name: str) -> float:
-        """Return novelty bonus for this trick and increment its landed count.
+    def get_multiplier_and_record(self, trick_name: str) -> float:
+        """Return penalty multiplier for this trick and increment its landed count.
 
         Args:
             trick_name: The trick string from TrickResult.trick.
 
         Returns:
-            Bonus to add to base reward. 0.0 for exempt tricks.
+            Multiplier in (0, 1]. 1.0 for exempt tricks or first landing.
         """
-        if trick_name in self._NO_BONUS:
-            return 0.0
+        if trick_name in self._NO_PENALTY:
+            return 1.0
         count = self._counts.get(trick_name, 0)
         self._counts[trick_name] = count + 1
-        return 0.2 / (1 + count)
+        return 1.0 / (1 + count)
 
     def count(self, trick_name: str) -> int:
         """Return how many times trick_name has been landed so far."""
@@ -167,7 +167,7 @@ def _score_component(trick: str) -> float:
 def get_reward(
     driver,
     wait_time: float = 0.0,
-    tracker: NoveltyTracker | None = None,
+    penalty: RepetitionPenalty | None = None,
 ) -> tuple[float, TrickResult | None, float]:
     """Wait for the trick notification, capture, score, and return the reward.
 
@@ -177,24 +177,24 @@ def get_reward(
     Args:
         driver: Appium WebDriver instance.
         wait_time: Seconds to wait after gestures finish before first screenshot.
-        tracker: Optional NoveltyTracker. When provided, landed tricks receive
-            a diminishing novelty bonus and their count is incremented.
+        penalty: Optional RepetitionPenalty. When provided, landed tricks receive
+            a diminishing multiplier and their count is incremented.
 
     Returns:
-        Tuple of (reward, result, novelty_bonus):
-            reward       — base reward + novelty bonus, float.
-            result       — TrickResult(trick, status) or None.
-            novelty_bonus — bonus that was added (0.0 if no tracker or failed).
+        Tuple of (reward, result, multiplier):
+            reward     — base reward * multiplier, float.
+            result     — TrickResult(trick, status) or None.
+            multiplier — factor applied to base reward (1.0 if no penalty or failed).
     """
     time.sleep(wait_time)
     result = capture_and_detect(driver)
     base = compute_reward(result)
 
-    novelty_bonus = 0.0
-    if tracker is not None and result is not None and result.status == "landed":
-        novelty_bonus = tracker.get_bonus_and_record(result.trick)
+    multiplier = 1.0
+    if penalty is not None and result is not None and result.status == "landed":
+        multiplier = penalty.get_multiplier_and_record(result.trick)
 
-    return base + novelty_bonus, result, novelty_bonus
+    return base * multiplier, result, multiplier
 
 
 # ---------------------------------------------------------------------------
@@ -253,29 +253,27 @@ if __name__ == "__main__":
     print()
     print("All base reward tests passed." if all_passed else "FAILURES detected.")
 
-    print("\n=== Novelty bonus tests ===")
-    tracker = NoveltyTracker()
-    novelty_cases = [
-        # (trick, status, expected_bonus, description)
-        ("KICKFLIP",        "landed", round(0.2 / 1, 4), "first landing → 0.2"),
-        ("KICKFLIP",        "landed", round(0.2 / 2, 4), "second landing → 0.1"),
-        ("KICKFLIP",        "landed", round(0.2 / 3, 4), "third landing → 0.067"),
-        ("OLLIE",           "landed", round(0.2 / 1, 4), "new trick → 0.2"),
-        ("KICKFLIP",        "failed", 0.0,               "failed — no bonus, no count"),
-        ("360 FLIP",        "landed", 0.0,               "exempt — no bonus"),
-        ("BACKSIDE 360 FLIP","landed",0.0,               "exempt — no bonus"),
+    print("\n=== RepetitionPenalty multiplier tests ===")
+    penalty = RepetitionPenalty()
+    multiplier_cases = [
+        # (trick, status, expected_multiplier, description)
+        ("KICKFLIP",         "landed", round(1.0 / 1, 4), "first landing  → 1.0"),
+        ("KICKFLIP",         "landed", round(1.0 / 2, 4), "second landing → 0.5"),
+        ("KICKFLIP",         "landed", round(1.0 / 3, 4), "third landing  → 0.33"),
+        ("OLLIE",            "landed", round(1.0 / 1, 4), "new trick      → 1.0"),
+        ("KICKFLIP",         "failed", 1.0,               "failed         — no penalty, no count"),
+        ("360 FLIP",         "landed", 1.0,               "exempt         — always 1.0"),
+        ("BACKSIDE 360 FLIP","landed", 1.0,               "exempt         — always 1.0"),
     ]
-    novelty_passed = True
-    for trick, status, expected_bonus, desc in novelty_cases:
+    penalty_passed = True
+    for trick, status, expected_mult, desc in multiplier_cases:
         result = TrickResult(trick=trick, status=status)
-        # Peek at count before (failed/exempt shouldn't increment)
-        pre_count = tracker.count(trick)
-        bonus = tracker.get_bonus_and_record(result.trick) if result.status == "landed" else 0.0
-        actual_bonus = round(bonus, 4)
-        test_status = "PASS" if actual_bonus == expected_bonus else "FAIL"
+        mult = penalty.get_multiplier_and_record(result.trick) if result.status == "landed" else 1.0
+        actual_mult = round(mult, 4)
+        test_status = "PASS" if actual_mult == expected_mult else "FAIL"
         if test_status == "FAIL":
-            novelty_passed = False
-        print(f"  [{test_status}] {desc:40s} bonus={actual_bonus:.4f}  (expected {expected_bonus:.4f})")
+            penalty_passed = False
+        print(f"  [{test_status}] {desc:40s} multiplier={actual_mult:.4f}  (expected {expected_mult:.4f})")
 
     print()
-    print("All novelty tests passed." if novelty_passed else "NOVELTY FAILURES detected.")
+    print("All multiplier tests passed." if penalty_passed else "MULTIPLIER FAILURES detected.")

@@ -54,7 +54,7 @@ from appium.options.ios import XCUITestOptions
 from dotenv import load_dotenv
 
 from action_param import INITIAL_MEAN, INITIAL_SIGMA, PARAM_BOUNDS, execute_action
-from reward import NoveltyTracker, get_reward
+from reward import RepetitionPenalty, get_reward
 from trueskate_ai.sim.touch_actions import reset_position
 
 # ---------------------------------------------------------------------------
@@ -242,7 +242,7 @@ def main() -> None:
     best_reward = 0.0
     best_trick: str | None = None
     best_params: np.ndarray = INITIAL_MEAN.copy()
-    novelty_tracker = NoveltyTracker()
+    repetition_penalty = RepetitionPenalty()
 
     try:
         while eval_num < args.max_evals:
@@ -255,7 +255,7 @@ def main() -> None:
 
                 reward = 0.0
                 trick_result = None
-                novelty_bonus = 0.0
+                repetition_multiplier = 1.0
                 recorder = FrameRecorder()
                 try:
                     recorder.start(driver)
@@ -264,8 +264,8 @@ def main() -> None:
                     execute_action(driver, np.array(candidate))
 
                     # Score the attempt
-                    reward, trick_result, novelty_bonus = get_reward(
-                        driver, wait_time=args.wait_time, tracker=novelty_tracker
+                    reward, trick_result, repetition_multiplier = get_reward(
+                        driver, wait_time=args.wait_time, penalty=repetition_penalty
                     )
                 except Exception as exc:
                     recorder.stop()
@@ -305,7 +305,7 @@ def main() -> None:
                     "candidate_idx": candidate_idx,
                     "eval_num": eval_num,
                     "reward": reward,
-                    "novelty_bonus": round(novelty_bonus, 4),
+                    "repetition_multiplier": round(repetition_multiplier, 4),
                     "trick_name": trick_str,
                     "trick_status": trick_status,
                     "params": [round(float(p), 2) for p in candidate],
