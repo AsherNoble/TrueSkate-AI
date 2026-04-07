@@ -4,17 +4,14 @@ After each action attempt, captures a screenshot, runs OCR-based trick
 detection, and maps the result to a scalar reward.
 
 Reward tiers (for landed tricks):
-    1.0   — "360 FLIP" (exact, no modifiers)
-    0.75  — 360 FLIP with a modifier, or NIGHTMARE flip
-    0.6   — Flip tricks (FLIP, HEEL, KICK, HARD, LASER, VARIAL, INWARD,
-            IMPOSSIBLE, DOLPHIN, DRAGON)
-    0.5   — 360+ rotation tricks (360, 540, 720, SPIN, GAZELLE)
-    0.3   — Shove-it tricks (SHOVE)
-    0.2   — Basic air tricks (OLLIE, NOLLIE, 180)
-    0.1   — Any other recognized trick (grinds, slides, manuals, etc.)
-    0.0   — None (no trick detected)
+    1.0   — "360 FLIP" exact, no modifiers (FAKIE/SWITCH/DOUBLE/TRIPLE/NOLLIE/BACKSIDE)
+    0.8   — 360 FLIP with a modifier (FAKIE, SWITCH, NOLLIE, BACKSIDE, DOUBLE, TRIPLE, etc.)
+    0.6   — VARIAL FLIP variants (VARIAL FLIP, VARIAL DOUBLE/TRIPLE/QUAD FLIP),
+            KICKFLIP (standalone), NIGHTMARE FLIP
+    0.3   — 360 POP SHOVE-IT, BACKSIDE 360 (no flip component)
+    0.0   — Everything else (heelflips, hard flips, laser flips, ollies, grinds, etc.)
 
-Failed tricks receive a 0.4× multiplier on the base tier reward.
+Failed tricks receive base * (base - 0.1) for all tricks.
 
 For combo tricks (e.g. "KICKFLIP + CROOKED GRIND"), each component is
 evaluated independently and the maximum reward is returned.
@@ -105,7 +102,7 @@ def compute_reward(result: TrickResult | None) -> float:
     For combo tricks joined with " + ", each component is scored and the
     maximum reward across components is returned.
 
-    Failed tricks receive a 0.4× multiplier on the base tier reward.
+    Failed tricks receive base * (base - 0.1) — tiered penalty.
 
     Args:
         result: Output of detect_trick() — a TrickResult or None.
@@ -120,61 +117,44 @@ def compute_reward(result: TrickResult | None) -> float:
     base_reward = max(_score_component(c) for c in components)
 
     if result.status == "failed":
-        if any(_is_failed_exempt(c) for c in components):
-            return base_reward + 0.1  # exempt: score 0.1 above landed tier, no failure multiplier —— encourages flipping
         return base_reward * (base_reward - 0.1)  # tiered (failed 360 flip yields 0.9)
 
     return base_reward
 
 
-def _is_failed_exempt(trick: str) -> bool:
-    """Return True for failed tricks that bypass the failure multiplier.
-
-    Exempt: BACKSIDE 360 (no flip) and 360 POP SHOVE-IT variants.
-    These score 0.1 above their landed tier to reward proximity to the target.
-    """
-    backside_360 = "BACKSIDE" in trick and "360" in trick and "FLIP" not in trick
-    shove_360 = "360" in trick and "SHOVE" in trick
-    return backside_360 or shove_360
-
-
 def _score_component(trick: str) -> float:
     """Score a single (non-combo) trick string. First match wins."""
-    _MODIFIERS = ("FAKIE", "SWITCH", "DOUBLE", "TRIPLE", "NOLLIE")
+    _MODIFIERS = ("FAKIE", "SWITCH", "DOUBLE", "TRIPLE", "NOLLIE", "BACKSIDE")
 
-    # --- Tier 1.0: exact target, no modifiers ---
+    # --- Tier 1.0: 360 FLIP exact, no modifiers ---
     if "360 FLIP" in trick and not any(m in trick for m in _MODIFIERS):
         return 1.0
 
-    # --- Tier 0.75: 360 FLIP with a modifier, or nightmare flip ---
-    # "360 DOUBLE FLIP" / "360 TRIPLE FLIP" don't contain the exact substring
-    # "360 FLIP", so also check for "360" + "FLIP" co-occurring with a modifier.
+    # --- Tier 0.8: 360 FLIP with a modifier ---
+    # "360 DOUBLE FLIP" / "360 TRIPLE FLIP" don't contain the substring "360 FLIP",
+    # so also check for "360" + "FLIP" co-occurring with any modifier.
     if "360 FLIP" in trick and any(m in trick for m in _MODIFIERS):
-        return 0.75
+        return 0.8
     if "360" in trick and "FLIP" in trick and any(m in trick for m in _MODIFIERS):
-        return 0.75
+        return 0.8
+
+    # --- Tier 0.6: VARIAL FLIP variants, standalone KICKFLIP, NIGHTMARE FLIP ---
+    # VARIAL FLIP: has VARIAL + FLIP but is not a VARIAL KICKFLIP or VARIAL HEELFLIP
+    if "VARIAL" in trick and "FLIP" in trick and "KICKFLIP" not in trick and "HEELFLIP" not in trick:
+        return 0.6
+    if "KICKFLIP" in trick and "VARIAL" not in trick:
+        return 0.6
     if "NIGHTMARE" in trick:
-        return 0.75
+        return 0.6
 
-    # --- Tier 0.5: flip tricks (flip component is mechanically critical) ---
-    _FLIP_KEYWORDS = (
-        "FLIP", "HEEL", "KICK", "HARD", "LASER", "VARIAL", "INWARD",
-        "IMPOSSIBLE", "DOLPHIN", "DRAGON",
-    )
-    if any(kw in trick for kw in _FLIP_KEYWORDS):
-        return 0.5
-
-    # --- Tier 0.3: 360+ rotation tricks (no flip) ---
-    _ROTATION_KEYWORDS = ("SPIN", "GAZELLE", "360", "540", "720")
-    if any(kw in trick for kw in _ROTATION_KEYWORDS):
+    # --- Tier 0.3: 360 POP SHOVE-IT, BACKSIDE 360 (no flip) ---
+    if "360" in trick and "SHOVE" in trick:
+        return 0.3
+    if "BACKSIDE" in trick and "360" in trick and "FLIP" not in trick:
         return 0.3
 
-    # --- Tier 0.2: 180 tricks ---
-    if "180" or "SHOVE-IT" in trick:
-        return 0.2
-
-    # --- Tier 0.1: any other recognized trick (shoves, ollies, grinds, etc.) ---
-    return 0.1
+    # --- Everything else ---
+    return 0.0
 
 
 def get_reward(
@@ -216,41 +196,45 @@ def get_reward(
 
 if __name__ == "__main__":
     test_cases = [
-        # Landed tricks
-        ("360 FLIP", "landed",               1.0),
-        ("FAKIE 360 FLIP", "landed",         0.75),
-        ("SWITCH 360 FLIP", "landed",        0.75),
-        ("360 DOUBLE FLIP", "landed",        0.75),
-        ("360 TRIPLE FLIP", "landed",        0.75),
-        ("NOLLIE 360 FLIP", "landed",        0.75),
-        ("540 FLIP", "landed",               0.5),
-        ("540 DOUBLE FLIP", "landed",        0.5),
-        ("NIGHTMARE FLIP", "landed",         0.75),
-        ("KICKFLIP", "landed",               0.5),
-        ("INWARD HEELFLIP", "landed",        0.5),
-        ("HARD FLIP", "landed",              0.5),
-        ("LASER FLIP", "landed",             0.5),
-        ("VARIAL KICKFLIP", "landed",        0.5),
-        ("IMPOSSIBLE", "landed",             0.5),
-        ("360 POP SHOVE-IT", "landed",       0.3),
-        ("540 POP SHOVE-IT", "landed",       0.3),
-        ("FS POP SHOVE-IT", "landed",        0.1),
-        ("POP SHOVE-IT", "landed",           0.1),
-        ("BIG SPIN", "landed",               0.3),
-        ("BACKSIDE 360", "landed",           0.3),
-        ("OLLIE", "landed",                  0.1),
-        ("NOLLIE", "landed",                 0.1),
-        ("BACKSIDE 180", "landed",           0.2),
-        ("KICKFLIP + 50-50 GRIND", "landed", 0.5),
-        # Failed tricks — base * (base - 0.1)
-        ("360 FLIP", "failed",               0.9),   # 1.0 * 0.9
-        ("540 DOUBLE FLIP", "failed",        0.2),   # 0.5 * 0.4
-        ("KICKFLIP", "failed",               0.2),   # 0.5 * 0.4
-        # Exempt failed tricks — base + 0.1, no failure multiplier
-        ("360 POP SHOVE-IT", "failed",       0.4),   # 0.3 + 0.1
-        ("BACKSIDE 360", "failed",           0.4),   # 0.3 + 0.1
+        # Tier 1.0 — 360 FLIP exact
+        ("360 FLIP", "landed",                1.0),
+        # Tier 0.8 — 360 FLIP with modifier
+        ("FAKIE 360 FLIP", "landed",          0.8),
+        ("SWITCH 360 FLIP", "landed",         0.8),
+        ("NOLLIE 360 FLIP", "landed",         0.8),
+        ("BACKSIDE 360 FLIP", "landed",       0.8),
+        ("360 DOUBLE FLIP", "landed",         0.8),
+        ("360 TRIPLE FLIP", "landed",         0.8),
+        # Tier 0.6 — VARIAL FLIP, KICKFLIP, NIGHTMARE
+        ("VARIAL FLIP", "landed",             0.6),
+        ("VARIAL DOUBLE FLIP", "landed",      0.6),
+        ("VARIAL TRIPLE FLIP", "landed",      0.6),
+        ("KICKFLIP", "landed",                0.6),
+        ("NIGHTMARE FLIP", "landed",          0.6),
+        # Tier 0.3 — 360 POP SHOVE-IT, BACKSIDE 360
+        ("360 POP SHOVE-IT", "landed",        0.3),
+        ("BACKSIDE 360", "landed",            0.3),
+        # Tier 0.0 — everything else
+        ("HARD FLIP", "landed",               0.0),
+        ("LASER FLIP", "landed",              0.0),
+        ("HEELFLIP", "landed",                0.0),
+        ("VARIAL KICKFLIP", "landed",         0.0),
+        ("540 FLIP", "landed",                0.0),
+        ("540 POP SHOVE-IT", "landed",        0.0),
+        ("POP SHOVE-IT", "landed",            0.0),
+        ("OLLIE", "landed",                   0.0),
+        ("BACKSIDE 180", "landed",            0.0),
+        # Combo — max component wins
+        ("KICKFLIP + 50-50 GRIND", "landed",  0.6),
+        # Failed tricks — all use base * (base - 0.1)
+        ("360 FLIP", "failed",                0.9),    # 1.0 * 0.9
+        ("360 DOUBLE FLIP", "failed",         0.56),   # 0.8 * 0.7
+        ("KICKFLIP", "failed",                0.3),    # 0.6 * 0.5
+        ("360 POP SHOVE-IT", "failed",        0.06),   # 0.3 * 0.2
+        ("BACKSIDE 360", "failed",            0.06),   # 0.3 * 0.2
+        ("HARD FLIP", "failed",               0.0),    # 0.0 * -0.1 = 0.0
         # No trick
-        (None, None,                         0.0),
+        (None, None,                          0.0),
     ]
 
     all_passed = True
