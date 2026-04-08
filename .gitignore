@@ -82,4 +82,4 @@ htmlcov/
 
 # Experiments
 experiments/rl_poc/experiment_journal.md
-experiments/rl_poc/trick_libraries/
+trick_libraries/
