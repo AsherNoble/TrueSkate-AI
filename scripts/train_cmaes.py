@@ -44,8 +44,8 @@ def main() -> None:
     parser.add_argument("--pop-size", type=int, default=24,
                         help="CMA-ES population size — evals per generation (default: 24)")
     parser.add_argument("--log-dir", type=Path,
-                        default=_REPO_ROOT / "experiments" / "rl_poc" / "logs",
-                        help="Log directory (default: experiments/rl_poc/logs)")
+                        default=_REPO_ROOT / "logs",
+                        help="Log directory (default: logs/)")
     args = parser.parse_args()
 
     driver, mjpeg_url = connect_driver()
