@@ -41,8 +41,6 @@ data/
 !data/.gitkeep
 models/
 checkpoints/
-logs/
-runs/
 wandb/
 *.h5
 *.hdf5
@@ -80,6 +78,3 @@ htmlcov/
 .env
 .env.local
 
-# Experiments
-experiments/rl_poc/experiment_journal.md
-trick_libraries/
