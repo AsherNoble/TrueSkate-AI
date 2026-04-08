@@ -79,6 +79,20 @@ _MJPEG_PORT = 9100
 _APP_STATE_FOREGROUND = 4
 
 
+def _ensure_foreground(driver: webdriver.Remote) -> bool:
+    """Verify True Skate is in the foreground; relaunch it if not.
+
+    Returns True if the app had to be relaunched, False if it was already running.
+    """
+    state = driver.query_app_state(_BUNDLE_ID)
+    if state == _APP_STATE_FOREGROUND:
+        return False
+    print(f"True Skate not in foreground (state={state}) — relaunching.")
+    driver.activate_app(_BUNDLE_ID)
+    time.sleep(2.0)  # wait for game UI to settle after relaunch
+    return True
+
+
 def connect_driver() -> tuple[webdriver.Remote, str]:
     """Connect to Appium, reusing True Skate if it is already in the foreground.
 
@@ -291,7 +305,10 @@ def main() -> None:
             rewards = []
 
             for candidate_idx, candidate in enumerate(solutions):
-                # Wait for board to settle after previous reset
+                # Ensure True Skate is still the foreground app before wasting an eval
+                relaunched = _ensure_foreground(driver)
+
+                # Wait for board to settle after previous reset (or relaunch)
                 time.sleep(args.settle_time)
 
                 reward = 0.0
@@ -306,7 +323,7 @@ def main() -> None:
 
                     # Score the attempt
                     reward, trick_result, repetition_multiplier = get_reward(
-                        driver, wait_time=args.wait_time, penalty=repetition_penalty
+                        driver, wait_time=args.wait_time, penalty=None
                     )
                 except Exception as exc:
                     recorder.stop()
@@ -352,6 +369,7 @@ def main() -> None:
                     "params": [round(float(p), 2) for p in candidate],
                     "frame_dir": eval_dir_name,
                     "n_composites": n_composites,
+                    "app_relaunched": relaunched,
                     "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                 })
 

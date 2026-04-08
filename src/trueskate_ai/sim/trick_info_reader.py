@@ -106,13 +106,16 @@ def _ocr_above_anchor(
         frame: Full BGR frame.
         mask: Boolean mask over frame[anchor_y_offset:anchor_y_offset+mask.shape[0], :].
         anchor_y_offset: Row in frame where the search band starts (250).
-        status: "landed" or "failed" — determines TrickResult.status.
+        status: "landed", "failed", or "unknown" — determines TrickResult.status.
+            For "unknown" the crop anchors off the bottom of the white region
+            (ys.max) rather than the top, since the score line sits below the trick name.
 
     Returns:
         TrickResult or None if no trick text is found.
     """
     ys, xs = np.where(mask)
-    anchor_y_min = int(ys.min()) + anchor_y_offset
+    anchor_row = int(ys.max() if status == "unknown" else ys.min())
+    anchor_y_min = anchor_row + anchor_y_offset
     anchor_x_min = int(xs.min())
     anchor_x_max = int(xs.max())
 
@@ -150,8 +153,6 @@ def _ocr_above_anchor(
             continue
         if "SCORE" in cleaned:
             continue
-        if re.fullmatch(r"[\d ]+", cleaned):
-            continue
         if _BANNER_WORDS & set(cleaned.split()):
             continue
         # For failed detections the word "FAILED" appears in the crop — discard it.
@@ -162,8 +163,22 @@ def _ocr_above_anchor(
     if not candidates:
         return None
 
-    matched_components = [_match_component(c) for c in candidates]
-    matched_components = [m for m in matched_components if m is not None]
+    # Try merging adjacent candidates before individual matching.
+    # e.g. ["360", "POP SHOVE-IT"] → try "360 POP SHOVE-IT" against KNOWN_TRICKS first.
+    # If the merge matches, consume both and skip individual matching for that pair.
+    matched_components = []
+    i = 0
+    while i < len(candidates):
+        if i + 1 < len(candidates):
+            merged = candidates[i] + " " + candidates[i + 1]
+            if merged in KNOWN_TRICKS:
+                matched_components.append(merged)
+                i += 2
+                continue
+        match = _match_component(candidates[i])
+        if match is not None:
+            matched_components.append(match)
+        i += 1
 
     if not matched_components:
         return None

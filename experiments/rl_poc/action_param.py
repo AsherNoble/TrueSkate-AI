@@ -67,7 +67,7 @@ _SCOOP = [100, 680, 220, 690, 340, 675, 0.06, 1.2]
 _FLICK = [270, 590, 220, 530, 160, 470, 0.05, 0.7]
 
 # Delay: slight overlap — flick starts just before scoop finishes
-_DELAY = [-0.02]
+_DELAY = [0.3]
 
 INITIAL_MEAN: np.ndarray = np.array(_SCOOP + _FLICK + _DELAY, dtype=np.float64)
 """17-element informed prior for a plausible 360 flip."""
