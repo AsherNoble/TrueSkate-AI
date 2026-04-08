@@ -25,7 +25,7 @@ from trueskate_ai.rl.action_param import (
     _PUSH_PRE_DELAY,
     _PUSH_START,
 )
-from trueskate_ai.rl.cmaes_optimizer import connect_driver
+from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
 from trueskate_ai.sim.touch_actions import build_curved_drag
 
 
@@ -114,13 +114,14 @@ def main() -> None:
     trick, recipe = _load_recipe(args.library, args.mode)
 
     print(f"Executing: trick='{trick}' mode={args.mode}")
-    driver, _ = connect_driver()
+    worker = DeviceWorker(DEVICES[0])
+    worker.connect()
 
     try:
-        execute_recipe(driver, recipe)
+        execute_recipe(worker.driver, recipe)
         print("Gestures fired.")
     finally:
-        driver.quit()
+        worker.disconnect()
 
 
 if __name__ == "__main__":
