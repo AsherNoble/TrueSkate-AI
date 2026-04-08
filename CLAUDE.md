@@ -4,61 +4,83 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TrueSkate-AI trains a model to play the mobile game True Skate. The pipeline: capture screen recordings → extract per-frame touch labels via computer vision → train a model to predict touch sequences → execute predictions on-device via Appium.
+TrueSkate-AI trains an RL agent to perform skateboarding tricks in the iOS game True Skate. The current approach uses CMA-ES (evolutionary strategy) to optimize continuous gesture parameters executed on a physical iPhone via Appium/WebDriverAgent.
+
+**Current milestone:** Land a 360 flip from a fixed board position.
+
+**Status:** Pipeline is fully operational. The agent has landed pop shove-its, varial flips, 360 flips, and nightmare flips. CMA-ES tends to converge on reliable medium-reward tricks rather than volatile high-reward ones.
 
 ## Setup
 
-No `pyproject.toml` or `setup.py` exists yet. Install dependencies manually:
-
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install opencv-python numpy torch torchvision scipy pillow appium-python-client matplotlib requests
+pip install opencv-python numpy torch torchvision scipy pillow appium-python-client matplotlib requests cma pytesseract
 ```
 
 External tools: Appium (npm), WebDriverAgent (Xcode), ffmpeg, libimobiledevice.
 
-## Architecture
-
-```
-src/trueskate_ai/
-├── labeling/       # CV pipeline: video → per-frame touch labels (the core implemented module)
-├── vision/         # PyTorch Datasets for training (TouchDataset, VideoDataset)
-├── utils/          # TrajectorySpline for smooth path fitting, data_loader helper
-├── eval/           # (placeholder)
-├── sim/            # (placeholder)
-└── trajectories/   # (placeholder)
-scripts/            # Entry points: launch_services, extract_frames, run_model, etc.
-notebooks/          # Experiments, training data, reference images
-tmp/                # Debug output (gitignored)
-```
-
-### Labeling Pipeline (main implemented module)
-
-`trace_extractor.py` → `video_labeler.py` → `visualize.py`
-
-1. **TraceExtractor** processes individual BGR frames: HSV filtering for orange traces → morphological cleanup → connected component blob detection → solidity + temporal new-pixel-ratio classification → hotspot peak localization → nearest-neighbor touch assignment for temporal consistency. Also detects spin button state via Sobel gradient magnitude on the button icon region.
-2. **VideoLabeler** wraps TraceExtractor for full video processing. CLI entry point: `python -m trueskate_ai.labeling.video_labeler <video.mp4>`. Outputs CSV and optionally `.pt` tensors or debug video.
-3. **LabelVisualizer** creates annotated debug videos and frame strips.
-
-### Key Data Formats
-
-- **TouchState**: `(frame_number, touch1_active, touch1_x, touch1_y, touch2_active, touch2_x, touch2_y, spin_control_active)` — coordinates normalized to [0, 1]
-- **CSV labels**: One row per frame with the TouchState fields
-- **Tensor output**: Shape `(N, 7)` float32, excludes frame_number
-
-### Resolution Handling
-
-All TraceExtractor parameters are defined at a reference resolution (1170×2532 for main frame, 750×1624 for spin button region) and scale proportionally to actual frame dimensions.
-
-## Device Configuration
-
-- WebDriverAgent project: `~/Projects/WebDriverAgent`
+- Device UDID stored in `.env` (not hardcoded)
+- WDA project: `~/Projects/WebDriverAgent` (needs `-allowProvisioningUpdates` after Xcode updates)
 - Appium: localhost:4723, WDA: localhost:8100
-- Training data source: `/Users/ashernoble/Projects/Training_Data/`
+- True Skate bundle ID: `com.trueaxis.skate`
+
+## Architecture
+src/trueskate_ai/
+├── labeling/       # CV pipeline: video → per-frame touch labels (legacy, pre-RL)
+├── vision/         # PyTorch Datasets (TouchDataset, VideoDataset) — legacy
+├── rl/             # RL components (action_param, cmaes_optimizer, reward)
+├── sim/            # Device interaction (touch_actions, trick_info_reader, known_tricks, execute_trick)
+├── utils/          # TrajectorySpline, data_loader
+├── eval/           # (placeholder)
+└── trajectories/   # (placeholder)
+scripts/            # Entry points: launch_services, train_cmaes, build_trick_library, etc.
+experiments/        # Experiment journal, standalone experiments
+tmp/                # Debug output (gitignored)
+
+### RL Pipeline (active development)
+
+1. **Action parameterization** (`src/trueskate_ai/rl/action_param.py`): 17-param vector → 2 `curved_drag` gesture slots (3 waypoints + duration + easing_power each) + 1 inter-slot delay. Curved drags are essential — straight swipes don't reflect real gameplay. Slot 1: horizontal scoop from tail. Slot 2: diagonal upward flick from center.
+
+2. **Touch execution** (`src/trueskate_ai/sim/touch_actions.py`): `curved_drag` primitives executed via Appium W3C Actions. Slots run as overlapping gestures in a single `perform()` call (parallel, not sequential).
+
+3. **OCR / trick detection** (`src/trueskate_ai/sim/trick_info_reader.py`): `detect_trick()` takes BGR numpy array. pytesseract with 3× upscaling, grayscale, threshold, character whitelist, green/red/white pixel anchoring, fuzzy match against 248-entry `KNOWN_TRICKS` list. Known issues: pytesseract hallucinations — Apple Vision framework replacement planned.
+
+4. **Reward** (`src/trueskate_ai/rl/reward.py`): Tiered scoring. Current v3: 360 FLIP = 1.0, varial/kickflip = 0.6, 360 shove-it/BS 360 = 0.3, everything else = 0.0. Failed multiplier: `base * (base - 0.1)`. FS/FRONTSIDE tricks zeroed. OCR normalizes "540" → "360" before scoring.
+
+5. **CMA-ES optimizer** (`src/trueskate_ai/rl/cmaes_optimizer.py`, entry point `scripts/train_cmaes.py`): Evolutionary optimization over gesture params. JSONL logging. Params clamped to prevent inf/NaN Appium crashes. y-bounds capped at 750 to avoid home indicator zone.
+
+6. **Trick library** (`scripts/build_trick_library.py`, `src/trueskate_ai/sim/execute_trick.py`): Extracts recipes from JSONL logs (median + best params), replays via Appium.
+
+### Labeling Pipeline (legacy — pre-RL pivot)
+
+`trace_extractor.py` → `video_labeler.py` → `visualize.py`. CV-based touch label extraction from screen recordings. Superseded by RL approach but code remains.
+
+## Key Design Decisions
+
+- **Curved gestures required** — Asher's expert domain knowledge; straight swipes don't work
+- **CMA-ES over full RL** — 17-dim continuous space suits black-box evolutionary optimization; avoids data requirements of SAC etc.
+- **Data throughput is the bottleneck** — True Skate runs at 1× real-time; GPU can't accelerate the live interaction loop. ~15K steps/hour
+- **Reward shaping is critical** — partial credit for trick components guides exploration; aggressive tier compression prevents convergence on wrong tricks
+- **OCR misreads are a real signal problem** — "360"→"540" misread was causing 1.0 tricks to score 0.6
+
+## Experiment Journal
+
+Located at `experiments/rl_poc_experiment_journal.md`. Read at start of relevant conversations and append key findings, bugs, and decisions. Keep entries brief.
 
 ## Conventions
 
-- Debug/temporary output goes in `tmp/` (gitignored)
+- Debug/temporary output → `tmp/` (gitignored)
 - `.venv/` is the sole virtual environment
-- `*.pth` model files are gitignored; stored in `notebooks/models/`
-- Notebook outputs (PNGs, JSON) go in `notebooks/outputs/`
+- `*.pth` model files gitignored; stored in `notebooks/models/`
+- Commit messages: 10–20 words, one commit at a time
+- Function names should reflect actual behavior precisely (e.g., `reset_position()` not `go_to_waypoint()`)
+- Use full absolute paths — tilde expansion (`~/`) is unreliable in tooling
+
+## Known Issues / Next Steps
+
+- Swap OCR to Apple Vision framework (pyobjc) — pytesseract hallucinations worsening
+- App-focus check before each eval (agent wasted 1800+ evals screenshotting Clock app)
+- Auto-terminate on N consecutive zero-reward evals
+- CMA-ES multimodal problem: unimodal Gaussian averages over bimodal landscape → IPOP/BIPOP restarts or novelty bonus needed
+- Hard flip reward tier missing (currently scores 0.0)
+- Long-term: hierarchical architecture — sequence model over trick names commanding low-level RL policies
