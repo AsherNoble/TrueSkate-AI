@@ -6,7 +6,7 @@ perform sequence as run_cmaes — but driven directly from decoded curved_drag
 arguments rather than a raw parameter vector.
 
 Usage:
-    python experiments/rl_poc/execute_trick.py --library <json_path> --trick <name> [--mode best|median]
+    python experiments/rl_poc/execute_trick.py --library <json_path> [--mode best|median]
 """
 import argparse
 import json
@@ -38,21 +38,23 @@ from run_cmaes import connect_driver
 from trueskate_ai.sim.touch_actions import build_curved_drag
 
 
-def _load_recipe(library_path: Path, trick: str, mode: str) -> dict:
-    """Load and return the gesture recipe for *trick* from a library JSON."""
+def _load_recipe(library_path: Path, mode: str) -> tuple[str, dict]:
+    """Load trick name and gesture recipe from a library JSON.
+
+    Returns:
+        (trick_name, recipe_dict)
+    """
     data = json.loads(library_path.read_text())
 
-    if data.get("trick", "").lower() != trick.lower():
-        sys.exit(
-            f"ERROR: library trick is '{data.get('trick')}', "
-            f"not '{trick}'"
-        )
+    trick = data.get("trick")
+    if not trick:
+        sys.exit(f"ERROR: no 'trick' field in {library_path}")
 
     key = f"{mode}_gestures"
     if key not in data:
         sys.exit(f"ERROR: key '{key}' not found in {library_path}")
 
-    return data[key]
+    return trick, data[key]
 
 
 def _execute_recipe(driver, recipe: dict) -> None:
@@ -105,8 +107,6 @@ def main() -> None:
     )
     parser.add_argument("--library", type=Path, required=True,
                         help="Path to the trick library JSON")
-    parser.add_argument("--trick", type=str, required=True,
-                        help="Trick name to look up (case-insensitive)")
     parser.add_argument("--mode", choices=["best", "median"], default="median",
                         help="Which gesture set to replay (default: median)")
     args = parser.parse_args()
@@ -114,9 +114,9 @@ def main() -> None:
     if not args.library.exists():
         sys.exit(f"ERROR: library file not found: {args.library}")
 
-    recipe = _load_recipe(args.library, args.trick, args.mode)
+    trick, recipe = _load_recipe(args.library, args.mode)
 
-    print(f"Executing: trick='{args.trick}' mode={args.mode}")
+    print(f"Executing: trick='{trick}' mode={args.mode}")
     driver, _ = connect_driver()
 
     try:
