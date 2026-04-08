@@ -187,7 +187,7 @@ def run(
                 futures = {}
                 for i, worker in enumerate(workers):
                     cand_idx = batch_start + i
-                    cand_eval_num = eval_num + cand_idx + 1
+                    cand_eval_num = eval_num + i + 1
                     future = executor.submit(
                         worker.evaluate,
                         solutions[cand_idx], wait_time, cand_eval_num, generation,
