@@ -166,92 +166,100 @@ def run(
         while eval_num < max_evals:
             solutions = es.ask()
 
-            # Ensure True Skate is in the foreground on all devices
-            for worker in workers:
-                worker.ensure_foreground()
-
-            # Settle time — all devices settle simultaneously
-            time.sleep(settle_time)
-
-            # Reset all devices simultaneously
-            reset_futures = [executor.submit(w.reset) for w in workers]
-            for f in reset_futures:
-                f.result()
-
-            # Dispatch candidates round-robin across workers:
-            # worker 0 → [0, n, 2n, ...], worker 1 → [1, n+1, 2n+1, ...], etc.
-            futures = {}
-            for cand_idx, candidate in enumerate(solutions):
-                worker = workers[cand_idx % n_workers]
-                cand_eval_num = eval_num + cand_idx + 1
-                future = executor.submit(
-                    worker.evaluate, candidate, wait_time, cand_eval_num, generation
-                )
-                futures[future] = cand_idx
-
-            # Collect results in candidate order
-            results: list[dict] = [{}] * len(solutions)
-            for future in as_completed(futures):
-                cand_idx = futures[future]
-                try:
-                    results[cand_idx] = future.result()
-                except Exception as exc:
-                    # Safety net — DeviceWorker.evaluate() catches internally,
-                    # but guard against unexpected thread-level failures.
-                    logging.warning(
-                        "Future for candidate %d raised: %s", cand_idx, exc
-                    )
-                    results[cand_idx] = {
-                        "reward": 0.0,
-                        "trick_name": None,
-                        "trick_status": None,
-                        "device_id": "unknown",
-                        "params": solutions[cand_idx],
-                        "raw_frames": [],
-                        "n_composites": 0,
-                        "app_relaunched": False,
-                    }
-
-            # Assemble rewards, save composites, write JSONL
+            # Process candidates in rounds of n_workers.
+            # Each round: foreground check → settle → dispatch batch →
+            # collect results → reset all devices simultaneously.
+            n_rounds = len(solutions) // n_workers
             rewards = []
             device_eval_counts: dict[str, int] = {}
 
-            for cand_idx, result in enumerate(results):
-                reward = result["reward"]
-                rewards.append(reward)
-                eval_num += 1
+            for round_idx in range(n_rounds):
+                batch_start = round_idx * n_workers
 
-                device_id = result["device_id"]
-                device_eval_counts[device_id] = (
-                    device_eval_counts.get(device_id, 0) + 1
-                )
+                # Ensure True Skate is in the foreground on all devices
+                for worker in workers:
+                    worker.ensure_foreground()
 
-                # Save frame composites
-                raw_frames = result["raw_frames"]
-                eval_dir_name = f"eval_{eval_num:05d}_{device_id}"
-                n_composites = _save_composites(
-                    raw_frames, run_dir / "frames" / eval_dir_name
-                )
+                # Settle time — all devices settle simultaneously
+                time.sleep(settle_time)
 
-                _write_log(log_fh, {
-                    "generation": generation,
-                    "candidate_idx": cand_idx,
-                    "eval_num": eval_num,
-                    "device_id": device_id,
-                    "reward": reward,
-                    "trick_name": result["trick_name"],
-                    "trick_status": result["trick_status"],
-                    "params": [round(float(p), 2) for p in result["params"]],
-                    "frame_dir": eval_dir_name,
-                    "n_composites": n_composites,
-                    "app_relaunched": result["app_relaunched"],
-                    "timestamp": datetime.now().isoformat(timespec="milliseconds"),
-                })
+                # Dispatch one candidate per worker simultaneously
+                futures = {}
+                for i, worker in enumerate(workers):
+                    cand_idx = batch_start + i
+                    cand_eval_num = eval_num + cand_idx + 1
+                    future = executor.submit(
+                        worker.evaluate,
+                        solutions[cand_idx], wait_time, cand_eval_num, generation,
+                    )
+                    futures[future] = cand_idx
 
-                if reward > best_reward:
-                    best_reward = reward
-                    best_trick = result["trick_name"]
-                    best_params = np.array(result["params"])
+                # Collect results for this round
+                round_results: dict[int, dict] = {}
+                for future in as_completed(futures):
+                    cand_idx = futures[future]
+                    try:
+                        round_results[cand_idx] = future.result()
+                    except Exception as exc:
+                        # Safety net — DeviceWorker.evaluate() catches internally,
+                        # but guard against unexpected thread-level failures.
+                        logging.warning(
+                            "Future for candidate %d raised: %s", cand_idx, exc
+                        )
+                        round_results[cand_idx] = {
+                            "reward": 0.0,
+                            "trick_name": None,
+                            "trick_status": None,
+                            "device_id": "unknown",
+                            "params": solutions[cand_idx],
+                            "raw_frames": [],
+                            "n_composites": 0,
+                            "app_relaunched": False,
+                        }
+
+                # Process round results in candidate order
+                for i in range(n_workers):
+                    cand_idx = batch_start + i
+                    result = round_results[cand_idx]
+                    reward = result["reward"]
+                    rewards.append(reward)
+                    eval_num += 1
+
+                    device_id = result["device_id"]
+                    device_eval_counts[device_id] = (
+                        device_eval_counts.get(device_id, 0) + 1
+                    )
+
+                    raw_frames = result["raw_frames"]
+                    eval_dir_name = f"eval_{eval_num:05d}_{device_id}"
+                    n_composites = _save_composites(
+                        raw_frames, run_dir / "frames" / eval_dir_name
+                    )
+
+                    _write_log(log_fh, {
+                        "generation": generation,
+                        "candidate_idx": cand_idx,
+                        "eval_num": eval_num,
+                        "device_id": device_id,
+                        "reward": reward,
+                        "trick_name": result["trick_name"],
+                        "trick_status": result["trick_status"],
+                        "params": [round(float(p), 2) for p in result["params"]],
+                        "frame_dir": eval_dir_name,
+                        "n_composites": n_composites,
+                        "app_relaunched": result["app_relaunched"],
+                        "timestamp": datetime.now().isoformat(timespec="milliseconds"),
+                    })
+
+                    if reward > best_reward:
+                        best_reward = reward
+                        best_trick = result["trick_name"]
+                        best_params = np.array(result["params"])
+
+                # Reset all devices simultaneously before next round
+                reset_futures = [executor.submit(w.reset) for w in workers]
+                for f in reset_futures:
+                    f.result()
 
             # Feed negated rewards to CMA-ES (it minimizes)
             es.tell(solutions, [-r for r in rewards])
