@@ -172,7 +172,7 @@ class DeviceWorker:
         options.skip_log_capture = True
         options.no_reset = True
         options.set_capability("mjpegServerPort", self._cfg["mjpeg_port"])
-
+        options.set_capability("webDriverAgentUrl", f"http://127.0.0.1:{self._cfg['wda_port']}")
         appium_url = f"http://127.0.0.1:{self._cfg['appium_port']}"
         self.driver = webdriver.Remote(appium_url, options=options)
         self.mjpeg_url = f"http://127.0.0.1:{self._cfg['mjpeg_port']}"

@@ -176,61 +176,84 @@ def _start_wda(device: dict) -> bool:
         print(f"[{name}] WebDriverAgent not found at {WDA_PROJECT_PATH}")
         return False
 
-    wda_cmd = [
-        "xcodebuild",
-        "-project", str(WDA_PROJECT_PATH / "WebDriverAgent.xcodeproj"),
-        "-scheme", "WebDriverAgentRunner",
-        "-destination", f"id={udid}",
-        "-allowProvisioningUpdates",
-        "test",
-    ]
+    def _run_wda_command(action: str) -> bool:
+        """Try to start WDA with the given xcodebuild action."""
+        cmd = [
+            "xcodebuild",
+            "-project", str(WDA_PROJECT_PATH / "WebDriverAgent.xcodeproj"),
+            "-scheme", "WebDriverAgentRunner",
+            "-destination", f"id={udid}",
+            "-allowProvisioningUpdates",
+            action,
+        ]
 
-    try:
-        proc = subprocess.Popen(
-            wda_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            cwd=str(WDA_PROJECT_PATH),
-        )
-        _processes[name]["wda"] = proc
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                cwd=str(WDA_PROJECT_PATH),
+            )
+            _processes[name]["wda"] = proc
 
-        print(f"[{name}] WDA process started (PID: {proc.pid})")
-        print(f"[{name}] Waiting up to {WDA_STARTUP_TIMEOUT}s for WDA...")
+            print(f"[{name}] WDA process started with '{action}' (PID: {proc.pid})")
+            print(f"[{name}] Waiting up to {WDA_STARTUP_TIMEOUT}s for WDA...")
 
-        wda_ready = False
-        wda_url = None
+            wda_ready = False
+            wda_url = None
 
-        def read_output():
-            nonlocal wda_ready, wda_url
-            for line in proc.stdout:
-                # Don't print raw xcodebuild output — it contains UDIDs
-                if "ServerURLHere->" in line:
-                    match = re.search(r"ServerURLHere->(.+?)<-ServerURLHere", line)
-                    if match:
-                        wda_url = match.group(1)
-                        wda_ready = True
+            def read_output():
+                nonlocal wda_ready, wda_url
+                for line in proc.stdout:
+                    if "ServerURLHere->" in line:
+                        match = re.search(
+                            r"ServerURLHere->(.+?)<-ServerURLHere", line
+                        )
+                        if match:
+                            wda_url = match.group(1)
+                            wda_ready = True
 
-        output_thread = threading.Thread(target=read_output, daemon=True)
-        output_thread.start()
+            output_thread = threading.Thread(target=read_output, daemon=True)
+            output_thread.start()
 
-        start_time = time.time()
-        while time.time() - start_time < WDA_STARTUP_TIMEOUT:
-            if proc.poll() is not None:
-                print(f"[{name}] WDA process terminated unexpectedly")
-                return False
-            if wda_ready:
-                print(f"[{name}] WDA ready at {wda_url}")
-                return True
-            time.sleep(1)
+            start_time = time.time()
+            while time.time() - start_time < WDA_STARTUP_TIMEOUT:
+                exit_code = proc.poll()
+                if exit_code is not None:
+                    if exit_code == 0 and wda_ready:
+                        print(f"[{name}] WDA ready at {wda_url}")
+                        return True
+                    else:
+                        print(
+                            f"[{name}] WDA with '{action}' exited with code {exit_code}"
+                        )
+                        return False
+                if wda_ready:
+                    print(f"[{name}] WDA ready at {wda_url}")
+                    return True
+                time.sleep(1)
 
-        print(f"[{name}] WDA did not start within {WDA_STARTUP_TIMEOUT}s")
+            print(f"[{name}] WDA did not start within {WDA_STARTUP_TIMEOUT}s")
+            return False
+
+        except FileNotFoundError:
+            print(f"[{name}] xcodebuild not found. Is Xcode installed?")
+            return False
+
+    # Try test-without-building first (fast path if already built)
+    print(f"[{name}] Attempting test-without-building...")
+    if _run_wda_command("test-without-building"):
+        return True
+
+    # Fall back to build-for-testing then test-without-building
+    print(f"[{name}] test-without-building failed, trying build-for-testing...")
+    if not _run_wda_command("build-for-testing"):
         return False
 
-    except FileNotFoundError:
-        print(f"[{name}] xcodebuild not found. Is Xcode installed?")
-        return False
+    print(f"[{name}] Running test-without-building after build...")
+    return _run_wda_command("test-without-building")
 
 
 # ---------------------------------------------------------------------------
