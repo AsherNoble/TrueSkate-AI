@@ -71,13 +71,21 @@ def _signal_handler(sig, frame):
 
 def _cleanup():
     for name, procs in _processes.items():
-        if procs.get("iproxy"):
-            print(f"[{name}] Stopping iproxy...")
-            procs["iproxy"].terminate()
+        if procs.get("iproxy_wda"):
+            print(f"[{name}] Stopping WDA iproxy...")
+            procs["iproxy_wda"].terminate()
             try:
-                procs["iproxy"].wait(timeout=2)
+                procs["iproxy_wda"].wait(timeout=2)
             except subprocess.TimeoutExpired:
-                procs["iproxy"].kill()
+                procs["iproxy_wda"].kill()
+
+        if procs.get("iproxy_mjpeg"):
+            print(f"[{name}] Stopping MJPEG iproxy...")
+            procs["iproxy_mjpeg"].terminate()
+            try:
+                procs["iproxy_mjpeg"].wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                procs["iproxy_mjpeg"].kill()
 
         if procs.get("appium") and not procs.get("appium_was_running"):
             print(f"[{name}] Stopping Appium...")
@@ -265,24 +273,45 @@ def _start_wda(device: dict) -> bool:
 
 
 def _start_iproxy(device: dict) -> bool:
-    """Start iproxy port forwarding from Mac to iOS device."""
+    """Start iproxy port forwarding from Mac to iOS device for WDA and MJPEG.
+
+    WDA is forwarded because we use webDriverAgentUrl to bypass Appium's WDA
+    management. MJPEG is forwarded manually because WDA always runs its MJPEG
+    server on device port 9100 regardless of the mjpegServerPort capability —
+    so we forward each device's local MJPEG port to device port 9100 directly.
+    """
     name = device["name"]
-    local_port = device["wda_port"]
-    device_port = 8100  # WDA always runs on 8100 on the device
+    wda_local_port = device["wda_port"]
+    mjpeg_local_port = device["mjpeg_port"]
+    wda_device_port = 8100   # WDA always runs on 8100 on the device
+    mjpeg_device_port = 9100  # WDA MJPEG always runs on 9100 on the device
     udid = os.environ.get(device["env_key"])
 
-    print(f"[{name}] Starting iproxy: localhost:{local_port} <-> device:{device_port}...")
-
     try:
-        proc = subprocess.Popen(
-            ["iproxy", str(local_port), str(device_port), "-u", udid],
+        # Forward WDA port
+        print(f"[{name}] Starting iproxy for WDA: localhost:{wda_local_port} <-> device:{wda_device_port}...")
+        wda_proc = subprocess.Popen(
+            ["iproxy", str(wda_local_port), str(wda_device_port), "-u", udid],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
         )
-        _processes[name]["iproxy"] = proc
-        time.sleep(1)  # Give iproxy a moment to establish the tunnel
-        print(f"[{name}] iproxy running (PID: {proc.pid})")
+        _processes[name]["iproxy_wda"] = wda_proc
+        time.sleep(0.5)
+        print(f"[{name}] WDA iproxy running (PID: {wda_proc.pid})")
+
+        # Forward MJPEG port (device always uses 9100 regardless of capability)
+        print(f"[{name}] Starting iproxy for MJPEG: localhost:{mjpeg_local_port} <-> device:{mjpeg_device_port}...")
+        mjpeg_proc = subprocess.Popen(
+            ["iproxy", str(mjpeg_local_port), str(mjpeg_device_port), "-u", udid],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        _processes[name]["iproxy_mjpeg"] = mjpeg_proc
+        time.sleep(0.5)
+        print(f"[{name}] MJPEG iproxy running (PID: {mjpeg_proc.pid})")
+
         return True
     except FileNotFoundError:
         print(f"[{name}] iproxy not found. Install with: brew install libimobiledevice")
@@ -306,7 +335,8 @@ def main():
             "wda": None,
             "appium": None,
             "appium_was_running": False,
-            "iproxy": None,
+            "iproxy_wda": None,
+            "iproxy_mjpeg": None,
         }
 
     # Check all devices connected
@@ -373,8 +403,13 @@ def main():
                     _cleanup()
                     sys.exit(1)
 
-                if procs["iproxy"] and procs["iproxy"].poll() is not None:
-                    print(f"\n[{name}] iproxy process died unexpectedly")
+                if procs["iproxy_wda"] and procs["iproxy_wda"].poll() is not None:
+                    print(f"\n[{name}] WDA iproxy process died unexpectedly")
+                    _cleanup()
+                    sys.exit(1)
+
+                if procs["iproxy_mjpeg"] and procs["iproxy_mjpeg"].poll() is not None:
+                    print(f"\n[{name}] MJPEG iproxy process died unexpectedly")
                     _cleanup()
                     sys.exit(1)
 

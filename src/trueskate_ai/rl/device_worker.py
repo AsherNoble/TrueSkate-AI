@@ -112,10 +112,10 @@ class FrameRecorder:
                             .resize((210, 455), Image.LANCZOS)
                         )
                         self._frames.append(np.array(img, dtype=np.uint8))
-                    except Exception:
-                        pass
-        except Exception:
-            pass
+                    except Exception as e:
+                        logging.debug(f"Failed to decode JPEG frame: {e}")
+        except Exception as e:
+            logging.warning(f"MJPEG capture failed: {e}")
         finally:
             self._response = None
 
@@ -171,7 +171,6 @@ class DeviceWorker:
         options.use_prebuilt_wda = True
         options.skip_log_capture = True
         options.no_reset = True
-        options.set_capability("mjpegServerPort", self._cfg["mjpeg_port"])
         options.set_capability("webDriverAgentUrl", f"http://127.0.0.1:{self._cfg['wda_port']}")
         appium_url = f"http://127.0.0.1:{self._cfg['appium_port']}"
 
