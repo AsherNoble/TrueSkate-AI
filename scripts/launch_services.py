@@ -71,6 +71,14 @@ def _signal_handler(sig, frame):
 
 def _cleanup():
     for name, procs in _processes.items():
+        if procs.get("iproxy"):
+            print(f"[{name}] Stopping iproxy...")
+            procs["iproxy"].terminate()
+            try:
+                procs["iproxy"].wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                procs["iproxy"].kill()
+
         if procs.get("appium") and not procs.get("appium_was_running"):
             print(f"[{name}] Stopping Appium...")
             procs["appium"].terminate()
@@ -256,6 +264,31 @@ def _start_wda(device: dict) -> bool:
     return _run_wda_command("test-without-building")
 
 
+def _start_iproxy(device: dict) -> bool:
+    """Start iproxy port forwarding from Mac to iOS device."""
+    name = device["name"]
+    local_port = device["wda_port"]
+    device_port = 8100  # WDA always runs on 8100 on the device
+    udid = os.environ.get(device["env_key"])
+
+    print(f"[{name}] Starting iproxy: localhost:{local_port} <-> device:{device_port}...")
+
+    try:
+        proc = subprocess.Popen(
+            ["iproxy", str(local_port), str(device_port), "-u", udid],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        _processes[name]["iproxy"] = proc
+        time.sleep(1)  # Give iproxy a moment to establish the tunnel
+        print(f"[{name}] iproxy running (PID: {proc.pid})")
+        return True
+    except FileNotFoundError:
+        print(f"[{name}] iproxy not found. Install with: brew install libimobiledevice")
+        return False
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -273,6 +306,7 @@ def main():
             "wda": None,
             "appium": None,
             "appium_was_running": False,
+            "iproxy": None,
         }
 
     # Check all devices connected
@@ -295,6 +329,14 @@ def main():
     for device in DEVICES:
         if not _start_wda(device):
             print(f"\nStartup failed: WDA for {device['name']}")
+            _cleanup()
+            sys.exit(1)
+        print()
+
+    # Start iproxy tunnels for each device
+    for device in DEVICES:
+        if not _start_iproxy(device):
+            print(f"\nStartup failed: iproxy for {device['name']}")
             _cleanup()
             sys.exit(1)
         print()
@@ -328,6 +370,11 @@ def main():
 
                 if procs["wda"] and procs["wda"].poll() is not None:
                     print(f"\n[{name}] WDA process died unexpectedly")
+                    _cleanup()
+                    sys.exit(1)
+
+                if procs["iproxy"] and procs["iproxy"].poll() is not None:
+                    print(f"\n[{name}] iproxy process died unexpectedly")
                     _cleanup()
                     sys.exit(1)
 
