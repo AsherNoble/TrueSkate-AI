@@ -174,6 +174,24 @@ class DeviceWorker:
         options.set_capability("mjpegServerPort", self._cfg["mjpeg_port"])
         options.set_capability("webDriverAgentUrl", f"http://127.0.0.1:{self._cfg['wda_port']}")
         appium_url = f"http://127.0.0.1:{self._cfg['appium_port']}"
+
+        # Pre-flight: confirm WDA is reachable before telling Appium to connect.
+        # If WDA just started it may need a moment, so we retry up to 3 times.
+        wda_url = f"http://127.0.0.1:{self._cfg['wda_port']}/status"
+        for attempt in range(1, 4):
+            try:
+                if requests.get(wda_url, timeout=2).status_code == 200:
+                    break
+            except requests.exceptions.RequestException:
+                pass
+            if attempt == 3:
+                raise RuntimeError(
+                    f"[{self.device_id}] WDA is not responding at "
+                    f"http://127.0.0.1:{self._cfg['wda_port']} after 3 attempts. "
+                    f"Run 'python scripts/launch_services.py' first."
+                )
+            time.sleep(2)
+
         self.driver = webdriver.Remote(appium_url, options=options)
         self.mjpeg_url = f"http://127.0.0.1:{self._cfg['mjpeg_port']}"
 
