@@ -14,7 +14,7 @@ Easing power controls the velocity profile passed to curved_drag():
     power = 1.0  — constant velocity (linear)
     power > 1.0  — accelerating (slow start, fast end)
 
-Screen: 414×896 logical points (iPhone 11 @2x).
+Canonical action space: 375×812 logical points (iPhone XS width reference).
 """
 import time
 
@@ -26,24 +26,38 @@ from selenium.webdriver.common.actions.pointer_input import PointerInput
 # Bounds
 # ---------------------------------------------------------------------------
 
+_LEGACY_W = 414.0
+_LEGACY_H = 896.0
+_CANONICAL_W = 375.0
+_CANONICAL_H = 812.0
+
+
+def _to_canonical_x(x: float) -> float:
+    return x * (_CANONICAL_W / _LEGACY_W)
+
+
+def _to_canonical_y(y: float) -> float:
+    return y * (_CANONICAL_H / _LEGACY_H)
+
+
 # fmt: off
 _BOUNDS_RAW = [
     # Slot 1
-    [0, 414],    # x0
-    [448, 750],  # y0  — capped at 750 to avoid the iOS home indicator zone
-    [0, 414],    # x1
-    [448, 750],  # y1
-    [0, 414],    # x2
-    [448, 750],  # y2
+    [0.0, _to_canonical_x(414.0)],        # x0
+    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y0
+    [0.0, _to_canonical_x(414.0)],        # x1
+    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y1
+    [0.0, _to_canonical_x(414.0)],        # x2
+    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y2
     [0.03, 0.8], # duration
     [0.3, 3.0],  # easing_power
     # Slot 2
-    [0, 414],    # x0
-    [448, 750],  # y0
-    [0, 414],    # x1
-    [448, 750],  # y1
-    [0, 414],    # x2
-    [448, 750],  # y2
+    [0.0, _to_canonical_x(414.0)],        # x0
+    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y0
+    [0.0, _to_canonical_x(414.0)],        # x1
+    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y1
+    [0.0, _to_canonical_x(414.0)],        # x2
+    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y2
     [0.03, 0.8], # duration
     [0.3, 3.0],  # easing_power
     # Delay
@@ -58,11 +72,21 @@ PARAM_BOUNDS: np.ndarray = np.array(_BOUNDS_RAW, dtype=np.float64)
 # Initial mean — informed prior for a 360 flip
 # ---------------------------------------------------------------------------
 
-# Slot 1: scoop — left-to-right arc across the TAIL (y~680, not 575)
-_SCOOP = [100, 680, 220, 690, 340, 675, 0.06, 1.2]
+# Slot 1: scoop — left-to-right arc across the TAIL (canonical coords)
+_SCOOP = [
+    _to_canonical_x(100.0), _to_canonical_y(680.0),
+    _to_canonical_x(220.0), _to_canonical_y(690.0),
+    _to_canonical_x(340.0), _to_canonical_y(675.0),
+    0.06, 1.2,
+]
 
-# Slot 2: flick — upward-left diagonal from mid-board (the kickflip component)
-_FLICK = [270, 590, 220, 530, 160, 470, 0.05, 0.7]
+# Slot 2: flick — upward-left diagonal from mid-board (canonical coords)
+_FLICK = [
+    _to_canonical_x(270.0), _to_canonical_y(590.0),
+    _to_canonical_x(220.0), _to_canonical_y(530.0),
+    _to_canonical_x(160.0), _to_canonical_y(470.0),
+    0.05, 0.7,
+]
 
 # Delay: slight overlap — flick starts just before scoop finishes
 _DELAY = [0.3]
@@ -155,9 +179,9 @@ computing pause durations so delay values reflect true real-world timing."""
 # Static pre-execution push parameters (not optimized by CMA-ES)
 _PUSH_PRE_DELAY = 0.5
 """Delay before each trick execution during which the push occurs (seconds)."""
-_PUSH_START = (350, 224)
+_PUSH_START = (_to_canonical_x(350.0), _to_canonical_y(224.0))
 """Push start position: right side, upper half (x=350, y=224)."""
-_PUSH_END = (350, 672)
+_PUSH_END = (_to_canonical_x(350.0), _to_canonical_y(672.0))
 """Push end position: right side, lower half (x=350, y=672)."""
 _PUSH_DURATION = 0.02
 """Push duration (seconds)."""
@@ -165,7 +189,20 @@ _PUSH_EASING = 2.0
 """Push easing power — accelerating (slow start, fast end) for realistic push dynamics."""
 
 
-def execute_action(driver, params: np.ndarray) -> None:
+def norm_to_device(x: float, y: float, device_w: float, device_h: float) -> tuple[float, float]:
+    """Map a canonical-space point (375x812) into a device's logical points."""
+    scale = device_w / _CANONICAL_W
+    action_h = _CANONICAL_H * scale
+    y_offset = (device_h - action_h) / 2.0
+    return x * scale, y_offset + (y * scale)
+
+
+def execute_action(
+    driver,
+    params: np.ndarray,
+    device_w: float = _CANONICAL_W,
+    device_h: float = _CANONICAL_H,
+) -> None:
     """Clamp, unpack, and execute a 17-float action on the device.
 
     Fires three gesture slots in a single W3C Actions perform() call:
@@ -183,6 +220,11 @@ def execute_action(driver, params: np.ndarray) -> None:
     g0, g1 = action["gestures"]
     delay = action["delays"][0]
 
+    g0_points = [norm_to_device(x, y, device_w, device_h) for x, y in g0["points"]]
+    g1_points = [norm_to_device(x, y, device_w, device_h) for x, y in g1["points"]]
+    push_start = norm_to_device(_PUSH_START[0], _PUSH_START[1], device_w, device_h)
+    push_end = norm_to_device(_PUSH_END[0], _PUSH_END[1], device_w, device_h)
+
     p0 = g0["easing_power"]
     easing0 = (lambda t, p=p0: t ** p) if p0 != 1.0 else None
     p1 = g1["easing_power"]
@@ -195,7 +237,7 @@ def execute_action(driver, params: np.ndarray) -> None:
     # before True Skate sees them.
     finger2 = PointerInput("touch", "finger2")
     build_curved_drag(
-        finger2, [_PUSH_START, _PUSH_END],
+        finger2, [push_start, push_end],
         total_duration=_PUSH_DURATION, easing=push_easing
     )
     ActionChains(driver, devices=[finger2]).perform()
@@ -210,18 +252,18 @@ def execute_action(driver, params: np.ndarray) -> None:
     finger1 = PointerInput("touch", "finger1")
 
     # Slot 1 on finger0
-    build_curved_drag(finger0, g0["points"], total_duration=g0["duration"], easing=easing0)
+    build_curved_drag(finger0, g0_points, total_duration=g0["duration"], easing=easing0)
 
     # Offset finger1 start: slot1 duration + delay, minus Appium latency
     # WDA requires a pointerMove before any pause, so position finger1 first.
-    finger1.create_pointer_move(x=g1["points"][0][0], y=g1["points"][0][1], duration=0)
+    finger1.create_pointer_move(x=g1_points[0][0], y=g1_points[0][1], duration=0)
     adjusted_delay = delay - APPIUM_LATENCY_OFFSET
     pause_secs = max(0.0, g0["duration"] + adjusted_delay)
     if pause_secs > 0:
         finger1.create_pause(pause_secs)
 
     # Slot 2 on finger1
-    build_curved_drag(finger1, g1["points"], total_duration=g1["duration"], easing=easing1)
+    build_curved_drag(finger1, g1_points, total_duration=g1["duration"], easing=easing1)
 
     # Scoop + flick execute simultaneously
     ActionChains(driver, devices=[finger0, finger1]).perform()

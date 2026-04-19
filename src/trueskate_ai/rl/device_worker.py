@@ -39,6 +39,8 @@ DEVICES: list[dict] = [
         "wda_port": 8100,
         "mjpeg_port": 9100,
         "appium_port": 4723,
+        "logical_w": 414,
+        "logical_h": 896,
     },
     {
         "env_key": "IPHONE_11_UDID",
@@ -46,6 +48,8 @@ DEVICES: list[dict] = [
         "wda_port": 8101,
         "mjpeg_port": 9101,
         "appium_port": 4724,
+        "logical_w": 414,
+        "logical_h": 896,
     },
     {
         "env_key": "IPHONE_XS_UDID",
@@ -53,6 +57,8 @@ DEVICES: list[dict] = [
         "wda_port": 8102,
         "mjpeg_port": 9102,
         "appium_port": 4725,
+        "logical_w": 375,
+        "logical_h": 812,
     },
 ]
 
@@ -234,7 +240,7 @@ class DeviceWorker:
 
     def reset(self) -> None:
         """Reset the board to its starting position."""
-        reset_position(self.driver)
+        reset_position(self.driver, device_w=self._cfg["logical_w"])
 
     # -- evaluate -----------------------------------------------------------
 
@@ -258,7 +264,12 @@ class DeviceWorker:
         recorder = FrameRecorder()
         try:
             recorder.start(self.mjpeg_url)
-            execute_action(self.driver, np.array(params))
+            execute_action(
+                self.driver,
+                np.array(params),
+                device_w=self._cfg["logical_w"],
+                device_h=self._cfg["logical_h"],
+            )
             reward, trick_result, _ = get_reward(
                 self.driver, wait_time=wait_time, penalty=None
             )
