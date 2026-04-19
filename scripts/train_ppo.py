@@ -68,6 +68,12 @@ def main() -> None:
     parser.add_argument(
         "--use-cuda", action="store_true", help="Use CUDA if available for policy updates."
     )
+    parser.add_argument(
+        "--hindsight-relabel",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable hindsight relabeling for landed non-target tricks (default: enabled).",
+    )
     args = parser.parse_args()
     if (args.spin_x is None) != (args.spin_y is None):
         parser.error("Provide both --spin-x and --spin-y together, or neither.")
@@ -91,6 +97,7 @@ def main() -> None:
         spin_y=args.spin_y,
         device_count=args.device_count,
         use_cuda=args.use_cuda,
+        hindsight_relabel=args.hindsight_relabel,
     )
     run_training(config)
 

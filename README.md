@@ -67,4 +67,7 @@ python scripts/calibrate_spin_button.py --x 25 --y 362 --repeat 2
 
 # Optional global spin override during PPO runs
 python scripts/train_ppo.py --spin-x 25 --spin-y 362
+
+# Disable hindsight relabeling (enabled by default)
+python scripts/train_ppo.py --no-hindsight-relabel
 ```
