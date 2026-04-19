@@ -186,7 +186,7 @@ def get_reward(
     return base * multiplier, result, multiplier
 
 
-def _normalize_trick_name(trick_name: str) -> str:
+def normalize_trick_name(trick_name: str) -> str:
     normalized = trick_name.upper().strip()
     # Preserve current OCR workaround convention.
     normalized = normalized.replace("540", "360")
@@ -203,8 +203,8 @@ def compute_conditioned_reward(result: TrickResult | None, *, target_trick: str)
     if result is None or result.status != "landed":
         return 0.0
 
-    target = _normalize_trick_name(target_trick)
-    components = [_normalize_trick_name(c) for c in result.trick.split(" + ")]
+    target = normalize_trick_name(target_trick)
+    components = [normalize_trick_name(c) for c in result.trick.split(" + ")]
     return 1.0 if any(component == target for component in components) else 0.0
 
 

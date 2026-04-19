@@ -20,6 +20,7 @@ from trueskate_ai.rl.collectors.trick_conditioned_collector import (
 )
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
 from trueskate_ai.rl.ppo.buffer import RolloutBatch
+from trueskate_ai.rl.reward import normalize_trick_name
 
 logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
 
@@ -55,6 +56,7 @@ class PPOConfig:
     spin_y: float | None = None
     device_count: int | None = None
     use_cuda: bool = False
+    hindsight_relabel: bool = True
 
 
 def _open_run_log(log_dir: Path) -> tuple[Path, object]:
@@ -89,6 +91,7 @@ def run_training(config: PPOConfig) -> None:
 
     device = torch.device("cuda" if config.use_cuda and torch.cuda.is_available() else "cpu")
     tricks = list(TRICK_LIST)
+    trick_to_idx = {normalize_trick_name(trick): idx for idx, trick in enumerate(tricks)}
     workers_cfg = DEVICES if config.device_count is None else DEVICES[: config.device_count]
     workers = [DeviceWorker(cfg) for cfg in workers_cfg]
     if not workers:
@@ -143,16 +146,56 @@ def run_training(config: PPOConfig) -> None:
                 spin_button_xy=spin_override,
             )
 
-            rewards = torch.as_tensor(
+            sampled_rewards = torch.as_tensor(
                 [r.reward for r in rollout_results], dtype=torch.float32, device=device
             )
-            returns = rewards
-            advantages = _normalize_advantages(returns - values)
+            hindsight_trick_idxs: list[int] = []
+            hindsight_actions: list[torch.Tensor] = []
+            if config.hindsight_relabel:
+                for result in rollout_results:
+                    if result.detected_status != "landed" or result.detected_trick is None:
+                        continue
+                    detected_norm = normalize_trick_name(result.detected_trick)
+                    target_norm = normalize_trick_name(result.target_trick)
+                    if detected_norm == target_norm:
+                        continue
+                    relabeled_idx = trick_to_idx.get(detected_norm)
+                    if relabeled_idx is None:
+                        continue
+                    hindsight_trick_idxs.append(relabeled_idx)
+                    hindsight_actions.append(actions[result.sample_idx].detach())
+
+            trick_idx_batch = trick_idxs.detach()
+            action_batch = actions.detach()
+            old_log_prob_batch = old_log_probs.detach()
+            value_batch = values.detach()
+            reward_batch = sampled_rewards
+
+            hindsight_added_count = len(hindsight_trick_idxs)
+            if hindsight_added_count > 0:
+                relabeled_tricks = torch.as_tensor(
+                    hindsight_trick_idxs, dtype=torch.long, device=device
+                )
+                relabeled_actions = torch.stack(hindsight_actions).to(device)
+                with torch.no_grad():
+                    relabeled_old_logp, _, relabeled_values = policy.evaluate_actions(
+                        relabeled_tricks, relabeled_actions
+                    )
+                relabeled_rewards = torch.ones(hindsight_added_count, dtype=torch.float32, device=device)
+
+                trick_idx_batch = torch.cat([trick_idx_batch, relabeled_tricks], dim=0)
+                action_batch = torch.cat([action_batch, relabeled_actions], dim=0)
+                old_log_prob_batch = torch.cat([old_log_prob_batch, relabeled_old_logp.detach()], dim=0)
+                value_batch = torch.cat([value_batch, relabeled_values.detach()], dim=0)
+                reward_batch = torch.cat([reward_batch, relabeled_rewards], dim=0)
+
+            returns = reward_batch
+            advantages = _normalize_advantages(returns - value_batch)
 
             batch = RolloutBatch(
-                trick_idx=trick_idxs.detach(),
-                actions=actions.detach(),
-                old_log_probs=old_log_probs.detach(),
+                trick_idx=trick_idx_batch,
+                actions=action_batch,
+                old_log_probs=old_log_prob_batch,
                 returns=returns.detach(),
                 advantages=advantages.detach(),
             )
@@ -197,8 +240,8 @@ def run_training(config: PPOConfig) -> None:
                 mean_value_loss /= n_steps
                 mean_entropy /= n_steps
 
-            mean_reward = float(rewards.mean().detach().cpu())
-            max_reward = float(rewards.max().detach().cpu())
+            mean_reward = float(sampled_rewards.mean().detach().cpu())
+            max_reward = float(sampled_rewards.max().detach().cpu())
             n_samples = len(rollout_results)
             n_errors = sum(1 for r in rollout_results if r.error is not None)
             n_detected = sum(1 for r in rollout_results if r.detected_trick is not None)
@@ -208,6 +251,8 @@ def run_training(config: PPOConfig) -> None:
             landed_rate = (n_landed / n_samples) if n_samples else 0.0
             match_rate = (n_matches / n_samples) if n_samples else 0.0
             error_rate = (n_errors / n_samples) if n_samples else 0.0
+            hindsight_rate = (hindsight_added_count / n_samples) if n_samples else 0.0
+            effective_batch_size = int(batch.size)
 
             device_summary: dict[str, dict[str, int]] = {}
             for result in rollout_results:
@@ -254,6 +299,9 @@ def run_training(config: PPOConfig) -> None:
                     "detection_rate": round(detection_rate, 4),
                     "landed_rate": round(landed_rate, 4),
                     "error_rate": round(error_rate, 4),
+                    "hindsight_added_count": hindsight_added_count,
+                    "hindsight_rate": round(hindsight_rate, 4),
+                    "effective_batch_size": effective_batch_size,
                     "device_summary": device_summary,
                     "policy_loss": round(mean_policy_loss, 6),
                     "value_loss": round(mean_value_loss, 6),
@@ -267,7 +315,7 @@ def run_training(config: PPOConfig) -> None:
                 f"[update {update_idx:04d}] mean_reward={mean_reward:.3f} "
                 f"max_reward={max_reward:.3f} "
                 f"match_rate={match_rate:.2%} detect_rate={detection_rate:.2%} "
-                f"error_rate={error_rate:.2%} "
+                f"error_rate={error_rate:.2%} hindsight_added={hindsight_added_count} "
                 f"policy_loss={mean_policy_loss:.4f} value_loss={mean_value_loss:.4f}"
             )
 
