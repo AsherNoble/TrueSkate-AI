@@ -41,6 +41,7 @@ DEVICES: list[dict] = [
         "appium_port": 4723,
         "logical_w": 414,
         "logical_h": 896,
+        "spin_button_xy": (25.0, 362.0),
     },
     {
         "env_key": "IPHONE_11_UDID",
@@ -50,6 +51,7 @@ DEVICES: list[dict] = [
         "appium_port": 4724,
         "logical_w": 414,
         "logical_h": 896,
+        "spin_button_xy": (25.0, 362.0),
     },
     {
         "env_key": "IPHONE_XS_UDID",
@@ -59,6 +61,7 @@ DEVICES: list[dict] = [
         "appium_port": 4725,
         "logical_w": 375,
         "logical_h": 812,
+        "spin_button_xy": (25.0, 362.0),
     },
 ]
 
@@ -163,6 +166,19 @@ class DeviceWorker:
         self._cfg = device_cfg
         self.driver: webdriver.Remote | None = None
         self.mjpeg_url: str | None = None
+
+    @property
+    def device_w(self) -> float:
+        return float(self._cfg["logical_w"])
+
+    @property
+    def device_h(self) -> float:
+        return float(self._cfg["logical_h"])
+
+    @property
+    def spin_button_xy(self) -> tuple[float, float]:
+        value = self._cfg.get("spin_button_xy", (25.0, 362.0))
+        return float(value[0]), float(value[1])
 
     # -- connection ---------------------------------------------------------
 
