@@ -47,6 +47,13 @@ DEVICES: list[dict] = [
         "mjpeg_port": 9101,
         "appium_port": 4724,
     },
+    {
+        "env_key": "IPHONE_XS_UDID",
+        "name": "iPhone_XS",
+        "wda_port": 8102,
+        "mjpeg_port": 9102,
+        "appium_port": 4725,
+    },
 ]
 
 # ---------------------------------------------------------------------------
