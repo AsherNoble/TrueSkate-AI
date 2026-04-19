@@ -58,14 +58,21 @@ def _collect_one(
         target_trick=task.target_trick,
         wait_time=wait_time,
     )
+    detected_trick = trick_result.trick if trick_result is not None else None
+    detected_status = trick_result.status if trick_result is not None else None
+    print(
+        f"[{worker.device_id}] [eval {task.eval_num} | update {task.update_idx}] "
+        f"target={task.target_trick}  detected={detected_trick}  reward={reward:.2f}  "
+        f"status={detected_status}"
+    )
     return RolloutResult(
         sample_idx=task.sample_idx,
         eval_num=task.eval_num,
         update_idx=task.update_idx,
         reward=reward,
         target_trick=task.target_trick,
-        detected_trick=trick_result.trick if trick_result is not None else None,
-        detected_status=trick_result.status if trick_result is not None else None,
+        detected_trick=detected_trick,
+        detected_status=detected_status,
         device_id=worker.device_id,
     )
 
@@ -121,6 +128,10 @@ def collect_rollouts(
                         detected_status="error",
                         device_id=worker.device_id,
                         error=str(exc),
+                    )
+                    print(
+                        f"[{worker.device_id}] [eval {task.eval_num} | update {task.update_idx}] "
+                        f"target={task.target_trick}  detected=None  reward=0.00  status=error"
                     )
                 results[result.sample_idx] = result
 
