@@ -29,6 +29,12 @@ _EASING_MAX = 3.0
 _DELAY_MIN = -0.3
 _DELAY_MAX = 0.8
 
+_PUSH_PRE_DELAY = 0.5
+_PUSH_DURATION = 0.02
+_PUSH_EASING = 2.0
+_PUSH_START = (_CANONICAL_W * (350.0 / 414.0), _CANONICAL_H * (224.0 / 896.0))
+_PUSH_END = (_CANONICAL_W * (350.0 / 414.0), _CANONICAL_H * (672.0 / 896.0))
+
 
 def _map_from_unit(value: float, lo: float, hi: float) -> float:
     return lo + ((value + 1.0) * 0.5) * (hi - lo)
@@ -119,6 +125,26 @@ def _tap_at_time(driver, start_time: float, target_offset: float, tap_xy: tuple[
     driver.execute_script("mobile: tap", {"x": tap_xy[0], "y": tap_xy[1]})
 
 
+def _execute_static_push(driver, *, device_w: float, device_h: float) -> None:
+    """Run the CMA-ES-style static push before trick gestures."""
+    push_start = norm_to_device(_PUSH_START[0], _PUSH_START[1], device_w, device_h)
+    push_end = norm_to_device(_PUSH_END[0], _PUSH_END[1], device_w, device_h)
+    push_easing = lambda t: t**_PUSH_EASING
+
+    finger_push = PointerInput("touch", "finger_push")
+    build_curved_drag(
+        finger_push,
+        [push_start, push_end],
+        total_duration=_PUSH_DURATION,
+        easing=push_easing,
+    )
+    ActionChains(driver, devices=[finger_push]).perform()
+
+    remaining_pre_delay = _PUSH_PRE_DELAY - _PUSH_DURATION
+    if remaining_pre_delay > 0:
+        time.sleep(remaining_pre_delay)
+
+
 def execute_action_plan(
     driver,
     plan: ActionPlan,
@@ -128,6 +154,8 @@ def execute_action_plan(
     spin_button_xy: tuple[float, float] = (25.0, 362.0),
 ) -> None:
     """Execute a decoded action plan on-device."""
+    _execute_static_push(driver, device_w=device_w, device_h=device_h)
+
     starts = _slot_starts(plan)
     fingers = [PointerInput("touch", "finger0"), PointerInput("touch", "finger1")]
     finger_available = [0.0, 0.0]
