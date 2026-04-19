@@ -84,9 +84,9 @@ def drag(driver, start_x, start_y, end_x, end_y, *, duration=1.0):
     })
 
 
-def reset_position(driver):
+def reset_position(driver, device_w=414):
     """Tap the reset button to return the board to its starting position."""
-    driver.tap([(187, 50)])
+    driver.tap([(device_w / 2, 50)])
 
 
 def two_finger_tap(driver, x, y):
@@ -204,5 +204,4 @@ def build_curved_drag(finger, points, *, total_duration=0.5, easing=None):
         finger.create_pointer_move(x=x, y=y, duration=dur)
 
     finger.create_pointer_up(0)
-
 
