@@ -186,6 +186,41 @@ def get_reward(
     return base * multiplier, result, multiplier
 
 
+def _normalize_trick_name(trick_name: str) -> str:
+    normalized = trick_name.upper().strip()
+    # Preserve current OCR workaround convention.
+    normalized = normalized.replace("540", "360")
+    return normalized
+
+
+def compute_conditioned_reward(result: TrickResult | None, *, target_trick: str) -> float:
+    """Binary reward for trick-conditioned policy training.
+
+    Returns:
+        1.0 if a landed detected component matches target_trick exactly
+        after normalization, else 0.0.
+    """
+    if result is None or result.status != "landed":
+        return 0.0
+
+    target = _normalize_trick_name(target_trick)
+    components = [_normalize_trick_name(c) for c in result.trick.split(" + ")]
+    return 1.0 if any(component == target for component in components) else 0.0
+
+
+def get_conditioned_reward(
+    driver,
+    *,
+    target_trick: str,
+    wait_time: float = 0.0,
+) -> tuple[float, TrickResult | None]:
+    """Capture trick text and return conditioned binary reward."""
+    time.sleep(wait_time)
+    result = capture_and_detect(driver)
+    reward = compute_conditioned_reward(result, target_trick=target_trick)
+    return reward, result
+
+
 # ---------------------------------------------------------------------------
 # Sanity-check entrypoint
 # ---------------------------------------------------------------------------
