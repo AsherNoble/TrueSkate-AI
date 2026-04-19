@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -19,6 +20,8 @@ from trueskate_ai.rl.collectors.trick_conditioned_collector import (
 )
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
 from trueskate_ai.rl.ppo.buffer import RolloutBatch
+
+logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
 
 TRICK_LIST: tuple[str, ...] = (
     "OLLIE", "NOLLIE", "KICKFLIP", "DOUBLE KICKFLIP", "TRIPLE KICKFLIP",
