@@ -81,3 +81,41 @@ FRONTSIDE 360 FLIP, BACKSIDE 360 HEEL, FRONTSIDE 360 HEEL
 - Outcome:
   - runtime stability is now good (no WDA action failures during pilot)
   - signal quality is still the bottleneck (few detections, zero target matches)
+
+### PPO Action Squashing Migration (2026-04-21)
+- Switched policy action bounding from **hard clipping** to **tanh squashing** in `src/trueskate_ai/nn/policy.py`.
+- Rationale:
+  - clipping creates discontinuities at the boundary and mismatched log-prob behavior
+  - tanh keeps actions naturally in `[-1, 1]` with smoother gradients
+- Implemented corrected squashed log-prob (change-of-variables):
+  - sample pre-squash `u ~ Normal(mu, sigma)`
+  - action `a = tanh(u)`
+  - log-prob uses Jacobian correction term `-log(1 - a^2 + eps)`
+- For PPO evaluation on fixed actions:
+  - recover pre-squash with stable `atanh(clamp(a, -1+eps, 1-eps))`
+  - compute corrected log-prob consistently with rollout sampling path
+- Note:
+  - entropy bonus still uses base Gaussian entropy (approximation), while PPO ratio uses corrected log-probs.
+
+### Hindsight Relabel Combo Fix (2026-04-21)
+- Fixed HER relabeling for combo OCR strings (e.g. `"KICKFLIP + 50-50 GRIND"`).
+- Relabel now splits components on `" + "`, normalizes each component, and relabels recognized non-target trick components instead of skipping whole combo strings.
+
+### Resume-Run Feature (2026-04-21)
+- Added explicit checkpoint resume support for PPO runs (`--resume-from <checkpoint.pt>`).
+- Resume now restores:
+  - policy weights
+  - optimizer state (if present)
+  - trainer counters (`update_idx`, `eval_num`)
+- New resumed runs keep a fresh run folder but log lineage explicitly via a `resume_start` JSONL event containing:
+  - source checkpoint path
+  - source run id (if available in checkpoint metadata)
+  - whether optimizer was restored
+  - resume start update/eval counters
+- Checkpoint payload upgraded to include:
+  - `policy_state_dict`
+  - `optimizer_state_dict`
+  - `trainer_state`
+  - `config`
+  - `run_metadata`
+- Backward compatibility retained for older policy-only checkpoint formats.
