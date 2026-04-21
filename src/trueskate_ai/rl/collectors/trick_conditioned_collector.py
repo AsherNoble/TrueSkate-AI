@@ -13,6 +13,35 @@ from trueskate_ai.rl.device_worker import DeviceWorker
 from trueskate_ai.rl.reward import get_conditioned_reward
 from trueskate_ai.rl.trick_conditioned_action import execute_action_vector
 
+_TARGET_COL_WIDTH = 28
+_DETECTED_COL_WIDTH = 32
+
+
+def _fmt_col(value: str | None, width: int) -> str:
+    text = "None" if value is None else value
+    if len(text) > width:
+        return f"{text[: max(0, width - 3)]}..."
+    return text.ljust(width)
+
+
+def _format_eval_line(
+    *,
+    device_id: str,
+    eval_num: int,
+    update_idx: int,
+    target_trick: str,
+    detected_trick: str | None,
+    reward: float,
+    status: str | None,
+) -> str:
+    target_col = _fmt_col(target_trick, _TARGET_COL_WIDTH)
+    detected_col = _fmt_col(detected_trick, _DETECTED_COL_WIDTH)
+    status_col = _fmt_col(status, 8)
+    return (
+        f"[{device_id}] [eval {eval_num:5d} | update {update_idx:4d}] "
+        f"target={target_col}  detected={detected_col}  reward={reward:5.2f}  status={status_col}"
+    )
+
 
 @dataclass(frozen=True)
 class RolloutTask:
@@ -61,9 +90,15 @@ def _collect_one(
     detected_trick = trick_result.trick if trick_result is not None else None
     detected_status = trick_result.status if trick_result is not None else None
     print(
-        f"[{worker.device_id}] [eval {task.eval_num} | update {task.update_idx}] "
-        f"target={task.target_trick}  detected={detected_trick}  reward={reward:.2f}  "
-        f"status={detected_status}"
+        _format_eval_line(
+            device_id=worker.device_id,
+            eval_num=task.eval_num,
+            update_idx=task.update_idx,
+            target_trick=task.target_trick,
+            detected_trick=detected_trick,
+            reward=reward,
+            status=detected_status,
+        )
     )
     return RolloutResult(
         sample_idx=task.sample_idx,
@@ -130,8 +165,15 @@ def collect_rollouts(
                         error=str(exc),
                     )
                     print(
-                        f"[{worker.device_id}] [eval {task.eval_num} | update {task.update_idx}] "
-                        f"target={task.target_trick}  detected=None  reward=0.00  status=error"
+                        _format_eval_line(
+                            device_id=worker.device_id,
+                            eval_num=task.eval_num,
+                            update_idx=task.update_idx,
+                            target_trick=task.target_trick,
+                            detected_trick=None,
+                            reward=0.0,
+                            status="error",
+                        )
                     )
                 results[result.sample_idx] = result
 
