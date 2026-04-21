@@ -6,7 +6,9 @@ Training an AI agent to perform skateboarding tricks in [True Skate](https://app
 
 The project started as behavioral cloning (supervised learning from gameplay recordings) but pivoted to **reinforcement learning** — the agent generates its own touch gestures via Appium on a physical iPhone, so there's no labeling bottleneck.
 
-The current method uses **CMA-ES** (Covariance Matrix Adaptation Evolution Strategy) to optimize a 17-dimensional continuous parameter vector that encodes two curved multi-touch gestures. The agent attempts tricks, reads the result via OCR, and receives a shaped reward.
+The current baseline method uses **CMA-ES** (Covariance Matrix Adaptation Evolution Strategy) to optimize a 17-dimensional continuous parameter vector that encodes two curved multi-touch gestures. The agent attempts tricks, reads the result via OCR, and receives a shaped reward.
+
+An experimental path now also exists for **trick-conditioned PPO** with a neural policy that outputs a 42-parameter action plan (4 gated gesture slots, inter-slot delays, and spin timing controls).
 
 ## Results So Far
 
@@ -26,12 +28,13 @@ True Skate runs at **1× real-time** — no way to speed up the simulator. A GPU
 
 ## Project Structure
 src/trueskate_ai/
-├── rl/             # Action parameterization, CMA-ES optimizer, reward function
+├── nn/             # Trick-conditioned neural policy
+├── rl/             # Action parameterization, reward, collectors, PPO and CMA-ES
 ├── sim/            # Device control (touch_actions, trick_info_reader, known_tricks)
 ├── labeling/       # Legacy CV pipeline (pre-RL pivot)
 ├── vision/         # Legacy PyTorch datasets
 └── utils/          # Trajectory splines, data loading
-scripts/            # Entry points (train_cmaes, launch_services, build_trick_library, etc.)
+scripts/            # Entry points (train_cmaes, train_ppo, launch_services, build_trick_library, etc.)
 experiments/        # Experiment journals and standalone experiments
 
 ## Requirements
@@ -49,3 +52,25 @@ pip install opencv-python numpy torch torchvision scipy pillow appium-python-cli
 ```
 
 Copy `.env.example` to `.env` and set your device UDID.
+
+## Training Entrypoints
+
+```bash
+# CMA-ES baseline
+python scripts/train_cmaes.py
+
+# Trick-conditioned PPO experiment
+python scripts/train_ppo.py --updates 100 --steps-per-update 24
+
+# Spin button coordinate calibration helper
+python scripts/calibrate_spin_button.py --x 25 --y 362 --repeat 2
+
+# Optional global spin override during PPO runs
+python scripts/train_ppo.py --spin-x 25 --spin-y 362
+
+# Disable hindsight relabeling (enabled by default)
+python scripts/train_ppo.py --no-hindsight-relabel
+
+# Resume a new run from a prior checkpoint
+python scripts/train_ppo.py --resume-from /absolute/path/to/policy_update_0010.pt
+```
