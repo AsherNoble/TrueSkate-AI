@@ -70,4 +70,7 @@ python scripts/train_ppo.py --spin-x 25 --spin-y 362
 
 # Disable hindsight relabeling (enabled by default)
 python scripts/train_ppo.py --no-hindsight-relabel
+
+# Resume a new run from a prior checkpoint
+python scripts/train_ppo.py --resume-from /absolute/path/to/policy_update_0010.pt
 ```

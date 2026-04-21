@@ -74,6 +74,12 @@ def main() -> None:
         default=True,
         help="Enable hindsight relabeling for landed non-target tricks (default: enabled).",
     )
+    parser.add_argument(
+        "--resume-from",
+        type=Path,
+        default=None,
+        help="Optional checkpoint path to resume training from.",
+    )
     args = parser.parse_args()
     if (args.spin_x is None) != (args.spin_y is None):
         parser.error("Provide both --spin-x and --spin-y together, or neither.")
@@ -98,6 +104,7 @@ def main() -> None:
         device_count=args.device_count,
         use_cuda=args.use_cuda,
         hindsight_relabel=args.hindsight_relabel,
+        resume_from=args.resume_from,
     )
     run_training(config)
 

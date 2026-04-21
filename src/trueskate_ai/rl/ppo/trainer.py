@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from typing import Any
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -57,14 +58,15 @@ class PPOConfig:
     device_count: int | None = None
     use_cuda: bool = False
     hindsight_relabel: bool = True
+    resume_from: Path | None = None
 
 
-def _open_run_log(log_dir: Path) -> tuple[Path, object]:
+def _open_run_log(log_dir: Path) -> tuple[str, Path, object]:
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_dir = log_dir / "runs" / f"ppo_run_{run_id}"
     run_dir.mkdir(parents=True, exist_ok=True)
     log_fh = (run_dir / f"ppo_run_{run_id}.jsonl").open("w", buffering=1)
-    return run_dir, log_fh
+    return run_id, run_dir, log_fh
 
 
 def _normalize_advantages(advantages: torch.Tensor) -> torch.Tensor:
@@ -81,7 +83,70 @@ def _write_jsonl(fh, record: dict) -> None:
 def _config_to_json_dict(config: PPOConfig) -> dict:
     data = asdict(config)
     data["log_dir"] = str(data["log_dir"])
+    data["resume_from"] = str(data["resume_from"]) if data["resume_from"] is not None else None
     return data
+
+
+def _save_checkpoint(
+    *,
+    path: Path,
+    policy: TrickConditionedPolicy,
+    optimizer: Adam,
+    config: PPOConfig,
+    next_update_idx: int,
+    eval_num: int,
+    run_metadata: dict[str, Any],
+) -> None:
+    torch.save(
+        {
+            "policy_state_dict": policy.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "trainer_state": {
+                "next_update_idx": next_update_idx,
+                "eval_num": eval_num,
+            },
+            "config": _config_to_json_dict(config),
+            "run_metadata": run_metadata,
+        },
+        path,
+    )
+
+
+def _load_resume_checkpoint(
+    *,
+    checkpoint_path: Path,
+    policy: TrickConditionedPolicy,
+    optimizer: Adam,
+    device: torch.device,
+) -> dict[str, Any]:
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+
+    if isinstance(checkpoint, dict) and "policy_state_dict" in checkpoint:
+        policy.load_state_dict(checkpoint["policy_state_dict"])
+    elif isinstance(checkpoint, dict):
+        # Backward compatibility for raw state_dict-style checkpoint.
+        policy.load_state_dict(checkpoint)
+    else:
+        raise ValueError(f"Unsupported checkpoint format: {checkpoint_path}")
+
+    optimizer_restored = False
+    if isinstance(checkpoint, dict) and "optimizer_state_dict" in checkpoint:
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        optimizer_restored = True
+
+    trainer_state = checkpoint.get("trainer_state", {}) if isinstance(checkpoint, dict) else {}
+    next_update_idx = int(trainer_state.get("next_update_idx", 0))
+    eval_num = int(trainer_state.get("eval_num", 0))
+    source_run_metadata = checkpoint.get("run_metadata", {}) if isinstance(checkpoint, dict) else {}
+
+    return {
+        "resume_checkpoint": str(checkpoint_path.resolve()),
+        "resume_source_run": source_run_metadata.get("run_id"),
+        "optimizer_restored": optimizer_restored,
+        "next_update_idx": next_update_idx,
+        "eval_num": eval_num,
+        "checkpoint_config": checkpoint.get("config") if isinstance(checkpoint, dict) else None,
+    }
 
 
 def _extract_relabel_components(
@@ -122,11 +187,50 @@ def run_training(config: PPOConfig) -> None:
     for worker in workers:
         worker.connect()
 
-    run_dir, log_fh = _open_run_log(config.log_dir)
+    run_id, run_dir, log_fh = _open_run_log(config.log_dir)
     policy = TrickConditionedPolicy(num_tricks=len(tricks)).to(device)
     optimizer = Adam(policy.parameters(), lr=config.learning_rate)
     generator = torch.Generator(device="cpu")
     generator.manual_seed(config.seed)
+
+    run_metadata: dict[str, Any] = {
+        "run_id": run_id,
+        "run_dir": str(run_dir),
+        "started_at": datetime.now().isoformat(timespec="milliseconds"),
+        "resumed": False,
+    }
+
+    start_update_idx = 0
+    eval_num = 0
+    if config.resume_from is not None:
+        resume_info = _load_resume_checkpoint(
+            checkpoint_path=config.resume_from,
+            policy=policy,
+            optimizer=optimizer,
+            device=device,
+        )
+        start_update_idx = int(resume_info["next_update_idx"])
+        eval_num = int(resume_info["eval_num"])
+        run_metadata["resumed"] = True
+        run_metadata["resumed_from"] = resume_info["resume_checkpoint"]
+        run_metadata["resume_source_run"] = resume_info["resume_source_run"]
+        run_metadata["optimizer_restored"] = resume_info["optimizer_restored"]
+
+        _write_jsonl(
+            log_fh,
+            {
+                "type": "resume_start",
+                "run_id": run_id,
+                "resumed": True,
+                "resume_checkpoint": resume_info["resume_checkpoint"],
+                "resume_source_run": resume_info["resume_source_run"],
+                "optimizer_restored": resume_info["optimizer_restored"],
+                "resume_start_update": start_update_idx,
+                "resume_start_eval": eval_num,
+                "loaded_config_summary": resume_info["checkpoint_config"],
+                "timestamp": datetime.now().isoformat(timespec="milliseconds"),
+            },
+        )
 
     spin_override = (
         (config.spin_x, config.spin_y)
@@ -134,9 +238,9 @@ def run_training(config: PPOConfig) -> None:
         else None
     )
 
-    eval_num = 0
     try:
-        for update_idx in range(config.updates):
+        end_update_idx = start_update_idx + config.updates
+        for update_idx in range(start_update_idx, end_update_idx):
             trick_idxs_np = rng.integers(0, len(tricks), size=config.steps_per_update, endpoint=False)
             trick_idxs = torch.as_tensor(trick_idxs_np, dtype=torch.long, device=device)
 
@@ -346,14 +450,27 @@ def run_training(config: PPOConfig) -> None:
 
             if (update_idx + 1) % config.checkpoint_every == 0:
                 ckpt_path = run_dir / f"policy_update_{update_idx + 1:04d}.pt"
-                torch.save(
-                    {"policy_state_dict": policy.state_dict(), "config": _config_to_json_dict(config)},
-                    ckpt_path,
+                _save_checkpoint(
+                    path=ckpt_path,
+                    policy=policy,
+                    optimizer=optimizer,
+                    config=config,
+                    next_update_idx=update_idx + 1,
+                    eval_num=eval_num,
+                    run_metadata=run_metadata,
                 )
                 print(f"Saved checkpoint: {ckpt_path}")
 
         final_ckpt = run_dir / "policy_final.pt"
-        torch.save({"policy_state_dict": policy.state_dict(), "config": _config_to_json_dict(config)}, final_ckpt)
+        _save_checkpoint(
+            path=final_ckpt,
+            policy=policy,
+            optimizer=optimizer,
+            config=config,
+            next_update_idx=end_update_idx,
+            eval_num=eval_num,
+            run_metadata=run_metadata,
+        )
         print(f"Saved final checkpoint: {final_ckpt}")
 
     finally:
