@@ -71,10 +71,13 @@ def _collect_one(
     *,
     wait_time: float,
     settle_time: float,
+    capture_count: int,
+    capture_interval: float,
     spin_button_xy: tuple[float, float] | None,
 ) -> RolloutResult:
     worker.ensure_foreground()
     time.sleep(settle_time)
+    action_start_time = time.monotonic()
     execute_action_vector(
         worker.driver,
         task.action,
@@ -86,6 +89,9 @@ def _collect_one(
         worker.driver,
         target_trick=task.target_trick,
         wait_time=wait_time,
+        capture_count=capture_count,
+        capture_interval=capture_interval,
+        action_start_time=action_start_time,
     )
     detected_trick = trick_result.trick if trick_result is not None else None
     detected_status = trick_result.status if trick_result is not None else None
@@ -118,6 +124,8 @@ def collect_rollouts(
     tasks: list[RolloutTask],
     wait_time: float,
     settle_time: float,
+    capture_count: int,
+    capture_interval: float,
     spin_button_xy: tuple[float, float] | None = None,
 ) -> list[RolloutResult]:
     """Collect rollout tasks in parallel across available workers."""
@@ -136,6 +144,8 @@ def collect_rollouts(
                     task,
                     wait_time=wait_time,
                     settle_time=settle_time,
+                    capture_count=capture_count,
+                    capture_interval=capture_interval,
                     spin_button_xy=spin_button_xy,
                 )
                 futures[f] = (worker, task)

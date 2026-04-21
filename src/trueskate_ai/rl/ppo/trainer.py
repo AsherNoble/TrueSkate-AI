@@ -22,6 +22,7 @@ from trueskate_ai.rl.collectors.trick_conditioned_collector import (
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
 from trueskate_ai.rl.ppo.buffer import RolloutBatch
 from trueskate_ai.rl.reward import normalize_trick_name
+from trueskate_ai.sim.trick_info_reader import ensure_ocr_backend_ready
 
 logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
 
@@ -50,6 +51,8 @@ class PPOConfig:
     max_grad_norm: float = 0.5
     seed: int = 42
     wait_time: float = 0.0
+    capture_count: int = 14
+    capture_interval: float = 0.15
     settle_time: float = 0.5
     checkpoint_every: int = 10
     log_dir: Path = Path("logs")
@@ -172,6 +175,8 @@ def _extract_relabel_components(
 
 
 def run_training(config: PPOConfig) -> None:
+    ensure_ocr_backend_ready()
+
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
     rng = np.random.default_rng(config.seed)
@@ -269,6 +274,8 @@ def run_training(config: PPOConfig) -> None:
                 tasks=tasks,
                 wait_time=config.wait_time,
                 settle_time=config.settle_time,
+                capture_count=config.capture_count,
+                capture_interval=config.capture_interval,
                 spin_button_xy=spin_override,
             )
 
