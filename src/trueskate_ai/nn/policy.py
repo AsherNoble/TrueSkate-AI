@@ -43,6 +43,7 @@ class TrickConditionedPolicy(nn.Module):
         self.actor_mean = nn.Linear(hidden_dim, action_dim)
         self.critic = nn.Linear(hidden_dim, 1)
         self.log_std = nn.Parameter(torch.zeros(action_dim))
+        self._squash_eps = 1e-6
 
     @property
     def action_dim(self) -> int:
@@ -60,18 +61,20 @@ class TrickConditionedPolicy(nn.Module):
         return means, std, value
 
     def act(self, trick_idx: torch.Tensor) -> PolicySample:
-        """Sample an action, then clamp into [-1, 1] for downstream decoding."""
+        """Sample a tanh-squashed action and corrected log-prob."""
         means, std, value = self.forward(trick_idx)
         dist = Normal(means, std)
-        raw_action = dist.rsample()
-        action = torch.clamp(raw_action, -1.0, 1.0)
-        log_prob = dist.log_prob(raw_action).sum(dim=-1)
+        pre_tanh_action = dist.rsample()
+        action = torch.tanh(pre_tanh_action)
+        log_prob = self._squashed_log_prob(
+            dist=dist, pre_tanh_action=pre_tanh_action, squashed_action=action
+        )
         return PolicySample(action=action, log_prob=log_prob, value=value)
 
     def act_deterministic(self, trick_idx: torch.Tensor) -> PolicySample:
         """Use the policy mean as the action (for eval/replay)."""
         means, _, value = self.forward(trick_idx)
-        action = torch.clamp(means, -1.0, 1.0)
+        action = torch.tanh(means)
         log_prob = torch.zeros_like(value)
         return PolicySample(action=action, log_prob=log_prob, value=value)
 
@@ -81,9 +84,32 @@ class TrickConditionedPolicy(nn.Module):
         """Compute PPO terms for fixed actions."""
         means, std, value = self.forward(trick_idx)
         dist = Normal(means, std)
-        # Clamp for numeric consistency with sampled actions.
-        clamped_actions = torch.clamp(actions, -1.0, 1.0)
-        log_prob = dist.log_prob(clamped_actions).sum(dim=-1)
+        squashed_action = torch.clamp(
+            actions, -1.0 + self._squash_eps, 1.0 - self._squash_eps
+        )
+        pre_tanh_action = self._atanh(squashed_action)
+        log_prob = self._squashed_log_prob(
+            dist=dist,
+            pre_tanh_action=pre_tanh_action,
+            squashed_action=squashed_action,
+        )
+        # Approximate entropy with the base Gaussian entropy.
         entropy = dist.entropy().sum(dim=-1)
         return log_prob, entropy, value
 
+    def _squashed_log_prob(
+        self,
+        *,
+        dist: Normal,
+        pre_tanh_action: torch.Tensor,
+        squashed_action: torch.Tensor,
+    ) -> torch.Tensor:
+        """Log-prob with tanh change-of-variables correction."""
+        base_log_prob = dist.log_prob(pre_tanh_action)
+        correction = torch.log(1.0 - squashed_action.pow(2) + self._squash_eps)
+        return (base_log_prob - correction).sum(dim=-1)
+
+    @staticmethod
+    def _atanh(x: torch.Tensor) -> torch.Tensor:
+        """Numerically stable inverse tanh for actions in (-1, 1)."""
+        return 0.5 * (torch.log1p(x) - torch.log1p(-x))
