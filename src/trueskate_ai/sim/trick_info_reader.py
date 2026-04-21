@@ -1,18 +1,56 @@
 import difflib
 import logging
+import os
 import re
+from functools import lru_cache
 from typing import Literal, NamedTuple
 
 import cv2
 import numpy as np
-import pytesseract
 
 from .known_tricks import KNOWN_TRICKS
+from .vision_ocr import image_to_lines as vision_image_to_lines
+from .vision_ocr import is_vision_available, vision_unavailable_reason
 
 
 class TrickResult(NamedTuple):
     trick: str
     status: Literal["landed", "failed", "unknown"]
+
+
+_LOGGED_OCR_BACKEND = False
+
+
+@lru_cache(maxsize=1)
+def _resolve_ocr_backend() -> Literal["vision"]:
+    requested = os.getenv("TRUESKATE_OCR_BACKEND", "auto").strip().lower()
+    if requested not in {"auto", "vision"}:
+        raise ValueError(
+            "TRUESKATE_OCR_BACKEND must be one of: auto, vision"
+        )
+
+    if is_vision_available():
+        return "vision"
+
+    raise RuntimeError(
+        "Apple Vision OCR is unavailable. "
+        "Install pyobjc-core, pyobjc-framework-Cocoa, pyobjc-framework-Quartz, "
+        f"and pyobjc-framework-Vision. Cause: {vision_unavailable_reason()}"
+    )
+
+
+def _extract_lines_with_ocr(crop: np.ndarray) -> list[str]:
+    global _LOGGED_OCR_BACKEND
+    backend = _resolve_ocr_backend()
+    if not _LOGGED_OCR_BACKEND:
+        logging.info("trick_info_reader: OCR backend=%s", backend)
+        _LOGGED_OCR_BACKEND = True
+    return vision_image_to_lines(crop)
+
+
+def ensure_ocr_backend_ready() -> None:
+    """Fail fast if OCR backend is misconfigured or unavailable."""
+    _resolve_ocr_backend()
 
 
 def _match_component(ocr_line: str) -> str | None:
@@ -65,8 +103,8 @@ def _find_anchor(search: np.ndarray) -> tuple[np.ndarray, Literal["landed", "fai
     g = search[:, :, 1].astype(np.int32)
     b = search[:, :, 0].astype(np.int32)
 
-    green_mask = (g > 180) & (r < 120) & (b < 120)
-    if green_mask.sum() >= 20:
+    green_mask = (g > 150) & ((g - r) > 40) & ((g - b) > 40)
+    if green_mask.sum() >= 15:
         logging.debug("anchor search: green=%d, red=— (skipped)", green_mask.sum())
         return green_mask, "landed"
 
@@ -77,18 +115,18 @@ def _find_anchor(search: np.ndarray) -> tuple[np.ndarray, Literal["landed", "fai
     center_col = np.zeros_like(r, dtype=bool)
     center_col[:, w // 3 : 2 * w // 3] = True
 
-    red_mask = (r > 180) & (g < 80) & (b < 80)
+    red_mask = (r > 150) & ((r - g) > 60) & ((r - b) > 60)
     red_filtered = red_mask & center_col
 
     logging.debug("anchor search: green=%d, red=%d (filtered)", green_mask.sum(), red_filtered.sum())
 
-    if red_filtered.sum() >= 50:
+    if red_filtered.sum() >= 35:
         return red_filtered, "failed"
 
-    white_mask = (r > 200) & (g > 200) & (b > 200)
+    white_mask = (r > 180) & (g > 180) & (b > 180)
     white_filtered = white_mask & center_col
 
-    if white_filtered.sum() >= 50:
+    if white_filtered.sum() >= 35:
         return white_filtered, "unknown"
 
     return None
@@ -120,27 +158,27 @@ def _ocr_above_anchor(
     anchor_x_max = int(xs.max())
 
     h, w = frame.shape[:2]
-    y0 = max(0, anchor_y_min - 100)
+    y0 = max(0, anchor_y_min - 160)
     y1 = anchor_y_min
-    x0 = max(0, anchor_x_min - 150)
-    x1 = min(w, anchor_x_max + 150)
+    x0 = max(0, anchor_x_min - 220)
+    x1 = min(w, anchor_x_max + 220)
 
     band = frame[y0:y1, x0:x1]
     upscaled = cv2.resize(band, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
     gray = cv2.cvtColor(upscaled, cv2.COLOR_BGR2GRAY)
-    _, crop = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY_INV)
-
-    cv2.imwrite("/tmp/debug_crop.png", crop)
-
-    config = "--psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :-"
-    raw = pytesseract.image_to_string(crop, config=config)
+    _, binary_inv = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY_INV)
 
     _BANNER_WORDS = {"TRUE", "SKATE", "SUPER", "CROWN", "STREET", "LEAGUE", "SLS", "CALIFORNIA", "SKATEPARKS", "SANTA", "CRUZ", "GLASSHOUSE"}
 
     candidates = []
-    for line in raw.splitlines():
+    lines = _extract_lines_with_ocr(upscaled) + _extract_lines_with_ocr(binary_inv)
+    seen_lines: set[str] = set()
+    for line in lines:
+        if line in seen_lines:
+            continue
+        seen_lines.add(line)
         cleaned = re.sub(r"[^A-Z0-9 :-]", "", line.upper()).strip()
-        # Tesseract merges letter-digit and digit-letter boundaries — split them.
+        # OCR can merge letter-digit and digit-letter boundaries — split them.
         cleaned = re.sub(r'([A-Z])(\d)', r'\1 \2', cleaned)
         cleaned = re.sub(r'(\d)([A-Z])', r'\1 \2', cleaned)
         # Normalize OCR rotation number misreads:
@@ -199,8 +237,8 @@ def detect_trick(frame: np.ndarray) -> TrickResult | None:
     Returns e.g. TrickResult(trick="KICKFLIP + CROOKED GRIND", status="landed")
     or None if no notification is visible.
     """
-    _ANCHOR_Y_OFFSET = 250
-    search = frame[_ANCHOR_Y_OFFSET:600, :]
+    _ANCHOR_Y_OFFSET = 180
+    search = frame[_ANCHOR_Y_OFFSET:680, :]
 
     result = _find_anchor(search)
     if result is None:
