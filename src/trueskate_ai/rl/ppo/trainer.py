@@ -84,6 +84,28 @@ def _config_to_json_dict(config: PPOConfig) -> dict:
     return data
 
 
+def _extract_relabel_components(
+    detected_trick: str, *, target_norm: str, trick_to_idx: dict[str, int]
+) -> list[int]:
+    """Return relabel trick indices for recognized landed components.
+
+    OCR can return combo strings like "KICKFLIP + 50-50 GRIND". We split by
+    " + ", normalize each component, and keep only known trick targets that are
+    different from the originally sampled target trick.
+    """
+    relabel_idxs: list[int] = []
+    seen: set[str] = set()
+    for component in detected_trick.split(" + "):
+        normalized = normalize_trick_name(component)
+        if normalized == target_norm or normalized in seen:
+            continue
+        seen.add(normalized)
+        relabeled_idx = trick_to_idx.get(normalized)
+        if relabeled_idx is not None:
+            relabel_idxs.append(relabeled_idx)
+    return relabel_idxs
+
+
 def run_training(config: PPOConfig) -> None:
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
@@ -155,15 +177,18 @@ def run_training(config: PPOConfig) -> None:
                 for result in rollout_results:
                     if result.detected_status != "landed" or result.detected_trick is None:
                         continue
-                    detected_norm = normalize_trick_name(result.detected_trick)
                     target_norm = normalize_trick_name(result.target_trick)
-                    if detected_norm == target_norm:
+                    relabeled_components = _extract_relabel_components(
+                        result.detected_trick,
+                        target_norm=target_norm,
+                        trick_to_idx=trick_to_idx,
+                    )
+                    if not relabeled_components:
                         continue
-                    relabeled_idx = trick_to_idx.get(detected_norm)
-                    if relabeled_idx is None:
-                        continue
-                    hindsight_trick_idxs.append(relabeled_idx)
-                    hindsight_actions.append(actions[result.sample_idx].detach())
+                    source_action = actions[result.sample_idx].detach()
+                    for relabeled_idx in relabeled_components:
+                        hindsight_trick_idxs.append(relabeled_idx)
+                        hindsight_actions.append(source_action)
 
             trick_idx_batch = trick_idxs.detach()
             action_batch = actions.detach()
