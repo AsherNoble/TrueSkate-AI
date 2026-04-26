@@ -61,11 +61,18 @@ class RepetitionPenalty:
         return self._counts.get(trick_name, 0)
 
 
-def capture_and_detect(driver) -> TrickResult | None:
-    """Capture 5 screenshots spaced 0.25s apart and run trick OCR on each.
+def capture_and_detect(
+    driver,
+    *,
+    capture_count: int = 14,
+    capture_interval: float = 0.15,
+    action_start_time: float | None = None,
+) -> TrickResult | None:
+    """Capture multiple screenshots and run trick OCR on each.
 
-    Takes screenshots at t=0, t=0.25, t=0.5, t=0.75, t=1.0 seconds. Returns
-    the first non-None TrickResult found, or None if all 5 fail to detect a trick.
+    Default cadence captures 14 screenshots at 0.15s spacing and returns the
+    first non-None TrickResult. When action_start_time is provided, screenshot
+    timestamps are aligned to that action start.
 
     Args:
         driver: Appium WebDriver instance.
@@ -73,9 +80,19 @@ def capture_and_detect(driver) -> TrickResult | None:
     Returns:
         TrickResult(trick=..., status="landed"|"failed") or None.
     """
-    for capture_idx in range(5):
-        if capture_idx > 0:
-            time.sleep(0.25)
+    if capture_count <= 0:
+        raise ValueError(f"capture_count must be positive, got {capture_count}")
+    if capture_interval < 0.0:
+        raise ValueError(f"capture_interval must be >= 0.0, got {capture_interval}")
+
+    for capture_idx in range(capture_count):
+        if action_start_time is not None:
+            target_time = action_start_time + (capture_idx * capture_interval)
+            sleep_for = target_time - time.monotonic()
+            if sleep_for > 0:
+                time.sleep(sleep_for)
+        elif capture_idx > 0:
+            time.sleep(capture_interval)
 
         png_bytes = driver.get_screenshot_as_png()
         arr = np.frombuffer(png_bytes, dtype=np.uint8)
@@ -157,17 +174,25 @@ def get_reward(
     driver,
     wait_time: float = 0.0,
     penalty: RepetitionPenalty | None = None,
+    *,
+    capture_count: int = 14,
+    capture_interval: float = 0.15,
+    action_start_time: float | None = None,
 ) -> tuple[float, TrickResult | None, float]:
     """Wait for the trick notification, capture, score, and return the reward.
 
     This is the main entry point called by the CMA-ES optimization loop.
-    Captures 5 screenshots spaced 0.25s apart (total ~1.0s after initial wait).
+    Captures multiple screenshots after initial wait and returns the first detected trick.
 
     Args:
         driver: Appium WebDriver instance.
         wait_time: Seconds to wait after gestures finish before first screenshot.
         penalty: Optional RepetitionPenalty. When provided, landed tricks receive
             a diminishing multiplier and their count is incremented.
+        capture_count: Number of screenshots to capture per eval.
+        capture_interval: Seconds between consecutive screenshots.
+        action_start_time: Monotonic timestamp recorded when action execution
+            begins. When provided, screenshots are aligned to this start.
 
     Returns:
         Tuple of (reward, result, multiplier):
@@ -176,7 +201,12 @@ def get_reward(
             multiplier — factor applied to base reward (1.0 if no penalty or failed).
     """
     time.sleep(wait_time)
-    result = capture_and_detect(driver)
+    result = capture_and_detect(
+        driver,
+        capture_count=capture_count,
+        capture_interval=capture_interval,
+        action_start_time=action_start_time,
+    )
     base = compute_reward(result)
 
     multiplier = 1.0
@@ -213,10 +243,18 @@ def get_conditioned_reward(
     *,
     target_trick: str,
     wait_time: float = 0.0,
+    capture_count: int = 14,
+    capture_interval: float = 0.15,
+    action_start_time: float | None = None,
 ) -> tuple[float, TrickResult | None]:
     """Capture trick text and return conditioned binary reward."""
     time.sleep(wait_time)
-    result = capture_and_detect(driver)
+    result = capture_and_detect(
+        driver,
+        capture_count=capture_count,
+        capture_interval=capture_interval,
+        action_start_time=action_start_time,
+    )
     reward = compute_conditioned_reward(result, target_trick=target_trick)
     return reward, result
 

@@ -43,16 +43,16 @@ DEVICES: list[dict] = [
         "logical_h": 896,
         "spin_button_xy": (25.0, 362.0),
     },
-    {
-        "env_key": "IPHONE_11_UDID",
-        "name": "iPhone_11",
-        "wda_port": 8101,
-        "mjpeg_port": 9101,
-        "appium_port": 4724,
-        "logical_w": 414,
-        "logical_h": 896,
-        "spin_button_xy": (25.0, 362.0),
-    },
+    # {
+    #     "env_key": "IPHONE_11_UDID",
+    #     "name": "iPhone_11",
+    #     "wda_port": 8101,
+    #     "mjpeg_port": 9101,
+    #     "appium_port": 4724,
+    #     "logical_w": 414,
+    #     "logical_h": 896,
+    #     "spin_button_xy": (25.0, 362.0),
+    # },
     {
         "env_key": "IPHONE_XS_UDID",
         "name": "iPhone_XS",
@@ -280,6 +280,7 @@ class DeviceWorker:
         recorder = FrameRecorder()
         try:
             recorder.start(self.mjpeg_url)
+            action_start_time = time.monotonic()
             execute_action(
                 self.driver,
                 np.array(params),
@@ -287,7 +288,10 @@ class DeviceWorker:
                 device_h=self._cfg["logical_h"],
             )
             reward, trick_result, _ = get_reward(
-                self.driver, wait_time=wait_time, penalty=None
+                self.driver,
+                wait_time=wait_time,
+                penalty=None,
+                action_start_time=action_start_time,
             )
         except Exception as exc:
             recorder.stop()

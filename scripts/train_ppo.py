@@ -36,6 +36,18 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--wait-time", type=float, default=0.0, help="Seconds to wait before OCR.")
     parser.add_argument(
+        "--capture-count",
+        type=int,
+        default=14,
+        help="Number of screenshots to sample per eval for OCR (default: 14).",
+    )
+    parser.add_argument(
+        "--capture-interval",
+        type=float,
+        default=0.15,
+        help="Seconds between OCR screenshots (default: 0.15).",
+    )
+    parser.add_argument(
         "--settle-time",
         type=float,
         default=0.5,
@@ -83,6 +95,10 @@ def main() -> None:
     args = parser.parse_args()
     if (args.spin_x is None) != (args.spin_y is None):
         parser.error("Provide both --spin-x and --spin-y together, or neither.")
+    if args.capture_count <= 0:
+        parser.error("--capture-count must be > 0")
+    if args.capture_interval < 0:
+        parser.error("--capture-interval must be >= 0")
 
     config = PPOConfig(
         updates=args.updates,
@@ -96,6 +112,8 @@ def main() -> None:
         max_grad_norm=args.max_grad_norm,
         seed=args.seed,
         wait_time=args.wait_time,
+        capture_count=args.capture_count,
+        capture_interval=args.capture_interval,
         settle_time=args.settle_time,
         checkpoint_every=args.checkpoint_every,
         log_dir=args.log_dir,

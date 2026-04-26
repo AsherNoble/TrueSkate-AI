@@ -1,18 +1,56 @@
 import difflib
 import logging
+import os
 import re
+from functools import lru_cache
 from typing import Literal, NamedTuple
 
 import cv2
 import numpy as np
-import pytesseract
 
 from .known_tricks import KNOWN_TRICKS
+from .vision_ocr import image_to_lines as vision_image_to_lines
+from .vision_ocr import is_vision_available, vision_unavailable_reason
 
 
 class TrickResult(NamedTuple):
     trick: str
     status: Literal["landed", "failed", "unknown"]
+
+
+_LOGGED_OCR_BACKEND = False
+
+
+@lru_cache(maxsize=1)
+def _resolve_ocr_backend() -> Literal["vision"]:
+    requested = os.getenv("TRUESKATE_OCR_BACKEND", "auto").strip().lower()
+    if requested not in {"auto", "vision"}:
+        raise ValueError(
+            "TRUESKATE_OCR_BACKEND must be one of: auto, vision"
+        )
+
+    if is_vision_available():
+        return "vision"
+
+    raise RuntimeError(
+        "Apple Vision OCR is unavailable. "
+        "Install pyobjc-core, pyobjc-framework-Cocoa, pyobjc-framework-Quartz, "
+        f"and pyobjc-framework-Vision. Cause: {vision_unavailable_reason()}"
+    )
+
+
+def _extract_lines_with_ocr(crop: np.ndarray) -> list[str]:
+    global _LOGGED_OCR_BACKEND
+    backend = _resolve_ocr_backend()
+    if not _LOGGED_OCR_BACKEND:
+        logging.info("trick_info_reader: OCR backend=%s", backend)
+        _LOGGED_OCR_BACKEND = True
+    return vision_image_to_lines(crop)
+
+
+def ensure_ocr_backend_ready() -> None:
+    """Fail fast if OCR backend is misconfigured or unavailable."""
+    _resolve_ocr_backend()
 
 
 def _match_component(ocr_line: str) -> str | None:
@@ -65,31 +103,25 @@ def _find_anchor(search: np.ndarray) -> tuple[np.ndarray, Literal["landed", "fai
     g = search[:, :, 1].astype(np.int32)
     b = search[:, :, 0].astype(np.int32)
 
-    green_mask = (g > 180) & (r < 120) & (b < 120)
-    if green_mask.sum() >= 20:
+    green_mask = (g > 150) & ((g - r) > 40) & ((g - b) > 40)
+    if green_mask.sum() >= 15:
         logging.debug("anchor search: green=%d, red=— (skipped)", green_mask.sum())
         return green_mask, "landed"
 
-    # Filter red and white pixels to the center third of the frame horizontally.
-    # The FAILED/UNKNOWN notification is centered; stadium walls and sponsor bars
-    # appear at the edges, so this eliminates most false positives.
+    # Filter red pixels to the left+center two-thirds of the frame to exclude
+    # right-edge sponsor bars and stadium walls; notification banners appear on
+    # the left or center of the screen.
     w = search.shape[1]
-    center_col = np.zeros_like(r, dtype=bool)
-    center_col[:, w // 3 : 2 * w // 3] = True
+    left_center = np.zeros_like(r, dtype=bool)
+    left_center[:, : 2 * w // 3] = True
 
-    red_mask = (r > 180) & (g < 80) & (b < 80)
-    red_filtered = red_mask & center_col
+    red_mask = (r > 150) & ((r - g) > 60) & ((r - b) > 60)
+    red_filtered = red_mask & left_center
 
     logging.debug("anchor search: green=%d, red=%d (filtered)", green_mask.sum(), red_filtered.sum())
 
-    if red_filtered.sum() >= 50:
+    if red_filtered.sum() >= 35:
         return red_filtered, "failed"
-
-    white_mask = (r > 200) & (g > 200) & (b > 200)
-    white_filtered = white_mask & center_col
-
-    if white_filtered.sum() >= 50:
-        return white_filtered, "unknown"
 
     return None
 
@@ -99,7 +131,7 @@ def _ocr_above_anchor(
     mask: np.ndarray,
     anchor_y_offset: int,
     status: Literal["landed", "failed", "unknown"],
-) -> TrickResult | None:
+) -> tuple[TrickResult | None, dict]:
     """Crop above the anchor band, run OCR, and return a TrickResult.
 
     Args:
@@ -111,7 +143,7 @@ def _ocr_above_anchor(
             (ys.max) rather than the top, since the score line sits below the trick name.
 
     Returns:
-        TrickResult or None if no trick text is found.
+        (TrickResult or None, diagnostics dict)
     """
     ys, xs = np.where(mask)
     anchor_row = int(ys.max() if status == "unknown" else ys.min())
@@ -120,27 +152,27 @@ def _ocr_above_anchor(
     anchor_x_max = int(xs.max())
 
     h, w = frame.shape[:2]
-    y0 = max(0, anchor_y_min - 100)
+    y0 = max(0, anchor_y_min - 160)
     y1 = anchor_y_min
-    x0 = max(0, anchor_x_min - 150)
-    x1 = min(w, anchor_x_max + 150)
+    x0 = max(0, anchor_x_min - 220)
+    x1 = min(w, anchor_x_max + 220)
 
     band = frame[y0:y1, x0:x1]
     upscaled = cv2.resize(band, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
     gray = cv2.cvtColor(upscaled, cv2.COLOR_BGR2GRAY)
-    _, crop = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY_INV)
-
-    cv2.imwrite("/tmp/debug_crop.png", crop)
-
-    config = "--psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :-"
-    raw = pytesseract.image_to_string(crop, config=config)
+    _, binary_inv = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY_INV)
 
     _BANNER_WORDS = {"TRUE", "SKATE", "SUPER", "CROWN", "STREET", "LEAGUE", "SLS", "CALIFORNIA", "SKATEPARKS", "SANTA", "CRUZ", "GLASSHOUSE"}
 
     candidates = []
-    for line in raw.splitlines():
+    lines = _extract_lines_with_ocr(upscaled) + _extract_lines_with_ocr(binary_inv)
+    seen_lines: set[str] = set()
+    for line in lines:
+        if line in seen_lines:
+            continue
+        seen_lines.add(line)
         cleaned = re.sub(r"[^A-Z0-9 :-]", "", line.upper()).strip()
-        # Tesseract merges letter-digit and digit-letter boundaries — split them.
+        # OCR can merge letter-digit and digit-letter boundaries — split them.
         cleaned = re.sub(r'([A-Z])(\d)', r'\1 \2', cleaned)
         cleaned = re.sub(r'(\d)([A-Z])', r'\1 \2', cleaned)
         # Normalize OCR rotation number misreads:
@@ -153,6 +185,10 @@ def _ocr_above_anchor(
             continue
         if "SCORE" in cleaned:
             continue
+        # Discard pure score values: any bare number > 1080 is a game score counter,
+        # not a rotation (max valid rotation in True Skate is 1080).
+        if re.fullmatch(r'\d+', cleaned) and int(cleaned) > 1080:
+            continue
         if _BANNER_WORDS & set(cleaned.split()):
             continue
         # For failed detections the word "FAILED" appears in the crop — discard it.
@@ -160,8 +196,16 @@ def _ocr_above_anchor(
             continue
         candidates.append(cleaned)
 
+    diagnostics = {
+        "crop_bounds": [x0, y0, x1, y1],
+        "ocr_lines": lines,
+        "ocr_candidates": candidates,
+    }
+
     if not candidates:
-        return None
+        diagnostics["matched_components"] = []
+        diagnostics["final_trick"] = None
+        return None, diagnostics
 
     # Try merging adjacent candidates before individual matching.
     # e.g. ["360", "POP SHOVE-IT"] → try "360 POP SHOVE-IT" against KNOWN_TRICKS first.
@@ -181,11 +225,44 @@ def _ocr_above_anchor(
         i += 1
 
     if not matched_components:
-        return None
+        diagnostics["matched_components"] = []
+        diagnostics["final_trick"] = None
+        return None, diagnostics
 
     trick = " + ".join(matched_components)
+    diagnostics["matched_components"] = matched_components
+    diagnostics["final_trick"] = trick
     logging.info("trick_info_reader: %s — %s", status, trick)
-    return TrickResult(trick=trick, status=status)
+    return TrickResult(trick=trick, status=status), diagnostics
+
+
+def detect_trick_with_diagnostics(frame: np.ndarray) -> tuple[TrickResult | None, dict]:
+    """Return trick detection result plus per-frame diagnostics."""
+    _ANCHOR_Y_OFFSET = 180
+    search = frame[_ANCHOR_Y_OFFSET:680, :]
+
+    diagnostics: dict = {
+        "anchor_found": False,
+        "anchor_status": None,
+        "anchor_pixels": 0,
+        "crop_bounds": None,
+        "ocr_lines": [],
+        "ocr_candidates": [],
+        "matched_components": [],
+        "final_trick": None,
+    }
+
+    result = _find_anchor(search)
+    if result is None:
+        return None, diagnostics
+
+    mask, status = result
+    diagnostics["anchor_found"] = True
+    diagnostics["anchor_status"] = status
+    diagnostics["anchor_pixels"] = int(mask.sum())
+    trick_result, ocr_diag = _ocr_above_anchor(frame, mask, _ANCHOR_Y_OFFSET, status)
+    diagnostics.update(ocr_diag)
+    return trick_result, diagnostics
 
 
 def detect_trick(frame: np.ndarray) -> TrickResult | None:
@@ -199,12 +276,5 @@ def detect_trick(frame: np.ndarray) -> TrickResult | None:
     Returns e.g. TrickResult(trick="KICKFLIP + CROOKED GRIND", status="landed")
     or None if no notification is visible.
     """
-    _ANCHOR_Y_OFFSET = 250
-    search = frame[_ANCHOR_Y_OFFSET:600, :]
-
-    result = _find_anchor(search)
-    if result is None:
-        return None
-
-    mask, status = result
-    return _ocr_above_anchor(frame, mask, _ANCHOR_Y_OFFSET, status)
+    result, _ = detect_trick_with_diagnostics(frame)
+    return result
