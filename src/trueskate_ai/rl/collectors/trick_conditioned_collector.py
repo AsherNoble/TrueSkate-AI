@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from trueskate_ai.rl.device_worker import DeviceWorker
+from trueskate_ai.rl.device_worker import DeviceWorker, _ALL_DEAD_TIMEOUT
 from trueskate_ai.rl.reward import get_conditioned_reward
 from trueskate_ai.rl.trick_conditioned_action import execute_action_vector
 
@@ -134,10 +134,17 @@ def collect_rollouts(
 
     results: dict[int, RolloutResult] = {}
     with ThreadPoolExecutor(max_workers=len(workers)) as executor:
-        for batch_start in range(0, len(tasks), len(workers)):
-            batch = tasks[batch_start : batch_start + len(workers)]
+        task_idx = 0
+        while task_idx < len(tasks):
+            alive = [w for w in workers if w.alive]
+            if not alive:
+                logging.warning("All workers dead — retrying with all workers.")
+                alive = workers
+            batch = tasks[task_idx : task_idx + len(alive)]
+            task_idx += len(batch)
+
             futures = {}
-            for worker, task in zip(workers, batch):
+            for worker, task in zip(alive, batch):
                 f = executor.submit(
                     _collect_one,
                     worker,
@@ -154,7 +161,13 @@ def collect_rollouts(
                 worker, task = futures[future]
                 try:
                     result = future.result()
+                    worker._failure_streak = 0
+                    worker._dead_since = None
                 except Exception as exc:
+                    was_alive = worker.alive
+                    worker._failure_streak += 1
+                    if was_alive and not worker.alive:
+                        worker._dead_since = time.monotonic()
                     logging.warning(
                         "[%s] rollout failed (update=%d eval=%d sample=%d): %s",
                         worker.device_id,
@@ -187,8 +200,23 @@ def collect_rollouts(
                     )
                 results[result.sample_idx] = result
 
-            reset_futures = [executor.submit(worker.reset) for worker, _ in futures.values()]
+            reset_futures = [executor.submit(w.reset) for w, _ in futures.values()]
             for reset_future in reset_futures:
                 reset_future.result()
+
+            for w in workers:
+                w._try_revive()
+
+            if not any(w.alive for w in workers):
+                now = time.monotonic()
+                oldest_death = min(
+                    (w._dead_since for w in workers if w._dead_since is not None),
+                    default=now,
+                )
+                if now - oldest_death > _ALL_DEAD_TIMEOUT:
+                    raise RuntimeError(
+                        f"All devices have been unreachable for >"
+                        f"{_ALL_DEAD_TIMEOUT / 60:.0f} minutes — aborting."
+                    )
 
     return [results[i] for i in range(len(tasks))]
