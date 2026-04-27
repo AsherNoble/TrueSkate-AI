@@ -389,6 +389,30 @@ def run_training(config: PPOConfig) -> None:
             error_rate = (n_errors / n_samples) if n_samples else 0.0
             hindsight_rate = (hindsight_added_count / n_samples) if n_samples else 0.0
             effective_batch_size = int(batch.size)
+            mean_action_exec_s = (
+                sum(r.action_exec_s for r in rollout_results) / n_samples if n_samples else 0.0
+            )
+            mean_reward_eval_s = (
+                sum(r.reward_eval_s for r in rollout_results) / n_samples if n_samples else 0.0
+            )
+            mean_eval_total_s = (
+                sum(r.eval_total_s for r in rollout_results) / n_samples if n_samples else 0.0
+            )
+            mean_post_eval_wait_s = (
+                sum(r.post_eval_wait_s for r in rollout_results) / n_samples if n_samples else 0.0
+            )
+            mean_reset_s = (
+                sum(r.reset_s for r in rollout_results) / n_samples if n_samples else 0.0
+            )
+            mean_capture_attempts = (
+                sum(r.capture_attempts for r in rollout_results) / n_samples if n_samples else 0.0
+            )
+            mean_capture_elapsed_s = (
+                sum(r.capture_elapsed_s for r in rollout_results) / n_samples if n_samples else 0.0
+            )
+            mean_skipped_captures = (
+                sum(r.skipped_captures for r in rollout_results) / n_samples if n_samples else 0.0
+            )
 
             device_summary: dict[str, dict[str, int]] = {}
             for result in rollout_results:
@@ -420,6 +444,15 @@ def run_training(config: PPOConfig) -> None:
                         "detected_status": result.detected_status,
                         "error": result.error,
                         "reward": result.reward,
+                        "action_exec_s": round(result.action_exec_s, 4),
+                        "reward_eval_s": round(result.reward_eval_s, 4),
+                        "eval_total_s": round(result.eval_total_s, 4),
+                        "post_eval_wait_s": round(result.post_eval_wait_s, 4),
+                        "reset_s": round(result.reset_s, 4),
+                        "capture_attempts": result.capture_attempts,
+                        "skipped_captures": result.skipped_captures,
+                        "detection_capture_idx": result.detection_capture_idx,
+                        "capture_elapsed_s": round(result.capture_elapsed_s, 4),
                         "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                     },
                 )
@@ -438,6 +471,14 @@ def run_training(config: PPOConfig) -> None:
                     "hindsight_added_count": hindsight_added_count,
                     "hindsight_rate": round(hindsight_rate, 4),
                     "effective_batch_size": effective_batch_size,
+                    "mean_action_exec_s": round(mean_action_exec_s, 4),
+                    "mean_reward_eval_s": round(mean_reward_eval_s, 4),
+                    "mean_eval_total_s": round(mean_eval_total_s, 4),
+                    "mean_post_eval_wait_s": round(mean_post_eval_wait_s, 4),
+                    "mean_reset_s": round(mean_reset_s, 4),
+                    "mean_capture_attempts": round(mean_capture_attempts, 4),
+                    "mean_capture_elapsed_s": round(mean_capture_elapsed_s, 4),
+                    "mean_skipped_captures": round(mean_skipped_captures, 4),
                     "device_summary": device_summary,
                     "policy_loss": round(mean_policy_loss, 6),
                     "value_loss": round(mean_value_loss, 6),

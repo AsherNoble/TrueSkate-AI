@@ -335,6 +335,7 @@ class DeviceWorker:
         """
         relaunched = self.ensure_foreground()
         recorder = FrameRecorder() if self.record_frames else None
+        eval_start_time = time.monotonic()
         try:
             if recorder is not None:
                 recorder.start(self.mjpeg_url)
@@ -345,12 +346,15 @@ class DeviceWorker:
                 device_w=self._cfg["logical_w"],
                 device_h=self._cfg["logical_h"],
             )
-            reward, trick_result, _ = get_reward(
+            action_end_time = time.monotonic()
+            reward, trick_result, _, capture_diag = get_reward(
                 self.driver,
                 wait_time=wait_time,
                 penalty=None,
                 action_start_time=action_start_time,
+                return_diagnostics=True,
             )
+            reward_end_time = time.monotonic()
         except Exception as exc:
             if recorder is not None:
                 recorder.stop()
@@ -375,6 +379,13 @@ class DeviceWorker:
                 "raw_frames": [],
                 "n_composites": 0,
                 "app_relaunched": relaunched,
+                "action_exec_s": 0.0,
+                "reward_eval_s": 0.0,
+                "eval_total_s": 0.0,
+                "capture_attempts": 0,
+                "skipped_captures": 0,
+                "detection_capture_idx": None,
+                "capture_elapsed_s": 0.0,
             }
 
         self._failure_streak = 0
@@ -401,6 +412,17 @@ class DeviceWorker:
             "raw_frames": raw_frames,
             "n_composites": 0,
             "app_relaunched": relaunched,
+            "action_exec_s": action_end_time - action_start_time,
+            "reward_eval_s": reward_end_time - action_end_time,
+            "eval_total_s": reward_end_time - eval_start_time,
+            "capture_attempts": int(capture_diag["captures_attempted"]),
+            "skipped_captures": int(capture_diag["skipped_captures"]),
+            "detection_capture_idx": (
+                None
+                if capture_diag["detection_capture_idx"] is None
+                else int(capture_diag["detection_capture_idx"])
+            ),
+            "capture_elapsed_s": float(capture_diag["capture_elapsed_s"]),
         }
 
     # -- disconnect ---------------------------------------------------------

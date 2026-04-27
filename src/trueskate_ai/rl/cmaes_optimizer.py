@@ -38,10 +38,10 @@ logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
 def _open_log(log_dir: Path) -> tuple[Path, Path, object]:
     """Create a run folder with JSONL log and frames/ subdir. Returns (run_dir, log_path, file_handle)."""
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = log_dir / "runs" / f"run_{run_id}"
+    run_dir = log_dir / "runs" / f"cmaes_run_{run_id}"
     run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / "frames").mkdir(exist_ok=True)
-    log_path = run_dir / f"run_{run_id}.jsonl"
+    log_path = run_dir / f"cmaes_run_{run_id}.jsonl"
     return run_dir, log_path, log_path.open("w", buffering=1)  # line-buffered
 
 
@@ -55,6 +55,12 @@ def _save_checkpoint(es, run_dir: Path, generation: int) -> None:
     path = run_dir / f"checkpoint_gen{generation}.pkl"
     with path.open("wb") as f:
         pickle.dump(es, f)
+
+
+def _timed_worker_reset(worker) -> tuple[str, float, float]:
+    reset_started_at = time.monotonic()
+    worker.reset()
+    return worker.device_id, reset_started_at, time.monotonic() - reset_started_at
 
 
 # ---------------------------------------------------------------------------
@@ -192,12 +198,14 @@ def run(
                         worker.evaluate,
                         solutions[cand_idx], wait_time, cand_eval_num, generation,
                     )
-                    futures[future] = cand_idx
+                    futures[future] = (cand_idx, worker)
 
                 # Collect results for this round
                 round_results: dict[int, dict] = {}
+                completion_times: dict[int, float] = {}
+                reset_futures: dict[object, int] = {}
                 for future in as_completed(futures):
-                    cand_idx = futures[future]
+                    cand_idx, worker = futures[future]
                     try:
                         round_results[cand_idx] = future.result()
                     except Exception as exc:
@@ -215,7 +223,37 @@ def run(
                             "raw_frames": [],
                             "n_composites": 0,
                             "app_relaunched": False,
+                            "action_exec_s": 0.0,
+                            "reward_eval_s": 0.0,
+                            "eval_total_s": 0.0,
+                            "capture_attempts": 0,
+                            "skipped_captures": 0,
+                            "detection_capture_idx": None,
+                            "capture_elapsed_s": 0.0,
                         }
+                    completion_times[cand_idx] = time.monotonic()
+                    reset_future = executor.submit(_timed_worker_reset, worker)
+                    reset_futures[reset_future] = cand_idx
+
+                reset_metrics: dict[int, dict[str, float]] = {}
+                for reset_future in as_completed(reset_futures):
+                    cand_idx = reset_futures[reset_future]
+                    try:
+                        _, reset_started_at, reset_duration = reset_future.result()
+                    except Exception as exc:
+                        logging.warning(
+                            "Reset future for candidate %d failed: %s", cand_idx, exc
+                        )
+                        reset_started_at = completion_times.get(cand_idx, time.monotonic())
+                        reset_duration = 0.0
+                    post_eval_wait = max(
+                        0.0,
+                        reset_started_at - completion_times.get(cand_idx, reset_started_at),
+                    )
+                    reset_metrics[cand_idx] = {
+                        "post_eval_wait_s": post_eval_wait,
+                        "reset_s": reset_duration,
+                    }
 
                 # Process round results in candidate order
                 for i in range(n_workers):
@@ -248,6 +286,19 @@ def run(
                         "frame_dir": eval_dir_name,
                         "n_composites": n_composites,
                         "app_relaunched": result["app_relaunched"],
+                        "action_exec_s": round(result.get("action_exec_s", 0.0), 4),
+                        "reward_eval_s": round(result.get("reward_eval_s", 0.0), 4),
+                        "eval_total_s": round(result.get("eval_total_s", 0.0), 4),
+                        "post_eval_wait_s": round(
+                            reset_metrics.get(cand_idx, {}).get("post_eval_wait_s", 0.0), 4
+                        ),
+                        "reset_s": round(
+                            reset_metrics.get(cand_idx, {}).get("reset_s", 0.0), 4
+                        ),
+                        "capture_attempts": result.get("capture_attempts", 0),
+                        "skipped_captures": result.get("skipped_captures", 0),
+                        "detection_capture_idx": result.get("detection_capture_idx"),
+                        "capture_elapsed_s": round(result.get("capture_elapsed_s", 0.0), 4),
                         "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                     })
 
@@ -255,11 +306,6 @@ def run(
                         best_reward = reward
                         best_trick = result["trick_name"]
                         best_params = np.array(result["params"])
-
-                # Reset all devices simultaneously before next round
-                reset_futures = [executor.submit(w.reset) for w in workers]
-                for f in reset_futures:
-                    f.result()
 
             # Feed negated rewards to CMA-ES (it minimizes)
             es.tell(solutions, [-r for r in rewards])
