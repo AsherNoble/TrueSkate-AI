@@ -1,0 +1,96 @@
+{
+  "trick": "hard flip",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            230.66,
+            555.82
+          ],
+          [
+            295.11,
+            617.65
+          ],
+          [
+            289.01,
+            675.12
+          ]
+        ],
+        "duration": 0.03,
+        "easing_power": 0.95
+      },
+      {
+        "points": [
+          [
+            201.12,
+            495.0
+          ],
+          [
+            221.59,
+            512.7
+          ],
+          [
+            373.37,
+            407.25
+          ]
+        ],
+        "duration": 0.26,
+        "easing_power": 1.49
+      }
+    ],
+    "delays": [
+      0.29
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            230.66,
+            555.82
+          ],
+          [
+            295.11,
+            617.65
+          ],
+          [
+            289.01,
+            675.12
+          ]
+        ],
+        "duration": 0.03,
+        "easing_power": 0.95
+      },
+      {
+        "points": [
+          [
+            201.12,
+            495.0
+          ],
+          [
+            221.59,
+            512.7
+          ],
+          [
+            373.37,
+            407.25
+          ]
+        ],
+        "duration": 0.26,
+        "easing_power": 1.49
+      }
+    ],
+    "delays": [
+      0.29
+    ]
+  },
+  "sample_count": 1,
+  "reward_stats": {
+    "min": 0.0,
+    "mean": 0.0,
+    "max": 0.0
+  },
+  "source_log": "logs/runs/cmaes_run_20260427_230809/cmaes_run_20260427_230809.jsonl"
+}

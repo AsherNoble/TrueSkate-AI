@@ -1,0 +1,96 @@
+{
+  "trick": "quad hard flip",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            269.43,
+            487.16
+          ],
+          [
+            261.98,
+            647.18
+          ],
+          [
+            200.8,
+            669.87
+          ]
+        ],
+        "duration": 0.21,
+        "easing_power": 1.41
+      },
+      {
+        "points": [
+          [
+            223.8,
+            555.76
+          ],
+          [
+            194.54,
+            506.04
+          ],
+          [
+            329.25,
+            450.51
+          ]
+        ],
+        "duration": 0.2,
+        "easing_power": 1.74
+      }
+    ],
+    "delays": [
+      0.07
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            269.43,
+            487.16
+          ],
+          [
+            261.98,
+            647.18
+          ],
+          [
+            200.8,
+            678.12
+          ]
+        ],
+        "duration": 0.18,
+        "easing_power": 0.48
+      },
+      {
+        "points": [
+          [
+            223.8,
+            585.69
+          ],
+          [
+            213.51,
+            430.63
+          ],
+          [
+            365.96,
+            427.04
+          ]
+        ],
+        "duration": 0.2,
+        "easing_power": 1.99
+      }
+    ],
+    "delays": [
+      0.23
+    ]
+  },
+  "sample_count": 3,
+  "reward_stats": {
+    "min": -0.0,
+    "mean": 0.0,
+    "max": 0.0
+  },
+  "source_log": "logs/runs/cmaes_run_20260427_230809/cmaes_run_20260427_230809.jsonl"
+}

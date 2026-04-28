@@ -1,0 +1,96 @@
+{
+  "trick": "varial kickflip",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            112.84,
+            580.56
+          ],
+          [
+            203.36,
+            669.15
+          ],
+          [
+            258.04,
+            678.29
+          ]
+        ],
+        "duration": 0.23,
+        "easing_power": 1.22
+      },
+      {
+        "points": [
+          [
+            146.39,
+            573.46
+          ],
+          [
+            278.77,
+            472.88
+          ],
+          [
+            325.52,
+            406.12
+          ]
+        ],
+        "duration": 0.22,
+        "easing_power": 1.09
+      }
+    ],
+    "delays": [
+      0.4
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            112.84,
+            580.56
+          ],
+          [
+            203.36,
+            669.15
+          ],
+          [
+            258.04,
+            678.29
+          ]
+        ],
+        "duration": 0.23,
+        "easing_power": 1.22
+      },
+      {
+        "points": [
+          [
+            146.39,
+            573.46
+          ],
+          [
+            278.77,
+            472.88
+          ],
+          [
+            325.52,
+            406.12
+          ]
+        ],
+        "duration": 0.22,
+        "easing_power": 1.09
+      }
+    ],
+    "delays": [
+      0.4
+    ]
+  },
+  "sample_count": 1,
+  "reward_stats": {
+    "min": 0.0,
+    "mean": 0.0,
+    "max": 0.0
+  },
+  "source_log": "logs/runs/cmaes_run_20260427_230809/cmaes_run_20260427_230809.jsonl"
+}

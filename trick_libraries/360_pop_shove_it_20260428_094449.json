@@ -1,0 +1,96 @@
+{
+  "trick": "360 pop shove-it",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            344.65,
+            449.94
+          ],
+          [
+            151.09,
+            612.9
+          ],
+          [
+            125.39,
+            539.39
+          ]
+        ],
+        "duration": 0.5,
+        "easing_power": 1.64
+      },
+      {
+        "points": [
+          [
+            181.3,
+            565.23
+          ],
+          [
+            152.28,
+            469.98
+          ],
+          [
+            345.4,
+            601.34
+          ]
+        ],
+        "duration": 0.05,
+        "easing_power": 1.69
+      }
+    ],
+    "delays": [
+      -0.05
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            244.09,
+            605.63
+          ],
+          [
+            137.24,
+            658.21
+          ],
+          [
+            213.42,
+            651.94
+          ]
+        ],
+        "duration": 0.15,
+        "easing_power": 2.01
+      },
+      {
+        "points": [
+          [
+            171.22,
+            523.41
+          ],
+          [
+            291.74,
+            525.23
+          ],
+          [
+            340.28,
+            418.36
+          ]
+        ],
+        "duration": 0.06,
+        "easing_power": 0.94
+      }
+    ],
+    "delays": [
+      0.2
+    ]
+  },
+  "sample_count": 3257,
+  "reward_stats": {
+    "min": 0.06,
+    "mean": 0.299,
+    "max": 0.3
+  },
+  "source_log": "logs/runs/cmaes_run_20260427_230809/cmaes_run_20260427_230809.jsonl"
+}
