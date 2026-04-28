@@ -26,6 +26,7 @@ from trueskate_ai.rl.action_param import (
     _PUSH_END,
     _PUSH_PRE_DELAY,
     _PUSH_START,
+    norm_to_device,
 )
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
 from trueskate_ai.sim.touch_actions import build_curved_drag
@@ -50,7 +51,7 @@ def _load_recipe(library_path: Path, mode: str) -> tuple[str, dict]:
     return trick, data[key]
 
 
-def execute_recipe(driver, recipe: dict) -> None:
+def execute_recipe(driver, recipe: dict, *, device_w: float, device_h: float) -> None:
     """Fire the push + two-finger gesture sequence from a decoded recipe.
 
     Args:
@@ -60,6 +61,10 @@ def execute_recipe(driver, recipe: dict) -> None:
     """
     g0, g1 = recipe["gestures"]
     delay = recipe["delays"][0]
+    g0_points = [norm_to_device(x, y, device_w, device_h) for x, y in g0["points"]]
+    g1_points = [norm_to_device(x, y, device_w, device_h) for x, y in g1["points"]]
+    push_start = norm_to_device(_PUSH_START[0], _PUSH_START[1], device_w, device_h)
+    push_end = norm_to_device(_PUSH_END[0], _PUSH_END[1], device_w, device_h)
 
     p0 = g0["easing_power"]
     easing0 = (lambda t, p=p0: t ** p) if p0 != 1.0 else None
@@ -70,7 +75,7 @@ def execute_recipe(driver, recipe: dict) -> None:
     # --- Step 1: push (single-finger, separate perform) ---
     finger2 = PointerInput("touch", "finger2")
     build_curved_drag(
-        finger2, [_PUSH_START, _PUSH_END],
+        finger2, [push_start, push_end],
         total_duration=_PUSH_DURATION, easing=push_easing,
     )
     ActionChains(driver, devices=[finger2]).perform()
@@ -82,10 +87,6 @@ def execute_recipe(driver, recipe: dict) -> None:
     # --- Step 2: scoop + flick (two-finger perform) ---
     finger0 = PointerInput("touch", "finger0")
     finger1 = PointerInput("touch", "finger1")
-
-    # Points are stored as lists in JSON; convert to tuples for build_curved_drag
-    g0_points = [tuple(p) for p in g0["points"]]
-    g1_points = [tuple(p) for p in g1["points"]]
 
     build_curved_drag(finger0, g0_points, total_duration=g0["duration"], easing=easing0)
 
@@ -120,7 +121,7 @@ def main() -> None:
     worker.connect()
 
     try:
-        execute_recipe(worker.driver, recipe)
+        execute_recipe(worker.driver, recipe, device_w=worker.device_w, device_h=worker.device_h)
         print("Gestures fired.")
     finally:
         worker.disconnect()
