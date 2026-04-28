@@ -22,3 +22,17 @@ Multiply data collection throughput by evaluating N candidates simultaneously ac
 
 ## Next Steps
 - Monitor for Appium/WDA stability issues under higher device counts
+
+## Update — Post-eval reset scheduling refinement (2026-04-27)
+- Addressed idle board time between eval completion and reset by changing reset scheduling from strict end-of-round barriers to immediate per-worker reset submission:
+  - PPO collector: `collect_rollouts()` now submits reset for each worker as soon as that worker’s rollout future completes.
+  - CMA-ES loop: per-candidate resets are submitted immediately after each evaluation future resolves, instead of waiting for the full round to finish first.
+- Added reset-timing telemetry in logs (`post_eval_wait_s`, `reset_s`) to quantify whether synchronization overhead remains.
+- Expected effect: better wall-clock utilization and less visible idle board rolling/stationary time on fast-finishing devices while preserving batch semantics for the next dispatch cycle.
+
+## Validation Snapshot (2026-04-27)
+- XR live PPO micro-run (`device-count=1`) confirms new timing fields are being emitted and sane.
+- Observed from `ppo_run_20260427_172254`:
+  - `post_eval_wait_s` ≈ `0.0001`
+  - `reset_s` ≈ `0.8249`
+- This confirms reset starts immediately after eval completion in the current scheduler, with no meaningful idle barrier wait in the single-worker case.

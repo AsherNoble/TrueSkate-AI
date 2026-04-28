@@ -23,6 +23,8 @@ import numpy as np
 
 from trueskate_ai.sim.trick_info_reader import TrickResult, detect_trick
 
+CaptureDiagnostics = dict[str, int | float | None]
+
 
 class RepetitionPenalty:
     """Tracks landed trick counts and returns a multiplier that penalises repeats.
@@ -61,18 +63,19 @@ class RepetitionPenalty:
         return self._counts.get(trick_name, 0)
 
 
-def capture_and_detect(
+def capture_and_detect_with_diagnostics(
     driver,
     *,
     capture_count: int = 14,
     capture_interval: float = 0.15,
     action_start_time: float | None = None,
-) -> TrickResult | None:
+) -> tuple[TrickResult | None, CaptureDiagnostics]:
     """Capture multiple screenshots and run trick OCR on each.
 
     Default cadence captures 14 screenshots at 0.15s spacing and returns the
     first non-None TrickResult. When action_start_time is provided, screenshot
-    timestamps are aligned to that action start.
+    timestamps are aligned to that action start; if we're behind schedule, stale
+    capture slots are skipped rather than replayed back-to-back.
 
     Args:
         driver: Appium WebDriver instance.
@@ -85,51 +88,79 @@ def capture_and_detect(
     if capture_interval < 0.0:
         raise ValueError(f"capture_interval must be >= 0.0, got {capture_interval}")
 
-    for capture_idx in range(capture_count):
+    capture_started_at = time.monotonic()
+    captures_attempted = 0
+    skipped_captures = 0
+
+    next_capture_idx = 0
+    while next_capture_idx < capture_count:
+        capture_idx = next_capture_idx
         if action_start_time is not None:
             target_time = action_start_time + (capture_idx * capture_interval)
-            sleep_for = target_time - time.monotonic()
+            now = time.monotonic()
+            sleep_for = target_time - now
             if sleep_for > 0:
                 time.sleep(sleep_for)
+            elif capture_interval > 0:
+                # If execution ran past multiple scheduled capture slots, skip
+                # stale slots instead of bursting redundant back-to-back OCR calls.
+                catchup_idx = int((now - action_start_time) // capture_interval)
+                if catchup_idx > capture_idx:
+                    capped_idx = min(catchup_idx, capture_count - 1)
+                    skipped_captures += capped_idx - capture_idx
+                    capture_idx = capped_idx
         elif capture_idx > 0:
             time.sleep(capture_interval)
 
         png_bytes = driver.get_screenshot_as_png()
         arr = np.frombuffer(png_bytes, dtype=np.uint8)
         frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        captures_attempted += 1
 
         result = detect_trick(frame)
         if result is not None:
-            return result
+            diagnostics: CaptureDiagnostics = {
+                "captures_attempted": captures_attempted,
+                "detection_capture_idx": capture_idx,
+                "capture_elapsed_s": time.monotonic() - capture_started_at,
+                "skipped_captures": skipped_captures,
+            }
+            return result, diagnostics
 
-    return None
+        next_capture_idx = capture_idx + 1
+
+    diagnostics = {
+        "captures_attempted": captures_attempted,
+        "detection_capture_idx": None,
+        "capture_elapsed_s": time.monotonic() - capture_started_at,
+        "skipped_captures": skipped_captures,
+    }
+    return None, diagnostics
+
+
+def capture_and_detect(
+    driver,
+    *,
+    capture_count: int = 14,
+    capture_interval: float = 0.15,
+    action_start_time: float | None = None,
+) -> TrickResult | None:
+    result, _ = capture_and_detect_with_diagnostics(
+        driver,
+        capture_count=capture_count,
+        capture_interval=capture_interval,
+        action_start_time=action_start_time,
+    )
+    return result
 
 
 def compute_reward(result: TrickResult | None) -> float:
-    """Map a TrickResult to a scalar reward.
-
-    For combo tricks joined with " + ", each component is scored and the
-    maximum reward across components is returned.
-
-    Failed and unknown tricks receive base * (base - 0.1) — tiered penalty.
-    "unknown" is returned when a white anchor is detected (ambiguous outcome).
-
-    Args:
-        result: Output of detect_trick() — a TrickResult or None.
-
-    Returns:
-        Scalar reward in [0.0, 1.0].
-    """
+    """Return 1.0 only for a landed exact KICKFLIP, else 0.0."""
     if result is None:
         return 0.0
-
-    components = [c.strip() for c in result.trick.split(" + ")]
-    base_reward = max(_score_component(c) for c in components)
-
-    if result.status in ("failed", "unknown"):
-        return base_reward * (base_reward - 0.1)  # tiered (failed 360 flip yields 0.9)
-
-    return base_reward
+    if result.status != "landed":
+        return 0.0
+    return 1.0 if result.trick.strip().upper() == "KICKFLIP" else 0.0
 
 
 def _score_component(trick: str) -> float:
@@ -178,7 +209,8 @@ def get_reward(
     capture_count: int = 14,
     capture_interval: float = 0.15,
     action_start_time: float | None = None,
-) -> tuple[float, TrickResult | None, float]:
+    return_diagnostics: bool = False,
+) -> tuple[float, TrickResult | None, float] | tuple[float, TrickResult | None, float, CaptureDiagnostics]:
     """Wait for the trick notification, capture, score, and return the reward.
 
     This is the main entry point called by the CMA-ES optimization loop.
@@ -201,7 +233,7 @@ def get_reward(
             multiplier — factor applied to base reward (1.0 if no penalty or failed).
     """
     time.sleep(wait_time)
-    result = capture_and_detect(
+    result, diagnostics = capture_and_detect_with_diagnostics(
         driver,
         capture_count=capture_count,
         capture_interval=capture_interval,
@@ -213,6 +245,8 @@ def get_reward(
     if penalty is not None and result is not None and result.status == "landed":
         multiplier = penalty.get_multiplier_and_record(result.trick)
 
+    if return_diagnostics:
+        return base * multiplier, result, multiplier, diagnostics
     return base * multiplier, result, multiplier
 
 
@@ -246,16 +280,19 @@ def get_conditioned_reward(
     capture_count: int = 14,
     capture_interval: float = 0.15,
     action_start_time: float | None = None,
-) -> tuple[float, TrickResult | None]:
+    return_diagnostics: bool = False,
+) -> tuple[float, TrickResult | None] | tuple[float, TrickResult | None, CaptureDiagnostics]:
     """Capture trick text and return conditioned binary reward."""
     time.sleep(wait_time)
-    result = capture_and_detect(
+    result, diagnostics = capture_and_detect_with_diagnostics(
         driver,
         capture_count=capture_count,
         capture_interval=capture_interval,
         action_start_time=action_start_time,
     )
     reward = compute_conditioned_reward(result, target_trick=target_trick)
+    if return_diagnostics:
+        return reward, result, diagnostics
     return reward, result
 
 

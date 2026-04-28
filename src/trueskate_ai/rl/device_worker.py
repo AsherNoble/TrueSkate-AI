@@ -72,6 +72,9 @@ DEVICES: list[dict] = [
 _BUNDLE_ID = "com.trueaxis.skate"
 _APP_STATE_FOREGROUND = 4
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+_DEAD_THRESHOLD = 5      # consecutive failures before a worker is considered dead
+_REVIVE_COOLDOWN = 60.0  # seconds between scheduled reconnect attempts for dead workers
+_ALL_DEAD_TIMEOUT = 300.0  # seconds before aborting when every worker is dead
 
 # ---------------------------------------------------------------------------
 # Frame recording
@@ -161,11 +164,19 @@ class DeviceWorker:
     connect() once, then dispatches evaluate() calls via ThreadPoolExecutor.
     """
 
-    def __init__(self, device_cfg: dict) -> None:
+    def __init__(self, device_cfg: dict, *, record_frames: bool = False) -> None:
         self.device_id: str = device_cfg["name"]
         self._cfg = device_cfg
+        self.record_frames = record_frames
         self.driver: webdriver.Remote | None = None
         self.mjpeg_url: str | None = None
+        self._failure_streak: int = 0
+        self._last_reconnect_time: float = 0.0
+        self._dead_since: float | None = None
+
+    @property
+    def alive(self) -> bool:
+        return self._failure_streak < _DEAD_THRESHOLD
 
     @property
     def device_w(self) -> float:
@@ -256,7 +267,53 @@ class DeviceWorker:
 
     def reset(self) -> None:
         """Reset the board to its starting position."""
-        reset_position(self.driver, device_w=self._cfg["logical_w"])
+        try:
+            reset_position(self.driver, device_w=self._cfg["logical_w"])
+        except Exception as exc:
+            logging.warning("[%s] reset failed, attempting reconnect: %s", self.device_id, exc)
+            if self._reconnect():
+                reset_position(self.driver, device_w=self._cfg["logical_w"])
+            else:
+                logging.error("[%s] reset skipped — device unreachable.", self.device_id)
+
+    # -- reconnect ----------------------------------------------------------
+
+    def _reconnect(self, max_attempts: int = 3) -> bool:
+        """Quit the stale Appium session and re-establish a fresh one.
+
+        Returns True if reconnect succeeded, False if all attempts failed.
+        """
+        self._last_reconnect_time = time.monotonic()
+        for attempt in range(1, max_attempts + 1):
+            try:
+                if self.driver is not None:
+                    try:
+                        self.driver.quit()
+                    except Exception:
+                        pass
+                    self.driver = None
+                self.connect()
+                self._failure_streak = 0
+                self._dead_since = None
+                print(f"[{self.device_id}] Reconnected (attempt {attempt}).")
+                return True
+            except Exception as exc:
+                logging.warning(
+                    "[%s] reconnect attempt %d/%d failed: %s",
+                    self.device_id, attempt, max_attempts, exc,
+                )
+                time.sleep(5 * attempt)
+        logging.error("[%s] all reconnect attempts failed.", self.device_id)
+        return False
+
+    def _try_revive(self) -> None:
+        """Attempt a reconnect if the cooldown has elapsed. Called by the collector."""
+        if self.alive:
+            return
+        if time.monotonic() - self._last_reconnect_time < _REVIVE_COOLDOWN:
+            return
+        logging.info("[%s] attempting scheduled reconnect.", self.device_id)
+        self._reconnect()
 
     # -- evaluate -----------------------------------------------------------
 
@@ -277,9 +334,11 @@ class DeviceWorker:
         reward=0.0 on failure.
         """
         relaunched = self.ensure_foreground()
-        recorder = FrameRecorder()
+        recorder = FrameRecorder() if self.record_frames else None
+        eval_start_time = time.monotonic()
         try:
-            recorder.start(self.mjpeg_url)
+            if recorder is not None:
+                recorder.start(self.mjpeg_url)
             action_start_time = time.monotonic()
             execute_action(
                 self.driver,
@@ -287,18 +346,29 @@ class DeviceWorker:
                 device_w=self._cfg["logical_w"],
                 device_h=self._cfg["logical_h"],
             )
-            reward, trick_result, _ = get_reward(
+            action_end_time = time.monotonic()
+            reward, trick_result, _, capture_diag = get_reward(
                 self.driver,
                 wait_time=wait_time,
                 penalty=None,
                 action_start_time=action_start_time,
+                return_diagnostics=True,
             )
+            reward_end_time = time.monotonic()
         except Exception as exc:
-            recorder.stop()
+            if recorder is not None:
+                recorder.stop()
             logging.warning("[%s] eval %d failed: %s", self.device_id, eval_num, exc)
+            was_alive = self.alive
+            self._failure_streak += 1
+            if was_alive and not self.alive:
+                self._dead_since = time.monotonic()
+            if self._failure_streak % 5 == 0:
+                self._reconnect()
             print(
-                f"[{self.device_id}] [eval {eval_num} | gen {generation}] "
-                f"ERROR: {exc} — assigning reward=0.0"
+                f"[eval {eval_num:05d} | gen {generation:04d}] "
+                f"device={self.device_id} reward=0.00 status=error "
+                f"trick=- frames=0 error={exc}"
             )
             return {
                 "reward": 0.0,
@@ -309,16 +379,28 @@ class DeviceWorker:
                 "raw_frames": [],
                 "n_composites": 0,
                 "app_relaunched": relaunched,
+                "action_exec_s": 0.0,
+                "reward_eval_s": 0.0,
+                "eval_total_s": 0.0,
+                "capture_attempts": 0,
+                "skipped_captures": 0,
+                "detection_capture_idx": None,
+                "capture_elapsed_s": 0.0,
             }
 
-        raw_frames = recorder.stop()
+        self._failure_streak = 0
+        raw_frames = recorder.stop() if recorder is not None else []
         trick_name = trick_result.trick if trick_result else None
         trick_status = trick_result.status if trick_result else None
+        trick_label = trick_name if trick_name else "-"
+        status_label = trick_status if trick_status else "-"
+        relaunched_label = "yes" if relaunched else "no"
 
         print(
-            f"[{self.device_id}] [eval {eval_num} | gen {generation}] "
-            f"reward={reward:.2f}  trick={trick_name}  status={trick_status}  "
-            f"raw_frames={len(raw_frames)}"
+            f"[eval {eval_num:05d} | gen {generation:04d}] "
+            f"device={self.device_id} reward={reward:.2f} "
+            f"status={status_label} trick={trick_label} "
+            f"frames={len(raw_frames)} relaunched={relaunched_label}"
         )
 
         return {
@@ -330,6 +412,17 @@ class DeviceWorker:
             "raw_frames": raw_frames,
             "n_composites": 0,
             "app_relaunched": relaunched,
+            "action_exec_s": action_end_time - action_start_time,
+            "reward_eval_s": reward_end_time - action_end_time,
+            "eval_total_s": reward_end_time - eval_start_time,
+            "capture_attempts": int(capture_diag["captures_attempted"]),
+            "skipped_captures": int(capture_diag["skipped_captures"]),
+            "detection_capture_idx": (
+                None
+                if capture_diag["detection_capture_idx"] is None
+                else int(capture_diag["detection_capture_idx"])
+            ),
+            "capture_elapsed_s": float(capture_diag["capture_elapsed_s"]),
         }
 
     # -- disconnect ---------------------------------------------------------

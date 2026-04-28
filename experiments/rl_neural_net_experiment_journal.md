@@ -119,3 +119,37 @@ FRONTSIDE 360 FLIP, BACKSIDE 360 HEEL, FRONTSIDE 360 HEEL
   - `config`
   - `run_metadata`
 - Backward compatibility retained for older policy-only checkpoint formats.
+
+### Post-gesture Idle Stall Instrumentation + Fix (2026-04-27)
+- Investigated intermittent 3s+ idle windows after gesture execution and before reset in PPO rollouts.
+- Added per-sample timing telemetry to PPO JSONL (`sample` + `update_summary`):
+  - `action_exec_s`, `reward_eval_s`, `eval_total_s`
+  - `post_eval_wait_s`, `reset_s`
+  - `capture_attempts`, `skipped_captures`, `detection_capture_idx`, `capture_elapsed_s`
+- Added reward-capture diagnostics path in `reward.py`:
+  - `capture_and_detect_with_diagnostics()`
+  - optional diagnostics returns from `get_conditioned_reward()` / `get_reward()`
+- Latency fix in capture scheduler:
+  - when `action_start_time` is far in the past, stale capture slots are skipped instead of executing a burst of redundant back-to-back OCR captures.
+  - preserves capture-window semantics while reducing tail latency.
+- Rollout reset behavior changed in `trick_conditioned_collector.py`:
+  - each worker now schedules reset immediately after its eval completes (still waiting for all resets before next batch dispatch).
+  - removes unnecessary post-eval board idle caused by waiting for slower peers to finish before starting resets.
+- Note: local short-run reproduction command was attempted, but WDA was not reachable (`127.0.0.1:8100`) in this session, so on-device timing confirmation remains to be captured in the next live run.
+
+### XR Live Validation (2026-04-27)
+- Brought up XR-only environment using launch script with device list constrained to `iPhone_XR`.
+- Ran one-step PPO validation:
+  `python scripts/train_ppo.py --updates 1 --steps-per-update 1 --epochs-per-update 1 --minibatch-size 1 --device-count 1 --checkpoint-every 1 --wait-time 0.0 --capture-count 14 --capture-interval 0.15 --settle-time 0.5`
+- Run artifact: `logs/runs/ppo_run_20260427_172254/`
+- Observed sample telemetry:
+  - `action_exec_s`: 6.4537
+  - `reward_eval_s`: 0.4166
+  - `eval_total_s`: 7.3853
+  - `post_eval_wait_s`: 0.0001
+  - `reset_s`: 0.8249
+  - `capture_attempts`: 1
+  - `skipped_captures`: 13
+- Interpretation:
+  - Post-eval idle before reset is effectively eliminated for this sample (`post_eval_wait_s` near zero).
+  - OCR capture burst behavior is avoided (single capture attempt + skipped stale slots), with much lower reward-eval tail time than full 14-capture loop.
