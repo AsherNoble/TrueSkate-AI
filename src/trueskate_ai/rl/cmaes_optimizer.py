@@ -230,6 +230,8 @@ def run(
                             "skipped_captures": 0,
                             "detection_capture_idx": None,
                             "capture_elapsed_s": 0.0,
+                            "monitor_frames_checked": 0,
+                            "monitor_elapsed_s": 0.0,
                         }
                     completion_times[cand_idx] = time.monotonic()
                     reset_future = executor.submit(_timed_worker_reset, worker)
@@ -299,6 +301,8 @@ def run(
                         "skipped_captures": result.get("skipped_captures", 0),
                         "detection_capture_idx": result.get("detection_capture_idx"),
                         "capture_elapsed_s": round(result.get("capture_elapsed_s", 0.0), 4),
+                        "monitor_frames_checked": result.get("monitor_frames_checked", 0),
+                        "monitor_elapsed_s": round(result.get("monitor_elapsed_s", 0.0), 4),
                         "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                     })
 

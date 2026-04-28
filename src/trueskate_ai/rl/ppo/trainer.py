@@ -413,6 +413,12 @@ def run_training(config: PPOConfig) -> None:
             mean_skipped_captures = (
                 sum(r.skipped_captures for r in rollout_results) / n_samples if n_samples else 0.0
             )
+            mean_monitor_frames_checked = (
+                sum(r.monitor_frames_checked for r in rollout_results) / n_samples if n_samples else 0.0
+            )
+            mean_monitor_elapsed_s = (
+                sum(r.monitor_elapsed_s for r in rollout_results) / n_samples if n_samples else 0.0
+            )
 
             device_summary: dict[str, dict[str, int]] = {}
             for result in rollout_results:
@@ -453,6 +459,8 @@ def run_training(config: PPOConfig) -> None:
                         "skipped_captures": result.skipped_captures,
                         "detection_capture_idx": result.detection_capture_idx,
                         "capture_elapsed_s": round(result.capture_elapsed_s, 4),
+                        "monitor_frames_checked": result.monitor_frames_checked,
+                        "monitor_elapsed_s": round(result.monitor_elapsed_s, 4),
                         "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                     },
                 )
@@ -479,6 +487,8 @@ def run_training(config: PPOConfig) -> None:
                     "mean_capture_attempts": round(mean_capture_attempts, 4),
                     "mean_capture_elapsed_s": round(mean_capture_elapsed_s, 4),
                     "mean_skipped_captures": round(mean_skipped_captures, 4),
+                    "mean_monitor_frames_checked": round(mean_monitor_frames_checked, 4),
+                    "mean_monitor_elapsed_s": round(mean_monitor_elapsed_s, 4),
                     "device_summary": device_summary,
                     "policy_loss": round(mean_policy_loss, 6),
                     "value_loss": round(mean_value_loss, 6),

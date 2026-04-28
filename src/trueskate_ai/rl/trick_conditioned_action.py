@@ -131,7 +131,13 @@ def _tap_at_time(driver, start_time: float, target_offset: float, tap_xy: tuple[
     driver.execute_script("mobile: tap", {"x": tap_xy[0], "y": tap_xy[1]})
 
 
-def _execute_static_push(driver, *, device_w: float, device_h: float) -> None:
+def _execute_static_push(
+    driver,
+    *,
+    device_w: float,
+    device_h: float,
+    on_post_push=None,
+) -> None:
     """Run the CMA-ES-style static push before trick gestures."""
     push_start = norm_to_device(_PUSH_START[0], _PUSH_START[1], device_w, device_h)
     push_end = norm_to_device(_PUSH_END[0], _PUSH_END[1], device_w, device_h)
@@ -145,6 +151,8 @@ def _execute_static_push(driver, *, device_w: float, device_h: float) -> None:
         easing=push_easing,
     )
     ActionChains(driver, devices=[finger_push]).perform()
+    if on_post_push is not None:
+        on_post_push()
 
     remaining_pre_delay = _PUSH_PRE_DELAY - _PUSH_DURATION
     if remaining_pre_delay > 0:
@@ -158,9 +166,15 @@ def execute_action_plan(
     device_w: float,
     device_h: float,
     spin_button_xy: tuple[float, float] = (25.0, 362.0),
+    on_post_push=None,
 ) -> None:
     """Execute a decoded action plan on-device."""
-    _execute_static_push(driver, device_w=device_w, device_h=device_h)
+    _execute_static_push(
+        driver,
+        device_w=device_w,
+        device_h=device_h,
+        on_post_push=on_post_push,
+    )
 
     starts = _slot_starts(plan)
     fingers = [PointerInput("touch", "finger0"), PointerInput("touch", "finger1")]
@@ -233,6 +247,7 @@ def execute_action_vector(
     device_w: float,
     device_h: float,
     spin_button_xy: tuple[float, float] = (25.0, 362.0),
+    on_post_push=None,
 ) -> ActionPlan:
     """Decode and execute a trick-conditioned action vector."""
     plan = decode_action_vector(action)
@@ -242,5 +257,6 @@ def execute_action_vector(
         device_w=device_w,
         device_h=device_h,
         spin_button_xy=spin_button_xy,
+        on_post_push=on_post_push,
     )
     return plan

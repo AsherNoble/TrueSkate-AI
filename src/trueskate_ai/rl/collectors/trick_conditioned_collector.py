@@ -10,7 +10,12 @@ from dataclasses import dataclass, replace
 import numpy as np
 
 from trueskate_ai.rl.device_worker import DeviceWorker, _ALL_DEAD_TIMEOUT
-from trueskate_ai.rl.reward import get_conditioned_reward
+from trueskate_ai.rl.reward import (
+    ContinuousTrickMonitor,
+    compute_conditioned_reward,
+    get_conditioned_reward,
+    merge_trick_results,
+)
 from trueskate_ai.rl.trick_conditioned_action import execute_action_vector
 
 _TARGET_COL_WIDTH = 28
@@ -71,6 +76,8 @@ class RolloutResult:
     skipped_captures: int = 0
     detection_capture_idx: int | None = None
     capture_elapsed_s: float = 0.0
+    monitor_frames_checked: int = 0
+    monitor_elapsed_s: float = 0.0
     error: str | None = None
 
 
@@ -93,6 +100,11 @@ def _collect_one(
     eval_start = time.monotonic()
     worker.ensure_foreground()
     time.sleep(settle_time)
+    monitor = ContinuousTrickMonitor()
+
+    def _on_post_push() -> None:
+        monitor.start(worker.mjpeg_url)
+
     action_start_time = time.monotonic()
     execute_action_vector(
         worker.driver,
@@ -100,20 +112,24 @@ def _collect_one(
         device_w=worker.device_w,
         device_h=worker.device_h,
         spin_button_xy=worker.spin_button_xy if spin_button_xy is None else spin_button_xy,
+        on_post_push=_on_post_push,
     )
     action_end_time = time.monotonic()
+    monitor_result, monitor_diag = monitor.stop()
     reward, trick_result, capture_diag = get_conditioned_reward(
         worker.driver,
         target_trick=task.target_trick,
         wait_time=wait_time,
         capture_count=capture_count,
         capture_interval=capture_interval,
-        action_start_time=action_start_time,
+        action_start_time=action_end_time,
         return_diagnostics=True,
     )
+    combined_result = merge_trick_results(monitor_result, trick_result)
+    reward = compute_conditioned_reward(combined_result, target_trick=task.target_trick)
     reward_end_time = time.monotonic()
-    detected_trick = trick_result.trick if trick_result is not None else None
-    detected_status = trick_result.status if trick_result is not None else None
+    detected_trick = combined_result.trick if combined_result is not None else None
+    detected_status = combined_result.status if combined_result is not None else None
     print(
         _format_eval_line(
             device_id=worker.device_id,
@@ -137,7 +153,7 @@ def _collect_one(
         action_exec_s=action_end_time - action_start_time,
         reward_eval_s=reward_end_time - action_end_time,
         eval_total_s=reward_end_time - eval_start,
-        capture_attempts=int(capture_diag["captures_attempted"]),
+        capture_attempts=int(capture_diag["captures_attempted"]) + int(monitor_diag["frames_checked"]),
         skipped_captures=int(capture_diag["skipped_captures"]),
         detection_capture_idx=(
             None
@@ -145,6 +161,8 @@ def _collect_one(
             else int(capture_diag["detection_capture_idx"])
         ),
         capture_elapsed_s=float(capture_diag["capture_elapsed_s"]),
+        monitor_frames_checked=int(monitor_diag["frames_checked"]),
+        monitor_elapsed_s=float(monitor_diag["monitor_elapsed_s"]),
     )
 
 
