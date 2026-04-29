@@ -153,3 +153,26 @@ FRONTSIDE 360 FLIP, BACKSIDE 360 HEEL, FRONTSIDE 360 HEEL
 - Interpretation:
   - Post-eval idle before reset is effectively eliminated for this sample (`post_eval_wait_s` near zero).
   - OCR capture burst behavior is avoided (single capture attempt + skipped stale slots), with much lower reward-eval tail time than full 14-capture loop.
+
+### OCR Reliability Hotfix — post-push monitoring (2026-04-27)
+- User-observed regression: trick text was being missed too often after the prior capture-skip optimization.
+- Fix implemented:
+  - OCR monitoring now starts **immediately after static push** (not later) via an explicit `on_post_push` hook.
+  - Added `ContinuousTrickMonitor` using MJPEG frames for continuous detection during active eval execution.
+  - Post-action capture still runs for the configured window; monitor + post-action detections are merged with de-dup trick concatenation (`" + "`).
+- Live validation run:
+  - `logs/runs/ppo_run_20260427_183521`
+  - `monitor_frames_checked`: `45`
+  - `capture_attempts` (monitor + post-action): `51`
+  - `monitor_elapsed_s`: `4.865`
+- Outcome: screen checking now clearly begins in the post-push phase and continues through eval, restoring dense OCR polling behavior.
+
+### Merge Specificity Fix (2026-04-27)
+- Issue observed: one landed trick could be merged as multiple outputs (example: `"HARD FLIP + DOUBLE HARD FLIP"`).
+- Fix in `reward.py` merge pipeline:
+  - split merged detections into trick components,
+  - dedupe by specificity, keeping the most specific overlapping variant,
+  - preserve true combos via existing `" + "` formatting.
+- Example behavior after fix:
+  - `HARD FLIP` + `DOUBLE HARD FLIP` → `DOUBLE HARD FLIP`
+  - `KICKFLIP + 50-50 GRIND` + `KICKFLIP` → `KICKFLIP + 50-50 GRIND`

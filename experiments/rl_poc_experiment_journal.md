@@ -101,11 +101,17 @@
 - Extracted: 360 flip (2 samples, 1.0), double kickflip (18, 0.6), nightmare flip (1196, 0.6)
 - Hard flip family all scored 0.0 — not matched in reward tiers (bug to fix)
 
+## CMA-ES Revival + Target-Relative Reward (2026-04-29)
+- **PPO detour (Apr 19–27):** pivoted to trick-conditioned PPO to escape CMA-ES EV trap; see `rl_neural_net_experiment_journal.md` for full detail. Core issue: match_rate stayed 0 — HER pumped reward=1 experiences that biased V(trick) upward, killing advantage signal for hard targets. Parked PPO; returning to CMA-ES with better reward design.
+- **Binary reward failure (confirmed empirically):** ran CMA-ES with reward=1.0 for KICKFLIP only, else 0.0. 6 hits in 4980 evals — covariance update diluted to noise by 59/60 zero-fitness ties per generation. Never converged.
+- **`execute_trick.py` coordinate scaling bug fixed:** `execute_recipe` was passing canonical 375×812 coords directly to Appium on non-XS devices. iPhone 11/XR (414×896) need `norm_to_device` scaling — same as `execute_action` already did. XS unaffected (canonical = XS native space). Explains why mined recipes didn't replay reliably.
+- **Target-relative reward (`compute_reward_for_target`):** target=1.0, same mechanical family=0.4 (substring-based: any trick containing FLIP → kickflip family), any other recognized trick=0.05, nothing=0.0. Non-landed: `base * (base - 0.1)`. Prevents EV trap (pop shove-it scores 0.05 under flip target) while solving dilution (most evals score >0, giving CMA-ES a real population ranking).
+- **Warm-start support added** (`--initial-mean` on `train_cmaes.py`): seeds CMA-ES mean from `best_gestures` in a trick library JSON, coordinate sigmas halved to 20.0.
+- **First successful convergence run:** `--target-trick KICKFLIP --initial-mean trick_libraries/kickflip_20260427_105222.json` — CMA-ES converged on 360 FLIP basin (adjacent in param space to kickflip warm-start) within ~20 generations. Back-to-back 360 FLIPs observed for the first time. ~1280 360 FLIP hits logged.
+
+
 ## Next Steps
-- Swap OCR to Apple Vision framework (pyobjc)
 - App-focus check before each eval
 - Auto-terminate on consecutive zero-reward evals
-- Fix hard flip reward tier
-- Novelty bonus / IPOP restarts to escape convergence traps
-- Emulated phone for parallel eval throughput
-- Long-term: hierarchical architecture — sequence model commanding low-level RL policies
+- Run dedicated per-trick convergence runs using `--target-trick` + `--initial-mean` for each trick in the library — exclude 360 FLIP from kickflip-family tier to prevent basin drift
+- Modular curriculum: JSON-defined reward tier tables selectable via `--target-trick` instead of hardcoded family logic

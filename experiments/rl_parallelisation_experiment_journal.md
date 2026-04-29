@@ -36,3 +36,13 @@ Multiply data collection throughput by evaluating N candidates simultaneously ac
   - `post_eval_wait_s` ≈ `0.0001`
   - `reset_s` ≈ `0.8249`
 - This confirms reset starts immediately after eval completion in the current scheduler, with no meaningful idle barrier wait in the single-worker case.
+
+## Update — OCR monitor start alignment (2026-04-27)
+- Added a post-push execution hook in both action paths:
+  - CMA-ES: `action_param.execute_action(..., on_post_push=...)`
+  - PPO: `trick_conditioned_action.execute_action_vector(..., on_post_push=...)`
+- This hook starts a continuous MJPEG-based trick monitor immediately after static push so OCR checking does not wait until action completion.
+- Evaluator paths (PPO collector and `DeviceWorker.evaluate`) now merge:
+  1. monitor detections collected during execution, and
+  2. post-action capture-window detections,
+  with duplicate trick names removed and `" + "` concatenation preserved.
