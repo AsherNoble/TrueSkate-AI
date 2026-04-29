@@ -16,10 +16,13 @@ Failed tricks receive base * (base - 0.1) for all tricks.
 For combo tricks (e.g. "KICKFLIP + CROOKED GRIND"), each component is
 evaluated independently and the maximum reward is returned.
 """
+import logging
+import threading
 import time
 
 import cv2
 import numpy as np
+import requests
 
 from trueskate_ai.sim.trick_info_reader import TrickResult, detect_trick
 
@@ -63,6 +66,142 @@ class RepetitionPenalty:
         return self._counts.get(trick_name, 0)
 
 
+def _merge_detected_results(results: list[TrickResult]) -> TrickResult:
+    """Merge frame-level detections into one eval-level TrickResult.
+
+    Duplicate trick names are removed while preserving first-seen order.
+    Overlapping variants collapse to the most specific form
+    (e.g. DOUBLE HARD FLIP wins over HARD FLIP).
+    Status precedence is landed > failed > unknown.
+    """
+    def _is_more_specific_variant(candidate: str, current: str) -> bool:
+        if candidate == current:
+            return False
+        if candidate.endswith(current):
+            return True
+        cand_tokens = set(candidate.split())
+        curr_tokens = set(current.split())
+        return curr_tokens.issubset(cand_tokens) and len(cand_tokens) > len(curr_tokens)
+
+    trick_components: list[str] = []
+    for result in results:
+        for component in result.trick.split(" + "):
+            normalized = normalize_trick_name(component)
+            if normalized:
+                trick_components.append(normalized)
+
+    tricks: list[str] = []
+    for candidate in trick_components:
+        handled = False
+        for idx, current in enumerate(tricks):
+            if candidate == current:
+                handled = True
+                break
+            if _is_more_specific_variant(candidate, current):
+                tricks[idx] = candidate
+                handled = True
+                break
+            if _is_more_specific_variant(current, candidate):
+                handled = True
+                break
+        if not handled:
+            tricks.append(candidate)
+
+    if any(result.status == "landed" for result in results):
+        status = "landed"
+    elif any(result.status == "failed" for result in results):
+        status = "failed"
+    else:
+        status = "unknown"
+
+    return TrickResult(trick=" + ".join(tricks), status=status)
+
+
+def merge_trick_results(*results: TrickResult | None) -> TrickResult | None:
+    """Merge optional TrickResult values into one deduplicated result."""
+    present = [result for result in results if result is not None]
+    if not present:
+        return None
+    return _merge_detected_results(present)
+
+
+class ContinuousTrickMonitor:
+    """Reads MJPEG frames continuously and runs OCR trick detection."""
+
+    def __init__(self) -> None:
+        self._thread: threading.Thread | None = None
+        self._stop_flag = False
+        self._response: requests.Response | None = None
+        self._detections: list[TrickResult] = []
+        self._frames_checked = 0
+        self._started_at = 0.0
+
+    def start(self, mjpeg_url: str | None) -> None:
+        if mjpeg_url is None or self._thread is not None:
+            return
+        self._stop_flag = False
+        self._detections = []
+        self._frames_checked = 0
+        self._started_at = time.monotonic()
+        self._thread = threading.Thread(
+            target=self._capture_loop, args=(mjpeg_url,), daemon=True
+        )
+        self._thread.start()
+
+    def _capture_loop(self, mjpeg_url: str) -> None:
+        buf = b""
+        try:
+            resp = requests.get(mjpeg_url, stream=True, timeout=5)
+            self._response = resp
+            for chunk in resp.iter_content(chunk_size=4096):
+                if self._stop_flag:
+                    break
+                buf += chunk
+                while True:
+                    start_idx = buf.find(b"\xff\xd8")
+                    if start_idx == -1:
+                        buf = b""
+                        break
+                    end_idx = buf.find(b"\xff\xd9", start_idx + 2)
+                    if end_idx == -1:
+                        buf = buf[start_idx:]
+                        break
+                    jpeg_bytes = buf[start_idx : end_idx + 2]
+                    buf = buf[end_idx + 2 :]
+                    arr = np.frombuffer(jpeg_bytes, dtype=np.uint8)
+                    frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                    if frame is None:
+                        continue
+                    self._frames_checked += 1
+                    result = detect_trick(frame)
+                    if result is not None:
+                        self._detections.append(result)
+        except Exception as exc:
+            logging.warning("ContinuousTrickMonitor failed: %s", exc)
+        finally:
+            self._response = None
+
+    def stop(self) -> tuple[TrickResult | None, CaptureDiagnostics]:
+        self._stop_flag = True
+        resp = self._response
+        if resp is not None:
+            try:
+                resp.close()
+            except Exception:
+                pass
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+            self._thread = None
+
+        merged = _merge_detected_results(self._detections) if self._detections else None
+        diagnostics: CaptureDiagnostics = {
+            "frames_checked": self._frames_checked,
+            "distinct_tricks_detected": len({result.trick for result in self._detections}),
+            "monitor_elapsed_s": max(0.0, time.monotonic() - self._started_at),
+        }
+        return merged, diagnostics
+
+
 def capture_and_detect_with_diagnostics(
     driver,
     *,
@@ -72,10 +211,10 @@ def capture_and_detect_with_diagnostics(
 ) -> tuple[TrickResult | None, CaptureDiagnostics]:
     """Capture multiple screenshots and run trick OCR on each.
 
-    Default cadence captures 14 screenshots at 0.15s spacing and returns the
-    first non-None TrickResult. When action_start_time is provided, screenshot
-    timestamps are aligned to that action start; if we're behind schedule, stale
-    capture slots are skipped rather than replayed back-to-back.
+    Captures continuously (as fast as screenshots can be read) over a bounded
+    detection window. The window length is capture_count * capture_interval.
+    If multiple distinct trick names are seen across frames, they are merged
+    using the same " + " concatenation convention.
 
     Args:
         driver: Appium WebDriver instance.
@@ -90,28 +229,19 @@ def capture_and_detect_with_diagnostics(
 
     capture_started_at = time.monotonic()
     captures_attempted = 0
-    skipped_captures = 0
+    detection_capture_idx: int | None = None
+    detected_results: list[TrickResult] = []
+    capture_idx = 0
 
-    next_capture_idx = 0
-    while next_capture_idx < capture_count:
-        capture_idx = next_capture_idx
-        if action_start_time is not None:
-            target_time = action_start_time + (capture_idx * capture_interval)
-            now = time.monotonic()
-            sleep_for = target_time - now
-            if sleep_for > 0:
-                time.sleep(sleep_for)
-            elif capture_interval > 0:
-                # If execution ran past multiple scheduled capture slots, skip
-                # stale slots instead of bursting redundant back-to-back OCR calls.
-                catchup_idx = int((now - action_start_time) // capture_interval)
-                if catchup_idx > capture_idx:
-                    capped_idx = min(catchup_idx, capture_count - 1)
-                    skipped_captures += capped_idx - capture_idx
-                    capture_idx = capped_idx
-        elif capture_idx > 0:
-            time.sleep(capture_interval)
+    window_s = capture_count * capture_interval
+    capture_anchor = action_start_time if action_start_time is not None else capture_started_at
+    if action_start_time is not None:
+        sleep_for = action_start_time - time.monotonic()
+        if sleep_for > 0:
+            time.sleep(sleep_for)
+    capture_deadline = capture_anchor + window_s
 
+    while True:
         png_bytes = driver.get_screenshot_as_png()
         arr = np.frombuffer(png_bytes, dtype=np.uint8)
         frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
@@ -119,23 +249,24 @@ def capture_and_detect_with_diagnostics(
 
         result = detect_trick(frame)
         if result is not None:
-            diagnostics: CaptureDiagnostics = {
-                "captures_attempted": captures_attempted,
-                "detection_capture_idx": capture_idx,
-                "capture_elapsed_s": time.monotonic() - capture_started_at,
-                "skipped_captures": skipped_captures,
-            }
-            return result, diagnostics
+            if detection_capture_idx is None:
+                detection_capture_idx = capture_idx
+            detected_results.append(result)
 
-        next_capture_idx = capture_idx + 1
+        now = time.monotonic()
+        if now >= capture_deadline:
+            break
 
+        capture_idx += 1
+
+    merged_result = _merge_detected_results(detected_results) if detected_results else None
     diagnostics = {
         "captures_attempted": captures_attempted,
-        "detection_capture_idx": None,
+        "detection_capture_idx": detection_capture_idx,
         "capture_elapsed_s": time.monotonic() - capture_started_at,
-        "skipped_captures": skipped_captures,
+        "skipped_captures": 0,
     }
-    return None, diagnostics
+    return merged_result, diagnostics
 
 
 def capture_and_detect(
@@ -155,12 +286,27 @@ def capture_and_detect(
 
 
 def compute_reward(result: TrickResult | None) -> float:
-    """Return 1.0 only for a landed exact KICKFLIP, else 0.0."""
+    """Score a trick result using the graduated 360-flip reward tiers.
+
+    Tier 1.0 — 360 FLIP exact (no modifiers)
+    Tier 0.8 — 360 FLIP with a modifier
+    Tier 0.6 — VARIAL FLIP variants, standalone KICKFLIP, NIGHTMARE FLIP
+    Tier 0.3 — 360 POP SHOVE-IT, BACKSIDE 360
+    Tier 0.0 — everything else
+
+    For combo strings (e.g. "KICKFLIP + CROOKED GRIND") each component is
+    scored independently and the maximum is used.
+
+    Non-landed statuses (failed, unknown) receive base * (base - 0.1) as a
+    near-miss signal. A base of 0.0 yields 0.0 regardless of status.
+    """
     if result is None:
         return 0.0
-    if result.status != "landed":
-        return 0.0
-    return 1.0 if result.trick.strip().upper() == "KICKFLIP" else 0.0
+    components = [c.strip() for c in result.trick.split(" + ")]
+    base = max(_score_component(c) for c in components)
+    if result.status == "landed":
+        return base
+    return base * (base - 0.1)
 
 
 def _score_component(trick: str) -> float:
@@ -223,8 +369,8 @@ def get_reward(
             a diminishing multiplier and their count is incremented.
         capture_count: Number of screenshots to capture per eval.
         capture_interval: Seconds between consecutive screenshots.
-        action_start_time: Monotonic timestamp recorded when action execution
-            begins. When provided, screenshots are aligned to this start.
+        action_start_time: Optional monotonic timestamp that anchors the
+            capture window start.
 
     Returns:
         Tuple of (reward, result, multiplier):
@@ -257,6 +403,87 @@ def normalize_trick_name(trick_name: str) -> str:
     return normalized
 
 
+_KICKFLIP_FAMILY = frozenset(
+    {
+        "KICKFLIP",
+        "VARIAL KICKFLIP",
+        "BACKSIDE FLIP",
+        "FRONTSIDE FLIP",
+        "HARD FLIP",
+        "360 FLIP",
+        "NIGHTMARE FLIP",
+        "LASER FLIP",
+        "VARIAL FLIP",
+    }
+)
+_HEELFLIP_FAMILY = frozenset(
+    {
+        "HEELFLIP",
+        "VARIAL HEELFLIP",
+        "BACKSIDE HEELFLIP",
+        "FRONTSIDE HEELFLIP",
+        "HARD HEELFLIP",
+        "360 HEELFLIP",
+        "NIGHTMARE HEELFLIP",
+        "LASER HEELFLIP",
+        "VARIAL HEEL",
+    }
+)
+_SHOVE_IT_FAMILY = frozenset(
+    {
+        "POP SHOVE-IT",
+        "VARIAL POP SHOVE-IT",
+        "BACKSIDE SHOVE-IT",
+        "FRONTSIDE SHOVE-IT",
+        "HARD SHOVE-IT",
+        "360 POP SHOVE-IT",
+        "NIGHTMARE SHOVE-IT",
+        "LASER SHOVE-IT",
+        "VARIAL SHOVE-IT",
+    }
+)
+
+
+def _mechanical_family(trick_name: str) -> str | None:
+    normalized = normalize_trick_name(trick_name)
+    if normalized in _KICKFLIP_FAMILY:
+        return "kickflip"
+    if normalized in _HEELFLIP_FAMILY:
+        return "heelflip"
+    if normalized in _SHOVE_IT_FAMILY:
+        return "shove-it"
+    return None
+
+
+def compute_reward_for_target(result: TrickResult | None, *, target_trick: str) -> float:
+    """Score a trick result against a target trick with family-aware shaping."""
+    if result is None:
+        return 0.0
+
+    components = [
+        normalize_trick_name(component)
+        for component in result.trick.split(" + ")
+        if component.strip()
+    ]
+    if not components:
+        return 0.0
+
+    target = normalize_trick_name(target_trick)
+    target_family = _mechanical_family(target)
+
+    def _score_component(component: str) -> float:
+        if component == target:
+            return 1.0
+        if target_family is not None and _mechanical_family(component) == target_family:
+            return 0.4
+        return 0.05
+
+    base = max(_score_component(component) for component in components)
+    if result.status == "landed":
+        return base
+    return base * (base - 0.1)
+
+
 def compute_conditioned_reward(result: TrickResult | None, *, target_trick: str) -> float:
     """Binary reward for trick-conditioned policy training.
 
@@ -282,7 +509,10 @@ def get_conditioned_reward(
     action_start_time: float | None = None,
     return_diagnostics: bool = False,
 ) -> tuple[float, TrickResult | None] | tuple[float, TrickResult | None, CaptureDiagnostics]:
-    """Capture trick text and return conditioned binary reward."""
+    """Capture trick text and return conditioned binary reward.
+
+    The capture loop polls continuously during the configured detection window.
+    """
     time.sleep(wait_time)
     result, diagnostics = capture_and_detect_with_diagnostics(
         driver,

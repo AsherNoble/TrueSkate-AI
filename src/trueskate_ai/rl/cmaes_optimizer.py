@@ -20,6 +20,8 @@ from PIL import Image
 
 from trueskate_ai.rl.action_param import INITIAL_MEAN, INITIAL_SIGMA, PARAM_BOUNDS
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
+from trueskate_ai.rl.reward import compute_reward_for_target
+from trueskate_ai.sim.trick_info_reader import TrickResult
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -63,6 +65,43 @@ def _timed_worker_reset(worker) -> tuple[str, float, float]:
     return worker.device_id, reset_started_at, time.monotonic() - reset_started_at
 
 
+def _load_initial_mean_from_library(path: Path) -> np.ndarray:
+    """Load best_gestures from a trick library JSON and pack into 17 params."""
+    data = json.loads(path.read_text())
+    best_gestures = data.get("best_gestures")
+    if not isinstance(best_gestures, dict):
+        raise ValueError(f"Missing or invalid 'best_gestures' in {path}")
+
+    gestures = best_gestures.get("gestures")
+    delays = best_gestures.get("delays")
+    if not isinstance(gestures, list) or len(gestures) != 2:
+        raise ValueError(f"Expected best_gestures.gestures to have exactly 2 entries in {path}")
+    if not isinstance(delays, list) or len(delays) != 1:
+        raise ValueError(f"Expected best_gestures.delays to have exactly 1 entry in {path}")
+
+    params: list[float] = []
+    for gesture_idx, gesture in enumerate(gestures):
+        if not isinstance(gesture, dict):
+            raise ValueError(f"Gesture {gesture_idx} in {path} is not an object")
+        points = gesture.get("points")
+        if not isinstance(points, list) or len(points) != 3:
+            raise ValueError(f"Gesture {gesture_idx} must contain exactly 3 points in {path}")
+        for point_idx, point in enumerate(points):
+            if not isinstance(point, (list, tuple)) or len(point) != 2:
+                raise ValueError(
+                    f"Gesture {gesture_idx} point {point_idx} must be [x, y] in {path}"
+                )
+            params.extend([float(point[0]), float(point[1])])
+        params.append(float(gesture["duration"]))
+        params.append(float(gesture["easing_power"]))
+
+    params.append(float(delays[0]))
+    mean = np.array(params, dtype=np.float64)
+    if mean.shape != (17,):
+        raise ValueError(f"Expected 17 parameters from best_gestures in {path}, got {mean.shape}")
+    return mean
+
+
 # ---------------------------------------------------------------------------
 # Frame composites
 # ---------------------------------------------------------------------------
@@ -93,6 +132,8 @@ def run(
     pop_size: int = 24,
     log_dir: Path,
     devices: list[dict] | None = None,
+    target_trick: str | None = None,
+    initial_mean: Path | None = None,
 ) -> None:
     """Execute the CMA-ES optimization loop across multiple devices.
 
@@ -110,6 +151,9 @@ def run(
         log_dir:     Root directory for run logs and frame composites.
         devices:     List of device config dicts. Defaults to DEVICES from
                      device_worker module.
+        target_trick: Optional trick name for post-hoc target-aware rescoring.
+        initial_mean: Optional path to trick library JSON; when provided,
+                      best_gestures seeds the CMA-ES mean.
     """
     try:
         import cma
@@ -146,13 +190,25 @@ def run(
     print(f"Workers: {[w.device_id for w in workers]}")
 
     bounds = [PARAM_BOUNDS[:, 0].tolist(), PARAM_BOUNDS[:, 1].tolist()]
+    cma_mean = INITIAL_MEAN.copy()
+    cma_stds = INITIAL_SIGMA.copy()
+    if initial_mean is not None:
+        cma_mean = _load_initial_mean_from_library(initial_mean)
+        coordinate_mask = np.ones(17, dtype=bool)
+        coordinate_mask[[6, 7, 14, 15, 16]] = False
+        cma_stds[coordinate_mask] = 20.0
+        print(f"Loaded initial mean from trick library: {initial_mean}")
+    if target_trick is not None:
+        target_trick = target_trick.strip()
+        if not target_trick:
+            target_trick = None
 
     es = cma.CMAEvolutionStrategy(
-        INITIAL_MEAN.tolist(),
+        cma_mean.tolist(),
         1.0,  # overall sigma — per-parameter scaling handled by CMA_stds
         {
             "bounds": bounds,
-            "CMA_stds": INITIAL_SIGMA.tolist(),
+            "CMA_stds": cma_stds.tolist(),
             "seed": seed,
             "maxiter": max_evals,  # generous ceiling; real stop is max_evals
             "verbose": -9,         # suppress CMA-ES internal printing
@@ -262,6 +318,19 @@ def run(
                     cand_idx = batch_start + i
                     result = round_results[cand_idx]
                     reward = result["reward"]
+                    if target_trick is not None:
+                        trick_name = result["trick_name"]
+                        trick_status = result["trick_status"]
+                        trick_result = (
+                            TrickResult(trick=trick_name, status=trick_status)
+                            if trick_name is not None and trick_status is not None
+                            else None
+                        )
+                        reward = compute_reward_for_target(
+                            trick_result,
+                            target_trick=target_trick,
+                        )
+                        result["reward"] = reward
                     rewards.append(reward)
                     eval_num += 1
 

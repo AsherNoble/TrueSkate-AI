@@ -14,6 +14,8 @@ Options:
     --settle-time Seconds to wait after reset before next attempt (default: 0.5)
     --pop-size    CMA-ES population size — evals per generation (default: 24)
     --log-dir     Log directory (default: logs/)
+    --target-trick Target trick name for conditioned post-hoc rescoring.
+    --initial-mean Path to trick library JSON; seeds mean from best_gestures.
 """
 import argparse
 import sys
@@ -47,6 +49,10 @@ def main() -> None:
     parser.add_argument("--log-dir", type=Path,
                         default=_REPO_ROOT / "logs",
                         help="Log directory (default: logs/)")
+    parser.add_argument("--target-trick", type=str, default=None,
+                        help="Target trick name for conditioned post-hoc rescoring")
+    parser.add_argument("--initial-mean", type=Path, default=None,
+                        help="Path to trick library JSON used to seed CMA-ES mean from best_gestures")
     args = parser.parse_args()
 
     run(
@@ -56,6 +62,8 @@ def main() -> None:
         settle_time=args.settle_time,
         pop_size=args.pop_size,
         log_dir=args.log_dir,
+        target_trick=args.target_trick,
+        initial_mean=args.initial_mean,
     )
 
 

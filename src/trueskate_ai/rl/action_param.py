@@ -72,20 +72,20 @@ PARAM_BOUNDS: np.ndarray = np.array(_BOUNDS_RAW, dtype=np.float64)
 # Initial mean — informed prior for a 360 flip
 # ---------------------------------------------------------------------------
 
-# Slot 1: scoop — left-to-right arc across the TAIL (canonical coords)
+# Slot 1: pop flick — southward swipe from the tail area (canonical coords)
 _SCOOP = [
-    _to_canonical_x(100.0), _to_canonical_y(680.0),
-    _to_canonical_x(220.0), _to_canonical_y(690.0),
-    _to_canonical_x(340.0), _to_canonical_y(675.0),
+    _to_canonical_x(205.0), _to_canonical_y(620.0),
+    _to_canonical_x(210.0), _to_canonical_y(690.0),
+    _to_canonical_x(215.0), _to_canonical_y(748.0),
     0.06, 1.2,
 ]
 
-# Slot 2: flick — upward-left diagonal from mid-board (canonical coords)
+# Slot 2: flick — rightward swipe from the upper-mid board area (canonical coords)
 _FLICK = [
-    _to_canonical_x(270.0), _to_canonical_y(590.0),
-    _to_canonical_x(220.0), _to_canonical_y(530.0),
-    _to_canonical_x(160.0), _to_canonical_y(470.0),
-    0.05, 0.7,
+    _to_canonical_x(205.0), _to_canonical_y(520.0),
+    _to_canonical_x(275.0), _to_canonical_y(512.0),
+    _to_canonical_x(345.0), _to_canonical_y(505.0),
+    0.05, 0.9,
 ]
 
 # Delay: slight overlap — flick starts just before scoop finishes
@@ -202,6 +202,7 @@ def execute_action(
     params: np.ndarray,
     device_w: float = _CANONICAL_W,
     device_h: float = _CANONICAL_H,
+    on_post_push=None,
 ) -> None:
     """Clamp, unpack, and execute a 17-float action on the device.
 
@@ -241,6 +242,8 @@ def execute_action(
         total_duration=_PUSH_DURATION, easing=push_easing
     )
     ActionChains(driver, devices=[finger2]).perform()
+    if on_post_push is not None:
+        on_post_push()
 
     # Wait out the remaining pre-delay after the push finishes
     remaining_pre_delay = _PUSH_PRE_DELAY - _PUSH_DURATION
