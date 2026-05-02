@@ -20,12 +20,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from selenium.webdriver.common.action_chains import ActionChains
 
-from trueskate_ai.rl.cmaes.action_param import (
-    _PUSH_DURATION,
-    _PUSH_EASING,
-    _PUSH_END,
-    _PUSH_PRE_DELAY,
-    _PUSH_START,
+from trueskate_ai.rl.gestures import (
+    PUSH_DURATION,
+    PUSH_EASING,
+    PUSH_END,
+    PUSH_PRE_DELAY,
+    PUSH_START,
     norm_to_device,
 )
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
@@ -105,21 +105,20 @@ def execute_recipe(
     delay = recipe["delays"][0]
     g0_points = [norm_to_device(x, y, device_w, device_h) for x, y in g0["points"]]
     g1_points = [norm_to_device(x, y, device_w, device_h) for x, y in g1["points"]]
-    push_start = norm_to_device(_PUSH_START[0], _PUSH_START[1], device_w, device_h)
-    push_end = norm_to_device(_PUSH_END[0], _PUSH_END[1], device_w, device_h)
-
     p0 = g0["easing_power"]
     easing0 = (lambda t, p=p0: t ** p) if p0 != 1.0 else None
     p1 = g1["easing_power"]
     easing1 = (lambda t, p=p1: t ** p) if p1 != 1.0 else None
-    push_easing = lambda t: t ** _PUSH_EASING
 
     # --- Step 1: push ---
+    push_start = norm_to_device(PUSH_START[0], PUSH_START[1], device_w, device_h)
+    push_end = norm_to_device(PUSH_END[0], PUSH_END[1], device_w, device_h)
+    push_easing = lambda t: t ** PUSH_EASING  # noqa: E731
     finger2 = make_touch_pointer("finger2")
-    build_curved_drag(finger2, [push_start, push_end], total_duration=_PUSH_DURATION, easing=push_easing)
+    build_curved_drag(finger2, [push_start, push_end], total_duration=PUSH_DURATION, easing=push_easing)
     ActionChains(driver, devices=[finger2]).perform()
 
-    remaining_pre_delay = _PUSH_PRE_DELAY - _PUSH_DURATION
+    remaining_pre_delay = PUSH_PRE_DELAY - PUSH_DURATION
     if remaining_pre_delay > 0:
         time.sleep(remaining_pre_delay)
 

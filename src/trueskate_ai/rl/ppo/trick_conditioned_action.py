@@ -9,24 +9,22 @@ from dataclasses import dataclass
 import numpy as np
 from selenium.webdriver.common.action_chains import ActionChains
 
-from trueskate_ai.rl.cmaes.action_param import norm_to_device
+from trueskate_ai.rl.gestures import execute_static_push, norm_to_device
 from trueskate_ai.sim.touch_actions import (
     build_curved_drag,
     make_touch_pointer,
     perform_pointer_actions,
 )
 
-_CANONICAL_W = 375.0
-_CANONICAL_H = 812.0
 _ACTION_DIM = 42
 _SLOT_COUNT = 4
 
 _TOP_BOUND_SCALE = 1.3
 _BOTTOM_BAND_SCALE = 1.15
 _X_MIN = 0.0
-_X_MAX = _CANONICAL_W
-_Y_MIN = _CANONICAL_H * ((448.0 * _TOP_BOUND_SCALE) / 896.0)
-_Y_BASE_MAX = _CANONICAL_H * (750.0 / 896.0)
+_X_MAX = 375.0
+_Y_MIN = 812.0 * ((448.0 * _TOP_BOUND_SCALE) / 896.0)
+_Y_BASE_MAX = 812.0 * (750.0 / 896.0)
 _Y_MAX = _Y_MIN + ((_Y_BASE_MAX - _Y_MIN) * _BOTTOM_BAND_SCALE)
 _DURATION_MIN = 0.03
 _DURATION_MAX = 3
@@ -34,15 +32,6 @@ _EASING_MIN = 0.3
 _EASING_MAX = 3.0
 _DELAY_MIN = -0.3
 _DELAY_MAX = 2
-
-_PUSH_PRE_DELAY = 0.5
-_PUSH_DURATION = 0.02
-_PUSH_EASING = 2.0
-_PUSH_START = (
-    _CANONICAL_W * (350.0 / 414.0),
-    _CANONICAL_H * ((224.0 * _TOP_BOUND_SCALE) / 896.0),
-)
-_PUSH_END = (_CANONICAL_W * (350.0 / 414.0), _CANONICAL_H * (672.0 / 896.0))
 
 
 def _map_from_unit(value: float, lo: float, hi: float) -> float:
@@ -134,34 +123,6 @@ def _tap_at_time(driver, start_time: float, target_offset: float, tap_xy: tuple[
     driver.execute_script("mobile: tap", {"x": tap_xy[0], "y": tap_xy[1]})
 
 
-def _execute_static_push(
-    driver,
-    *,
-    device_w: float,
-    device_h: float,
-    on_post_push=None,
-) -> None:
-    """Run the CMA-ES-style static push before trick gestures."""
-    push_start = norm_to_device(_PUSH_START[0], _PUSH_START[1], device_w, device_h)
-    push_end = norm_to_device(_PUSH_END[0], _PUSH_END[1], device_w, device_h)
-    push_easing = lambda t: t**_PUSH_EASING
-
-    finger_push = make_touch_pointer("finger_push")
-    build_curved_drag(
-        finger_push,
-        [push_start, push_end],
-        total_duration=_PUSH_DURATION,
-        easing=push_easing,
-    )
-    ActionChains(driver, devices=[finger_push]).perform()
-    if on_post_push is not None:
-        on_post_push()
-
-    remaining_pre_delay = _PUSH_PRE_DELAY - _PUSH_DURATION
-    if remaining_pre_delay > 0:
-        time.sleep(remaining_pre_delay)
-
-
 def execute_action_plan(
     driver,
     plan: ActionPlan,
@@ -172,12 +133,7 @@ def execute_action_plan(
     on_post_push=None,
 ) -> None:
     """Execute a decoded action plan on-device."""
-    _execute_static_push(
-        driver,
-        device_w=device_w,
-        device_h=device_h,
-        on_post_push=on_post_push,
-    )
+    execute_static_push(driver, device_w=device_w, device_h=device_h, on_post_push=on_post_push)
 
     starts = _slot_starts(plan)
     fingers = [make_touch_pointer("finger0"), make_touch_pointer("finger1")]

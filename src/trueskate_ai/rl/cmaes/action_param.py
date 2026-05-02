@@ -17,24 +17,35 @@ Easing power controls the velocity profile passed to curved_drag():
 Canonical action space: 375×812 logical points (iPhone XS width reference).
 """
 import numpy as np
-from selenium.webdriver.common.action_chains import ActionChains
+
+from trueskate_ai.rl.gestures import (
+    CANONICAL_H,
+    CANONICAL_W,
+    PUSH_DURATION,
+    PUSH_EASING,
+    PUSH_END,
+    PUSH_PRE_DELAY,
+    PUSH_START,
+    execute_static_push,
+    norm_to_device,
+)
 
 # ---------------------------------------------------------------------------
 # Bounds
 # ---------------------------------------------------------------------------
 
+# Legacy dimensions — used only for converting the original gesture coords
+# to canonical space when defining bounds and initial mean.
 _LEGACY_W = 414.0
 _LEGACY_H = 896.0
-_CANONICAL_W = 375.0
-_CANONICAL_H = 812.0
 
 
 def _to_canonical_x(x: float) -> float:
-    return x * (_CANONICAL_W / _LEGACY_W)
+    return x * (CANONICAL_W / _LEGACY_W)
 
 
 def _to_canonical_y(y: float) -> float:
-    return y * (_CANONICAL_H / _LEGACY_H)
+    return y * (CANONICAL_H / _LEGACY_H)
 
 
 # fmt: off
@@ -95,16 +106,11 @@ INITIAL_MEAN: np.ndarray = np.array(_SCOOP + _FLICK + _DELAY, dtype=np.float64)
 # Initial sigma
 # ---------------------------------------------------------------------------
 
-# Parameter type → sigma mapping
 _COORD_SIGMA = 40.0
 _DUR_SIGMA = 0.15
 _EASING_SIGMA = 0.5
 _DELAY_SIGMA = 0.15
 
-# Indices by type:
-#   duration:     6, 14
-#   easing_power: 7, 15
-#   delay:        16
 _SIGMA_MAP = {
     6: _DUR_SIGMA, 7: _EASING_SIGMA,
     14: _DUR_SIGMA, 15: _EASING_SIGMA,
@@ -128,12 +134,6 @@ def clamp_params(params: np.ndarray) -> np.ndarray:
     Replaces any NaN or inf values with the midpoint of that parameter's
     bounds before clipping. CMA-ES can occasionally sample non-finite
     values, and np.clip does not catch them.
-
-    Args:
-        params: 17-element float array from CMA-ES.
-
-    Returns:
-        New array with each value clipped to [min, max] per PARAM_BOUNDS.
     """
     midpoints = (PARAM_BOUNDS[:, 0] + PARAM_BOUNDS[:, 1]) / 2
     params = np.where(np.isfinite(params), params, midpoints)
@@ -142,9 +142,6 @@ def clamp_params(params: np.ndarray) -> np.ndarray:
 
 def unpack_action(params: np.ndarray) -> dict:
     """Unpack a clamped 17-float parameter vector into a structured dict.
-
-    Args:
-        params: 17-element float array (should already be clamped).
 
     Returns:
         Dict with keys:
@@ -169,51 +166,21 @@ def unpack_action(params: np.ndarray) -> dict:
     return {"gestures": gestures, "delays": delays}
 
 
-# Static pre-execution push parameters (not optimized by CMA-ES)
-_PUSH_PRE_DELAY = 0.5
-"""Delay before each trick execution during which the push occurs (seconds)."""
-_PUSH_START = (_to_canonical_x(350.0), _to_canonical_y(224.0))
-"""Push start position: right side, upper half (x=350, y=224)."""
-_PUSH_END = (_to_canonical_x(350.0), _to_canonical_y(672.0))
-"""Push end position: right side, lower half (x=350, y=672)."""
-_PUSH_DURATION = 0.02
-"""Push duration (seconds)."""
-_PUSH_EASING = 2.0
-"""Push easing power — accelerating (slow start, fast end) for realistic push dynamics."""
-
-
-def norm_to_device(x: float, y: float, device_w: float, device_h: float) -> tuple[float, float]:
-    """Map a canonical-space point (375x812) into a device's logical points."""
-    scale = device_w / _CANONICAL_W
-    action_h = _CANONICAL_H * scale
-    y_offset = (device_h - action_h) / 2.0
-    return x * scale, y_offset + (y * scale)
-
-
 def execute_action(
     driver,
     params: np.ndarray,
-    device_w: float = _CANONICAL_W,
-    device_h: float = _CANONICAL_H,
+    device_w: float = CANONICAL_W,
+    device_h: float = CANONICAL_H,
     on_post_push=None,
     timing_device_key: str | None = None,
 ) -> None:
     """Clamp, unpack, and execute a 17-float action on the device.
 
     Fires three gesture slots in two stages:
-      - finger0: scoop (slot 1)
-      - finger1: flick (slot 2), offset by calibrated delay scheduling
-      - finger2: static downward push (right side), occurring during pre-delay
-
-    Args:
-        driver: Appium WebDriver instance.
-        params: 17-element float array from CMA-ES.
+      - finger_push: static downward push (right side), during pre-delay
+      - finger0/finger1: scoop + flick, with calibrated inter-gesture delay
     """
-    from trueskate_ai.sim.touch_actions import (  # noqa: PLC0415
-        build_curved_drag,
-        execute_two_slot_gestures,
-        make_touch_pointer,
-    )
+    from trueskate_ai.sim.touch_actions import execute_two_slot_gestures  # noqa: PLC0415
 
     action = unpack_action(clamp_params(params))
     g0, g1 = action["gestures"]
@@ -221,34 +188,14 @@ def execute_action(
 
     g0_points = [norm_to_device(x, y, device_w, device_h) for x, y in g0["points"]]
     g1_points = [norm_to_device(x, y, device_w, device_h) for x, y in g1["points"]]
-    push_start = norm_to_device(_PUSH_START[0], _PUSH_START[1], device_w, device_h)
-    push_end = norm_to_device(_PUSH_END[0], _PUSH_END[1], device_w, device_h)
 
     p0 = g0["easing_power"]
     easing0 = (lambda t, p=p0: t ** p) if p0 != 1.0 else None
     p1 = g1["easing_power"]
     easing1 = (lambda t, p=p1: t ** p) if p1 != 1.0 else None
-    push_easing = lambda t: t ** _PUSH_EASING  # accelerating (ease_in)
 
-    # --- Step 1: static push (single-finger, separate perform) ---
-    # Must be a separate perform() call — bundling 3 fingers in one perform()
-    # triggers iOS's system three-finger gesture (undo/redo), swallowing all touches
-    # before True Skate sees them.
-    finger2 = make_touch_pointer("finger2")
-    build_curved_drag(
-        finger2, [push_start, push_end],
-        total_duration=_PUSH_DURATION, easing=push_easing
-    )
-    ActionChains(driver, devices=[finger2]).perform()
-    if on_post_push is not None:
-        on_post_push()
+    execute_static_push(driver, device_w=device_w, device_h=device_h, on_post_push=on_post_push)
 
-    # Wait out the remaining pre-delay after the push finishes
-    remaining_pre_delay = _PUSH_PRE_DELAY - _PUSH_DURATION
-    if remaining_pre_delay > 0:
-        time.sleep(remaining_pre_delay)
-
-    # --- Step 2: scoop + flick ---
     execute_two_slot_gestures(
         driver,
         g0_points=g0_points,
