@@ -24,7 +24,7 @@ from appium.options.ios import XCUITestOptions
 from dotenv import load_dotenv
 from PIL import Image
 
-from trueskate_ai.rl.action_param import execute_action
+from trueskate_ai.rl.cmaes.action_param import execute_action
 from trueskate_ai.rl.reward import (
     ContinuousTrickMonitor,
     compute_reward,

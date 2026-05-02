@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 from selenium.webdriver.common.action_chains import ActionChains
 
-from trueskate_ai.rl.action_param import norm_to_device
+from trueskate_ai.rl.cmaes.action_param import norm_to_device
 from trueskate_ai.sim.touch_actions import (
     build_curved_drag,
     make_touch_pointer,

@@ -16,11 +16,11 @@ from pathlib import Path
 
 import requests
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from selenium.webdriver.common.action_chains import ActionChains
 
-from trueskate_ai.rl.action_param import (
+from trueskate_ai.rl.cmaes.action_param import (
     _PUSH_DURATION,
     _PUSH_EASING,
     _PUSH_END,

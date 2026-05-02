@@ -16,7 +16,7 @@ from trueskate_ai.rl.reward import (
     get_conditioned_reward,
     merge_trick_results,
 )
-from trueskate_ai.rl.trick_conditioned_action import execute_action_vector
+from trueskate_ai.rl.ppo.trick_conditioned_action import execute_action_vector
 
 _TARGET_COL_WIDTH = 28
 _DETECTED_COL_WIDTH = 32

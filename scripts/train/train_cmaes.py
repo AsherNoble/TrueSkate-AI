@@ -25,11 +25,11 @@ from pathlib import Path
 # Path setup
 # ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve().parent
-_REPO_ROOT = _HERE.parent
+_REPO_ROOT = _HERE.parent.parent
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from trueskate_ai.rl.cmaes_optimizer import run
+from trueskate_ai.rl.cmaes.cmaes_optimizer import run
 
 
 def main() -> None:

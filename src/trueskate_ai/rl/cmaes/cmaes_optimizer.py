@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from trueskate_ai.rl.action_param import INITIAL_MEAN, INITIAL_SIGMA, PARAM_BOUNDS
+from trueskate_ai.rl.cmaes.action_param import INITIAL_MEAN, INITIAL_SIGMA, PARAM_BOUNDS
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
 from trueskate_ai.rl.reward import compute_reward_for_target
 from trueskate_ai.sim.trick_info_reader import TrickResult

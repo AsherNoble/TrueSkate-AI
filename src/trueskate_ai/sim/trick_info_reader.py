@@ -9,8 +9,8 @@ import cv2
 import numpy as np
 
 from .known_tricks import KNOWN_TRICKS
-from .vision_ocr import image_to_lines as vision_image_to_lines
-from .vision_ocr import is_vision_available, vision_unavailable_reason
+from trueskate_ai.vision.vision_ocr import image_to_lines as vision_image_to_lines
+from trueskate_ai.vision.vision_ocr import is_vision_available, vision_unavailable_reason
 
 
 class TrickResult(NamedTuple):

@@ -14,8 +14,8 @@ import torch
 from torch import nn
 from torch.optim import Adam
 
-from trueskate_ai.nn.policy import TrickConditionedPolicy
-from trueskate_ai.rl.collectors.trick_conditioned_collector import (
+from trueskate_ai.rl.ppo.policy import TrickConditionedPolicy
+from trueskate_ai.rl.ppo.collector import (
     RolloutTask,
     collect_rollouts,
 )
