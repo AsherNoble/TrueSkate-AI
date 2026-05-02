@@ -39,6 +39,7 @@ Key runtime constraints captured here:
 
 ## Existing assistant files to consult
 - CLAUDE.md — repo-specific guidelines and architecture (included critical details). Consult before proposing changes to core flows.
+- trick_libraries/TRICK_LIBRARY_FORMAT.md — JSON schema for trick library files, gesture parameters, and easing power reference.
 
 ## When editing or extending
 - Preserve curved gesture primitives; changes to action_param or touch_actions must be validated on-device.

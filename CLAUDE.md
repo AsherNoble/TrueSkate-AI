@@ -49,7 +49,7 @@ tmp/                # Debug output (gitignored)
 
 5. **CMA-ES optimizer** (`src/trueskate_ai/rl/cmaes_optimizer.py`, entry point `scripts/train_cmaes.py`): Evolutionary optimization over gesture params. JSONL logging. Params clamped to prevent inf/NaN Appium crashes. y-bounds capped at 750 to avoid home indicator zone.
 
-6. **Trick library** (`scripts/build_trick_library.py`, `src/trueskate_ai/sim/execute_trick.py`): Extracts recipes from JSONL logs (median + best params), replays via Appium.
+6. **Trick library** (`scripts/build_trick_library.py`, `src/trueskate_ai/sim/execute_trick.py`): Extracts recipes from JSONL logs (median + best params), replays via Appium. See `trick_libraries/TRICK_LIBRARY_FORMAT.md` for JSON schema and easing power reference.
 
 ### Labeling Pipeline (legacy — pre-RL pivot)
 
