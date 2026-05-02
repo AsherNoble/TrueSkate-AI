@@ -61,24 +61,33 @@ def _fire_gesture(points, duration, easing, wda_url):
     resp.raise_for_status()
 
 
-def _execute_two_gestures(g0_points, g1_points, g0_duration, g1_duration,
-                          delay, easing0, easing1, wda_url):
-    """Fire two gestures sequentially with Python-controlled inter-gesture delay.
+def _execute_gestures(gestures_data: list, delays: list, wda_url: str):
+    """Fire multiple gestures sequentially with Python-controlled inter-gesture delays.
 
     WDA's synthesizeEventWithRecord blocks until the gesture completes, so the
-    requests.post call returns exactly when g0 finishes. We then sleep the
-    remaining delay before firing g1. Each gesture is an independent touch
+    requests.post call returns exactly when one gesture finishes. We then sleep the
+    remaining delay before firing the next. Each gesture is an independent touch
     sequence — no shared path, no phantom swipe between them.
+
+    Args:
+        gestures_data: List of gesture dicts, each with 'points', 'duration', 'easing_power'
+        delays: List of N-1 delays (delay after gesture i before gesture i+1)
+        wda_url: WDA base URL
     """
-    t0 = time.perf_counter()
-    _fire_gesture(g0_points, g0_duration, easing0, wda_url)
-    elapsed = time.perf_counter() - t0
+    for i, gesture in enumerate(gestures_data):
+        points = gesture["points"]
+        duration = gesture["duration"]
+        easing_power = gesture["easing_power"]
+        easing = (lambda t, p=easing_power: t ** p) if easing_power != 1.0 else None
 
-    remaining = delay - elapsed
-    if remaining > 0:
-        time.sleep(remaining)
+        t0 = time.perf_counter()
+        _fire_gesture(points, duration, easing, wda_url)
 
-    _fire_gesture(g1_points, g1_duration, easing1, wda_url)
+        if i < len(delays):
+            elapsed = time.perf_counter() - t0
+            remaining = delays[i] - elapsed
+            if remaining > 0:
+                time.sleep(remaining)
 
 
 def _load_recipe(library_path: Path, mode: str) -> tuple[str, dict]:
@@ -119,15 +128,22 @@ def execute_recipe(
     wda_url: str,
     timing_device_key: str | None = None,
 ) -> None:
-    """Fire the push + two-gesture sequence from a decoded recipe."""
-    g0, g1 = recipe["gestures"]
-    delay = recipe["delays"][0]
-    g0_points = [norm_to_device(x, y, device_w, device_h) for x, y in g0["points"]]
-    g1_points = [norm_to_device(x, y, device_w, device_h) for x, y in g1["points"]]
-    p0 = g0["easing_power"]
-    easing0 = (lambda t, p=p0: t ** p) if p0 != 1.0 else None
-    p1 = g1["easing_power"]
-    easing1 = (lambda t, p=p1: t ** p) if p1 != 1.0 else None
+    """Fire the push + N-gesture sequence from a decoded recipe.
+    
+    Args:
+        recipe: Dict with 'gestures' (list of gesture dicts) and 'delays' (list of N-1 delays)
+    """
+    gestures = recipe["gestures"]
+    delays = recipe["delays"]
+
+    # Normalize gesture points to device coordinates
+    normalized_gestures = []
+    for gesture in gestures:
+        normalized_gesture = dict(gesture)
+        normalized_gesture["points"] = [
+            norm_to_device(x, y, device_w, device_h) for x, y in gesture["points"]
+        ]
+        normalized_gestures.append(normalized_gesture)
 
     # --- Step 1: push ---
     push_start = norm_to_device(PUSH_START[0], PUSH_START[1], device_w, device_h)
@@ -141,17 +157,8 @@ def execute_recipe(
     if remaining_pre_delay > 0:
         time.sleep(remaining_pre_delay)
 
-    # --- Step 2: scoop + flick via custom WDA endpoint ---
-    _execute_two_gestures(
-        g0_points=g0_points,
-        g1_points=g1_points,
-        g0_duration=g0["duration"],
-        g1_duration=g1["duration"],
-        delay=delay,
-        easing0=easing0,
-        easing1=easing1,
-        wda_url=wda_url,
-    )
+    # --- Step 2: execute all gestures via custom WDA endpoint ---
+    _execute_gestures(normalized_gestures, delays, wda_url)
 
     time.sleep(0.7)
     reset_position(driver)
