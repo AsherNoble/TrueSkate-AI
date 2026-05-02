@@ -5,7 +5,9 @@ defined in DEVICES. Monitors all processes and cleans up on Ctrl+C.
 
 Usage:
     python scripts/launch_services.py
+    python scripts/launch_services.py --device iPhone_XR
 """
+import argparse
 import os
 import re
 import signal
@@ -323,14 +325,33 @@ def _start_iproxy(device: dict) -> bool:
 # ---------------------------------------------------------------------------
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Launch WDA/Appium services for configured devices."
+    )
+    parser.add_argument(
+        "--device",
+        help="Device name to launch (e.g., iPhone_XR). Defaults to all devices.",
+    )
+    args = parser.parse_args()
+
+    if args.device:
+        selected_devices = [d for d in DEVICES if d["name"] == args.device]
+        if not selected_devices:
+            valid_names = ", ".join(d["name"] for d in DEVICES)
+            print(f"Unknown device name: {args.device}")
+            print(f"Valid values: {valid_names}")
+            sys.exit(1)
+    else:
+        selected_devices = DEVICES
+
     print("=" * 60)
     print("True Skate ML Environment Launcher")
-    print(f"Devices: {[d['name'] for d in DEVICES]}")
+    print(f"Devices: {[d['name'] for d in selected_devices]}")
     print("=" * 60)
 
     signal.signal(signal.SIGINT, _signal_handler)
 
-    for device in DEVICES:
+    for device in selected_devices:
         _processes[device["name"]] = {
             "wda": None,
             "appium": None,
@@ -340,7 +361,7 @@ def main():
         }
 
     # Check all devices connected
-    for device in DEVICES:
+    for device in selected_devices:
         if not _check_device_connected(device):
             print(f"\nStartup failed: {device['name']} not connected")
             sys.exit(1)
@@ -348,7 +369,7 @@ def main():
     print()
 
     # Start Appium for each device
-    for device in DEVICES:
+    for device in selected_devices:
         if not _start_appium(device):
             print(f"\nStartup failed: Appium for {device['name']}")
             _cleanup()
@@ -356,7 +377,7 @@ def main():
         print()
 
     # Start WDA for each device
-    for device in DEVICES:
+    for device in selected_devices:
         if not _start_wda(device):
             print(f"\nStartup failed: WDA for {device['name']}")
             _cleanup()
@@ -364,7 +385,7 @@ def main():
         print()
 
     # Start iproxy tunnels for each device
-    for device in DEVICES:
+    for device in selected_devices:
         if not _start_iproxy(device):
             print(f"\nStartup failed: iproxy for {device['name']}")
             _cleanup()
@@ -374,7 +395,7 @@ def main():
     print("=" * 60)
     print("Environment ready!")
     print("=" * 60)
-    for device in DEVICES:
+    for device in selected_devices:
         name = device["name"]
         print(f"  {name}:")
         print(f"    Appium: http://localhost:{device['appium_port']}")
@@ -388,7 +409,7 @@ def main():
     try:
         while True:
             time.sleep(1)
-            for device in DEVICES:
+            for device in selected_devices:
                 name = device["name"]
                 procs = _processes[name]
 

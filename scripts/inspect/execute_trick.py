@@ -10,6 +10,7 @@ Usage:
 """
 import argparse
 import json
+import socket
 import sys
 import time
 from pathlib import Path
@@ -91,6 +92,24 @@ def _load_recipe(library_path: Path, mode: str) -> tuple[str, dict]:
     return trick, data[key]
 
 
+def _is_wda_running(port: int, timeout: int = 2) -> bool:
+    """Check if WDA is responding on the given port."""
+    try:
+        resp = requests.get(f"http://localhost:{port}/status", timeout=timeout)
+        return resp.status_code == 200
+    except (requests.exceptions.RequestException, socket.error):
+        return False
+
+
+def _get_active_devices() -> list[dict]:
+    """Return list of devices with WDA currently running."""
+    active = []
+    for device in DEVICES:
+        if _is_wda_running(device["wda_port"]):
+            active.append(device)
+    return active
+
+
 def execute_recipe(
     driver,
     recipe: dict,
@@ -150,20 +169,30 @@ def main() -> None:
     trick, recipe = _load_recipe(args.library, args.mode)
     print(f"Executing: trick='{trick}' mode={args.mode}")
 
-    worker = DeviceWorker(DEVICES[0], calibrate_touch_on_connect=False)
-    worker.connect()
-    try:
-        execute_recipe(
-            worker.driver,
-            recipe,
-            device_w=worker.device_w,
-            device_h=worker.device_h,
-            wda_url=f"http://127.0.0.1:{worker._cfg['wda_port']}",
-            timing_device_key=worker.device_id,
-        )
-        print("Gestures fired.")
-    finally:
-        worker.disconnect()
+    active_devices = _get_active_devices()
+    if not active_devices:
+        sys.exit("ERROR: No devices with WDA running. Start services with: python scripts/launch_services.py")
+
+    print(f"Found {len(active_devices)} active device(s): {[d['name'] for d in active_devices]}")
+    print()
+
+    for device in active_devices:
+        print(f"[{device['name']}] Executing...")
+        worker = DeviceWorker(device, calibrate_touch_on_connect=False)
+        worker.connect()
+        try:
+            execute_recipe(
+                worker.driver,
+                recipe,
+                device_w=worker.device_w,
+                device_h=worker.device_h,
+                wda_url=f"http://127.0.0.1:{worker._cfg['wda_port']}",
+                timing_device_key=worker.device_id,
+            )
+            print(f"[{device['name']}] Gestures fired.")
+        finally:
+            worker.disconnect()
+        print()
 
 
 if __name__ == "__main__":
