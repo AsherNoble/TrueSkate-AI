@@ -25,8 +25,13 @@ from dotenv import load_dotenv
 from PIL import Image
 
 from trueskate_ai.rl.action_param import execute_action
-from trueskate_ai.rl.reward import get_reward
-from trueskate_ai.sim.touch_actions import reset_position
+from trueskate_ai.rl.reward import (
+    ContinuousTrickMonitor,
+    compute_reward,
+    get_reward,
+    merge_trick_results,
+)
+from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position
 
 # ---------------------------------------------------------------------------
 # Device configurations
@@ -43,16 +48,16 @@ DEVICES: list[dict] = [
         "logical_h": 896,
         "spin_button_xy": (25.0, 362.0),
     },
-    # {
-    #     "env_key": "IPHONE_11_UDID",
-    #     "name": "iPhone_11",
-    #     "wda_port": 8101,
-    #     "mjpeg_port": 9101,
-    #     "appium_port": 4724,
-    #     "logical_w": 414,
-    #     "logical_h": 896,
-    #     "spin_button_xy": (25.0, 362.0),
-    # },
+    {
+        "env_key": "IPHONE_11_UDID",
+        "name": "iPhone_11",
+        "wda_port": 8101,
+        "mjpeg_port": 9101,
+        "appium_port": 4724,
+        "logical_w": 414,
+        "logical_h": 896,
+        "spin_button_xy": (25.0, 362.0),
+    },
     {
         "env_key": "IPHONE_XS_UDID",
         "name": "iPhone_XS",
@@ -164,10 +169,17 @@ class DeviceWorker:
     connect() once, then dispatches evaluate() calls via ThreadPoolExecutor.
     """
 
-    def __init__(self, device_cfg: dict, *, record_frames: bool = False) -> None:
+    def __init__(
+        self,
+        device_cfg: dict,
+        *,
+        record_frames: bool = False,
+        calibrate_touch_on_connect: bool = True,
+    ) -> None:
         self.device_id: str = device_cfg["name"]
         self._cfg = device_cfg
         self.record_frames = record_frames
+        self.calibrate_touch_on_connect = calibrate_touch_on_connect
         self.driver: webdriver.Remote | None = None
         self.mjpeg_url: str | None = None
         self._failure_streak: int = 0
@@ -244,6 +256,25 @@ class DeviceWorker:
             )
             self.driver.activate_app(_BUNDLE_ID)
             time.sleep(1.5)
+
+        if self.calibrate_touch_on_connect:
+            try:
+                calibration = calibrate_touch_timing(
+                    self.driver,
+                    device_key=self.device_id,
+                    device_w=self.device_w,
+                    device_h=self.device_h,
+                )
+                logging.info(
+                    "[%s] touch calibration source=%s seq_overhead=%.3fs threshold=%.3fs",
+                    self.device_id,
+                    calibration.source,
+                    calibration.sequential_overhead_s,
+                    calibration.combined_nonneg_threshold_s,
+                )
+                reset_position(self.driver, device_w=self._cfg["logical_w"])
+            except Exception as exc:
+                logging.warning("[%s] touch calibration skipped: %s", self.device_id, exc)
 
     # -- foreground check ---------------------------------------------------
 
@@ -337,6 +368,11 @@ class DeviceWorker:
         recorder = FrameRecorder() if self.record_frames else None
         eval_start_time = time.monotonic()
         try:
+            monitor = ContinuousTrickMonitor()
+
+            def _on_post_push() -> None:
+                monitor.start(self.mjpeg_url)
+
             if recorder is not None:
                 recorder.start(self.mjpeg_url)
             action_start_time = time.monotonic()
@@ -345,15 +381,21 @@ class DeviceWorker:
                 np.array(params),
                 device_w=self._cfg["logical_w"],
                 device_h=self._cfg["logical_h"],
+                on_post_push=_on_post_push,
+                timing_device_key=self.device_id,
             )
             action_end_time = time.monotonic()
+            monitor_result, monitor_diag = monitor.stop()
             reward, trick_result, _, capture_diag = get_reward(
                 self.driver,
                 wait_time=wait_time,
                 penalty=None,
-                action_start_time=action_start_time,
+                action_start_time=action_end_time,
                 return_diagnostics=True,
             )
+            combined_result = merge_trick_results(monitor_result, trick_result)
+            reward = compute_reward(combined_result)
+            trick_result = combined_result
             reward_end_time = time.monotonic()
         except Exception as exc:
             if recorder is not None:
@@ -386,6 +428,8 @@ class DeviceWorker:
                 "skipped_captures": 0,
                 "detection_capture_idx": None,
                 "capture_elapsed_s": 0.0,
+                "monitor_frames_checked": 0,
+                "monitor_elapsed_s": 0.0,
             }
 
         self._failure_streak = 0
@@ -415,7 +459,7 @@ class DeviceWorker:
             "action_exec_s": action_end_time - action_start_time,
             "reward_eval_s": reward_end_time - action_end_time,
             "eval_total_s": reward_end_time - eval_start_time,
-            "capture_attempts": int(capture_diag["captures_attempted"]),
+            "capture_attempts": int(capture_diag["captures_attempted"]) + int(monitor_diag["frames_checked"]),
             "skipped_captures": int(capture_diag["skipped_captures"]),
             "detection_capture_idx": (
                 None
@@ -423,6 +467,8 @@ class DeviceWorker:
                 else int(capture_diag["detection_capture_idx"])
             ),
             "capture_elapsed_s": float(capture_diag["capture_elapsed_s"]),
+            "monitor_frames_checked": int(monitor_diag["frames_checked"]),
+            "monitor_elapsed_s": float(monitor_diag["monitor_elapsed_s"]),
         }
 
     # -- disconnect ---------------------------------------------------------

@@ -16,11 +16,8 @@ Easing power controls the velocity profile passed to curved_drag():
 
 Canonical action space: 375×812 logical points (iPhone XS width reference).
 """
-import time
-
 import numpy as np
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.actions.pointer_input import PointerInput
 
 # ---------------------------------------------------------------------------
 # Bounds
@@ -172,10 +169,6 @@ def unpack_action(params: np.ndarray) -> dict:
     return {"gestures": gestures, "delays": delays}
 
 
-APPIUM_LATENCY_OFFSET = 0.8
-"""Approximate Appium/WDA round-trip latency in seconds, subtracted when
-computing pause durations so delay values reflect true real-world timing."""
-
 # Static pre-execution push parameters (not optimized by CMA-ES)
 _PUSH_PRE_DELAY = 0.5
 """Delay before each trick execution during which the push occurs (seconds)."""
@@ -203,19 +196,24 @@ def execute_action(
     device_w: float = _CANONICAL_W,
     device_h: float = _CANONICAL_H,
     on_post_push=None,
+    timing_device_key: str | None = None,
 ) -> None:
     """Clamp, unpack, and execute a 17-float action on the device.
 
-    Fires three gesture slots in a single W3C Actions perform() call:
+    Fires three gesture slots in two stages:
       - finger0: scoop (slot 1)
-      - finger1: flick (slot 2), offset by latency-adjusted delay
+      - finger1: flick (slot 2), offset by calibrated delay scheduling
       - finger2: static downward push (right side), occurring during pre-delay
 
     Args:
         driver: Appium WebDriver instance.
         params: 17-element float array from CMA-ES.
     """
-    from trueskate_ai.sim.touch_actions import build_curved_drag  # noqa: PLC0415
+    from trueskate_ai.sim.touch_actions import (  # noqa: PLC0415
+        build_curved_drag,
+        execute_two_slot_gestures,
+        make_touch_pointer,
+    )
 
     action = unpack_action(clamp_params(params))
     g0, g1 = action["gestures"]
@@ -236,7 +234,7 @@ def execute_action(
     # Must be a separate perform() call — bundling 3 fingers in one perform()
     # triggers iOS's system three-finger gesture (undo/redo), swallowing all touches
     # before True Skate sees them.
-    finger2 = PointerInput("touch", "finger2")
+    finger2 = make_touch_pointer("finger2")
     build_curved_drag(
         finger2, [push_start, push_end],
         total_duration=_PUSH_DURATION, easing=push_easing
@@ -250,26 +248,18 @@ def execute_action(
     if remaining_pre_delay > 0:
         time.sleep(remaining_pre_delay)
 
-    # --- Step 2: scoop + flick (two-finger perform) ---
-    finger0 = PointerInput("touch", "finger0")
-    finger1 = PointerInput("touch", "finger1")
-
-    # Slot 1 on finger0
-    build_curved_drag(finger0, g0_points, total_duration=g0["duration"], easing=easing0)
-
-    # Offset finger1 start: slot1 duration + delay, minus Appium latency
-    # WDA requires a pointerMove before any pause, so position finger1 first.
-    finger1.create_pointer_move(x=g1_points[0][0], y=g1_points[0][1], duration=0)
-    adjusted_delay = delay - APPIUM_LATENCY_OFFSET
-    pause_secs = max(0.0, g0["duration"] + adjusted_delay)
-    if pause_secs > 0:
-        finger1.create_pause(pause_secs)
-
-    # Slot 2 on finger1
-    build_curved_drag(finger1, g1_points, total_duration=g1["duration"], easing=easing1)
-
-    # Scoop + flick execute simultaneously
-    ActionChains(driver, devices=[finger0, finger1]).perform()
+    # --- Step 2: scoop + flick ---
+    execute_two_slot_gestures(
+        driver,
+        g0_points=g0_points,
+        g1_points=g1_points,
+        g0_duration=g0["duration"],
+        g1_duration=g1["duration"],
+        delay=delay,
+        easing0=easing0,
+        easing1=easing1,
+        device_key=timing_device_key,
+    )
 
 
 # ---------------------------------------------------------------------------

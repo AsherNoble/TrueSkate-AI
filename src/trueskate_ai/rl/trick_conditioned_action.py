@@ -8,10 +8,13 @@ from dataclasses import dataclass
 
 import numpy as np
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.actions.pointer_input import PointerInput
 
 from trueskate_ai.rl.action_param import norm_to_device
-from trueskate_ai.sim.touch_actions import build_curved_drag
+from trueskate_ai.sim.touch_actions import (
+    build_curved_drag,
+    make_touch_pointer,
+    perform_pointer_actions,
+)
 
 _CANONICAL_W = 375.0
 _CANONICAL_H = 812.0
@@ -26,11 +29,11 @@ _Y_MIN = _CANONICAL_H * ((448.0 * _TOP_BOUND_SCALE) / 896.0)
 _Y_BASE_MAX = _CANONICAL_H * (750.0 / 896.0)
 _Y_MAX = _Y_MIN + ((_Y_BASE_MAX - _Y_MIN) * _BOTTOM_BAND_SCALE)
 _DURATION_MIN = 0.03
-_DURATION_MAX = 0.8
+_DURATION_MAX = 3
 _EASING_MIN = 0.3
 _EASING_MAX = 3.0
 _DELAY_MIN = -0.3
-_DELAY_MAX = 0.8
+_DELAY_MAX = 2
 
 _PUSH_PRE_DELAY = 0.5
 _PUSH_DURATION = 0.02
@@ -143,7 +146,7 @@ def _execute_static_push(
     push_end = norm_to_device(_PUSH_END[0], _PUSH_END[1], device_w, device_h)
     push_easing = lambda t: t**_PUSH_EASING
 
-    finger_push = PointerInput("touch", "finger_push")
+    finger_push = make_touch_pointer("finger_push")
     build_curved_drag(
         finger_push,
         [push_start, push_end],
@@ -177,7 +180,7 @@ def execute_action_plan(
     )
 
     starts = _slot_starts(plan)
-    fingers = [PointerInput("touch", "finger0"), PointerInput("touch", "finger1")]
+    fingers = [make_touch_pointer("finger0"), make_touch_pointer("finger1")]
     finger_available = [0.0, 0.0]
     finger_has_actions = [False, False]
     has_gesture = False
@@ -190,8 +193,7 @@ def execute_action_plan(
         finger_idx = 0 if finger_available[0] <= finger_available[1] else 1
         actual_start = max(requested_start, finger_available[finger_idx])
 
-        # WDA requires any pause to be preceded by pointerMove.
-        # We position at slot start before optional waiting.
+        # Position before waiting to keep WDA pointer sequencing stable.
         fingers[finger_idx].create_pointer_move(
             x=points[0][0], y=points[0][1], duration=0
         )
@@ -204,6 +206,7 @@ def execute_action_plan(
             points,
             total_duration=slot.duration,
             easing=easing,
+            include_start_move=False,
         )
         finger_available[finger_idx] = actual_start + slot.duration
         finger_has_actions[finger_idx] = True
@@ -235,7 +238,7 @@ def execute_action_plan(
 
     if has_gesture:
         active_fingers = [fingers[i] for i in range(len(fingers)) if finger_has_actions[i]]
-        ActionChains(driver, devices=active_fingers).perform()
+        perform_pointer_actions(driver, active_fingers)
     if action_thread is not None:
         action_thread.join(timeout=max(1.0, total_duration + 0.5))
 
