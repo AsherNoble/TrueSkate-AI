@@ -376,18 +376,18 @@ def main():
             sys.exit(1)
         print()
 
-    # Start WDA for each device
+    # Start iproxy tunnels first so WDA detection works properly
     for device in selected_devices:
-        if not _start_wda(device):
-            print(f"\nStartup failed: WDA for {device['name']}")
+        if not _start_iproxy(device):
+            print(f"\nStartup failed: iproxy for {device['name']}")
             _cleanup()
             sys.exit(1)
         print()
 
-    # Start iproxy tunnels for each device
+    # Start WDA for each device (after iproxy so it can detect already-running WDA)
     for device in selected_devices:
-        if not _start_iproxy(device):
-            print(f"\nStartup failed: iproxy for {device['name']}")
+        if not _start_wda(device):
+            print(f"\nStartup failed: WDA for {device['name']}")
             _cleanup()
             sys.exit(1)
         print()
