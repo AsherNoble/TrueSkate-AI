@@ -30,6 +30,7 @@ if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from trueskate_ai.rl.device_worker import DEVICES
+from trueskate_ai.sim.touch_actions import skip_loading_screen
 
 load_dotenv(_REPO_ROOT / ".env")
 
@@ -321,6 +322,83 @@ def _start_iproxy(device: dict) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Launch TrueSkate
+# ---------------------------------------------------------------------------
+
+def _launch_trueskate_on_devices(devices: list[dict]) -> None:
+    """Open True Skate app on all devices via Appium.
+    
+    Attempts to connect to Appium and activate the True Skate app on each device.
+    Uses device-specific coordinates to skip the loading screen.
+    Errors are logged but don't prevent other devices from trying.
+    """
+    from appium import webdriver
+    from appium.options.ios import XCUITestOptions
+    
+    _BUNDLE_ID = "com.trueaxis.skate"
+    
+    for device in devices:
+        name = device["name"]
+        try:
+            print(f"[{name}] Opening True Skate...")
+            
+            udid = os.environ.get(device["env_key"])
+            if not udid:
+                print(f"[{name}] Skipping: {device['env_key']} not set in .env")
+                continue
+            
+            options = XCUITestOptions()
+            options.platform_name = "iOS"
+            options.automation_name = "XCUITest"
+            options.bundle_id = _BUNDLE_ID
+            options.udid = udid
+            options.wda_local_port = device["wda_port"]
+            options.use_prebuilt_wda = True
+            options.skip_log_capture = True
+            options.no_reset = True
+            options.set_capability("webDriverAgentUrl", f"http://127.0.0.1:{device['wda_port']}")
+            
+            appium_url = f"http://127.0.0.1:{device['appium_port']}"
+            driver = webdriver.Remote(appium_url, options=options)
+            
+            # Always re-activate before dismissing the loading screen so the
+            # "open" and "skip" steps stay coupled, even if Appium reports the
+            # app as already foreground.
+            state = driver.query_app_state(_BUNDLE_ID)
+            if state == 4:
+                print(f"[{name}] True Skate already in foreground")
+            else:
+                print(f"[{name}] True Skate not in foreground (state={state})")
+
+            driver.activate_app(_BUNDLE_ID)
+            time.sleep(1.5)
+
+            try:
+                skip_xy = device.get("loading_screen_skip_xy", None)
+                if skip_xy:
+                    x, y = float(skip_xy[0]), float(skip_xy[1])
+                else:
+                    # Default to bottom-right area
+                    x = device.get("logical_w", 414) - 14.0
+                    y = device.get("logical_h", 896) - 46.0
+                # Primer touch: execute_trick runs skip after a prior gesture.
+                # Reproduce that ordering to stabilize first-touch dispatch.
+                driver.execute_script('mobile: tap', {'x': x, 'y': y})
+                time.sleep(0.25)
+                skip_loading_screen(driver, x=x, y=y, duration=1.0)
+                time.sleep(0.3)
+            except Exception as e:
+                print(f"[{name}] Warning: Could not skip loading screen: {e}")
+            time.sleep(1.0)
+            
+            driver.quit()
+            print(f"[{name}] True Skate opened successfully")
+            
+        except Exception as e:
+            print(f"[{name}] Failed to open True Skate: {e}")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -402,6 +480,12 @@ def main():
         print(f"    WDA:    http://localhost:{device['wda_port']}")
         print(f"    MJPEG:  http://localhost:{device['mjpeg_port']}")
     print()
+    
+    # Open True Skate on each device
+    print("Opening True Skate on all devices...")
+    _launch_trueskate_on_devices(selected_devices)
+    print()
+    
     print("Run training with: python scripts/train_cmaes.py")
     print("Press Ctrl+C to stop all services")
     print("=" * 60)

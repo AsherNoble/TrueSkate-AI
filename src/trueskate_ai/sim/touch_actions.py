@@ -98,11 +98,13 @@ def swipe(driver, start_x, start_y, end_x, end_y, *, duration=0.5):
 
 def long_press(driver, x, y, *, duration=1.0):
     """Press and hold at (x, y) in logical points. Duration in seconds."""
-    driver.execute_script('mobile: touchAndHold', {
-        'x': x,
-        'y': y,
-        'duration': duration,
-    })
+    finger = make_touch_pointer("press")
+    actions = ActionChains(driver, devices=[finger])
+    finger.create_pointer_move(x=x, y=y, duration=0)
+    finger.create_pointer_down()
+    finger.create_pause(duration)
+    finger.create_pointer_up(0)
+    actions.perform()
 
 
 def flick(driver, start_x, start_y, end_x, end_y):
@@ -135,6 +137,23 @@ def drag(driver, start_x, start_y, end_x, end_y, *, duration=1.0):
 def reset_position(driver, device_w=414):
     """Tap the reset button to return the board to its starting position."""
     driver.tap([(device_w / 2, 50)])
+
+
+def skip_loading_screen(driver, x=350, y=752, *, duration=1):
+    """Dismiss the True Skate loading screen by holding at the specified location.
+
+    When the app relaunches after being backgrounded, a loading screen appears.
+    This function uses a press-and-hold gesture instead of a tap because the
+    screen is sometimes not dismissed by a single tap.
+
+    Args:
+        driver: Appium webdriver instance.
+        x: X coordinate in logical points (default: 350).
+        y: Y coordinate in logical points (default: 752).
+        duration: Hold duration in seconds.
+    """
+    print('skip loading screen')
+    long_press(driver, x, y, duration=duration)
 
 
 def two_finger_tap(driver, x, y):

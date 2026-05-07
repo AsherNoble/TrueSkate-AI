@@ -31,7 +31,7 @@ from trueskate_ai.rl.reward import (
     get_reward,
     merge_trick_results,
 )
-from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position
+from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position, skip_loading_screen
 
 # ---------------------------------------------------------------------------
 # Device configurations
@@ -47,6 +47,7 @@ DEVICES: list[dict] = [
         "logical_w": 414,
         "logical_h": 896,
         "spin_button_xy": (25.0, 362.0),
+        "loading_screen_skip_xy": (400.0, 850.0),
     },
     {
         "env_key": "IPHONE_11_UDID",
@@ -57,6 +58,7 @@ DEVICES: list[dict] = [
         "logical_w": 414,
         "logical_h": 896,
         "spin_button_xy": (25.0, 362.0),
+        "loading_screen_skip_xy": (365.0, 795.0),
     },
     {
         "env_key": "IPHONE_XS_UDID",
@@ -67,6 +69,7 @@ DEVICES: list[dict] = [
         "logical_w": 375,
         "logical_h": 812,
         "spin_button_xy": (25.0, 362.0),
+        "loading_screen_skip_xy": (360.0, 770.0),
     },
 ]
 
@@ -203,6 +206,13 @@ class DeviceWorker:
         value = self._cfg.get("spin_button_xy", (25.0, 362.0))
         return float(value[0]), float(value[1])
 
+    @property
+    def loading_screen_skip_xy(self) -> tuple[float, float]:
+        """Get device-specific loading screen skip coordinates in logical points."""
+        # Default to bottom-right area if not configured
+        value = self._cfg.get("loading_screen_skip_xy", (self.device_w - 14.0, self.device_h - 46.0))
+        return float(value[0]), float(value[1])
+
     # -- connection ---------------------------------------------------------
 
     def connect(self) -> None:
@@ -255,7 +265,13 @@ class DeviceWorker:
                 f"(state={state}) — activating."
             )
             self.driver.activate_app(_BUNDLE_ID)
-            time.sleep(1.5)
+            time.sleep(1.0)
+            try:
+                x, y = self.loading_screen_skip_xy
+                skip_loading_screen(self.driver, x=x, y=y)
+            except Exception as exc:
+                logging.warning("[%s] skip loading screen failed: %s", self.device_id, exc)
+            time.sleep(1.0)
 
         if self.calibrate_touch_on_connect:
             try:
@@ -291,7 +307,13 @@ class DeviceWorker:
             f"(state={state}) — relaunching."
         )
         self.driver.activate_app(_BUNDLE_ID)
-        time.sleep(2.0)
+        time.sleep(3.0)
+        try:
+            x, y = self.loading_screen_skip_xy
+            skip_loading_screen(self.driver, x=x, y=y)
+        except Exception as exc:
+            logging.warning("[%s] skip loading screen failed: %s", self.device_id, exc)
+        time.sleep(1.0)
         return True
 
     # -- reset --------------------------------------------------------------
