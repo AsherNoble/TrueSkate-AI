@@ -14,58 +14,57 @@ Easing power controls the velocity profile passed to curved_drag():
     power = 1.0  — constant velocity (linear)
     power > 1.0  — accelerating (slow start, fast end)
 
-Canonical action space: 375×812 logical points (iPhone XS width reference).
+All coordinate parameters are normalized to [0, 1] and scaled to device
+logical points at execution time via scale_to_device().
 """
 import numpy as np
 
 from trueskate_ai.rl.gestures import (
-    CANONICAL_H,
-    CANONICAL_W,
     PUSH_DURATION,
     PUSH_EASING,
     PUSH_END,
     PUSH_PRE_DELAY,
     PUSH_START,
     execute_static_push,
-    norm_to_device,
+    scale_to_device,
 )
 
 # ---------------------------------------------------------------------------
 # Bounds
 # ---------------------------------------------------------------------------
 
-# Legacy dimensions — used only for converting the original gesture coords
-# to canonical space when defining bounds and initial mean.
-_LEGACY_W = 414.0
-_LEGACY_H = 896.0
+# # Legacy dimensions — used only for converting the original gesture coords
+# # to canonical space when defining bounds and initial mean.
+# _LEGACY_W = 414.0
+# _LEGACY_H = 896.0
 
 
-def _to_canonical_x(x: float) -> float:
-    return x * (CANONICAL_W / _LEGACY_W)
-
-
-def _to_canonical_y(y: float) -> float:
-    return y * (CANONICAL_H / _LEGACY_H)
+# def _to_canonical_x(x: float) -> float:
+#     return x * (CANONICAL_W / _LEGACY_W)
+#
+#
+# def _to_canonical_y(y: float) -> float:
+#     return y * (CANONICAL_H / _LEGACY_H)
 
 
 # fmt: off
 _BOUNDS_RAW = [
     # Slot 1
-    [0.0, _to_canonical_x(414.0)],        # x0
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y0
-    [0.0, _to_canonical_x(414.0)],        # x1
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y1
-    [0.0, _to_canonical_x(414.0)],        # x2
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y2
+    [0.0, 1],        # x0
+    [0.5, 0.8371],  # y0
+    [0.0, 1],        # x1
+    [0.5, 0.8371],  # y1
+    [0.0, 1],        # x2
+    [0.5, 0.8371],  # y2
     [0.03, 0.8], # duration
     [0.3, 3.0],  # easing_power
     # Slot 2
-    [0.0, _to_canonical_x(414.0)],        # x0
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y0
-    [0.0, _to_canonical_x(414.0)],        # x1
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y1
-    [0.0, _to_canonical_x(414.0)],        # x2
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y2
+    [0.0, 1],        # x0
+    [0.5, 0.8371],  # y0
+    [0.0, 1],        # x1
+    [0.5, 0.8371],  # y1
+    [0.0, 1],        # x2
+    [0.5, 0.8371],  # y2
     [0.03, 0.8], # duration
     [0.3, 3.0],  # easing_power
     # Delay
@@ -80,19 +79,19 @@ PARAM_BOUNDS: np.ndarray = np.array(_BOUNDS_RAW, dtype=np.float64)
 # Initial mean — informed prior for a 360 flip
 # ---------------------------------------------------------------------------
 
-# Slot 1: pop flick — southward swipe from the tail area (canonical coords)
+# Slot 1: pop flick — southward swipe from the tail area
 _SCOOP = [
-    _to_canonical_x(205.0), _to_canonical_y(620.0),
-    _to_canonical_x(210.0), _to_canonical_y(690.0),
-    _to_canonical_x(215.0), _to_canonical_y(748.0),
+    0.4485, 0.6920,
+    0.4595, 0.7001,
+    0.4595, 0.8348,
     0.06, 1.2,
 ]
 
 # Slot 2: flick — rightward swipe from the upper-mid board area (canonical coords)
 _FLICK = [
-    _to_canonical_x(205.0), _to_canonical_y(520.0),
-    _to_canonical_x(275.0), _to_canonical_y(512.0),
-    _to_canonical_x(345.0), _to_canonical_y(505.0),
+    0.4485, 0.5836,
+    0.6017, 0.5714,
+    0.7548, 0.5636,
     0.05, 0.9,
 ]
 
@@ -106,7 +105,7 @@ INITIAL_MEAN: np.ndarray = np.array(_SCOOP + _FLICK + _DELAY, dtype=np.float64)
 # Initial sigma
 # ---------------------------------------------------------------------------
 
-_COORD_SIGMA = 40.0
+_COORD_SIGMA = 0.10
 _DUR_SIGMA = 0.15
 _EASING_SIGMA = 0.5
 _DELAY_SIGMA = 0.15
@@ -169,8 +168,8 @@ def unpack_action(params: np.ndarray) -> dict:
 def execute_action(
     driver,
     params: np.ndarray,
-    device_w: float = CANONICAL_W,
-    device_h: float = CANONICAL_H,
+    device_w: float,
+    device_h: float,
     on_post_push=None,
     timing_device_key: str | None = None,
 ) -> None:
@@ -186,8 +185,8 @@ def execute_action(
     g0, g1 = action["gestures"]
     delay = action["delays"][0]
 
-    g0_points = [norm_to_device(x, y, device_w, device_h) for x, y in g0["points"]]
-    g1_points = [norm_to_device(x, y, device_w, device_h) for x, y in g1["points"]]
+    g0_points = [scale_to_device(x, y, device_w, device_h) for x, y in g0["points"]]
+    g1_points = [scale_to_device(x, y, device_w, device_h) for x, y in g1["points"]]
 
     p0 = g0["easing_power"]
     easing0 = (lambda t, p=p0: t ** p) if p0 != 1.0 else None

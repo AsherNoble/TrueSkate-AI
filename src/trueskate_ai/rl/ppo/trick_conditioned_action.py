@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 from selenium.webdriver.common.action_chains import ActionChains
 
-from trueskate_ai.rl.gestures import execute_static_push, norm_to_device
+from trueskate_ai.rl.gestures import execute_static_push, scale_to_device
 from trueskate_ai.sim.touch_actions import (
     build_curved_drag,
     make_touch_pointer,
@@ -19,13 +19,10 @@ from trueskate_ai.sim.touch_actions import (
 _ACTION_DIM = 42
 _SLOT_COUNT = 4
 
-_TOP_BOUND_SCALE = 1.3
-_BOTTOM_BAND_SCALE = 1.15
 _X_MIN = 0.0
-_X_MAX = 375.0
-_Y_MIN = 812.0 * ((448.0 * _TOP_BOUND_SCALE) / 896.0)
-_Y_BASE_MAX = 812.0 * (750.0 / 896.0)
-_Y_MAX = _Y_MIN + ((_Y_BASE_MAX - _Y_MIN) * _BOTTOM_BAND_SCALE)
+_X_MAX = 1.0
+_Y_MIN = 0.6500
+_Y_MAX = 0.8651
 _DURATION_MIN = 0.03
 _DURATION_MAX = 3
 _EASING_MIN = 0.3
@@ -129,10 +126,13 @@ def execute_action_plan(
     *,
     device_w: float,
     device_h: float,
-    spin_button_xy: tuple[float, float] = (25.0, 362.0),
+    spin_button_xy: tuple[float, float] = (0.0604, 0.4040),
     on_post_push=None,
 ) -> None:
-    """Execute a decoded action plan on-device."""
+    """Execute a decoded action plan on-device.
+
+    spin_button_xy: normalized [0, 1] coords for the spin/rotation button.
+    """
     execute_static_push(driver, device_w=device_w, device_h=device_h, on_post_push=on_post_push)
 
     starts = _slot_starts(plan)
@@ -144,7 +144,7 @@ def execute_action_plan(
     for slot_idx, slot in enumerate(plan.slots):
         if not slot.enabled:
             continue
-        points = [norm_to_device(x, y, device_w, device_h) for x, y in slot.points]
+        points = [scale_to_device(x, y, device_w, device_h) for x, y in slot.points]
         requested_start = starts[slot_idx]
         finger_idx = 0 if finger_available[0] <= finger_available[1] else 1
         actual_start = max(requested_start, finger_available[finger_idx])
@@ -171,7 +171,7 @@ def execute_action_plan(
     total_duration = max(finger_available + [0.01])
 
     if not has_gesture and plan.spin.enabled:
-        spin_point = norm_to_device(spin_button_xy[0], spin_button_xy[1], device_w, device_h)
+        spin_point = scale_to_device(spin_button_xy[0], spin_button_xy[1], device_w, device_h)
         time.sleep(plan.spin.t_start * total_duration)
         driver.execute_script("mobile: tap", {"x": spin_point[0], "y": spin_point[1]})
         time.sleep(max(0.0, (plan.spin.t_end - plan.spin.t_start) * total_duration))
@@ -180,7 +180,7 @@ def execute_action_plan(
 
     action_thread: threading.Thread | None = None
     if plan.spin.enabled and has_gesture:
-        spin_point = norm_to_device(spin_button_xy[0], spin_button_xy[1], device_w, device_h)
+        spin_point = scale_to_device(spin_button_xy[0], spin_button_xy[1], device_w, device_h)
         start_offset = plan.spin.t_start * total_duration
         end_offset = plan.spin.t_end * total_duration
 
@@ -205,7 +205,7 @@ def execute_action_vector(
     *,
     device_w: float,
     device_h: float,
-    spin_button_xy: tuple[float, float] = (25.0, 362.0),
+    spin_button_xy: tuple[float, float] = (0.0604, 0.4040),
     on_post_push=None,
 ) -> ActionPlan:
     """Decode and execute a trick-conditioned action vector."""

@@ -27,7 +27,7 @@ from trueskate_ai.rl.gestures import (
     PUSH_END,
     PUSH_PRE_DELAY,
     PUSH_START,
-    norm_to_device,
+    scale_to_device,
 )
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
 from trueskate_ai.sim.touch_actions import (
@@ -141,13 +141,13 @@ def execute_recipe(
     for gesture in gestures:
         normalized_gesture = dict(gesture)
         normalized_gesture["points"] = [
-            norm_to_device(x, y, device_w, device_h) for x, y in gesture["points"]
+            scale_to_device(x, y, device_w, device_h) for x, y in gesture["points"]
         ]
         normalized_gestures.append(normalized_gesture)
 
     # --- Step 1: push ---
-    push_start = norm_to_device(PUSH_START[0], PUSH_START[1], device_w, device_h)
-    push_end = norm_to_device(PUSH_END[0], PUSH_END[1], device_w, device_h)
+    push_start = scale_to_device(PUSH_START[0], PUSH_START[1], device_w, device_h)
+    push_end = scale_to_device(PUSH_END[0], PUSH_END[1], device_w, device_h)
     push_easing = lambda t: t ** PUSH_EASING  # noqa: E731
     finger2 = make_touch_pointer("finger2")
     build_curved_drag(finger2, [push_start, push_end], total_duration=PUSH_DURATION, easing=push_easing)

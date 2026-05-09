@@ -1,14 +1,9 @@
 """Touch actions for True Skate via Appium XCUITest driver.
 
-All coordinates are in **logical points** (414x896 on iPhone 11).
-If your model outputs pixel coordinates (828x1792), divide by the
-device scale factor (2 for iPhone 11) before passing them here.
-
-Usage in run_model.py:
-    from trueskate_ai.sim.touch_actions import swipe, tap, pixels_to_points
-    x, y = pixels_to_points(px_x, px_y, scale=2)
-    tap(driver, x, y)
-    swipe(driver, 100, 600, 100, 300, duration=0.5)
+Gesture primitives (curved_drag, build_curved_drag) accept coordinates
+in device logical points. Callers in the RL pipeline pass normalized
+[0, 1] coordinates and scale them via scale_to_device() in gestures.py
+before calling these functions.
 """
 import logging
 import time
@@ -19,8 +14,6 @@ from statistics import median
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.actions.pointer_input import PointerInput
 
-# iPhone 11: 828x1792 pixels, 414x896 points, @2x
-DEFAULT_SCALE_FACTOR = 2
 _POINTER_SEQ = count()
 _DEFAULT_COMBINED_THRESHOLD = 0.6
 _MIN_COMBINED_THRESHOLD = 0.45
@@ -65,11 +58,6 @@ def set_touch_timing_calibration(device_key, calibration: TouchTimingCalibration
     if not device_key:
         return
     _TIMING_CALIBRATIONS[device_key] = calibration
-
-
-def pixels_to_points(px_x, px_y, *, scale=DEFAULT_SCALE_FACTOR):
-    """Convert pixel coordinates to logical points for Appium."""
-    return px_x / scale, px_y / scale
 
 
 def tap(driver, x, y, *, pre_delay=0.0, post_delay=0.0):
