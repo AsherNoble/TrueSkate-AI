@@ -1,12 +1,13 @@
 """Replay a gesture recipe from a trick library JSON on-device.
 
 Connects to the phone via Appium, loads a trick library entry, and fires
-the selected gesture set (best or median) via a custom WDA endpoint that
-executes both gestures as one XCSynthesizedEventRecord — device-native
-timing, zero phantom touches between gestures.
+the selected recipe (best or median) via the custom WDA endpoint
+/wda/perform_trick_gestures — one HTTP call per gesture, Python-timed delays.
 
 Usage:
-    python -m trueskate_ai.sim.execute_trick --library <json_path> [--mode best|median]
+    python scripts/inspect/execute_trick.py --library <json_path> [--mode best|median]
+
+Trick library schema and gesture conventions: GESTURES.md at the repo root.
 """
 import argparse
 import json

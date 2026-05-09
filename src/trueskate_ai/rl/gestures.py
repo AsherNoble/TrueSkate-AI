@@ -1,4 +1,9 @@
-"""Shared gesture constants and execution utilities for all RL pipelines."""
+"""Shared gesture execution utilities and constants for all RL pipelines.
+
+Provides scale_to_device() — the sole coordinate transform in the pipeline —
+and the static push gesture fired before every trick attempt. Coordinate and
+gesture conventions are documented in GESTURES.md at the repo root.
+"""
 import time
 
 from selenium.webdriver.common.action_chains import ActionChains

@@ -1,4 +1,11 @@
-"""Decode and execute trick-conditioned policy actions."""
+"""PPO gesture parameterization: decode a policy output vector and execute it on device.
+
+Decodes a normalised [-1, 1] action vector into a GestureRecipe (4 gated gesture slots,
+inter-slot delays, spin control) and executes it via Appium/WDA. Gesture coordinates are
+normalised [0, 1] throughout; scale_to_device() converts to logical points at execution.
+
+Gesture and coordinate conventions: GESTURES.md at the repo root.
+"""
 
 from __future__ import annotations
 
@@ -51,13 +58,13 @@ class SpinControl:
 
 
 @dataclass(frozen=True)
-class ActionPlan:
+class GestureRecipe:
     slots: list[GestureSlot]
     delays: list[float]
     spin: SpinControl
 
 
-def decode_action_vector(action: np.ndarray) -> ActionPlan:
+def decode_gesture_params(action: np.ndarray) -> GestureRecipe:
     """Decode a normalized [-1, 1] action vector into a structured plan."""
     flat = np.asarray(action, dtype=np.float64).reshape(-1)
     if flat.shape[0] != _ACTION_DIM:
@@ -97,13 +104,13 @@ def decode_action_vector(action: np.ndarray) -> ActionPlan:
     t1 = np.clip(_map_from_unit(float(flat[idx + 2]), 0.0, 1.0), 0.0, 1.0)
     spin = SpinControl(enabled=spin_enabled, t_start=min(t0, t1), t_end=max(t0, t1))
 
-    return ActionPlan(slots=slots, delays=delays, spin=spin)
+    return GestureRecipe(slots=slots, delays=delays, spin=spin)
 
 
-def _slot_starts(plan: ActionPlan) -> list[float]:
+def _slot_starts(recipe: GestureRecipe) -> list[float]:
     starts = [0.0]
     for i in range(1, _SLOT_COUNT):
-        prev = starts[i - 1] + plan.slots[i - 1].duration + plan.delays[i - 1]
+        prev = starts[i - 1] + recipe.slots[i - 1].duration + recipe.delays[i - 1]
         starts.append(max(0.0, prev))
     return starts
 
@@ -120,28 +127,28 @@ def _tap_at_time(driver, start_time: float, target_offset: float, tap_xy: tuple[
     driver.execute_script("mobile: tap", {"x": tap_xy[0], "y": tap_xy[1]})
 
 
-def execute_action_plan(
+def execute_gesture_recipe(
     driver,
-    plan: ActionPlan,
+    recipe: GestureRecipe,
     *,
     device_w: float,
     device_h: float,
     spin_button_xy: tuple[float, float] = (0.0604, 0.4040),
     on_post_push=None,
 ) -> None:
-    """Execute a decoded action plan on-device.
+    """Execute a decoded gesture recipe on-device.
 
-    spin_button_xy: normalized [0, 1] coords for the spin/rotation button.
+    spin_button_xy: normalised [0, 1] coords for the spin/rotation button.
     """
     execute_static_push(driver, device_w=device_w, device_h=device_h, on_post_push=on_post_push)
 
-    starts = _slot_starts(plan)
+    starts = _slot_starts(recipe)
     fingers = [make_touch_pointer("finger0"), make_touch_pointer("finger1")]
     finger_available = [0.0, 0.0]
     finger_has_actions = [False, False]
     has_gesture = False
 
-    for slot_idx, slot in enumerate(plan.slots):
+    for slot_idx, slot in enumerate(recipe.slots):
         if not slot.enabled:
             continue
         points = [scale_to_device(x, y, device_w, device_h) for x, y in slot.points]
@@ -170,19 +177,19 @@ def execute_action_plan(
 
     total_duration = max(finger_available + [0.01])
 
-    if not has_gesture and plan.spin.enabled:
+    if not has_gesture and recipe.spin.enabled:
         spin_point = scale_to_device(spin_button_xy[0], spin_button_xy[1], device_w, device_h)
-        time.sleep(plan.spin.t_start * total_duration)
+        time.sleep(recipe.spin.t_start * total_duration)
         driver.execute_script("mobile: tap", {"x": spin_point[0], "y": spin_point[1]})
-        time.sleep(max(0.0, (plan.spin.t_end - plan.spin.t_start) * total_duration))
+        time.sleep(max(0.0, (recipe.spin.t_end - recipe.spin.t_start) * total_duration))
         driver.execute_script("mobile: tap", {"x": spin_point[0], "y": spin_point[1]})
         return
 
     action_thread: threading.Thread | None = None
-    if plan.spin.enabled and has_gesture:
+    if recipe.spin.enabled and has_gesture:
         spin_point = scale_to_device(spin_button_xy[0], spin_button_xy[1], device_w, device_h)
-        start_offset = plan.spin.t_start * total_duration
-        end_offset = plan.spin.t_end * total_duration
+        start_offset = recipe.spin.t_start * total_duration
+        end_offset = recipe.spin.t_end * total_duration
 
         def _spin_runner(start_time: float) -> None:
             _tap_at_time(driver, start_time, start_offset, spin_point)
@@ -199,7 +206,7 @@ def execute_action_plan(
         action_thread.join(timeout=max(1.0, total_duration + 0.5))
 
 
-def execute_action_vector(
+def execute_gesture_params_vector(
     driver,
     action: np.ndarray,
     *,
@@ -207,15 +214,15 @@ def execute_action_vector(
     device_h: float,
     spin_button_xy: tuple[float, float] = (0.0604, 0.4040),
     on_post_push=None,
-) -> ActionPlan:
-    """Decode and execute a trick-conditioned action vector."""
-    plan = decode_action_vector(action)
-    execute_action_plan(
+) -> GestureRecipe:
+    """Decode a normalised [-1, 1] gesture parameter vector and execute it on-device."""
+    recipe = decode_gesture_params(action)
+    execute_gesture_recipe(
         driver,
-        plan,
+        recipe,
         device_w=device_w,
         device_h=device_h,
         spin_button_xy=spin_button_xy,
         on_post_push=on_post_push,
     )
-    return plan
+    return recipe

@@ -24,7 +24,7 @@ from appium.options.ios import XCUITestOptions
 from dotenv import load_dotenv
 from PIL import Image
 
-from trueskate_ai.rl.cmaes.action_param import execute_action
+from trueskate_ai.rl.cmaes.action_param import execute_gesture_params
 from trueskate_ai.rl.reward import (
     ContinuousTrickMonitor,
     compute_reward,
@@ -46,7 +46,7 @@ DEVICES: list[dict] = [
         "appium_port": 4723,
         "logical_w": 414,
         "logical_h": 896,
-        "spin_button_xy": (25.0, 362.0),
+        "spin_button_xy": (0.0604, 0.4040),
         "loading_screen_skip_xy": (400.0, 850.0),
     },
     {
@@ -57,7 +57,7 @@ DEVICES: list[dict] = [
         "appium_port": 4724,
         "logical_w": 414,
         "logical_h": 896,
-        "spin_button_xy": (25.0, 362.0),
+        "spin_button_xy": (0.0604, 0.4040),
         "loading_screen_skip_xy": (365.0, 795.0),
     },
     {
@@ -68,7 +68,7 @@ DEVICES: list[dict] = [
         "appium_port": 4725,
         "logical_w": 375,
         "logical_h": 812,
-        "spin_button_xy": (25.0, 362.0),
+        "spin_button_xy": (0.0604, 0.4040),
         "loading_screen_skip_xy": (360.0, 770.0),
     },
 ]
@@ -216,19 +216,22 @@ class DeviceWorker:
     # -- connection ---------------------------------------------------------
 
     def connect(self) -> None:
-        """Create an Appium driver for this device's ports/UDID."""
+        """Create an Appium driver for this device's ports."""
         load_dotenv(_REPO_ROOT / ".env")
         udid = os.environ.get(self._cfg["env_key"])
-        if not udid:
-            raise RuntimeError(
-                f"[{self.device_id}] {self._cfg['env_key']} not set in .env"
-            )
 
         options = XCUITestOptions()
         options.platform_name = "iOS"
         options.automation_name = "XCUITest"
         options.bundle_id = _BUNDLE_ID
-        options.udid = udid
+        if udid:
+            options.udid = udid
+        else:
+            logging.warning(
+                "[%s] %s not set in .env; connecting via live Appium/WDA ports.",
+                self.device_id,
+                self._cfg["env_key"],
+            )
         options.wda_local_port = self._cfg["wda_port"]
         options.use_prebuilt_wda = True
         options.skip_log_capture = True
@@ -379,7 +382,7 @@ class DeviceWorker:
     ) -> dict:
         """Execute one candidate eval on this device.
 
-        Runs: ensure_foreground -> record frames -> execute_action ->
+        Runs: ensure_foreground -> record frames -> execute_gesture_params ->
         get_reward -> stop recording. Does NOT call reset_position
         (the orchestrator handles resets across all devices).
 
@@ -398,7 +401,7 @@ class DeviceWorker:
             if recorder is not None:
                 recorder.start(self.mjpeg_url)
             action_start_time = time.monotonic()
-            execute_action(
+            execute_gesture_params(
                 self.driver,
                 np.array(params),
                 device_w=self._cfg["logical_w"],

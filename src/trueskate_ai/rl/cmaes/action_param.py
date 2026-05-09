@@ -1,21 +1,14 @@
-"""Action parameterization for the CMA-ES 360 flip experiment.
+"""CMA-ES gesture parameterization: bounds, decode, and execution.
 
-Bridges a flat 17-float numpy parameter vector to actual touch gestures
-executed via curved_drag(). CMA-ES optimizes this vector; this module
-handles bounds, unpacking, and execution.
+Bridges a flat 17-float numpy parameter vector to gesture execution on device.
+CMA-ES optimizes this vector; this module handles bounds, unpacking, and execution.
 
 Parameter layout (17 total):
-    Slot 1 (scoop):  x0,y0, x1,y1, x2,y2, duration, easing_power  → indices 0–7
-    Slot 2 (flick):  x0,y0, x1,y1, x2,y2, duration, easing_power  → indices 8–15
+    Slot 1:  x0,y0, x1,y1, x2,y2, duration, easing_power  → indices 0–7
+    Slot 2:  x0,y0, x1,y1, x2,y2, duration, easing_power  → indices 8–15
     Delay 1→2: index 16
 
-Easing power controls the velocity profile passed to curved_drag():
-    power < 1.0  — decelerating (fast start, slow end)
-    power = 1.0  — constant velocity (linear)
-    power > 1.0  — accelerating (slow start, fast end)
-
-All coordinate parameters are normalized to [0, 1] and scaled to device
-logical points at execution time via scale_to_device().
+Coordinate, easing, and recipe conventions are documented in GESTURES.md.
 """
 import numpy as np
 
@@ -139,14 +132,14 @@ def clamp_params(params: np.ndarray) -> np.ndarray:
     return np.clip(params, PARAM_BOUNDS[:, 0], PARAM_BOUNDS[:, 1])
 
 
-def unpack_action(params: np.ndarray) -> dict:
-    """Unpack a clamped 17-float parameter vector into a structured dict.
+def unpack_gesture_params(params: np.ndarray) -> dict:
+    """Unpack a clamped 17-float parameter vector into a gesture recipe dict.
 
     Returns:
         Dict with keys:
             "gestures": list of 2 dicts, each with "points" (list of 3
-                (x, y) tuples), "duration" (float, seconds), and
-                "easing_power" (float).
+                (x, y) tuples in normalised [0, 1]), "duration" (float, seconds),
+                and "easing_power" (float).
             "delays": list of 1 float — inter-gesture delay in seconds.
     """
     gestures = []
@@ -165,7 +158,7 @@ def unpack_action(params: np.ndarray) -> dict:
     return {"gestures": gestures, "delays": delays}
 
 
-def execute_action(
+def execute_gesture_params(
     driver,
     params: np.ndarray,
     device_w: float,
@@ -173,17 +166,12 @@ def execute_action(
     on_post_push=None,
     timing_device_key: str | None = None,
 ) -> None:
-    """Clamp, unpack, and execute a 17-float action on the device.
-
-    Fires three gesture slots in two stages:
-      - finger_push: static downward push (right side), during pre-delay
-      - finger0/finger1: scoop + flick, with calibrated inter-gesture delay
-    """
+    """Clamp, unpack, and execute a 17-float gesture parameter vector on the device."""
     from trueskate_ai.sim.touch_actions import execute_two_slot_gestures  # noqa: PLC0415
 
-    action = unpack_action(clamp_params(params))
-    g0, g1 = action["gestures"]
-    delay = action["delays"][0]
+    recipe = unpack_gesture_params(clamp_params(params))
+    g0, g1 = recipe["gestures"]
+    delay = recipe["delays"][0]
 
     g0_points = [scale_to_device(x, y, device_w, device_h) for x, y in g0["points"]]
     g1_points = [scale_to_device(x, y, device_w, device_h) for x, y in g1["points"]]
@@ -214,17 +202,17 @@ def execute_action(
 
 if __name__ == "__main__":
     print("=== Initial mean (informed 360-flip prior) ===")
-    action = unpack_action(INITIAL_MEAN)
-    for i, g in enumerate(action["gestures"]):
+    recipe = unpack_gesture_params(INITIAL_MEAN)
+    for i, g in enumerate(recipe["gestures"]):
         print(f"  Gesture {i + 1}: points={g['points']}, duration={g['duration']:.3f}s, easing_power={g['easing_power']:.2f}")
-    print(f"  Delays: {action['delays']}")
+    print(f"  Delays: {recipe['delays']}")
 
     rng = np.random.default_rng(42)
     print("\n=== 3 random samples (uniform within bounds) ===")
     for sample_idx in range(3):
         raw = rng.uniform(PARAM_BOUNDS[:, 0], PARAM_BOUNDS[:, 1])
-        action = unpack_action(clamp_params(raw))
+        recipe = unpack_gesture_params(clamp_params(raw))
         print(f"\n  Sample {sample_idx + 1}:")
-        for i, g in enumerate(action["gestures"]):
+        for i, g in enumerate(recipe["gestures"]):
             print(f"    Gesture {i + 1}: points={g['points']}, duration={g['duration']:.3f}s, easing_power={g['easing_power']:.2f}")
-        print(f"    Delays: {action['delays']}")
+        print(f"    Delays: {recipe['delays']}")

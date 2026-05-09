@@ -1,9 +1,12 @@
-"""Touch actions for True Skate via Appium XCUITest driver.
+"""Low-level Appium gesture primitives for True Skate.
 
-Gesture primitives (curved_drag, build_curved_drag) accept coordinates
-in device logical points. Callers in the RL pipeline pass normalized
-[0, 1] coordinates and scale them via scale_to_device() in gestures.py
-before calling these functions.
+build_curved_drag() and make_touch_pointer() are the core building blocks;
+callers compose them into multi-finger perform() payloads. All coordinates
+accepted here are device logical points — callers are responsible for scaling
+from normalised [0, 1] via scale_to_device() (see rl/gestures.py) before
+passing points to these functions.
+
+Gesture and coordinate conventions: GESTURES.md at the repo root.
 """
 import logging
 import time
