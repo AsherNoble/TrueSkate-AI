@@ -1,4 +1,4 @@
-# Trick Library Format Reference
+/b# Trick Library Format Reference
 
 This document describes the JSON format used for trick libraries and recipe files in TrueSkate-AI.
 
@@ -121,7 +121,7 @@ Meaning: After gesture 0 wait 0.12s â†’ gesture 1; after gesture 1 wait 0.15s â†
 
 When a recipe is executed via `execute_trick.py`:
 
-1. **Push phase**: A static upward push (thumb) is performed first (duration ~0.3s, easing ~2.0)
+1. **Push phase**: A static upward push is performed first (duration ~0.3s, easing ~2.0)
 2. **Recipe phase**: After push delay (~0.5s total), the gestures are executed in sequence:
    - Gesture 0 fires immediately
    - After gesture 0 + delay[0], gesture 1 fires
