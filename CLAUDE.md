@@ -71,7 +71,7 @@ See `GESTURES.md` at the repo root for the authoritative reference on:
 - **Data throughput is the bottleneck** — True Skate runs at 1× real-time; GPU can't accelerate the live interaction loop. ~15K steps/hour
 - **Reward shaping is critical** — partial credit for trick components guides exploration; aggressive tier compression prevents convergence on wrong tricks
 - **OCR misreads are a real signal problem** — "360"→"540" misread was causing 1.0 tricks to score 0.6
-- **No y_offset** — all supported devices share the 19.5:9 aspect ratio; `scale_to_device(norm_x, norm_y, device_w, device_h)` is the complete coordinate transform. RL gesture y bounds: `Y_BOUND_MIN = 0.12`, `Y_BOUND_MAX = 0.88` (defined in `rl/gestures.py`)
+- **No y_offset** — all supported devices share the 19.5:9 aspect ratio; `scale_to_device(norm_x, norm_y, device_w, device_h)` is the complete coordinate transform. RL gesture y bounds: `Y_BOUND_MIN = 0.12`, `Y_BOUND_MAX = 0.88` (defined in `rl/gestures.py`). Note: iPhone 11 runs with Display Zoom always enabled, which reduces its UIKit logical resolution from 414 × 896 to 375 × 812 — the same as the XS. This is reflected in `DEVICES` in `device_worker.py` and does not break normalised coordinates because the aspect ratio is unchanged.
 
 ## Experiment Journal
 

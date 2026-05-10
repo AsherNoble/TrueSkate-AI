@@ -34,13 +34,13 @@ This is implemented as `scale_to_device(norm_x, norm_y, device_w, device_h)` in 
 
 All three supported devices share an essentially identical screen aspect ratio (19.5:9):
 
-| Device | Logical size (pts) | Aspect ratio |
-|---|---|---|
-| iPhone XR | 414 × 896 | 1 : 2.1643 |
-| iPhone 11 | 414 × 896 | 1 : 2.1643 |
-| iPhone XS | 375 × 812 | 1 : 2.1653 |
+| Device | Logical size (pts) | Aspect ratio | Notes |
+|---|---|---|---|
+| iPhone XR | 414 × 896 | 1 : 2.1643 | |
+| iPhone 11 | 375 × 812 | 1 : 2.1653 | Display Zoom always on — reduces UIKit logical resolution from 414 × 896 |
+| iPhone XS | 375 × 812 | 1 : 2.1653 | |
 
-The difference between XS and XR/11 is **< 0.05%** — sub-pixel at any practical resolution. A normalised point `[0.5, 0.7]` lands at the same relative position on all three devices. No y_offset, viewport padding, or per-device correction is needed or should be added.
+The difference between any two of these aspect ratios is **< 0.05%** — sub-pixel at any practical resolution. A normalised point `[0.5, 0.7]` lands at the same relative position on all three devices. No y_offset, viewport padding, or per-device correction is needed or should be added.
 
 > If a future device with a materially different aspect ratio (> 0.5% deviation) is added to `DEVICES`, this decision must be revisited before that device is used for training.
 

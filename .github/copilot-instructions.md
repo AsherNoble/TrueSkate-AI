@@ -31,7 +31,7 @@ Key runtime constraints:
 
 ## Key conventions and patterns
 - **Gesture terminology**: use "gesture" for a touch path, "gesture recipe" for the structured dict, "gesture parameters" for the CMA-ES flat vector. Do not use "action" or "swipe" for these concepts. See GESTURES.md.
-- **Coordinates**: all gesture coordinates are normalised [0, 1]. Conversion to device logical points at execution: `device_x = norm_x * device_w`, `device_y = norm_y * device_h` via `scale_to_device()` in `src/trueskate_ai/rl/gestures.py`. No y_offset needed — all supported devices share the 19.5:9 aspect ratio.
+- **Coordinates**: all gesture coordinates are normalised [0, 1]. Conversion to device logical points at execution: `device_x = norm_x * device_w`, `device_y = norm_y * device_h` via `scale_to_device()` in `src/trueskate_ai/rl/gestures.py`. No y_offset needed — all supported devices share the 19.5:9 aspect ratio. Per-device logical dimensions are in `DEVICES` in `device_worker.py`; note that iPhone 11 runs Display Zoom (375 × 812 pts) rather than the spec-sheet standard of 414 × 896.
 - **Y_BOUND_MIN = 0.12 / Y_BOUND_MAX = 0.88**: valid RL gesture y range; defined in `src/trueskate_ai/rl/gestures.py`. See GESTURES.md.
 - **Curved gestures required**: do not replace with straight swipes — curved multi-waypoint drags are essential for trick physics.
 - **Gesture execution**: trick gestures fire as sequential calls to the custom WDA endpoint `/wda/perform_trick_gestures`, bypassing Appium. Push still uses Appium ActionChains (separate perform() call).
