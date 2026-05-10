@@ -61,6 +61,20 @@ These were fixed prior to this standardisation pass:
 - Per-device `loading_screen_skip_xy` config keys removed from `DEVICES`; `DeviceWorker.loading_screen_skip_xy` property deleted
 - All call sites updated: `device_worker.py` (×5), `launch_services.py`, `execute_trick.py`
 
+## Display Zoom: logical-pt fix & dimension guard (2pm 10/5/2026)
+
+### Bug: iPhone 11 Display Zoom caused coord drift vs XR
+
+- Display Zoom was on for iPhone 11, shrinking UIKit logical resolution from 414 × 896 → 375 × 812
+- `DEVICES` hardcoded 414 × 896 for both — WDA received identical payloads that landed at different board positions (~4–5% y-drift on the 11)
+- `scale_to_device()` and normalised coords were correct; the error was entirely in the stale hardcoded dims
+
+### Fixes applied
+
+- `device_worker.py`: iPhone 11 `logical_w/h` corrected to 375 × 812; inline comments explain the Display Zoom reduction from 414 × 896
+- `GESTURES.md`, `CLAUDE.md`, `copilot-instructions.md`: device table and prose updated to document the intentional Display Zoom state
+- `launch_services.py` + `DeviceWorker.connect()`: `driver.get_window_size()` check added — halts on mismatch with an actionable Display Zoom hint
+
 ## Deffered / TODO
 
 - `src/trueskate_ai/rl/gestures.py` is architecturally misplaced in `rl/` — contains execution infrastructure (`scale_to_device`, `execute_static_push`) that belongs in `sim/`. Safe to move but touches several import lines. Deferred.
