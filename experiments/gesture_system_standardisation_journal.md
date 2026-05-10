@@ -75,9 +75,13 @@ These were fixed prior to this standardisation pass:
 - `GESTURES.md`, `CLAUDE.md`, `copilot-instructions.md`: device table and prose updated to document the intentional Display Zoom state
 - `launch_services.py` + `DeviceWorker.connect()`: `driver.get_window_size()` check added — halts on mismatch with an actionable Display Zoom hint
 
-## Deffered / TODO
+## Deferred/TODO resolution (4pm 10/5/2026)
 
-- `src/trueskate_ai/rl/gestures.py` is architecturally misplaced in `rl/` — contains execution infrastructure (`scale_to_device`, `execute_static_push`) that belongs in `sim/`. Safe to move but touches several import lines. Deferred.
-- `scripts/inspect/execute_trick.py::execute_recipe()` is reusable logic buried in a script — candidate for `sim/gesture_executor.py`. Deferred.
-- `touch_actions.py` legacy functions (`swipe`, `flick`, `drag`) not used in RL pipeline. Removal is fix 12, deferred per instructions.
-- `trick_libraries/kickflip.json` contains un-normalised logical-pixel coordinates — will break `execute_recipe`. Flagged but not converted (user to handle manual coordinate values per protocol).
+All four deferred items resolved:
+
+- `rl/gestures.py` → `sim/gestures.py`. All import sites updated (3 files). Docstring updated.
+- `execute_recipe()` extracted from `scripts/inspect/execute_trick.py` into new `src/trueskate_ai/sim/gesture_recipe.py`; renamed `execute_gesture_recipe()`. Helper functions (`_wda_waypoints`, `_fire_gesture`, `_execute_gestures`) moved with it. `execute_trick.py` is now script-only scaffolding.
+- `touch_actions.py`: `swipe()`, `flick()`, `drag()` deleted. `_easing_to_segment_durations` renamed to `easing_to_segment_durations` (was incorrectly private; used externally). `scripts/run_model.py` deleted (stale, only caller was a commented-out line).
+- Un-normalised trick library JSONs (`kickflip.json`, `360_pop_shove_it_20260427_111712.json`, `varial_kickflip_20260429_234920.json`, `quad_hard_flip_20260428_103902.json`) moved to `trick_libraries/pre_normalisation/`. Note added to `TRICK_LIBRARY_FORMAT.md`.
+- Two comments in `action_param.py` fixed: "swipe" → "gesture", clarified as CMA-ES initial mean values not fixed behaviors.
+- GESTURES.md Code Cross-References updated throughout.
