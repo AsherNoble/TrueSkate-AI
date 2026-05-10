@@ -196,7 +196,7 @@ def run(
         cma_mean = _load_initial_mean_from_library(initial_mean)
         coordinate_mask = np.ones(17, dtype=bool)
         coordinate_mask[[6, 7, 14, 15, 16]] = False
-        cma_stds[coordinate_mask] = 20.0
+        cma_stds[coordinate_mask] = 0.05
         print(f"Loaded initial mean from trick library: {initial_mean}")
     if target_trick is not None:
         target_trick = target_trick.strip()
