@@ -340,7 +340,7 @@ def _launch_trueskate_on_devices(devices: list[dict]) -> None:
     for device in devices:
         name = device["name"]
         try:
-            print(f"[{name}] Opening True Skate...")
+            # print(f"[{name}] Opening True Skate...")
             
             udid = os.environ.get(device["env_key"])
             if not udid:
@@ -360,7 +360,20 @@ def _launch_trueskate_on_devices(devices: list[dict]) -> None:
             
             appium_url = f"http://127.0.0.1:{device['appium_port']}"
             driver = webdriver.Remote(appium_url, options=options)
-            
+
+            actual = driver.get_window_size()
+            exp_w, exp_h = int(device["logical_w"]), int(device["logical_h"])
+            if actual["width"] != exp_w or actual["height"] != exp_h:
+                print(
+                    f"[{name}] ERROR: screen dimensions mismatch — "
+                    f"expected {exp_w}×{exp_h}, got {actual['width']}×{actual['height']}. "
+                    f"Check Display Zoom: Settings → Display & Brightness → Display Zoom → Default."
+                )
+                driver.quit()
+                _cleanup()
+                sys.exit(1)
+            print(f"[{name}] Screen dimensions OK: {actual['width']}×{actual['height']} pts")
+
             # Always re-activate before dismissing the loading screen so the
             # "open" and "skip" steps stay coupled, even if Appium reports the
             # app as already foreground.
@@ -380,7 +393,7 @@ def _launch_trueskate_on_devices(devices: list[dict]) -> None:
                 # Reproduce that ordering to stabilize first-touch dispatch.
                 driver.execute_script('mobile: tap', {'x': 0.8454 * logical_w, 'y': 0.8393 * logical_h})
                 time.sleep(0.25)
-                skip_loading_screen(driver, logical_w, logical_h, duration=1.0)
+                # skip_loading_screen(driver, logical_w, logical_h, duration=1.0)
                 time.sleep(0.3)
             except Exception as e:
                 print(f"[{name}] Warning: Could not skip loading screen: {e}")
@@ -481,7 +494,6 @@ def main():
     _launch_trueskate_on_devices(selected_devices)
     print()
     
-    print("Run training with: python scripts/train_cmaes.py")
     print("Press Ctrl+C to stop all services")
     print("=" * 60)
 

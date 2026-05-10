@@ -58,16 +58,16 @@ DEVICES: list[dict] = [
         "logical_h": 896,
         "spin_button_xy": (0.0604, 0.4040),
     },
-    {
-        "env_key": "IPHONE_XS_UDID",
-        "name": "iPhone_XS",
-        "wda_port": 8102,
-        "mjpeg_port": 9102,
-        "appium_port": 4725,
-        "logical_w": 375,
-        "logical_h": 812,
-        "spin_button_xy": (0.0604, 0.4040),
-    },
+    # {
+    #     "env_key": "IPHONE_XS_UDID",
+    #     "name": "iPhone_XS",
+    #     "wda_port": 8102,
+    #     "mjpeg_port": 9102,
+    #     "appium_port": 4725,
+    #     "logical_w": 375,
+    #     "logical_h": 812,
+    #     "spin_button_xy": (0.0604, 0.4040),
+    # },
 ]
 
 # ---------------------------------------------------------------------------
@@ -174,7 +174,7 @@ class DeviceWorker:
         device_cfg: dict,
         *,
         record_frames: bool = False,
-        calibrate_touch_on_connect: bool = True,
+        calibrate_touch_on_connect: bool = False,
     ) -> None:
         self.device_id: str = device_cfg["name"]
         self._cfg = device_cfg
@@ -247,6 +247,16 @@ class DeviceWorker:
             time.sleep(2)
 
         self.driver = webdriver.Remote(appium_url, options=options)
+
+        actual = self.driver.get_window_size()
+        exp_w, exp_h = int(self._cfg["logical_w"]), int(self._cfg["logical_h"])
+        if actual["width"] != exp_w or actual["height"] != exp_h:
+            raise RuntimeError(
+                f"[{self.device_id}] screen dimensions mismatch: "
+                f"expected {exp_w}×{exp_h}, got {actual['width']}×{actual['height']}. "
+                f"Check Display Zoom: Settings → Display & Brightness → Display Zoom → Default."
+            )
+
         self.mjpeg_url = f"http://127.0.0.1:{self._cfg['mjpeg_port']}"
 
         state = self.driver.query_app_state(_BUNDLE_ID)
