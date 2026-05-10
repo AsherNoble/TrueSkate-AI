@@ -162,7 +162,7 @@ def execute_recipe(
     _execute_gestures(normalized_gestures, delays, wda_url)
 
     time.sleep(0.7)
-    reset_position(driver)
+    reset_position(driver, device_w, device_h)
 
 
 def main() -> None:

@@ -47,7 +47,6 @@ DEVICES: list[dict] = [
         "logical_w": 414,
         "logical_h": 896,
         "spin_button_xy": (0.0604, 0.4040),
-        "loading_screen_skip_xy": (400.0, 850.0),
     },
     {
         "env_key": "IPHONE_11_UDID",
@@ -58,7 +57,6 @@ DEVICES: list[dict] = [
         "logical_w": 414,
         "logical_h": 896,
         "spin_button_xy": (0.0604, 0.4040),
-        "loading_screen_skip_xy": (365.0, 795.0),
     },
     {
         "env_key": "IPHONE_XS_UDID",
@@ -69,7 +67,6 @@ DEVICES: list[dict] = [
         "logical_w": 375,
         "logical_h": 812,
         "spin_button_xy": (0.0604, 0.4040),
-        "loading_screen_skip_xy": (360.0, 770.0),
     },
 ]
 
@@ -206,13 +203,6 @@ class DeviceWorker:
         value = self._cfg.get("spin_button_xy", (25.0, 362.0))
         return float(value[0]), float(value[1])
 
-    @property
-    def loading_screen_skip_xy(self) -> tuple[float, float]:
-        """Get device-specific loading screen skip coordinates in logical points."""
-        # Default to bottom-right area if not configured
-        value = self._cfg.get("loading_screen_skip_xy", (self.device_w - 14.0, self.device_h - 46.0))
-        return float(value[0]), float(value[1])
-
     # -- connection ---------------------------------------------------------
 
     def connect(self) -> None:
@@ -270,8 +260,7 @@ class DeviceWorker:
             self.driver.activate_app(_BUNDLE_ID)
             time.sleep(1.0)
             try:
-                x, y = self.loading_screen_skip_xy
-                skip_loading_screen(self.driver, x=x, y=y)
+                skip_loading_screen(self.driver, self.device_w, self.device_h)
             except Exception as exc:
                 logging.warning("[%s] skip loading screen failed: %s", self.device_id, exc)
             time.sleep(1.0)
@@ -291,7 +280,7 @@ class DeviceWorker:
                     calibration.sequential_overhead_s,
                     calibration.combined_nonneg_threshold_s,
                 )
-                reset_position(self.driver, device_w=self._cfg["logical_w"])
+                reset_position(self.driver, self._cfg["logical_w"], self._cfg["logical_h"])
             except Exception as exc:
                 logging.warning("[%s] touch calibration skipped: %s", self.device_id, exc)
 
@@ -312,8 +301,7 @@ class DeviceWorker:
         self.driver.activate_app(_BUNDLE_ID)
         time.sleep(3.0)
         try:
-            x, y = self.loading_screen_skip_xy
-            skip_loading_screen(self.driver, x=x, y=y)
+            skip_loading_screen(self.driver, self.device_w, self.device_h)
         except Exception as exc:
             logging.warning("[%s] skip loading screen failed: %s", self.device_id, exc)
         time.sleep(1.0)
@@ -324,11 +312,11 @@ class DeviceWorker:
     def reset(self) -> None:
         """Reset the board to its starting position."""
         try:
-            reset_position(self.driver, device_w=self._cfg["logical_w"])
+            reset_position(self.driver, self._cfg["logical_w"], self._cfg["logical_h"])
         except Exception as exc:
             logging.warning("[%s] reset failed, attempting reconnect: %s", self.device_id, exc)
             if self._reconnect():
-                reset_position(self.driver, device_w=self._cfg["logical_w"])
+                reset_position(self.driver, self._cfg["logical_w"], self._cfg["logical_h"])
             else:
                 logging.error("[%s] reset skipped — device unreachable.", self.device_id)
 

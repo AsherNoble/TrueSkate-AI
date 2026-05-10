@@ -374,18 +374,13 @@ def _launch_trueskate_on_devices(devices: list[dict]) -> None:
             time.sleep(1.5)
 
             try:
-                skip_xy = device.get("loading_screen_skip_xy", None)
-                if skip_xy:
-                    x, y = float(skip_xy[0]), float(skip_xy[1])
-                else:
-                    # Default to bottom-right area
-                    x = device.get("logical_w", 414) - 14.0
-                    y = device.get("logical_h", 896) - 46.0
+                logical_w = float(device.get("logical_w", 414))
+                logical_h = float(device.get("logical_h", 896))
                 # Primer touch: execute_trick runs skip after a prior gesture.
                 # Reproduce that ordering to stabilize first-touch dispatch.
-                driver.execute_script('mobile: tap', {'x': x, 'y': y})
+                driver.execute_script('mobile: tap', {'x': 0.8454 * logical_w, 'y': 0.8393 * logical_h})
                 time.sleep(0.25)
-                skip_loading_screen(driver, x=x, y=y, duration=1.0)
+                skip_loading_screen(driver, logical_w, logical_h, duration=1.0)
                 time.sleep(0.3)
             except Exception as e:
                 print(f"[{name}] Warning: Could not skip loading screen: {e}")

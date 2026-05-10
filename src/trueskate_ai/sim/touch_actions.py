@@ -125,26 +125,18 @@ def drag(driver, start_x, start_y, end_x, end_y, *, duration=1.0):
     })
 
 
-def reset_position(driver, device_w=414):
+def reset_position(driver, device_w: float, device_h: float):
     """Tap the reset button to return the board to its starting position."""
-    driver.tap([(device_w / 2, 50)])
+    driver.tap([(0.5 * device_w, 0.0558 * device_h)])
 
 
-def skip_loading_screen(driver, x=350, y=752, *, duration=1):
-    """Dismiss the True Skate loading screen by holding at the specified location.
+def skip_loading_screen(driver, device_w: float, device_h: float, *, duration: float = 1.0):
+    """Dismiss the True Skate loading screen by holding at normalised position (0.8454, 0.8393).
 
     When the app relaunches after being backgrounded, a loading screen appears.
-    This function uses a press-and-hold gesture instead of a tap because the
-    screen is sometimes not dismissed by a single tap.
-
-    Args:
-        driver: Appium webdriver instance.
-        x: X coordinate in logical points (default: 350).
-        y: Y coordinate in logical points (default: 752).
-        duration: Hold duration in seconds.
+    Uses a press-and-hold because a single tap is sometimes insufficient.
     """
-    print('skip loading screen')
-    long_press(driver, x, y, duration=duration)
+    long_press(driver, 0.8454 * device_w, 0.8393 * device_h, duration=duration)
 
 
 def two_finger_tap(driver, x, y):
