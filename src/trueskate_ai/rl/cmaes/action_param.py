@@ -18,6 +18,8 @@ from trueskate_ai.rl.gestures import (
     PUSH_END,
     PUSH_PRE_DELAY,
     PUSH_START,
+    Y_BOUND_MAX,
+    Y_BOUND_MIN,
     execute_static_push,
     scale_to_device,
 )
@@ -43,25 +45,25 @@ from trueskate_ai.rl.gestures import (
 # fmt: off
 _BOUNDS_RAW = [
     # Slot 1
-    [0.0, 1],        # x0
-    [0.5, 0.8371],  # y0
-    [0.0, 1],        # x1
-    [0.5, 0.8371],  # y1
-    [0.0, 1],        # x2
-    [0.5, 0.8371],  # y2
-    [0.03, 0.8], # duration
-    [0.3, 3.0],  # easing_power
+    [0.0, 1.0],                    # x0
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y0
+    [0.0, 1.0],                    # x1
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y1
+    [0.0, 1.0],                    # x2
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y2
+    [0.03, 0.8],                   # duration
+    [0.3, 3.0],                    # easing_power
     # Slot 2
-    [0.0, 1],        # x0
-    [0.5, 0.8371],  # y0
-    [0.0, 1],        # x1
-    [0.5, 0.8371],  # y1
-    [0.0, 1],        # x2
-    [0.5, 0.8371],  # y2
-    [0.03, 0.8], # duration
-    [0.3, 3.0],  # easing_power
+    [0.0, 1.0],                    # x0
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y0
+    [0.0, 1.0],                    # x1
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y1
+    [0.0, 1.0],                    # x2
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y2
+    [0.03, 0.8],                   # duration
+    [0.3, 3.0],                    # easing_power
     # Delay
-    [-0.3, 0.8], # delay 1→2
+    [-0.3, 0.8],                   # delay 1→2
 ]
 # fmt: on
 

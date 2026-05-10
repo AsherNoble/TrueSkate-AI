@@ -16,7 +16,7 @@ from dataclasses import dataclass
 import numpy as np
 from selenium.webdriver.common.action_chains import ActionChains
 
-from trueskate_ai.rl.gestures import execute_static_push, scale_to_device
+from trueskate_ai.rl.gestures import Y_BOUND_MAX, Y_BOUND_MIN, execute_static_push, scale_to_device
 from trueskate_ai.sim.touch_actions import (
     build_curved_drag,
     make_touch_pointer,
@@ -28,8 +28,8 @@ _SLOT_COUNT = 4
 
 _X_MIN = 0.0
 _X_MAX = 1.0
-_Y_MIN = 0.6500
-_Y_MAX = 0.8651
+_Y_MIN = Y_BOUND_MIN
+_Y_MAX = Y_BOUND_MAX
 _DURATION_MIN = 0.03
 _DURATION_MAX = 3
 _EASING_MIN = 0.3
