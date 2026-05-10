@@ -3,7 +3,7 @@
 build_curved_drag() and make_touch_pointer() are the core building blocks;
 callers compose them into multi-finger perform() payloads. All coordinates
 accepted here are device logical points — callers are responsible for scaling
-from normalised [0, 1] via scale_to_device() (see rl/gestures.py) before
+from normalised [0, 1] via scale_to_device() (see sim/gestures.py) before
 passing points to these functions.
 
 Gesture and coordinate conventions: GESTURES.md at the repo root.
@@ -72,21 +72,6 @@ def tap(driver, x, y, *, pre_delay=0.0, post_delay=0.0):
         time.sleep(post_delay)
 
 
-def swipe(driver, start_x, start_y, end_x, end_y, *, duration=0.5):
-    """Swipe from (start_x, start_y) to (end_x, end_y) in logical points.
-
-    Uses mobile: dragFromToForDuration because mobile: swipe only
-    accepts a direction string, not coordinates.
-    """
-    driver.execute_script('mobile: dragFromToForDuration', {
-        'fromX': start_x,
-        'fromY': start_y,
-        'toX': end_x,
-        'toY': end_y,
-        'duration': duration,
-    })
-
-
 def long_press(driver, x, y, *, duration=1.0):
     """Press and hold at (x, y) in logical points. Duration in seconds."""
     finger = make_touch_pointer("press")
@@ -98,31 +83,9 @@ def long_press(driver, x, y, *, duration=1.0):
     actions.perform()
 
 
-def flick(driver, start_x, start_y, end_x, end_y):
-    """Fast flick gesture (kick / push) using a very short drag."""
-    driver.execute_script('mobile: dragFromToForDuration', {
-        'fromX': start_x,
-        'fromY': start_y,
-        'toX': end_x,
-        'toY': end_y,
-        'duration': 0.1,
-    })
-
-
 def double_tap(driver, x, y):
     """Double tap at (x, y) in logical points."""
     driver.execute_script('mobile: doubleTap', {'x': x, 'y': y})
-
-
-def drag(driver, start_x, start_y, end_x, end_y, *, duration=1.0):
-    """Slow drag — useful for board positioning and controlled movements."""
-    driver.execute_script('mobile: dragFromToForDuration', {
-        'fromX': start_x,
-        'fromY': start_y,
-        'toX': end_x,
-        'toY': end_y,
-        'duration': duration,
-    })
 
 
 def reset_position(driver, device_w: float, device_h: float):
@@ -166,7 +129,7 @@ def ease_in_out(t, power=2):
     return 1.0 - 0.5 * (2 * (1.0 - t)) ** power
 
 
-def _easing_to_segment_durations(n_segments, total_duration_ms, easing):
+def easing_to_segment_durations(n_segments, total_duration_ms, easing):
     """Convert an easing function to per-segment durations in ms.
 
     The easing maps normalized progress [0,1] -> normalized time [0,1].
@@ -206,7 +169,7 @@ def curved_drag(driver, points, *, total_duration=0.5, easing=None):
     if easing is None:
         durations = [max(1, total_ms // n_segments)] * n_segments
     else:
-        durations = _easing_to_segment_durations(n_segments, total_ms, easing)
+        durations = easing_to_segment_durations(n_segments, total_ms, easing)
 
     finger = make_touch_pointer("finger")
     actions = ActionChains(driver, devices=[finger])
@@ -254,7 +217,7 @@ def build_curved_drag(
     if easing is None:
         durations = [max(1, total_ms // n_segments)] * n_segments
     else:
-        durations = _easing_to_segment_durations(n_segments, total_ms, easing)
+        durations = easing_to_segment_durations(n_segments, total_ms, easing)
 
     x0, y0 = points[0]
     if include_start_move:
