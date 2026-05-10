@@ -1,0 +1,43 @@
+{
+  "trick": "kickflip_test",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [177.5, 440.0],
+          [177.5, 500.0],
+          [177.5, 560.0]
+        ],
+        "duration": 0.05,
+        "easing_power": 1.9
+      },
+      {
+        "points": [
+          [160.0, 394.035],
+          [160.0, 394.035],
+          [300.0, 394.035]
+        ],
+        "duration": 0.05,
+        "easing_power": 0.8
+      },
+      {
+        "points": [
+          [177.5, 394.035],
+          [177.5, 400],
+          [177.5, 405]
+        ],
+        "duration": 1,
+        "easing_power": 2
+      }
+    ],
+    "delays": [0.2, 0.2]
+  },
+  "best_gestures": {},
+  "sample_count": 0,
+  "reward_stats": {
+    "min": 0.0,
+    "mean": 0.5,
+    "max": 1.0
+  },
+  "source_log": "Custom params created via manual experimentation"
+}

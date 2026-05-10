@@ -1,14 +1,12 @@
-"""Touch actions for True Skate via Appium XCUITest driver.
+"""Low-level Appium gesture primitives for True Skate.
 
-All coordinates are in **logical points** (414x896 on iPhone 11).
-If your model outputs pixel coordinates (828x1792), divide by the
-device scale factor (2 for iPhone 11) before passing them here.
+build_curved_drag() and make_touch_pointer() are the core building blocks;
+callers compose them into multi-finger perform() payloads. All coordinates
+accepted here are device logical points — callers are responsible for scaling
+from normalised [0, 1] via scale_to_device() (see sim/gestures.py) before
+passing points to these functions.
 
-Usage in run_model.py:
-    from trueskate_ai.sim.touch_actions import swipe, tap, pixels_to_points
-    x, y = pixels_to_points(px_x, px_y, scale=2)
-    tap(driver, x, y)
-    swipe(driver, 100, 600, 100, 300, duration=0.5)
+Gesture and coordinate conventions: GESTURES.md at the repo root.
 """
 import logging
 import time
@@ -19,8 +17,6 @@ from statistics import median
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.actions.pointer_input import PointerInput
 
-# iPhone 11: 828x1792 pixels, 414x896 points, @2x
-DEFAULT_SCALE_FACTOR = 2
 _POINTER_SEQ = count()
 _DEFAULT_COMBINED_THRESHOLD = 0.6
 _MIN_COMBINED_THRESHOLD = 0.45
@@ -67,11 +63,6 @@ def set_touch_timing_calibration(device_key, calibration: TouchTimingCalibration
     _TIMING_CALIBRATIONS[device_key] = calibration
 
 
-def pixels_to_points(px_x, px_y, *, scale=DEFAULT_SCALE_FACTOR):
-    """Convert pixel coordinates to logical points for Appium."""
-    return px_x / scale, px_y / scale
-
-
 def tap(driver, x, y, *, pre_delay=0.0, post_delay=0.0):
     """Single tap at (x, y) in logical points."""
     if pre_delay:
@@ -81,39 +72,15 @@ def tap(driver, x, y, *, pre_delay=0.0, post_delay=0.0):
         time.sleep(post_delay)
 
 
-def swipe(driver, start_x, start_y, end_x, end_y, *, duration=0.5):
-    """Swipe from (start_x, start_y) to (end_x, end_y) in logical points.
-
-    Uses mobile: dragFromToForDuration because mobile: swipe only
-    accepts a direction string, not coordinates.
-    """
-    driver.execute_script('mobile: dragFromToForDuration', {
-        'fromX': start_x,
-        'fromY': start_y,
-        'toX': end_x,
-        'toY': end_y,
-        'duration': duration,
-    })
-
-
 def long_press(driver, x, y, *, duration=1.0):
     """Press and hold at (x, y) in logical points. Duration in seconds."""
-    driver.execute_script('mobile: touchAndHold', {
-        'x': x,
-        'y': y,
-        'duration': duration,
-    })
-
-
-def flick(driver, start_x, start_y, end_x, end_y):
-    """Fast flick gesture (kick / push) using a very short drag."""
-    driver.execute_script('mobile: dragFromToForDuration', {
-        'fromX': start_x,
-        'fromY': start_y,
-        'toX': end_x,
-        'toY': end_y,
-        'duration': 0.1,
-    })
+    finger = make_touch_pointer("press")
+    actions = ActionChains(driver, devices=[finger])
+    finger.create_pointer_move(x=x, y=y, duration=0)
+    finger.create_pointer_down()
+    finger.create_pause(duration)
+    finger.create_pointer_up(0)
+    actions.perform()
 
 
 def double_tap(driver, x, y):
@@ -121,20 +88,18 @@ def double_tap(driver, x, y):
     driver.execute_script('mobile: doubleTap', {'x': x, 'y': y})
 
 
-def drag(driver, start_x, start_y, end_x, end_y, *, duration=1.0):
-    """Slow drag — useful for board positioning and controlled movements."""
-    driver.execute_script('mobile: dragFromToForDuration', {
-        'fromX': start_x,
-        'fromY': start_y,
-        'toX': end_x,
-        'toY': end_y,
-        'duration': duration,
-    })
-
-
-def reset_position(driver, device_w=414):
+def reset_position(driver, device_w: float, device_h: float):
     """Tap the reset button to return the board to its starting position."""
-    driver.tap([(device_w / 2, 50)])
+    driver.tap([(0.5 * device_w, 0.0558 * device_h)])
+
+
+def skip_loading_screen(driver, device_w: float, device_h: float, *, duration: float = 1.0):
+    """Dismiss the True Skate loading screen by holding at normalised position (0.8454, 0.8393).
+
+    When the app relaunches after being backgrounded, a loading screen appears.
+    Uses a press-and-hold because a single tap is sometimes insufficient.
+    """
+    long_press(driver, 0.8454 * device_w, 0.8393 * device_h, duration=duration)
 
 
 def two_finger_tap(driver, x, y):
@@ -164,7 +129,7 @@ def ease_in_out(t, power=2):
     return 1.0 - 0.5 * (2 * (1.0 - t)) ** power
 
 
-def _easing_to_segment_durations(n_segments, total_duration_ms, easing):
+def easing_to_segment_durations(n_segments, total_duration_ms, easing):
     """Convert an easing function to per-segment durations in ms.
 
     The easing maps normalized progress [0,1] -> normalized time [0,1].
@@ -204,7 +169,7 @@ def curved_drag(driver, points, *, total_duration=0.5, easing=None):
     if easing is None:
         durations = [max(1, total_ms // n_segments)] * n_segments
     else:
-        durations = _easing_to_segment_durations(n_segments, total_ms, easing)
+        durations = easing_to_segment_durations(n_segments, total_ms, easing)
 
     finger = make_touch_pointer("finger")
     actions = ActionChains(driver, devices=[finger])
@@ -252,7 +217,7 @@ def build_curved_drag(
     if easing is None:
         durations = [max(1, total_ms // n_segments)] * n_segments
     else:
-        durations = _easing_to_segment_durations(n_segments, total_ms, easing)
+        durations = easing_to_segment_durations(n_segments, total_ms, easing)
 
     x0, y0 = points[0]
     if include_start_move:

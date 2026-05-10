@@ -24,14 +24,14 @@ from appium.options.ios import XCUITestOptions
 from dotenv import load_dotenv
 from PIL import Image
 
-from trueskate_ai.rl.cmaes.action_param import execute_action
+from trueskate_ai.rl.cmaes.action_param import execute_gesture_params
 from trueskate_ai.rl.reward import (
     ContinuousTrickMonitor,
     compute_reward,
     get_reward,
     merge_trick_results,
 )
-from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position
+from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position, skip_loading_screen
 
 # ---------------------------------------------------------------------------
 # Device configurations
@@ -46,7 +46,7 @@ DEVICES: list[dict] = [
         "appium_port": 4723,
         "logical_w": 414,
         "logical_h": 896,
-        "spin_button_xy": (25.0, 362.0),
+        "spin_button_xy": (0.0604, 0.4040),
     },
     {
         "env_key": "IPHONE_11_UDID",
@@ -54,20 +54,20 @@ DEVICES: list[dict] = [
         "wda_port": 8101,
         "mjpeg_port": 9101,
         "appium_port": 4724,
-        "logical_w": 414,
-        "logical_h": 896,
-        "spin_button_xy": (25.0, 362.0),
+        "logical_w": 375,  # Display Zoom always on; reduces logical_w 414 → 375
+        "logical_h": 812,  # Display Zoom always on; reduces logical_h 896 → 812
+        "spin_button_xy": (0.0604, 0.4040),
     },
-    {
-        "env_key": "IPHONE_XS_UDID",
-        "name": "iPhone_XS",
-        "wda_port": 8102,
-        "mjpeg_port": 9102,
-        "appium_port": 4725,
-        "logical_w": 375,
-        "logical_h": 812,
-        "spin_button_xy": (25.0, 362.0),
-    },
+    # {
+    #     "env_key": "IPHONE_XS_UDID",
+    #     "name": "iPhone_XS",
+    #     "wda_port": 8102,
+    #     "mjpeg_port": 9102,
+    #     "appium_port": 4725,
+    #     "logical_w": 375,
+    #     "logical_h": 812,
+    #     "spin_button_xy": (0.0604, 0.4040),
+    # },
 ]
 
 # ---------------------------------------------------------------------------
@@ -174,7 +174,7 @@ class DeviceWorker:
         device_cfg: dict,
         *,
         record_frames: bool = False,
-        calibrate_touch_on_connect: bool = True,
+        calibrate_touch_on_connect: bool = False,
     ) -> None:
         self.device_id: str = device_cfg["name"]
         self._cfg = device_cfg
@@ -206,19 +206,22 @@ class DeviceWorker:
     # -- connection ---------------------------------------------------------
 
     def connect(self) -> None:
-        """Create an Appium driver for this device's ports/UDID."""
+        """Create an Appium driver for this device's ports."""
         load_dotenv(_REPO_ROOT / ".env")
         udid = os.environ.get(self._cfg["env_key"])
-        if not udid:
-            raise RuntimeError(
-                f"[{self.device_id}] {self._cfg['env_key']} not set in .env"
-            )
 
         options = XCUITestOptions()
         options.platform_name = "iOS"
         options.automation_name = "XCUITest"
         options.bundle_id = _BUNDLE_ID
-        options.udid = udid
+        if udid:
+            options.udid = udid
+        else:
+            logging.warning(
+                "[%s] %s not set in .env; connecting via live Appium/WDA ports.",
+                self.device_id,
+                self._cfg["env_key"],
+            )
         options.wda_local_port = self._cfg["wda_port"]
         options.use_prebuilt_wda = True
         options.skip_log_capture = True
@@ -244,6 +247,16 @@ class DeviceWorker:
             time.sleep(2)
 
         self.driver = webdriver.Remote(appium_url, options=options)
+
+        actual = self.driver.get_window_size()
+        exp_w, exp_h = int(self._cfg["logical_w"]), int(self._cfg["logical_h"])
+        if actual["width"] != exp_w or actual["height"] != exp_h:
+            raise RuntimeError(
+                f"[{self.device_id}] screen dimensions mismatch: "
+                f"expected {exp_w}×{exp_h}, got {actual['width']}×{actual['height']}. "
+                f"Check Display Zoom: Settings → Display & Brightness → Display Zoom → Default."
+            )
+
         self.mjpeg_url = f"http://127.0.0.1:{self._cfg['mjpeg_port']}"
 
         state = self.driver.query_app_state(_BUNDLE_ID)
@@ -255,7 +268,12 @@ class DeviceWorker:
                 f"(state={state}) — activating."
             )
             self.driver.activate_app(_BUNDLE_ID)
-            time.sleep(1.5)
+            time.sleep(1.0)
+            try:
+                skip_loading_screen(self.driver, self.device_w, self.device_h)
+            except Exception as exc:
+                logging.warning("[%s] skip loading screen failed: %s", self.device_id, exc)
+            time.sleep(1.0)
 
         if self.calibrate_touch_on_connect:
             try:
@@ -272,7 +290,7 @@ class DeviceWorker:
                     calibration.sequential_overhead_s,
                     calibration.combined_nonneg_threshold_s,
                 )
-                reset_position(self.driver, device_w=self._cfg["logical_w"])
+                reset_position(self.driver, self._cfg["logical_w"], self._cfg["logical_h"])
             except Exception as exc:
                 logging.warning("[%s] touch calibration skipped: %s", self.device_id, exc)
 
@@ -291,7 +309,12 @@ class DeviceWorker:
             f"(state={state}) — relaunching."
         )
         self.driver.activate_app(_BUNDLE_ID)
-        time.sleep(2.0)
+        time.sleep(3.0)
+        try:
+            skip_loading_screen(self.driver, self.device_w, self.device_h)
+        except Exception as exc:
+            logging.warning("[%s] skip loading screen failed: %s", self.device_id, exc)
+        time.sleep(1.0)
         return True
 
     # -- reset --------------------------------------------------------------
@@ -299,11 +322,11 @@ class DeviceWorker:
     def reset(self) -> None:
         """Reset the board to its starting position."""
         try:
-            reset_position(self.driver, device_w=self._cfg["logical_w"])
+            reset_position(self.driver, self._cfg["logical_w"], self._cfg["logical_h"])
         except Exception as exc:
             logging.warning("[%s] reset failed, attempting reconnect: %s", self.device_id, exc)
             if self._reconnect():
-                reset_position(self.driver, device_w=self._cfg["logical_w"])
+                reset_position(self.driver, self._cfg["logical_w"], self._cfg["logical_h"])
             else:
                 logging.error("[%s] reset skipped — device unreachable.", self.device_id)
 
@@ -357,7 +380,7 @@ class DeviceWorker:
     ) -> dict:
         """Execute one candidate eval on this device.
 
-        Runs: ensure_foreground -> record frames -> execute_action ->
+        Runs: ensure_foreground -> record frames -> execute_gesture_params ->
         get_reward -> stop recording. Does NOT call reset_position
         (the orchestrator handles resets across all devices).
 
@@ -376,7 +399,7 @@ class DeviceWorker:
             if recorder is not None:
                 recorder.start(self.mjpeg_url)
             action_start_time = time.monotonic()
-            execute_action(
+            execute_gesture_params(
                 self.driver,
                 np.array(params),
                 device_w=self._cfg["logical_w"],

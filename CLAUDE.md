@@ -39,7 +39,7 @@ tmp/                # Debug output (gitignored)
 
 ### RL Pipeline (active development)
 
-1. **Action parameterization** (`src/trueskate_ai/rl/action_param.py`): 17-param vector → 2 `curved_drag` gesture slots (3 waypoints + duration + easing_power each) + 1 inter-slot delay. Curved drags are essential — straight swipes don't reflect real gameplay. Slot 1: horizontal scoop from tail. Slot 2: diagonal upward flick from center.
+1. **Gesture parameterization** (`src/trueskate_ai/rl/cmaes/action_param.py`): 17-param vector → 2 gesture slots (3 normalised waypoints + duration + easing_power each) + 1 inter-slot delay. Curved drags are essential — straight swipes don't reflect real gameplay. See `GESTURES.md` for coordinate conventions.
 
 2. **Touch execution** (`src/trueskate_ai/sim/touch_actions.py`): `curved_drag` primitives executed via Appium W3C Actions. Slots run as overlapping gestures in a single `perform()` call (parallel, not sequential).
 
@@ -49,11 +49,20 @@ tmp/                # Debug output (gitignored)
 
 5. **CMA-ES optimizer** (`src/trueskate_ai/rl/cmaes_optimizer.py`, entry point `scripts/train_cmaes.py`): Evolutionary optimization over gesture params. JSONL logging. Params clamped to prevent inf/NaN Appium crashes. y-bounds capped at 750 to avoid home indicator zone.
 
-6. **Trick library** (`scripts/build_trick_library.py`, `src/trueskate_ai/sim/execute_trick.py`): Extracts recipes from JSONL logs (median + best params), replays via Appium. See `trick_libraries/TRICK_LIBRARY_FORMAT.md` for JSON schema and easing power reference.
+6. **Trick library** (`scripts/data/build_trick_library.py`, `scripts/inspect/execute_trick.py`): Extracts gesture recipes from JSONL logs (median + best params), replays via WDA. See `GESTURES.md` for the full schema and coordinate reference.
 
 ### Labeling Pipeline (legacy — pre-RL pivot)
 
 `trace_extractor.py` → `video_labeler.py` → `visualize.py`. CV-based touch label extraction from screen recordings. Superseded by RL approach but code remains.
+
+## Gesture & Coordinate Reference
+
+See `GESTURES.md` at the repo root for the authoritative reference on:
+- Terminology (gesture, gesture recipe, gesture parameters)
+- Normalised coordinate system and why no y_offset is needed
+- Supported device screen ratios and `Y_BOUND_MIN` / `Y_BOUND_MAX`
+- Gesture and recipe JSON schema
+- Execution flow and code cross-references
 
 ## Key Design Decisions
 
@@ -62,6 +71,7 @@ tmp/                # Debug output (gitignored)
 - **Data throughput is the bottleneck** — True Skate runs at 1× real-time; GPU can't accelerate the live interaction loop. ~15K steps/hour
 - **Reward shaping is critical** — partial credit for trick components guides exploration; aggressive tier compression prevents convergence on wrong tricks
 - **OCR misreads are a real signal problem** — "360"→"540" misread was causing 1.0 tricks to score 0.6
+- **No y_offset** — all supported devices share the 19.5:9 aspect ratio; `scale_to_device(norm_x, norm_y, device_w, device_h)` is the complete coordinate transform. RL gesture y bounds: `Y_BOUND_MIN = 0.12`, `Y_BOUND_MAX = 0.88` (defined in `rl/gestures.py`). Note: iPhone 11 runs with Display Zoom always enabled, which reduces its UIKit logical resolution from 414 × 896 to 375 × 812 — the same as the XS. This is reflected in `DEVICES` in `device_worker.py` and does not break normalised coordinates because the aspect ratio is unchanged.
 
 ## Experiment Journal
 

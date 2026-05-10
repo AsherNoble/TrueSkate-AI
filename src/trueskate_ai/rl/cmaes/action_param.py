@@ -1,75 +1,69 @@
-"""Action parameterization for the CMA-ES 360 flip experiment.
+"""CMA-ES gesture parameterization: bounds, decode, and execution.
 
-Bridges a flat 17-float numpy parameter vector to actual touch gestures
-executed via curved_drag(). CMA-ES optimizes this vector; this module
-handles bounds, unpacking, and execution.
+Bridges a flat 17-float numpy parameter vector to gesture execution on device.
+CMA-ES optimizes this vector; this module handles bounds, unpacking, and execution.
 
 Parameter layout (17 total):
-    Slot 1 (scoop):  x0,y0, x1,y1, x2,y2, duration, easing_power  → indices 0–7
-    Slot 2 (flick):  x0,y0, x1,y1, x2,y2, duration, easing_power  → indices 8–15
+    Slot 1:  x0,y0, x1,y1, x2,y2, duration, easing_power  → indices 0–7
+    Slot 2:  x0,y0, x1,y1, x2,y2, duration, easing_power  → indices 8–15
     Delay 1→2: index 16
 
-Easing power controls the velocity profile passed to curved_drag():
-    power < 1.0  — decelerating (fast start, slow end)
-    power = 1.0  — constant velocity (linear)
-    power > 1.0  — accelerating (slow start, fast end)
-
-Canonical action space: 375×812 logical points (iPhone XS width reference).
+Coordinate, easing, and recipe conventions are documented in GESTURES.md.
 """
 import numpy as np
 
-from trueskate_ai.rl.gestures import (
-    CANONICAL_H,
-    CANONICAL_W,
+from trueskate_ai.sim.gestures import (
     PUSH_DURATION,
     PUSH_EASING,
     PUSH_END,
     PUSH_PRE_DELAY,
     PUSH_START,
+    Y_BOUND_MAX,
+    Y_BOUND_MIN,
     execute_static_push,
-    norm_to_device,
+    scale_to_device,
 )
 
 # ---------------------------------------------------------------------------
 # Bounds
 # ---------------------------------------------------------------------------
 
-# Legacy dimensions — used only for converting the original gesture coords
-# to canonical space when defining bounds and initial mean.
-_LEGACY_W = 414.0
-_LEGACY_H = 896.0
+# # Legacy dimensions — used only for converting the original gesture coords
+# # to canonical space when defining bounds and initial mean.
+# _LEGACY_W = 414.0
+# _LEGACY_H = 896.0
 
 
-def _to_canonical_x(x: float) -> float:
-    return x * (CANONICAL_W / _LEGACY_W)
-
-
-def _to_canonical_y(y: float) -> float:
-    return y * (CANONICAL_H / _LEGACY_H)
+# def _to_canonical_x(x: float) -> float:
+#     return x * (CANONICAL_W / _LEGACY_W)
+#
+#
+# def _to_canonical_y(y: float) -> float:
+#     return y * (CANONICAL_H / _LEGACY_H)
 
 
 # fmt: off
 _BOUNDS_RAW = [
     # Slot 1
-    [0.0, _to_canonical_x(414.0)],        # x0
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y0
-    [0.0, _to_canonical_x(414.0)],        # x1
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y1
-    [0.0, _to_canonical_x(414.0)],        # x2
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y2
-    [0.03, 0.8], # duration
-    [0.3, 3.0],  # easing_power
+    [0.0, 1.0],                    # x0
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y0
+    [0.0, 1.0],                    # x1
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y1
+    [0.0, 1.0],                    # x2
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y2
+    [0.03, 0.8],                   # duration
+    [0.3, 3.0],                    # easing_power
     # Slot 2
-    [0.0, _to_canonical_x(414.0)],        # x0
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y0
-    [0.0, _to_canonical_x(414.0)],        # x1
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y1
-    [0.0, _to_canonical_x(414.0)],        # x2
-    [_to_canonical_y(448.0), _to_canonical_y(750.0)],  # y2
-    [0.03, 0.8], # duration
-    [0.3, 3.0],  # easing_power
+    [0.0, 1.0],                    # x0
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y0
+    [0.0, 1.0],                    # x1
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y1
+    [0.0, 1.0],                    # x2
+    [Y_BOUND_MIN, Y_BOUND_MAX],    # y2
+    [0.03, 0.8],                   # duration
+    [0.3, 3.0],                    # easing_power
     # Delay
-    [-0.3, 0.8], # delay 1→2
+    [-0.3, 0.8],                   # delay 1→2
 ]
 # fmt: on
 
@@ -80,19 +74,19 @@ PARAM_BOUNDS: np.ndarray = np.array(_BOUNDS_RAW, dtype=np.float64)
 # Initial mean — informed prior for a 360 flip
 # ---------------------------------------------------------------------------
 
-# Slot 1: pop flick — southward swipe from the tail area (canonical coords)
+# Initialised as a southward gesture from the tail area
 _SCOOP = [
-    _to_canonical_x(205.0), _to_canonical_y(620.0),
-    _to_canonical_x(210.0), _to_canonical_y(690.0),
-    _to_canonical_x(215.0), _to_canonical_y(748.0),
+    0.4485, 0.6920,
+    0.4595, 0.7001,
+    0.4595, 0.8348,
     0.06, 1.2,
 ]
 
-# Slot 2: flick — rightward swipe from the upper-mid board area (canonical coords)
+# Initialised as a rightward gesture from the upper-mid board area
 _FLICK = [
-    _to_canonical_x(205.0), _to_canonical_y(520.0),
-    _to_canonical_x(275.0), _to_canonical_y(512.0),
-    _to_canonical_x(345.0), _to_canonical_y(505.0),
+    0.4485, 0.5836,
+    0.6017, 0.5714,
+    0.7548, 0.5636,
     0.05, 0.9,
 ]
 
@@ -106,7 +100,7 @@ INITIAL_MEAN: np.ndarray = np.array(_SCOOP + _FLICK + _DELAY, dtype=np.float64)
 # Initial sigma
 # ---------------------------------------------------------------------------
 
-_COORD_SIGMA = 40.0
+_COORD_SIGMA = 0.10
 _DUR_SIGMA = 0.15
 _EASING_SIGMA = 0.5
 _DELAY_SIGMA = 0.15
@@ -140,14 +134,14 @@ def clamp_params(params: np.ndarray) -> np.ndarray:
     return np.clip(params, PARAM_BOUNDS[:, 0], PARAM_BOUNDS[:, 1])
 
 
-def unpack_action(params: np.ndarray) -> dict:
-    """Unpack a clamped 17-float parameter vector into a structured dict.
+def unpack_gesture_params(params: np.ndarray) -> dict:
+    """Unpack a clamped 17-float parameter vector into a gesture recipe dict.
 
     Returns:
         Dict with keys:
             "gestures": list of 2 dicts, each with "points" (list of 3
-                (x, y) tuples), "duration" (float, seconds), and
-                "easing_power" (float).
+                (x, y) tuples in normalised [0, 1]), "duration" (float, seconds),
+                and "easing_power" (float).
             "delays": list of 1 float — inter-gesture delay in seconds.
     """
     gestures = []
@@ -166,28 +160,23 @@ def unpack_action(params: np.ndarray) -> dict:
     return {"gestures": gestures, "delays": delays}
 
 
-def execute_action(
+def execute_gesture_params(
     driver,
     params: np.ndarray,
-    device_w: float = CANONICAL_W,
-    device_h: float = CANONICAL_H,
+    device_w: float,
+    device_h: float,
     on_post_push=None,
     timing_device_key: str | None = None,
 ) -> None:
-    """Clamp, unpack, and execute a 17-float action on the device.
-
-    Fires three gesture slots in two stages:
-      - finger_push: static downward push (right side), during pre-delay
-      - finger0/finger1: scoop + flick, with calibrated inter-gesture delay
-    """
+    """Clamp, unpack, and execute a 17-float gesture parameter vector on the device."""
     from trueskate_ai.sim.touch_actions import execute_two_slot_gestures  # noqa: PLC0415
 
-    action = unpack_action(clamp_params(params))
-    g0, g1 = action["gestures"]
-    delay = action["delays"][0]
+    recipe = unpack_gesture_params(clamp_params(params))
+    g0, g1 = recipe["gestures"]
+    delay = recipe["delays"][0]
 
-    g0_points = [norm_to_device(x, y, device_w, device_h) for x, y in g0["points"]]
-    g1_points = [norm_to_device(x, y, device_w, device_h) for x, y in g1["points"]]
+    g0_points = [scale_to_device(x, y, device_w, device_h) for x, y in g0["points"]]
+    g1_points = [scale_to_device(x, y, device_w, device_h) for x, y in g1["points"]]
 
     p0 = g0["easing_power"]
     easing0 = (lambda t, p=p0: t ** p) if p0 != 1.0 else None
@@ -215,17 +204,17 @@ def execute_action(
 
 if __name__ == "__main__":
     print("=== Initial mean (informed 360-flip prior) ===")
-    action = unpack_action(INITIAL_MEAN)
-    for i, g in enumerate(action["gestures"]):
+    recipe = unpack_gesture_params(INITIAL_MEAN)
+    for i, g in enumerate(recipe["gestures"]):
         print(f"  Gesture {i + 1}: points={g['points']}, duration={g['duration']:.3f}s, easing_power={g['easing_power']:.2f}")
-    print(f"  Delays: {action['delays']}")
+    print(f"  Delays: {recipe['delays']}")
 
     rng = np.random.default_rng(42)
     print("\n=== 3 random samples (uniform within bounds) ===")
     for sample_idx in range(3):
         raw = rng.uniform(PARAM_BOUNDS[:, 0], PARAM_BOUNDS[:, 1])
-        action = unpack_action(clamp_params(raw))
+        recipe = unpack_gesture_params(clamp_params(raw))
         print(f"\n  Sample {sample_idx + 1}:")
-        for i, g in enumerate(action["gestures"]):
+        for i, g in enumerate(recipe["gestures"]):
             print(f"    Gesture {i + 1}: points={g['points']}, duration={g['duration']:.3f}s, easing_power={g['easing_power']:.2f}")
-        print(f"    Delays: {action['delays']}")
+        print(f"    Delays: {recipe['delays']}")

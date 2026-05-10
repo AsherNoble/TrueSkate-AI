@@ -1,6 +1,6 @@
 # TrueSkate-AI
 
-Training an AI agent to perform skateboarding tricks in [True Skate](https://apps.apple.com/app/true-skate/id549105915), an iOS mobile game.
+Training an AI agent to play the mobile game [True Skate](https://apps.apple.com/app/true-skate/id549105915) at an expert level.
 
 ## Approach
 
@@ -16,11 +16,11 @@ The agent has landed **pop shove-its, varial flips, 360 flips, nightmare flips, 
 
 ## How It Works
 
-1. **Action parameterization** — Two `curved_drag` gesture slots (3 waypoints + duration + easing each) plus inter-slot delay → 17 params total
-2. **Touch execution** — Gestures run as overlapping W3C Actions via Appium/WebDriverAgent on a physical iPhone
-3. **Trick detection** — Screenshot → OCR via pytesseract → fuzzy match against 248 known tricks
-4. **Reward** — Tiered scoring based on trick name (360 flip = 1.0 down to 0.0 for irrelevant tricks)
-5. **Optimization** — CMA-ES samples parameter vectors, evaluates them on-device, updates the search distribution
+1. **Gesture parameterization** — Two gesture slots (3 normalised waypoints + duration + easing each) plus inter-slot delay → 17 params total. See [GESTURES.md](GESTURES.md) for the full coordinate and schema reference.
+2. **Touch execution** — Gestures fire as sequential calls to a custom WDA endpoint on a physical iPhone; push uses Appium ActionChains
+3. **Trick detection** — Screenshot → Apple Vision OCR → fuzzy match against known tricks
+4. **Reward** — Tiered scoring based on detected trick name
+5. **Optimization** — CMA-ES samples gesture parameter vectors, evaluates them on-device, updates the search distribution
 
 ## Key Constraint
 
@@ -42,13 +42,12 @@ experiments/        # Experiment journals and standalone experiments
 - Python 3.11+ with venv
 - Appium + WebDriverAgent (Xcode)
 - Physical iPhone with True Skate installed
-- pytesseract / Tesseract OCR
 
 ## Setup
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install opencv-python numpy torch torchvision scipy pillow appium-python-client matplotlib requests cma pytesseract
+pip install numpy opencv-python torch torchvision scipy pillow appium-python-client matplotlib requests cma python-dotenv pyobjc
 ```
 
 Copy `.env.example` to `.env` and set your device UDID.
@@ -57,20 +56,20 @@ Copy `.env.example` to `.env` and set your device UDID.
 
 ```bash
 # CMA-ES baseline
-python scripts/train_cmaes.py
+python scripts/train/train_cmaes.py
 
 # Trick-conditioned PPO experiment
-python scripts/train_ppo.py --updates 100 --steps-per-update 24
+python scripts/train/train_ppo.py --updates 100 --steps-per-update 24
 
 # Spin button coordinate calibration helper
-python scripts/calibrate_spin_button.py --x 25 --y 362 --repeat 2
+python scripts/inspect/calibrate_spin_button.py --x 25 --y 362 --repeat 2
 
 # Optional global spin override during PPO runs
-python scripts/train_ppo.py --spin-x 25 --spin-y 362
+python scripts/train/train_ppo.py --spin-x 25 --spin-y 362
 
 # Disable hindsight relabeling (enabled by default)
-python scripts/train_ppo.py --no-hindsight-relabel
+python scripts/train/train_ppo.py --no-hindsight-relabel
 
 # Resume a new run from a prior checkpoint
-python scripts/train_ppo.py --resume-from /absolute/path/to/policy_update_0010.pt
+python scripts/train/train_ppo.py --resume-from /absolute/path/to/policy_update_0010.pt
 ```
