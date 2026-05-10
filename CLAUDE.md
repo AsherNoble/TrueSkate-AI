@@ -60,7 +60,7 @@ tmp/                # Debug output (gitignored)
 See `GESTURES.md` at the repo root for the authoritative reference on:
 - Terminology (gesture, gesture recipe, gesture parameters)
 - Normalised coordinate system and why no y_offset is needed
-- Supported device screen ratios and `SAFE_Y_MAX`
+- Supported device screen ratios and `Y_BOUND_MIN` / `Y_BOUND_MAX`
 - Gesture and recipe JSON schema
 - Execution flow and code cross-references
 
@@ -71,7 +71,7 @@ See `GESTURES.md` at the repo root for the authoritative reference on:
 - **Data throughput is the bottleneck** — True Skate runs at 1× real-time; GPU can't accelerate the live interaction loop. ~15K steps/hour
 - **Reward shaping is critical** — partial credit for trick components guides exploration; aggressive tier compression prevents convergence on wrong tricks
 - **OCR misreads are a real signal problem** — "360"→"540" misread was causing 1.0 tricks to score 0.6
-- **No y_offset** — all supported devices share the 19.5:9 aspect ratio; `scale_to_device(norm_x, norm_y, device_w, device_h)` is the complete coordinate transform
+- **No y_offset** — all supported devices share the 19.5:9 aspect ratio; `scale_to_device(norm_x, norm_y, device_w, device_h)` is the complete coordinate transform. RL gesture y bounds: `Y_BOUND_MIN = 0.12`, `Y_BOUND_MAX = 0.88` (defined in `rl/gestures.py`)
 
 ## Experiment Journal
 

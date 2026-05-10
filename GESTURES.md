@@ -47,15 +47,14 @@ The difference between XS and XR/11 is **< 0.05%** — sub-pixel at any practica
 ### Usable coordinate bounds
 
 ```
-X:         [0.0,       1.0       ]   full screen width
-Y:         [0.0,       SAFE_Y_MAX]   avoid home indicator zone
+X:         [0.0,         1.0        ]   full screen width
+Y:         [Y_BOUND_MIN, Y_BOUND_MAX]   valid RL gesture area
 
-SAFE_Y_MAX = 0.8371   # 750 / 896 — home indicator starts at ~750 logical pts
-                      # on a 896pt-tall screen; applies equally to all supported
-                      # devices given their shared aspect ratio
+Y_BOUND_MIN = 0.12   # top of board play area (avoids game controls — reset pos, rewind, etc)
+Y_BOUND_MAX = 0.88   # bottom of board play area (avoids home indicator zone & game menu)
 ```
 
-The lower Y bound for the trick area in practice is approximately `0.40` (above the board's centre), but this is a soft design heuristic, not a hard constraint. `SAFE_Y_MAX` is the hard upper limit enforced in gesture parameter bounds.
+Defined in `src/trueskate_ai/rl/gestures.py`; imported by both RL pipelines (`action_param.py`, `trick_conditioned_action.py`). These bounds apply only to RL gesture parameters — utility gestures (`skip_loading_screen`, `reset_position`, `execute_static_push`) use their own fixed normalised positions and are not constrained by these values.
 
 ---
 

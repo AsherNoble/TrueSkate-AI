@@ -1,6 +1,6 @@
 # TrueSkate-AI
 
-Training an AI agent to perform skateboarding tricks in [True Skate](https://apps.apple.com/app/true-skate/id549105915), an iOS mobile game.
+Training an AI agent to play the mobile game [True Skate](https://apps.apple.com/app/true-skate/id549105915) at an expert level.
 
 ## Approach
 
