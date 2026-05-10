@@ -16,7 +16,7 @@ from dataclasses import dataclass
 import numpy as np
 from selenium.webdriver.common.action_chains import ActionChains
 
-from trueskate_ai.rl.gestures import Y_BOUND_MAX, Y_BOUND_MIN, execute_static_push, scale_to_device
+from trueskate_ai.sim.gestures import Y_BOUND_MAX, Y_BOUND_MIN, execute_static_push, scale_to_device
 from trueskate_ai.sim.touch_actions import (
     build_curved_drag,
     make_touch_pointer,

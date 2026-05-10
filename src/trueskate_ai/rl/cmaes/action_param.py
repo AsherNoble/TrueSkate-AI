@@ -12,7 +12,7 @@ Coordinate, easing, and recipe conventions are documented in GESTURES.md.
 """
 import numpy as np
 
-from trueskate_ai.rl.gestures import (
+from trueskate_ai.sim.gestures import (
     PUSH_DURATION,
     PUSH_EASING,
     PUSH_END,
@@ -74,7 +74,7 @@ PARAM_BOUNDS: np.ndarray = np.array(_BOUNDS_RAW, dtype=np.float64)
 # Initial mean — informed prior for a 360 flip
 # ---------------------------------------------------------------------------
 
-# Slot 1: pop flick — southward swipe from the tail area
+# Initialised as a southward gesture from the tail area
 _SCOOP = [
     0.4485, 0.6920,
     0.4595, 0.7001,
@@ -82,7 +82,7 @@ _SCOOP = [
     0.06, 1.2,
 ]
 
-# Slot 2: flick — rightward swipe from the upper-mid board area (canonical coords)
+# Initialised as a rightward gesture from the upper-mid board area
 _FLICK = [
     0.4485, 0.5836,
     0.6017, 0.5714,

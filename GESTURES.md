@@ -28,7 +28,7 @@ device_x = norm_x * device_w
 device_y = norm_y * device_h
 ```
 
-This is implemented as `scale_to_device(norm_x, norm_y, device_w, device_h)` in `src/trueskate_ai/rl/gestures.py`. It is the **only** coordinate transform in the pipeline — there is no offset, scaling factor, or per-device adjustment beyond this multiplication.
+This is implemented as `scale_to_device(norm_x, norm_y, device_w, device_h)` in `src/trueskate_ai/sim/gestures.py`. It is the **only** coordinate transform in the pipeline — there is no offset, scaling factor, or per-device adjustment beyond this multiplication.
 
 ### Why normalised coordinates work across all devices
 
@@ -54,7 +54,7 @@ Y_BOUND_MIN = 0.12   # top of board play area (avoids game controls — reset po
 Y_BOUND_MAX = 0.88   # bottom of board play area (avoids home indicator zone & game menu)
 ```
 
-Defined in `src/trueskate_ai/rl/gestures.py`; imported by both RL pipelines (`action_param.py`, `trick_conditioned_action.py`). These bounds apply only to RL gesture parameters — utility gestures (`skip_loading_screen`, `reset_position`, `execute_static_push`) use their own fixed normalised positions and are not constrained by these values.
+Defined in `src/trueskate_ai/sim/gestures.py`; imported by both RL pipelines (`action_param.py`, `trick_conditioned_action.py`). These bounds apply only to RL gesture parameters — utility gestures (`skip_loading_screen`, `reset_position`, `execute_static_push`) use their own fixed normalised positions and are not constrained by these values.
 
 ---
 
@@ -184,7 +184,7 @@ All `points` in stored recipes are normalised `[0, 1]`. Legacy files with raw lo
    the board to its starting position.
 ```
 
-Push constants are defined in `src/trueskate_ai/rl/gestures.py`. The execution loop is in `scripts/inspect/execute_trick.py::execute_recipe()` (library replay) and `src/trueskate_ai/rl/cmaes/action_param.py::execute_gesture_params()` (CMA-ES eval path).
+Push constants are defined in `src/trueskate_ai/sim/gestures.py`. The execution loop is in `src/trueskate_ai/sim/gesture_recipe.py::execute_gesture_recipe()` (library replay) and `src/trueskate_ai/rl/cmaes/action_param.py::execute_gesture_params()` (CMA-ES eval path).
 
 ---
 
@@ -192,17 +192,12 @@ Push constants are defined in `src/trueskate_ai/rl/gestures.py`. The execution l
 
 | Concept | Location |
 |---|---|
-| `scale_to_device()` | `src/trueskate_ai/rl/gestures.py` |
-| `execute_static_push()`, `PUSH_*` constants | `src/trueskate_ai/rl/gestures.py` |
+| `scale_to_device()` | `src/trueskate_ai/sim/gestures.py` |
+| `execute_static_push()`, `PUSH_*` constants | `src/trueskate_ai/sim/gestures.py` |
+| `execute_gesture_recipe()` | `src/trueskate_ai/sim/gesture_recipe.py` |
 | `build_curved_drag()`, `make_touch_pointer()`, `perform_pointer_actions()` | `src/trueskate_ai/sim/touch_actions.py` |
 | CMA-ES gesture parameter bounds, decode, execute | `src/trueskate_ai/rl/cmaes/action_param.py` |
 | PPO gesture parameter decode, execute | `src/trueskate_ai/rl/ppo/trick_conditioned_action.py` |
 | Library recipe replay | `scripts/inspect/execute_trick.py` |
 | Build trick library from JSONL log | `scripts/data/build_trick_library.py` |
 | Device configs (`DEVICES`, `logical_w`, `logical_h`) | `src/trueskate_ai/rl/device_worker.py` |
-
-### Pending architectural moves (not yet done)
-
-- `src/trueskate_ai/rl/gestures.py` contains execution infrastructure (`scale_to_device`, `execute_static_push`) that belongs in `sim/` rather than `rl/`. Deferred to a future tidy pass.
-- `execute_recipe()` in `scripts/inspect/execute_trick.py` is reusable logic that could move to `sim/gesture_executor.py`. Deferred.
-- `src/trueskate_ai/sim/touch_actions.py` contains legacy functions (`swipe`, `flick`, `drag`) not used in the RL pipeline. Removal deferred (fix 12).

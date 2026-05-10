@@ -1,4 +1,4 @@
-"""Shared gesture execution utilities and constants for all RL pipelines.
+"""Shared gesture execution utilities and constants.
 
 Provides scale_to_device() — the sole coordinate transform in the pipeline —
 and the static push gesture fired before every trick attempt. Coordinate and
