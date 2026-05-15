@@ -19,7 +19,15 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from trueskate_ai.rl.cmaes.action_param import INITIAL_MEAN, INITIAL_SIGMA, PARAM_BOUNDS
+from trueskate_ai.rl.cmaes.action_param import (
+    build_coordinate_mask,
+    build_initial_mean_from_priors,
+    build_initial_sigma,
+    build_param_bounds,
+    clamp_params,
+    default_initial_mean,
+    param_vector_length,
+)
 from trueskate_ai.rl.cmaes.curriculum import Curriculum
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
 
@@ -65,8 +73,12 @@ def _timed_worker_reset(worker) -> tuple[str, float, float]:
     return worker.device_id, reset_started_at, time.monotonic() - reset_started_at
 
 
-def _load_initial_mean_from_library(path: Path) -> np.ndarray:
-    """Load median_gestures from a trick library JSON and pack into 17 params."""
+def _load_initial_mean_from_library(path: Path, num_gestures: int) -> np.ndarray:
+    """Load median_gestures from a trick library JSON and pack into a param vector.
+
+    Validates that the library's gesture count matches the curriculum's
+    ``num_gestures``.
+    """
     data = json.loads(path.read_text())
     median_gestures = data.get("median_gestures")
     if not isinstance(median_gestures, dict):
@@ -74,10 +86,17 @@ def _load_initial_mean_from_library(path: Path) -> np.ndarray:
 
     gestures = median_gestures.get("gestures")
     delays = median_gestures.get("delays")
-    if not isinstance(gestures, list) or len(gestures) != 2:
-        raise ValueError(f"Expected median_gestures.gestures to have exactly 2 entries in {path}")
-    if not isinstance(delays, list) or len(delays) != 1:
-        raise ValueError(f"Expected median_gestures.delays to have exactly 1 entry in {path}")
+    expected_delays = max(0, num_gestures - 1)
+    if not isinstance(gestures, list) or len(gestures) != num_gestures:
+        raise ValueError(
+            f"Expected median_gestures.gestures to have exactly {num_gestures} entries in {path}, "
+            f"got {len(gestures) if isinstance(gestures, list) else type(gestures).__name__}"
+        )
+    if not isinstance(delays, list) or len(delays) != expected_delays:
+        raise ValueError(
+            f"Expected median_gestures.delays to have exactly {expected_delays} entries in {path}, "
+            f"got {len(delays) if isinstance(delays, list) else type(delays).__name__}"
+        )
 
     params: list[float] = []
     for gesture_idx, gesture in enumerate(gestures):
@@ -95,10 +114,13 @@ def _load_initial_mean_from_library(path: Path) -> np.ndarray:
         params.append(float(gesture["duration"]))
         params.append(float(gesture["easing_power"]))
 
-    params.append(float(delays[0]))
+    params.extend(float(d) for d in delays)
     mean = np.array(params, dtype=np.float64)
-    if mean.shape != (17,):
-        raise ValueError(f"Expected 17 parameters from median_gestures in {path}, got {mean.shape}")
+    expected_len = param_vector_length(num_gestures)
+    if mean.shape != (expected_len,):
+        raise ValueError(
+            f"Expected {expected_len} parameters from median_gestures in {path}, got {mean.shape}"
+        )
     return mean
 
 
@@ -191,17 +213,38 @@ def run(
     print(f"Logging to {log_path}")
     print(f"Workers: {[w.device_id for w in workers]}")
 
-    bounds = [PARAM_BOUNDS[:, 0].tolist(), PARAM_BOUNDS[:, 1].tolist()]
-    cma_mean = INITIAL_MEAN.copy()
-    cma_stds = INITIAL_SIGMA.copy()
+    num_gestures = curriculum.num_gestures
+    param_bounds = build_param_bounds(num_gestures)
+    bounds = [param_bounds[:, 0].tolist(), param_bounds[:, 1].tolist()]
+    cma_stds = build_initial_sigma(num_gestures)
+
+    if curriculum.initial_means is not None:
+        cma_mean = build_initial_mean_from_priors(
+            curriculum.initial_means, curriculum.initial_delays
+        )
+    elif num_gestures == 2:
+        cma_mean = default_initial_mean(2)
+    else:
+        # Curriculum.from_json enforces that warm_start is set when N != 2 and
+        # no embedded priors are supplied. Seed with zeros; warm-start below
+        # overwrites this before CMA-ES initialisation.
+        cma_mean = np.zeros(param_vector_length(num_gestures), dtype=np.float64)
+
     if initial_mean is None and curriculum.warm_start is not None:
         initial_mean = curriculum.warm_start
         print(f"Using warm-start from curriculum: {initial_mean}")
     if initial_mean is not None:
-        cma_mean = _load_initial_mean_from_library(initial_mean)
-        coordinate_mask = np.ones(17, dtype=bool)
-        coordinate_mask[[6, 7, 14, 15, 16]] = False
-        cma_stds[coordinate_mask] = 0.05
+        cma_mean = _load_initial_mean_from_library(initial_mean, num_gestures)
+        # Warm-start files can predate the current bounds; clamp out-of-range
+        # values before handing the vector to CMA-ES (which rejects strictly).
+        out_of_bounds = (cma_mean < param_bounds[:, 0]) | (cma_mean > param_bounds[:, 1])
+        if out_of_bounds.any():
+            print("Warm-start values outside current bounds — clamping:")
+            for idx in np.where(out_of_bounds)[0]:
+                lo, hi = param_bounds[idx]
+                print(f"  param[{idx}] = {cma_mean[idx]:.4f} → clamped to [{lo:.4f}, {hi:.4f}]")
+            cma_mean = clamp_params(cma_mean, param_bounds)
+        cma_stds[build_coordinate_mask(num_gestures)] = 0.05
         print(f"Loaded initial mean from trick library: {initial_mean}")
 
     es = cma.CMAEvolutionStrategy(
@@ -217,11 +260,23 @@ def run(
         },
     )
 
+    _write_log(log_fh, {
+        "type": "run_config",
+        "num_gestures": num_gestures,
+        "param_vector_length": param_vector_length(num_gestures),
+        "target": curriculum.target,
+        "seed": seed,
+        "pop_size": pop_size,
+        "max_evals": max_evals,
+        "warm_start": str(initial_mean) if initial_mean is not None else None,
+        "timestamp": datetime.now().isoformat(timespec="milliseconds"),
+    })
+
     eval_num = 0
     generation = 0
     best_reward = 0.0
     best_trick: str | None = None
-    best_params: np.ndarray = INITIAL_MEAN.copy()
+    best_params: np.ndarray = cma_mean.copy()
 
     executor = ThreadPoolExecutor(max_workers=n_workers)
 

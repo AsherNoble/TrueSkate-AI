@@ -2,6 +2,10 @@
 
 A Curriculum is a flat trick→reward dict (loaded from JSON) plus a default
 reward for unlisted recognised tricks and a togglable failure multiplier.
+It also carries the gesture-vector dimensionality for CMA-ES (``num_gestures``)
+and optional per-slot initial means / inter-gesture delays. When
+``num_gestures != 2`` the curriculum MUST supply either explicit priors or
+a ``warm_start`` whose gesture count matches.
 
 Curriculum JSONs live in `curricula/<trick>.json` at the repo root.
 """
@@ -13,6 +17,8 @@ from typing import Callable
 from trueskate_ai.rl.reward import near_miss_multiplier, normalize_trick_name
 from trueskate_ai.sim.known_tricks import KNOWN_TRICKS
 from trueskate_ai.sim.trick_info_reader import TrickResult
+
+_PARAMS_PER_SLOT = 8  # mirrors action_param.PARAMS_PER_SLOT (kept local to avoid import cycle)
 
 
 def _resolve_failure_multiplier(spec) -> Callable[[float], float]:
@@ -41,6 +47,9 @@ class Curriculum:
     warm_start: Path | None = None
     failure_multiplier_spec: str | float = "near_miss"
     notes: str = ""
+    num_gestures: int = 2
+    initial_means: tuple[tuple[float, ...], ...] | None = None
+    initial_delays: tuple[float, ...] | None = None
 
     @classmethod
     def from_json(cls, path: Path) -> "Curriculum":
@@ -57,6 +66,61 @@ class Curriculum:
         # Allow absolute paths in the JSON too:
         if warm_start_raw and Path(warm_start_raw).is_absolute():
             warm_start = Path(warm_start_raw)
+
+        num_gestures = int(data.get("num_gestures", 2))
+        if num_gestures < 1:
+            raise ValueError(
+                f"Curriculum {path}: num_gestures must be >= 1, got {num_gestures}"
+            )
+
+        raw_means = data.get("initial_means")
+        if raw_means is not None:
+            if not isinstance(raw_means, list) or len(raw_means) != num_gestures:
+                got = len(raw_means) if isinstance(raw_means, list) else type(raw_means).__name__
+                raise ValueError(
+                    f"Curriculum {path}: initial_means must be a list of {num_gestures} "
+                    f"per-slot entries, got {got}"
+                )
+            initial_means: tuple[tuple[float, ...], ...] | None = tuple(
+                tuple(float(v) for v in slot) for slot in raw_means
+            )
+            for i, slot in enumerate(initial_means):
+                if len(slot) != _PARAMS_PER_SLOT:
+                    raise ValueError(
+                        f"Curriculum {path}: initial_means[{i}] must have exactly "
+                        f"{_PARAMS_PER_SLOT} values (3 waypoints * 2 coords + duration "
+                        f"+ easing), got {len(slot)}"
+                    )
+        else:
+            initial_means = None
+
+        raw_delays = data.get("initial_delays")
+        expected_delays = max(0, num_gestures - 1)
+        if raw_delays is not None:
+            if not isinstance(raw_delays, list) or len(raw_delays) != expected_delays:
+                got = len(raw_delays) if isinstance(raw_delays, list) else type(raw_delays).__name__
+                raise ValueError(
+                    f"Curriculum {path}: initial_delays must be a list of "
+                    f"{expected_delays} values (num_gestures - 1), got {got}"
+                )
+            initial_delays: tuple[float, ...] | None = tuple(float(v) for v in raw_delays)
+        else:
+            initial_delays = None
+
+        # When num_gestures != 2 there is no default prior — fail fast if the
+        # curriculum supplies neither warm_start nor embedded priors.
+        if num_gestures != 2 and warm_start is None:
+            missing = []
+            if initial_means is None:
+                missing.append("initial_means")
+            if expected_delays > 0 and initial_delays is None:
+                missing.append("initial_delays")
+            if missing:
+                raise ValueError(
+                    f"Curriculum {path}: num_gestures={num_gestures} requires either "
+                    f"'warm_start' or {' and '.join(missing)} to seed CMA-ES"
+                )
+
         return cls(
             target=target,
             rewards=rewards,
@@ -64,6 +128,9 @@ class Curriculum:
             warm_start=warm_start,
             failure_multiplier_spec=data.get("failure_multiplier", "near_miss"),
             notes=data.get("notes", ""),
+            num_gestures=num_gestures,
+            initial_means=initial_means,
+            initial_delays=initial_delays,
         )
 
     def _score_component(self, component: str) -> float:

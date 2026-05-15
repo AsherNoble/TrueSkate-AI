@@ -50,16 +50,16 @@ DEVICES: list[dict] = [
         "logical_h": 896,
         "spin_button_xy": (0.0604, 0.4040),
     },
-    {
-        "env_key": "IPHONE_11_UDID",
-        "name": "iPhone_11",
-        "wda_port": 8101,
-        "mjpeg_port": 9101,
-        "appium_port": 4724,
-        "logical_w": 375,  # Display Zoom always on; reduces logical_w 414 → 375
-        "logical_h": 812,  # Display Zoom always on; reduces logical_h 896 → 812
-        "spin_button_xy": (0.0604, 0.4040),
-    },
+    # {
+    #     "env_key": "IPHONE_11_UDID",
+    #     "name": "iPhone_11",
+    #     "wda_port": 8101,
+    #     "mjpeg_port": 9101,
+    #     "appium_port": 4724,
+    #     "logical_w": 375,  # Display Zoom always on; reduces logical_w 414 → 375
+    #     "logical_h": 812,  # Display Zoom always on; reduces logical_h 896 → 812
+    #     "spin_button_xy": (0.0604, 0.4040),
+    # },
     # {
     #     "env_key": "IPHONE_XS_UDID",
     #     "name": "iPhone_XS",

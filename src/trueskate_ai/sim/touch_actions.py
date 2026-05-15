@@ -26,7 +26,7 @@ _MAX_SEQUENTIAL_COMPENSATION = 0.25
 
 @dataclass(frozen=True)
 class TouchTimingCalibration:
-    """Per-device/session timing calibration for two-slot gesture scheduling."""
+    """Per-device/session timing calibration for N-slot gesture scheduling."""
     sequential_overhead_s: float
     combined_nonneg_threshold_s: float
     source: str = "default"
@@ -298,28 +298,56 @@ def calibrate_touch_timing(driver, *, device_key, device_w, device_h, samples=3)
     return calibration
 
 
-def execute_two_slot_gestures(
+def execute_n_slot_gestures(
     driver,
     *,
-    g0_points,
-    g1_points,
-    g0_duration,
-    g1_duration,
-    delay,
-    easing0=None,
-    easing1=None,
+    gestures_points,
+    gestures_durations,
+    delays,
+    easings=None,
     device_key=None,
     combined_nonneg_threshold_override=None,
     sequential_compensation_override=None,
     force_single_payload=False,
 ):
-    """Execute two gesture slots with shared, calibrated delay scheduling."""
-    slot2_start = g0_duration + delay
-    if slot2_start < 0:
+    """Execute N gesture slots with shared, calibrated delay scheduling.
+
+    Args:
+        gestures_points: list of N gesture point lists (each in device logical points).
+        gestures_durations: list of N gesture durations in seconds.
+        delays: list of N-1 inter-gesture delays in seconds. Negative = overlap.
+        easings: optional list of N easing callables (None entries → constant velocity).
+    """
+    n = len(gestures_points)
+    if n < 1:
+        raise ValueError("execute_n_slot_gestures requires at least 1 gesture")
+    if len(gestures_durations) != n:
         raise ValueError(
-            f"Invalid delay={delay:.3f}s for slot1 duration={g0_duration:.3f}s: "
-            "slot2 would start before slot1 starts."
+            f"gestures_durations length {len(gestures_durations)} does not match "
+            f"gestures_points length {n}"
         )
+    expected_delays = max(0, n - 1)
+    if len(delays) != expected_delays:
+        raise ValueError(
+            f"delays length {len(delays)} does not match N-1 ({expected_delays}) for N={n}"
+        )
+    if easings is None:
+        easings = [None] * n
+    elif len(easings) != n:
+        raise ValueError(
+            f"easings length {len(easings)} does not match gestures_points length {n}"
+        )
+
+    # Cumulative start time of each slot, relative to t=0.
+    starts = [0.0]
+    for i in range(1, n):
+        next_start = starts[i - 1] + gestures_durations[i - 1] + delays[i - 1]
+        if next_start < starts[i - 1]:
+            raise ValueError(
+                f"Invalid delay={delays[i - 1]:.3f}s for slot{i - 1} duration="
+                f"{gestures_durations[i - 1]:.3f}s: slot{i} would start before slot{i - 1} starts."
+            )
+        starts.append(next_start)
 
     calibration = get_touch_timing_calibration(device_key)
     threshold = (
@@ -327,67 +355,93 @@ def execute_two_slot_gestures(
         if combined_nonneg_threshold_override is not None
         else calibration.combined_nonneg_threshold_s
     )
-    use_combined = force_single_payload or delay < 0 or delay <= threshold
+
+    # Combined when: forced; any overlap requires a single payload; or every gap
+    # is short enough that a single bundled payload preserves the schedule better
+    # than separate WDA calls.
+    has_delays = len(delays) > 0
+    any_negative = has_delays and any(d < 0 for d in delays)
+    all_under_threshold = has_delays and all(d <= threshold for d in delays)
+    use_combined = (
+        force_single_payload
+        or any_negative
+        or (has_delays and all_under_threshold)
+    )
+
+    base_compensation = (
+        float(sequential_compensation_override)
+        if sequential_compensation_override is not None
+        else calibration.sequential_overhead_s
+    )
 
     if use_combined:
-        finger0 = make_touch_pointer("finger0")
-        finger1 = make_touch_pointer("finger1")
-        build_curved_drag(finger0, g0_points, total_duration=g0_duration, easing=easing0)
-
-        if force_single_payload and slot2_start > 0:
-            # Keep delayed finger parked away from slot2 start until actual start
-            # tick to avoid WDA phantom transitions from a pre-positioned source.
-            finger1.create_pointer_move(x=g0_points[0][0], y=g0_points[0][1], duration=0)
-            finger1.create_pause(slot2_start)
-            build_curved_drag(
-                finger1,
-                g1_points,
-                total_duration=g1_duration,
-                easing=easing1,
-                include_start_move=True,
-            )
-        else:
-            finger1.create_pointer_move(x=g1_points[0][0], y=g1_points[0][1], duration=0)
-            if slot2_start > 0:
-                finger1.create_pause(slot2_start)
-            build_curved_drag(
-                finger1,
-                g1_points,
-                total_duration=g1_duration,
-                easing=easing1,
-                include_start_move=False,
-            )
-        perform_pointer_actions(driver, [finger0, finger1])
+        fingers = []
+        for i in range(n):
+            finger = make_touch_pointer(f"finger{i}")
+            start_x, start_y = gestures_points[i][0]
+            if i == 0:
+                build_curved_drag(
+                    finger,
+                    gestures_points[i],
+                    total_duration=gestures_durations[i],
+                    easing=easings[i],
+                )
+            elif force_single_payload and starts[i] > 0:
+                # Park parked finger away from its actual start until the scheduled tick
+                # to avoid WDA phantom transitions from a pre-positioned source.
+                finger.create_pointer_move(x=start_x, y=start_y, duration=0)
+                finger.create_pause(starts[i])
+                build_curved_drag(
+                    finger,
+                    gestures_points[i],
+                    total_duration=gestures_durations[i],
+                    easing=easings[i],
+                    include_start_move=True,
+                )
+            else:
+                finger.create_pointer_move(x=start_x, y=start_y, duration=0)
+                if starts[i] > 0:
+                    finger.create_pause(starts[i])
+                build_curved_drag(
+                    finger,
+                    gestures_points[i],
+                    total_duration=gestures_durations[i],
+                    easing=easings[i],
+                    include_start_move=False,
+                )
+            fingers.append(finger)
+        perform_pointer_actions(driver, fingers)
         branch = "combined-forced" if force_single_payload else "combined"
-        effective_delay = delay
+        effective_delays = list(delays)
     else:
-        finger0 = make_touch_pointer("finger0")
-        build_curved_drag(finger0, g0_points, total_duration=g0_duration, easing=easing0)
-        ActionChains(driver, devices=[finger0]).perform()
-
-        base_compensation = (
-            float(sequential_compensation_override)
-            if sequential_compensation_override is not None
-            else calibration.sequential_overhead_s
-        )
-        compensation = min(delay, max(0.0, base_compensation))
-        sleep_for = max(0.0, delay - compensation)
-        if sleep_for > 0:
-            time.sleep(sleep_for)
-
-        finger1 = make_touch_pointer("finger1")
-        build_curved_drag(finger1, g1_points, total_duration=g1_duration, easing=easing1)
-        ActionChains(driver, devices=[finger1]).perform()
+        # Sequential — N separate WDA calls with compensated delays in between.
+        effective_delays = []
+        for i in range(n):
+            finger = make_touch_pointer(f"finger{i}")
+            build_curved_drag(
+                finger,
+                gestures_points[i],
+                total_duration=gestures_durations[i],
+                easing=easings[i],
+            )
+            ActionChains(driver, devices=[finger]).perform()
+            if i < n - 1:
+                compensation = min(delays[i], max(0.0, base_compensation))
+                sleep_for = max(0.0, delays[i] - compensation)
+                if sleep_for > 0:
+                    time.sleep(sleep_for)
+                effective_delays.append(sleep_for)
         branch = "sequential"
-        effective_delay = sleep_for
 
     logging.info(
-        "touch scheduler branch=%s delay=%.3fs slot2_start=%.3fs threshold=%.3fs calibration=%s seq_overhead=%.3fs effective_delay=%.3fs",
+        "touch scheduler branch=%s n=%d delays=%s starts=%s threshold=%.3fs "
+        "calibration=%s seq_overhead=%.3fs effective_delays=%s",
         branch,
-        delay,
-        slot2_start,
+        n,
+        [round(d, 3) for d in delays],
+        [round(s, 3) for s in starts],
         threshold,
         calibration.source,
-        base_compensation if branch == "sequential" else calibration.sequential_overhead_s,
-        effective_delay,
+        base_compensation,
+        [round(d, 3) for d in effective_delays],
     )
