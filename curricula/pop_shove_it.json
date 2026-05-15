@@ -1,0 +1,14 @@
+{
+  "target": "POP SHOVE-IT",
+  "warm_start": null,
+  "rewards": {
+    "POP SHOVE-IT":         1.0,
+    "360 POP SHOVE-IT":     0.3,
+    "FS POP SHOVE-IT":      0.2,
+    "VARIAL KICKFLIP":      0.2,
+    "KICKFLIP":             0.05
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "BS pop shove-it. CMA-ES tends to converge here easily; small reward for KICKFLIP to avoid basin drift toward flip family."
+}

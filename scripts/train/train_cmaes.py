@@ -1,21 +1,22 @@
 """CLI entry point for CMA-ES gesture optimization.
 
 Connects to devices via Appium and runs the parallel CMA-ES loop from
-trueskate_ai.rl.cmaes_optimizer. Device connections are managed internally
-by run() via DeviceWorker instances.
+trueskate_ai.rl.cmaes.cmaes_optimizer. Device connections are managed
+internally by run() via DeviceWorker instances.
 
 Usage:
-    python scripts/train_cmaes.py [options]
+    python scripts/train/train_cmaes.py --curriculum curricula/kickflip.json [options]
 
 Options:
+    --curriculum  Path to curriculum JSON (e.g. curricula/kickflip.json). Required.
     --max-evals   Total evaluations before stopping (default: 1800)
     --seed        CMA-ES random seed (default: 42)
     --wait-time   Seconds to wait for trick text after gestures (default: 0.0)
     --settle-time Seconds to wait after reset before next attempt (default: 0.5)
     --pop-size    CMA-ES population size — evals per generation (default: 24)
     --log-dir     Log directory (default: logs/)
-    --target-trick Target trick name for conditioned post-hoc rescoring.
-    --initial-mean Path to trick library JSON; seeds mean from best_gestures.
+    --initial-mean Path to trick library JSON; seeds mean from median_gestures.
+                  Overrides the warm_start field in the curriculum JSON.
 """
 import argparse
 import sys
@@ -30,12 +31,15 @@ if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from trueskate_ai.rl.cmaes.cmaes_optimizer import run
+from trueskate_ai.rl.cmaes.curriculum import Curriculum
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="CMA-ES optimization loop for the True Skate 360 flip experiment."
+        description="CMA-ES optimization loop for True Skate gesture search."
     )
+    parser.add_argument("--curriculum", type=Path, required=True,
+                        help="Path to curriculum JSON (e.g. curricula/kickflip.json)")
     parser.add_argument("--max-evals", type=int, default=1800,
                         help="Total evaluations before stopping (default: 1800)")
     parser.add_argument("--seed", type=int, default=42,
@@ -49,11 +53,12 @@ def main() -> None:
     parser.add_argument("--log-dir", type=Path,
                         default=_REPO_ROOT / "logs",
                         help="Log directory (default: logs/)")
-    parser.add_argument("--target-trick", type=str, default=None,
-                        help="Target trick name for conditioned post-hoc rescoring")
     parser.add_argument("--initial-mean", type=Path, default=None,
-                        help="Path to trick library JSON used to seed CMA-ES mean from best_gestures")
+                        help="Path to trick library JSON used to seed CMA-ES mean from median_gestures. "
+                             "Overrides warm_start in the curriculum JSON.")
     args = parser.parse_args()
+
+    curriculum = Curriculum.from_json(args.curriculum)
 
     run(
         max_evals=args.max_evals,
@@ -62,7 +67,7 @@ def main() -> None:
         settle_time=args.settle_time,
         pop_size=args.pop_size,
         log_dir=args.log_dir,
-        target_trick=args.target_trick,
+        curriculum=curriculum,
         initial_mean=args.initial_mean,
     )
 

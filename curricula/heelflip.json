@@ -1,0 +1,16 @@
+{
+  "target": "HEELFLIP",
+  "warm_start": null,
+  "rewards": {
+    "HEELFLIP":             1.0,
+    "DOUBLE HEELFLIP":      0.5,
+    "VARIAL HEELFLIP":      0.4,
+    "INWARD HEELFLIP":      0.4,
+    "BACKSIDE HEEL FLIP":   0.3,
+    "FRONTSIDE HEEL FLIP":  0.0,
+    "OLLIE":                0.05
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "First heelflip-family target. No warm-start yet — will start from action_param.INITIAL_MEAN."
+}

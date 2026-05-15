@@ -1,0 +1,19 @@
+{
+  "target": "KICKFLIP",
+  "warm_start": "trick_libraries/kickflip_2.json",
+  "rewards": {
+    "KICKFLIP":         1.0,
+    "DOUBLE KICKFLIP":  0.5,
+    "VARIAL KICKFLIP":  0.4,
+    "HARD FLIP":        0.4,
+    "NIGHTMARE FLIP":   0.4,
+    "BACKSIDE FLIP":    0.3,
+    "360 FLIP":         0.05,
+    "FRONTSIDE FLIP":   0.0,
+    "POP SHOVE-IT":     0.05
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Excludes 360 FLIP from kickflip family to prevent basin drift seen in earlier runs (warm-start from kickflip_2.json).",
+  "warm_start_note": "Warm-start was discovered to land 360 FLIP basin, not pure KICKFLIP — see rl_poc journal 2026-04-29 entry."
+}

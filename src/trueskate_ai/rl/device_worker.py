@@ -24,14 +24,16 @@ from appium.options.ios import XCUITestOptions
 from dotenv import load_dotenv
 from PIL import Image
 
+from typing import Callable
+
 from trueskate_ai.rl.cmaes.action_param import execute_gesture_params
 from trueskate_ai.rl.reward import (
     ContinuousTrickMonitor,
-    compute_reward,
-    get_reward,
+    capture_and_detect_with_diagnostics,
     merge_trick_results,
 )
 from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position, skip_loading_screen
+from trueskate_ai.sim.trick_info_reader import TrickResult
 
 # ---------------------------------------------------------------------------
 # Device configurations
@@ -377,12 +379,18 @@ class DeviceWorker:
         wait_time: float,
         eval_num: int,
         generation: int,
+        *,
+        scorer: Callable[[TrickResult | None], float],
     ) -> dict:
         """Execute one candidate eval on this device.
 
         Runs: ensure_foreground -> record frames -> execute_gesture_params ->
-        get_reward -> stop recording. Does NOT call reset_position
-        (the orchestrator handles resets across all devices).
+        capture_and_detect -> score via injected scorer -> stop recording.
+        Does NOT call reset_position (the orchestrator handles resets).
+
+        Args:
+            scorer: Callable mapping TrickResult | None → float. Typically
+                ``Curriculum.score`` passed in from the CMA-ES optimizer.
 
         Returns a result dict; never raises — logs errors and returns
         reward=0.0 on failure.
@@ -409,15 +417,16 @@ class DeviceWorker:
             )
             action_end_time = time.monotonic()
             monitor_result, monitor_diag = monitor.stop()
-            reward, trick_result, _, capture_diag = get_reward(
+            if wait_time > 0:
+                time.sleep(wait_time)
+            result_post, capture_diag = capture_and_detect_with_diagnostics(
                 self.driver,
-                wait_time=wait_time,
-                penalty=None,
+                capture_count=14,
+                capture_interval=0.15,
                 action_start_time=action_end_time,
-                return_diagnostics=True,
             )
-            combined_result = merge_trick_results(monitor_result, trick_result)
-            reward = compute_reward(combined_result)
+            combined_result = merge_trick_results(monitor_result, result_post)
+            reward = scorer(combined_result)
             trick_result = combined_result
             reward_end_time = time.monotonic()
         except Exception as exc:

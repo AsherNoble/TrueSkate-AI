@@ -176,3 +176,11 @@ FRONTSIDE 360 FLIP, BACKSIDE 360 HEEL, FRONTSIDE 360 HEEL
 - Example behavior after fix:
   - `HARD FLIP` + `DOUBLE HARD FLIP` → `DOUBLE HARD FLIP`
   - `KICKFLIP + 50-50 GRIND` + `KICKFLIP` → `KICKFLIP + 50-50 GRIND`
+
+### PPO Warm-Start Plan (2026-05-10)
+- PPO is parked. The trick-conditioned net's exploration cliff (HER pumping V(trick) for unsolved targets, killing advantage signal — see 2026-04-29 entry in `rl_poc_experiment_journal.md`) means PPO from-scratch on hard targets is unproductive.
+- New plan: use CMA-ES + per-trick curricula (`curricula/<trick>.json`) to find converged params for ~all flatground tricks. Each successful run yields a 17-param point in gesture space, stored as `trick_libraries/<trick>.json` (existing schema).
+- Warm-start the trick-conditioned PPO policy by **supervised pretraining** the head: for each trick library, the net's output for that trick's embedding is regressed to the library's params (MSE on the 17-dim vector, before tanh squashing). This seeds the policy in already-good basins per trick.
+- After supervised warm-start, unfreeze and run online PPO updates as previously implemented — same collector, same binary reward, same 3-device parallel rollout. The hope is that per-trick basins are stable enough that PPO refines rather than rediscovers, and the shared trunk learns the structure between tricks (e.g. shared scoop kinematics across the kickflip family).
+- Prerequisite: ship CMA-ES libraries for at minimum the kickflip family (KICKFLIP, VARIAL KICKFLIP, HARD FLIP, NIGHTMARE FLIP, 360 FLIP) — those are the ones with proven warm-starts already. Heelflip / shove-it families to follow.
+- This pivot keeps PPO code intact (no schema breakage) and makes the curriculum work double duty: per-trick reliability now, neural cold start later.

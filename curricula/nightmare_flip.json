@@ -1,0 +1,15 @@
+{
+  "target": "NIGHTMARE FLIP",
+  "warm_start": null,
+  "rewards": {
+    "NIGHTMARE FLIP":   1.0,
+    "VARIAL KICKFLIP":  0.4,
+    "DOUBLE KICKFLIP":  0.4,
+    "KICKFLIP":         0.3,
+    "360 FLIP":         0.2,
+    "POP SHOVE-IT":     0.1
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Nightmare flip = double kickflip with shove-it body; reward varial kickflip + double kickflip as nearby basins."
+}

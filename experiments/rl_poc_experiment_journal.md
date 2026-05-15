@@ -113,5 +113,12 @@
 ## Next Steps
 - App-focus check before each eval
 - Auto-terminate on consecutive zero-reward evals
-- Run dedicated per-trick convergence runs using `--target-trick` + `--initial-mean` for each trick in the library — exclude 360 FLIP from kickflip-family tier to prevent basin drift
-- Modular curriculum: JSON-defined reward tier tables selectable via `--target-trick` instead of hardcoded family logic
+- Run dedicated per-trick convergence runs using `--initial-mean` for each trick in the library — exclude 360 FLIP from kickflip-family curriculum to prevent basin drift
+
+## Reward Refactor + Curriculum System (2026-05-10)
+- `reward.py` cleaned up: deleted dead `compute_reward()` (hardcoded 360-flip tiers), deleted hallucinated entries from family frozensets (`360 HEELFLIP`, `HARD HEELFLIP`, `NIGHTMARE HEELFLIP`, `LASER HEELFLIP`, `HARD SHOVE-IT`, `NIGHTMARE SHOVE-IT`, `FRONTSIDE SHOVE-IT`, bare `SHOVE-IT`, `VARIAL HEEL`), moved family taxonomy out to `known_tricks.py` (the canonical trick taxonomy file).
+- `compute_reward_for_target()` substring family logic replaced by `Curriculum` class (`src/trueskate_ai/rl/cmaes/curriculum.py`) backed by per-trick JSON files in `curricula/`.
+- Curriculum schema: flat `{trick: reward}` dict + `default_reward` for unlisted recognised tricks + togglable `failure_multiplier` (`"near_miss"` (default) | `"zero"` | float constant). New target tricks are now data-only additions.
+- `near_miss_multiplier(base) = max(0.0, base * (base - 0.1))` — clamped ≥ 0; previous formula produced small negatives for low-reward bases like `default_reward=0.05`.
+- `scripts/train/train_cmaes.py`: `--target-trick` flag replaced by `--curriculum <path>`. `--initial-mean` stays as an explicit override; otherwise defaults from the curriculum's `warm_start` field.
+- `known_tricks.py` restructured: family frozensets (`KICKFLIP_FAMILY`, `HEELFLIP_FAMILY`, `SHOVE_IT_FAMILY`, `ROTATION_FAMILY`, `GRIND_SLIDE_FAMILY`, `SPIN_FAMILY`, `DOLPHIN_DRAGON_FAMILY`, `OTHER_TRICKS`) + `MODIFIERS` (now includes `NOLLIE`). `KNOWN_TRICKS` is now the union. OCR matcher (`trick_info_reader.py`) picks up NOLLIE automatically via the import.

@@ -1,0 +1,14 @@
+{
+  "target": "VARIAL KICKFLIP",
+  "warm_start": null,
+  "rewards": {
+    "VARIAL KICKFLIP":  1.0,
+    "KICKFLIP":         0.4,
+    "POP SHOVE-IT":     0.4,
+    "NIGHTMARE FLIP":   0.3,
+    "360 FLIP":         0.1
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Varial kickflip = kickflip + BS pop shove-it; reward both base components."
+}

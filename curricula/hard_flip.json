@@ -1,0 +1,16 @@
+{
+  "target": "HARD FLIP",
+  "warm_start": null,
+  "rewards": {
+    "HARD FLIP":            1.0,
+    "DOUBLE HARD FLIP":     0.6,
+    "FS POP SHOVE-IT":      0.4,
+    "KICKFLIP":             0.4,
+    "VARIAL KICKFLIP":      0.3,
+    "NIGHTMARE FLIP":       0.2,
+    "360 FLIP":             0.1
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Hard flip = kickflip + FS pop shove-it; reward both component basins."
+}

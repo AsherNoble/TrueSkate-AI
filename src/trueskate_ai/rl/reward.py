@@ -1,24 +1,16 @@
-"""Reward function for the CMA-ES 360 flip experiment.
+"""Reward primitives for the CMA-ES + PPO training loops.
 
-After each action attempt, captures a screenshot, runs OCR-based trick
-detection, and maps the result to a scalar reward.
+Reward shaping for CMA-ES is delegated to per-target Curriculum objects
+(see `trueskate_ai.rl.cmaes.curriculum`). PPO reward stays binary via
+`compute_conditioned_reward()` / `get_conditioned_reward()`.
 
-Reward tiers (for landed tricks):
-    1.0   — "360 FLIP" exact, no modifiers (FAKIE/SWITCH/DOUBLE/TRIPLE/NOLLIE/BACKSIDE)
-    0.8   — 360 FLIP with a modifier (FAKIE, SWITCH, NOLLIE, BACKSIDE, DOUBLE, TRIPLE, etc.)
-    0.6   — VARIAL FLIP variants (VARIAL FLIP, VARIAL DOUBLE/TRIPLE/QUAD FLIP),
-            KICKFLIP (standalone), NIGHTMARE FLIP
-    0.3   — 360 POP SHOVE-IT, BACKSIDE 360 (no flip component)
-    0.0   — Everything else (heelflips, hard flips, laser flips, ollies, grinds, etc.)
-
-Failed tricks receive base * (base - 0.1) for all tricks.
-
-For combo tricks (e.g. "KICKFLIP + CROOKED GRIND"), each component is
-evaluated independently and the maximum reward is returned.
+This module owns the OCR capture window, frame merging, repetition penalty,
+and shared utilities (`near_miss_multiplier`, `normalize_trick_name`).
 """
 import logging
 import threading
 import time
+from typing import Callable
 
 import cv2
 import numpy as np
@@ -285,85 +277,24 @@ def capture_and_detect(
     return result
 
 
-def compute_reward(result: TrickResult | None) -> float:
-    """Score a trick result using the graduated 360-flip reward tiers.
-
-    Tier 1.0 — 360 FLIP exact (no modifiers)
-    Tier 0.8 — 360 FLIP with a modifier
-    Tier 0.6 — VARIAL FLIP variants, standalone KICKFLIP, NIGHTMARE FLIP
-    Tier 0.3 — 360 POP SHOVE-IT, BACKSIDE 360
-    Tier 0.0 — everything else
-
-    For combo strings (e.g. "KICKFLIP + CROOKED GRIND") each component is
-    scored independently and the maximum is used.
-
-    Non-landed statuses (failed, unknown) receive base * (base - 0.1) as a
-    near-miss signal. A base of 0.0 yields 0.0 regardless of status.
-    """
-    if result is None:
-        return 0.0
-    components = [c.strip() for c in result.trick.split(" + ")]
-    base = max(_score_component(c) for c in components)
-    if result.status == "landed":
-        return base
-    return base * (base - 0.1)
-
-
-def _score_component(trick: str) -> float:
-    """Score a single (non-combo) trick string. First match wins."""
-    if "FRONTSIDE" in trick or trick.startswith("FS ") or " FS " in trick:
-        return 0.0
-
-    _MODIFIERS = ("FAKIE", "SWITCH", "DOUBLE", "TRIPLE", "NOLLIE", "BACKSIDE")
-
-    # --- Tier 1.0: 360 FLIP exact, no modifiers ---
-    if "360 FLIP" in trick and not any(m in trick for m in _MODIFIERS):
-        return 1.0
-
-    # --- Tier 0.8: 360 FLIP with a modifier ---
-    # "360 DOUBLE FLIP" / "360 TRIPLE FLIP" don't contain the substring "360 FLIP",
-    # so also check for "360" + "FLIP" co-occurring with any modifier.
-    if "360 FLIP" in trick and any(m in trick for m in _MODIFIERS):
-        return 0.8
-    if "360" in trick and "FLIP" in trick and any(m in trick for m in _MODIFIERS):
-        return 0.8
-
-    # --- Tier 0.6: VARIAL FLIP variants, standalone KICKFLIP, NIGHTMARE FLIP ---
-    # VARIAL FLIP: has VARIAL + FLIP but is not a VARIAL KICKFLIP or VARIAL HEELFLIP
-    if "VARIAL" in trick and "FLIP" in trick and "KICKFLIP" not in trick and "HEELFLIP" not in trick:
-        return 0.6
-    if "KICKFLIP" in trick and "VARIAL" not in trick:
-        return 0.6
-    if "NIGHTMARE" in trick:
-        return 0.6
-
-    # --- Tier 0.3: 360 POP SHOVE-IT, BACKSIDE 360 (no flip) ---
-    if "360" in trick and "SHOVE" in trick:
-        return 0.3
-    if "BACKSIDE" in trick and "360" in trick and "FLIP" not in trick:
-        return 0.3
-
-    # --- Everything else ---
-    return 0.0
-
-
 def get_reward(
     driver,
+    *,
+    scorer: Callable[[TrickResult | None], float],
     wait_time: float = 0.0,
     penalty: RepetitionPenalty | None = None,
-    *,
     capture_count: int = 14,
     capture_interval: float = 0.15,
     action_start_time: float | None = None,
     return_diagnostics: bool = False,
 ) -> tuple[float, TrickResult | None, float] | tuple[float, TrickResult | None, float, CaptureDiagnostics]:
-    """Wait for the trick notification, capture, score, and return the reward.
-
-    This is the main entry point called by the CMA-ES optimization loop.
-    Captures multiple screenshots after initial wait and returns the first detected trick.
+    """Wait for the trick notification, capture, score via injected scorer, apply penalty.
 
     Args:
         driver: Appium WebDriver instance.
+        scorer: Callable mapping TrickResult | None → float. Typically
+            ``Curriculum.score`` for CMA-ES or a lambda wrapping
+            ``compute_conditioned_reward`` for PPO.
         wait_time: Seconds to wait after gestures finish before first screenshot.
         penalty: Optional RepetitionPenalty. When provided, landed tricks receive
             a diminishing multiplier and their count is incremented.
@@ -385,7 +316,7 @@ def get_reward(
         capture_interval=capture_interval,
         action_start_time=action_start_time,
     )
-    base = compute_reward(result)
+    base = scorer(result)
 
     multiplier = 1.0
     if penalty is not None and result is not None and result.status == "landed":
@@ -403,85 +334,14 @@ def normalize_trick_name(trick_name: str) -> str:
     return normalized
 
 
-_KICKFLIP_FAMILY = frozenset(
-    {
-        "KICKFLIP",
-        "VARIAL KICKFLIP",
-        "BACKSIDE FLIP",
-        "FRONTSIDE FLIP",
-        "HARD FLIP",
-        "360 FLIP",
-        "NIGHTMARE FLIP",
-        "LASER FLIP",
-        "VARIAL FLIP",
-    }
-)
-_HEELFLIP_FAMILY = frozenset(
-    {
-        "HEELFLIP",
-        "VARIAL HEELFLIP",
-        "BACKSIDE HEELFLIP",
-        "FRONTSIDE HEELFLIP",
-        "HARD HEELFLIP",
-        "360 HEELFLIP",
-        "NIGHTMARE HEELFLIP",
-        "LASER HEELFLIP",
-        "VARIAL HEEL",
-    }
-)
-_SHOVE_IT_FAMILY = frozenset(
-    {
-        "POP SHOVE-IT",
-        "VARIAL POP SHOVE-IT",
-        "BACKSIDE SHOVE-IT",
-        "FRONTSIDE SHOVE-IT",
-        "HARD SHOVE-IT",
-        "360 POP SHOVE-IT",
-        "NIGHTMARE SHOVE-IT",
-        "LASER SHOVE-IT",
-        "VARIAL SHOVE-IT",
-    }
-)
+def near_miss_multiplier(base: float) -> float:
+    """Failure-multiplier util: scales near-misses without going negative.
 
-
-def _mechanical_family(trick_name: str) -> str | None:
-    normalized = normalize_trick_name(trick_name)
-    if normalized in _KICKFLIP_FAMILY:
-        return "kickflip"
-    if normalized in _HEELFLIP_FAMILY:
-        return "heelflip"
-    if normalized in _SHOVE_IT_FAMILY:
-        return "shove-it"
-    return None
-
-
-def compute_reward_for_target(result: TrickResult | None, *, target_trick: str) -> float:
-    """Score a trick result against a target trick with family-aware shaping."""
-    if result is None:
-        return 0.0
-
-    components = [
-        normalize_trick_name(component)
-        for component in result.trick.split(" + ")
-        if component.strip()
-    ]
-    if not components:
-        return 0.0
-
-    target = normalize_trick_name(target_trick)
-    target_family = _mechanical_family(target)
-
-    def _score_component(component: str) -> float:
-        if component == target:
-            return 1.0
-        if target_family is not None and _mechanical_family(component) == target_family:
-            return 0.4
-        return 0.05
-
-    base = max(_score_component(component) for component in components)
-    if result.status == "landed":
-        return base
-    return base * (base - 0.1)
+    Returns max(0, base * (base - 0.1)) so a 1.0-target failure scores 0.9,
+    a 0.4 family-member failure scores 0.12, and a 0.05 default-reward
+    failure scores 0.0 (clamped — would be negative under raw formula).
+    """
+    return max(0.0, base * (base - 0.1))
 
 
 def compute_conditioned_reward(result: TrickResult | None, *, target_trick: str) -> float:
@@ -531,66 +391,23 @@ def get_conditioned_reward(
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    test_cases = [
-        # Tier 1.0 — 360 FLIP exact
-        ("360 FLIP", "landed",                1.0),
-        # Tier 0.8 — 360 FLIP with modifier
-        ("FAKIE 360 FLIP", "landed",          0.8),
-        ("SWITCH 360 FLIP", "landed",         0.8),
-        ("NOLLIE 360 FLIP", "landed",         0.8),
-        ("BACKSIDE 360 FLIP", "landed",       0.8),
-        ("360 DOUBLE FLIP", "landed",         0.8),
-        ("360 TRIPLE FLIP", "landed",         0.8),
-        # Tier 0.6 — VARIAL FLIP, KICKFLIP, NIGHTMARE
-        ("VARIAL FLIP", "landed",             0.6),
-        ("VARIAL DOUBLE FLIP", "landed",      0.6),
-        ("VARIAL TRIPLE FLIP", "landed",      0.6),
-        ("KICKFLIP", "landed",                0.6),
-        ("NIGHTMARE FLIP", "landed",          0.6),
-        # Tier 0.3 — 360 POP SHOVE-IT, BACKSIDE 360
-        ("360 POP SHOVE-IT", "landed",        0.3),
-        ("BACKSIDE 360", "landed",            0.3),
-        # Tier 0.0 — everything else
-        ("HARD FLIP", "landed",               0.0),
-        ("LASER FLIP", "landed",              0.0),
-        ("HEELFLIP", "landed",                0.0),
-        ("VARIAL KICKFLIP", "landed",         0.0),
-        ("540 FLIP", "landed",                0.0),
-        ("540 POP SHOVE-IT", "landed",        0.0),
-        ("POP SHOVE-IT", "landed",            0.0),
-        ("OLLIE", "landed",                   0.0),
-        ("BACKSIDE 180", "landed",            0.0),
-        # Combo — max component wins
-        ("KICKFLIP + 50-50 GRIND", "landed",  0.6),
-        # Failed tricks — all use base * (base - 0.1)
-        ("360 FLIP", "failed",                0.9),    # 1.0 * 0.9
-        ("360 DOUBLE FLIP", "failed",         0.56),   # 0.8 * 0.7
-        ("KICKFLIP", "failed",                0.3),    # 0.6 * 0.5
-        ("360 POP SHOVE-IT", "failed",        0.06),   # 0.3 * 0.2
-        ("BACKSIDE 360", "failed",            0.06),   # 0.3 * 0.2
-        ("HARD FLIP", "failed",               0.0),    # 0.0 * -0.1 = 0.0
-        # Unknown status (white anchor) — same formula as failed
-        ("KICKFLIP", "unknown",               0.3),    # 0.6 * 0.5
-        ("360 FLIP", "unknown",               0.9),    # 1.0 * 0.9
-        ("HARD FLIP", "unknown",              0.0),    # 0.0 * -0.1 = 0.0
-        # No trick
-        (None, None,                          0.0),
+    print("=== near_miss_multiplier ===")
+    nmm_cases = [
+        (1.0,  0.9),
+        (0.6,  0.30),
+        (0.4,  0.12),
+        (0.3,  0.06),
+        (0.05, 0.0),
+        (0.0,  0.0),
     ]
-
-    all_passed = True
-    for trick, status, expected in test_cases:
-        result = TrickResult(trick=trick, status=status) if trick is not None else None
-        actual = compute_reward(result)
-        expected_rounded = round(expected, 2)
-        actual_rounded = round(actual, 2)
-        test_status = "PASS" if actual_rounded == expected_rounded else "FAIL"
-        if test_status == "FAIL":
-            all_passed = False
-        label = f"{trick!r} ({status})" if trick is not None else "None"
-        print(f"  [{test_status}] compute_reward({label:35s}) = {actual:.2f}  (expected {expected:.2f})")
-
-    print()
-    print("All base reward tests passed." if all_passed else "FAILURES detected.")
+    nmm_passed = True
+    for base, expected in nmm_cases:
+        actual = near_miss_multiplier(base)
+        ok = abs(actual - expected) < 1e-6
+        if not ok:
+            nmm_passed = False
+        print(f"  [{'PASS' if ok else 'FAIL'}] near_miss({base}) = {actual:.4f} (expected {expected:.4f})")
+    print("near_miss_multiplier tests passed." if nmm_passed else "near_miss_multiplier FAILURES.")
 
     print("\n=== RepetitionPenalty multiplier tests ===")
     penalty = RepetitionPenalty()

@@ -1,0 +1,19 @@
+{
+  "target": "360 FLIP",
+  "warm_start": "trick_libraries/360_flip_20260507_095215.json",
+  "rewards": {
+    "360 FLIP":           1.0,
+    "360 DOUBLE FLIP":    0.6,
+    "BACKSIDE 360 FLIP":  0.5,
+    "VARIAL KICKFLIP":    0.3,
+    "KICKFLIP":           0.3,
+    "NIGHTMARE FLIP":     0.3,
+    "HARD FLIP":          0.2,
+    "360 POP SHOVE-IT":   0.3,
+    "BACKSIDE 360":       0.2,
+    "POP SHOVE-IT":       0.05
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Mirrors the v3 reward tiers from the original 360 flip experiment but using flat-dict precision."
+}

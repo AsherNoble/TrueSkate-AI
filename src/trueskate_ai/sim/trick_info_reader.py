@@ -8,7 +8,7 @@ from typing import Literal, NamedTuple
 import cv2
 import numpy as np
 
-from .known_tricks import KNOWN_TRICKS
+from .known_tricks import KNOWN_TRICKS, MODIFIERS
 from trueskate_ai.vision.vision_ocr import image_to_lines as vision_image_to_lines
 from trueskate_ai.vision.vision_ocr import is_vision_available, vision_unavailable_reason
 
@@ -64,7 +64,7 @@ def _match_component(ocr_line: str) -> str | None:
         return ocr_line
 
     modifier = None
-    mod_match = difflib.get_close_matches(words[0], ["FAKIE", "SWITCH", "BACKSIDE", "FRONTSIDE"], n=1, cutoff=0.5)
+    mod_match = difflib.get_close_matches(words[0], list(MODIFIERS), n=1, cutoff=0.5)
     if mod_match:
         modifier = mod_match[0]
         ocr_line = " ".join(words[1:])

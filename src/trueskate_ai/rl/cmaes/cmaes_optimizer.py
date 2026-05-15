@@ -1,8 +1,9 @@
 """CMA-ES optimization loop for True Skate gesture search.
 
 Orchestrates parallel multi-device evaluation via DeviceWorker instances
-dispatched through a ThreadPoolExecutor. The CLI entry point is
-scripts/train_cmaes.py.
+dispatched through a ThreadPoolExecutor. Reward shaping is delegated to
+a per-target Curriculum object injected via the ``curriculum`` argument of
+``run()``. The CLI entry point is scripts/train/train_cmaes.py.
 
 Public API:
     run()  — execute the full CMA-ES optimization loop across multiple devices.
@@ -19,9 +20,8 @@ import numpy as np
 from PIL import Image
 
 from trueskate_ai.rl.cmaes.action_param import INITIAL_MEAN, INITIAL_SIGMA, PARAM_BOUNDS
+from trueskate_ai.rl.cmaes.curriculum import Curriculum
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
-from trueskate_ai.rl.reward import compute_reward_for_target
-from trueskate_ai.sim.trick_info_reader import TrickResult
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -66,18 +66,18 @@ def _timed_worker_reset(worker) -> tuple[str, float, float]:
 
 
 def _load_initial_mean_from_library(path: Path) -> np.ndarray:
-    """Load best_gestures from a trick library JSON and pack into 17 params."""
+    """Load median_gestures from a trick library JSON and pack into 17 params."""
     data = json.loads(path.read_text())
-    best_gestures = data.get("best_gestures")
-    if not isinstance(best_gestures, dict):
-        raise ValueError(f"Missing or invalid 'best_gestures' in {path}")
+    median_gestures = data.get("median_gestures")
+    if not isinstance(median_gestures, dict):
+        raise ValueError(f"Missing or invalid 'median_gestures' in {path}")
 
-    gestures = best_gestures.get("gestures")
-    delays = best_gestures.get("delays")
+    gestures = median_gestures.get("gestures")
+    delays = median_gestures.get("delays")
     if not isinstance(gestures, list) or len(gestures) != 2:
-        raise ValueError(f"Expected best_gestures.gestures to have exactly 2 entries in {path}")
+        raise ValueError(f"Expected median_gestures.gestures to have exactly 2 entries in {path}")
     if not isinstance(delays, list) or len(delays) != 1:
-        raise ValueError(f"Expected best_gestures.delays to have exactly 1 entry in {path}")
+        raise ValueError(f"Expected median_gestures.delays to have exactly 1 entry in {path}")
 
     params: list[float] = []
     for gesture_idx, gesture in enumerate(gestures):
@@ -98,7 +98,7 @@ def _load_initial_mean_from_library(path: Path) -> np.ndarray:
     params.append(float(delays[0]))
     mean = np.array(params, dtype=np.float64)
     if mean.shape != (17,):
-        raise ValueError(f"Expected 17 parameters from best_gestures in {path}, got {mean.shape}")
+        raise ValueError(f"Expected 17 parameters from median_gestures in {path}, got {mean.shape}")
     return mean
 
 
@@ -132,7 +132,7 @@ def run(
     pop_size: int = 24,
     log_dir: Path,
     devices: list[dict] | None = None,
-    target_trick: str | None = None,
+    curriculum: Curriculum,
     initial_mean: Path | None = None,
 ) -> None:
     """Execute the CMA-ES optimization loop across multiple devices.
@@ -151,9 +151,11 @@ def run(
         log_dir:     Root directory for run logs and frame composites.
         devices:     List of device config dicts. Defaults to DEVICES from
                      device_worker module.
-        target_trick: Optional trick name for post-hoc target-aware rescoring.
+        curriculum:  Curriculum object providing the per-trick reward scorer.
+                     Workers call ``curriculum.score`` directly.
         initial_mean: Optional path to trick library JSON; when provided,
-                      best_gestures seeds the CMA-ES mean.
+                      median_gestures seeds the CMA-ES mean. Overrides
+                      curriculum.warm_start if both are given.
     """
     try:
         import cma
@@ -192,16 +194,15 @@ def run(
     bounds = [PARAM_BOUNDS[:, 0].tolist(), PARAM_BOUNDS[:, 1].tolist()]
     cma_mean = INITIAL_MEAN.copy()
     cma_stds = INITIAL_SIGMA.copy()
+    if initial_mean is None and curriculum.warm_start is not None:
+        initial_mean = curriculum.warm_start
+        print(f"Using warm-start from curriculum: {initial_mean}")
     if initial_mean is not None:
         cma_mean = _load_initial_mean_from_library(initial_mean)
         coordinate_mask = np.ones(17, dtype=bool)
         coordinate_mask[[6, 7, 14, 15, 16]] = False
         cma_stds[coordinate_mask] = 0.05
         print(f"Loaded initial mean from trick library: {initial_mean}")
-    if target_trick is not None:
-        target_trick = target_trick.strip()
-        if not target_trick:
-            target_trick = None
 
     es = cma.CMAEvolutionStrategy(
         cma_mean.tolist(),
@@ -253,6 +254,7 @@ def run(
                     future = executor.submit(
                         worker.evaluate,
                         solutions[cand_idx], wait_time, cand_eval_num, generation,
+                        scorer=curriculum.score,
                     )
                     futures[future] = (cand_idx, worker)
 
@@ -318,19 +320,6 @@ def run(
                     cand_idx = batch_start + i
                     result = round_results[cand_idx]
                     reward = result["reward"]
-                    if target_trick is not None:
-                        trick_name = result["trick_name"]
-                        trick_status = result["trick_status"]
-                        trick_result = (
-                            TrickResult(trick=trick_name, status=trick_status)
-                            if trick_name is not None and trick_status is not None
-                            else None
-                        )
-                        reward = compute_reward_for_target(
-                            trick_result,
-                            target_trick=target_trick,
-                        )
-                        result["reward"] = reward
                     rewards.append(reward)
                     eval_num += 1
 
