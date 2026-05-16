@@ -317,6 +317,12 @@ def execute_n_slot_gestures(
         gestures_durations: list of N gesture durations in seconds.
         delays: list of N-1 inter-gesture delays in seconds. Negative = overlap.
         easings: optional list of N easing callables (None entries → constant velocity).
+
+    A delay negative enough to place a later slot before an earlier one is not
+    rejected: slots are reordered by absolute start time so the schedule is
+    always valid. The delay parameter is honoured exactly — only the execution
+    order is relabelled — so the schedule stays continuous as a delay sweeps
+    through the crossover point.
     """
     n = len(gestures_points)
     if n < 1:
@@ -338,16 +344,29 @@ def execute_n_slot_gestures(
             f"easings length {len(easings)} does not match gestures_points length {n}"
         )
 
-    # Cumulative start time of each slot, relative to t=0.
-    starts = [0.0]
+    # Absolute start time of each slot from the delay chain. A sufficiently
+    # negative delay places a later slot before an earlier one, which yields a
+    # negative start time here.
+    raw_starts = [0.0]
     for i in range(1, n):
-        next_start = starts[i - 1] + gestures_durations[i - 1] + delays[i - 1]
-        if next_start < starts[i - 1]:
-            raise ValueError(
-                f"Invalid delay={delays[i - 1]:.3f}s for slot{i - 1} duration="
-                f"{gestures_durations[i - 1]:.3f}s: slot{i} would start before slot{i - 1} starts."
-            )
-        starts.append(next_start)
+        raw_starts.append(raw_starts[i - 1] + gestures_durations[i - 1] + delays[i - 1])
+
+    # Reorder slots by absolute start time so the schedule is always valid.
+    # A stable sort preserves the original order for simultaneous starts.
+    order = sorted(range(n), key=lambda i: raw_starts[i])
+    if order != list(range(n)):
+        gestures_points = [gestures_points[i] for i in order]
+        gestures_durations = [gestures_durations[i] for i in order]
+        easings = [easings[i] for i in order]
+        raw_starts = [raw_starts[i] for i in order]
+
+    # Normalise so the earliest slot starts at t=0, then recompute the
+    # inter-slot delays for the (possibly reordered) schedule. Sorting
+    # guarantees every start is non-decreasing, so each delay >= -duration.
+    starts = [s - raw_starts[0] for s in raw_starts]
+    delays = [
+        starts[i + 1] - starts[i] - gestures_durations[i] for i in range(n - 1)
+    ]
 
     calibration = get_touch_timing_calibration(device_key)
     threshold = (
@@ -434,10 +453,11 @@ def execute_n_slot_gestures(
         branch = "sequential"
 
     logging.info(
-        "touch scheduler branch=%s n=%d delays=%s starts=%s threshold=%.3fs "
+        "touch scheduler branch=%s n=%d order=%s delays=%s starts=%s threshold=%.3fs "
         "calibration=%s seq_overhead=%.3fs effective_delays=%s",
         branch,
         n,
+        order,
         [round(d, 3) for d in delays],
         [round(s, 3) for s in starts],
         threshold,
