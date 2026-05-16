@@ -18,9 +18,11 @@ from trueskate_ai.rl.ppo.collector import (
     RolloutTask,
     collect_rollouts,
 )
-from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
+from trueskate_ai.rl.ppo.metrics import summarize_rollouts
+from trueskate_ai.rl.device_worker import DEVICES
 from trueskate_ai.rl.ppo.buffer import RolloutBatch
 from trueskate_ai.rl.run_logger import RunLogger
+from trueskate_ai.rl.worker_pool import WorkerPool
 from trueskate_ai.rl.reward import normalize_trick_name
 from trueskate_ai.sim.trick_info_reader import ensure_ocr_backend_ready
 
@@ -173,12 +175,11 @@ def run_training(config: PPOConfig) -> None:
     tricks = list(TRICK_LIST)
     trick_to_idx = {normalize_trick_name(trick): idx for idx, trick in enumerate(tricks)}
     workers_cfg = DEVICES if config.device_count is None else DEVICES[: config.device_count]
-    workers = [DeviceWorker(cfg) for cfg in workers_cfg]
-    if not workers:
+    pool = WorkerPool(workers_cfg)
+    if len(pool) == 0:
         raise RuntimeError("No devices configured for rollout collection")
 
-    for worker in workers:
-        worker.connect()
+    pool.connect_all()
 
     logger = RunLogger(config.log_dir, "ppo")
     run_id, run_dir = logger.run_id, logger.run_dir
@@ -258,7 +259,7 @@ def run_training(config: PPOConfig) -> None:
                 )
 
             rollout_results = collect_rollouts(
-                workers=workers,
+                pool=pool,
                 tasks=tasks,
                 wait_time=config.wait_time,
                 settle_time=config.settle_time,
@@ -364,65 +365,10 @@ def run_training(config: PPOConfig) -> None:
                 mean_value_loss /= n_steps
                 mean_entropy /= n_steps
 
-            mean_reward = float(sampled_rewards.mean().detach().cpu())
-            max_reward = float(sampled_rewards.max().detach().cpu())
-            n_samples = len(rollout_results)
-            n_errors = sum(1 for r in rollout_results if r.error is not None)
-            n_detected = sum(1 for r in rollout_results if r.detected_trick is not None)
-            n_landed = sum(1 for r in rollout_results if r.detected_status == "landed")
-            n_matches = sum(1 for r in rollout_results if r.reward > 0.0)
-            detection_rate = (n_detected / n_samples) if n_samples else 0.0
-            landed_rate = (n_landed / n_samples) if n_samples else 0.0
-            match_rate = (n_matches / n_samples) if n_samples else 0.0
-            error_rate = (n_errors / n_samples) if n_samples else 0.0
-            hindsight_rate = (hindsight_added_count / n_samples) if n_samples else 0.0
+            summary = summarize_rollouts(
+                rollout_results, hindsight_added_count=hindsight_added_count
+            )
             effective_batch_size = int(batch.size)
-            mean_action_exec_s = (
-                sum(r.action_exec_s for r in rollout_results) / n_samples if n_samples else 0.0
-            )
-            mean_reward_eval_s = (
-                sum(r.reward_eval_s for r in rollout_results) / n_samples if n_samples else 0.0
-            )
-            mean_eval_total_s = (
-                sum(r.eval_total_s for r in rollout_results) / n_samples if n_samples else 0.0
-            )
-            mean_post_eval_wait_s = (
-                sum(r.post_eval_wait_s for r in rollout_results) / n_samples if n_samples else 0.0
-            )
-            mean_reset_s = (
-                sum(r.reset_s for r in rollout_results) / n_samples if n_samples else 0.0
-            )
-            mean_capture_attempts = (
-                sum(r.capture_attempts for r in rollout_results) / n_samples if n_samples else 0.0
-            )
-            mean_capture_elapsed_s = (
-                sum(r.capture_elapsed_s for r in rollout_results) / n_samples if n_samples else 0.0
-            )
-            mean_skipped_captures = (
-                sum(r.skipped_captures for r in rollout_results) / n_samples if n_samples else 0.0
-            )
-            mean_monitor_frames_checked = (
-                sum(r.monitor_frames_checked for r in rollout_results) / n_samples if n_samples else 0.0
-            )
-            mean_monitor_elapsed_s = (
-                sum(r.monitor_elapsed_s for r in rollout_results) / n_samples if n_samples else 0.0
-            )
-
-            device_summary: dict[str, dict[str, int]] = {}
-            for result in rollout_results:
-                stats = device_summary.setdefault(
-                    result.device_id,
-                    {"samples": 0, "detected": 0, "landed": 0, "matched": 0, "errors": 0},
-                )
-                stats["samples"] += 1
-                if result.detected_trick is not None:
-                    stats["detected"] += 1
-                if result.detected_status == "landed":
-                    stats["landed"] += 1
-                if result.reward > 0.0:
-                    stats["matched"] += 1
-                if result.error is not None:
-                    stats["errors"] += 1
 
             for result in rollout_results:
                 logger.write(
@@ -456,26 +402,26 @@ def run_training(config: PPOConfig) -> None:
                 {
                     "type": "update_summary",
                     "update": update_idx,
-                    "mean_reward": mean_reward,
-                    "max_reward": max_reward,
-                    "match_rate": round(match_rate, 4),
-                    "detection_rate": round(detection_rate, 4),
-                    "landed_rate": round(landed_rate, 4),
-                    "error_rate": round(error_rate, 4),
+                    "mean_reward": summary.mean_reward,
+                    "max_reward": summary.max_reward,
+                    "match_rate": round(summary.match_rate, 4),
+                    "detection_rate": round(summary.detection_rate, 4),
+                    "landed_rate": round(summary.landed_rate, 4),
+                    "error_rate": round(summary.error_rate, 4),
                     "hindsight_added_count": hindsight_added_count,
-                    "hindsight_rate": round(hindsight_rate, 4),
+                    "hindsight_rate": round(summary.hindsight_rate, 4),
                     "effective_batch_size": effective_batch_size,
-                    "mean_action_exec_s": round(mean_action_exec_s, 4),
-                    "mean_reward_eval_s": round(mean_reward_eval_s, 4),
-                    "mean_eval_total_s": round(mean_eval_total_s, 4),
-                    "mean_post_eval_wait_s": round(mean_post_eval_wait_s, 4),
-                    "mean_reset_s": round(mean_reset_s, 4),
-                    "mean_capture_attempts": round(mean_capture_attempts, 4),
-                    "mean_capture_elapsed_s": round(mean_capture_elapsed_s, 4),
-                    "mean_skipped_captures": round(mean_skipped_captures, 4),
-                    "mean_monitor_frames_checked": round(mean_monitor_frames_checked, 4),
-                    "mean_monitor_elapsed_s": round(mean_monitor_elapsed_s, 4),
-                    "device_summary": device_summary,
+                    "mean_action_exec_s": round(summary.mean_action_exec_s, 4),
+                    "mean_reward_eval_s": round(summary.mean_reward_eval_s, 4),
+                    "mean_eval_total_s": round(summary.mean_eval_total_s, 4),
+                    "mean_post_eval_wait_s": round(summary.mean_post_eval_wait_s, 4),
+                    "mean_reset_s": round(summary.mean_reset_s, 4),
+                    "mean_capture_attempts": round(summary.mean_capture_attempts, 4),
+                    "mean_capture_elapsed_s": round(summary.mean_capture_elapsed_s, 4),
+                    "mean_skipped_captures": round(summary.mean_skipped_captures, 4),
+                    "mean_monitor_frames_checked": round(summary.mean_monitor_frames_checked, 4),
+                    "mean_monitor_elapsed_s": round(summary.mean_monitor_elapsed_s, 4),
+                    "device_summary": summary.device_summary,
                     "policy_loss": round(mean_policy_loss, 6),
                     "value_loss": round(mean_value_loss, 6),
                     "entropy": round(mean_entropy, 6),
@@ -485,10 +431,10 @@ def run_training(config: PPOConfig) -> None:
             )
 
             print(
-                f"[update {update_idx:04d}] mean_reward={mean_reward:.3f} "
-                f"max_reward={max_reward:.3f} "
-                f"match_rate={match_rate:.2%} detect_rate={detection_rate:.2%} "
-                f"error_rate={error_rate:.2%} hindsight_added={hindsight_added_count} "
+                f"[update {update_idx:04d}] mean_reward={summary.mean_reward:.3f} "
+                f"max_reward={summary.max_reward:.3f} "
+                f"match_rate={summary.match_rate:.2%} detect_rate={summary.detection_rate:.2%} "
+                f"error_rate={summary.error_rate:.2%} hindsight_added={hindsight_added_count} "
                 f"policy_loss={mean_policy_loss:.4f} value_loss={mean_value_loss:.4f}"
             )
 
@@ -519,5 +465,4 @@ def run_training(config: PPOConfig) -> None:
 
     finally:
         logger.close()
-        for worker in workers:
-            worker.disconnect()
+        pool.disconnect_all()

@@ -29,8 +29,8 @@ from trueskate_ai.rl.cmaes.action_param import (
     param_vector_length,
 )
 from trueskate_ai.rl.cmaes.curriculum import Curriculum
-from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
 from trueskate_ai.rl.run_logger import RunLogger
+from trueskate_ai.rl.worker_pool import WorkerPool
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -166,15 +166,11 @@ def run(
             "'cma' package not found. Install it with: pip install cma"
         )
 
-    if devices is None:
-        devices = DEVICES
-
     # --- Connect workers ---------------------------------------------------
-    workers = [DeviceWorker(cfg) for cfg in devices]
-    n_workers = len(workers)
+    pool = WorkerPool(devices)
+    n_workers = len(pool)
 
-    for worker in workers:
-        worker.connect()
+    pool.connect_all()
 
     # --- Auto-round pop_size and max_evals ---------------------------------
     original_pop_size = pop_size
@@ -192,7 +188,7 @@ def run(
     run_dir = logger.run_dir
     print(f"Run folder: {run_dir}")
     print(f"Logging to {logger.log_path}")
-    print(f"Workers: {[w.device_id for w in workers]}")
+    print(f"Workers: {pool.device_ids}")
 
     num_gestures = curriculum.num_gestures
     param_bounds = build_param_bounds(num_gestures)
@@ -276,7 +272,7 @@ def run(
                 batch_start = round_idx * n_workers
 
                 # Ensure True Skate is in the foreground on all devices
-                for worker in workers:
+                for worker in pool:
                     worker.ensure_foreground()
 
                 # Settle time — all devices settle simultaneously
@@ -284,7 +280,7 @@ def run(
 
                 # Dispatch one candidate per worker simultaneously
                 futures = {}
-                for i, worker in enumerate(workers):
+                for i, worker in enumerate(pool):
                     cand_idx = batch_start + i
                     cand_eval_num = eval_num + i + 1
                     future = executor.submit(
@@ -462,5 +458,4 @@ def run(
         logger.close()
 
         executor.shutdown(wait=False)
-        for worker in workers:
-            worker.disconnect()
+        pool.disconnect_all()

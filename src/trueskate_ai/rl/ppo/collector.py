@@ -9,7 +9,7 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 
-from trueskate_ai.rl.device_worker import DeviceWorker, ALL_DEAD_TIMEOUT
+from trueskate_ai.rl.device_worker import DeviceWorker
 from trueskate_ai.rl.reward import (
     ContinuousTrickMonitor,
     compute_conditioned_reward,
@@ -17,6 +17,7 @@ from trueskate_ai.rl.reward import (
     merge_trick_results,
 )
 from trueskate_ai.rl.ppo.trick_conditioned_action import execute_gesture_params_vector
+from trueskate_ai.rl.worker_pool import WorkerPool
 
 _TARGET_COL_WIDTH = 28
 _DETECTED_COL_WIDTH = 32
@@ -162,7 +163,7 @@ def _collect_one(
 
 def collect_rollouts(
     *,
-    workers: list[DeviceWorker],
+    pool: WorkerPool,
     tasks: list[RolloutTask],
     wait_time: float,
     settle_time: float,
@@ -170,18 +171,18 @@ def collect_rollouts(
     capture_interval: float,
     spin_button_xy: tuple[float, float] | None = None,
 ) -> list[RolloutResult]:
-    """Collect rollout tasks in parallel across available workers."""
-    if not workers:
+    """Collect rollout tasks in parallel across the pool's workers."""
+    if len(pool) == 0:
         raise ValueError("At least one DeviceWorker is required for rollout collection")
 
     results: dict[int, RolloutResult] = {}
-    with ThreadPoolExecutor(max_workers=len(workers)) as executor:
+    with ThreadPoolExecutor(max_workers=len(pool)) as executor:
         task_idx = 0
         while task_idx < len(tasks):
-            alive = [w for w in workers if w.alive]
+            alive = pool.alive
             if not alive:
                 logging.warning("All workers dead — retrying with all workers.")
-                alive = workers
+                alive = pool.workers
             batch = tasks[task_idx : task_idx + len(alive)]
             task_idx += len(batch)
 
@@ -265,19 +266,7 @@ def collect_rollouts(
                         reset_s=reset_duration,
                     )
 
-            for w in workers:
-                w.maybe_revive()
-
-            if not any(w.alive for w in workers):
-                now = time.monotonic()
-                oldest_death = min(
-                    (w.dead_since for w in workers if w.dead_since is not None),
-                    default=now,
-                )
-                if now - oldest_death > ALL_DEAD_TIMEOUT:
-                    raise RuntimeError(
-                        f"All devices have been unreachable for >"
-                        f"{ALL_DEAD_TIMEOUT / 60:.0f} minutes — aborting."
-                    )
+            pool.revive_dead()
+            pool.raise_if_all_dead()
 
     return [results[i] for i in range(len(tasks))]

@@ -45,10 +45,8 @@ touches failure/revive logic.
 2. Extract orchestration services from `run()` / `run_training()`:
    - 2a. `RunLogger` — unified run-folder + JSONL sink. **(done)**
    - 2b. `DeviceWorker.timed_reset()` — dedup the duplicated timed-reset helper. **(done)**
-   - 2c. `WorkerPool` — encapsulate worker list, connect/disconnect, all-dead abort.
-     Pending — touches the dispatch loop, larger change.
-   - 2d. Metrics reducer — extract the ~40-line `sum(...)/n` block in `run_training`.
-     Pending — PPO-only, quick win.
+   - 2c. `WorkerPool` — encapsulate worker list, connect/disconnect, all-dead abort. **(done)**
+   - 2d. Metrics reducer — extract the ~40-line `sum(...)/n` block in `run_training`. **(done)**
 3. Leave reward/curriculum as-is.
 
 Principle: keep core CMA-ES / PPO logic intact; refactor only the orchestration shell.
@@ -82,3 +80,31 @@ Principle: keep core CMA-ES / PPO logic intact; refactor only the orchestration 
   from `trainer.py`. Behavior preserved (same folder layout, same JSONL output).
   Verified: compile, no leftover refs, `RunLogger` round-trip + all orchestrator
   modules import clean. Steps 2c (`WorkerPool`) and 2d (metrics reducer) pending.
+- 2026-05-16 — **Step 2d complete (metrics reducer).**
+  New `rl/ppo/metrics.py`: `RolloutSummary` dataclass + `summarize_rollouts()`.
+  Replaced the ~60-line inline rate/mean/device-summary block in `run_training`
+  with one `summarize_rollouts(...)` call; the `update_summary` record and the
+  per-update print line now read from `summary.*`. `mean_reward`/`max_reward`
+  computed from `RolloutResult.reward` (identical to the old tensor path).
+  Behavior preserved.
+- 2026-05-16 — **Step 2c complete (WorkerPool).**
+  New `rl/worker_pool.py`: `WorkerPool` owns the DeviceWorker fleet — construction,
+  `connect_all`/`disconnect_all`, `revive_dead`, `raise_if_all_dead`; iterable +
+  indexable so dispatch loops are unchanged. Both orchestrators now build a
+  `WorkerPool` instead of a raw list and delegate connect/disconnect to it.
+  `collect_rollouts` takes `pool: WorkerPool` and delegates the revive + all-dead
+  abort (previously inlined). `AllWorkersDeadError` subclasses `RuntimeError`, so
+  existing `except RuntimeError` callers are unaffected. `DeviceWorker`/`DEVICES`
+  remain exported from `device_worker.py` for the standalone inspect scripts.
+  Verified: compile, all modules import clean, `collect_rollouts` signature now
+  takes `pool`, `WorkerPool` + `summarize_rollouts` behavior unit-checked.
+
+## Outcome
+Steps 1 and 2 complete. The orchestration shell is now factored into reusable
+services (`RunLogger`, `WorkerPool`, `summarize_rollouts`) shared by the CMA-ES
+and PPO loops; `run()` / `run_training()` coordinate strategy rather than owning
+logging, worker lifecycle, and metric reduction. Core CMA-ES / PPO math untouched.
+Not yet exercised against live devices — needs a smoke run before the next
+training session. New shared modules have no automated tests; behavior was
+verified by ad-hoc checks. Worth adding pytest coverage for `summarize_rollouts`
+and `WorkerPool` alongside the OCR test work.
