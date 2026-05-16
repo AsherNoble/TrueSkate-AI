@@ -286,6 +286,7 @@ def run(
                         worker.evaluate,
                         solutions[cand_idx], wait_time, cand_eval_num, generation,
                         scorer=curriculum.score,
+                        run_dir=run_dir,
                     )
                     futures[future] = (cand_idx, worker)
 
@@ -319,8 +320,8 @@ def run(
                             "skipped_captures": 0,
                             "detection_capture_idx": None,
                             "capture_elapsed_s": 0.0,
-                            "monitor_frames_checked": 0,
-                            "monitor_elapsed_s": 0.0,
+                            "anchor_candidates": 0,
+                            "ocr_calls": 0,
                         }
                     completion_times[cand_idx] = time.monotonic()
                     reset_future = executor.submit(worker.timed_reset)
@@ -390,8 +391,8 @@ def run(
                         "skipped_captures": result.get("skipped_captures", 0),
                         "detection_capture_idx": result.get("detection_capture_idx"),
                         "capture_elapsed_s": round(result.get("capture_elapsed_s", 0.0), 4),
-                        "monitor_frames_checked": result.get("monitor_frames_checked", 0),
-                        "monitor_elapsed_s": round(result.get("monitor_elapsed_s", 0.0), 4),
+                        "anchor_candidates": result.get("anchor_candidates", 0),
+                        "ocr_calls": result.get("ocr_calls", 0),
                         "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                     })
 

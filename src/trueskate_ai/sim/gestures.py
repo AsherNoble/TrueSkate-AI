@@ -20,8 +20,8 @@ PUSH_END: tuple[float, float] = (
     0.6797,
 )
 
-Y_BOUND_MIN: float = 0.12   # top of the valid RL gesture area
-Y_BOUND_MAX: float = 0.88   # bottom of the valid RL gesture area (avoids home indicator)
+Y_BOUND_MIN: float = 0.3   # top of the valid RL gesture area
+Y_BOUND_MAX: float = 0.7   # bottom of the valid RL gesture area (avoids home indicator)
 
 
 def scale_to_device(x: float, y: float, device_w: float, device_h: float) -> tuple[float, float]:

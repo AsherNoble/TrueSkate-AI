@@ -7,18 +7,32 @@ Reward shaping for CMA-ES is delegated to per-target Curriculum objects
 This module owns the OCR capture window, frame merging, repetition penalty,
 and shared utilities (`near_miss_multiplier`, `normalize_trick_name`).
 """
+import json
 import logging
 import threading
 import time
+from pathlib import Path
 from typing import Callable
 
 import cv2
 import numpy as np
 import requests
 
-from trueskate_ai.sim.trick_info_reader import TrickResult, detect_trick
+from trueskate_ai.sim.trick_info_reader import (
+    AnchorInfo,
+    TrickResult,
+    detect_trick,
+    find_notification_anchor,
+    ocr_at_anchor,
+)
 
 CaptureDiagnostics = dict[str, int | float | None]
+
+# After a notification anchor has been seen, this many consecutive anchorless
+# frames means the notification has finished — stop capturing early.
+_NOTIF_GONE_FRAMES = 3
+# Number of best-ranked frames to actually run the (expensive) OCR pipeline on.
+_OCR_TOP_K = 3
 
 
 class RepetitionPenalty:
@@ -194,22 +208,73 @@ class ContinuousTrickMonitor:
         return merged, diagnostics
 
 
+def _persist_ocr_failure(
+    failure_dir: Path,
+    eval_label: str,
+    per_frame: list[tuple[np.ndarray, AnchorInfo, int, dict]],
+) -> None:
+    """Save frames, crops and diagnostics for an eval that found an anchor but
+    matched no trick — so otherwise-invisible OCR failures stay debuggable."""
+    try:
+        out_dir = failure_dir / eval_label
+        out_dir.mkdir(parents=True, exist_ok=True)
+        records = []
+        for frame, anchor, capture_idx, ocr_diag in per_frame:
+            cv2.imwrite(str(out_dir / f"frame_{capture_idx:02d}.png"), frame)
+            bounds = ocr_diag.get("crop_bounds")
+            if bounds:
+                x0, y0, x1, y1 = bounds
+                cv2.imwrite(str(out_dir / f"crop_{capture_idx:02d}.png"), frame[y0:y1, x0:x1])
+            records.append({
+                "capture_idx": capture_idx,
+                "anchor_status": anchor.status,
+                "anchor_pixels": anchor.pixel_count,
+                "anchor_clipped": anchor.clipped,
+                "anchor_bbox": [anchor.x_min, anchor.y_min, anchor.x_max, anchor.y_max],
+                "crop_bounds": bounds,
+                "ocr_lines": ocr_diag.get("ocr_lines"),
+                "ocr_candidates": ocr_diag.get("ocr_candidates"),
+                "final_trick": ocr_diag.get("final_trick"),
+            })
+        (out_dir / "diagnostics.json").write_text(json.dumps(records, indent=2))
+        logging.warning(
+            "OCR failure: anchor found but no trick matched — saved %d frame(s) to %s",
+            len(per_frame), out_dir,
+        )
+    except Exception as exc:  # diagnostics must never break an eval
+        logging.warning("failed to persist OCR failure diagnostics: %s", exc)
+
+
 def capture_and_detect_with_diagnostics(
     driver,
     *,
     capture_count: int = 14,
     capture_interval: float = 0.15,
     action_start_time: float | None = None,
+    max_window_s: float | None = None,
+    ocr_failure_dir: Path | str | None = None,
+    eval_label: str | None = None,
 ) -> tuple[TrickResult | None, CaptureDiagnostics]:
-    """Capture multiple screenshots and run trick OCR on each.
+    """Capture screenshots, then OCR only the best few — the "best-N" system.
 
-    Captures continuously (as fast as screenshots can be read) over a bounded
-    detection window. The window length is capture_count * capture_interval.
-    If multiple distinct trick names are seen across frames, they are merged
-    using the same " + " concatenation convention.
+    Every captured frame gets a cheap, OCR-free anchor check
+    (`find_notification_anchor`). Frames carrying a notification anchor are
+    collected, ranked (settled/unclipped frames with the most colour pixels
+    first), and only the top `_OCR_TOP_K` are passed through the expensive OCR
+    pipeline. This both avoids OCRing the ~dozen frames the old loop did and
+    skips mid-slide frames whose trick name is truncated off-screen.
+
+    Capture runs until the notification has appeared and then been absent for
+    `_NOTIF_GONE_FRAMES` frames, or until the detection window expires —
+    covering variance in when the notification appears.
 
     Args:
         driver: Appium WebDriver instance.
+        max_window_s: Hard cap on the detection window. Defaults to
+            capture_count * capture_interval when None.
+        ocr_failure_dir: If set, anchor-found-but-no-match evals dump frames +
+            crops + diagnostics here for debugging.
+        eval_label: Sub-directory name for failure diagnostics (e.g. eval id).
 
     Returns:
         TrickResult(trick=..., status="landed"|"failed") or None.
@@ -220,12 +285,7 @@ def capture_and_detect_with_diagnostics(
         raise ValueError(f"capture_interval must be >= 0.0, got {capture_interval}")
 
     capture_started_at = time.monotonic()
-    captures_attempted = 0
-    detection_capture_idx: int | None = None
-    detected_results: list[TrickResult] = []
-    capture_idx = 0
-
-    window_s = capture_count * capture_interval
+    window_s = max_window_s if max_window_s is not None else capture_count * capture_interval
     capture_anchor = action_start_time if action_start_time is not None else capture_started_at
     if action_start_time is not None:
         sleep_for = action_start_time - time.monotonic()
@@ -233,30 +293,62 @@ def capture_and_detect_with_diagnostics(
             time.sleep(sleep_for)
     capture_deadline = capture_anchor + window_s
 
+    # Phase 1 — capture frames, run only the cheap anchor check on each.
+    candidates: list[tuple[np.ndarray, AnchorInfo, int]] = []
+    captures_attempted = 0
+    capture_idx = 0
+    anchor_seen = False
+    gone_streak = 0
+
     while True:
         png_bytes = driver.get_screenshot_as_png()
         arr = np.frombuffer(png_bytes, dtype=np.uint8)
         frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
         captures_attempted += 1
 
-        result = detect_trick(frame)
-        if result is not None:
-            if detection_capture_idx is None:
-                detection_capture_idx = capture_idx
-            detected_results.append(result)
+        anchor = find_notification_anchor(frame) if frame is not None else None
+        if anchor is not None:
+            candidates.append((frame, anchor, capture_idx))
+            anchor_seen = True
+            gone_streak = 0
+        elif anchor_seen:
+            gone_streak += 1
 
-        now = time.monotonic()
-        if now >= capture_deadline:
+        if anchor_seen and gone_streak >= _NOTIF_GONE_FRAMES:
             break
-
+        if time.monotonic() >= capture_deadline:
+            break
         capture_idx += 1
 
+    # Phase 2 — rank candidates and OCR only the best few.
+    # Sort key: unclipped frames first, then most colour pixels (a fully
+    # rendered, settled notification has the most).
+    candidates.sort(key=lambda c: (c[1].clipped, -c[1].pixel_count))
+    selected = candidates[:_OCR_TOP_K]
+
+    detected_results: list[TrickResult] = []
+    detection_capture_idx: int | None = None
+    failure_frames: list[tuple[np.ndarray, AnchorInfo, int, dict]] = []
+    for frame, anchor, idx in selected:
+        result, ocr_diag = ocr_at_anchor(frame, anchor)
+        failure_frames.append((frame, anchor, idx, ocr_diag))
+        if result is not None:
+            if detection_capture_idx is None:
+                detection_capture_idx = idx
+            detected_results.append(result)
+
     merged_result = _merge_detected_results(detected_results) if detected_results else None
-    diagnostics = {
+
+    if merged_result is None and candidates and ocr_failure_dir is not None:
+        _persist_ocr_failure(Path(ocr_failure_dir), eval_label or "eval", failure_frames)
+
+    diagnostics: CaptureDiagnostics = {
         "captures_attempted": captures_attempted,
         "detection_capture_idx": detection_capture_idx,
         "capture_elapsed_s": time.monotonic() - capture_started_at,
         "skipped_captures": 0,
+        "anchor_candidates": len(candidates),
+        "ocr_calls": len(selected),
     }
     return merged_result, diagnostics
 

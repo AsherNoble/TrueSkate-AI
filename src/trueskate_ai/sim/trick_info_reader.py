@@ -18,6 +18,36 @@ class TrickResult(NamedTuple):
     status: Literal["landed", "failed", "unknown"]
 
 
+class AnchorInfo(NamedTuple):
+    """Cheap (OCR-free) description of a trick-notification anchor in a frame.
+
+    The anchor is the green (landed) / red (failed) score-digit cluster. `mask`
+    is the boolean colour mask over ``frame[anchor_y_offset:680, :]`` and is
+    consumed by `ocr_at_anchor`. `clipped` is True when the notification is
+    mid-slide (anchor bbox hugging a frame edge) — its trick name is truncated
+    and OCR on it would yield garbage fragments.
+    """
+
+    status: Literal["landed", "failed"]
+    mask: np.ndarray
+    anchor_y_offset: int
+    x_min: int
+    x_max: int
+    y_min: int
+    y_max: int
+    pixel_count: int
+    clipped: bool
+
+
+# Row where the anchor colour-search band starts (frames are 750x1624).
+_ANCHOR_Y_OFFSET = 180
+# A notification slides in from the left and out to the right; when its anchor
+# bbox is within these margins of a frame edge the trick name is clipped
+# off-screen. Asymmetric: the name extends far left of the score but only
+# slightly right, and the right-edge slide-out is the dominant failure mode.
+_CLIP_MARGIN_LEFT = 40
+_CLIP_MARGIN_RIGHT = 150
+
 _LOGGED_OCR_BACKEND = False
 
 
@@ -236,15 +266,51 @@ def _ocr_above_anchor(
     return TrickResult(trick=trick, status=status), diagnostics
 
 
+def find_notification_anchor(frame: np.ndarray) -> AnchorInfo | None:
+    """Cheap, OCR-free detection of the trick-notification anchor.
+
+    Runs only colour thresholding (fast numpy) — no OCR. Used to score and rank
+    many captured frames before paying for OCR on just the best few.
+
+    Returns AnchorInfo, or None if no green/red notification colour is present.
+    """
+    search = frame[_ANCHOR_Y_OFFSET:680, :]
+    result = _find_anchor(search)
+    if result is None:
+        return None
+
+    mask, status = result
+    ys, xs = np.where(mask)
+    x_min, x_max = int(xs.min()), int(xs.max())
+    y_min = int(ys.min()) + _ANCHOR_Y_OFFSET
+    y_max = int(ys.max()) + _ANCHOR_Y_OFFSET
+    w = frame.shape[1]
+    clipped = x_min <= _CLIP_MARGIN_LEFT or x_max >= w - _CLIP_MARGIN_RIGHT
+    return AnchorInfo(
+        status=status,
+        mask=mask,
+        anchor_y_offset=_ANCHOR_Y_OFFSET,
+        x_min=x_min,
+        x_max=x_max,
+        y_min=y_min,
+        y_max=y_max,
+        pixel_count=int(mask.sum()),
+        clipped=clipped,
+    )
+
+
+def ocr_at_anchor(frame: np.ndarray, anchor: AnchorInfo) -> tuple[TrickResult | None, dict]:
+    """Run the (expensive) OCR pipeline for a precomputed anchor."""
+    return _ocr_above_anchor(frame, anchor.mask, anchor.anchor_y_offset, anchor.status)
+
+
 def detect_trick_with_diagnostics(frame: np.ndarray) -> tuple[TrickResult | None, dict]:
     """Return trick detection result plus per-frame diagnostics."""
-    _ANCHOR_Y_OFFSET = 180
-    search = frame[_ANCHOR_Y_OFFSET:680, :]
-
     diagnostics: dict = {
         "anchor_found": False,
         "anchor_status": None,
         "anchor_pixels": 0,
+        "anchor_clipped": False,
         "crop_bounds": None,
         "ocr_lines": [],
         "ocr_candidates": [],
@@ -252,15 +318,15 @@ def detect_trick_with_diagnostics(frame: np.ndarray) -> tuple[TrickResult | None
         "final_trick": None,
     }
 
-    result = _find_anchor(search)
-    if result is None:
+    anchor = find_notification_anchor(frame)
+    if anchor is None:
         return None, diagnostics
 
-    mask, status = result
     diagnostics["anchor_found"] = True
-    diagnostics["anchor_status"] = status
-    diagnostics["anchor_pixels"] = int(mask.sum())
-    trick_result, ocr_diag = _ocr_above_anchor(frame, mask, _ANCHOR_Y_OFFSET, status)
+    diagnostics["anchor_status"] = anchor.status
+    diagnostics["anchor_pixels"] = anchor.pixel_count
+    diagnostics["anchor_clipped"] = anchor.clipped
+    trick_result, ocr_diag = ocr_at_anchor(frame, anchor)
     diagnostics.update(ocr_diag)
     return trick_result, diagnostics
 

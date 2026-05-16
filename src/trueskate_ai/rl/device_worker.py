@@ -27,11 +27,7 @@ from PIL import Image
 from typing import Callable
 
 from trueskate_ai.rl.cmaes.action_param import execute_gesture_params
-from trueskate_ai.rl.reward import (
-    ContinuousTrickMonitor,
-    capture_and_detect_with_diagnostics,
-    merge_trick_results,
-)
+from trueskate_ai.rl.reward import capture_and_detect_with_diagnostics
 from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position, skip_loading_screen
 from trueskate_ai.sim.trick_info_reader import TrickResult
 
@@ -50,16 +46,16 @@ DEVICES: list[dict] = [
         "logical_h": 896,
         "spin_button_xy": (0.0604, 0.4040),
     },
-    {
-        "env_key": "IPHONE_11_UDID",
-        "name": "iPhone_11",
-        "wda_port": 8101,
-        "mjpeg_port": 9101,
-        "appium_port": 4724,
-        "logical_w": 375,  # Display Zoom always on; reduces logical_w 414 → 375
-        "logical_h": 812,  # Display Zoom always on; reduces logical_h 896 → 812
-        "spin_button_xy": (0.0604, 0.4040),
-    },
+    # {
+    #     "env_key": "IPHONE_11_UDID",
+    #     "name": "iPhone_11",
+    #     "wda_port": 8101,
+    #     "mjpeg_port": 9101,
+    #     "appium_port": 4724,
+    #     "logical_w": 375,  # Display Zoom always on; reduces logical_w 414 → 375
+    #     "logical_h": 812,  # Display Zoom always on; reduces logical_h 896 → 812
+    #     "spin_button_xy": (0.0604, 0.4040),
+    # },
     {
         "env_key": "IPHONE_XS_UDID",
         "name": "iPhone_XS",
@@ -428,6 +424,7 @@ class DeviceWorker:
         generation: int,
         *,
         scorer: Callable[[TrickResult | None], float],
+        run_dir: Path | None = None,
     ) -> dict:
         """Execute one candidate eval on this device.
 
@@ -438,6 +435,8 @@ class DeviceWorker:
         Args:
             scorer: Callable mapping TrickResult | None → float. Typically
                 ``Curriculum.score`` passed in from the CMA-ES optimizer.
+            run_dir: Run folder; when set, OCR failures dump diagnostics to
+                ``run_dir/ocr_failures/``.
 
         Returns a result dict; never raises — logs errors and returns
         reward=0.0 on failure.
@@ -446,11 +445,6 @@ class DeviceWorker:
         recorder = FrameRecorder() if self.record_frames else None
         eval_start_time = time.monotonic()
         try:
-            monitor = ContinuousTrickMonitor()
-
-            def _on_post_push() -> None:
-                monitor.start(self.mjpeg_url)
-
             if recorder is not None:
                 recorder.start(self.mjpeg_url)
             action_start_time = time.monotonic()
@@ -459,22 +453,22 @@ class DeviceWorker:
                 np.array(params),
                 device_w=self._cfg["logical_w"],
                 device_h=self._cfg["logical_h"],
-                on_post_push=_on_post_push,
                 timing_device_key=self.device_id,
             )
             action_end_time = time.monotonic()
-            monitor_result, monitor_diag = monitor.stop()
             if wait_time > 0:
                 time.sleep(wait_time)
-            result_post, capture_diag = capture_and_detect_with_diagnostics(
+            ocr_failure_dir = run_dir / "ocr_failures" if run_dir is not None else None
+            eval_label = f"eval_{eval_num:05d}_{self.device_id}"
+            trick_result, capture_diag = capture_and_detect_with_diagnostics(
                 self.driver,
-                capture_count=14,
                 capture_interval=0.15,
                 action_start_time=action_end_time,
+                max_window_s=3.5,
+                ocr_failure_dir=ocr_failure_dir,
+                eval_label=eval_label,
             )
-            combined_result = merge_trick_results(monitor_result, result_post)
-            reward = scorer(combined_result)
-            trick_result = combined_result
+            reward = scorer(trick_result)
             reward_end_time = time.monotonic()
         except Exception as exc:
             if recorder is not None:
@@ -504,8 +498,6 @@ class DeviceWorker:
                 "skipped_captures": 0,
                 "detection_capture_idx": None,
                 "capture_elapsed_s": 0.0,
-                "monitor_frames_checked": 0,
-                "monitor_elapsed_s": 0.0,
             }
 
         self.record_success()
@@ -535,7 +527,7 @@ class DeviceWorker:
             "action_exec_s": action_end_time - action_start_time,
             "reward_eval_s": reward_end_time - action_end_time,
             "eval_total_s": reward_end_time - eval_start_time,
-            "capture_attempts": int(capture_diag["captures_attempted"]) + int(monitor_diag["frames_checked"]),
+            "capture_attempts": int(capture_diag["captures_attempted"]),
             "skipped_captures": int(capture_diag["skipped_captures"]),
             "detection_capture_idx": (
                 None
@@ -543,8 +535,8 @@ class DeviceWorker:
                 else int(capture_diag["detection_capture_idx"])
             ),
             "capture_elapsed_s": float(capture_diag["capture_elapsed_s"]),
-            "monitor_frames_checked": int(monitor_diag["frames_checked"]),
-            "monitor_elapsed_s": float(monitor_diag["monitor_elapsed_s"]),
+            "anchor_candidates": int(capture_diag["anchor_candidates"]),
+            "ocr_calls": int(capture_diag["ocr_calls"]),
         }
 
     # -- disconnect ---------------------------------------------------------
