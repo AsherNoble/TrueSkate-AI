@@ -99,6 +99,18 @@ Principle: keep core CMA-ES / PPO logic intact; refactor only the orchestration 
   Verified: compile, all modules import clean, `collect_rollouts` signature now
   takes `pool`, `WorkerPool` + `summarize_rollouts` behavior unit-checked.
 
+- 2026-05-16 — **Bugfix: tolerant device connection (pre-existing, not from this refactor).**
+  `train_cmaes.py` aborted if any device in `DEVICES` was down, even though
+  `launch_services.py --device NAME` is meant to support running a subset.
+  Confirmed via `git show 10e2949` that pre-refactor `run()` already did a bare
+  `for worker in workers: worker.connect()` with no tolerance — the refactor
+  copied that 1:1. Fixed in one place now that the abstraction exists:
+  `WorkerPool.connect_all()` connects per-device, logs+drops any that fail, and
+  raises only when *none* connect. Moved `n_workers = len(pool)` in
+  `cmaes_optimizer.run()` to *after* `connect_all()` so pop_size rounding uses
+  the connected count, not the configured count. Fixes both the CMA-ES and PPO
+  paths. Verified: partial / none / all-up connection cases.
+
 ## Outcome
 Steps 1 and 2 complete. The orchestration shell is now factored into reusable
 services (`RunLogger`, `WorkerPool`, `summarize_rollouts`) shared by the CMA-ES

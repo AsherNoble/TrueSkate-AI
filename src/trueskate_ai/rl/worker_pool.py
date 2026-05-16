@@ -13,6 +13,7 @@ Public API:
     WorkerPool          — owns workers + connect/disconnect/revive/abort.
     AllWorkersDeadError — raised when the whole fleet is unreachable too long.
 """
+import logging
 import time
 
 from trueskate_ai.rl.device_worker import ALL_DEAD_TIMEOUT, DEVICES, DeviceWorker
@@ -58,9 +59,35 @@ class WorkerPool:
         return [w.device_id for w in self._workers]
 
     def connect_all(self) -> None:
-        """Connect every worker. Raises on the first connection failure."""
+        """Connect to every device, dropping any whose services aren't running.
+
+        ``launch_services.py`` can bring up only a subset of the configured
+        devices (e.g. ``--device iPhone_XR``). A device whose WDA/Appium is
+        unreachable is logged and excluded from the pool rather than aborting
+        the whole run. Raises RuntimeError only when *no* device connects.
+        """
+        connected: list[DeviceWorker] = []
         for w in self._workers:
-            w.connect()
+            try:
+                w.connect()
+                connected.append(w)
+            except Exception as exc:
+                logging.warning(
+                    "[%s] connection failed — excluding from this run: %s",
+                    w.device_id, exc,
+                )
+        if not connected:
+            raise RuntimeError(
+                "No devices could be connected. Start at least one with "
+                "'python scripts/launch_services.py [--device NAME]'."
+            )
+        skipped = len(self._workers) - len(connected)
+        if skipped:
+            logging.warning(
+                "Running on %d of %d configured device(s); %d skipped.",
+                len(connected), len(self._workers), skipped,
+            )
+        self._workers = connected
 
     def disconnect_all(self) -> None:
         """Disconnect every worker. Never raises."""

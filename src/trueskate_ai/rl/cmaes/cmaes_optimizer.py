@@ -166,11 +166,10 @@ def run(
             "'cma' package not found. Install it with: pip install cma"
         )
 
-    # --- Connect workers ---------------------------------------------------
+    # --- Connect workers (skips any device whose services aren't running) --
     pool = WorkerPool(devices)
-    n_workers = len(pool)
-
     pool.connect_all()
+    n_workers = len(pool)
 
     # --- Auto-round pop_size and max_evals ---------------------------------
     original_pop_size = pop_size
