@@ -421,12 +421,17 @@ def execute_n_slot_gestures(
                 finger.create_pointer_move(x=start_x, y=start_y, duration=0)
                 if starts[i] > 0:
                     finger.create_pause(starts[i])
+                # include_start_move re-issues the start move immediately
+                # before pointer_down: WDA drops a standalone zero-duration
+                # move when a pause follows it, so pointer_down would
+                # otherwise fire at the pointer origin (top-left) — observed
+                # as a spurious top-left downward swipe that opens the menu.
                 build_curved_drag(
                     finger,
                     gestures_points[i],
                     total_duration=gestures_durations[i],
                     easing=easings[i],
-                    include_start_move=False,
+                    include_start_move=True,
                 )
             fingers.append(finger)
         perform_pointer_actions(driver, fingers)
