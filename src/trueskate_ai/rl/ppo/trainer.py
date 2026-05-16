@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
 from dataclasses import asdict, dataclass
@@ -21,6 +20,7 @@ from trueskate_ai.rl.ppo.collector import (
 )
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
 from trueskate_ai.rl.ppo.buffer import RolloutBatch
+from trueskate_ai.rl.run_logger import RunLogger
 from trueskate_ai.rl.reward import normalize_trick_name
 from trueskate_ai.sim.trick_info_reader import ensure_ocr_backend_ready
 
@@ -64,23 +64,11 @@ class PPOConfig:
     resume_from: Path | None = None
 
 
-def _open_run_log(log_dir: Path) -> tuple[str, Path, object]:
-    run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = log_dir / "runs" / f"ppo_run_{run_id}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-    log_fh = (run_dir / f"ppo_run_{run_id}.jsonl").open("w", buffering=1)
-    return run_id, run_dir, log_fh
-
-
 def _normalize_advantages(advantages: torch.Tensor) -> torch.Tensor:
     std = advantages.std(unbiased=False)
     if float(std) < 1e-8:
         return advantages - advantages.mean()
     return (advantages - advantages.mean()) / (std + 1e-8)
-
-
-def _write_jsonl(fh, record: dict) -> None:
-    fh.write(json.dumps(record) + "\n")
 
 
 def _config_to_json_dict(config: PPOConfig) -> dict:
@@ -192,7 +180,8 @@ def run_training(config: PPOConfig) -> None:
     for worker in workers:
         worker.connect()
 
-    run_id, run_dir, log_fh = _open_run_log(config.log_dir)
+    logger = RunLogger(config.log_dir, "ppo")
+    run_id, run_dir = logger.run_id, logger.run_dir
     policy = TrickConditionedPolicy(num_tricks=len(tricks)).to(device)
     optimizer = Adam(policy.parameters(), lr=config.learning_rate)
     generator = torch.Generator(device="cpu")
@@ -221,8 +210,7 @@ def run_training(config: PPOConfig) -> None:
         run_metadata["resume_source_run"] = resume_info["resume_source_run"]
         run_metadata["optimizer_restored"] = resume_info["optimizer_restored"]
 
-        _write_jsonl(
-            log_fh,
+        logger.write(
             {
                 "type": "resume_start",
                 "run_id": run_id,
@@ -437,8 +425,7 @@ def run_training(config: PPOConfig) -> None:
                     stats["errors"] += 1
 
             for result in rollout_results:
-                _write_jsonl(
-                    log_fh,
+                logger.write(
                     {
                         "type": "sample",
                         "update": update_idx,
@@ -465,8 +452,7 @@ def run_training(config: PPOConfig) -> None:
                     },
                 )
 
-            _write_jsonl(
-                log_fh,
+            logger.write(
                 {
                     "type": "update_summary",
                     "update": update_idx,
@@ -532,6 +518,6 @@ def run_training(config: PPOConfig) -> None:
         print(f"Saved final checkpoint: {final_ckpt}")
 
     finally:
-        log_fh.close()
+        logger.close()
         for worker in workers:
             worker.disconnect()

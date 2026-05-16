@@ -81,7 +81,7 @@ _APP_STATE_FOREGROUND = 4
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _DEAD_THRESHOLD = 5      # consecutive failures before a worker is considered dead
 _REVIVE_COOLDOWN = 60.0  # seconds between scheduled reconnect attempts for dead workers
-_ALL_DEAD_TIMEOUT = 300.0  # seconds before aborting when every worker is dead
+ALL_DEAD_TIMEOUT = 300.0  # seconds before aborting when every worker is dead (public: read by orchestrators)
 
 # ---------------------------------------------------------------------------
 # Frame recording
@@ -191,6 +191,15 @@ class DeviceWorker:
     @property
     def alive(self) -> bool:
         return self._failure_streak < _DEAD_THRESHOLD
+
+    @property
+    def dead_since(self) -> float | None:
+        """monotonic() timestamp at which this worker crossed into the dead state.
+
+        None while the worker is alive. Read-only — mutated only via the
+        record_success / record_failure lifecycle methods.
+        """
+        return self._dead_since
 
     @property
     def device_w(self) -> float:
@@ -332,6 +341,16 @@ class DeviceWorker:
             else:
                 logging.error("[%s] reset skipped — device unreachable.", self.device_id)
 
+    def timed_reset(self) -> tuple[str, float, float]:
+        """Reset the board and time it. Returns (device_id, monotonic_start, duration_s).
+
+        Convenience for orchestrators that dispatch resets on a thread pool and
+        need the start timestamp to compute post-eval wait time.
+        """
+        started_at = time.monotonic()
+        self.reset()
+        return self.device_id, started_at, time.monotonic() - started_at
+
     # -- reconnect ----------------------------------------------------------
 
     def _reconnect(self, max_attempts: int = 3) -> bool:
@@ -362,14 +381,42 @@ class DeviceWorker:
         logging.error("[%s] all reconnect attempts failed.", self.device_id)
         return False
 
-    def _try_revive(self) -> None:
-        """Attempt a reconnect if the cooldown has elapsed. Called by the collector."""
+    def maybe_revive(self) -> None:
+        """Attempt a reconnect if the worker is dead and the cooldown has elapsed.
+
+        Public worker-lifecycle hook for orchestrators (CMA-ES loop, PPO
+        collector) to call after a batch. No-op while the worker is alive.
+        """
         if self.alive:
             return
         if time.monotonic() - self._last_reconnect_time < _REVIVE_COOLDOWN:
             return
         logging.info("[%s] attempting scheduled reconnect.", self.device_id)
         self._reconnect()
+
+    # -- health tracking ----------------------------------------------------
+
+    def record_success(self) -> None:
+        """Mark the most recent eval as successful: clear the failure streak.
+
+        The single entry point for both orchestrators to report success —
+        replaces direct mutation of _failure_streak / _dead_since.
+        """
+        self._failure_streak = 0
+        self._dead_since = None
+
+    def record_failure(self) -> None:
+        """Mark the most recent eval as failed: advance the failure streak.
+
+        Stamps _dead_since on the transition from alive → dead. The single
+        entry point for both orchestrators to report failure. Does not itself
+        reconnect — callers decide whether to follow up with maybe_revive() or
+        _reconnect().
+        """
+        was_alive = self.alive
+        self._failure_streak += 1
+        if was_alive and not self.alive:
+            self._dead_since = time.monotonic()
 
     # -- evaluate -----------------------------------------------------------
 
@@ -433,10 +480,7 @@ class DeviceWorker:
             if recorder is not None:
                 recorder.stop()
             logging.warning("[%s] eval %d failed: %s", self.device_id, eval_num, exc)
-            was_alive = self.alive
-            self._failure_streak += 1
-            if was_alive and not self.alive:
-                self._dead_since = time.monotonic()
+            self.record_failure()
             if self._failure_streak % 5 == 0:
                 self._reconnect()
             print(
@@ -464,7 +508,7 @@ class DeviceWorker:
                 "monitor_elapsed_s": 0.0,
             }
 
-        self._failure_streak = 0
+        self.record_success()
         raw_frames = recorder.stop() if recorder is not None else []
         trick_name = trick_result.trick if trick_result else None
         trick_status = trick_result.status if trick_result else None

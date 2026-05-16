@@ -30,6 +30,7 @@ from trueskate_ai.rl.cmaes.action_param import (
 )
 from trueskate_ai.rl.cmaes.curriculum import Curriculum
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
+from trueskate_ai.rl.run_logger import RunLogger
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -42,35 +43,14 @@ logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
 
 
 # ---------------------------------------------------------------------------
-# Logging helpers
+# Checkpoint helper
 # ---------------------------------------------------------------------------
-
-def _open_log(log_dir: Path) -> tuple[Path, Path, object]:
-    """Create a run folder with JSONL log and frames/ subdir. Returns (run_dir, log_path, file_handle)."""
-    run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = log_dir / "runs" / f"cmaes_run_{run_id}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-    (run_dir / "frames").mkdir(exist_ok=True)
-    log_path = run_dir / f"cmaes_run_{run_id}.jsonl"
-    return run_dir, log_path, log_path.open("w", buffering=1)  # line-buffered
-
-
-def _write_log(fh, record: dict) -> None:
-    """Append a JSON record to the log file."""
-    fh.write(json.dumps(record) + "\n")
-
 
 def _save_checkpoint(es, run_dir: Path, generation: int) -> None:
     """Pickle the CMA-ES object to a checkpoint file inside the run folder."""
     path = run_dir / f"checkpoint_gen{generation}.pkl"
     with path.open("wb") as f:
         pickle.dump(es, f)
-
-
-def _timed_worker_reset(worker) -> tuple[str, float, float]:
-    reset_started_at = time.monotonic()
-    worker.reset()
-    return worker.device_id, reset_started_at, time.monotonic() - reset_started_at
 
 
 def _load_initial_mean_from_library(path: Path, num_gestures: int) -> np.ndarray:
@@ -208,9 +188,10 @@ def run(
             f"max_evals {original_max_evals} → {max_evals}"
         )
 
-    run_dir, log_path, log_fh = _open_log(log_dir)
+    logger = RunLogger(log_dir, "cmaes", subdirs=("frames",))
+    run_dir = logger.run_dir
     print(f"Run folder: {run_dir}")
-    print(f"Logging to {log_path}")
+    print(f"Logging to {logger.log_path}")
     print(f"Workers: {[w.device_id for w in workers]}")
 
     num_gestures = curriculum.num_gestures
@@ -260,7 +241,7 @@ def run(
         },
     )
 
-    _write_log(log_fh, {
+    logger.write({
         "type": "run_config",
         "num_gestures": num_gestures,
         "param_vector_length": param_vector_length(num_gestures),
@@ -347,7 +328,7 @@ def run(
                             "monitor_elapsed_s": 0.0,
                         }
                     completion_times[cand_idx] = time.monotonic()
-                    reset_future = executor.submit(_timed_worker_reset, worker)
+                    reset_future = executor.submit(worker.timed_reset)
                     reset_futures[reset_future] = cand_idx
 
                 reset_metrics: dict[int, dict[str, float]] = {}
@@ -389,7 +370,7 @@ def run(
                         raw_frames, run_dir / "frames" / eval_dir_name
                     )
 
-                    _write_log(log_fh, {
+                    logger.write({
                         "generation": generation,
                         "candidate_idx": cand_idx,
                         "eval_num": eval_num,
@@ -447,7 +428,7 @@ def run(
                 f"best={gen_best:.2f} mean={gen_mean:.2f} | "
                 f"{device_counts_str} ---"
             )
-            _write_log(log_fh, {
+            logger.write({
                 "type": "generation_summary",
                 "generation": generation,
                 "best_reward": gen_best,
@@ -478,7 +459,7 @@ def run(
         _save_checkpoint(es, run_dir, generation)
         print("Final checkpoint saved.")
 
-        log_fh.close()
+        logger.close()
 
         executor.shutdown(wait=False)
         for worker in workers:

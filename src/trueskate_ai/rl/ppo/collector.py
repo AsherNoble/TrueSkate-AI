@@ -9,7 +9,7 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 
-from trueskate_ai.rl.device_worker import DeviceWorker, _ALL_DEAD_TIMEOUT
+from trueskate_ai.rl.device_worker import DeviceWorker, ALL_DEAD_TIMEOUT
 from trueskate_ai.rl.reward import (
     ContinuousTrickMonitor,
     compute_conditioned_reward,
@@ -79,12 +79,6 @@ class RolloutResult:
     monitor_frames_checked: int = 0
     monitor_elapsed_s: float = 0.0
     error: str | None = None
-
-
-def _timed_reset(worker: DeviceWorker) -> tuple[str, float, float]:
-    reset_started_at = time.monotonic()
-    worker.reset()
-    return worker.device_id, reset_started_at, time.monotonic() - reset_started_at
 
 
 def _collect_one(
@@ -211,13 +205,9 @@ def collect_rollouts(
                 worker, task = futures[future]
                 try:
                     result = future.result()
-                    worker._failure_streak = 0
-                    worker._dead_since = None
+                    worker.record_success()
                 except Exception as exc:
-                    was_alive = worker.alive
-                    worker._failure_streak += 1
-                    if was_alive and not worker.alive:
-                        worker._dead_since = time.monotonic()
+                    worker.record_failure()
                     logging.warning(
                         "[%s] rollout failed (update=%d eval=%d sample=%d): %s",
                         worker.device_id,
@@ -250,7 +240,7 @@ def collect_rollouts(
                     )
                 results[result.sample_idx] = result
                 completion_times[result.sample_idx] = time.monotonic()
-                reset_future = executor.submit(_timed_reset, worker)
+                reset_future = executor.submit(worker.timed_reset)
                 reset_futures[reset_future] = (worker.device_id, result.sample_idx)
 
             for reset_future in as_completed(reset_futures):
@@ -276,18 +266,18 @@ def collect_rollouts(
                     )
 
             for w in workers:
-                w._try_revive()
+                w.maybe_revive()
 
             if not any(w.alive for w in workers):
                 now = time.monotonic()
                 oldest_death = min(
-                    (w._dead_since for w in workers if w._dead_since is not None),
+                    (w.dead_since for w in workers if w.dead_since is not None),
                     default=now,
                 )
-                if now - oldest_death > _ALL_DEAD_TIMEOUT:
+                if now - oldest_death > ALL_DEAD_TIMEOUT:
                     raise RuntimeError(
                         f"All devices have been unreachable for >"
-                        f"{_ALL_DEAD_TIMEOUT / 60:.0f} minutes — aborting."
+                        f"{ALL_DEAD_TIMEOUT / 60:.0f} minutes — aborting."
                     )
 
     return [results[i] for i in range(len(tasks))]
