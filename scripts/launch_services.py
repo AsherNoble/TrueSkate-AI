@@ -36,11 +36,19 @@ from trueskate_ai.rl.device_worker import (
     select_devices,
 )
 from trueskate_ai.sim.touch_actions import skip_loading_screen
+from trueskate_ai.utils.notify import notify
 
 load_dotenv(_REPO_ROOT / ".env")
 
 WDA_PROJECT_PATH = Path.home() / "Projects" / "WebDriverAgent"
 WDA_STARTUP_TIMEOUT = 60
+
+# Per-device restart backoff (seconds), indexed by consecutive-failure count.
+# The last value repeats. Backoff decays back to 0 after a device stays healthy
+# for _RESTART_DECAY_S, so an occasional blip doesn't permanently slow restarts.
+_RESTART_BACKOFF_S = [5, 15, 30, 60, 120]
+_RESTART_DECAY_S = 600
+_DEVICE_USB_WAIT_S = 60  # how long to wait for a browned-out device to reappear
 
 # Per-device process tracking:
 # {device_name: {"wda": Process|None, "appium": Process|None, "appium_was_running": bool}}
@@ -77,42 +85,40 @@ def _signal_handler(sig, frame):
     sys.exit(0)
 
 
+def _stop_proc(name: str, key: str, label: str, timeout: int) -> None:
+    """Terminate one tracked subprocess (if present) and clear its slot."""
+    procs = _processes.get(name, {})
+    proc = procs.get(key)
+    if not proc:
+        return
+    print(f"[{name}] Stopping {label}...")
+    proc.terminate()
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+    procs[key] = None
+
+
+def _cleanup_device(name: str) -> None:
+    """Stop all subprocesses owned for a single device.
+
+    Leaves a pre-existing (externally started) Appium instance running, matching
+    the original shutdown contract.
+    """
+    procs = _processes.get(name, {})
+    _stop_proc(name, "iproxy_wda", "WDA iproxy", timeout=2)
+    _stop_proc(name, "iproxy_mjpeg", "MJPEG iproxy", timeout=2)
+    if procs.get("appium_was_running"):
+        print(f"[{name}] Leaving existing Appium instance running...")
+    else:
+        _stop_proc(name, "appium", "Appium", timeout=5)
+    _stop_proc(name, "wda", "WebDriverAgent", timeout=5)
+
+
 def _cleanup():
-    for name, procs in _processes.items():
-        if procs.get("iproxy_wda"):
-            print(f"[{name}] Stopping WDA iproxy...")
-            procs["iproxy_wda"].terminate()
-            try:
-                procs["iproxy_wda"].wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                procs["iproxy_wda"].kill()
-
-        if procs.get("iproxy_mjpeg"):
-            print(f"[{name}] Stopping MJPEG iproxy...")
-            procs["iproxy_mjpeg"].terminate()
-            try:
-                procs["iproxy_mjpeg"].wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                procs["iproxy_mjpeg"].kill()
-
-        if procs.get("appium") and not procs.get("appium_was_running"):
-            print(f"[{name}] Stopping Appium...")
-            procs["appium"].terminate()
-            try:
-                procs["appium"].wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                procs["appium"].kill()
-        elif procs.get("appium_was_running"):
-            print(f"[{name}] Leaving existing Appium instance running...")
-
-        if procs.get("wda"):
-            print(f"[{name}] Stopping WebDriverAgent...")
-            procs["wda"].terminate()
-            try:
-                procs["wda"].wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                procs["wda"].kill()
-
+    for name in _processes:
+        _cleanup_device(name)
     print("Cleanup complete")
 
 
@@ -327,6 +333,82 @@ def _start_iproxy(device: dict) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Per-device (re)start
+# ---------------------------------------------------------------------------
+
+def _wait_for_device(device: dict, timeout: int = _DEVICE_USB_WAIT_S) -> bool:
+    """Poll `idevice_id -l` until this device's UDID reappears on USB.
+
+    Covers the brown-out / loose-port case (old XS especially): the phone drops
+    off USB, then comes back — we wait for it before restarting services.
+    """
+    name = device["name"]
+    udid = os.environ.get(device["env_key"])
+    if not udid:
+        return False
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        result = subprocess.run(["idevice_id", "-l"], capture_output=True, text=True)
+        if udid in result.stdout:
+            return True
+        print(f"[{name}] Waiting for device to reappear on USB...")
+        time.sleep(3)
+    return False
+
+
+def _start_device(device: dict) -> bool:
+    """Bring up Appium + iproxy + WDA for a single device, in order."""
+    return (
+        _start_appium(device)
+        and _start_iproxy(device)
+        and _start_wda(device)
+    )
+
+
+def _restart_device(device: dict) -> bool:
+    """Tear down and restart one device's service stack, with decaying backoff.
+
+    Other devices keep running. Returns True if the device came back up.
+    """
+    name = device["name"]
+    procs = _processes[name]
+    now = time.time()
+    if now - procs.get("last_restart", 0.0) > _RESTART_DECAY_S:
+        procs["restart_count"] = 0  # device was stable a while; reset escalation
+    attempt = procs.get("restart_count", 0)
+    backoff = _RESTART_BACKOFF_S[min(attempt, len(_RESTART_BACKOFF_S) - 1)]
+    procs["restart_count"] = attempt + 1
+    procs["last_restart"] = now
+
+    print(f"[{name}] Restarting service stack (attempt {attempt + 1}); backoff {backoff}s.")
+    _cleanup_device(name)
+    procs["appium_was_running"] = False  # we own a fresh Appium after a restart
+    time.sleep(backoff)
+
+    if not _wait_for_device(device):
+        print(f"[{name}] Device not back on USB; will retry on next monitor cycle.")
+        notify(
+            f"{name}: device still missing from USB after restart attempt "
+            f"{attempt + 1}. Check the cable/hub.",
+            title="TrueSkate rig", priority="high", tags=["warning"],
+        )
+        return False
+
+    if _start_device(device):
+        procs["restart_count"] = 0  # full recovery; clear escalation
+        _launch_trueskate_on_devices([device])
+        print(f"[{name}] Recovered.")
+        notify(f"{name} recovered and back collecting.",
+               title="TrueSkate rig", tags=["white_check_mark"])
+        return True
+
+    print(f"[{name}] Restart failed (attempt {attempt + 1}).")
+    notify(f"{name} restart failed (attempt {attempt + 1}).",
+           title="TrueSkate rig", priority="high", tags=["warning"])
+    return False
+
+
+# ---------------------------------------------------------------------------
 # Launch TrueSkate
 # ---------------------------------------------------------------------------
 
@@ -506,33 +588,36 @@ def main():
     print("Press Ctrl+C to stop all services")
     print("=" * 60)
 
+    # Monitor: if any device's process dies, restart ONLY that device's stack.
+    # One munted phone/port no longer takes down the whole rig.
+    _PROC_LABELS = {
+        "appium": "Appium",
+        "wda": "WebDriverAgent",
+        "iproxy_wda": "WDA iproxy",
+        "iproxy_mjpeg": "MJPEG iproxy",
+    }
     try:
         while True:
-            time.sleep(1)
+            time.sleep(2)
             for device in selected_devices:
                 name = device["name"]
                 procs = _processes[name]
 
-                if (procs["appium"] and not procs["appium_was_running"]
-                        and procs["appium"].poll() is not None):
-                    print(f"\n[{name}] Appium process died unexpectedly")
-                    _cleanup()
-                    sys.exit(1)
+                died = None
+                for key, label in _PROC_LABELS.items():
+                    # A pre-existing external Appium isn't ours to monitor.
+                    if key == "appium" and procs.get("appium_was_running"):
+                        continue
+                    proc = procs.get(key)
+                    if proc and proc.poll() is not None:
+                        died = label
+                        break
 
-                if procs["wda"] and procs["wda"].poll() is not None:
-                    print(f"\n[{name}] WDA process died unexpectedly")
-                    _cleanup()
-                    sys.exit(1)
-
-                if procs["iproxy_wda"] and procs["iproxy_wda"].poll() is not None:
-                    print(f"\n[{name}] WDA iproxy process died unexpectedly")
-                    _cleanup()
-                    sys.exit(1)
-
-                if procs["iproxy_mjpeg"] and procs["iproxy_mjpeg"].poll() is not None:
-                    print(f"\n[{name}] MJPEG iproxy process died unexpectedly")
-                    _cleanup()
-                    sys.exit(1)
+                if died:
+                    msg = f"{name}: {died} died — restarting device services."
+                    print(f"\n[{name}] {died} process died unexpectedly")
+                    notify(msg, title="TrueSkate rig", priority="high", tags=["warning"])
+                    _restart_device(device)
 
     except KeyboardInterrupt:
         _signal_handler(None, None)
