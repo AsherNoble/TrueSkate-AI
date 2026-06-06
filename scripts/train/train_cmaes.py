@@ -32,6 +32,7 @@ if str(_REPO_ROOT / "src") not in sys.path:
 
 from trueskate_ai.rl.cmaes.cmaes_optimizer import run
 from trueskate_ai.rl.cmaes.curriculum import Curriculum
+from trueskate_ai.rl.device_worker import add_device_selection_args, resolve_devices
 
 
 def main() -> None:
@@ -56,9 +57,16 @@ def main() -> None:
     parser.add_argument("--initial-mean", type=Path, default=None,
                         help="Path to trick library JSON used to seed CMA-ES mean from median_gestures. "
                              "Overrides warm_start in the curriculum JSON.")
+    add_device_selection_args(parser)
     args = parser.parse_args()
 
     curriculum = Curriculum.from_json(args.curriculum)
+    devices = resolve_devices(
+        devices_arg=args.devices,
+        personal=args.personal,
+        all_devices=args.all_devices,
+    )
+    print(f"Devices for this run: {[d['name'] for d in devices]}")
 
     run(
         max_evals=args.max_evals,
@@ -67,6 +75,7 @@ def main() -> None:
         settle_time=args.settle_time,
         pop_size=args.pop_size,
         log_dir=args.log_dir,
+        devices=devices,
         curriculum=curriculum,
         initial_mean=args.initial_mean,
     )

@@ -35,10 +35,16 @@ from trueskate_ai.sim.trick_info_reader import TrickResult
 # Device configurations
 # ---------------------------------------------------------------------------
 
+# Each device carries a "role":
+#   "collection" — part of the 24h home data-collection fleet (default roster).
+#   "personal"   — a phone reserved for ad-hoc testing (e.g. Asher's iPhone 11),
+#                  excluded from the default roster so a training run never grabs
+#                  it. Select it explicitly with --personal / --devices.
 DEVICES: list[dict] = [
     {
         "env_key": "IPHONE_XR_UDID",
         "name": "iPhone_XR",
+        "role": "collection",
         "wda_port": 8100,
         "mjpeg_port": 9100,
         "appium_port": 4723,
@@ -49,6 +55,7 @@ DEVICES: list[dict] = [
     {
         "env_key": "IPHONE_11_UDID",
         "name": "iPhone_11",
+        "role": "personal",  # Asher's personal device — testing only, not 24h collection.
         "wda_port": 8101,
         "mjpeg_port": 9101,
         "appium_port": 4724,
@@ -59,6 +66,7 @@ DEVICES: list[dict] = [
     {
         "env_key": "IPHONE_XS_UDID",
         "name": "iPhone_XS",
+        "role": "collection",
         "wda_port": 8102,
         "mjpeg_port": 9102,
         "appium_port": 4725,
@@ -67,6 +75,100 @@ DEVICES: list[dict] = [
         "spin_button_xy": (0.0604, 0.4040),
     },
 ]
+
+DEFAULT_ROLE = "collection"
+
+
+def select_devices(
+    *,
+    names: list[str] | None = None,
+    roles: list[str] | None = None,
+    devices: list[dict] | None = None,
+) -> list[dict]:
+    """Resolve which device configs a run/launcher should use.
+
+    Precedence:
+        1. ``names`` — explicit device names (case-insensitive, order preserved
+           as listed by the caller). Unknown names raise ValueError.
+        2. ``roles`` — every device whose ``role`` is in this set.
+        3. default — every ``collection`` device (the 24h home roster; excludes
+           ``personal`` phones such as the iPhone 11).
+
+    Devices missing a ``role`` key are treated as ``DEFAULT_ROLE``.
+    """
+    pool = DEVICES if devices is None else devices
+
+    if names:
+        by_name = {d["name"].lower(): d for d in pool}
+        selected: list[dict] = []
+        unknown: list[str] = []
+        for name in names:
+            cfg = by_name.get(name.strip().lower())
+            if cfg is None:
+                unknown.append(name)
+            else:
+                selected.append(cfg)
+        if unknown:
+            valid = ", ".join(d["name"] for d in pool)
+            raise ValueError(
+                f"Unknown device name(s): {', '.join(unknown)}. Valid: {valid}"
+            )
+        return selected
+
+    if roles:
+        wanted = {r.lower() for r in roles}
+        return [d for d in pool if d.get("role", DEFAULT_ROLE).lower() in wanted]
+
+    return [d for d in pool if d.get("role", DEFAULT_ROLE) == "collection"]
+
+
+def resolve_devices(
+    *,
+    devices_arg: str | None = None,
+    personal: bool = False,
+    all_devices: bool = False,
+) -> list[dict]:
+    """Map common CLI flags to a device list, shared by the entry-point scripts.
+
+    ``--devices "iPhone_XR,iPhone_XS"`` → explicit names.
+    ``--personal``    → every device with role ``personal``.
+    ``--all-devices`` → every configured device regardless of role.
+    (none)            → the default ``collection`` roster.
+
+    ``devices_arg`` wins if given; otherwise ``personal``; otherwise
+    ``all_devices``; otherwise the default.
+    """
+    if devices_arg:
+        names = [n for n in (s.strip() for s in devices_arg.split(",")) if n]
+        return select_devices(names=names)
+    if personal:
+        return select_devices(roles=["personal"])
+    if all_devices:
+        return list(DEVICES)
+    return select_devices()
+
+
+def add_device_selection_args(parser) -> None:
+    """Register the shared --devices / --personal / --all-devices flags.
+
+    Mutually exclusive; resolve the result with ``resolve_devices``.
+    """
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--devices",
+        help="Comma-separated device names (e.g. 'iPhone_XR,iPhone_XS'). "
+        "Defaults to the 'collection' roster (excludes personal phones).",
+    )
+    group.add_argument(
+        "--personal",
+        action="store_true",
+        help="Use personal-role device(s) only — e.g. test on the iPhone 11 on this Mac.",
+    )
+    group.add_argument(
+        "--all-devices",
+        action="store_true",
+        help="Use every configured device regardless of role.",
+    )
 
 # ---------------------------------------------------------------------------
 # Constants

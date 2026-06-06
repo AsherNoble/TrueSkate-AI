@@ -29,7 +29,12 @@ _REPO_ROOT = _HERE.parent
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from trueskate_ai.rl.device_worker import DEVICES
+from trueskate_ai.rl.device_worker import (
+    DEVICES,
+    add_device_selection_args,
+    resolve_devices,
+    select_devices,
+)
 from trueskate_ai.sim.touch_actions import skip_loading_screen
 
 load_dotenv(_REPO_ROOT / ".env")
@@ -412,23 +417,27 @@ def _launch_trueskate_on_devices(devices: list[dict]) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Launch WDA/Appium services for configured devices."
+        description="Launch WDA/Appium services for selected devices."
     )
+    add_device_selection_args(parser)
     parser.add_argument(
         "--device",
-        help="Device name to launch (e.g., iPhone_XR). Defaults to all devices.",
+        help="[deprecated] Single device name. Use --devices instead.",
     )
     args = parser.parse_args()
 
-    if args.device:
-        selected_devices = [d for d in DEVICES if d["name"] == args.device]
-        if not selected_devices:
-            valid_names = ", ".join(d["name"] for d in DEVICES)
-            print(f"Unknown device name: {args.device}")
-            print(f"Valid values: {valid_names}")
-            sys.exit(1)
-    else:
-        selected_devices = DEVICES
+    try:
+        if args.device:
+            selected_devices = select_devices(names=[args.device])
+        else:
+            selected_devices = resolve_devices(
+                devices_arg=args.devices,
+                personal=args.personal,
+                all_devices=args.all_devices,
+            )
+    except ValueError as exc:
+        print(exc)
+        sys.exit(1)
 
     print("=" * 60)
     print("True Skate ML Environment Launcher")
