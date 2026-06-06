@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LaunchAgent for the 24h TrueSkate training supervisor.
+
+  This is a TEMPLATE. Do not load it directly — run deploy/install_launchd.sh,
+  which substitutes __PYTHON__ / __REPO__ / __CURRICULUM__ and installs it to
+  ~/Library/LaunchAgents/com.trueskate.training.plist.
+
+  It is a LaunchAgent (not a Daemon) on purpose: WebDriverAgent/xcodebuild and
+  USB device access need the logged-in GUI session. Enable auto-login on the
+  Intel MacBook so this starts after a reboot without anyone present.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.trueskate.training</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PYTHON__</string>
+        <string>__REPO__/scripts/run_training.py</string>
+        <string>--curriculum</string>
+        <string>__CURRICULUM__</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__REPO__</string>
+
+    <!-- launchd starts with a minimal PATH; add the tools the rig shells out to
+         (appium/node via Homebrew, iproxy/idevice_id, xcodebuild, tailscale). -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Restart the supervisor itself if it ever exits. The supervisor already
+         restarts its own children; this is the outer backstop. -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <key>StandardOutPath</key>
+    <string>__REPO__/logs/supervisor.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>__REPO__/logs/supervisor.err.log</string>
+</dict>
+</plist>
