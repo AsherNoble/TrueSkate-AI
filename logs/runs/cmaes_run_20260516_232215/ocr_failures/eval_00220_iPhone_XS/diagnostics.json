@@ -1,0 +1,54 @@
+[
+  {
+    "capture_idx": 0,
+    "anchor_status": "landed",
+    "anchor_pixels": 541,
+    "anchor_clipped": false,
+    "anchor_bbox": [
+      601,
+      487,
+      641,
+      521
+    ],
+    "crop_bounds": [
+      381,
+      327,
+      861,
+      487
+    ],
+    "ocr_lines": [
+      "NOLLIE",
+      "NOLLIE"
+    ],
+    "ocr_candidates": [
+      "NOLLIE"
+    ],
+    "final_trick": null
+  },
+  {
+    "capture_idx": 1,
+    "anchor_status": "landed",
+    "anchor_pixels": 540,
+    "anchor_clipped": false,
+    "anchor_bbox": [
+      903,
+      487,
+      943,
+      521
+    ],
+    "crop_bounds": [
+      683,
+      327,
+      1124,
+      487
+    ],
+    "ocr_lines": [
+      "NOLLIE",
+      "NOLLIE"
+    ],
+    "ocr_candidates": [
+      "NOLLIE"
+    ],
+    "final_trick": null
+  }
+]

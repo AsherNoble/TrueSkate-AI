@@ -1,0 +1,28 @@
+[
+  {
+    "capture_idx": 0,
+    "anchor_status": "landed",
+    "anchor_pixels": 341,
+    "anchor_clipped": true,
+    "anchor_bbox": [
+      738,
+      366,
+      766,
+      391
+    ],
+    "crop_bounds": [
+      518,
+      206,
+      828,
+      366
+    ],
+    "ocr_lines": [
+      "NOLLIE",
+      "NOLLIE"
+    ],
+    "ocr_candidates": [
+      "NOLLIE"
+    ],
+    "final_trick": null
+  }
+]
