@@ -14,7 +14,7 @@ TrueSkate-AI trains an RL agent to perform skateboarding tricks in the iOS game 
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install opencv-python numpy torch torchvision scipy pillow appium-python-client matplotlib requests cma pytesseract
+pip install -r requirements.txt
 ```
 
 External tools: Appium (npm), WebDriverAgent (Xcode), ffmpeg, libimobiledevice.
@@ -43,7 +43,7 @@ tmp/                # Debug output (gitignored)
 
 2. **Touch execution** (`src/trueskate_ai/sim/touch_actions.py`): `curved_drag` primitives executed via Appium W3C Actions. Slots run as overlapping gestures in a single `perform()` call (parallel, not sequential).
 
-3. **OCR / trick detection** (`src/trueskate_ai/sim/trick_info_reader.py`): `detect_trick()` takes BGR numpy array. pytesseract with 3× upscaling, grayscale, threshold, character whitelist, green/red/white pixel anchoring, fuzzy match against 248-entry `KNOWN_TRICKS` list. Known issues: pytesseract hallucinations — Apple Vision framework replacement planned.
+3. **OCR / trick detection** (`src/trueskate_ai/sim/trick_info_reader.py`): `detect_trick()` takes BGR numpy array. OCR runs on Apple Vision (`src/trueskate_ai/vision/vision_ocr.py`, via pyobjc) — backend selected by the `TRUESKATE_OCR_BACKEND` env var (`auto`/`vision`, default `auto`). green/red/white pixel anchoring locates the trick-notification cluster, then fuzzy match against the `KNOWN_TRICKS` list. pytesseract has been removed.
 
 4. **Reward** (`src/trueskate_ai/rl/reward.py`): Tiered scoring. Current v3: 360 FLIP = 1.0, varial/kickflip = 0.6, 360 shove-it/BS 360 = 0.3, everything else = 0.0. Failed multiplier: `base * (base - 0.1)`. FS/FRONTSIDE tricks zeroed. OCR normalizes "540" → "360" before scoring.
 
@@ -88,7 +88,6 @@ Located at `experiments/rl_poc_experiment_journal.md`. Read at start of relevant
 
 ## Known Issues / Next Steps
 
-- Swap OCR to Apple Vision framework (pyobjc) — pytesseract hallucinations worsening
 - App-focus check before each eval (agent wasted 1800+ evals screenshotting Clock app)
 - Auto-terminate on N consecutive zero-reward evals
 - CMA-ES multimodal problem: unimodal Gaussian averages over bimodal landscape → IPOP/BIPOP restarts or novelty bonus needed

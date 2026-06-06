@@ -9,3 +9,8 @@ matplotlib>=3.7.0
 requests>=2.31.0
 cma>=3.3.0
 python-dotenv>=1.0.0
+# Apple Vision OCR backend (trick_info_reader.py / vision_ocr.py)
+pyobjc-core>=10.0
+pyobjc-framework-Cocoa>=10.0
+pyobjc-framework-Quartz>=10.0
+pyobjc-framework-Vision>=10.0
