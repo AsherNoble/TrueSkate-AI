@@ -30,7 +30,7 @@ from trueskate_ai.rl.cmaes.action_param import (
 )
 from trueskate_ai.rl.cmaes.curriculum import Curriculum
 from trueskate_ai.rl.run_logger import RunLogger
-from trueskate_ai.rl.worker_pool import WorkerPool
+from trueskate_ai.rl.worker_pool import AllWorkersDeadError, WorkerPool
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -270,9 +270,23 @@ def run(
             for round_idx in range(n_rounds):
                 batch_start = round_idx * n_workers
 
-                # Ensure True Skate is in the foreground on all devices
+                # Recover any dead workers (cooldown-gated) before dispatching,
+                # and abort cleanly if the whole fleet has been unreachable too
+                # long. Without this a 24h run silently bleeds dead devices.
+                pool.revive_dead()
+                pool.raise_if_all_dead()
+
+                # Ensure True Skate is in the foreground on all devices. A
+                # dead/stale driver can raise here — never let one device tear
+                # down the whole run; record the failure so revival picks it up.
                 for worker in pool:
-                    worker.ensure_foreground()
+                    try:
+                        worker.ensure_foreground()
+                    except Exception as exc:
+                        logging.warning(
+                            "[%s] foreground check failed: %s", worker.device_id, exc
+                        )
+                        worker.record_failure()
 
                 # Settle time — all devices settle simultaneously
                 time.sleep(settle_time)
@@ -444,6 +458,9 @@ def run(
 
     except KeyboardInterrupt:
         print("\nInterrupted by user.")
+
+    except AllWorkersDeadError as exc:
+        print(f"\nAborting run: {exc}")
 
     finally:
         print("\n=== Run complete ===")
