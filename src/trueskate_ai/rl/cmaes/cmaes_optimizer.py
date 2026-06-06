@@ -29,8 +29,14 @@ from trueskate_ai.rl.cmaes.action_param import (
     param_vector_length,
 )
 from trueskate_ai.rl.cmaes.curriculum import Curriculum
+from trueskate_ai.monitoring.status import StatusTracker
 from trueskate_ai.rl.run_logger import RunLogger
 from trueskate_ai.rl.worker_pool import AllWorkersDeadError, WorkerPool
+from trueskate_ai.utils.notify import notify
+
+# Notify after this many consecutive generations with zero landed tricks — the
+# rig is alive but producing nothing (lost focus, app exited, bad params).
+_ZERO_LAND_GEN_ALERT = 6
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -188,6 +194,27 @@ def run(
     print(f"Run folder: {run_dir}")
     print(f"Logging to {logger.log_path}")
     print(f"Workers: {pool.device_ids}")
+
+    # Heartbeat status (served by scripts/status_server.py over Tailscale) +
+    # push notifications. status.json lives at the log-dir root so the server
+    # always points at the latest run.
+    status = StatusTracker(
+        Path(log_dir) / "status.json",
+        run_id=run_dir.name,
+        run_dir=str(run_dir),
+        target=curriculum.target,
+        max_evals=max_evals,
+        pop_size=pop_size,
+        device_ids=pool.device_ids,
+    )
+    status.write()
+    notify(
+        f"CMA-ES started: target={curriculum.target}, "
+        f"{len(pool)} device(s) {pool.device_ids}, max_evals={max_evals}.",
+        title="TrueSkate training", tags=["rocket"],
+    )
+    zero_land_gens = 0
+    alerted_zero_land = False
 
     num_gestures = curriculum.num_gestures
     param_bounds = build_param_bounds(num_gestures)
@@ -410,6 +437,11 @@ def run(
                         "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                     })
 
+                    status.record_eval(
+                        device_id, reward,
+                        result["trick_name"], result["trick_status"],
+                    )
+
                     if reward > best_reward:
                         best_reward = reward
                         best_trick = result["trick_name"]
@@ -447,6 +479,38 @@ def run(
                 "timestamp": datetime.now().isoformat(timespec="milliseconds"),
             })
 
+            # Heartbeat + throughput watchdog.
+            alive_ids = [w.device_id for w in pool.alive]
+            dead_ids = [d for d in pool.device_ids if d not in alive_ids]
+            status.record_generation(
+                generation=generation,
+                gen_best=gen_best,
+                gen_mean=gen_mean,
+                best_reward=best_reward,
+                best_trick=best_trick,
+                alive=alive_ids,
+                dead=dead_ids,
+            )
+            if dead_ids:
+                notify(
+                    f"Device(s) down: {', '.join(dead_ids)} "
+                    f"(still running on {', '.join(alive_ids) or 'nothing'}).",
+                    title="TrueSkate training", priority="high", tags=["warning"],
+                )
+            if gen_best > 0:
+                zero_land_gens = 0
+                alerted_zero_land = False
+            else:
+                zero_land_gens += 1
+                if zero_land_gens >= _ZERO_LAND_GEN_ALERT and not alerted_zero_land:
+                    alerted_zero_land = True
+                    notify(
+                        f"No landed trick in {zero_land_gens} generations — rig may "
+                        f"have lost the skatepark (app exited / focus lost). "
+                        f"gen={generation}, evals={eval_num}.",
+                        title="TrueSkate training", priority="high", tags=["warning"],
+                    )
+
             if (generation + 1) % 10 == 0:
                 _save_checkpoint(es, run_dir, generation)
                 print(f"Checkpoint saved at generation {generation}.")
@@ -458,9 +522,16 @@ def run(
 
     except KeyboardInterrupt:
         print("\nInterrupted by user.")
+        status.set_note("interrupted by user")
 
     except AllWorkersDeadError as exc:
         print(f"\nAborting run: {exc}")
+        status.set_note(f"aborted: {exc}")
+        notify(
+            f"Run ABORTED — all devices unreachable. evals={eval_num}, "
+            f"best={best_reward:.2f} ({best_trick}).",
+            title="TrueSkate training", priority="urgent", tags=["rotating_light"],
+        )
 
     finally:
         print("\n=== Run complete ===")
@@ -471,6 +542,13 @@ def run(
 
         _save_checkpoint(es, run_dir, generation)
         print("Final checkpoint saved.")
+
+        status.set_note("run complete")
+        notify(
+            f"Run finished: evals={eval_num}, best={best_reward:.2f} "
+            f"({best_trick}), target={curriculum.target}.",
+            title="TrueSkate training", tags=["checkered_flag"], block=True,
+        )
 
         logger.close()
 
