@@ -40,7 +40,27 @@ from trueskate_ai.utils.notify import notify
 
 load_dotenv(_REPO_ROOT / ".env")
 
-WDA_PROJECT_PATH = Path.home() / "Projects" / "WebDriverAgent"
+def _resolve_wda_project_path() -> Path:
+    """Locate the WebDriverAgent Xcode project.
+
+    Honours the WDA_PROJECT_PATH env var (e.g. in .env); otherwise looks
+    beside this repo (WDA is checked out as a sibling), then falls back to
+    the legacy ~/Projects/WebDriverAgent location.
+    """
+    override = os.getenv("WDA_PROJECT_PATH")
+    if override:
+        return Path(override).expanduser()
+    candidates = [
+        _REPO_ROOT.parent / "WebDriverAgent",
+        Path.home() / "Projects" / "WebDriverAgent",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+WDA_PROJECT_PATH = _resolve_wda_project_path()
 WDA_STARTUP_TIMEOUT = 60
 
 # Per-device restart backoff (seconds), indexed by consecutive-failure count.
@@ -252,14 +272,21 @@ def _start_wda(device: dict) -> bool:
             while time.time() - start_time < WDA_STARTUP_TIMEOUT:
                 exit_code = proc.poll()
                 if exit_code is not None:
-                    if exit_code == 0 and wda_ready:
+                    if wda_ready:
                         print(f"[{name}] WDA ready at {wda_url}")
                         return True
-                    else:
-                        print(
-                            f"[{name}] WDA with '{action}' exited with code {exit_code}"
-                        )
-                        return False
+                    # build-for-testing just compiles and exits 0 — it never
+                    # starts the on-device server, so it has no ServerURLHere.
+                    # Treat a clean build as success so the caller can retry
+                    # test-without-building. For the test actions, exiting
+                    # before ServerURLHere is always a real failure.
+                    if action == "build-for-testing" and exit_code == 0:
+                        print(f"[{name}] build-for-testing completed")
+                        return True
+                    print(
+                        f"[{name}] WDA with '{action}' exited with code {exit_code}"
+                    )
+                    return False
                 if wda_ready:
                     print(f"[{name}] WDA ready at {wda_url}")
                     return True
