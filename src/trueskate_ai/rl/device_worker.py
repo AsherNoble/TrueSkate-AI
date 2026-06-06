@@ -30,6 +30,7 @@ from trueskate_ai.rl.cmaes.action_param import execute_gesture_params
 from trueskate_ai.rl.reward import capture_and_detect_with_diagnostics
 from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position, skip_loading_screen
 from trueskate_ai.sim.trick_info_reader import TrickResult
+from trueskate_ai.vision.scene_classifier import SceneGuard
 
 # ---------------------------------------------------------------------------
 # Device configurations
@@ -285,6 +286,10 @@ class DeviceWorker:
         self._failure_streak: int = 0
         self._last_reconnect_time: float = 0.0
         self._dead_since: float | None = None
+        # Optional visual "still in a skatepark?" guard. Disabled (no-op) unless
+        # SCENE_GUARD_MODEL points at a trained checkpoint. See
+        # experiments/scene_classifier_journal.md.
+        self.scene_guard = SceneGuard.from_env()
 
     @property
     def alive(self) -> bool:
@@ -425,6 +430,42 @@ class DeviceWorker:
             logging.warning("[%s] skip loading screen failed: %s", self.device_id, exc)
         time.sleep(1.0)
         return True
+
+    # -- scene guard --------------------------------------------------------
+
+    def check_scene(self) -> bool | None:
+        """Verify we're still in an active skatepark; recover if not.
+
+        Returns True/False when the (optional) scene guard has a verdict, else
+        None (guard disabled or inference failed). On a False verdict it tries
+        to recover the device back into the park so the next eval isn't wasted
+        swiping at a menu/home screen.
+        """
+        if not self.scene_guard.enabled:
+            return None
+        try:
+            png = self.driver.get_screenshot_as_png()
+            verdict = self.scene_guard.in_skatepark(Image.open(io.BytesIO(png)))
+        except Exception as exc:
+            logging.warning("[%s] scene check failed: %s", self.device_id, exc)
+            return None
+        if verdict is False:
+            logging.warning(
+                "[%s] scene guard: not in skatepark — recovering.", self.device_id
+            )
+            self._recover_to_skatepark()
+        return verdict
+
+    def _recover_to_skatepark(self) -> None:
+        """Bring the device back into a skating session: re-activate → skip → reset."""
+        try:
+            self.driver.activate_app(_BUNDLE_ID)
+            time.sleep(1.0)
+            skip_loading_screen(self.driver, self.device_w, self.device_h)
+            time.sleep(0.5)
+            reset_position(self.driver, self._cfg["logical_w"], self._cfg["logical_h"])
+        except Exception as exc:
+            logging.warning("[%s] scene recovery failed: %s", self.device_id, exc)
 
     # -- reset --------------------------------------------------------------
 
@@ -593,6 +634,7 @@ class DeviceWorker:
                 "raw_frames": [],
                 "n_composites": 0,
                 "app_relaunched": relaunched,
+                "in_skatepark": None,
                 "action_exec_s": 0.0,
                 "reward_eval_s": 0.0,
                 "eval_total_s": 0.0,
@@ -603,6 +645,7 @@ class DeviceWorker:
             }
 
         self.record_success()
+        in_skatepark = self.check_scene()  # None unless the scene guard is enabled
         raw_frames = recorder.stop() if recorder is not None else []
         trick_name = trick_result.trick if trick_result else None
         trick_status = trick_result.status if trick_result else None
@@ -626,6 +669,7 @@ class DeviceWorker:
             "raw_frames": raw_frames,
             "n_composites": 0,
             "app_relaunched": relaunched,
+            "in_skatepark": in_skatepark,
             "action_exec_s": action_end_time - action_start_time,
             "reward_eval_s": reward_end_time - action_end_time,
             "eval_total_s": reward_end_time - eval_start_time,

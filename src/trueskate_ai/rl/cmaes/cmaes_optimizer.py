@@ -419,6 +419,7 @@ def run(
                         "frame_dir": eval_dir_name,
                         "n_composites": n_composites,
                         "app_relaunched": result["app_relaunched"],
+                        "in_skatepark": result.get("in_skatepark"),
                         "action_exec_s": round(result.get("action_exec_s", 0.0), 4),
                         "reward_eval_s": round(result.get("reward_eval_s", 0.0), 4),
                         "eval_total_s": round(result.get("eval_total_s", 0.0), 4),
