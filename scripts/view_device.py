@@ -165,6 +165,19 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         pass  # quiet — ffmpeg warnings are the signal we care about
 
 
+class _Server(socketserver.ThreadingTCPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+    def handle_error(self, request, client_address):
+        # HLS players abort in-flight segment fetches constantly; a client
+        # hanging up mid-response is normal operation, not a server error.
+        exc = sys.exc_info()[1]
+        if isinstance(exc, (BrokenPipeError, ConnectionResetError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Remote live-view of a connected iPhone over Tailscale.")
     parser.add_argument("--list", action="store_true", help="List AVFoundation devices and exit.")
@@ -188,11 +201,10 @@ def main() -> None:
     try:
         handler = functools.partial(_Handler, directory=str(tmp))
         try:
-            httpd = socketserver.ThreadingTCPServer((args.host, args.port), handler)
+            httpd = _Server((args.host, args.port), handler)
         except OSError as e:
             sys.exit(f"Cannot bind {args.host}:{args.port} ({e.strerror}) — is another "
                      "view_device.py already running? Stop it or pass --port.")
-        httpd.daemon_threads = True
         threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
         ff = subprocess.Popen(
