@@ -36,9 +36,9 @@ Thumbs.db
 .ipynb_checkpoints
 *.ipynb_checkpoints/
 
-# ML/Data Science
-data/
-!data/.gitkeep
+# ML/Data Science — repo-root data/ only (a bare "data/" also hid scripts/data/)
+/data/
+!/data/.gitkeep
 models/
 checkpoints/
 wandb/
