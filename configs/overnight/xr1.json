@@ -13,11 +13,12 @@
   "queue": [
     {
       "curriculum": "curricula/360_flip.json",
-      "_note": "Set warm_start to whichever tmp/legacy_libs/360_flip_{CANONICAL,EXECUTED}.json replays correctly; cold start is itself a 360-flip prior."
+      "warm_start": "trick_libraries/360_flip_r0429_executed.json"
     },
     {
       "curriculum": "curricula/hard_flip.json",
-      "_note": "Warm start: tmp/legacy_libs/hard_flip_*.json if replay-validated (copy into trick_libraries/), else accidental-discovery mining from the 360-flip run."
+      "warm_start": "trick_libraries/hard_flip_legacy_r0426.json",
+      "_note": "Near-basin start (lands shove-its, replay-validated alive); orchestrator overrides with 360-flip-run mining if richer."
     }
   ]
 }

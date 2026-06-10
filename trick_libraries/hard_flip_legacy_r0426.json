@@ -1,0 +1,97 @@
+{
+  "trick": "HARD FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.5135,
+            0.6094
+          ],
+          [
+            0.6935,
+            0.7403
+          ],
+          [
+            0.4066,
+            0.8224
+          ]
+        ],
+        "duration": 0.12,
+        "easing_power": 1.11
+      },
+      {
+        "points": [
+          [
+            0.5402,
+            0.6386
+          ],
+          [
+            0.8033,
+            0.6804
+          ],
+          [
+            0.9552,
+            0.5944
+          ]
+        ],
+        "duration": 0.31,
+        "easing_power": 2.23
+      }
+    ],
+    "delays": [
+      0.4
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.6399,
+            0.5983
+          ],
+          [
+            0.5551,
+            0.815
+          ],
+          [
+            0.3463,
+            0.8107
+          ]
+        ],
+        "duration": 0.12,
+        "easing_power": 1.4
+      },
+      {
+        "points": [
+          [
+            0.4266,
+            0.5542
+          ],
+          [
+            0.9999,
+            0.6583
+          ],
+          [
+            0.9671,
+            0.6551
+          ]
+        ],
+        "duration": 0.26,
+        "easing_power": 1.78
+      }
+    ],
+    "delays": [
+      0.49
+    ]
+  },
+  "sample_count": 23,
+  "landed_only": true,
+  "reward_stats": {
+    "min": 0.0,
+    "mean": 0.0,
+    "max": 0.0
+  },
+  "source_log": "tmp/legacy/r0426_canonical.jsonl"
+}

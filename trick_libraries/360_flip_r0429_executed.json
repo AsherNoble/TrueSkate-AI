@@ -1,0 +1,97 @@
+{
+  "trick": "360 FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.9011,
+            0.7436
+          ],
+          [
+            0.8968,
+            0.7911
+          ],
+          [
+            0.079,
+            0.88
+          ]
+        ],
+        "duration": 0.55,
+        "easing_power": 1.26
+      },
+      {
+        "points": [
+          [
+            0.6032,
+            0.5894
+          ],
+          [
+            1.0,
+            0.7681
+          ],
+          [
+            1.0,
+            0.5691
+          ]
+        ],
+        "duration": 0.31,
+        "easing_power": 2.07
+      }
+    ],
+    "delays": [
+      0.59
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.8493,
+            0.7322
+          ],
+          [
+            0.789,
+            0.7963
+          ],
+          [
+            0.297,
+            0.867
+          ]
+        ],
+        "duration": 0.26,
+        "easing_power": 0.44
+      },
+      {
+        "points": [
+          [
+            0.5994,
+            0.6726
+          ],
+          [
+            0.9616,
+            0.7792
+          ],
+          [
+            1.0,
+            0.6601
+          ]
+        ],
+        "duration": 0.18,
+        "easing_power": 1.4
+      }
+    ],
+    "delays": [
+      0.76
+    ]
+  },
+  "sample_count": 1263,
+  "landed_only": true,
+  "reward_stats": {
+    "min": 0.4,
+    "mean": 0.4048,
+    "max": 1.0
+  },
+  "source_log": "tmp/legacy/r0429_executed.jsonl"
+}

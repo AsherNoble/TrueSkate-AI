@@ -1,19 +1,20 @@
 {
   "target": "360 FLIP",
-  "warm_start": "trick_libraries/360_flip_20260507_095215.json",
+  "warm_start": "trick_libraries/360_flip_r0429_executed.json",
   "rewards": {
-    "360 FLIP":           1.0,
-    "360 DOUBLE FLIP":    0.6,
-    "BACKSIDE 360 FLIP":  0.5,
-    "VARIAL KICKFLIP":    0.3,
-    "KICKFLIP":           0.3,
-    "NIGHTMARE FLIP":     0.3,
-    "HARD FLIP":          0.2,
-    "360 POP SHOVE-IT":   0.3,
-    "BACKSIDE 360":       0.2,
-    "POP SHOVE-IT":       0.05
+    "360 FLIP": 1.0,
+    "360 DOUBLE FLIP": 0.6,
+    "BACKSIDE 360 FLIP": 0.5,
+    "VARIAL KICKFLIP": 0.3,
+    "KICKFLIP": 0.3,
+    "NIGHTMARE FLIP": 0.3,
+    "HARD FLIP": 0.2,
+    "360 POP SHOVE-IT": 0.3,
+    "BACKSIDE 360": 0.2,
+    "POP SHOVE-IT": 0.05
   },
   "default_reward": 0.05,
   "failure_multiplier": "near_miss",
-  "notes": "Mirrors the v3 reward tiers from the original 360 flip experiment but using flat-dict precision."
+  "notes": "Mirrors the v3 reward tiers from the original 360 flip experiment but using flat-dict precision.",
+  "warm_start_note": "Replay-validated 2026-06-11 (2/3 landed on iPhone 11): April r0429 log converted under the executed-iphone11 mapping. The old 20260507 lib was a dead conversion (wrong 414x896 divisor) \u2014 retired to pre_normalisation/."
 }
