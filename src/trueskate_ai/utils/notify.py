@@ -22,6 +22,21 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 _dotenv_loaded = False
 
 
+def _ssl_context():
+    """SSL context that works on python.org macOS builds (no system CA certs).
+
+    Uses certifi's bundle when available, else the default context.
+    """
+    import ssl
+
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
+
+
 def _ensure_env() -> None:
     """Best-effort load of the repo .env so NTFY_TOPIC is available.
 
@@ -88,7 +103,7 @@ def notify(
                 req.add_header(
                     "Tags", tags if isinstance(tags, str) else ",".join(tags)
                 )
-            request.urlopen(req, timeout=_TIMEOUT_S)
+            request.urlopen(req, timeout=_TIMEOUT_S, context=_ssl_context())
         except Exception as exc:  # never let a notification break training
             logging.warning("ntfy notification failed: %s", exc)
 

@@ -4,7 +4,7 @@
   "defaults": {
     "pop_size": 12,
     "max_evals": 1500,
-    "max_hours": 3.0,
+    "max_hours": 2.5,
     "stop_land_rate": 0.7,
     "stop_window": 50,
     "wait_time": 0.0,
@@ -18,7 +18,12 @@
     {
       "curriculum": "curricula/hard_flip.json",
       "warm_start": "trick_libraries/hard_flip_legacy_r0426.json",
-      "_note": "Near-basin start (lands shove-its, replay-validated alive); orchestrator overrides with 360-flip-run mining if richer."
+      "_note": "Near-basin start (lands shove-its); orchestrator overrides with 360-flip-run mining if richer."
+    },
+    {
+      "curriculum": "curricula/pop_shove_it_3g.json",
+      "pop_size": 14,
+      "_note": "N=3 \u2014 strong 65-sample warm start from trick_libraries, no chaining needed."
     }
   ]
 }

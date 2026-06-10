@@ -317,6 +317,12 @@ def run(
     early_stop = False
     recent_target_lands: deque[bool] = deque(maxlen=stop_window)
     target_normalized = normalize_trick_name(curriculum.target)
+    # Target lands are rare, high-value events — ping on every one, but batch
+    # to at most one notification per 5 min so a converging run doesn't spam.
+    last_land_ping = 0.0
+    lands_since_ping = 0
+    total_target_lands = 0
+    _LAND_PING_INTERVAL_S = 300.0
 
     executor = ThreadPoolExecutor(max_workers=n_workers)
 
@@ -480,9 +486,27 @@ def run(
                         result["trick_name"], result["trick_status"],
                     )
 
-                    recent_target_lands.append(_is_target_land(
+                    is_target_land = _is_target_land(
                         result["trick_name"], result["trick_status"], target_normalized
-                    ))
+                    )
+                    recent_target_lands.append(is_target_land)
+                    if is_target_land:
+                        total_target_lands += 1
+                        lands_since_ping += 1
+                        now = time.monotonic()
+                        if now - last_land_ping >= _LAND_PING_INTERVAL_S:
+                            batched = (
+                                f" (+{lands_since_ping - 1} more since last ping)"
+                                if lands_since_ping > 1 else ""
+                            )
+                            notify(
+                                f"{curriculum.target} LANDED on {device_id} — "
+                                f"#{total_target_lands} this run, eval {eval_num}, "
+                                f"gen {generation}{batched}.",
+                                title="TrueSkate training", tags=["tada"],
+                            )
+                            last_land_ping = now
+                            lands_since_ping = 0
 
                     if reward > best_reward:
                         best_reward = reward

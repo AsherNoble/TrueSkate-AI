@@ -4,7 +4,7 @@
   "defaults": {
     "pop_size": 14,
     "max_evals": 1500,
-    "max_hours": 3.0,
+    "max_hours": 2.5,
     "stop_land_rate": 0.7,
     "stop_window": 50,
     "wait_time": 0.0,
@@ -15,7 +15,11 @@
       "curriculum": "curricula/kickflip.json"
     },
     {
-      "curriculum": "curricula/pop_shove_it_3g.json"
+      "curriculum": "curricula/varial_kickflip_3g.json"
+    },
+    {
+      "curriculum": "curricula/nightmare_flip_3g.json",
+      "_note": "Chains from varial run's mining (varial lib is its best prior)."
     }
   ]
 }
