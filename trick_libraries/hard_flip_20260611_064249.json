@@ -1,0 +1,97 @@
+{
+  "trick": "HARD FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.46,
+            0.63
+          ],
+          [
+            0.47,
+            0.81
+          ],
+          [
+            0.41,
+            0.83
+          ]
+        ],
+        "duration": 0.42,
+        "easing_power": 1.12
+      },
+      {
+        "points": [
+          [
+            0.53,
+            0.54
+          ],
+          [
+            0.74,
+            0.77
+          ],
+          [
+            0.99,
+            0.57
+          ]
+        ],
+        "duration": 0.665,
+        "easing_power": 2.95
+      }
+    ],
+    "delays": [
+      0.595
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.52,
+            0.5
+          ],
+          [
+            0.66,
+            0.72
+          ],
+          [
+            0.44,
+            0.73
+          ]
+        ],
+        "duration": 0.07,
+        "easing_power": 0.93
+      },
+      {
+        "points": [
+          [
+            0.57,
+            0.52
+          ],
+          [
+            0.8,
+            0.72
+          ],
+          [
+            0.98,
+            0.59
+          ]
+        ],
+        "duration": 0.56,
+        "easing_power": 2.61
+      }
+    ],
+    "delays": [
+      0.48
+    ]
+  },
+  "sample_count": 168,
+  "landed_only": true,
+  "reward_stats": {
+    "min": 1.0,
+    "mean": 1.0,
+    "max": 1.0
+  },
+  "source_log": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/logs/overnight/iPhone_XR/01_hard_flip/runs/cmaes_run_20260611_045258/cmaes_run_20260611_045258.jsonl"
+}
