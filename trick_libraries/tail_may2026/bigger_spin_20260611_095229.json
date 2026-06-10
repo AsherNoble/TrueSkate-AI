@@ -1,0 +1,136 @@
+{
+  "trick": "BIGGER SPIN",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.38,
+            0.42
+          ],
+          [
+            0.51,
+            0.51
+          ],
+          [
+            0.49,
+            0.62
+          ]
+        ],
+        "duration": 0.64,
+        "easing_power": 2.98
+      },
+      {
+        "points": [
+          [
+            0.56,
+            0.59
+          ],
+          [
+            0.39,
+            0.44
+          ],
+          [
+            0.66,
+            0.33
+          ]
+        ],
+        "duration": 0.13,
+        "easing_power": 0.39
+      },
+      {
+        "points": [
+          [
+            0.38,
+            0.41
+          ],
+          [
+            0.48,
+            0.46
+          ],
+          [
+            0.36,
+            0.44
+          ]
+        ],
+        "duration": 0.34,
+        "easing_power": 0.8
+      }
+    ],
+    "delays": [
+      0.32,
+      -0.01
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.38,
+            0.42
+          ],
+          [
+            0.51,
+            0.51
+          ],
+          [
+            0.49,
+            0.62
+          ]
+        ],
+        "duration": 0.64,
+        "easing_power": 2.98
+      },
+      {
+        "points": [
+          [
+            0.56,
+            0.59
+          ],
+          [
+            0.39,
+            0.44
+          ],
+          [
+            0.66,
+            0.33
+          ]
+        ],
+        "duration": 0.13,
+        "easing_power": 0.39
+      },
+      {
+        "points": [
+          [
+            0.38,
+            0.41
+          ],
+          [
+            0.48,
+            0.46
+          ],
+          [
+            0.36,
+            0.44
+          ]
+        ],
+        "duration": 0.34,
+        "easing_power": 0.8
+      }
+    ],
+    "delays": [
+      0.32,
+      -0.01
+    ]
+  },
+  "sample_count": 1,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/runs/cmaes_run_202605*/cmaes_run_*.jsonl"
+}

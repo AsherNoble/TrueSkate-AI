@@ -1,0 +1,136 @@
+{
+  "trick": "WALL RIDE",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.31,
+            0.39
+          ],
+          [
+            0.51,
+            0.53
+          ],
+          [
+            0.5,
+            0.61
+          ]
+        ],
+        "duration": 0.56,
+        "easing_power": 2.73
+      },
+      {
+        "points": [
+          [
+            0.57,
+            0.6
+          ],
+          [
+            0.4,
+            0.47
+          ],
+          [
+            0.65,
+            0.32
+          ]
+        ],
+        "duration": 0.14,
+        "easing_power": 0.56
+      },
+      {
+        "points": [
+          [
+            0.43,
+            0.47
+          ],
+          [
+            0.44,
+            0.44
+          ],
+          [
+            0.3,
+            0.52
+          ]
+        ],
+        "duration": 0.06,
+        "easing_power": 1.74
+      }
+    ],
+    "delays": [
+      0.33,
+      0.11
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.31,
+            0.39
+          ],
+          [
+            0.51,
+            0.53
+          ],
+          [
+            0.5,
+            0.61
+          ]
+        ],
+        "duration": 0.56,
+        "easing_power": 2.73
+      },
+      {
+        "points": [
+          [
+            0.57,
+            0.6
+          ],
+          [
+            0.4,
+            0.47
+          ],
+          [
+            0.65,
+            0.32
+          ]
+        ],
+        "duration": 0.14,
+        "easing_power": 0.56
+      },
+      {
+        "points": [
+          [
+            0.43,
+            0.47
+          ],
+          [
+            0.44,
+            0.44
+          ],
+          [
+            0.3,
+            0.52
+          ]
+        ],
+        "duration": 0.06,
+        "easing_power": 1.74
+      }
+    ],
+    "delays": [
+      0.33,
+      0.11
+    ]
+  },
+  "sample_count": 1,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.4,
+    "mean": 0.4,
+    "max": 0.4
+  },
+  "source_log": "logs/runs/cmaes_run_202605*/cmaes_run_*.jsonl"
+}

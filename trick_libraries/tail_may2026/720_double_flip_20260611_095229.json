@@ -1,0 +1,136 @@
+{
+  "trick": "720 DOUBLE FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.47,
+            0.57
+          ],
+          [
+            0.51,
+            0.87
+          ],
+          [
+            0.61,
+            0.8
+          ]
+        ],
+        "duration": 0.35,
+        "easing_power": 2.5
+      },
+      {
+        "points": [
+          [
+            0.63,
+            0.5
+          ],
+          [
+            0.73,
+            0.58
+          ],
+          [
+            0.73,
+            0.32
+          ]
+        ],
+        "duration": 0.36,
+        "easing_power": 2.51
+      },
+      {
+        "points": [
+          [
+            0.54,
+            0.5
+          ],
+          [
+            0.1,
+            0.17
+          ],
+          [
+            0.45,
+            0.34
+          ]
+        ],
+        "duration": 0.32,
+        "easing_power": 1.24
+      }
+    ],
+    "delays": [
+      -0.3,
+      0.6
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.47,
+            0.57
+          ],
+          [
+            0.51,
+            0.87
+          ],
+          [
+            0.61,
+            0.8
+          ]
+        ],
+        "duration": 0.35,
+        "easing_power": 2.5
+      },
+      {
+        "points": [
+          [
+            0.63,
+            0.5
+          ],
+          [
+            0.73,
+            0.58
+          ],
+          [
+            0.73,
+            0.32
+          ]
+        ],
+        "duration": 0.36,
+        "easing_power": 2.51
+      },
+      {
+        "points": [
+          [
+            0.54,
+            0.5
+          ],
+          [
+            0.1,
+            0.17
+          ],
+          [
+            0.45,
+            0.34
+          ]
+        ],
+        "duration": 0.32,
+        "easing_power": 1.24
+      }
+    ],
+    "delays": [
+      -0.3,
+      0.6
+    ]
+  },
+  "sample_count": 1,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.4,
+    "mean": 0.4,
+    "max": 0.4
+  },
+  "source_log": "logs/runs/cmaes_run_202605*/cmaes_run_*.jsonl"
+}

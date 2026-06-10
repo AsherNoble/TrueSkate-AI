@@ -1,0 +1,136 @@
+{
+  "trick": "QUAD HARD FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.33,
+            0.5
+          ],
+          [
+            0.58,
+            0.58
+          ],
+          [
+            0.46,
+            0.6
+          ]
+        ],
+        "duration": 0.7,
+        "easing_power": 2.04
+      },
+      {
+        "points": [
+          [
+            0.58,
+            0.59
+          ],
+          [
+            0.2,
+            0.36
+          ],
+          [
+            0.75,
+            0.32
+          ]
+        ],
+        "duration": 0.22,
+        "easing_power": 0.59
+      },
+      {
+        "points": [
+          [
+            0.4,
+            0.39
+          ],
+          [
+            0.51,
+            0.52
+          ],
+          [
+            0.33,
+            0.2
+          ]
+        ],
+        "duration": 0.11,
+        "easing_power": 0.74
+      }
+    ],
+    "delays": [
+      0.75,
+      0.28
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.37,
+            0.53
+          ],
+          [
+            0.58,
+            0.53
+          ],
+          [
+            0.35,
+            0.57
+          ]
+        ],
+        "duration": 0.7,
+        "easing_power": 1.9
+      },
+      {
+        "points": [
+          [
+            0.57,
+            0.57
+          ],
+          [
+            0.2,
+            0.46
+          ],
+          [
+            0.71,
+            0.38
+          ]
+        ],
+        "duration": 0.17,
+        "easing_power": 0.54
+      },
+      {
+        "points": [
+          [
+            0.44,
+            0.45
+          ],
+          [
+            0.45,
+            0.52
+          ],
+          [
+            0.29,
+            0.39
+          ]
+        ],
+        "duration": 0.11,
+        "easing_power": 0.46
+      }
+    ],
+    "delays": [
+      0.5,
+      0.28
+    ]
+  },
+  "sample_count": 5,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/runs/cmaes_run_202605*/cmaes_run_*.jsonl"
+}

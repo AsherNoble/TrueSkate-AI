@@ -1,0 +1,136 @@
+{
+  "trick": "360 DOLPHIN QUAD FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.31,
+            0.44
+          ],
+          [
+            0.55,
+            0.68
+          ],
+          [
+            0.5,
+            0.67
+          ]
+        ],
+        "duration": 0.73,
+        "easing_power": 1.81
+      },
+      {
+        "points": [
+          [
+            0.55,
+            0.57
+          ],
+          [
+            0.15,
+            0.38
+          ],
+          [
+            0.73,
+            0.34
+          ]
+        ],
+        "duration": 0.19,
+        "easing_power": 0.75
+      },
+      {
+        "points": [
+          [
+            0.29,
+            0.28
+          ],
+          [
+            0.44,
+            0.57
+          ],
+          [
+            0.39,
+            0.16
+          ]
+        ],
+        "duration": 0.06,
+        "easing_power": 1.21
+      }
+    ],
+    "delays": [
+      0.78,
+      0.11
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.28,
+            0.52
+          ],
+          [
+            0.51,
+            0.73
+          ],
+          [
+            0.52,
+            0.68
+          ]
+        ],
+        "duration": 0.77,
+        "easing_power": 1.22
+      },
+      {
+        "points": [
+          [
+            0.6,
+            0.57
+          ],
+          [
+            0.22,
+            0.33
+          ],
+          [
+            0.69,
+            0.45
+          ]
+        ],
+        "duration": 0.16,
+        "easing_power": 0.6
+      },
+      {
+        "points": [
+          [
+            0.27,
+            0.28
+          ],
+          [
+            0.4,
+            0.57
+          ],
+          [
+            0.34,
+            0.23
+          ]
+        ],
+        "duration": 0.09,
+        "easing_power": 0.93
+      }
+    ],
+    "delays": [
+      0.74,
+      0.09
+    ]
+  },
+  "sample_count": 7,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/runs/cmaes_run_202605*/cmaes_run_*.jsonl"
+}

@@ -1,0 +1,136 @@
+{
+  "trick": "OLLIE",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.48,
+            0.63
+          ],
+          [
+            0.51,
+            0.85
+          ],
+          [
+            0.52,
+            0.87
+          ]
+        ],
+        "duration": 0.23,
+        "easing_power": 1.81
+      },
+      {
+        "points": [
+          [
+            0.54,
+            0.51
+          ],
+          [
+            0.5,
+            0.51
+          ],
+          [
+            0.79,
+            0.38
+          ]
+        ],
+        "duration": 0.27,
+        "easing_power": 1.77
+      },
+      {
+        "points": [
+          [
+            0.5,
+            0.47
+          ],
+          [
+            0.41,
+            0.39
+          ],
+          [
+            0.5,
+            0.4
+          ]
+        ],
+        "duration": 0.53,
+        "easing_power": 1.71
+      }
+    ],
+    "delays": [
+      -0.06,
+      0.34
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.54,
+            0.6
+          ],
+          [
+            0.57,
+            0.87
+          ],
+          [
+            0.59,
+            0.85
+          ]
+        ],
+        "duration": 0.7,
+        "easing_power": 2.35
+      },
+      {
+        "points": [
+          [
+            0.43,
+            0.5
+          ],
+          [
+            0.39,
+            0.4
+          ],
+          [
+            0.89,
+            0.37
+          ]
+        ],
+        "duration": 0.1,
+        "easing_power": 0.51
+      },
+      {
+        "points": [
+          [
+            0.56,
+            0.37
+          ],
+          [
+            0.64,
+            0.44
+          ],
+          [
+            0.64,
+            0.44
+          ]
+        ],
+        "duration": 0.71,
+        "easing_power": 2.21
+      }
+    ],
+    "delays": [
+      0.79,
+      0.22
+    ]
+  },
+  "sample_count": 105,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.0,
+    "mean": 0.0443,
+    "max": 0.4
+  },
+  "source_log": "logs/runs/cmaes_run_202605*/cmaes_run_*.jsonl"
+}

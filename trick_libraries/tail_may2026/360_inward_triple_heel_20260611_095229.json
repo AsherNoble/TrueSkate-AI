@@ -1,0 +1,136 @@
+{
+  "trick": "360 INWARD TRIPLE HEEL",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.275,
+            0.47
+          ],
+          [
+            0.5800000000000001,
+            0.675
+          ],
+          [
+            0.535,
+            0.625
+          ]
+        ],
+        "duration": 0.73,
+        "easing_power": 1.5
+      },
+      {
+        "points": [
+          [
+            0.485,
+            0.55
+          ],
+          [
+            0.28,
+            0.53
+          ],
+          [
+            0.7949999999999999,
+            0.245
+          ]
+        ],
+        "duration": 0.23,
+        "easing_power": 0.32
+      },
+      {
+        "points": [
+          [
+            0.32,
+            0.31999999999999995
+          ],
+          [
+            0.44499999999999995,
+            0.505
+          ],
+          [
+            0.54,
+            0.16999999999999998
+          ]
+        ],
+        "duration": 0.185,
+        "easing_power": 1.13
+      }
+    ],
+    "delays": [
+      0.76,
+      -0.105
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.31,
+            0.48
+          ],
+          [
+            0.48,
+            0.71
+          ],
+          [
+            0.56,
+            0.58
+          ]
+        ],
+        "duration": 0.73,
+        "easing_power": 1.43
+      },
+      {
+        "points": [
+          [
+            0.48,
+            0.52
+          ],
+          [
+            0.33,
+            0.48
+          ],
+          [
+            0.75,
+            0.27
+          ]
+        ],
+        "duration": 0.19,
+        "easing_power": 0.33
+      },
+      {
+        "points": [
+          [
+            0.3,
+            0.29
+          ],
+          [
+            0.48,
+            0.5
+          ],
+          [
+            0.53,
+            0.15
+          ]
+        ],
+        "duration": 0.23,
+        "easing_power": 0.76
+      }
+    ],
+    "delays": [
+      0.79,
+      -0.15
+    ]
+  },
+  "sample_count": 2,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/runs/cmaes_run_202605*/cmaes_run_*.jsonl"
+}

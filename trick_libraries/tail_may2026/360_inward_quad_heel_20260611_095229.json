@@ -1,0 +1,136 @@
+{
+  "trick": "360 INWARD QUAD HEEL",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.35,
+            0.42
+          ],
+          [
+            0.51,
+            0.56
+          ],
+          [
+            0.37,
+            0.53
+          ]
+        ],
+        "duration": 0.65,
+        "easing_power": 2.33
+      },
+      {
+        "points": [
+          [
+            0.6,
+            0.51
+          ],
+          [
+            0.32,
+            0.44
+          ],
+          [
+            0.74,
+            0.35
+          ]
+        ],
+        "duration": 0.24,
+        "easing_power": 0.32
+      },
+      {
+        "points": [
+          [
+            0.38,
+            0.45
+          ],
+          [
+            0.6,
+            0.52
+          ],
+          [
+            0.3,
+            0.41
+          ]
+        ],
+        "duration": 0.25,
+        "easing_power": 0.3
+      }
+    ],
+    "delays": [
+      0.23,
+      -0.18
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.35,
+            0.42
+          ],
+          [
+            0.51,
+            0.56
+          ],
+          [
+            0.37,
+            0.53
+          ]
+        ],
+        "duration": 0.65,
+        "easing_power": 2.33
+      },
+      {
+        "points": [
+          [
+            0.6,
+            0.51
+          ],
+          [
+            0.32,
+            0.44
+          ],
+          [
+            0.74,
+            0.35
+          ]
+        ],
+        "duration": 0.24,
+        "easing_power": 0.32
+      },
+      {
+        "points": [
+          [
+            0.38,
+            0.45
+          ],
+          [
+            0.6,
+            0.52
+          ],
+          [
+            0.3,
+            0.41
+          ]
+        ],
+        "duration": 0.25,
+        "easing_power": 0.3
+      }
+    ],
+    "delays": [
+      0.23,
+      -0.18
+    ]
+  },
+  "sample_count": 1,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/runs/cmaes_run_202605*/cmaes_run_*.jsonl"
+}
