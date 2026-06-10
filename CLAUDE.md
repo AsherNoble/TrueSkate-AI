@@ -85,6 +85,7 @@ Located at `experiments/rl_poc_experiment_journal.md`. Read at start of relevant
 - Commit messages: 10–20 words, one commit at a time
 - Function names should reflect actual behavior precisely (e.g., `reset_position()` not `go_to_waypoint()`)
 - Use full absolute paths — tilde expansion (`~/`) is unreliable in tooling
+- Communication style: prefer terse dot points over prose. State what changed and the next step; skip the essay/recap. Less word salad.
 
 ## Known Issues / Next Steps
 
