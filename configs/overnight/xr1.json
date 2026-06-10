@@ -1,0 +1,23 @@
+{
+  "device": "iPhone_XR",
+  "seed": 42,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 3.0,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/360_flip.json",
+      "_note": "Set warm_start to whichever tmp/legacy_libs/360_flip_{CANONICAL,EXECUTED}.json replays correctly; cold start is itself a 360-flip prior."
+    },
+    {
+      "curriculum": "curricula/hard_flip.json",
+      "_note": "Warm start: tmp/legacy_libs/hard_flip_*.json if replay-validated (copy into trick_libraries/), else accidental-discovery mining from the 360-flip run."
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import json
 import logging
 import pickle
 import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
@@ -30,6 +31,7 @@ from trueskate_ai.rl.cmaes.action_param import (
 )
 from trueskate_ai.rl.cmaes.curriculum import Curriculum
 from trueskate_ai.monitoring.status import StatusTracker
+from trueskate_ai.rl.reward import normalize_trick_name
 from trueskate_ai.rl.run_logger import RunLogger
 from trueskate_ai.rl.worker_pool import AllWorkersDeadError, WorkerPool
 from trueskate_ai.utils.notify import notify
@@ -57,6 +59,25 @@ def _save_checkpoint(es, run_dir: Path, generation: int) -> None:
     path = run_dir / f"checkpoint_gen{generation}.pkl"
     with path.open("wb") as f:
         pickle.dump(es, f)
+
+
+def _is_target_land(trick_name: str | None, trick_status: str | None, target: str) -> bool:
+    """True when the eval landed the curriculum's target trick.
+
+    Mirrors Curriculum.score's combo handling: a "KICKFLIP + 50 50 GRIND"
+    detection counts as a KICKFLIP land.
+    """
+    if trick_status != "landed" or not trick_name:
+        return False
+    components = [normalize_trick_name(c) for c in trick_name.split(" + ") if c.strip()]
+    return target in components
+
+
+def _write_result_json(run_dir: Path, payload: dict) -> None:
+    """Write the machine-readable run outcome consumed by the overnight orchestrator."""
+    tmp = run_dir / "result.json.tmp"
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(run_dir / "result.json")
 
 
 def _load_initial_mean_from_library(path: Path, num_gestures: int) -> np.ndarray:
@@ -142,6 +163,8 @@ def run(
     devices: list[dict] | None = None,
     curriculum: Curriculum,
     initial_mean: Path | None = None,
+    stop_land_rate: float | None = None,
+    stop_window: int = 50,
 ) -> None:
     """Execute the CMA-ES optimization loop across multiple devices.
 
@@ -164,6 +187,16 @@ def run(
         initial_mean: Optional path to trick library JSON; when provided,
                       median_gestures seeds the CMA-ES mean. Overrides
                       curriculum.warm_start if both are given.
+        stop_land_rate: Optional early-stop threshold: stop when the rolling
+                      land rate of the TARGET trick over the last
+                      ``stop_window`` evals reaches this fraction. Checked at
+                      round boundaries. The orchestrator (not this function)
+                      mines the trick library afterwards.
+        stop_window:  Rolling window size (evals) for stop_land_rate.
+
+    On exit, writes ``<run_dir>/result.json`` with the stop reason
+    (max_evals | early_stop | interrupted | all_workers_dead) and summary
+    stats — the machine-readable contract for overnight_curriculum.py.
     """
     try:
         import cma
@@ -280,6 +313,10 @@ def run(
     best_reward = 0.0
     best_trick: str | None = None
     best_params: np.ndarray = cma_mean.copy()
+    stop_reason = "max_evals"
+    early_stop = False
+    recent_target_lands: deque[bool] = deque(maxlen=stop_window)
+    target_normalized = normalize_trick_name(curriculum.target)
 
     executor = ThreadPoolExecutor(max_workers=n_workers)
 
@@ -443,10 +480,52 @@ def run(
                         result["trick_name"], result["trick_status"],
                     )
 
+                    recent_target_lands.append(_is_target_land(
+                        result["trick_name"], result["trick_status"], target_normalized
+                    ))
+
                     if reward > best_reward:
                         best_reward = reward
                         best_trick = result["trick_name"]
                         best_params = np.array(result["params"])
+
+                # Early stop at round boundaries: rolling land rate of the
+                # target trick over the last stop_window evals.
+                if (
+                    stop_land_rate is not None
+                    and len(recent_target_lands) == stop_window
+                    and sum(recent_target_lands) / stop_window >= stop_land_rate
+                ):
+                    early_stop = True
+                    break
+
+            if early_stop:
+                stop_reason = "early_stop"
+                rate = sum(recent_target_lands) / stop_window
+                print(
+                    f"\nEARLY STOP: {curriculum.target} land rate "
+                    f"{rate:.0%} over last {stop_window} evals (threshold "
+                    f"{stop_land_rate:.0%}) after {eval_num} evals."
+                )
+                logger.write({
+                    "type": "generation_summary",
+                    "generation": generation,
+                    "best_reward": max(rewards) if rewards else 0.0,
+                    "mean_reward": round(float(np.mean(rewards)), 4) if rewards else 0.0,
+                    "device_eval_counts": device_eval_counts,
+                    "early_stop": True,
+                    "land_rate_window": round(rate, 4),
+                    "timestamp": datetime.now().isoformat(timespec="milliseconds"),
+                })
+                status.set_note(f"early stop: {rate:.0%} land rate")
+                notify(
+                    f"Early stop: {curriculum.target} land rate {rate:.0%} over "
+                    f"last {stop_window} evals after {eval_num} evals.",
+                    title="TrueSkate training", tags=["white_check_mark"],
+                )
+                # Skip es.tell for the partial generation — CMA-ES state stays
+                # at the last full generation, which the checkpoint captures.
+                break
 
             # Feed negated rewards to CMA-ES (it minimizes)
             es.tell(solutions, [-r for r in rewards])
@@ -522,10 +601,12 @@ def run(
                 break
 
     except KeyboardInterrupt:
+        stop_reason = "interrupted"
         print("\nInterrupted by user.")
         status.set_note("interrupted by user")
 
     except AllWorkersDeadError as exc:
+        stop_reason = "all_workers_dead"
         print(f"\nAborting run: {exc}")
         status.set_note(f"aborted: {exc}")
         notify(
@@ -543,6 +624,21 @@ def run(
 
         _save_checkpoint(es, run_dir, generation)
         print("Final checkpoint saved.")
+
+        _write_result_json(run_dir, {
+            "stop_reason": stop_reason,
+            "total_evals": eval_num,
+            "target": curriculum.target,
+            "land_rate_window": round(
+                sum(recent_target_lands) / len(recent_target_lands), 4
+            ) if recent_target_lands else 0.0,
+            "stop_window": stop_window,
+            "stop_land_rate": stop_land_rate,
+            "best_reward": round(best_reward, 4),
+            "best_trick": best_trick,
+            "run_dir": str(run_dir),
+            "log_path": str(logger.log_path),
+        })
 
         status.set_note("run complete")
         notify(

@@ -1,0 +1,21 @@
+{
+  "device": "iPhone_11",
+  "seed": 7,
+  "defaults": {
+    "pop_size": 6,
+    "max_evals": 24,
+    "max_hours": 0.15,
+    "stop_land_rate": 0.9,
+    "stop_window": 20,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/kickflip.json"
+    },
+    {
+      "curriculum": "curricula/pop_shove_it_3g.json"
+    }
+  ]
+}

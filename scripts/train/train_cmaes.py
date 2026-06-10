@@ -17,6 +17,10 @@ Options:
     --log-dir     Log directory (default: logs/)
     --initial-mean Path to trick library JSON; seeds mean from median_gestures.
                   Overrides the warm_start field in the curriculum JSON.
+    --stop-land-rate Early-stop when the target trick's rolling land rate over
+                  the last --stop-window evals reaches this fraction (default:
+                  off — run to --max-evals).
+    --stop-window Rolling window size in evals for --stop-land-rate (default: 50)
 """
 import argparse
 import sys
@@ -57,6 +61,11 @@ def main() -> None:
     parser.add_argument("--initial-mean", type=Path, default=None,
                         help="Path to trick library JSON used to seed CMA-ES mean from median_gestures. "
                              "Overrides warm_start in the curriculum JSON.")
+    parser.add_argument("--stop-land-rate", type=float, default=None,
+                        help="Early-stop when the target trick's rolling land rate over the last "
+                             "--stop-window evals reaches this fraction (default: off)")
+    parser.add_argument("--stop-window", type=int, default=50,
+                        help="Rolling window size in evals for --stop-land-rate (default: 50)")
     add_device_selection_args(parser)
     args = parser.parse_args()
 
@@ -78,6 +87,8 @@ def main() -> None:
         devices=devices,
         curriculum=curriculum,
         initial_mean=args.initial_mean,
+        stop_land_rate=args.stop_land_rate,
+        stop_window=args.stop_window,
     )
 
 

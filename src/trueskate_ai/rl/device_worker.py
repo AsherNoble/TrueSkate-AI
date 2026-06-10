@@ -75,6 +75,17 @@ DEVICES: list[dict] = [
         "logical_h": 812,
         "spin_button_xy": (0.0604, 0.4040),
     },
+    {
+        "env_key": "IPHONE_XR2_UDID",
+        "name": "iPhone_XR2",
+        "role": "collection",
+        "wda_port": 8103,
+        "mjpeg_port": 9103,
+        "appium_port": 4726,
+        "logical_w": 414,  # Display Zoom must be OFF (dim guard kills services on mismatch)
+        "logical_h": 896,
+        "spin_button_xy": (0.0604, 0.4040),
+    },
 ]
 
 DEFAULT_ROLE = "collection"

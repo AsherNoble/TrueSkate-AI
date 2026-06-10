@@ -1,0 +1,15 @@
+{
+  "target": "POP SHOVE-IT",
+  "num_gestures": 3,
+  "warm_start": "trick_libraries/pop_shove_it_20260610_230441.json",
+  "rewards": {
+    "POP SHOVE-IT":         1.0,
+    "360 POP SHOVE-IT":     0.3,
+    "FS POP SHOVE-IT":      0.2,
+    "VARIAL KICKFLIP":      0.2,
+    "KICKFLIP":             0.05
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "3-gesture variant of pop_shove_it.json for N=3 queue chaining. Warm start mined (landed-only) from cmaes_run_20260516_232215, 65 samples."
+}
