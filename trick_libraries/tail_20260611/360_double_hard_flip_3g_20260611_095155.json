@@ -1,0 +1,136 @@
+{
+  "trick": "360 DOUBLE HARD FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.465,
+            0.645
+          ],
+          [
+            0.8049999999999999,
+            0.76
+          ],
+          [
+            0.385,
+            0.875
+          ]
+        ],
+        "duration": 0.24,
+        "easing_power": 2.71
+      },
+      {
+        "points": [
+          [
+            0.565,
+            0.27
+          ],
+          [
+            0.36,
+            0.55
+          ],
+          [
+            0.675,
+            0.7150000000000001
+          ]
+        ],
+        "duration": 0.625,
+        "easing_power": 0.9450000000000001
+      },
+      {
+        "points": [
+          [
+            0.545,
+            0.7450000000000001
+          ],
+          [
+            0.43,
+            0.395
+          ],
+          [
+            0.46499999999999997,
+            0.515
+          ]
+        ],
+        "duration": 0.675,
+        "easing_power": 1.525
+      }
+    ],
+    "delays": [
+      0.28500000000000003,
+      0.33999999999999997
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.53,
+            0.72
+          ],
+          [
+            0.75,
+            0.7
+          ],
+          [
+            0.42,
+            0.87
+          ]
+        ],
+        "duration": 0.19,
+        "easing_power": 2.44
+      },
+      {
+        "points": [
+          [
+            0.52,
+            0.36
+          ],
+          [
+            0.36,
+            0.51
+          ],
+          [
+            0.74,
+            0.66
+          ]
+        ],
+        "duration": 0.57,
+        "easing_power": 1.49
+      },
+      {
+        "points": [
+          [
+            0.45,
+            0.68
+          ],
+          [
+            0.47,
+            0.4
+          ],
+          [
+            0.44,
+            0.46
+          ]
+        ],
+        "duration": 0.67,
+        "easing_power": 0.71
+      }
+    ],
+    "delays": [
+      0.29,
+      0.41
+    ]
+  },
+  "sample_count": 2,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.1,
+    "mean": 0.1,
+    "max": 0.1
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

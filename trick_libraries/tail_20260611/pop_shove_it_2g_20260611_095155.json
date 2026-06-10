@@ -1,0 +1,98 @@
+{
+  "trick": "POP SHOVE-IT",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.5,
+            0.65
+          ],
+          [
+            0.53,
+            0.82
+          ],
+          [
+            0.34,
+            0.83
+          ]
+        ],
+        "duration": 0.28,
+        "easing_power": 1.28
+      },
+      {
+        "points": [
+          [
+            0.51,
+            0.59
+          ],
+          [
+            0.78,
+            0.74
+          ],
+          [
+            0.98,
+            0.58
+          ]
+        ],
+        "duration": 0.57,
+        "easing_power": 2.8
+      }
+    ],
+    "delays": [
+      0.53
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.91,
+            0.76
+          ],
+          [
+            0.86,
+            0.87
+          ],
+          [
+            0.1,
+            0.86
+          ]
+        ],
+        "duration": 0.65,
+        "easing_power": 0.77
+      },
+      {
+        "points": [
+          [
+            0.64,
+            0.65
+          ],
+          [
+            0.99,
+            0.82
+          ],
+          [
+            1.0,
+            0.61
+          ]
+        ],
+        "duration": 0.59,
+        "easing_power": 1.95
+      }
+    ],
+    "delays": [
+      0.48
+    ]
+  },
+  "sample_count": 155,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

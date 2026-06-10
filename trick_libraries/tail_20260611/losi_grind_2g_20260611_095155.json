@@ -1,0 +1,98 @@
+{
+  "trick": "LOSI GRIND",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.66,
+            0.69
+          ],
+          [
+            0.55,
+            0.85
+          ],
+          [
+            0.27,
+            0.8
+          ]
+        ],
+        "duration": 0.3,
+        "easing_power": 1.69
+      },
+      {
+        "points": [
+          [
+            0.54,
+            0.62
+          ],
+          [
+            0.78,
+            0.79
+          ],
+          [
+            0.97,
+            0.62
+          ]
+        ],
+        "duration": 0.54,
+        "easing_power": 2.37
+      }
+    ],
+    "delays": [
+      0.28
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.79,
+            0.65
+          ],
+          [
+            0.72,
+            0.85
+          ],
+          [
+            0.09,
+            0.87
+          ]
+        ],
+        "duration": 0.53,
+        "easing_power": 2.77
+      },
+      {
+        "points": [
+          [
+            0.56,
+            0.63
+          ],
+          [
+            1.0,
+            0.84
+          ],
+          [
+            0.99,
+            0.68
+          ]
+        ],
+        "duration": 0.12,
+        "easing_power": 1.68
+      }
+    ],
+    "delays": [
+      0.73
+    ]
+  },
+  "sample_count": 3,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.6833,
+    "max": 1.0
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

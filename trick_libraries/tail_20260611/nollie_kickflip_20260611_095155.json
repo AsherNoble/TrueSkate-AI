@@ -1,0 +1,98 @@
+{
+  "trick": "NOLLIE KICKFLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.48,
+            0.62
+          ],
+          [
+            0.47,
+            0.79
+          ],
+          [
+            0.38,
+            0.85
+          ]
+        ],
+        "duration": 0.44,
+        "easing_power": 1.3
+      },
+      {
+        "points": [
+          [
+            0.38,
+            0.62
+          ],
+          [
+            0.64,
+            0.77
+          ],
+          [
+            0.99,
+            0.66
+          ]
+        ],
+        "duration": 0.57,
+        "easing_power": 2.88
+      }
+    ],
+    "delays": [
+      0.35
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.48,
+            0.62
+          ],
+          [
+            0.47,
+            0.79
+          ],
+          [
+            0.38,
+            0.85
+          ]
+        ],
+        "duration": 0.44,
+        "easing_power": 1.3
+      },
+      {
+        "points": [
+          [
+            0.38,
+            0.62
+          ],
+          [
+            0.64,
+            0.77
+          ],
+          [
+            0.99,
+            0.66
+          ]
+        ],
+        "duration": 0.57,
+        "easing_power": 2.88
+      }
+    ],
+    "delays": [
+      0.35
+    ]
+  },
+  "sample_count": 1,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

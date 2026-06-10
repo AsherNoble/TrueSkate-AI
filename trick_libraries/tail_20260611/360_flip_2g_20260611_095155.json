@@ -1,0 +1,98 @@
+{
+  "trick": "360 FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.825,
+            0.67
+          ],
+          [
+            0.81,
+            0.82
+          ],
+          [
+            0.04,
+            0.865
+          ]
+        ],
+        "duration": 0.47,
+        "easing_power": 1.495
+      },
+      {
+        "points": [
+          [
+            0.56,
+            0.62
+          ],
+          [
+            1.0,
+            0.8
+          ],
+          [
+            0.96,
+            0.65
+          ]
+        ],
+        "duration": 0.28,
+        "easing_power": 2.42
+      }
+    ],
+    "delays": [
+      0.74
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.88,
+            0.66
+          ],
+          [
+            0.85,
+            0.83
+          ],
+          [
+            0.12,
+            0.87
+          ]
+        ],
+        "duration": 0.53,
+        "easing_power": 1.22
+      },
+      {
+        "points": [
+          [
+            0.57,
+            0.62
+          ],
+          [
+            0.99,
+            0.84
+          ],
+          [
+            0.96,
+            0.63
+          ]
+        ],
+        "duration": 0.3,
+        "easing_power": 2.12
+      }
+    ],
+    "delays": [
+      0.69
+    ]
+  },
+  "sample_count": 280,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 1.0,
+    "mean": 1.0,
+    "max": 1.0
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

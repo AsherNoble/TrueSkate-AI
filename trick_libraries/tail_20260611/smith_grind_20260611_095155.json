@@ -1,0 +1,136 @@
+{
+  "trick": "SMITH GRIND",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.45499999999999996,
+            0.6950000000000001
+          ],
+          [
+            0.6799999999999999,
+            0.875
+          ],
+          [
+            0.75,
+            0.625
+          ]
+        ],
+        "duration": 0.6,
+        "easing_power": 0.47
+      },
+      {
+        "points": [
+          [
+            0.47,
+            0.55
+          ],
+          [
+            0.6799999999999999,
+            0.405
+          ],
+          [
+            0.72,
+            0.26
+          ]
+        ],
+        "duration": 0.69,
+        "easing_power": 0.65
+      },
+      {
+        "points": [
+          [
+            0.41000000000000003,
+            0.485
+          ],
+          [
+            0.22,
+            0.14
+          ],
+          [
+            0.44999999999999996,
+            0.125
+          ]
+        ],
+        "duration": 0.275,
+        "easing_power": 2.535
+      }
+    ],
+    "delays": [
+      -0.235,
+      0.785
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.49,
+            0.72
+          ],
+          [
+            0.69,
+            0.87
+          ],
+          [
+            0.74,
+            0.58
+          ]
+        ],
+        "duration": 0.61,
+        "easing_power": 0.44
+      },
+      {
+        "points": [
+          [
+            0.47,
+            0.55
+          ],
+          [
+            0.7,
+            0.39
+          ],
+          [
+            0.76,
+            0.26
+          ]
+        ],
+        "duration": 0.75,
+        "easing_power": 0.64
+      },
+      {
+        "points": [
+          [
+            0.42,
+            0.48
+          ],
+          [
+            0.18,
+            0.15
+          ],
+          [
+            0.41,
+            0.12
+          ]
+        ],
+        "duration": 0.25,
+        "easing_power": 3.0
+      }
+    ],
+    "delays": [
+      -0.21,
+      0.8
+    ]
+  },
+  "sample_count": 2,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 1.0,
+    "mean": 1.0,
+    "max": 1.0
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

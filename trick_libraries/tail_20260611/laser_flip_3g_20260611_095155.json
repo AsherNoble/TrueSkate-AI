@@ -1,0 +1,136 @@
+{
+  "trick": "LASER FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.4,
+            0.58
+          ],
+          [
+            0.53,
+            0.74
+          ],
+          [
+            0.525,
+            0.645
+          ]
+        ],
+        "duration": 0.675,
+        "easing_power": 1.6149999999999998
+      },
+      {
+        "points": [
+          [
+            0.5349999999999999,
+            0.405
+          ],
+          [
+            0.47,
+            0.48
+          ],
+          [
+            0.725,
+            0.315
+          ]
+        ],
+        "duration": 0.25,
+        "easing_power": 1.6400000000000001
+      },
+      {
+        "points": [
+          [
+            0.39,
+            0.43000000000000005
+          ],
+          [
+            0.345,
+            0.395
+          ],
+          [
+            0.36,
+            0.28
+          ]
+        ],
+        "duration": 0.41000000000000003,
+        "easing_power": 1.9300000000000002
+      }
+    ],
+    "delays": [
+      0.33,
+      0.41000000000000003
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.51,
+            0.7
+          ],
+          [
+            0.56,
+            0.87
+          ],
+          [
+            0.63,
+            0.7
+          ]
+        ],
+        "duration": 0.57,
+        "easing_power": 2.07
+      },
+      {
+        "points": [
+          [
+            0.58,
+            0.34
+          ],
+          [
+            0.71,
+            0.58
+          ],
+          [
+            0.84,
+            0.31
+          ]
+        ],
+        "duration": 0.29,
+        "easing_power": 1.74
+      },
+      {
+        "points": [
+          [
+            0.51,
+            0.46
+          ],
+          [
+            0.18,
+            0.14
+          ],
+          [
+            0.47,
+            0.27
+          ]
+        ],
+        "duration": 0.64,
+        "easing_power": 2.91
+      }
+    ],
+    "delays": [
+      -0.08,
+      0.8
+    ]
+  },
+  "sample_count": 2,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

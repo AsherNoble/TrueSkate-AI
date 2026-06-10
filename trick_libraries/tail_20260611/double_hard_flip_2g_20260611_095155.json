@@ -1,0 +1,98 @@
+{
+  "trick": "DOUBLE HARD FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.85,
+            0.62
+          ],
+          [
+            0.9,
+            0.84
+          ],
+          [
+            0.09,
+            0.78
+          ]
+        ],
+        "duration": 0.4,
+        "easing_power": 1.84
+      },
+      {
+        "points": [
+          [
+            0.58,
+            0.57
+          ],
+          [
+            1.0,
+            0.77
+          ],
+          [
+            0.98,
+            0.59
+          ]
+        ],
+        "duration": 0.28,
+        "easing_power": 1.32
+      }
+    ],
+    "delays": [
+      0.55
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.85,
+            0.62
+          ],
+          [
+            0.9,
+            0.84
+          ],
+          [
+            0.09,
+            0.78
+          ]
+        ],
+        "duration": 0.4,
+        "easing_power": 1.84
+      },
+      {
+        "points": [
+          [
+            0.58,
+            0.57
+          ],
+          [
+            1.0,
+            0.77
+          ],
+          [
+            0.98,
+            0.59
+          ]
+        ],
+        "duration": 0.28,
+        "easing_power": 1.32
+      }
+    ],
+    "delays": [
+      0.55
+    ]
+  },
+  "sample_count": 1,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

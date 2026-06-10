@@ -1,0 +1,136 @@
+{
+  "trick": "FAKIE OLLIE",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.52,
+            0.68
+          ],
+          [
+            0.65,
+            0.82
+          ],
+          [
+            0.63,
+            0.74
+          ]
+        ],
+        "duration": 0.67,
+        "easing_power": 1.59
+      },
+      {
+        "points": [
+          [
+            0.47,
+            0.44
+          ],
+          [
+            0.69,
+            0.45
+          ],
+          [
+            0.83,
+            0.23
+          ]
+        ],
+        "duration": 0.19,
+        "easing_power": 1.73
+      },
+      {
+        "points": [
+          [
+            0.55,
+            0.61
+          ],
+          [
+            0.31,
+            0.13
+          ],
+          [
+            0.49,
+            0.21
+          ]
+        ],
+        "duration": 0.7,
+        "easing_power": 3.0
+      }
+    ],
+    "delays": [
+      -0.19,
+      0.77
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.52,
+            0.68
+          ],
+          [
+            0.65,
+            0.82
+          ],
+          [
+            0.63,
+            0.74
+          ]
+        ],
+        "duration": 0.67,
+        "easing_power": 1.59
+      },
+      {
+        "points": [
+          [
+            0.47,
+            0.44
+          ],
+          [
+            0.69,
+            0.45
+          ],
+          [
+            0.83,
+            0.23
+          ]
+        ],
+        "duration": 0.19,
+        "easing_power": 1.73
+      },
+      {
+        "points": [
+          [
+            0.55,
+            0.61
+          ],
+          [
+            0.31,
+            0.13
+          ],
+          [
+            0.49,
+            0.21
+          ]
+        ],
+        "duration": 0.7,
+        "easing_power": 3.0
+      }
+    ],
+    "delays": [
+      -0.19,
+      0.77
+    ]
+  },
+  "sample_count": 1,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.2,
+    "mean": 0.2,
+    "max": 0.2
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

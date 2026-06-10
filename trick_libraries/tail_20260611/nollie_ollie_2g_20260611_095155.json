@@ -1,0 +1,98 @@
+{
+  "trick": "NOLLIE OLLIE",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.785,
+            0.745
+          ],
+          [
+            0.875,
+            0.835
+          ],
+          [
+            0.060000000000000005,
+            0.865
+          ]
+        ],
+        "duration": 0.33,
+        "easing_power": 0.76
+      },
+      {
+        "points": [
+          [
+            0.54,
+            0.605
+          ],
+          [
+            1.0,
+            0.845
+          ],
+          [
+            0.97,
+            0.51
+          ]
+        ],
+        "duration": 0.545,
+        "easing_power": 2.6550000000000002
+      }
+    ],
+    "delays": [
+      0.42000000000000004
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.68,
+            0.76
+          ],
+          [
+            0.91,
+            0.82
+          ],
+          [
+            0.07,
+            0.87
+          ]
+        ],
+        "duration": 0.22,
+        "easing_power": 0.34
+      },
+      {
+        "points": [
+          [
+            0.49,
+            0.56
+          ],
+          [
+            1.0,
+            0.88
+          ],
+          [
+            0.98,
+            0.58
+          ]
+        ],
+        "duration": 0.54,
+        "easing_power": 2.98
+      }
+    ],
+    "delays": [
+      0.5
+    ]
+  },
+  "sample_count": 2,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.125,
+    "max": 0.2
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

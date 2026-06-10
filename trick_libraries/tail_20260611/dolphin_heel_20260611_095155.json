@@ -1,0 +1,136 @@
+{
+  "trick": "DOLPHIN HEEL",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.45499999999999996,
+            0.745
+          ],
+          [
+            0.68,
+            0.865
+          ],
+          [
+            0.69,
+            0.655
+          ]
+        ],
+        "duration": 0.745,
+        "easing_power": 0.52
+      },
+      {
+        "points": [
+          [
+            0.475,
+            0.52
+          ],
+          [
+            0.65,
+            0.355
+          ],
+          [
+            0.73,
+            0.24
+          ]
+        ],
+        "duration": 0.6,
+        "easing_power": 0.565
+      },
+      {
+        "points": [
+          [
+            0.47,
+            0.475
+          ],
+          [
+            0.235,
+            0.135
+          ],
+          [
+            0.445,
+            0.135
+          ]
+        ],
+        "duration": 0.355,
+        "easing_power": 2.4699999999999998
+      }
+    ],
+    "delays": [
+      -0.11,
+      0.79
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.43,
+            0.76
+          ],
+          [
+            0.68,
+            0.88
+          ],
+          [
+            0.7,
+            0.63
+          ]
+        ],
+        "duration": 0.78,
+        "easing_power": 0.42
+      },
+      {
+        "points": [
+          [
+            0.48,
+            0.54
+          ],
+          [
+            0.64,
+            0.37
+          ],
+          [
+            0.73,
+            0.21
+          ]
+        ],
+        "duration": 0.6,
+        "easing_power": 0.51
+      },
+      {
+        "points": [
+          [
+            0.42,
+            0.48
+          ],
+          [
+            0.25,
+            0.12
+          ],
+          [
+            0.43,
+            0.14
+          ]
+        ],
+        "duration": 0.21,
+        "easing_power": 2.62
+      }
+    ],
+    "delays": [
+      -0.15,
+      0.78
+    ]
+  },
+  "sample_count": 4,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.3875,
+    "max": 1.0
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

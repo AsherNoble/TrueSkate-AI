@@ -1,0 +1,98 @@
+{
+  "trick": "INWARD HEELFLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.79,
+            0.65
+          ],
+          [
+            0.79,
+            0.825
+          ],
+          [
+            0.06,
+            0.84
+          ]
+        ],
+        "duration": 0.495,
+        "easing_power": 1.1800000000000002
+      },
+      {
+        "points": [
+          [
+            0.565,
+            0.63
+          ],
+          [
+            1.0,
+            0.77
+          ],
+          [
+            0.925,
+            0.665
+          ]
+        ],
+        "duration": 0.36,
+        "easing_power": 2.685
+      }
+    ],
+    "delays": [
+      0.585
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.89,
+            0.65
+          ],
+          [
+            0.79,
+            0.81
+          ],
+          [
+            0.06,
+            0.83
+          ]
+        ],
+        "duration": 0.5,
+        "easing_power": 1.08
+      },
+      {
+        "points": [
+          [
+            0.59,
+            0.66
+          ],
+          [
+            1.0,
+            0.77
+          ],
+          [
+            0.93,
+            0.71
+          ]
+        ],
+        "duration": 0.36,
+        "easing_power": 1.67
+      }
+    ],
+    "delays": [
+      0.61
+    ]
+  },
+  "sample_count": 6,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

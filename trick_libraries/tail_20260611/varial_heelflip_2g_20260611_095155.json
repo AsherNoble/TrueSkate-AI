@@ -1,0 +1,98 @@
+{
+  "trick": "VARIAL HEELFLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.94,
+            0.56
+          ],
+          [
+            0.74,
+            0.84
+          ],
+          [
+            0.03,
+            0.85
+          ]
+        ],
+        "duration": 0.65,
+        "easing_power": 1.42
+      },
+      {
+        "points": [
+          [
+            0.64,
+            0.65
+          ],
+          [
+            1.0,
+            0.77
+          ],
+          [
+            0.92,
+            0.74
+          ]
+        ],
+        "duration": 0.27,
+        "easing_power": 2.98
+      }
+    ],
+    "delays": [
+      0.59
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.94,
+            0.56
+          ],
+          [
+            0.74,
+            0.84
+          ],
+          [
+            0.03,
+            0.85
+          ]
+        ],
+        "duration": 0.65,
+        "easing_power": 1.42
+      },
+      {
+        "points": [
+          [
+            0.64,
+            0.65
+          ],
+          [
+            1.0,
+            0.77
+          ],
+          [
+            0.92,
+            0.74
+          ]
+        ],
+        "duration": 0.27,
+        "easing_power": 2.98
+      }
+    ],
+    "delays": [
+      0.59
+    ]
+  },
+  "sample_count": 1,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

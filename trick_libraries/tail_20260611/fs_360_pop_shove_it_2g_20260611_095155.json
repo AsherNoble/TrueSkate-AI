@@ -1,0 +1,98 @@
+{
+  "trick": "FS 360 POP SHOVE-IT",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.52,
+            0.67
+          ],
+          [
+            0.52,
+            0.87
+          ],
+          [
+            0.28,
+            0.73
+          ]
+        ],
+        "duration": 0.11,
+        "easing_power": 0.79
+      },
+      {
+        "points": [
+          [
+            0.41,
+            0.45
+          ],
+          [
+            0.79,
+            0.74
+          ],
+          [
+            0.99,
+            0.66
+          ]
+        ],
+        "duration": 0.62,
+        "easing_power": 2.45
+      }
+    ],
+    "delays": [
+      0.44
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.51,
+            0.58
+          ],
+          [
+            0.67,
+            0.65
+          ],
+          [
+            0.4,
+            0.82
+          ]
+        ],
+        "duration": 0.1,
+        "easing_power": 0.79
+      },
+      {
+        "points": [
+          [
+            0.52,
+            0.67
+          ],
+          [
+            0.86,
+            0.73
+          ],
+          [
+            0.99,
+            0.67
+          ]
+        ],
+        "duration": 0.28,
+        "easing_power": 1.83
+      }
+    ],
+    "delays": [
+      0.67
+    ]
+  },
+  "sample_count": 3,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

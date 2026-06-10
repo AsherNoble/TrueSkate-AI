@@ -1,0 +1,98 @@
+{
+  "trick": "720 DOUBLE FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.89,
+            0.67
+          ],
+          [
+            0.87,
+            0.84
+          ],
+          [
+            0.18,
+            0.87
+          ]
+        ],
+        "duration": 0.31,
+        "easing_power": 0.91
+      },
+      {
+        "points": [
+          [
+            0.53,
+            0.57
+          ],
+          [
+            0.99,
+            0.84
+          ],
+          [
+            0.98,
+            0.62
+          ]
+        ],
+        "duration": 0.15,
+        "easing_power": 1.64
+      }
+    ],
+    "delays": [
+      0.63
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.89,
+            0.67
+          ],
+          [
+            0.87,
+            0.84
+          ],
+          [
+            0.18,
+            0.87
+          ]
+        ],
+        "duration": 0.31,
+        "easing_power": 0.91
+      },
+      {
+        "points": [
+          [
+            0.53,
+            0.57
+          ],
+          [
+            0.99,
+            0.84
+          ],
+          [
+            0.98,
+            0.62
+          ]
+        ],
+        "duration": 0.15,
+        "easing_power": 1.64
+      }
+    ],
+    "delays": [
+      0.63
+    ]
+  },
+  "sample_count": 1,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.6,
+    "mean": 0.6,
+    "max": 0.6
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

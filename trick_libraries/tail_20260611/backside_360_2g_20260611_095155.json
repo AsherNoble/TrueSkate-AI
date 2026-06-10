@@ -1,0 +1,98 @@
+{
+  "trick": "BACKSIDE 360",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.725,
+            0.8049999999999999
+          ],
+          [
+            0.845,
+            0.8200000000000001
+          ],
+          [
+            0.075,
+            0.825
+          ]
+        ],
+        "duration": 0.51,
+        "easing_power": 1.36
+      },
+      {
+        "points": [
+          [
+            0.51,
+            0.62
+          ],
+          [
+            0.97,
+            0.76
+          ],
+          [
+            0.9450000000000001,
+            0.575
+          ]
+        ],
+        "duration": 0.32999999999999996,
+        "easing_power": 2.55
+      }
+    ],
+    "delays": [
+      0.66
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.76,
+            0.84
+          ],
+          [
+            0.86,
+            0.85
+          ],
+          [
+            0.09,
+            0.88
+          ]
+        ],
+        "duration": 0.53,
+        "easing_power": 1.1
+      },
+      {
+        "points": [
+          [
+            0.58,
+            0.59
+          ],
+          [
+            0.99,
+            0.81
+          ],
+          [
+            1.0,
+            0.52
+          ]
+        ],
+        "duration": 0.37,
+        "easing_power": 2.47
+      }
+    ],
+    "delays": [
+      0.55
+    ]
+  },
+  "sample_count": 4,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.1625,
+    "max": 0.2
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}

@@ -1,0 +1,98 @@
+{
+  "trick": "NOSE SLIDE",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.48,
+            0.63
+          ],
+          [
+            0.515,
+            0.82
+          ],
+          [
+            0.385,
+            0.86
+          ]
+        ],
+        "duration": 0.44,
+        "easing_power": 1.15
+      },
+      {
+        "points": [
+          [
+            0.52,
+            0.55
+          ],
+          [
+            0.78,
+            0.765
+          ],
+          [
+            0.99,
+            0.58
+          ]
+        ],
+        "duration": 0.655,
+        "easing_power": 2.92
+      }
+    ],
+    "delays": [
+      0.705
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.99,
+            0.68
+          ],
+          [
+            0.87,
+            0.83
+          ],
+          [
+            0.09,
+            0.86
+          ]
+        ],
+        "duration": 0.35,
+        "easing_power": 2.25
+      },
+      {
+        "points": [
+          [
+            0.6,
+            0.61
+          ],
+          [
+            1.0,
+            0.8
+          ],
+          [
+            0.98,
+            0.65
+          ]
+        ],
+        "duration": 0.44,
+        "easing_power": 2.24
+      }
+    ],
+    "delays": [
+      0.6
+    ]
+  },
+  "sample_count": 22,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.6341,
+    "max": 1.0
+  },
+  "source_log": "logs/overnight/*/*/runs/cmaes_run_*/cmaes_run_*.jsonl"
+}
