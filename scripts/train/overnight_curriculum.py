@@ -71,6 +71,30 @@ _POLL_S = 10.0
 _SIGINT_GRACE_S = 60.0   # checkpoint + result.json need time to flush
 _RETRY_MIN_BUDGET_S = 20 * 60
 _MINE_MIN_SAMPLES = 5
+_WDA_RECOVERY_TIMEOUT_S = 15 * 60  # launch_services backoff tops out at 120s cycles
+
+
+def _wait_for_wda(wda_port: int, timeout_s: float) -> bool:
+    """Block until the device's WDA responds, or timeout.
+
+    launch_services restarts a dead device's stack with escalating backoff;
+    starting (or retrying) a trick while WDA is down just burns the attempt.
+    """
+    from urllib import request as _request
+
+    deadline = time.monotonic() + timeout_s
+    notified_waiting = False
+    while time.monotonic() < deadline:
+        try:
+            with _request.urlopen(f"http://127.0.0.1:{wda_port}/status", timeout=3):
+                return True
+        except Exception:
+            if not notified_waiting:
+                notified_waiting = True
+                print(f"  [wda] :{wda_port} down — waiting for services to revive it "
+                      f"(up to {timeout_s / 60:.0f} min)")
+        time.sleep(10)
+    return False
 
 
 def _sanitize_filename(name: str) -> str:
@@ -253,6 +277,7 @@ def main() -> None:
 
     cfg = _load_config(args.config)
     device = cfg["device"]
+    wda_port = select_devices(names=[device])[0]["wda_port"]
     seed = int(cfg.get("seed", 42))
     defaults = cfg.get("defaults", {})
     queue = cfg["queue"]
@@ -290,17 +315,31 @@ def main() -> None:
                        f"warm={'yes' if warm else 'cold'}.",
                        title="TrueSkate overnight", tags=["hammer_and_wrench"])
 
+                if not _wait_for_wda(wda_port, _WDA_RECOVERY_TIMEOUT_S):
+                    raise RuntimeError(
+                        f"WDA :{wda_port} unreachable for "
+                        f"{_WDA_RECOVERY_TIMEOUT_S / 60:.0f} min before {target}"
+                    )
+
                 max_hours = item.get("max_hours", defaults.get("max_hours"))
                 started = time.monotonic()
                 result = _run_trick(cmd, log_dir, max_hours)
 
-                # One retry on infrastructure-shaped failures with budget left.
-                budget_left = (max_hours * 3600 - (time.monotonic() - started)) if max_hours else None
-                if (result["stop_reason"] in ("crashed", "all_workers_dead")
-                        and (budget_left is None or budget_left > _RETRY_MIN_BUDGET_S)):
+                # Retry infrastructure-shaped failures while budget remains —
+                # but only after WDA has actually recovered, else the retry
+                # burns instantly against a still-dead device stack.
+                retry_seed_bump = 100
+                while (result["stop_reason"] in ("crashed", "all_workers_dead")):
+                    budget_left = (max_hours * 3600 - (time.monotonic() - started)) if max_hours else None
+                    if budget_left is not None and budget_left < _RETRY_MIN_BUDGET_S:
+                        break
+                    print(f"  [retry] {result['stop_reason']} — waiting for WDA, then retrying")
+                    if not _wait_for_wda(wda_port, _WDA_RECOVERY_TIMEOUT_S):
+                        print(f"  [retry] WDA :{wda_port} never came back — giving up on {target}")
+                        break
                     retry_hours = budget_left / 3600 if budget_left else max_hours
-                    print(f"  [retry] {result['stop_reason']} — one retry with seed+100")
-                    cmd = _train_cmd(item, defaults, device, seed + idx + 100, warm, log_dir)
+                    cmd = _train_cmd(item, defaults, device, seed + idx + retry_seed_bump, warm, log_dir)
+                    retry_seed_bump += 100
                     result = _run_trick(cmd, log_dir, retry_hours)
 
                 # Harvest: the finished trick, and the next trick if its basin
