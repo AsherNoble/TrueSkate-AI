@@ -42,12 +42,21 @@ while true; do
       wda_down[$name]=0
       continue
     fi
-    if curl -s -m 3 "http://127.0.0.1:$wda/status" >/dev/null 2>&1; then
+    if curl -s -m 10 "http://127.0.0.1:$wda/status" >/dev/null 2>&1; then
+      wda_down[$name]=0
+      continue
+    fi
+    # A busy WDA can miss /status while executing gestures — if the device's
+    # training JSONL is fresh, the stack is healthy; do NOT refresh tunnels
+    # mid-eval (that's how we caused zero-capture rows on night 2).
+    devdir="iPhone_${name#XR}"; [ "$name" = "XR1" ] && devdir="iPhone_XR"; [ "$name" = "XR2" ] && devdir="iPhone_XR2"
+    j=$(ls -t "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/logs/overnight/$devdir"/*/runs/cmaes_run_*/cmaes_run_*.jsonl 2>/dev/null | head -1)
+    if [ -n "$j" ] && [ $(( $(date +%s) - $(stat -f %m "$j") )) -lt 120 ]; then
       wda_down[$name]=0
       continue
     fi
     wda_down[$name]=$(( ${wda_down[$name]} + 1 ))
-    if [ "${wda_down[$name]}" -ge 3 ] && pgrep -f "xcodebuild.*$udid" >/dev/null; then
+    if [ "${wda_down[$name]}" -ge 5 ] && pgrep -f "xcodebuild.*$udid" >/dev/null; then
       echo "[watchdog] $name WDA :$wda dead ${wda_down[$name]} checks with phone+runner present — refreshing tunnels"
       pkill -f "iproxy $wda" 2>/dev/null
       pkill -f "iproxy $mjpeg" 2>/dev/null
