@@ -150,7 +150,10 @@ def build_ffmpeg_cmd(device: str, out_dir: Path, framerate: int, bitrate: str) -
         # iPhone DAL frames all arrive with pts=0; without real timestamps the
         # HLS muxer never accrues segment duration and writes no segments.
         # (-use_wallclock_as_timestamps does NOT fix this for avfoundation.)
-        "-vf", "settb=AVTB,setpts='(RTCTIME-RTCSTART)/(TB*1000000)'",
+        # The fps filter is the real framerate cap — the -framerate input
+        # option doesn't constrain DAL devices (they deliver up to 60fps and
+        # the encode falls behind realtime under load → player stalls).
+        "-vf", f"settb=AVTB,setpts='(RTCTIME-RTCSTART)/(TB*1000000)',fps={framerate}",
         "-c:v", "h264_videotoolbox", "-realtime", "1",
         "-b:v", bitrate, "-g", str(framerate * 2),  # keyframe every 2s = one per segment
         "-f", "hls", "-hls_time", "2", "-hls_list_size", "6",
