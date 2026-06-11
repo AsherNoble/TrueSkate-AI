@@ -1,0 +1,18 @@
+{
+  "device": "iPhone_XR2",
+  "seed": 5142,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 0.6,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/inward_heelflip_3g.json"
+    }
+  ]
+}

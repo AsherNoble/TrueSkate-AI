@@ -142,7 +142,9 @@ document.addEventListener('visibilitychange', () => {{
 </body></html>"""
 
 
-def build_ffmpeg_cmd(device: str, out_dir: Path, framerate: int, bitrate: str) -> list[str]:
+def build_ffmpeg_cmd(device: str, out_dir: Path, framerate: int, bitrate: str,
+                     scale_height: int = 0) -> list[str]:
+    scale = f",scale=-2:{scale_height}" if scale_height else ""
     return [
         "ffmpeg", "-hide_banner", "-loglevel", "warning",
         "-f", "avfoundation", "-framerate", str(framerate),
@@ -153,7 +155,7 @@ def build_ffmpeg_cmd(device: str, out_dir: Path, framerate: int, bitrate: str) -
         # The fps filter is the real framerate cap — the -framerate input
         # option doesn't constrain DAL devices (they deliver up to 60fps and
         # the encode falls behind realtime under load → player stalls).
-        "-vf", f"settb=AVTB,setpts='(RTCTIME-RTCSTART)/(TB*1000000)',fps={framerate}",
+        "-vf", f"settb=AVTB,setpts='(RTCTIME-RTCSTART)/(TB*1000000)',fps={framerate}{scale}",
         "-c:v", "h264_videotoolbox", "-realtime", "1",
         "-b:v", bitrate, "-g", str(framerate * 2),  # keyframe every 2s = one per segment
         "-f", "hls", "-hls_time", "2", "-hls_list_size", "6",
@@ -202,6 +204,8 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1", help="Bind host (default 127.0.0.1; tailscale serve proxies this).")
     parser.add_argument("--framerate", type=int, default=30, help="Capture framerate (default 30).")
     parser.add_argument("--bitrate", default="6M", help="H.264 bitrate (default 6M).")
+    parser.add_argument("--scale-height", type=int, default=0,
+                        help="Downscale video to this height (0 = native). Use ~640 for remote viewing.")
     args = parser.parse_args()
 
     if args.list:
@@ -224,7 +228,7 @@ def main() -> None:
         threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
         ff = subprocess.Popen(
-            build_ffmpeg_cmd(args.device, tmp, args.framerate, args.bitrate),
+            build_ffmpeg_cmd(args.device, tmp, args.framerate, args.bitrate, args.scale_height),
             env=_shim_env(),
         )
 

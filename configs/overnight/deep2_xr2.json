@@ -1,0 +1,25 @@
+{
+  "device": "iPhone_XR2",
+  "seed": 4142,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 0.37,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/hard_flip.json",
+      "warm_start": "trick_libraries/hard_flip_20260611_064249.json",
+      "_note": "N=2 refine of the proven 70% early-stop recipe."
+    },
+    {
+      "curriculum": "curricula/360_flip.json",
+      "warm_start": "trick_libraries/360_flip_20260611_045254_xfix.json",
+      "_note": "Second-seed 360-flip refine \u2014 diversity on the demo's best trick."
+    }
+  ]
+}

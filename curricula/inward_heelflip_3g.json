@@ -1,0 +1,17 @@
+{
+  "target": "INWARD HEELFLIP",
+  "num_gestures": 3,
+  "warm_start": "trick_libraries/tail_may2026/inward_heelflip_20260611_095229.json",
+  "rewards": {
+    "INWARD HEELFLIP":      1.0,
+    "INWARD DOUBLE HEEL":   0.7,
+    "360 INWARD HEELFLIP":  0.6,
+    "HEELFLIP":             0.4,
+    "VARIAL HEELFLIP":      0.3,
+    "LASER FLIP":           0.2,
+    "POP SHOVE-IT":         0.05
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Inward heelflip = heelflip + BS pop shove-it. Warm start: 29 landed-only combo-credited samples mined from May logs."
+}
