@@ -1,0 +1,17 @@
+{
+  "target": "720 FLIP",
+  "num_gestures": 3,
+  "warm_start": "trick_libraries/tail_may2026/720_flip_20260611_095229.json",
+  "rewards": {
+    "720 FLIP":         1.0,
+    "720 DOUBLE FLIP":  0.9,
+    "360 FLIP":         0.4,
+    "360 DOUBLE FLIP":  0.3,
+    "VARIAL KICKFLIP":  0.2,
+    "KICKFLIP":         0.1,
+    "POP SHOVE-IT":     0.05
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "720 flip = two full board rotations + kickflip. Warm start: 33 combo-credited landed samples mined from May logs (tail sweep 2026-06-11). 360-flip family rewarded as the on-path basin."
+}
