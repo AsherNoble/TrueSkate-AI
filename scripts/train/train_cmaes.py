@@ -23,6 +23,7 @@ Options:
     --stop-window Rolling window size in evals for --stop-land-rate (default: 50)
 """
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -94,3 +95,10 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    # Hard-exit: run() leaves ThreadPoolExecutor workers running
+    # (shutdown(wait=False)); a worker stuck on a dead WDA socket keeps the
+    # process alive after main returns, and the orchestrator then polls a
+    # corpse until the time cap (observed 2026-06-12 ~04:30, cost 45 min).
+    # All artifacts (result.json, checkpoint, JSONL) are flushed inside
+    # run()'s finally before this line.
+    os._exit(0)
