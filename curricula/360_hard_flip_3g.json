@@ -1,0 +1,16 @@
+{
+  "target": "360 HARD FLIP",
+  "num_gestures": 3,
+  "warm_start": "trick_libraries/tail_20260611/360_hard_flip_3g_20260611_095155.json",
+  "rewards": {
+    "360 HARD FLIP":        1.0,
+    "360 DOUBLE HARD FLIP": 0.8,
+    "HARD FLIP":            0.5,
+    "DOUBLE HARD FLIP":     0.4,
+    "360 FLIP":             0.2,
+    "KICKFLIP":             0.1
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Hard-flip family deep-dive, step 2. Warm start thin (6 landed samples) — chained mining from the preceding hard-flip run is the better prior when available."
+}

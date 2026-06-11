@@ -1,0 +1,18 @@
+{
+  "target": "HARD FLIP",
+  "num_gestures": 3,
+  "warm_start": "trick_libraries/hard_flip_20260610_230442.json",
+  "rewards": {
+    "HARD FLIP":            1.0,
+    "DOUBLE HARD FLIP":     0.6,
+    "360 HARD FLIP":        0.6,
+    "FS POP SHOVE-IT":      0.4,
+    "KICKFLIP":             0.4,
+    "VARIAL KICKFLIP":      0.3,
+    "NIGHTMARE FLIP":       0.2,
+    "360 FLIP":             0.1
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "N=3 hard flip deep-refine. Warm start: 58 landed-only samples (May logs). Added 360/double hard flip as rewarded neighbours for the family deep-dive."
+}

@@ -1,0 +1,15 @@
+{
+  "target": "360 DOUBLE FLIP",
+  "num_gestures": 2,
+  "warm_start": "trick_libraries/tail_20260611/360_double_flip_20260611_095155_xfix.json",
+  "rewards": {
+    "360 DOUBLE FLIP":      1.0,
+    "360 TRIPLE FLIP":      0.8,
+    "360 FLIP":             0.5,
+    "KICKFLIP":             0.1,
+    "VARIAL KICKFLIP":      0.1
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Going deep on the working 360-flip family: double flip = same motion, harder flick. Warm start: 10 landed samples from overnight, x-remapped into the cropped bounds."
+}

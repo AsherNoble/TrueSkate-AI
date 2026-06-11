@@ -1,0 +1,23 @@
+{
+  "device": "iPhone_XR",
+  "seed": 3042,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 0.75,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/360_flip.json",
+      "warm_start": "trick_libraries/360_flip_20260611_045254_xfix.json",
+      "_note": "Deep-refine from last night's 263-sample mined lib (x-remapped), not the April prior."
+    },
+    {
+      "curriculum": "curricula/360_double_flip.json"
+    }
+  ]
+}
