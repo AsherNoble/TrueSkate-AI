@@ -117,14 +117,27 @@ video{{width:100%;height:100%;object-fit:contain}}</style></head>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 <script>
 const v = document.getElementById('v'), src = '{PLAYLIST}';
+let hls = null;
 if (v.canPlayType('application/vnd.apple.mpegurl')) {{          // Safari / iOS
   v.src = src;
 }} else if (window.Hls && Hls.isSupported()) {{                  // Chrome / Firefox
-  const hls = new Hls({{liveSyncDurationCount: 2, lowLatencyMode: true}});
+  hls = new Hls({{liveSyncDurationCount: 2, lowLatencyMode: true}});
   hls.loadSource(src); hls.attachMedia(v);
   hls.on(Hls.Events.ERROR, (_, d) => {{ if (d.fatal) setTimeout(() => {{
     hls.loadSource(src); hls.startLoad(); }}, 1500); }});         // retry while stream warms up
 }}
+// Live monitoring stream: never stay paused, never drift behind the live edge.
+function liveEdge() {{
+  if (v.seekable.length) v.currentTime = v.seekable.end(v.seekable.length - 1) - 0.5;
+}}
+v.addEventListener('pause', () => setTimeout(() => {{ liveEdge(); v.play(); }}, 300));
+setInterval(() => {{
+  if (v.paused) {{ liveEdge(); v.play(); }}
+  else if (v.seekable.length && v.seekable.end(v.seekable.length - 1) - v.currentTime > 8) liveEdge();
+}}, 5000);
+document.addEventListener('visibilitychange', () => {{
+  if (!document.hidden) {{ liveEdge(); v.play(); }}
+}});
 </script>
 </body></html>"""
 
