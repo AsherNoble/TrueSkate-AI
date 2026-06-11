@@ -22,6 +22,8 @@ PUSH_END: tuple[float, float] = (
 
 Y_BOUND_MIN: float = 0.12   # top of the valid RL gesture area
 Y_BOUND_MAX: float = 0.88   # bottom of the valid RL gesture area (avoids home indicator)
+X_BOUND_MIN: float = 0.12   # left edge hosts in-game buttons (spin ~x=0.06, clip/replay
+X_BOUND_MAX: float = 1.0    # below it) — gestures grazing them open the replay-clip UI
 
 
 def scale_to_device(x: float, y: float, device_w: float, device_h: float) -> tuple[float, float]:

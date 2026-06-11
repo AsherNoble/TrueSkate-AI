@@ -20,6 +20,8 @@ from trueskate_ai.sim.gestures import (
     PUSH_END,
     PUSH_PRE_DELAY,
     PUSH_START,
+    X_BOUND_MAX,
+    X_BOUND_MIN,
     Y_BOUND_MAX,
     Y_BOUND_MIN,
     execute_static_push,
@@ -53,11 +55,11 @@ def infer_num_gestures(n_params: int) -> int:
 
 # fmt: off
 _SLOT_BOUNDS: list[list[float]] = [
-    [0.0, 1.0],                    # x0
+    [X_BOUND_MIN, X_BOUND_MAX],    # x0
     [Y_BOUND_MIN, Y_BOUND_MAX],    # y0
-    [0.0, 1.0],                    # x1
+    [X_BOUND_MIN, X_BOUND_MAX],    # x1
     [Y_BOUND_MIN, Y_BOUND_MAX],    # y1
-    [0.0, 1.0],                    # x2
+    [X_BOUND_MIN, X_BOUND_MAX],    # x2
     [Y_BOUND_MIN, Y_BOUND_MAX],    # y2
     [0.03, 0.8],                   # duration
     [0.3, 3.0],                    # easing_power

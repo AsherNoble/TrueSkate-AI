@@ -1,0 +1,19 @@
+{
+  "device": "iPhone_XR",
+  "seed": 2042,
+  "defaults": {
+    "pop_size": 14,
+    "max_evals": 1500,
+    "max_hours": 2.0,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/720_flip_3g.json",
+      "warm_start": "trick_libraries/tail_may2026/720_flip_20260611_095229.json"
+    }
+  ]
+}
