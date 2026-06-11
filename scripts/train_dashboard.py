@@ -31,12 +31,15 @@ def _newest_jsonl(log_root: Path, device: str) -> Path | None:
     return runs[0] if runs else None
 
 
-def _device_status(log_root: Path, device: str) -> dict:
+def _device_status(log_root: Path, device: str, log_delay_s: float = 0.0) -> dict:
     j = _newest_jsonl(log_root, device)
     if j is None:
         return {"device": device, "trick": "—", "evals": 0, "note": "no run found"}
     target = None
     rows = []
+    # Hide rows newer than the stream latency so the log never references a
+    # trick the (HLS-delayed) video hasn't shown yet.
+    cutoff = time.time() - log_delay_s
     with j.open() as f:
         for line in f:
             line = line.strip()
@@ -49,6 +52,13 @@ def _device_status(log_root: Path, device: str) -> dict:
             if r.get("type") == "run_config":
                 target = r.get("target")
             elif "trick_name" in r or "eval_num" in r:
+                if log_delay_s > 0:
+                    try:
+                        ts = time.mktime(time.strptime(r["timestamp"][:19], "%Y-%m-%dT%H:%M:%S"))
+                        if ts > cutoff:
+                            continue
+                    except (KeyError, ValueError):
+                        pass
                 rows.append(r)
     evals = len(rows)
     lands = [r for r in rows if r.get("trick_status") == "landed"]
@@ -140,14 +150,17 @@ tick(); setInterval(tick, 5000);
 
 
 class _Handler(BaseHTTPRequestHandler):
-    def __init__(self, *args, log_root: Path, stream_host: str, **kwargs):
+    def __init__(self, *args, log_root: Path, stream_host: str, log_delay_s: float, **kwargs):
         self.log_root = log_root
         self.stream_host = stream_host
+        self.log_delay_s = log_delay_s
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
         if self.path == "/data":
-            body = json.dumps([_device_status(self.log_root, d) for d in DEVICES]).encode()
+            body = json.dumps([
+                _device_status(self.log_root, d, self.log_delay_s) for d in DEVICES
+            ]).encode()
             ctype = "application/json"
         else:
             body = _PAGE.replace("__STREAM_HOST__", self.stream_host).encode()
@@ -170,9 +183,12 @@ def main() -> None:
     parser.add_argument("--stream-host", default="100.83.159.74",
                         help="Host the view_device streams are bound to")
     parser.add_argument("--log-root", type=Path, default=_REPO_ROOT / "logs" / "overnight")
+    parser.add_argument("--log-delay", type=float, default=8.0,
+                        help="Seconds to lag the log so it matches HLS stream latency (default 8)")
     args = parser.parse_args()
 
-    handler = functools.partial(_Handler, log_root=args.log_root, stream_host=args.stream_host)
+    handler = functools.partial(_Handler, log_root=args.log_root, stream_host=args.stream_host,
+                                log_delay_s=args.log_delay)
     try:
         httpd = ThreadingHTTPServer((args.host, args.port), handler)
     except OSError as e:
