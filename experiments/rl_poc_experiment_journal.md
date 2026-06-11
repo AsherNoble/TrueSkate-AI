@@ -166,3 +166,8 @@
 - Replay validation of night-2 libraries: HARD FLIP **5/5 on XR1** (its training device). LASER FLIP **4/5 on XR2** (its training device) but **0/5-as-laser on XR1** (lands 360 FLIPs there — same normalised params, different flip).
 - Implication: converged recipes encode device-specific touch-timing/panel characteristics at the margin between adjacent tricks. Validate and demo each library on its training device; treat cross-device transfer as a warm start, not a replay.
 - Day-3 queues route accordingly: 360/hard-flip lineage on XR1, laser lineage on XR2. Descent tests running: hard flip→kickflip (XR1), laser→heelflip (XR2); ascent: 360 triple, triple laser.
+## CORRECTION: Stance Mirror, Not Device Flavor (2026-06-12 ~09:00)
+- **XR2's skater stance was REGULAR (XR1 goofy) until now — Asher caught it.** True Skate labels tricks relative to stance, so every XR2 detection pre-switch is the mirror trick: LASER↔360 FLIP, INWARD HEEL↔HARD FLIP, heel↔kick families, BS↔FS shoves/rotations.
+- Supersedes the "device-flavored recipes" entry above: the laser lib replaying as 360 FLIP on XR1 was the mirror, not touch calibration. The "laser 70% convergence" = a second converged 360-flip recipe; the demo's "double laser finale" = a 360 double flip in mirror.
+- Flag file with mirror map + affected libraries: `trick_libraries/FLAGGED_stance_mirror_xr2.md`. Pre-switch XR2 JSONLs need label mirroring before mining; post-switch runs are clean. Also re-judge: "inward heelflip 0%" and "backside 180 0.6%" failures were mirror-confused curricula.
+- Ops lesson: add stance to the pre-run device checklist (park, camera, stance, DND, Auto-Lock).
