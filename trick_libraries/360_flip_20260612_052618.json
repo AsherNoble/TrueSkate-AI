@@ -1,0 +1,97 @@
+{
+  "trick": "360 FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.67,
+            0.85
+          ],
+          [
+            0.8,
+            0.72
+          ],
+          [
+            0.21,
+            0.83
+          ]
+        ],
+        "duration": 0.75,
+        "easing_power": 0.98
+      },
+      {
+        "points": [
+          [
+            0.47,
+            0.67
+          ],
+          [
+            0.69,
+            0.88
+          ],
+          [
+            0.89,
+            0.52
+          ]
+        ],
+        "duration": 0.28,
+        "easing_power": 2.6
+      }
+    ],
+    "delays": [
+      0.73
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.89,
+            0.8
+          ],
+          [
+            0.75,
+            0.78
+          ],
+          [
+            0.17,
+            0.88
+          ]
+        ],
+        "duration": 0.37,
+        "easing_power": 0.3
+      },
+      {
+        "points": [
+          [
+            0.65,
+            0.67
+          ],
+          [
+            0.98,
+            0.86
+          ],
+          [
+            0.98,
+            0.51
+          ]
+        ],
+        "duration": 0.47,
+        "easing_power": 2.95
+      }
+    ],
+    "delays": [
+      0.8
+    ]
+  },
+  "sample_count": 276,
+  "landed_only": true,
+  "reward_stats": {
+    "min": 1.0,
+    "mean": 1.0,
+    "max": 1.0
+  },
+  "source_log": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/logs/overnight/iPhone_XR/01_360_flip/runs/cmaes_run_20260612_025611/cmaes_run_20260612_025611.jsonl"
+}

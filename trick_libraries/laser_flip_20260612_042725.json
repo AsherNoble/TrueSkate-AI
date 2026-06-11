@@ -1,0 +1,97 @@
+{
+  "trick": "LASER FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.89,
+            0.8
+          ],
+          [
+            0.73,
+            0.7
+          ],
+          [
+            0.13,
+            0.82
+          ]
+        ],
+        "duration": 0.24,
+        "easing_power": 1.09
+      },
+      {
+        "points": [
+          [
+            0.61,
+            0.63
+          ],
+          [
+            0.98,
+            0.87
+          ],
+          [
+            0.97,
+            0.57
+          ]
+        ],
+        "duration": 0.41,
+        "easing_power": 2.84
+      }
+    ],
+    "delays": [
+      0.76
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.82,
+            0.87
+          ],
+          [
+            0.59,
+            0.8
+          ],
+          [
+            0.13,
+            0.8
+          ]
+        ],
+        "duration": 0.31,
+        "easing_power": 1.23
+      },
+      {
+        "points": [
+          [
+            0.59,
+            0.7
+          ],
+          [
+            1.0,
+            0.85
+          ],
+          [
+            1.0,
+            0.43
+          ]
+        ],
+        "duration": 0.52,
+        "easing_power": 2.65
+      }
+    ],
+    "delays": [
+      0.7
+    ]
+  },
+  "sample_count": 187,
+  "landed_only": true,
+  "reward_stats": {
+    "min": 1.0,
+    "mean": 1.0,
+    "max": 1.0
+  },
+  "source_log": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/logs/overnight/iPhone_XR2/01_laser_flip/runs/cmaes_run_20260612_030214/cmaes_run_20260612_030214.jsonl"
+}
