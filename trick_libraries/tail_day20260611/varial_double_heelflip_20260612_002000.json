@@ -1,0 +1,136 @@
+{
+  "trick": "VARIAL DOUBLE HEELFLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.29000000000000004,
+            0.53
+          ],
+          [
+            0.55,
+            0.5349999999999999
+          ],
+          [
+            0.39,
+            0.64
+          ]
+        ],
+        "duration": 0.095,
+        "easing_power": 0.8800000000000001
+      },
+      {
+        "points": [
+          [
+            0.435,
+            0.53
+          ],
+          [
+            0.235,
+            0.265
+          ],
+          [
+            0.715,
+            0.345
+          ]
+        ],
+        "duration": 0.21000000000000002,
+        "easing_power": 0.75
+      },
+      {
+        "points": [
+          [
+            0.51,
+            0.365
+          ],
+          [
+            0.605,
+            0.455
+          ],
+          [
+            0.29500000000000004,
+            0.175
+          ]
+        ],
+        "duration": 0.095,
+        "easing_power": 1.825
+      }
+    ],
+    "delays": [
+      0.79,
+      0.13
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.35,
+            0.57
+          ],
+          [
+            0.38,
+            0.66
+          ],
+          [
+            0.43,
+            0.54
+          ]
+        ],
+        "duration": 0.55,
+        "easing_power": 1.09
+      },
+      {
+        "points": [
+          [
+            0.53,
+            0.54
+          ],
+          [
+            0.25,
+            0.3
+          ],
+          [
+            0.71,
+            0.25
+          ]
+        ],
+        "duration": 0.23,
+        "easing_power": 1.84
+      },
+      {
+        "points": [
+          [
+            0.42,
+            0.44
+          ],
+          [
+            0.48,
+            0.48
+          ],
+          [
+            0.25,
+            0.25
+          ]
+        ],
+        "duration": 0.13,
+        "easing_power": 0.48
+      }
+    ],
+    "delays": [
+      0.8,
+      0.06
+    ]
+  },
+  "sample_count": 4,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/overnight/iPhone_XR*/0[01]_*/runs/cmaes_run_20260611_1*/cmaes_run_*.jsonl"
+}

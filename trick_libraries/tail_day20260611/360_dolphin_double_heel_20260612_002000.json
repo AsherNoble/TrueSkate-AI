@@ -1,0 +1,136 @@
+{
+  "trick": "360 DOLPHIN DOUBLE HEEL",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.27,
+            0.48
+          ],
+          [
+            0.51,
+            0.55
+          ],
+          [
+            0.4,
+            0.64
+          ]
+        ],
+        "duration": 0.11,
+        "easing_power": 1.58
+      },
+      {
+        "points": [
+          [
+            0.43,
+            0.57
+          ],
+          [
+            0.18,
+            0.29
+          ],
+          [
+            0.74,
+            0.35
+          ]
+        ],
+        "duration": 0.17,
+        "easing_power": 0.52
+      },
+      {
+        "points": [
+          [
+            0.52,
+            0.36
+          ],
+          [
+            0.61,
+            0.45
+          ],
+          [
+            0.34,
+            0.2
+          ]
+        ],
+        "duration": 0.22,
+        "easing_power": 2.19
+      }
+    ],
+    "delays": [
+      0.79,
+      0.17
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.27,
+            0.48
+          ],
+          [
+            0.48,
+            0.58
+          ],
+          [
+            0.55,
+            0.64
+          ]
+        ],
+        "duration": 0.7,
+        "easing_power": 2.01
+      },
+      {
+        "points": [
+          [
+            0.48,
+            0.58
+          ],
+          [
+            0.17,
+            0.36
+          ],
+          [
+            0.79,
+            0.39
+          ]
+        ],
+        "duration": 0.19,
+        "easing_power": 0.9
+      },
+      {
+        "points": [
+          [
+            0.43,
+            0.37
+          ],
+          [
+            0.41,
+            0.5
+          ],
+          [
+            0.22,
+            0.25
+          ]
+        ],
+        "duration": 0.22,
+        "easing_power": 0.93
+      }
+    ],
+    "delays": [
+      0.74,
+      0.17
+    ]
+  },
+  "sample_count": 5,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/overnight/iPhone_XR*/0[01]_*/runs/cmaes_run_20260611_1*/cmaes_run_*.jsonl"
+}

@@ -1,0 +1,14 @@
+{
+  "target": "BACKSIDE 180",
+  "num_gestures": 2,
+  "warm_start": "trick_libraries/tail_20260611/backside_180_2g_20260611_095155_xfix.json",
+  "rewards": {
+    "BACKSIDE 180":         1.0,
+    "BACKSIDE 360":         0.5,
+    "FRONTSIDE 180":        0.3,
+    "OLLIE":                0.1
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Banking the rotation family: 13 landed samples from the 2026-06-10 overnight. Simple trick, should convert fast — diversity for the trick library."
+}

@@ -1,0 +1,98 @@
+{
+  "trick": "PRIMO SLIDE",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.85,
+            0.86
+          ],
+          [
+            0.79,
+            0.78
+          ],
+          [
+            0.26,
+            0.88
+          ]
+        ],
+        "duration": 0.34,
+        "easing_power": 1.07
+      },
+      {
+        "points": [
+          [
+            0.51,
+            0.57
+          ],
+          [
+            0.96,
+            0.81
+          ],
+          [
+            0.96,
+            0.5
+          ]
+        ],
+        "duration": 0.58,
+        "easing_power": 2.73
+      }
+    ],
+    "delays": [
+      0.77
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.87,
+            0.86
+          ],
+          [
+            0.95,
+            0.84
+          ],
+          [
+            0.26,
+            0.88
+          ]
+        ],
+        "duration": 0.33,
+        "easing_power": 0.64
+      },
+      {
+        "points": [
+          [
+            0.51,
+            0.57
+          ],
+          [
+            0.98,
+            0.85
+          ],
+          [
+            0.93,
+            0.45
+          ]
+        ],
+        "duration": 0.22,
+        "easing_power": 2.21
+      }
+    ],
+    "delays": [
+      0.8
+    ]
+  },
+  "sample_count": 5,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.36,
+    "max": 1.0
+  },
+  "source_log": "logs/overnight/iPhone_XR*/0[01]_*/runs/cmaes_run_20260611_1*/cmaes_run_*.jsonl"
+}

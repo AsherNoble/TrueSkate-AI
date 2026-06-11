@@ -1,0 +1,31 @@
+{
+  "device": "iPhone_XR",
+  "seed": 6042,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 2.5,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/360_double_flip.json",
+      "warm_start": "trick_libraries/tail_day20260611/360_double_flip_2g_20260612_002000.json",
+      "_note": "Resume with 45 combined samples — was trending 16-20% before USB interruptions."
+    },
+    {
+      "curriculum": "curricula/360_flip.json",
+      "warm_start": "trick_libraries/tail_day20260611/360_flip_2g_20260612_002000.json",
+      "_note": "Polish toward 70% from today's freshest 145-sample mine."
+    },
+    {
+      "curriculum": "curricula/hard_flip.json",
+      "warm_start": "trick_libraries/hard_flip_20260611_064249.json",
+      "stop_land_rate": 0.85,
+      "_note": "Already converged at 70% — push the ceiling."
+    }
+  ]
+}

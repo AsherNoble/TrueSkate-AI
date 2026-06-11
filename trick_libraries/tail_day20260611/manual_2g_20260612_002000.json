@@ -1,0 +1,98 @@
+{
+  "trick": "MANUAL",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.825,
+            0.86
+          ],
+          [
+            0.885,
+            0.78
+          ],
+          [
+            0.215,
+            0.875
+          ]
+        ],
+        "duration": 0.435,
+        "easing_power": 0.97
+      },
+      {
+        "points": [
+          [
+            0.515,
+            0.63
+          ],
+          [
+            0.9550000000000001,
+            0.845
+          ],
+          [
+            0.915,
+            0.51
+          ]
+        ],
+        "duration": 0.295,
+        "easing_power": 2.8
+      }
+    ],
+    "delays": [
+      0.76
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.86,
+            0.85
+          ],
+          [
+            0.85,
+            0.77
+          ],
+          [
+            0.18,
+            0.87
+          ]
+        ],
+        "duration": 0.4,
+        "easing_power": 1.09
+      },
+      {
+        "points": [
+          [
+            0.5,
+            0.6
+          ],
+          [
+            1.0,
+            0.87
+          ],
+          [
+            0.93,
+            0.52
+          ]
+        ],
+        "duration": 0.6,
+        "easing_power": 2.89
+      }
+    ],
+    "delays": [
+      0.77
+    ]
+  },
+  "sample_count": 4,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.1125,
+    "max": 0.3
+  },
+  "source_log": "logs/overnight/iPhone_XR*/0[01]_*/runs/cmaes_run_20260611_1*/cmaes_run_*.jsonl"
+}

@@ -1,0 +1,136 @@
+{
+  "trick": "NOLLIE NOSE SLIDE",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.51,
+            0.52
+          ],
+          [
+            0.5800000000000001,
+            0.85
+          ],
+          [
+            0.585,
+            0.875
+          ]
+        ],
+        "duration": 0.22999999999999998,
+        "easing_power": 2.6799999999999997
+      },
+      {
+        "points": [
+          [
+            0.66,
+            0.515
+          ],
+          [
+            0.575,
+            0.39
+          ],
+          [
+            0.765,
+            0.495
+          ]
+        ],
+        "duration": 0.04,
+        "easing_power": 1.13
+      },
+      {
+        "points": [
+          [
+            0.555,
+            0.47
+          ],
+          [
+            0.43,
+            0.21500000000000002
+          ],
+          [
+            0.46499999999999997,
+            0.315
+          ]
+        ],
+        "duration": 0.385,
+        "easing_power": 2.585
+      }
+    ],
+    "delays": [
+      0.22000000000000003,
+      0.12
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.48,
+            0.51
+          ],
+          [
+            0.6,
+            0.88
+          ],
+          [
+            0.61,
+            0.86
+          ]
+        ],
+        "duration": 0.3,
+        "easing_power": 2.78
+      },
+      {
+        "points": [
+          [
+            0.7,
+            0.62
+          ],
+          [
+            0.6,
+            0.4
+          ],
+          [
+            0.78,
+            0.52
+          ]
+        ],
+        "duration": 0.03,
+        "easing_power": 0.59
+      },
+      {
+        "points": [
+          [
+            0.56,
+            0.54
+          ],
+          [
+            0.44,
+            0.19
+          ],
+          [
+            0.46,
+            0.32
+          ]
+        ],
+        "duration": 0.15,
+        "easing_power": 1.9
+      }
+    ],
+    "delays": [
+      0.27,
+      -0.01
+    ]
+  },
+  "sample_count": 8,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.0,
+    "mean": 0.025,
+    "max": 0.05
+  },
+  "source_log": "logs/overnight/iPhone_XR*/0[01]_*/runs/cmaes_run_20260611_1*/cmaes_run_*.jsonl"
+}

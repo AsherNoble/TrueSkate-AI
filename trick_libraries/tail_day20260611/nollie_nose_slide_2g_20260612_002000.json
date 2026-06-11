@@ -1,0 +1,98 @@
+{
+  "trick": "NOLLIE NOSE SLIDE",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.775,
+            0.865
+          ],
+          [
+            0.8049999999999999,
+            0.785
+          ],
+          [
+            0.22,
+            0.86
+          ]
+        ],
+        "duration": 0.405,
+        "easing_power": 1.13
+      },
+      {
+        "points": [
+          [
+            0.535,
+            0.64
+          ],
+          [
+            0.98,
+            0.835
+          ],
+          [
+            0.96,
+            0.55
+          ]
+        ],
+        "duration": 0.385,
+        "easing_power": 2.52
+      }
+    ],
+    "delays": [
+      0.745
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.86,
+            0.86
+          ],
+          [
+            0.82,
+            0.69
+          ],
+          [
+            0.19,
+            0.87
+          ]
+        ],
+        "duration": 0.69,
+        "easing_power": 1.09
+      },
+      {
+        "points": [
+          [
+            0.61,
+            0.68
+          ],
+          [
+            1.0,
+            0.87
+          ],
+          [
+            0.94,
+            0.42
+          ]
+        ],
+        "duration": 0.42,
+        "easing_power": 2.98
+      }
+    ],
+    "delays": [
+      0.47
+    ]
+  },
+  "sample_count": 18,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.5306,
+    "max": 1.0
+  },
+  "source_log": "logs/overnight/iPhone_XR*/0[01]_*/runs/cmaes_run_20260611_1*/cmaes_run_*.jsonl"
+}

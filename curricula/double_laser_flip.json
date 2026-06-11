@@ -1,0 +1,16 @@
+{
+  "target": "DOUBLE LASER FLIP",
+  "num_gestures": 2,
+  "warm_start": "trick_libraries/double_laser_flip_demo_20260611.json",
+  "rewards": {
+    "DOUBLE LASER FLIP":    1.0,
+    "TRIPLE LASER FLIP":    0.9,
+    "LASER FLIP":           0.5,
+    "DOUBLE HEELFLIP":      0.3,
+    "VARIAL HEELFLIP":      0.2,
+    "HEELFLIP":             0.1
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Consolidating the accidental discovery: this recipe replayed 4/4 on iPhone_XR2 at the 2026-06-11 demo. Expect a fast early-stop; goal is a converged, mined library rather than exploration."
+}

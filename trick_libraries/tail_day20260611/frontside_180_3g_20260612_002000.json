@@ -1,0 +1,136 @@
+{
+  "trick": "FRONTSIDE 180",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.33,
+            0.51
+          ],
+          [
+            0.51,
+            0.64
+          ],
+          [
+            0.5,
+            0.64
+          ]
+        ],
+        "duration": 0.5,
+        "easing_power": 1.41
+      },
+      {
+        "points": [
+          [
+            0.58,
+            0.57
+          ],
+          [
+            0.2,
+            0.32
+          ],
+          [
+            0.75,
+            0.37
+          ]
+        ],
+        "duration": 0.06,
+        "easing_power": 0.37
+      },
+      {
+        "points": [
+          [
+            0.5,
+            0.42
+          ],
+          [
+            0.54,
+            0.38
+          ],
+          [
+            0.33,
+            0.24
+          ]
+        ],
+        "duration": 0.14,
+        "easing_power": 1.79
+      }
+    ],
+    "delays": [
+      0.6,
+      0.12
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.67,
+            0.51
+          ],
+          [
+            0.55,
+            0.86
+          ],
+          [
+            0.6,
+            0.88
+          ]
+        ],
+        "duration": 0.67,
+        "easing_power": 2.47
+      },
+      {
+        "points": [
+          [
+            0.67,
+            0.63
+          ],
+          [
+            0.58,
+            0.36
+          ],
+          [
+            0.69,
+            0.44
+          ]
+        ],
+        "duration": 0.06,
+        "easing_power": 0.33
+      },
+      {
+        "points": [
+          [
+            0.54,
+            0.53
+          ],
+          [
+            0.47,
+            0.16
+          ],
+          [
+            0.51,
+            0.33
+          ]
+        ],
+        "duration": 0.31,
+        "easing_power": 2.95
+      }
+    ],
+    "delays": [
+      0.48,
+      0.12
+    ]
+  },
+  "sample_count": 5,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.05,
+    "max": 0.05
+  },
+  "source_log": "logs/overnight/iPhone_XR*/0[01]_*/runs/cmaes_run_20260611_1*/cmaes_run_*.jsonl"
+}

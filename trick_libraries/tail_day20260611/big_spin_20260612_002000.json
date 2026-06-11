@@ -1,0 +1,136 @@
+{
+  "trick": "BIG SPIN",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.55,
+            0.51
+          ],
+          [
+            0.63,
+            0.88
+          ],
+          [
+            0.51,
+            0.79
+          ]
+        ],
+        "duration": 0.08,
+        "easing_power": 2.39
+      },
+      {
+        "points": [
+          [
+            0.61,
+            0.6
+          ],
+          [
+            0.52,
+            0.34
+          ],
+          [
+            0.78,
+            0.4
+          ]
+        ],
+        "duration": 0.07,
+        "easing_power": 1.07
+      },
+      {
+        "points": [
+          [
+            0.56,
+            0.49
+          ],
+          [
+            0.38,
+            0.32
+          ],
+          [
+            0.48,
+            0.28
+          ]
+        ],
+        "duration": 0.53,
+        "easing_power": 1.95
+      }
+    ],
+    "delays": [
+      0.08,
+      0.48
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.51,
+            0.58
+          ],
+          [
+            0.62,
+            0.88
+          ],
+          [
+            0.51,
+            0.79
+          ]
+        ],
+        "duration": 0.19,
+        "easing_power": 2.39
+      },
+      {
+        "points": [
+          [
+            0.61,
+            0.64
+          ],
+          [
+            0.53,
+            0.53
+          ],
+          [
+            0.78,
+            0.4
+          ]
+        ],
+        "duration": 0.07,
+        "easing_power": 1.44
+      },
+      {
+        "points": [
+          [
+            0.59,
+            0.48
+          ],
+          [
+            0.29,
+            0.32
+          ],
+          [
+            0.47,
+            0.48
+          ]
+        ],
+        "duration": 0.51,
+        "easing_power": 2.05
+      }
+    ],
+    "delays": [
+      -0.07,
+      0.48
+    ]
+  },
+  "sample_count": 3,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.2833,
+    "max": 0.4
+  },
+  "source_log": "logs/overnight/iPhone_XR*/0[01]_*/runs/cmaes_run_20260611_1*/cmaes_run_*.jsonl"
+}

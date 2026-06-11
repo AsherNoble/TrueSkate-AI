@@ -1,0 +1,16 @@
+{
+  "target": "LASER FLIP",
+  "num_gestures": 2,
+  "warm_start": "trick_libraries/double_laser_flip_demo_20260611.json",
+  "rewards": {
+    "LASER FLIP":           1.0,
+    "DOUBLE LASER FLIP":    0.6,
+    "TRIPLE LASER FLIP":    0.5,
+    "VARIAL HEELFLIP":      0.3,
+    "HEELFLIP":             0.2,
+    "INWARD HEELFLIP":      0.1
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Laser flip = FS 360 + heelflip. Warm start from the proven double-laser recipe (same family, gentler flick should drop one rotation). Orchestrator chaining from the preceding double-laser run is the better prior when available."
+}

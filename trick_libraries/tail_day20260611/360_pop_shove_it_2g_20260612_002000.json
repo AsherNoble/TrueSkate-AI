@@ -1,0 +1,98 @@
+{
+  "trick": "360 POP SHOVE-IT",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.835,
+            0.87
+          ],
+          [
+            0.83,
+            0.74
+          ],
+          [
+            0.20500000000000002,
+            0.87
+          ]
+        ],
+        "duration": 0.405,
+        "easing_power": 1.0350000000000001
+      },
+      {
+        "points": [
+          [
+            0.56,
+            0.63
+          ],
+          [
+            0.99,
+            0.82
+          ],
+          [
+            0.97,
+            0.565
+          ]
+        ],
+        "duration": 0.42,
+        "easing_power": 2.82
+      }
+    ],
+    "delays": [
+      0.74
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.84,
+            0.62
+          ],
+          [
+            0.88,
+            0.78
+          ],
+          [
+            0.12,
+            0.87
+          ]
+        ],
+        "duration": 0.35,
+        "easing_power": 0.82
+      },
+      {
+        "points": [
+          [
+            0.54,
+            0.64
+          ],
+          [
+            0.93,
+            0.81
+          ],
+          [
+            0.9,
+            0.57
+          ]
+        ],
+        "duration": 0.48,
+        "easing_power": 2.64
+      }
+    ],
+    "delays": [
+      0.76
+    ]
+  },
+  "sample_count": 52,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.05,
+    "mean": 0.2519,
+    "max": 0.3
+  },
+  "source_log": "logs/overnight/iPhone_XR*/0[01]_*/runs/cmaes_run_20260611_1*/cmaes_run_*.jsonl"
+}

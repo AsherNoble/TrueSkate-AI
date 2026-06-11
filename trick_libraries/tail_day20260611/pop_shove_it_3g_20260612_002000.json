@@ -1,0 +1,136 @@
+{
+  "trick": "POP SHOVE-IT",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.34,
+            0.53
+          ],
+          [
+            0.55,
+            0.66
+          ],
+          [
+            0.44,
+            0.67
+          ]
+        ],
+        "duration": 0.15,
+        "easing_power": 1.4
+      },
+      {
+        "points": [
+          [
+            0.48,
+            0.58
+          ],
+          [
+            0.25,
+            0.32
+          ],
+          [
+            0.73,
+            0.32
+          ]
+        ],
+        "duration": 0.11,
+        "easing_power": 0.62
+      },
+      {
+        "points": [
+          [
+            0.52,
+            0.38
+          ],
+          [
+            0.56,
+            0.4
+          ],
+          [
+            0.38,
+            0.23
+          ]
+        ],
+        "duration": 0.26,
+        "easing_power": 2.37
+      }
+    ],
+    "delays": [
+      0.7,
+      0.24
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.48,
+            0.41
+          ],
+          [
+            0.43,
+            0.77
+          ],
+          [
+            0.52,
+            0.73
+          ]
+        ],
+        "duration": 0.73,
+        "easing_power": 1.47
+      },
+      {
+        "points": [
+          [
+            0.67,
+            0.33
+          ],
+          [
+            0.41,
+            0.55
+          ],
+          [
+            1.0,
+            0.41
+          ]
+        ],
+        "duration": 0.11,
+        "easing_power": 1.06
+      },
+      {
+        "points": [
+          [
+            0.44,
+            0.54
+          ],
+          [
+            0.36,
+            0.6
+          ],
+          [
+            0.78,
+            0.43
+          ]
+        ],
+        "duration": 0.7,
+        "easing_power": 1.4
+      }
+    ],
+    "delays": [
+      -0.29,
+      0.44
+    ]
+  },
+  "sample_count": 479,
+  "landed_only": true,
+  "num_gestures": 3,
+  "reward_stats": {
+    "min": 0.0,
+    "mean": 0.2003,
+    "max": 1.0
+  },
+  "source_log": "logs/overnight/iPhone_XR*/0[01]_*/runs/cmaes_run_20260611_1*/cmaes_run_*.jsonl"
+}

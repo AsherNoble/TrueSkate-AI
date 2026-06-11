@@ -1,0 +1,98 @@
+{
+  "trick": "360 FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.82,
+            0.87
+          ],
+          [
+            0.84,
+            0.74
+          ],
+          [
+            0.2,
+            0.87
+          ]
+        ],
+        "duration": 0.4,
+        "easing_power": 1.02
+      },
+      {
+        "points": [
+          [
+            0.59,
+            0.62
+          ],
+          [
+            0.99,
+            0.84
+          ],
+          [
+            0.96,
+            0.55
+          ]
+        ],
+        "duration": 0.37,
+        "easing_power": 2.72
+      }
+    ],
+    "delays": [
+      0.76
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.93,
+            0.78
+          ],
+          [
+            0.91,
+            0.83
+          ],
+          [
+            0.12,
+            0.88
+          ]
+        ],
+        "duration": 0.5,
+        "easing_power": 1.25
+      },
+      {
+        "points": [
+          [
+            0.61,
+            0.58
+          ],
+          [
+            0.99,
+            0.82
+          ],
+          [
+            0.98,
+            0.54
+          ]
+        ],
+        "duration": 0.34,
+        "easing_power": 2.14
+      }
+    ],
+    "delays": [
+      0.74
+    ]
+  },
+  "sample_count": 145,
+  "landed_only": true,
+  "num_gestures": 2,
+  "reward_stats": {
+    "min": 0.5,
+    "mean": 0.8517,
+    "max": 1.0
+  },
+  "source_log": "logs/overnight/iPhone_XR*/0[01]_*/runs/cmaes_run_20260611_1*/cmaes_run_*.jsonl"
+}
