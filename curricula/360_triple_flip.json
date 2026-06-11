@@ -1,0 +1,15 @@
+{
+  "target": "360 TRIPLE FLIP",
+  "num_gestures": 2,
+  "warm_start": "trick_libraries/360_double_flip_20260612_025608.json",
+  "rewards": {
+    "360 TRIPLE FLIP":      1.0,
+    "360 QUAD FLIP":        0.8,
+    "360 DOUBLE FLIP":      0.5,
+    "360 FLIP":             0.2,
+    "KICKFLIP":             0.05
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Family ascent on XR1's own lineage: 360 double (48%, XR1-flavored) + harder flick."
+}

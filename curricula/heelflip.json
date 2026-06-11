@@ -1,6 +1,6 @@
 {
   "target": "HEELFLIP",
-  "warm_start": null,
+  "warm_start": "trick_libraries/laser_flip_20260612_042725.json",
   "rewards": {
     "HEELFLIP":             1.0,
     "DOUBLE HEELFLIP":      0.5,
@@ -12,5 +12,5 @@
   },
   "default_reward": 0.05,
   "failure_multiplier": "near_miss",
-  "notes": "First heelflip-family target. No warm-start yet — will start from action_param.INITIAL_MEAN."
+  "notes": "Family descent test #2 (2026-06-12): laser flip (converged 70% on XR2) minus the FS 360 = plain heelflip. Tests whether descent works subtractively. NOTE: laser recipe is XR2-flavored — it lands 360 flips on XR1, so run this on XR2."
 }

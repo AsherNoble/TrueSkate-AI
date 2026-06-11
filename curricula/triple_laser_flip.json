@@ -1,0 +1,14 @@
+{
+  "target": "TRIPLE LASER FLIP",
+  "num_gestures": 2,
+  "warm_start": "trick_libraries/double_laser_flip_20260612_030211.json",
+  "rewards": {
+    "TRIPLE LASER FLIP":    1.0,
+    "DOUBLE LASER FLIP":    0.5,
+    "LASER FLIP":           0.2,
+    "VARIAL HEELFLIP":      0.1
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Family ascent: double laser + harder flick. Warm from the consolidated double-laser library (30% rate, 870 evals)."
+}

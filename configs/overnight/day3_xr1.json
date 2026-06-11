@@ -1,0 +1,27 @@
+{
+  "device": "iPhone_XR",
+  "seed": 7042,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 2.5,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/360_double_flip.json",
+      "warm_start": "trick_libraries/360_double_flip_20260612_025608.json",
+      "_note": "Push 48% to the 70% stop."
+    },
+    {
+      "curriculum": "curricula/360_triple_flip.json"
+    },
+    {
+      "curriculum": "curricula/kickflip_2g.json",
+      "_note": "Descent test #3 \u2014 converged hard flip minus the shove."
+    }
+  ]
+}

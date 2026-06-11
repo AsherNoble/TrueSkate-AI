@@ -1,0 +1,15 @@
+{
+  "target": "KICKFLIP",
+  "num_gestures": 2,
+  "warm_start": "trick_libraries/hard_flip_20260612_062911.json",
+  "rewards": {
+    "KICKFLIP":             1.0,
+    "DOUBLE KICKFLIP":      0.8,
+    "HARD FLIP":            0.4,
+    "VARIAL KICKFLIP":      0.3,
+    "360 FLIP":             0.2
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Descent test #3: hard flip (86% converged, XR1-flavored, 5/5 replay) minus the FS shove = kickflip. The trick that resisted 2000+ cold evals gets its first converged-neighbor prior. Run on XR1."
+}
