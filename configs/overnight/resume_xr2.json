@@ -1,0 +1,28 @@
+{
+  "device": "iPhone_XR2",
+  "seed": 10142,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 2.5,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/hard_flip.json",
+      "warm_start": "trick_libraries/hard_flip_20260612_062911.json",
+      "stop_land_rate": 0.85,
+      "_note": "Resume: was at 64% rolling."
+    },
+    {
+      "curriculum": "curricula/kickflip_2g.json"
+    },
+    {
+      "curriculum": "curricula/laser_flip.json",
+      "_note": "Mirror experiment \u2014 mirrored 70% 360-flip warm start."
+    }
+  ]
+}

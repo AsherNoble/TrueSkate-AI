@@ -79,3 +79,8 @@ htmlcov/
 .env.local
 
 *.dylib
+
+# Runtime training output (frames, JSONLs) — too large for git
+logs/overnight/
+logs/smoke_es/
+logs/smoke_queue/

@@ -1,0 +1,22 @@
+{
+  "device": "iPhone_XR",
+  "seed": 10042,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 2.5,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/360_triple_flip.json",
+      "_note": "Resume mid-queue: was 11 lands/178 evals."
+    },
+    {
+      "curriculum": "curricula/kickflip_2g.json"
+    }
+  ]
+}

@@ -1,10 +1,10 @@
 {
   "device": "iPhone_XR",
-  "seed": 2042,
+  "seed": 2049,
   "defaults": {
     "pop_size": 14,
     "max_evals": 1500,
-    "max_hours": 2.0,
+    "max_hours": 1.5,
     "stop_land_rate": 0.7,
     "stop_window": 50,
     "wait_time": 0.0,
