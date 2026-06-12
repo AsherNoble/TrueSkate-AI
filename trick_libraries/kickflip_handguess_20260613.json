@@ -1,0 +1,27 @@
+{
+  "trick": "KICKFLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [[0.50, 0.60], [0.50, 0.73], [0.50, 0.86]],
+        "duration": 0.06,
+        "easing_power": 0.7
+      },
+      {
+        "points": [[0.45, 0.50], [0.58, 0.50], [0.74, 0.50]],
+        "duration": 0.05,
+        "easing_power": 1.8
+      },
+      {
+        "points": [[0.52, 0.50], [0.52, 0.50], [0.52, 0.50]],
+        "duration": 0.60,
+        "easing_power": 1.5
+      }
+    ],
+    "delays": [0.03, 0.13]
+  },
+  "best_gestures": {},
+  "sample_count": 0,
+  "reward_stats": {"min": 0.0, "mean": 0.5, "max": 1.0},
+  "source_log": "Hand-guesstimated 2026-06-13 (Asher's domain knowledge): pop = downward swipe on tail (decelerating), flick = rightward swipe (accelerating), catch = centre hold. Fresh take on the old kickflip_2.json mental model."
+}

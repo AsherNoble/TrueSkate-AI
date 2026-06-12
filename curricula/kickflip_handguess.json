@@ -1,0 +1,17 @@
+{
+  "target": "KICKFLIP",
+  "num_gestures": 3,
+  "warm_start": "trick_libraries/kickflip_handguess_20260613.json",
+  "rewards": {
+    "KICKFLIP": 1.0,
+    "DOUBLE KICKFLIP": 0.9,
+    "TRIPLE KICKFLIP": 0.9,
+    "VARIAL KICKFLIP": 0.3,
+    "360 FLIP": 0.15,
+    "HARD FLIP": 0.05,
+    "POP SHOVE-IT": 0.0
+  },
+  "default_reward": 0.0,
+  "failure_multiplier": "near_miss",
+  "notes": "Hand-guesstimated warm start (Asher's pop-down + flick-right + catch). Pop shove-it zeroed and hard flip minimised so CMA-ES can't drift to the easy traps that swallowed the descent runs."
+}
