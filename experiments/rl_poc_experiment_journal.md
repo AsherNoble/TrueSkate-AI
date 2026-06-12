@@ -171,3 +171,10 @@
 - Supersedes the "device-flavored recipes" entry above: the laser lib replaying as 360 FLIP on XR1 was the mirror, not touch calibration. The "laser 70% convergence" = a second converged 360-flip recipe; the demo's "double laser finale" = a 360 double flip in mirror.
 - Flag file with mirror map + affected libraries: `trick_libraries/FLAGGED_stance_mirror_xr2.md`. Pre-switch XR2 JSONLs need label mirroring before mining; post-switch runs are clean. Also re-judge: "inward heelflip 0%" and "backside 180 0.6%" failures were mirror-confused curricula.
 - Ops lesson: add stance to the pre-run device checklist (park, camera, stance, DND, Auto-Lock).
+## MIRROR THESIS PROVEN (2026-06-12 afternoon)
+- **Gesture x-mirror (x -> 1-x) of a converged recipe lands the chiral-mirror trick, converging FAST.** Two parallel experiments, both early-stopped at 70%:
+  - LASER FLIP from x-mirror of 360 FLIP recipe → 70% in 625 evals (XR2)
+  - INWARD HEELFLIP from x-mirror of 86% HARD FLIP recipe → 70% in **250 evals** (XR1) — faster than the 355-eval hard flip it mirrors.
+- **Mirror rule (from trick_vector_curriculum_plan.md, which we are NOT implementing — used only to derive mirrors):** a left-right gesture mirror negates the three chirality axes body_rotation, shove_rotation, kickflip_axis; dolphin_axis unchanged. So HARD FLIP (shove −1, kick +1) ↔ INWARD HEELFLIP (shove +1, kick −1); 360 FLIP (shove +2, kick +1) ↔ LASER FLIP (shove −2, kick −1). Verified empirically both ways.
+- **Implication:** every converged trick yields its chiral twin for a few hundred evals of polish. `scripts/data/mirror_library.py` does the transform (x-mirror + bounds-remap). Catalog effectively doubles for free.
+- Tooling: `mirror_library.py`. Converged libraries now: HARD FLIP 86%, 360 FLIP, 360 DOUBLE FLIP 70%, LASER FLIP 70%, INWARD HEELFLIP 70%, DOUBLE LASER (replay 4/4), POP SHOVE-IT.
