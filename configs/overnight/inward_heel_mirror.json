@@ -1,0 +1,19 @@
+{
+  "device": "iPhone_XR",
+  "seed": 11042,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 2.5,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/inward_heelflip.json",
+      "_note": "Mirror of 86% hard flip. Parallel to XR2's laser=mirror-of-360-flip run."
+    }
+  ]
+}

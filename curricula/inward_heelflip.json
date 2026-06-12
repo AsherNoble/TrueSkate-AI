@@ -1,0 +1,18 @@
+{
+  "target": "INWARD HEELFLIP",
+  "num_gestures": 2,
+  "warm_start": "trick_libraries/inward_heelflip_MIRRORED_from_86pct_hardflip.json",
+  "rewards": {
+    "INWARD HEELFLIP":      1.0,
+    "INWARD DOUBLE HEEL":   0.7,
+    "360 INWARD HEELFLIP":  0.6,
+    "HEELFLIP":             0.4,
+    "VARIAL HEELFLIP":      0.4,
+    "HARD FLIP":            0.2,
+    "LASER FLIP":           0.2,
+    "POP SHOVE-IT":         0.05
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Mirror experiment #2 (2026-06-12): inward heelflip = (shove +1, kick -1) = exact chirality mirror of HARD FLIP (shove -1, kick +1). Warm start: the 86%-converged, 5/5-validated hard-flip recipe, x-mirrored. Clean retrial of the trick that 'failed' under stance confusion. N=2, run on XR1 (goofy, hard flip's home device)."
+}
