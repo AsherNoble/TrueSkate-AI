@@ -1,0 +1,15 @@
+{
+  "target": "DOUBLE LASER FLIP",
+  "num_gestures": 2,
+  "warm_start": "trick_libraries/double_laser_flip_MIRRORED_from_70pct_360double.json",
+  "rewards": {
+    "DOUBLE LASER FLIP": 1.0,
+    "TRIPLE LASER FLIP": 0.8,
+    "LASER FLIP": 0.5,
+    "360 DOUBLE FLIP": 0.2,
+    "VARIAL HEELFLIP": 0.1
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "Mirror experiment #3: x-mirror of the 70%-converged 360 DOUBLE FLIP recipe (256 samples). N=2."
+}

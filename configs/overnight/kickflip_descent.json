@@ -1,0 +1,19 @@
+{
+  "device": "iPhone_XR2",
+  "seed": 12142,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 2.5,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/kickflip_2g.json",
+      "_note": "Descent: kickflip from 86% hard flip (hard flip minus FS shove). The unsolved trick, best possible prior."
+    }
+  ]
+}
