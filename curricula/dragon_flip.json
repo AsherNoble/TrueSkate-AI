@@ -1,0 +1,17 @@
+{
+  "target": "DRAGON FLIP",
+  "num_gestures": 3,
+  "warm_start": "trick_libraries/tail_may2026/dragon_flip_20260611_095229.json",
+  "rewards": {
+    "DRAGON FLIP": 1.0,
+    "DOLPHIN DOUBLE FLIP": 0.7,
+    "DOLPHIN TRIPLE FLIP": 0.7,
+    "DOLPHIN FLIP": 0.5,
+    "DOLPHIN HEEL": 0.2,
+    "OLLIE": 0.05,
+    "POP SHOVE-IT": 0.0
+  },
+  "default_reward": 0.0,
+  "failure_multiplier": "near_miss",
+  "notes": "Dragon flip = two dolphin flips (dolphin_axis +2). Swipe-only. Warm start 5 samples; chained mining from the dolphin run is a better prior when available."
+}

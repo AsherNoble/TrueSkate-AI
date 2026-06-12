@@ -1,0 +1,23 @@
+{
+  "device": "iPhone_XR2",
+  "seed": 15142,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 3.0,
+    "stop_land_rate": 0.5,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/dolphin_flip.json",
+      "_note": "Ballsy #1: rare swipe-only trick, thin prior."
+    },
+    {
+      "curriculum": "curricula/dragon_flip.json",
+      "_note": "Ballsy #2: ascent \u2014 2 dolphins."
+    }
+  ]
+}

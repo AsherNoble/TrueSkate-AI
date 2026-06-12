@@ -1,0 +1,18 @@
+{
+  "target": "DOLPHIN FLIP",
+  "num_gestures": 3,
+  "warm_start": "trick_libraries/tail_may2026/dolphin_flip_20260611_095229.json",
+  "rewards": {
+    "DOLPHIN FLIP": 1.0,
+    "DRAGON FLIP": 0.6,
+    "DOLPHIN DOUBLE FLIP": 0.6,
+    "DOLPHIN HEEL": 0.4,
+    "360 DOLPHIN FLIP": 0.3,
+    "OLLIE": 0.05,
+    "POP SHOVE-IT": 0.0,
+    "HARD FLIP": 0.0
+  },
+  "default_reward": 0.0,
+  "failure_multiplier": "near_miss",
+  "notes": "Dolphin flip = board rotation about the short axis. Swipe-only (no spin button). Thin warm start (3 samples mined from past accidental lands). Easy traps zeroed."
+}
