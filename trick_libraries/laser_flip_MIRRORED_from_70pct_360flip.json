@@ -1,0 +1,99 @@
+{
+  "trick": "LASER FLIP",
+  "median_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.12,
+            0.8
+          ],
+          [
+            0.28,
+            0.7
+          ],
+          [
+            0.88,
+            0.82
+          ]
+        ],
+        "duration": 0.24,
+        "easing_power": 1.09
+      },
+      {
+        "points": [
+          [
+            0.49,
+            0.63
+          ],
+          [
+            0.12,
+            0.87
+          ],
+          [
+            0.13,
+            0.57
+          ]
+        ],
+        "duration": 0.41,
+        "easing_power": 2.84
+      }
+    ],
+    "delays": [
+      0.76
+    ]
+  },
+  "best_gestures": {
+    "gestures": [
+      {
+        "points": [
+          [
+            0.18,
+            0.87
+          ],
+          [
+            0.41,
+            0.8
+          ],
+          [
+            0.87,
+            0.8
+          ]
+        ],
+        "duration": 0.31,
+        "easing_power": 1.23
+      },
+      {
+        "points": [
+          [
+            0.53,
+            0.7
+          ],
+          [
+            0.12,
+            0.85
+          ],
+          [
+            0.12,
+            0.43
+          ]
+        ],
+        "duration": 0.52,
+        "easing_power": 2.65
+      }
+    ],
+    "delays": [
+      0.7
+    ]
+  },
+  "sample_count": 187,
+  "landed_only": true,
+  "reward_stats": {
+    "min": 1.0,
+    "mean": 1.0,
+    "max": 1.0
+  },
+  "source_log": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/logs/overnight/iPhone_XR2/01_laser_flip/runs/cmaes_run_20260612_030214/cmaes_run_20260612_030214.jsonl",
+  "mirrored_from": "laser_flip_20260612_042725.json (trick: LASER FLIP)",
+  "notes": "x-mirrored from laser_flip_20260612_042725.json; chirality swap LASER FLIP -> LASER FLIP. Bounds-remapped after mirror."
+}

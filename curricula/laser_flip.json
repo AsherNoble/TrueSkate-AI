@@ -1,16 +1,16 @@
 {
   "target": "LASER FLIP",
   "num_gestures": 2,
-  "warm_start": "trick_libraries/double_laser_flip_demo_20260611.json",
+  "warm_start": "trick_libraries/laser_flip_MIRRORED_from_70pct_360flip.json",
   "rewards": {
-    "LASER FLIP":           1.0,
-    "DOUBLE LASER FLIP":    0.6,
-    "TRIPLE LASER FLIP":    0.5,
-    "VARIAL HEELFLIP":      0.3,
-    "HEELFLIP":             0.2,
-    "INWARD HEELFLIP":      0.1
+    "LASER FLIP": 1.0,
+    "DOUBLE LASER FLIP": 0.6,
+    "TRIPLE LASER FLIP": 0.5,
+    "VARIAL HEELFLIP": 0.3,
+    "HEELFLIP": 0.2,
+    "INWARD HEELFLIP": 0.1
   },
   "default_reward": 0.05,
   "failure_multiplier": "near_miss",
-  "notes": "Laser flip = FS 360 + heelflip. Warm start from the proven double-laser recipe (same family, gentler flick should drop one rotation). Orchestrator chaining from the preceding double-laser run is the better prior when available."
+  "notes": "Laser flip = FS 360 + heelflip = exact x-mirror of 360 flip. Warm start: the 70%-converged 360-flip recipe, x-mirrored (2026-06-12, both phones goofy now). Asher's mirror insight."
 }
