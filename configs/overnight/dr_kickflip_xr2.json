@@ -1,0 +1,20 @@
+{
+  "device": "iPhone_XR2",
+  "seed": 13142,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 2.5,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/kickflip_derewarded.json",
+      "warm_start": "trick_libraries/hard_flip_20260612_062911.json",
+      "_note": "De-rewarded-parent descent test."
+    }
+  ]
+}

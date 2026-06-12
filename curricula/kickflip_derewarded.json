@@ -1,0 +1,16 @@
+{
+  "target": "KICKFLIP",
+  "num_gestures": 2,
+  "warm_start": "trick_libraries/hard_flip_20260612_062911.json",
+  "rewards": {
+    "KICKFLIP": 1.0,
+    "DOUBLE KICKFLIP": 0.8,
+    "HARD FLIP": 0.05,
+    "VARIAL KICKFLIP": 0.3,
+    "360 FLIP": 0.2,
+    "DOUBLE HARD FLIP": 0.05
+  },
+  "default_reward": 0.05,
+  "failure_multiplier": "near_miss",
+  "notes": "De-rewarded-parent kickflip (2026-06-13): warm-started from the 86% HARD FLIP recipe but HARD FLIP reward dropped 0.4->0.05 to remove the gradient that kept the descent run stuck on the parent (149 hard flips, 0 kickflips). Tests whether descent works once the parent stops paying."
+}
