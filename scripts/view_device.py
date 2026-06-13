@@ -38,7 +38,9 @@ Caveats:
   cannot run this while QuickTime (or another ffmpeg) holds the same phone.
   It does NOT conflict with WDA/Appium/OCR, which use a different subsystem.
 - The phone must be UNLOCKED with the screen on; if it locks, capture stalls
-  at zero frames (ffmpeg hangs, no error).
+  at zero frames (ffmpeg hangs, no error). A watchdog detects the frozen
+  playlist and relaunches ffmpeg, so the stream self-heals once the phone is
+  unlocked again — no manual restart or page refresh needed.
 - The hosting app (terminal/IDE) needs macOS Screen Recording permission, or
   capture opens but never delivers frames.
 - Run this on whichever Mac the phone is physically attached to (the Intel
@@ -57,10 +59,18 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from pathlib import Path
 
 DEFAULT_PORT = 8300  # avoids 4723-5 (appium), 8100-2 (wda), 9100-2 (mjpeg), 8200 (dashboard)
 PLAYLIST = "stream.m3u8"
+
+# Watchdog: AVFoundation capture can stall at zero frames with no error (phone
+# locks, USB hiccup, DAL glitch). ffmpeg stays alive but stops writing HLS
+# segments, so the playlist freezes and the player spins after the stale tail.
+# We treat "no new segment for STALL_TIMEOUT" as a hang and relaunch ffmpeg.
+STALL_TIMEOUT = 12.0   # seconds without a fresh segment ⇒ encoder hung
+START_GRACE = 15.0     # seconds to allow first segment after each (re)launch
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _SHIM_SRC = _REPO_ROOT / "tools" / "enable_dal.c"
@@ -118,13 +128,32 @@ video{{width:100%;height:100%;object-fit:contain}}</style></head>
 <script>
 const v = document.getElementById('v'), src = '{PLAYLIST}';
 let hls = null;
+// Not low-latency HLS (ffmpeg emits plain segments), so don't ride the very
+// live edge — that stalls constantly. Keep a few segments of cushion and let
+// hls.js retry playlist/segment loads for a long time so the player survives an
+// encoder restart (the watchdog clears + rebuilds the playlist) and reconnects
+// on its own instead of freezing on a spinner until a manual refresh.
+function startHls() {{
+  hls = new Hls({{
+    liveSyncDurationCount: 4, liveMaxLatencyDurationCount: 12, lowLatencyMode: false,
+    manifestLoadingMaxRetry: 1000, manifestLoadingRetryDelay: 1000, manifestLoadingMaxRetryTimeout: 8000,
+    levelLoadingMaxRetry: 1000, levelLoadingRetryDelay: 1000, levelLoadingMaxRetryTimeout: 8000,
+    fragLoadingMaxRetry: 8,
+  }});
+  hls.loadSource(src); hls.attachMedia(v);
+  hls.on(Hls.Events.ERROR, (_, d) => {{
+    if (!d.fatal) return;
+    if (d.type === Hls.ErrorTypes.NETWORK_ERROR) {{ hls.startLoad(); }}        // playlist/segment gap (encoder restarting) → keep retrying
+    else if (d.type === Hls.ErrorTypes.MEDIA_ERROR) {{ hls.recoverMediaError(); }}  // decode hiccup at the discontinuity
+    else {{ try {{ hls.destroy(); }} catch (e) {{}} setTimeout(startHls, 2000); }}    // unrecoverable → rebuild from scratch
+  }});
+}}
 if (v.canPlayType('application/vnd.apple.mpegurl')) {{          // Safari / iOS
   v.src = src;
+  // Native HLS has no JS-level retry; re-point at the source if it errors out.
+  v.addEventListener('error', () => setTimeout(() => {{ v.src = src; v.load(); v.play(); }}, 2000));
 }} else if (window.Hls && Hls.isSupported()) {{                  // Chrome / Firefox
-  hls = new Hls({{liveSyncDurationCount: 2, lowLatencyMode: true}});
-  hls.loadSource(src); hls.attachMedia(v);
-  hls.on(Hls.Events.ERROR, (_, d) => {{ if (d.fatal) setTimeout(() => {{
-    hls.loadSource(src); hls.startLoad(); }}, 1500); }});         // retry while stream warms up
+  startHls();
 }}
 // Live monitoring stream: never stay paused, never drift behind the live edge.
 function liveEdge() {{
@@ -133,7 +162,7 @@ function liveEdge() {{
 v.addEventListener('pause', () => setTimeout(() => {{ liveEdge(); v.play(); }}, 300));
 setInterval(() => {{
   if (v.paused) {{ liveEdge(); v.play(); }}
-  else if (v.seekable.length && v.seekable.end(v.seekable.length - 1) - v.currentTime > 8) liveEdge();
+  else if (v.seekable.length && v.seekable.end(v.seekable.length - 1) - v.currentTime > 12) liveEdge();
 }}, 5000);
 document.addEventListener('visibilitychange', () => {{
   if (!document.hidden) {{ liveEdge(); v.play(); }}
@@ -162,6 +191,85 @@ def build_ffmpeg_cmd(device: str, out_dir: Path, framerate: int, bitrate: str,
         "-hls_flags", "delete_segments+independent_segments+omit_endlist",
         str(out_dir / PLAYLIST),
     ]
+
+
+def _spawn_encoder(cmd: list[str]) -> subprocess.Popen:
+    return subprocess.Popen(cmd, env=_shim_env())
+
+
+def _terminate_encoder(proc: subprocess.Popen | None) -> None:
+    if proc is None or proc.poll() is not None:
+        return
+    proc.terminate()
+    try:
+        proc.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+
+
+def _clear_hls(out_dir: Path) -> None:
+    """Drop the stale playlist + segments so a relaunched encoder serves a clean
+    stream instead of one whose media sequence jumps backwards."""
+    for seg in out_dir.glob("*.ts"):
+        seg.unlink(missing_ok=True)
+    (out_dir / PLAYLIST).unlink(missing_ok=True)
+
+
+def _segment_age(out_dir: Path) -> float | None:
+    """Seconds since the playlist was last rewritten (ffmpeg rewrites it on every
+    new segment), or None if it doesn't exist yet."""
+    try:
+        return time.time() - (out_dir / PLAYLIST).stat().st_mtime
+    except FileNotFoundError:
+        return None
+
+
+def run_with_watchdog(device: str, out_dir: Path, framerate: int, bitrate: str,
+                      scale_height: int, stop: threading.Event, *,
+                      cmd_builder=build_ffmpeg_cmd, spawn=_spawn_encoder,
+                      stall_timeout: float = STALL_TIMEOUT,
+                      start_grace: float = START_GRACE) -> None:
+    """Keep the encoder alive: relaunch it if it exits AND restart it if it hangs
+    (delivers no new segments). Runs until `stop` is set."""
+    cmd = cmd_builder(device, out_dir, framerate, bitrate, scale_height)
+    ff = spawn(cmd)
+    launched = time.monotonic()
+    restarts = 0
+    fails_since_healthy = 0  # consecutive restarts without the stream coming back
+    healthy = False
+    try:
+        while not stop.is_set():
+            exited = ff.poll() is not None
+            age = _segment_age(out_dir)
+            stalled = (age is None or age > stall_timeout) and \
+                      (time.monotonic() - launched) > start_grace
+            if exited or stalled:
+                reason = (f"encoder exited ({ff.returncode})" if exited
+                          else f"no new segment for >{stall_timeout:.0f}s — encoder hung")
+                restarts += 1
+                fails_since_healthy += 1
+                # Back off when restarts don't help (bad device, phone locked with
+                # zero frames) so we don't spin; resets once the stream recovers.
+                backoff = min(30.0, 2.0 ** min(fails_since_healthy, 5))
+                print(f"[{device}] {reason}; restarting in {backoff:.0f}s (#{restarts}).",
+                      flush=True)
+                _terminate_encoder(ff)
+                _clear_hls(out_dir)
+                if stop.wait(backoff):
+                    break
+                ff = spawn(cmd)
+                launched = time.monotonic()
+                healthy = False
+                continue
+            if not healthy and age is not None and age <= stall_timeout:
+                healthy = True
+                fails_since_healthy = 0
+                print(f"[{device}] stream live"
+                      f"{f' (recovered after {restarts} restart(s))' if restarts else ''}.",
+                      flush=True)
+            stop.wait(2.0)
+    finally:
+        _terminate_encoder(ff)
 
 
 class _Handler(http.server.SimpleHTTPRequestHandler):
@@ -217,7 +325,6 @@ def main() -> None:
     _require_ffmpeg()
     tmp = Path(tempfile.mkdtemp(prefix="trueskate_view_"))
     (tmp / "index.html").write_text(_index_html())
-    ff = None
     try:
         handler = functools.partial(_Handler, directory=str(tmp))
         try:
@@ -226,11 +333,6 @@ def main() -> None:
             sys.exit(f"Cannot bind {args.host}:{args.port} ({e.strerror}) — is another "
                      "view_device.py already running? Stop it or pass --port.")
         threading.Thread(target=httpd.serve_forever, daemon=True).start()
-
-        ff = subprocess.Popen(
-            build_ffmpeg_cmd(args.device, tmp, args.framerate, args.bitrate, args.scale_height),
-            env=_shim_env(),
-        )
 
         print(f"Capturing '{args.device}' → HLS in {tmp}")
         print(f"Local:   http://{args.host}:{args.port}/")
@@ -241,20 +343,12 @@ def main() -> None:
         stop = threading.Event()
         signal.signal(signal.SIGINT, lambda *_: stop.set())
         signal.signal(signal.SIGTERM, lambda *_: stop.set())
-        # Exit if ffmpeg dies (bad device name, phone unplugged, QuickTime holding it).
-        while not stop.is_set():
-            if ff.poll() is not None:
-                print(f"\nffmpeg exited ({ff.returncode}) — check the device name/connection "
-                      "and that QuickTime isn't holding the camera.")
-                break
-            stop.wait(0.5)
+        # Watchdog: relaunch ffmpeg if it exits (bad device, phone unplugged) AND
+        # if it hangs delivering zero frames (phone locked, DAL stall) — the latter
+        # froze the stream silently before, requiring a manual page refresh.
+        run_with_watchdog(args.device, tmp, args.framerate, args.bitrate,
+                          args.scale_height, stop)
     finally:
-        if ff and ff.poll() is None:
-            ff.terminate()
-            try:
-                ff.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                ff.kill()
         shutil.rmtree(tmp, ignore_errors=True)
         print("Stopped, cleaned up.")
 
