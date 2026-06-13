@@ -193,3 +193,12 @@
 - **Why:** the first run's mined median is a hundreds-of-landed-samples recipe (vs the 5-sample seed it started from), so the second run starts deep in the basin with the coord-sigma already shrunk to local refinement. The thin-prior wandering (see dolphin/dragon negative result) is avoided because the seed is now high quality.
 - **Technique:** for any trick that caps in the 30-50% band, mine it and re-run from that library. Iterate until it crosses the early-stop threshold. Cheap, fully automatic, no hand-tuning.
 - Distinct from MIRROR (chiral twin of a converged trick) and ASCENT/DESCENT (neighbouring trick in the family tree): this is vertical self-refinement of the SAME trick. The three compose — mine, mirror, and iterate.
+## The ~70% Ceiling: Self-Improvement Maxes, Doesn't Break Through (2026-06-13)
+- Goal: drive every sub-99% trick to 99% land rate via the self-improvement loop (each trick re-seeded from its own landed-only mine, 3 iterations, stop_land_rate 0.99). Ran 360 FLIP (XR1) and 360 DOUBLE FLIP (XR2) to completion.
+- **Iteration-over-iteration (final-window at cap | best 50-eval window ever reached):**
+  - 360 FLIP:        i1 26% | 54%  →  i2 66% | 68%  →  i3 66% | 78%
+  - 360 DOUBLE FLIP: i1 18% | 34%  →  i2 66% | 78%  →  i3 68% | 72%
+- **The first re-seed is the whole lever:** i1→i2 jumps ~40 points (the explicit seed library operates well below the orchestrator's tight landed-only mine). After that it PLATEAUS — i3 adds nothing to the final rate.
+- **Intrinsic ceiling ≈ 70% final, with brief peaks to ~78%.** The persistent gap between peak-50 (78%) and final-window (66%) is the real finding: CMA-ES *reaches* the optimum but cannot *hold* it — the population oscillates off a narrow optimum in the sparse multimodal landscape. 99% is NOT reachable by self-improvement alone; the loop maxes a trick at its landability ceiling and stops.
+- **Levers to actually break ~70% (untested, ranked):** (1) freeze exploration once peak is found — anneal sigma down hard late / tighten early-stop so it HOLDS 78% instead of drifting to 66%; (2) combo-tolerant reward — count "360 FLIP + NOSE SLIDE" as a land (much of the missing ~30% is the target landing WITH an incidental slide/grind the strict matcher rejects — could lift effective rate 10-15 pts for free); (3) more gesture slots or the spin-timing params for genuinely-missed attempts.
+- Decision: stopped the 99% campaign at the ceiling answer rather than grinding all six tricks to the same ~70% wall.
