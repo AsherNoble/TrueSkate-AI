@@ -1,0 +1,20 @@
+{
+  "device": "iPhone_XR",
+  "seed": 19042,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 2.5,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/double_laser_flip_derewarded.json",
+      "warm_start": "trick_libraries/double_laser_flip_20260613_190614.json",
+      "_note": "Self-improve \u2014 re-seed from 53-sample mine (was 12% capped), source family still zeroed."
+    }
+  ]
+}
