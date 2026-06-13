@@ -109,7 +109,9 @@ _PAGE = """<!doctype html>
 <style>
 html,body{margin:0;background:#0d1117;color:#c9d1d9;font:13px/1.5 ui-monospace,Menlo,monospace;height:100%}
 .wrap{display:grid;grid-template-columns:280px 280px 1fr;gap:10px;padding:10px;height:calc(100vh - 20px)}
-iframe{width:100%;height:100%;border:1px solid #30363d;border-radius:8px;background:#000}
+.cam{display:flex;flex-direction:column;min-height:0}
+iframe{width:100%;flex:1;min-height:0;border:1px solid #30363d;border-radius:8px;background:#000}
+.lbl{text-align:center;color:#58a6ff;font-weight:600;padding:4px 0 0}
 .log{overflow-y:auto;border:1px solid #30363d;border-radius:8px;padding:12px}
 h2{font-size:13px;margin:4px 0;color:#58a6ff}
 .dev{margin-bottom:18px}
@@ -122,8 +124,8 @@ td{padding:1px 8px 1px 0;white-space:nowrap}
 @media (max-width:900px){.wrap{grid-template-columns:1fr 1fr;grid-template-rows:300px 1fr}.log{grid-column:1/3}}
 </style></head>
 <body><div class="wrap">
-<iframe src="http://__STREAM_HOST__:8300/" allow="autoplay"></iframe>
-<iframe src="http://__STREAM_HOST__:8301/" allow="autoplay"></iframe>
+<div class="cam"><iframe src="http://__STREAM_HOST__:8300/" allow="autoplay"></iframe><div class="lbl">XR1</div></div>
+<div class="cam"><iframe src="http://__STREAM_HOST__:8301/" allow="autoplay"></iframe><div class="lbl">XR2</div></div>
 <div class="log" id="log">loading…</div>
 </div>
 <script>
