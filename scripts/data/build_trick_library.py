@@ -35,7 +35,7 @@ if str(_REPO_ROOT / "src") not in sys.path:
 from trueskate_ai.rl.cmaes.action_param import (
     build_param_bounds,
     clamp_params,
-    infer_num_gestures,
+    infer_layout,
     unpack_gesture_params,
 )
 
@@ -48,13 +48,14 @@ def _sanitize_filename(name: str) -> str:
 def _unpack_to_recipe(params: list[float]) -> dict:
     """Clamp + unpack a param list into a JSON-serializable recipe.
 
-    Infers num_gestures from the vector length (9N - 1 = len(params)),
-    so legacy 17-param logs naturally resolve to N=2.
+    Infers (num_gestures, use_spin) from the vector length, so legacy 17-param
+    logs resolve to N=2 no-spin and 20-param spin logs carry a decoded ``spin``
+    block in the recipe.
     """
     arr = np.array(params, dtype=np.float64)
-    num_gestures = infer_num_gestures(len(arr))
-    bounds = build_param_bounds(num_gestures)
-    recipe = unpack_gesture_params(clamp_params(arr, bounds), num_gestures)
+    num_gestures, use_spin = infer_layout(len(arr))
+    bounds = build_param_bounds(num_gestures, use_spin)
+    recipe = unpack_gesture_params(clamp_params(arr, bounds), num_gestures, use_spin)
     for g in recipe["gestures"]:
         g["points"] = [list(p) for p in g["points"]]
     return recipe

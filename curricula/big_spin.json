@@ -1,0 +1,18 @@
+{
+  "target": "BIG SPIN",
+  "num_gestures": 3,
+  "use_spin": true,
+  "warm_start": "trick_libraries/360_pop_shove_it_20260610_230442.json",
+  "rewards": {
+    "BIG SPIN": 1.0,
+    "BIGGER SPIN": 0.8,
+    "GAZELLE SPIN": 0.6,
+    "BIG FLIP": 0.4,
+    "360 POP SHOVE-IT": 0.0,
+    "POP SHOVE-IT": 0.0,
+    "FS POP SHOVE-IT": 0.0
+  },
+  "default_reward": 0.0,
+  "failure_multiplier": "near_miss",
+  "notes": "FIRST spin-family curriculum (use_spin=true -> 3-param spin block appended; vector length 29 for N=3). Warm-started from a 162-sample 360 pop shove-it recipe: the board shove is reliable, so CMA-ES must discover True Skate's rotate button (spin gate, starts at the 0.0 threshold so ~half the initial population taps it) to add the body rotation that turns the shove into a BIG SPIN. Shove traps (360/regular/FS pop shove-it) are ZEROED per the proven de-rewarded-parent rule, forcing the run to commit to the spin button instead of sitting in the comfortable shove basin. Spin-family neighbours kept at partial reward so the run isn't bricked if the emergent trick differs slightly. GATE: verify the gesture->trick mapping on-device (scripts/inspect/execute_trick.py + detect_trick must return a SPIN_FAMILY landed trick) BEFORE any unattended run; if shove+spin yields a different spin trick, retarget."
+}

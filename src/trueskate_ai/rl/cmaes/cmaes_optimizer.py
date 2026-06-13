@@ -27,6 +27,7 @@ from trueskate_ai.rl.cmaes.action_param import (
     build_param_bounds,
     clamp_params,
     default_initial_mean,
+    default_spin_block,
     param_vector_length,
 )
 from trueskate_ai.rl.cmaes.curriculum import Curriculum
@@ -80,11 +81,15 @@ def _write_result_json(run_dir: Path, payload: dict) -> None:
     tmp.replace(run_dir / "result.json")
 
 
-def _load_initial_mean_from_library(path: Path, num_gestures: int) -> np.ndarray:
+def _load_initial_mean_from_library(
+    path: Path, num_gestures: int, use_spin: bool = False
+) -> np.ndarray:
     """Load median_gestures from a trick library JSON and pack into a param vector.
 
     Validates that the library's gesture count matches the curriculum's
-    ``num_gestures``.
+    ``num_gestures``. When ``use_spin`` is set and the library carries a decoded
+    ``spin`` block it is packed (gate = +1/-1 by enabled); otherwise a neutral
+    spin-off block is appended so a non-spin library warm-starts a spin run.
     """
     data = json.loads(path.read_text())
     median_gestures = data.get("median_gestures")
@@ -122,11 +127,24 @@ def _load_initial_mean_from_library(path: Path, num_gestures: int) -> np.ndarray
         params.append(float(gesture["easing_power"]))
 
     params.extend(float(d) for d in delays)
+
+    if use_spin:
+        spin = median_gestures.get("spin")
+        if isinstance(spin, dict):
+            params.append(1.0 if spin.get("enabled") else -1.0)
+            params.append(float(spin.get("t_start", 0.2)))
+            params.append(float(spin.get("t_end", 0.8)))
+        else:
+            # Legacy / non-spin library → neutral spin-off block; the run is
+            # free to enable the rotate button as CMA-ES explores.
+            params.extend(default_spin_block())
+
     mean = np.array(params, dtype=np.float64)
-    expected_len = param_vector_length(num_gestures)
+    expected_len = param_vector_length(num_gestures, use_spin)
     if mean.shape != (expected_len,):
         raise ValueError(
-            f"Expected {expected_len} parameters from median_gestures in {path}, got {mean.shape}"
+            f"Expected {expected_len} parameters from median_gestures in {path} "
+            f"(use_spin={use_spin}), got {mean.shape}"
         )
     return mean
 
@@ -250,9 +268,10 @@ def run(
     alerted_zero_land = False
 
     num_gestures = curriculum.num_gestures
-    param_bounds = build_param_bounds(num_gestures)
+    use_spin = curriculum.use_spin
+    param_bounds = build_param_bounds(num_gestures, use_spin)
     bounds = [param_bounds[:, 0].tolist(), param_bounds[:, 1].tolist()]
-    cma_stds = build_initial_sigma(num_gestures)
+    cma_stds = build_initial_sigma(num_gestures, use_spin)
 
     if curriculum.initial_means is not None:
         cma_mean = build_initial_mean_from_priors(
@@ -266,11 +285,18 @@ def run(
         # overwrites this before CMA-ES initialisation.
         cma_mean = np.zeros(param_vector_length(num_gestures), dtype=np.float64)
 
+    # The gesture-portion means above are no-spin length; append a neutral spin
+    # block under use_spin (the warm-start branch below builds full length itself).
+    if use_spin:
+        cma_mean = np.concatenate(
+            [cma_mean, np.array(default_spin_block(), dtype=np.float64)]
+        )
+
     if initial_mean is None and curriculum.warm_start is not None:
         initial_mean = curriculum.warm_start
         print(f"Using warm-start from curriculum: {initial_mean}")
     if initial_mean is not None:
-        cma_mean = _load_initial_mean_from_library(initial_mean, num_gestures)
+        cma_mean = _load_initial_mean_from_library(initial_mean, num_gestures, use_spin)
         # Warm-start files can predate the current bounds; clamp out-of-range
         # values before handing the vector to CMA-ES (which rejects strictly).
         out_of_bounds = (cma_mean < param_bounds[:, 0]) | (cma_mean > param_bounds[:, 1])
@@ -280,7 +306,7 @@ def run(
                 lo, hi = param_bounds[idx]
                 print(f"  param[{idx}] = {cma_mean[idx]:.4f} → clamped to [{lo:.4f}, {hi:.4f}]")
             cma_mean = clamp_params(cma_mean, param_bounds)
-        cma_stds[build_coordinate_mask(num_gestures)] = 0.05
+        cma_stds[build_coordinate_mask(num_gestures, use_spin)] = 0.05
         print(f"Loaded initial mean from trick library: {initial_mean}")
 
     es = cma.CMAEvolutionStrategy(
@@ -299,7 +325,8 @@ def run(
     logger.write({
         "type": "run_config",
         "num_gestures": num_gestures,
-        "param_vector_length": param_vector_length(num_gestures),
+        "use_spin": use_spin,
+        "param_vector_length": param_vector_length(num_gestures, use_spin),
         "target": curriculum.target,
         "seed": seed,
         "pop_size": pop_size,

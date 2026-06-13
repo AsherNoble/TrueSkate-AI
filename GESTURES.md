@@ -132,6 +132,23 @@ delays: [0.12, 0.15]   → 3-gesture recipe: 0.12 s gap then 0.15 s gap
 
 Negative delays (inter-gesture overlap) are not currently supported via the WDA endpoint but are handled in the CMA-ES two-slot Appium path.
 
+### `spin` (optional)
+
+Spin-family tricks (BIG SPIN, BIG FLIP, GAZELLE FLIP, …) need True Skate's rotate button, which curved drags can't express. When a curriculum sets `"use_spin": true`, the CMA-ES action vector gains a trailing 3-param spin block and recipes carry a decoded `spin` object:
+
+```json
+{
+  "gestures": [ ... ],
+  "delays": [0.12, 0.15],
+  "spin": { "enabled": true, "t_start": 0.20, "t_end": 0.70 }
+}
+```
+
+- `enabled` — whether the rotate button fires this gesture (CMA-ES param: a gate thresholded at `>= 0`).
+- `t_start` / `t_end` — fractions `[0, 1]` of the schedule's total duration; the button is tapped **on** at `t_start·total` and **off** at `t_end·total` from a background thread synchronized with the gesture perform.
+
+The spin block is appended **after** the delays, so the vector length becomes `8N + (N−1) + 3 = 9N + 2` (vs `9N − 1` without spin). The two length classes are disjoint mod 9, so `infer_layout(len)` recovers `(N, use_spin)` from a vector alone — no separate flag is stored in logs. The rotate button's normalised position is per-device (`spin_button_xy` in `DEVICES`, default `(0.0604, 0.4040)`), left of the gesture area (`X_BOUND_MIN = 0.12`) so drags never hit it. Recipes without a `spin` key are pure curved drags (all legacy libraries).
+
 ---
 
 ## Trick Library File Format
@@ -159,6 +176,8 @@ Trick library files live in `trick_libraries/` and are produced by `scripts/data
 | `source_log` | string | Path to the JSONL run log this was built from |
 
 All `points` in stored recipes are normalised `[0, 1]`. Legacy files with raw logical-pixel coordinates must be converted before use (see `kickflip.json` — broken, replaced by `kickflip_2.json`).
+
+Libraries mined by `scripts/data/mine_all_tricks.py` also carry `num_gestures` (int) and `use_spin` (bool). When `use_spin` is true, `median_gestures`/`best_gestures` include a `spin` object (see above) and the filename gets a `_spin` suffix; spin and no-spin variants of the same trick are mined into separate files.
 
 ---
 

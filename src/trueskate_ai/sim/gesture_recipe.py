@@ -4,6 +4,7 @@ execute_gesture_recipe() fires the complete push + N-gesture sequence
 from a decoded trick library recipe. Gesture recipe schema and coordinate
 conventions are documented in GESTURES.md at the repo root.
 """
+import threading
 import time
 
 import requests
@@ -84,12 +85,16 @@ def execute_gesture_recipe(
     device_w: float,
     device_h: float,
     wda_url: str,
+    spin_button_xy: tuple[float, float] | None = None,
     timing_device_key: str | None = None,
 ) -> None:
     """Fire the push + N-gesture sequence from a decoded recipe.
 
     Args:
-        recipe: Dict with 'gestures' (list of gesture dicts) and 'delays' (list of N-1 delays)
+        recipe: Dict with 'gestures' (list of gesture dicts), 'delays' (list of
+            N-1 delays), and optionally 'spin' ({'enabled', 't_start', 't_end'}).
+        spin_button_xy: normalised [0, 1] coords of the rotate button; required
+            for an enabled spin block to fire.
     """
     gestures = recipe["gestures"]
     delays = recipe["delays"]
@@ -114,8 +119,39 @@ def execute_gesture_recipe(
     if remaining_pre_delay > 0:
         time.sleep(remaining_pre_delay)
 
-    # --- Step 2: execute all gestures via custom WDA endpoint ---
+    # --- Step 2: optional spin button, tapped on/off from a background thread
+    # synchronized with the gesture window (estimated total = durations + gaps) ---
+    spin = recipe.get("spin")
+    spin_thread = None
+    if spin and spin.get("enabled") and spin_button_xy is not None:
+        sx, sy = scale_to_device(spin_button_xy[0], spin_button_xy[1], device_w, device_h)
+        total = max(
+            0.01,
+            sum(g["duration"] for g in gestures) + sum(max(0.0, d) for d in delays),
+        )
+        start_offset = float(spin["t_start"]) * total
+        end_offset = float(spin["t_end"]) * total
+
+        def _spin_runner(t0, _s=start_offset, _e=end_offset):
+            d0 = max(0.0, (t0 + _s) - time.monotonic())
+            if d0 > 0:
+                time.sleep(d0)
+            driver.execute_script("mobile: tap", {"x": sx, "y": sy})
+            d1 = max(0.0, (t0 + _e) - time.monotonic())
+            if d1 > 0:
+                time.sleep(d1)
+            driver.execute_script("mobile: tap", {"x": sx, "y": sy})
+
+        spin_thread = threading.Thread(
+            target=_spin_runner, args=(time.monotonic(),), daemon=True
+        )
+        spin_thread.start()
+
+    # --- Step 3: execute all gestures via custom WDA endpoint ---
     _execute_gestures(normalized_gestures, delays, wda_url)
+
+    if spin_thread is not None:
+        spin_thread.join(timeout=5.0)
 
     time.sleep(0.7)
     reset_position(driver, device_w, device_h)

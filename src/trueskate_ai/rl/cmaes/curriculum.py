@@ -48,6 +48,7 @@ class Curriculum:
     failure_multiplier_spec: str | float = "near_miss"
     notes: str = ""
     num_gestures: int = 2
+    use_spin: bool = False
     initial_means: tuple[tuple[float, ...], ...] | None = None
     initial_delays: tuple[float, ...] | None = None
 
@@ -129,6 +130,7 @@ class Curriculum:
             failure_multiplier_spec=data.get("failure_multiplier", "near_miss"),
             notes=data.get("notes", ""),
             num_gestures=num_gestures,
+            use_spin=bool(data.get("use_spin", False)),
             initial_means=initial_means,
             initial_delays=initial_delays,
         )

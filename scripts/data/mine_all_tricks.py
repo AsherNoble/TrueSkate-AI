@@ -41,7 +41,7 @@ if str(_REPO_ROOT / "src") not in sys.path:
 from trueskate_ai.rl.cmaes.action_param import (
     build_param_bounds,
     clamp_params,
-    infer_num_gestures,
+    infer_layout,
     unpack_gesture_params,
 )
 
@@ -52,9 +52,9 @@ def _sanitize_filename(name: str) -> str:
 
 def _unpack_to_recipe(params: list[float]) -> dict:
     arr = np.array(params, dtype=np.float64)
-    num_gestures = infer_num_gestures(len(arr))
-    bounds = build_param_bounds(num_gestures)
-    recipe = unpack_gesture_params(clamp_params(arr, bounds), num_gestures)
+    num_gestures, use_spin = infer_layout(len(arr))
+    bounds = build_param_bounds(num_gestures, use_spin)
+    recipe = unpack_gesture_params(clamp_params(arr, bounds), num_gestures, use_spin)
     for g in recipe["gestures"]:
         g["points"] = [list(p) for p in g["points"]]
     return recipe
@@ -76,8 +76,10 @@ def main() -> None:
     if not log_paths:
         sys.exit(f"ERROR: no logs match {args.logs}")
 
-    # (component, num_gestures) -> list of (params, reward, full_trick_name)
-    groups: dict[tuple[str, int], list] = defaultdict(list)
+    # (component, num_gestures, use_spin) -> list of (params, reward, full_trick_name).
+    # use_spin is part of the key so spin and no-spin vectors (different lengths)
+    # never get medianed together.
+    groups: dict[tuple[str, int, bool], list] = defaultdict(list)
     rows = 0
     for path in log_paths:
         with open(path) as f:
@@ -94,22 +96,31 @@ def main() -> None:
                 if r.get("trick_status") != "landed" or not r.get("trick_name"):
                     continue
                 params = r.get("params")
-                if not params or (len(params) + 1) % 9 != 0:
+                if not params:
+                    continue
+                try:
+                    n, use_spin = infer_layout(len(params))
+                except ValueError:
+                    # Not a recognised no-spin (9N-1) or spin (9N+2) length.
                     continue
                 rows += 1
-                n = infer_num_gestures(len(params))
                 for comp in {c.strip().upper() for c in r["trick_name"].split(" + ") if c.strip()}:
-                    groups[(comp, n)].append((params, float(r.get("reward", 0.0)), r["trick_name"]))
+                    groups[(comp, n, use_spin)].append(
+                        (params, float(r.get("reward", 0.0)), r["trick_name"])
+                    )
 
     print(f"{rows} landed evals across {len(log_paths)} logs → "
-          f"{len(groups)} (trick, N) groups")
+          f"{len(groups)} (trick, N, spin) groups")
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     written = 0
-    multi_n = {c for (c, _) in groups if sum(1 for (c2, _) in groups if c2 == c) > 1}
+    n_by_comp: dict[str, set] = defaultdict(set)
+    for (comp, n, _sp) in groups:
+        n_by_comp[comp].add(n)
+    multi_n = {c for c, ns in n_by_comp.items() if len(ns) > 1}
 
-    for (comp, n), samples in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+    for (comp, n, use_spin), samples in sorted(groups.items(), key=lambda kv: -len(kv[1])):
         if len(samples) < args.min_samples:
             continue
         matrix = np.array([s[0] for s in samples], dtype=np.float64)
@@ -122,6 +133,7 @@ def main() -> None:
             "sample_count": len(samples),
             "landed_only": True,
             "num_gestures": n,
+            "use_spin": use_spin,
             "reward_stats": {
                 "min": round(float(rewards.min()), 4),
                 "mean": round(float(rewards.mean()), 4),
@@ -129,11 +141,14 @@ def main() -> None:
             },
             "source_log": args.logs,
         }
-        suffix = f"_{n}g" if comp in multi_n else ""
-        out_path = args.out_dir / f"{_sanitize_filename(comp)}{suffix}_{timestamp}.json"
+        n_suffix = f"_{n}g" if comp in multi_n else ""
+        spin_suffix = "_spin" if use_spin else ""
+        out_path = (
+            args.out_dir / f"{_sanitize_filename(comp)}{n_suffix}{spin_suffix}_{timestamp}.json"
+        )
         out_path.write_text(json.dumps(output, indent=2) + "\n")
         written += 1
-        print(f"  {len(samples):5d} samples  N={n}  {comp}")
+        print(f"  {len(samples):5d} samples  N={n}  spin={use_spin}  {comp}")
 
     print(f"\n{written} libraries → {args.out_dir}")
 

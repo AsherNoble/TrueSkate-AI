@@ -325,7 +325,10 @@ class DeviceWorker:
 
     @property
     def spin_button_xy(self) -> tuple[float, float]:
-        value = self._cfg.get("spin_button_xy", (25.0, 362.0))
+        # Normalised [0, 1] coords of True Skate's rotate button. Every DEVICES
+        # entry sets this; the default mirrors them (was a stale logical-point
+        # tuple that never matched a real device).
+        value = self._cfg.get("spin_button_xy", (0.0604, 0.4040))
         return float(value[0]), float(value[1])
 
     # -- connection ---------------------------------------------------------
@@ -607,6 +610,7 @@ class DeviceWorker:
                 np.array(params),
                 device_w=self._cfg["logical_w"],
                 device_h=self._cfg["logical_h"],
+                spin_button_xy=self.spin_button_xy,
                 timing_device_key=self.device_id,
             )
             action_end_time = time.monotonic()
