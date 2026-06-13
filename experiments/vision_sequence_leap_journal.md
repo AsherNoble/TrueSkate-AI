@@ -35,6 +35,26 @@ Ran the CURRENT `TraceExtractor.process_frame` over each clean clip sequentially
 - **The agent generates touches it knows exactly.** Capture clean screen frames during agent gestures → `(frame, known-touch)` is free ground truth. Use it to (a) **measure** trace_extractor's true positional error, and (b) **train Model 1** (a learned extractor that beats the heuristic). This is the unblocking step for the whole leap.
 - **Prerequisite that wasn't obvious:** the corpus must be **color, full-frame screen captures** (like `data/extracted_frames`, or AVFoundation USB capture) — NOT the grayscale 210×455 RL frames and NOT the external hand-clips. The Stage-1 capture must save color screen frames.
 
+## On-Device Self-Labeling — VALIDATED (2026-06-14, iPhone_XR)
+
+Brought WDA+Appium up (directly, no launcher monitor — see ops note) and ran the new `collect_self_labeled_traces.py`. Color MJPEG capture works: full-res **1792×828 RGB** frames with per-frame timestamps. Findings from ~140 collected gestures:
+
+1. **The trace only renders for on-board FLICKS, not arbitrary drags.** Random screen drags in empty space produce no trace and don't move the board (`warm@label=0`). Fixed the sampler to start on the board (~x∈[0.38,0.62], y∈[0.50,0.80]) and flick outward — every such flick produces a trace (50/50). (Some flicks even land real tricks, e.g. a BACKSIDE 180.)
+2. **The orange trace LAGS the flick by ~0.4-0.5s.** The swoosh peaks a median **+0.33s after the gesture END** (50/50 samples, range +0.14..+0.66s) — it's a lingering render of the completed flick path, not coincident with the finger. My first instantaneous-point labeling therefore marked the trace-rich frames "inactive."
+3. **Latency-shifted labels align with the trace.** Sweeping `latency_s`: at 0.0s only **1%** of active-frame labels land on the trace; at **0.40s → 78%**, at **0.50s → 85%** (median warm-px at label jumps 0 → ~2000). **`latency_s ≈ 0.45` is the validated offset** — now the default in `train_trace_extractor.py` + a trace-presence gate keeps only aligned frames.
+
+**Conclusion: Asher's agent-as-labeler approach WORKS on-device.** Clean color frames + known flicks + a ~0.45s latency shift → a corpus where labels sit on the rendered trace ~80% of the time. The label naturally lands at the flick's end (swoosh head). For Model 2 the richer target is the whole flick *path* the swoosh encodes (refinement). Corpora on disk: `data/self_labeled_traces/iPhone_XR_20260614_011235` (50, board-flick) + `..._011856` (250) — gitignored under /data/.
+
+## MODEL 1 TRAINED + GENERALIZES (2026-06-14) — the leap's perception foundation is proven
+
+- Trained the `GaussianBumpPredictor` U-Net on the 50-sample board-flick corpus (latency 0.45 + trace gate → 123 trace-aligned positives + negatives = 192 frames, 20 epochs, MPS). Loss fell monotonically **0.044 → 0.00096**.
+- **Held-out generalization (243 trace frames from the SEPARATE 250-sample session, seed 23 ≠ train seed 11):** predicted touch → ground-truth-label **median normalised distance 0.032** (≈3% of frame), **100% of predictions land on the orange trace** (median warm-px at prediction 3186 ≥ 2703 at the label). Visual overlays (`tmp/model1_pred/`) show pred (red) and label (green) coincident on the swoosh.
+- This is the go-signal: a tiny self-labeled corpus already yields a learned trace extractor that accurately reads the finger trace on unseen data. Scaling the corpus (the 250-sample run, more sessions, more devices) → a production Model 1, then run it on expert play to label Model 2's sequence data. Ops/cache caveat: training stdout was block-buffered (run `python -u`).
+
+## Ops Note — WDA Stability
+- WDA bring-up via `launch_services.py` FLAPPED hard (iproxy "died unexpectedly" → auto-restart → port 4723 wedged). Root cause: the launcher started a SECOND iproxy on 8100 conflicting with the pre-existing tunnel, and its restart monitor then wedged.
+- **Fix that worked: launch WDA + Appium DIRECTLY** (`xcodebuild ... test-without-building` + `appium --port 4723`), reusing the existing iproxy tunnels, with NO launcher monitor. Stayed rock-solid for ~25 min across 340 gestures + a training run. The launcher's auto-restart was the instability, not WDA itself. Fold a "reuse existing iproxy / don't double-start" guard into launch_services.
+
 ## Status / Next
-- WDA was **down** on all device ports this session (iproxy tunnels up for both XRs, UDIDs ...3A78002E and ...3A60802E, but no WDA listening; no xcodebuild loop). On-device ground-truth collection (Stage 1) and BIG SPIN OCR verification are blocked on bringing WDA up — flaky to do unattended; left for a supervised session.
-- Built device-free deliverables instead: Stage-1 collection script (ready to run once WDA is up), Model-1 training scaffold, Option-D board localizer. See commits on branch `feat/spin-and-vision-sequence-leap`.
+- **DONE this session:** self-labeling pipeline validated end-to-end on-device; Model 1 trained + generalizes; board localizer + reanchor; spin extension (code) — all committed on `feat/spin-and-vision-sequence-leap` (not pushed).
+- **Next (supervised):** (1) scale the self-labeled corpus (250+ run on disk; collect on XR2/XS too) and train a production Model 1; (2) run Model 1 on screen-recorded expert play → Model 2 sequence dataset; (3) fix the spin execution (second finger in one W3C payload) + confirm the spin input with Asher; (4) Option-D first 2-trick line using the board localizer + reanchor.

@@ -104,18 +104,31 @@ class TimestampedColorRecorder:
         return self._frames, self._times
 
 
-def _sample_gesture(rng: np.random.Generator) -> dict:
-    """A diverse calibration drag: 2-3 waypoints across the board, varied timing.
+# The board sits center-ish (localizer: ~(0.42-0.50, 0.54-0.55)). True Skate only
+# renders the orange finger-trace for flicks ON/NEAR the board — arbitrary
+# empty-space drags produce no trace and don't move the board (verified
+# 2026-06-14). So calibration gestures START on the board and FLICK outward,
+# mimicking real trick input, to maximise trace yield while still covering a
+# diverse spread of directions/speeds for Model 1 to generalise.
+_BOARD_X = (0.38, 0.62)
+_BOARD_Y = (0.50, 0.80)
 
-    Slower drags are favoured (longer duration) so capture/render latency causes
-    only small positional label error. Covers the input distribution beyond the
-    narrow trick-gesture region so Model 1 generalises to expert play.
-    """
-    n = int(rng.integers(2, 4))  # 2 or 3 waypoints
-    xs = rng.uniform(X_BOUND_MIN, X_BOUND_MAX, size=n)
-    ys = rng.uniform(Y_BOUND_MIN, Y_BOUND_MAX, size=n)
-    waypoints = [(float(x), float(y)) for x, y in zip(xs, ys)]
-    duration = float(rng.uniform(0.25, 0.9))     # bias slower for cleaner labels
+
+def _sample_gesture(rng: np.random.Generator) -> dict:
+    """A board-centered flick: start on the board, flick outward in a random dir."""
+    sx = float(rng.uniform(*_BOARD_X))
+    sy = float(rng.uniform(*_BOARD_Y))
+    ang = float(rng.uniform(0, 2 * np.pi))
+    mag = float(rng.uniform(0.18, 0.45))         # flick reach (normalised)
+    ex = float(np.clip(sx + mag * np.cos(ang), X_BOUND_MIN, X_BOUND_MAX))
+    ey = float(np.clip(sy + mag * np.sin(ang), Y_BOUND_MIN, Y_BOUND_MAX))
+    if int(rng.integers(0, 2)) == 0:
+        waypoints = [(sx, sy), (ex, ey)]                       # straight flick
+    else:
+        mx = float(np.clip((sx + ex) / 2 + rng.uniform(-0.08, 0.08), X_BOUND_MIN, X_BOUND_MAX))
+        my = float(np.clip((sy + ey) / 2 + rng.uniform(-0.08, 0.08), Y_BOUND_MIN, Y_BOUND_MAX))
+        waypoints = [(sx, sy), (mx, my), (ex, ey)]             # curved flick
+    duration = float(rng.uniform(0.12, 0.4))     # flicks are fast
     easing_power = float(rng.uniform(0.6, 2.0))
     return {"waypoints": waypoints, "duration": duration, "easing_power": easing_power}
 

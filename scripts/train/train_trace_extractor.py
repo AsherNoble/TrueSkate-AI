@@ -32,9 +32,17 @@ for p in (_REPO_ROOT / "src", _REPO_ROOT / "experiments"):
     if str(p) not in sys.path:
         sys.path.insert(0, str(p))
 
+import cv2  # noqa: E402
 import torch  # noqa: E402
 from torch.utils.data import DataLoader, Dataset  # noqa: E402
 from PIL import Image  # noqa: E402
+
+# Validated 2026-06-14: True Skate's orange finger-trace lags the flick — the
+# swoosh peaks ~0.4-0.5s AFTER touch release. At latency_s≈0.45 the known-touch
+# labels align with the visible trace in ~80% of frames (vs ~1% at 0.0). See
+# experiments/vision_sequence_leap_journal.md.
+_DEFAULT_LATENCY_S = 0.45
+_TRACE_WARM_THRESHOLD = 200  # min warm-orange px near the label to count as trace-aligned
 
 from trueskate_ai.vision.self_label import label_frames  # noqa: E402
 from gaussian_bump_predictor import GaussianBumpPredictor, GaussianBumpLoss  # noqa: E402
@@ -42,6 +50,18 @@ from gaussian_bump_predictor import GaussianBumpPredictor, GaussianBumpLoss  # n
 _H, _W = 416, 192          # working resolution (≈ portrait 812:375 aspect)
 _HEATMAP_SIGMA = 6.0
 _NEG_KEEP_FRAC = 0.2       # keep this fraction of inactive (no-touch) frames as negatives
+
+
+def _warm_near(frame_path: Path, nx: float, ny: float, r: int = 45) -> int:
+    """Count warm-orange (trace) pixels within r px of normalised (nx, ny)."""
+    img = cv2.imread(str(frame_path))
+    if img is None:
+        return 0
+    H, W = img.shape[:2]
+    px, py = int(nx * W), int(ny * H)
+    x0, x1, y0, y1 = max(0, px - r), min(W, px + r), max(0, py - r), min(H, py + r)
+    hsv = cv2.cvtColor(img[y0:y1, x0:x1], cv2.COLOR_BGR2HSV)
+    return int(((hsv[:, :, 0] <= 35) & (hsv[:, :, 1] >= 70) & (hsv[:, :, 2] >= 140)).sum())
 
 
 def make_heatmap(x: float, y: float, H: int, W: int, sigma: float = _HEATMAP_SIGMA) -> np.ndarray:
@@ -68,10 +88,11 @@ class SelfLabeledTraceDataset(Dataset):
     from the known gesture + the frame timestamp (latency_s tunable).
     """
 
-    def __init__(self, session_dir: str | Path, *, latency_s: float = 0.0,
-                 rng_seed: int = 0):
+    def __init__(self, session_dir: str | Path, *, latency_s: float = _DEFAULT_LATENCY_S,
+                 require_trace: bool = True, rng_seed: int = 0):
         self.items: list[tuple[Path, float, float, bool]] = []
         rng = np.random.default_rng(rng_seed)
+        kept_pos = gated = 0
         for sample_dir in sorted(Path(session_dir).glob("sample_*")):
             meta_path = sample_dir / "meta.json"
             if not meta_path.exists():
@@ -87,9 +108,19 @@ class SelfLabeledTraceDataset(Dataset):
                 frame_path = sample_dir / f"frame_{fi:03d}.png"
                 if not frame_path.exists():
                     continue
-                if not lab.active and rng.random() > _NEG_KEEP_FRAC:
-                    continue  # subsample no-touch negatives
-                self.items.append((frame_path, lab.x, lab.y, lab.active))
+                if not lab.active:
+                    if rng.random() <= _NEG_KEEP_FRAC:
+                        self.items.append((frame_path, lab.x, lab.y, False))
+                    continue
+                # Trace-presence gate: keep an active frame only if the orange
+                # trace actually appears near the (latency-shifted) label.
+                if require_trace and _warm_near(frame_path, lab.x, lab.y) < _TRACE_WARM_THRESHOLD:
+                    gated += 1
+                    continue
+                self.items.append((frame_path, lab.x, lab.y, True))
+                kept_pos += 1
+        print(f"  dataset: {kept_pos} trace-aligned positives kept, {gated} gated, "
+              f"{len(self.items)} total (latency={latency_s}s, require_trace={require_trace})")
         if not self.items:
             raise RuntimeError(f"No labeled frames found under {session_dir}")
 
@@ -163,7 +194,10 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Train the learned trace extractor (Model 1).")
     ap.add_argument("--data", type=Path, default=None, help="self_labeled_traces session dir")
     ap.add_argument("--smoke", action="store_true", help="synthetic pipeline check, no corpus needed")
-    ap.add_argument("--latency-s", type=float, default=0.0, help="frame->touch latency compensation")
+    ap.add_argument("--latency-s", type=float, default=_DEFAULT_LATENCY_S,
+                    help="frame->touch trace lag compensation (validated ~0.45s)")
+    ap.add_argument("--no-require-trace", action="store_true",
+                    help="keep active frames even without a visible trace at the label")
     ap.add_argument("--epochs", type=int, default=20)
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--lr", type=float, default=1e-3)
@@ -179,7 +213,8 @@ def main() -> None:
 
     if args.data is None:
         raise SystemExit("Provide --data <session_dir> or --smoke")
-    ds = SelfLabeledTraceDataset(args.data, latency_s=args.latency_s)
+    ds = SelfLabeledTraceDataset(args.data, latency_s=args.latency_s,
+                                 require_trace=not args.no_require_trace)
     train(ds, epochs=args.epochs, batch_size=args.batch_size, lr=args.lr, out_path=args.out)
 
 
