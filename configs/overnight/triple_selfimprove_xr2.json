@@ -1,0 +1,20 @@
+{
+  "device": "iPhone_XR2",
+  "seed": 18142,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1500,
+    "max_hours": 2.5,
+    "stop_land_rate": 0.7,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/360_triple_flip.json",
+      "warm_start": "trick_libraries/360_triple_flip_20260613_162335.json",
+      "_note": "Self-improvement: re-seed from the 38% mined recipe (vs the 5-sample thin prior it started from)."
+    }
+  ]
+}
