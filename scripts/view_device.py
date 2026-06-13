@@ -43,6 +43,14 @@ Caveats:
   unlocked again — no manual restart or page refresh needed.
 - The hosting app (terminal/IDE) needs macOS Screen Recording permission, or
   capture opens but never delivers frames.
+- macOS CoreMediaIO can wedge the iPhone's DAL screen-capture stream (one
+  CMIO-level event froze both phones at the same instant). The device still
+  enumerates and ffmpeg opens it, but zero frames arrive and the watchdog's
+  relaunches can't help — the wedge is below ffmpeg. QuickTime's capture path
+  is unaffected, and opening it RE-ACTIVATES the session: open QuickTime >
+  New Movie Recording, pick the device once, then quit QuickTime and the
+  ffmpeg capture works again. A USB replug re-registers the device but does
+  NOT re-activate the stream; restarting CoreMediaIO/usbmuxd doesn't fix it.
 - Run this on whichever Mac the phone is physically attached to (the Intel
   `training-server` for the rig's collection phones; this laptop for the 11).
 - HLS latency is ~4-8s. If you need near-real-time later, swap the HLS sink for
