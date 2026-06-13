@@ -1,0 +1,16 @@
+{
+  "target": "DOUBLE LASER FLIP",
+  "num_gestures": 2,
+  "warm_start": "trick_libraries/double_laser_flip_MIRRORED_from_70pct_360double.json",
+  "rewards": {
+    "DOUBLE LASER FLIP": 1.0,
+    "TRIPLE LASER FLIP": 0.8,
+    "LASER FLIP": 0.5,
+    "VARIAL HEELFLIP": 0.2,
+    "360 DOUBLE FLIP": 0.0,
+    "360 FLIP": 0.0
+  },
+  "default_reward": 0.0,
+  "failure_multiplier": "near_miss",
+  "notes": "Mirror of 70% 360-double recipe, with source-family (360 flip/double) rewards ZEROED \u2014 the 0.2 on 360-double was pulling the mirror back to the un-mirrored basin (landed 62 360-flips / 43 360-doubles, 0 lasers). De-rewarded-parent fix."
+}
