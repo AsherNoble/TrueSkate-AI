@@ -44,15 +44,24 @@ def execute_static_push(
     perform() triggers iOS's system three-finger gesture (undo/redo),
     swallowing all touches before True Skate sees them.
     """
+    import os  # noqa: PLC0415
     from trueskate_ai.sim.touch_actions import build_curved_drag, make_touch_pointer  # noqa: PLC0415
 
+    # PUSH_COUNT>1 chains swipes to build board speed (e.g. to roll to / 360-flip
+    # a gap in an obstacle park). PUSH_END_Y override lengthens each swipe.
+    push_count = max(1, int(os.environ.get("PUSH_COUNT", "1")))
+    end_y = float(os.environ.get("PUSH_END_Y", PUSH_END[1]))
+
     push_start = scale_to_device(PUSH_START[0], PUSH_START[1], device_w, device_h)
-    push_end = scale_to_device(PUSH_END[0], PUSH_END[1], device_w, device_h)
+    push_end = scale_to_device(PUSH_END[0], end_y, device_w, device_h)
     push_easing = lambda t: t ** PUSH_EASING  # noqa: E731
 
-    finger = make_touch_pointer("finger_push")
-    build_curved_drag(finger, [push_start, push_end], total_duration=PUSH_DURATION, easing=push_easing)
-    ActionChains(driver, devices=[finger]).perform()
+    for k in range(push_count):
+        finger = make_touch_pointer("finger_push")
+        build_curved_drag(finger, [push_start, push_end], total_duration=PUSH_DURATION, easing=push_easing)
+        ActionChains(driver, devices=[finger]).perform()
+        if k < push_count - 1:
+            time.sleep(0.12)  # brief gap so each swipe adds speed
     if on_post_push is not None:
         on_post_push()
 
