@@ -9,7 +9,6 @@ passing points to these functions.
 Gesture and coordinate conventions: GESTURES.md at the repo root.
 """
 import logging
-import threading
 import time
 from dataclasses import dataclass
 from itertools import count
@@ -48,18 +47,6 @@ def make_touch_pointer(prefix="finger"):
 
 def _clamp(value, low, high):
     return max(low, min(high, value))
-
-
-def _tap_at_time(driver, start_time, target_offset, tap_xy):
-    """Tap (x, y) logical points at start_time + target_offset (monotonic clock).
-
-    Used by the spin-button thread to fire a tap mid-gesture without blocking
-    the main perform() call. Lifted from the PPO SpinControl execution path.
-    """
-    delay = max(0.0, (start_time + target_offset) - time.monotonic())
-    if delay > 0:
-        time.sleep(delay)
-    driver.execute_script("mobile: tap", {"x": tap_xy[0], "y": tap_xy[1]})
 
 
 def get_touch_timing_calibration(device_key=None) -> TouchTimingCalibration:
@@ -333,10 +320,11 @@ def execute_n_slot_gestures(
         delays: list of N-1 inter-gesture delays in seconds. Negative = overlap.
         easings: optional list of N easing callables (None entries → constant velocity).
         spin: optional decoded spin control dict {"enabled", "t_start", "t_end"}
-            (fractions of the schedule's total duration). When enabled, the
-            rotate button is tapped on at t_start·total and off at t_end·total
-            from a background thread synchronized with the gesture perform().
-        spin_button_pt: (x, y) logical points of the rotate button — required for
+            (fractions of the schedule's total duration). True Skate's spin is a
+            HOLD control: when enabled, an extra finger is held DOWN on the spin
+            button from t_start·total to t_end·total, scheduled inside the same
+            W3C payload as the drags.
+        spin_button_pt: (x, y) logical points of the spin button — required for
             spin to fire (already scaled by the caller).
 
     A delay negative enough to place a later slot before an earlier one is not
@@ -345,10 +333,9 @@ def execute_n_slot_gestures(
     order is relabelled — so the schedule stays continuous as a delay sweeps
     through the crossover point.
 
-    When spin fires, the combined single-payload path is forced so exactly one
-    perform() is in flight racing the spin-button taps (matches the PPO
-    SpinControl topology; the sequential multi-perform path is not exercised
-    with a concurrent tap thread).
+    When spin fires, the combined single-payload path is forced so the held
+    spin finger shares one perform() with the drags (no concurrent WDA command
+    to cancel the in-flight gesture).
     """
     n = len(gestures_points)
     if n < 1:
@@ -466,30 +453,34 @@ def execute_n_slot_gestures(
                 )
             fingers.append(finger)
 
-        # Spin button: tap on at t_start·total, off at t_end·total, from a
-        # background thread so the taps land while the single perform() runs.
-        spin_thread = None
-        spin_total = 0.0
+        # Spin button is a HOLD control: an extra finger goes DOWN at
+        # t_start·total and UP at t_end·total, scheduled INSIDE the same W3C
+        # payload as the drags. (A prior design tapped it from a background
+        # thread via `mobile: tap` concurrent with perform() — that cancelled
+        # the in-flight gesture on the shared WDA session and nullified the
+        # trick. A finger in the same payload has no such conflict.)
         if spin_active:
             spin_total = max(
                 (starts[i] + gestures_durations[i] for i in range(n)), default=0.01
             )
-            start_offset = float(spin["t_start"]) * spin_total
-            end_offset = float(spin["t_end"]) * spin_total
-
-            def _spin_runner(t0, _start=start_offset, _end=end_offset):
-                _tap_at_time(driver, t0, _start, spin_button_pt)
-                _tap_at_time(driver, t0, _end, spin_button_pt)
-
-            spin_thread = threading.Thread(
-                target=_spin_runner, args=(time.monotonic(),), daemon=True
-            )
-            spin_thread.start()
+            start_offset = max(0.0, float(spin["t_start"]) * spin_total)
+            hold = max(0.0, (float(spin["t_end"]) - float(spin["t_start"])) * spin_total)
+            bx, by = spin_button_pt
+            sf = make_touch_pointer("spin")
+            # Position, wait, then RE-ISSUE the move before pointer_down: WDA
+            # drops a standalone zero-duration move when a pause follows it, so
+            # the down would otherwise fire at the pointer origin (0,0).
+            sf.create_pointer_move(x=bx, y=by, duration=0)
+            if start_offset > 0:
+                sf.create_pause(start_offset)
+            sf.create_pointer_move(x=bx, y=by, duration=0)
+            sf.create_pointer_down()
+            if hold > 0:
+                sf.create_pause(hold)
+            sf.create_pointer_up(0)
+            fingers.append(sf)
 
         perform_pointer_actions(driver, fingers)
-
-        if spin_thread is not None:
-            spin_thread.join(timeout=max(1.0, spin_total + 0.5))
 
         branch = (
             "combined-spin" if spin_active
