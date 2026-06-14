@@ -46,12 +46,17 @@ class BoardPose:
 
 @dataclass(frozen=True)
 class BoardLocatorConfig:
-    roi_top: float = 0.20        # ignore the top UI/scoreboard band
-    roi_bottom: float = 0.97     # ignore the very bottom controls strip
-    roi_left: float = 0.05
-    roi_right: float = 0.95
+    # Defaults tuned for LIVE in-park frames (SLS Super Crown): the tighter band
+    # excludes the bottom menu bar and the top scoreboard/ledge that otherwise
+    # win the dark-blob contest. The surround/saturation scoring (below) does the
+    # rest — it rejects dark UI strips and obstacle structures by preferring the
+    # deck (dark, on bright floor, with saturated wheels/holographic edges).
+    roi_top: float = 0.28        # ignore the top UI/scoreboard/ledge band
+    roi_bottom: float = 0.88     # ignore the bottom controls/menu strip
+    roi_left: float = 0.06
+    roi_right: float = 0.94
     min_area_frac: float = 0.004  # board must occupy at least this fraction of the frame
-    max_area_frac: float = 0.30   # ...and at most this (reject whole-frame dark)
+    max_area_frac: float = 0.22   # ...and at most this (reject whole-frame dark)
     min_elongation: float = 1.6   # long/short side ratio of the min-area rect
     blur_ksize: int = 5
     close_ksize: int = 9
@@ -92,6 +97,9 @@ def locate_board(bgr: np.ndarray, config: BoardLocatorConfig | None = None) -> B
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
 
+    hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+    ring_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (27, 27))
+
     comps, labels, stats, _ = _largest_components(mask)
     if not comps:
         return None
@@ -122,8 +130,26 @@ def locate_board(bgr: np.ndarray, config: BoardLocatorConfig | None = None) -> B
         # Centrality: prefer blobs near the horizontal centre (board sits there).
         centrality = 1.0 - min(1.0, abs(cx - 0.5) / 0.5)
         # Size plausibility: peak around a mid fraction, falls off at extremes.
-        size_score = float(np.clip(area_frac / 0.06, 0.0, 1.0))
-        score = (min(elongation, 6.0) / 6.0) * (0.4 + 0.6 * centrality) * (0.4 + 0.6 * size_score)
+        size_score = float(np.clip(area_frac / 0.05, 0.0, 1.0))
+        # Bright surround: the deck sits on bright flat floor; a ring around it is
+        # bright, unlike dark UI strips (menu bar) whose surround is dark.
+        dilated = cv2.dilate(comp_mask, ring_kernel)
+        ring = (dilated > 0) & (comp_mask == 0)
+        surround = float(gray[ring].mean() / 255.0) if ring.any() else 0.0
+        # Saturated colour near the blob: the deck has saturated wheels +
+        # holographic grip edges; plain dark structures do not.
+        bx, by = stats[label, cv2.CC_STAT_LEFT], stats[label, cv2.CC_STAT_TOP]
+        bw, bh = stats[label, cv2.CC_STAT_WIDTH], stats[label, cv2.CC_STAT_HEIGHT]
+        m = 18
+        patch = hsv[max(0, by - m):by + bh + m, max(0, bx - m):bx + bw + m]
+        sat = float(((patch[:, :, 1] > 90) & (patch[:, :, 2] > 90)).mean()) if patch.size else 0.0
+        score = (
+            (min(elongation, 6.0) / 6.0)
+            * (0.3 + 0.7 * centrality)
+            * (0.3 + 0.7 * size_score)
+            * (0.25 + 0.75 * surround)
+            * (0.4 + 0.6 * min(1.0, sat * 6.0))
+        )
 
         if score > best_score:
             # cv2 minAreaRect angle convention → normalise to 0 = vertical long axis.
