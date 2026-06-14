@@ -163,6 +163,9 @@ def main() -> None:
     ap.add_argument("--reset-every", type=int, default=1, help="Reset board every N gestures")
     ap.add_argument("--park", default=None,
                     help="Switch to this installed park first (glasshouse/workshop/underpass)")
+    ap.add_argument("--tag", default=None,
+                    help="Label the output dir _<tag> WITHOUT navigating (select the park manually "
+                         "first, e.g. an SLS arena). Used by the tonight runner's park auto-include.")
     args = ap.parse_args()
 
     cfg = next((d for d in DEVICES if d["name"].lower() == args.device.lower()), None)
@@ -180,7 +183,8 @@ def main() -> None:
         switch_to_park(driver, dw, dh, args.park)
 
     session = time.strftime("%Y%m%d_%H%M%S")
-    park_tag = f"_{args.park.lower()}" if args.park else ""
+    tag = (args.park or args.tag or "").lower().replace(" ", "")
+    park_tag = f"_{tag}" if tag else ""
     out_root = args.out_dir / f"{cfg['name']}_{session}{park_tag}"
     out_root.mkdir(parents=True, exist_ok=True)
     print(f"Saving to {out_root}")
