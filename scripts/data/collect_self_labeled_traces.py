@@ -49,19 +49,30 @@ from trueskate_ai.sim.touch_actions import curved_drag, reset_position  # noqa: 
 # (position-dependent; re-check with a screenshot if the installed set changes).
 _MENU_SKATEPARKS = (0.30, 0.95)
 _TAB_ALL = (0.10, 0.16)
-_PARK_ROW_Y = {"glasshouse": 0.34, "workshop": 0.55, "underpass": 0.78}
+_TAB_SLS = (0.55, 0.16)
+# park key -> (tab xy, row y-fraction). Row positions are list-order dependent —
+# re-check with a screenshot if the installed set changes.
+_PARK_NAV = {
+    "glasshouse": (_TAB_ALL, 0.34),
+    "workshop": (_TAB_ALL, 0.55),
+    "underpass": (_TAB_ALL, 0.78),
+    "sls_supercrown": (_TAB_SLS, 0.30),
+    "sls_newark": (_TAB_SLS, 0.50),
+    "sls_munich": (_TAB_SLS, 0.70),
+}
 
 
 def switch_to_park(driver, dw, dh, park: str) -> None:
     """Navigate True Skate's menus to load the named installed park."""
-    key = park.strip().lower().replace(" ", "").replace("the", "").replace(":", "")
-    if key not in _PARK_ROW_Y:
-        raise ValueError(f"Unknown park {park!r}. Known: {list(_PARK_ROW_Y)}")
+    key = park.strip().lower().replace(" ", "").replace(":", "")
+    if key not in _PARK_NAV:
+        raise ValueError(f"Unknown park {park!r}. Known: {list(_PARK_NAV)}")
+    (tab_x, tab_y), row_y = _PARK_NAV[key]
     driver.execute_script("mobile: tap", {"x": _MENU_SKATEPARKS[0] * dw, "y": _MENU_SKATEPARKS[1] * dh})
     time.sleep(1.2)
-    driver.execute_script("mobile: tap", {"x": _TAB_ALL[0] * dw, "y": _TAB_ALL[1] * dh})
-    time.sleep(0.8)
-    driver.execute_script("mobile: tap", {"x": 0.5 * dw, "y": _PARK_ROW_Y[key] * dh})
+    driver.execute_script("mobile: tap", {"x": tab_x * dw, "y": tab_y * dh})
+    time.sleep(0.9)
+    driver.execute_script("mobile: tap", {"x": 0.5 * dw, "y": row_y * dh})
     time.sleep(3.0)  # park load
 
 
