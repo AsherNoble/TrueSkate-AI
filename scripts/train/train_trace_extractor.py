@@ -47,16 +47,13 @@ _TRACE_WARM_THRESHOLD = 200  # min warm-orange px near the label to count as tra
 from trueskate_ai.vision.self_label import label_frames  # noqa: E402
 from gaussian_bump_predictor import GaussianBumpPredictor, GaussianBumpLoss  # noqa: E402
 
-_H, _W = 416, 192          # working resolution (≈ portrait 812:375 aspect)
+_H, _W = 288, 128          # working resolution (≈ portrait 2.25:1; still resolves the trace, ~3x faster than 416x192)
 _HEATMAP_SIGMA = 6.0
 _NEG_KEEP_FRAC = 0.2       # keep this fraction of inactive (no-touch) frames as negatives
 
 
-def _warm_near(frame_path: Path, nx: float, ny: float, r: int = 45) -> int:
-    """Count warm-orange (trace) pixels within r px of normalised (nx, ny)."""
-    img = cv2.imread(str(frame_path))
-    if img is None:
-        return 0
+def _warm_img(img: np.ndarray, nx: float, ny: float, r: int = 45) -> int:
+    """Count warm-orange (trace) pixels within r px of normalised (nx, ny) in a BGR image."""
     H, W = img.shape[:2]
     px, py = int(nx * W), int(ny * H)
     x0, x1, y0, y1 = max(0, px - r), min(W, px + r), max(0, py - r), min(H, py + r)
@@ -90,10 +87,16 @@ class SelfLabeledTraceDataset(Dataset):
 
     def __init__(self, session_dir: str | Path, *, latency_s: float = _DEFAULT_LATENCY_S,
                  require_trace: bool = True, rng_seed: int = 0):
-        self.items: list[tuple[Path, float, float, bool]] = []
+        # Each candidate frame is loaded from disk ONCE here (also needed for the
+        # trace gate) and cached resized in memory, so training epochs do no disk
+        # I/O — full-res-PNG-per-item was ~6 min/epoch; this is seconds.
+        self._frames: list[np.ndarray] = []   # uint8 [H,W,3] RGB
+        self._heatmaps: list[np.ndarray] = []  # float16 [H,W]
         rng = np.random.default_rng(rng_seed)
-        kept_pos = gated = 0
-        for sample_dir in sorted(Path(session_dir).glob("sample_*")):
+        kept_pos = gated = neg = 0
+        root = Path(session_dir)
+        sample_dirs = sorted(root.glob("sample_*")) or sorted(root.glob("*/sample_*"))
+        for sample_dir in sample_dirs:
             meta_path = sample_dir / "meta.json"
             if not meta_path.exists():
                 continue
@@ -110,33 +113,36 @@ class SelfLabeledTraceDataset(Dataset):
                     continue
                 if not lab.active:
                     if rng.random() <= _NEG_KEEP_FRAC:
-                        self.items.append((frame_path, lab.x, lab.y, False))
+                        img = cv2.imread(str(frame_path))
+                        if img is not None:
+                            self._cache(img, -1.0, -1.0); neg += 1
+                    continue
+                img = cv2.imread(str(frame_path))
+                if img is None:
                     continue
                 # Trace-presence gate: keep an active frame only if the orange
                 # trace actually appears near the (latency-shifted) label.
-                if require_trace and _warm_near(frame_path, lab.x, lab.y) < _TRACE_WARM_THRESHOLD:
+                if require_trace and _warm_img(img, lab.x, lab.y) < _TRACE_WARM_THRESHOLD:
                     gated += 1
                     continue
-                self.items.append((frame_path, lab.x, lab.y, True))
-                kept_pos += 1
-        print(f"  dataset: {kept_pos} trace-aligned positives kept, {gated} gated, "
-              f"{len(self.items)} total (latency={latency_s}s, require_trace={require_trace})")
-        if not self.items:
+                self._cache(img, lab.x, lab.y); kept_pos += 1
+        print(f"  dataset: {kept_pos} trace-aligned positives + {neg} negatives kept, "
+              f"{gated} gated (latency={latency_s}s, require_trace={require_trace})")
+        if not self._frames:
             raise RuntimeError(f"No labeled frames found under {session_dir}")
 
+    def _cache(self, bgr: np.ndarray, nx: float, ny: float) -> None:
+        rgb = cv2.cvtColor(cv2.resize(bgr, (_W, _H)), cv2.COLOR_BGR2RGB)
+        self._frames.append(rgb.astype(np.uint8))
+        hm = make_heatmap(nx * _W, ny * _H, _H, _W) if nx >= 0 else np.zeros((_H, _W), np.float32)
+        self._heatmaps.append(hm.astype(np.float16))
+
     def __len__(self) -> int:
-        return len(self.items)
+        return len(self._frames)
 
     def __getitem__(self, idx: int):
-        frame_path, x, y, active = self.items[idx]
-        img = Image.open(frame_path).convert("RGB").resize((_W, _H), Image.BILINEAR)
-        arr = np.asarray(img, dtype=np.float32) / 255.0
-        frame = torch.from_numpy(arr).permute(2, 0, 1)  # [3,H,W]
-        if active and x >= 0:
-            hm = make_heatmap(x * _W, y * _H, _H, _W, sigma=_HEATMAP_SIGMA)
-        else:
-            hm = np.zeros((_H, _W), dtype=np.float32)
-        heatmap = torch.from_numpy(hm).unsqueeze(0)  # [1,H,W]
+        frame = torch.from_numpy(self._frames[idx].astype(np.float32) / 255.0).permute(2, 0, 1)
+        heatmap = torch.from_numpy(self._heatmaps[idx].astype(np.float32)).unsqueeze(0)
         return {"image": frame, "heatmap": heatmap}
 
 
@@ -158,11 +164,11 @@ class _SyntheticTraceDataset(Dataset):
 
 
 def train(dataset: Dataset, *, epochs: int, batch_size: int, lr: float,
-          out_path: Path, smoke: bool = False) -> None:
+          out_path: Path, base_channels: int = 32, smoke: bool = False) -> None:
     dev = _device()
-    print(f"device={dev}  samples={len(dataset)}  epochs={epochs}  batch={batch_size}")
+    print(f"device={dev}  samples={len(dataset)}  epochs={epochs}  batch={batch_size}  base_ch={base_channels}")
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
-    model = GaussianBumpPredictor(in_channels=3, base_channels=32).to(dev)
+    model = GaussianBumpPredictor(in_channels=3, base_channels=base_channels).to(dev)
     loss_fn = GaussianBumpLoss()
     opt = torch.optim.Adam(model.parameters(), lr=lr)
 
@@ -186,7 +192,7 @@ def train(dataset: Dataset, *, epochs: int, batch_size: int, lr: float,
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"model_state": model.state_dict(), "h": _H, "w": _W,
-                "sigma": _HEATMAP_SIGMA}, out_path)
+                "sigma": _HEATMAP_SIGMA, "base_channels": base_channels}, out_path)
     print(f"saved checkpoint → {out_path}")
 
 
@@ -199,6 +205,7 @@ def main() -> None:
     ap.add_argument("--no-require-trace", action="store_true",
                     help="keep active frames even without a visible trace at the label")
     ap.add_argument("--epochs", type=int, default=20)
+    ap.add_argument("--base-channels", type=int, default=32, help="U-Net width (16 = ~4x faster)")
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--out", type=Path, default=_REPO_ROOT / "notebooks" / "models" / "trace_extractor_v1.pth")
@@ -215,7 +222,8 @@ def main() -> None:
         raise SystemExit("Provide --data <session_dir> or --smoke")
     ds = SelfLabeledTraceDataset(args.data, latency_s=args.latency_s,
                                  require_trace=not args.no_require_trace)
-    train(ds, epochs=args.epochs, batch_size=args.batch_size, lr=args.lr, out_path=args.out)
+    train(ds, epochs=args.epochs, batch_size=args.batch_size, lr=args.lr, out_path=args.out,
+          base_channels=args.base_channels)
 
 
 if __name__ == "__main__":
