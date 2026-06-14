@@ -197,6 +197,7 @@ def train(dataset: Dataset, *, epochs: int, batch_size: int, lr: float,
 
 
 def main() -> None:
+    global _H, _W
     ap = argparse.ArgumentParser(description="Train the learned trace extractor (Model 1).")
     ap.add_argument("--data", type=Path, default=None, help="self_labeled_traces session dir")
     ap.add_argument("--smoke", action="store_true", help="synthetic pipeline check, no corpus needed")
@@ -206,10 +207,13 @@ def main() -> None:
                     help="keep active frames even without a visible trace at the label")
     ap.add_argument("--epochs", type=int, default=20)
     ap.add_argument("--base-channels", type=int, default=32, help="U-Net width (16 = ~4x faster)")
+    ap.add_argument("--img-h", type=int, default=_H, help="working frame height (must be /16)")
+    ap.add_argument("--img-w", type=int, default=_W, help="working frame width (must be /16)")
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--out", type=Path, default=_REPO_ROOT / "notebooks" / "models" / "trace_extractor_v1.pth")
     args = ap.parse_args()
+    _H, _W = args.img_h, args.img_w
 
     if args.smoke:
         ds: Dataset = _SyntheticTraceDataset(n=8)
