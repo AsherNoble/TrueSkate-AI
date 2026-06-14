@@ -15,13 +15,21 @@ exec >> "$LOG" 2>&1
 echo "=== model1 multi-park training $TS ==="
 
 # Balanced multi-park training set (symlinks): one 250-sample warehouse session
-# + every glasshouse + underpass session collected today.
+# + every park-tagged session EXCEPT underpass (excluded per Asher). New parks
+# (e.g. an SLS arena) auto-include once collected — just give them a _<park> tag.
 TRAIN_DIR="$REPO/tmp/multipark_train"
 rm -rf "$TRAIN_DIR"; mkdir -p "$TRAIN_DIR"
 ln -s "$REPO/data/self_labeled_traces/iPhone_XR_20260614_011856" "$TRAIN_DIR/warehouse250" 2>/dev/null
 i=0
-for d in "$REPO"/data/self_labeled_traces/*_glasshouse "$REPO"/data/self_labeled_traces/*_underpass; do
-  [ -d "$d" ] && ln -s "$d" "$TRAIN_DIR/park$i" && i=$((i+1))
+for d in "$REPO"/data/self_labeled_traces/*_*; do
+  [ -d "$d" ] || continue
+  base="$(basename "$d")"
+  case "$base" in
+    *_underpass) continue ;;                       # excluded per instruction
+    *[!0-9]) ;;                                     # park-tagged (ends in a letter)
+    *) continue ;;                                  # bare timestamp = warehouse (already linked)
+  esac
+  ln -s "$d" "$TRAIN_DIR/park$i" && i=$((i+1))
 done
 echo "training dirs:"; ls -l "$TRAIN_DIR"
 
