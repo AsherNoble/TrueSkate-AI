@@ -27,8 +27,10 @@ from trueskate_ai.vision.board_localizer import locate_board  # noqa: E402
 
 def _latest_run(device: str | None) -> Path | None:
     pat = f"logs/overnight/{device or '*'}/*/runs/cmaes_run_*/"
-    runs = sorted(glob.glob(str(_REPO / pat)))
-    return Path(runs[-1]) if runs else None
+    runs = glob.glob(str(_REPO / pat))
+    if not runs:
+        return None
+    return Path(max(runs, key=lambda p: Path(p).stat().st_mtime))  # most recently active
 
 
 def _status(run_dir: Path) -> str:
