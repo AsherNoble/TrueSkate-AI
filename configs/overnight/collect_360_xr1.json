@@ -1,0 +1,30 @@
+{
+  "device": "iPhone_XR",
+  "seed": 27182,
+  "defaults": {
+    "pop_size": 12,
+    "max_evals": 1400,
+    "max_hours": 1.6,
+    "stop_land_rate": 0.72,
+    "stop_window": 50,
+    "wait_time": 0.0,
+    "settle_time": 0.5
+  },
+  "queue": [
+    {
+      "curriculum": "curricula/360_flip.json",
+      "warm_start": "trick_libraries/360_flip_20260612_052618.json",
+      "_note": "360 FLIP self-improve from its own 276-sample mine"
+    },
+    {
+      "curriculum": "curricula/360_double_flip.json",
+      "warm_start": "trick_libraries/360_double_flip_20260612_025608.json",
+      "_note": "360 DOUBLE FLIP self-improve"
+    },
+    {
+      "curriculum": "curricula/360_triple_flip.json",
+      "warm_start": "trick_libraries/360_triple_flip_20260613_190614.json",
+      "_note": "360 TRIPLE FLIP self-improve / ascent (catalog expansion)"
+    }
+  ]
+}
