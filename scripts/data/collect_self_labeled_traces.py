@@ -43,6 +43,27 @@ from trueskate_ai.sim.gestures import (  # noqa: E402
 )
 from trueskate_ai.sim.touch_actions import curved_drag, reset_position  # noqa: E402
 
+# Park selection (collect domain-diverse data so Model 1 generalises across the
+# parks the expert clips span). Nav: bottom SKATEPARKS tab -> "All" tab -> the
+# park row. Row y-positions are for the three INSTALLED parks in their list order
+# (position-dependent; re-check with a screenshot if the installed set changes).
+_MENU_SKATEPARKS = (0.30, 0.95)
+_TAB_ALL = (0.10, 0.16)
+_PARK_ROW_Y = {"glasshouse": 0.34, "workshop": 0.55, "underpass": 0.78}
+
+
+def switch_to_park(driver, dw, dh, park: str) -> None:
+    """Navigate True Skate's menus to load the named installed park."""
+    key = park.strip().lower().replace(" ", "").replace("the", "").replace(":", "")
+    if key not in _PARK_ROW_Y:
+        raise ValueError(f"Unknown park {park!r}. Known: {list(_PARK_ROW_Y)}")
+    driver.execute_script("mobile: tap", {"x": _MENU_SKATEPARKS[0] * dw, "y": _MENU_SKATEPARKS[1] * dh})
+    time.sleep(1.2)
+    driver.execute_script("mobile: tap", {"x": _TAB_ALL[0] * dw, "y": _TAB_ALL[1] * dh})
+    time.sleep(0.8)
+    driver.execute_script("mobile: tap", {"x": 0.5 * dw, "y": _PARK_ROW_Y[key] * dh})
+    time.sleep(3.0)  # park load
+
 
 class TimestampedColorRecorder:
     """MJPEG reader that keeps COLOR frames + monotonic capture timestamps."""
@@ -140,6 +161,8 @@ def main() -> None:
     ap.add_argument("--out-dir", type=Path, default=_REPO_ROOT / "data" / "self_labeled_traces")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--reset-every", type=int, default=1, help="Reset board every N gestures")
+    ap.add_argument("--park", default=None,
+                    help="Switch to this installed park first (glasshouse/workshop/underpass)")
     args = ap.parse_args()
 
     cfg = next((d for d in DEVICES if d["name"].lower() == args.device.lower()), None)
@@ -152,8 +175,13 @@ def main() -> None:
     driver, mjpeg_url = worker.driver, worker.mjpeg_url
     dw, dh = worker.device_w, worker.device_h
 
+    if args.park:
+        print(f"Switching to park: {args.park}")
+        switch_to_park(driver, dw, dh, args.park)
+
     session = time.strftime("%Y%m%d_%H%M%S")
-    out_root = args.out_dir / f"{cfg['name']}_{session}"
+    park_tag = f"_{args.park.lower()}" if args.park else ""
+    out_root = args.out_dir / f"{cfg['name']}_{session}{park_tag}"
     out_root.mkdir(parents=True, exist_ok=True)
     print(f"Saving to {out_root}")
 
