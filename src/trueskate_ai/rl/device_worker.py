@@ -30,7 +30,14 @@ from trueskate_ai.rl.cmaes.action_param import execute_gesture_params
 from trueskate_ai.rl.reward import capture_and_detect_with_diagnostics
 from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position, skip_loading_screen
 from trueskate_ai.sim.trick_info_reader import TrickResult
+from trueskate_ai.vision.color_recorder import TimestampedColorRecorder
 from trueskate_ai.vision.scene_classifier import SceneGuard
+
+# Set TRACE_COLLECT=1 to passively capture COLOR frames each eval (downscaled,
+# trace-window subset saved by the optimizer) so CMA-ES runs double as
+# self-labeled trace-extraction data — the executed gesture vector is the label.
+_TRACE_COLLECT = bool(os.environ.get("TRACE_COLLECT"))
+_TRACE_RESIZE_WIDTH = 512
 
 # ---------------------------------------------------------------------------
 # Device configurations
@@ -600,10 +607,13 @@ class DeviceWorker:
         """
         relaunched = self.ensure_foreground()
         recorder = FrameRecorder() if self.record_frames else None
+        trace_rec = TimestampedColorRecorder() if _TRACE_COLLECT else None
         eval_start_time = time.monotonic()
         try:
             if recorder is not None:
                 recorder.start(self.mjpeg_url)
+            if trace_rec is not None:
+                trace_rec.start(self.mjpeg_url, resize_width=_TRACE_RESIZE_WIDTH)
             action_start_time = time.monotonic()
             execute_gesture_params(
                 self.driver,
@@ -631,6 +641,8 @@ class DeviceWorker:
         except Exception as exc:
             if recorder is not None:
                 recorder.stop()
+            if trace_rec is not None:
+                trace_rec.stop()
             logging.warning("[%s] eval %d failed: %s", self.device_id, eval_num, exc)
             self.record_failure()
             if self._failure_streak % 5 == 0:
@@ -662,6 +674,10 @@ class DeviceWorker:
         self.record_success()
         in_skatepark = self.check_scene()  # None unless the scene guard is enabled
         raw_frames = recorder.stop() if recorder is not None else []
+        # Color trace frames + their times relative to gesture start (the executed
+        # gesture vector in "params" is the label; offline self_label aligns them).
+        trace_frames, trace_times = trace_rec.stop() if trace_rec is not None else ([], [])
+        trace_frame_times = [round(t - action_start_time, 4) for t in trace_times]
         trick_name = trick_result.trick if trick_result else None
         trick_status = trick_result.status if trick_result else None
         trick_label = trick_name if trick_name else "-"
@@ -682,6 +698,8 @@ class DeviceWorker:
             "device_id": self.device_id,
             "params": params,
             "raw_frames": raw_frames,
+            "trace_frames": trace_frames,
+            "trace_frame_times": trace_frame_times,
             "n_composites": 0,
             "app_relaunched": relaunched,
             "in_skatepark": in_skatepark,

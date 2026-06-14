@@ -42,6 +42,7 @@ from trueskate_ai.sim.gestures import (  # noqa: E402
     X_BOUND_MAX, X_BOUND_MIN, Y_BOUND_MAX, Y_BOUND_MIN, scale_to_device,
 )
 from trueskate_ai.sim.touch_actions import curved_drag, reset_position  # noqa: E402
+from trueskate_ai.vision.color_recorder import TimestampedColorRecorder  # noqa: E402
 
 # Park selection (collect domain-diverse data so Model 1 generalises across the
 # parks the expert clips span). Nav: bottom SKATEPARKS tab -> "All" tab -> the
@@ -74,66 +75,6 @@ def switch_to_park(driver, dw, dh, park: str) -> None:
     time.sleep(0.9)
     driver.execute_script("mobile: tap", {"x": 0.5 * dw, "y": row_y * dh})
     time.sleep(3.0)  # park load
-
-
-class TimestampedColorRecorder:
-    """MJPEG reader that keeps COLOR frames + monotonic capture timestamps."""
-
-    def __init__(self) -> None:
-        self._thread: threading.Thread | None = None
-        self._stop = False
-        self._frames: list[np.ndarray] = []
-        self._times: list[float] = []
-        self._resp: requests.Response | None = None
-
-    def start(self, mjpeg_url: str) -> None:
-        self._stop = False
-        self._frames, self._times = [], []
-        self._thread = threading.Thread(target=self._loop, args=(mjpeg_url,), daemon=True)
-        self._thread.start()
-
-    def _loop(self, mjpeg_url: str) -> None:
-        buf = b""
-        try:
-            resp = requests.get(mjpeg_url, stream=True, timeout=5)
-            self._resp = resp
-            for chunk in resp.iter_content(chunk_size=8192):
-                if self._stop:
-                    break
-                buf += chunk
-                while True:
-                    s = buf.find(b"\xff\xd8")
-                    if s == -1:
-                        buf = b""
-                        break
-                    e = buf.find(b"\xff\xd9", s + 2)
-                    if e == -1:
-                        buf = buf[s:]
-                        break
-                    jpeg = buf[s:e + 2]
-                    buf = buf[e + 2:]
-                    try:
-                        img = Image.open(io.BytesIO(jpeg)).convert("RGB")
-                        self._times.append(time.monotonic())
-                        self._frames.append(np.array(img, dtype=np.uint8))
-                    except Exception:
-                        pass
-        except Exception as exc:  # noqa: BLE001
-            print(f"  [recorder] MJPEG capture error: {exc}")
-        finally:
-            self._resp = None
-
-    def stop(self) -> tuple[list[np.ndarray], list[float]]:
-        self._stop = True
-        if self._resp is not None:
-            try:
-                self._resp.close()
-            except Exception:
-                pass
-        if self._thread is not None:
-            self._thread.join(timeout=2.0)
-            self._thread = None
-        return self._frames, self._times
 
 
 # The board sits center-ish (localizer: ~(0.42-0.50, 0.54-0.55)). True Skate only

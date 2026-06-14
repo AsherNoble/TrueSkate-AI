@@ -10,6 +10,7 @@ Public API:
 """
 import json
 import logging
+import os
 import pickle
 import time
 from collections import deque
@@ -40,6 +41,36 @@ from trueskate_ai.utils.notify import notify
 # Notify after this many consecutive generations with zero landed tricks — the
 # rig is alive but producing nothing (lost focus, app exited, bad params).
 _ZERO_LAND_GEN_ALERT = 6
+
+# Passive trace-extraction data capture during CMA-ES runs (TRACE_COLLECT=1).
+# Each eval's executed gesture vector IS the label; the worker returns color
+# frames. We save a downsampled trace-window subset per eval up to a cap.
+_TRACE_COLLECT = bool(os.environ.get("TRACE_COLLECT"))
+_TRACE_EVAL_CAP = int(os.environ.get("TRACE_EVAL_CAP", "2500"))
+_TRACE_WINDOW_S = (0.0, 2.0)   # gesture + lingering-trace window (rel. to gesture start)
+_TRACE_MAX_FRAMES = 24
+
+
+def _save_trace_eval(eval_dir: Path, frames, frame_times, params, device_id: str) -> int:
+    """Save a downsampled trace-window subset of color frames + a self-contained
+    meta (the executed gesture vector = label). Returns frames saved (0 = none)."""
+    idxs = [i for i, t in enumerate(frame_times) if _TRACE_WINDOW_S[0] <= t <= _TRACE_WINDOW_S[1]]
+    if not idxs:
+        return 0
+    if len(idxs) > _TRACE_MAX_FRAMES:
+        step = len(idxs) / _TRACE_MAX_FRAMES
+        idxs = [idxs[int(k * step)] for k in range(_TRACE_MAX_FRAMES)]
+    eval_dir.mkdir(parents=True, exist_ok=True)
+    saved_times = []
+    for j, i in enumerate(idxs):
+        Image.fromarray(frames[i], mode="RGB").save(eval_dir / f"frame_{j:03d}.png")
+        saved_times.append(frame_times[i])
+    (eval_dir / "meta.json").write_text(json.dumps({
+        "params": [float(p) for p in params],
+        "frame_times": saved_times,
+        "device_id": device_id,
+    }))
+    return len(idxs)
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -245,6 +276,14 @@ def run(
     print(f"Run folder: {run_dir}")
     print(f"Logging to {logger.log_path}")
     print(f"Workers: {pool.device_ids}")
+
+    trace_evals_saved = 0
+    if _TRACE_COLLECT:
+        trace_root = run_dir / "trace_data"
+        trace_root.mkdir(parents=True, exist_ok=True)
+        (trace_root / ".metadata_never_index").touch()  # keep mediaanalysisd off the frames
+        print(f"TRACE_COLLECT on — saving up to {_TRACE_EVAL_CAP} eval(s) of color "
+              f"trace frames to {trace_root}")
 
     # Heartbeat status (served by scripts/status_server.py over Tailscale) +
     # push notifications. status.json lives at the log-dir root so the server
@@ -505,6 +544,16 @@ def run(
                         "ocr_calls": result.get("ocr_calls", 0),
                         "timestamp": datetime.now().isoformat(timespec="milliseconds"),
                     })
+
+                    if (_TRACE_COLLECT and trace_evals_saved < _TRACE_EVAL_CAP
+                            and result.get("trace_frames")):
+                        n_tf = _save_trace_eval(
+                            run_dir / "trace_data" / eval_dir_name,
+                            result["trace_frames"], result["trace_frame_times"],
+                            result["params"], device_id,
+                        )
+                        if n_tf:
+                            trace_evals_saved += 1
 
                     status.record_eval(
                         device_id, reward,
