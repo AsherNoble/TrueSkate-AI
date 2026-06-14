@@ -71,6 +71,13 @@ Brought WDA+Appium up (directly, no launcher monitor — see ops note) and ran t
 - Added `--park glasshouse|workshop|underpass` to `collect_self_labeled_traces.py` (`switch_to_park()` does the menu nav; row y-positions are position-dependent — re-check if the installed set changes). Output dirs get a `_<park>` tag.
 - **This is the corrected scaling lever** (vs scaling pass #1's same-park data): a multi-park corpus → a domain-robust Model 1 that should generalise to UNSEEN parks (incl. the SLS arena the expert clips use). Multi-park collection (Glass House + Underpass, 150 each) running; next: train a fixed-arch Model 1 on balanced multi-park data and re-test transfer to the SLS-arena expert clips.
 
+## SLS Arena (the actual expert domain) Installed + Collected (2026-06-14)
+
+- Asher re-signed the XR's App Store into the Apple ID that owns the SLS DLC and installed his owned parks. The SLS arenas (SLS 2016 Super Crown / Newark / Munich, SLS 2015 Super Crown) are now installed — these are the **exact domain** of the expert clips ("SUPER CROWN / WORLD CHAMPIONSHIP" banners).
+- SLS parks live under the SKATEPARKS **SLS tab** (not the All tab), so `switch_to_park` doesn't cover them; added `--tag <label>` to the collector — select the SLS park manually, then `--tag sls_supercrown` labels the session so the tonight runner auto-includes it. (SLS parks themselves are $1.99 DLC / coin parks via "Get more parks"; the coin parks like Love Park/Warehouse/Schoolyard are 200K coins.)
+- Collected **174 samples in SLS 2016 Super Crown** (86% on-trace) — domain-matched to the expert clips.
+- **Tonight's 2am training corpus is now domain-matched:** Workshop 250 + Glass House 150 + **SLS Super Crown 174**, underpass EXCLUDED. The transfer eval (vs the SLS-arena expert clips) is now an IN-domain test — should beat the warehouse-only v1's partial transfer. If it does, scale SLS collection (Newark/Munich + more Super Crown) and start labeling the 264-clip corpus for Model 2.
+
 ## Status / Next
 - **DONE this session:** self-labeling pipeline validated end-to-end on-device; Model 1 trained + generalizes; board localizer + reanchor; spin extension (code) — all committed on `feat/spin-and-vision-sequence-leap` (not pushed).
 - **Next (supervised):** (1) scale the self-labeled corpus (250+ run on disk; collect on XR2/XS too) and train a production Model 1; (2) run Model 1 on screen-recorded expert play → Model 2 sequence dataset; (3) fix the spin execution (second finger in one W3C payload) + confirm the spin input with Asher; (4) Option-D first 2-trick line using the board localizer + reanchor.
