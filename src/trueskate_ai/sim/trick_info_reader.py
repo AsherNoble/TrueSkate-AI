@@ -1,6 +1,5 @@
 import difflib
 import logging
-import os
 import re
 from functools import lru_cache
 from typing import Literal, NamedTuple
@@ -48,17 +47,20 @@ _ANCHOR_Y_OFFSET = 180
 _CLIP_MARGIN_LEFT = 40
 _CLIP_MARGIN_RIGHT = 150
 
+# Sponsor/park-name words that show up in-frame and must never match a trick.
+_BANNER_WORDS = frozenset({
+    "TRUE", "SKATE", "SUPER", "CROWN", "STREET", "LEAGUE", "SLS",
+    "CALIFORNIA", "SKATEPARKS", "SANTA", "CRUZ", "GLASSHOUSE",
+})
+
 _LOGGED_OCR_BACKEND = False
 
 
 @lru_cache(maxsize=1)
 def _resolve_ocr_backend() -> Literal["vision"]:
-    requested = os.getenv("TRUESKATE_OCR_BACKEND", "auto").strip().lower()
-    if requested not in {"auto", "vision"}:
-        raise ValueError(
-            "TRUESKATE_OCR_BACKEND must be one of: auto, vision"
-        )
-
+    # Apple Vision is the only OCR backend (pytesseract removed), so there is no
+    # backend to select — this stays a function only to fail fast when Vision's
+    # pyobjc deps are missing.
     if is_vision_available():
         return "vision"
 
@@ -119,15 +121,15 @@ def _match_component(ocr_line: str) -> str | None:
     return None
 
 
-def _find_anchor(search: np.ndarray) -> tuple[np.ndarray, Literal["landed", "failed", "unknown"]] | None:
-    """Find the notification anchor band (green = landed, red = failed, white = unknown).
+def _find_anchor(search: np.ndarray) -> tuple[np.ndarray, Literal["landed", "failed"]] | None:
+    """Find the notification anchor band (green = landed, red = failed).
 
     Args:
-        search: Cropped frame slice (frame[250:600, :]) in BGR.
+        search: Cropped frame slice (frame[180:680, :]) in BGR.
 
     Returns:
         (mask, status) where mask is a bool array over search and status is
-        "landed", "failed", or "unknown", or None if no colour is found.
+        "landed" or "failed", or None if no colour is found.
     """
     r = search[:, :, 2].astype(np.int32)
     g = search[:, :, 1].astype(np.int32)
@@ -160,23 +162,21 @@ def _ocr_above_anchor(
     frame: np.ndarray,
     mask: np.ndarray,
     anchor_y_offset: int,
-    status: Literal["landed", "failed", "unknown"],
+    status: Literal["landed", "failed"],
 ) -> tuple[TrickResult | None, dict]:
     """Crop above the anchor band, run OCR, and return a TrickResult.
 
     Args:
         frame: Full BGR frame.
         mask: Boolean mask over frame[anchor_y_offset:anchor_y_offset+mask.shape[0], :].
-        anchor_y_offset: Row in frame where the search band starts (250).
-        status: "landed", "failed", or "unknown" — determines TrickResult.status.
-            For "unknown" the crop anchors off the bottom of the white region
-            (ys.max) rather than the top, since the score line sits below the trick name.
+        anchor_y_offset: Row in frame where the search band starts (180).
+        status: "landed" or "failed" — determines TrickResult.status.
 
     Returns:
         (TrickResult or None, diagnostics dict)
     """
     ys, xs = np.where(mask)
-    anchor_row = int(ys.max() if status == "unknown" else ys.min())
+    anchor_row = int(ys.min())
     anchor_y_min = anchor_row + anchor_y_offset
     anchor_x_min = int(xs.min())
     anchor_x_max = int(xs.max())
@@ -191,8 +191,6 @@ def _ocr_above_anchor(
     upscaled = cv2.resize(band, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
     gray = cv2.cvtColor(upscaled, cv2.COLOR_BGR2GRAY)
     _, binary_inv = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY_INV)
-
-    _BANNER_WORDS = {"TRUE", "SKATE", "SUPER", "CROWN", "STREET", "LEAGUE", "SLS", "CALIFORNIA", "SKATEPARKS", "SANTA", "CRUZ", "GLASSHOUSE"}
 
     candidates = []
     lines = _extract_lines_with_ocr(upscaled) + _extract_lines_with_ocr(binary_inv)
