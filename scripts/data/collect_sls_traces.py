@@ -10,8 +10,8 @@ lands, whiffs, or bumps a wall, and varied board positions are desirable.
 Per phone, it collects in one park for --per-park-hours, then ntfy-prompts you to
 walk over and load the next SLS park; it KEEPS collecting in the current park
 until it detects you actually switched (no idle time if you're away), then resets
-the timer and advances. The command->frame pipeline latency is calibrated
-continuously off the natural per-iteration reset (the "clapperboard").
+the timer and advances. The command->frame pipeline latency (the "clapperboard")
+is measured once at startup via the dedicated Clapperboard app (vision/clapperboard).
 
 Prereqs: WDA + Appium up for the device (python scripts/launch_services.py --personal).
 
@@ -43,7 +43,9 @@ from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker  # noqa: E402
 from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import curved_drag, reset_position  # noqa: E402
 from trueskate_ai.utils.notify import notify  # noqa: E402
-from trueskate_ai.vision.clapperboard import RollingCaptureOffset, board_centroid  # noqa: E402
+from trueskate_ai.vision.clapperboard import (  # noqa: E402
+    DEFAULT_CLAPPERBOARD_BUNDLE, RollingCaptureOffset, calibrate_via_app,
+)
 from trueskate_ai.vision.color_recorder import TimestampedColorRecorder  # noqa: E402
 from trueskate_ai.vision.park_change import ParkChangeDetector  # noqa: E402
 
@@ -180,7 +182,12 @@ def main() -> None:
     ap.add_argument("--resize-width", type=int, default=512)
     ap.add_argument("--max-frames-per-sample", type=int, default=24)
     ap.add_argument("--recipe-dir", type=Path, default=_REPO_ROOT / "trick_libraries")
-    ap.add_argument("--warmup-resets", type=int, default=12, help="Clapperboard seeding resets.")
+    ap.add_argument("--clapperboard-taps", type=int, default=12,
+                    help="Clapperboard app taps to seed the capture offset at startup.")
+    ap.add_argument("--clapperboard-bundle", default=DEFAULT_CLAPPERBOARD_BUNDLE,
+                    help="Bundle id of the installed Clapperboard app.")
+    ap.add_argument("--no-clapperboard", action="store_true",
+                    help="Skip capture-offset calibration (offset stamped null).")
     ap.add_argument("--no-caffeinate", action="store_true")
     ap.add_argument("--no-park-detect", action="store_true",
                     help="Single-park mode: never auto-advance (still prompts on the timer).")
@@ -219,7 +226,7 @@ def main() -> None:
     fracs = (args.flick_frac, args.nslot_frac, args.recipe_frac)
 
     rec = TimestampedColorRecorder()
-    offset = RollingCaptureOffset(window=max(30, args.warmup_resets))
+    offset = RollingCaptureOffset()
     detector = None if args.no_park_detect else ParkChangeDetector()
 
     def write_session_meta(saved: int, park_idx: int) -> None:
@@ -232,18 +239,24 @@ def main() -> None:
             **offset.summary(),
         }, indent=2))
 
-    # --- clapperboard warmup: seed Δ before collecting -----------------------
-    print(f"Calibrating capture offset ({args.warmup_resets} reset cycles)...")
-    for _ in range(args.warmup_resets):
-        if _STOP:
-            break
-        g = sample_mixture(rng, fracs=(1, 0, 0))            # a flick to displace the board
-        frames, times, _ = _capture(rec, mjpeg_url, 0.0, 0.3, args.resize_width,
-                                    action=lambda: _execute(worker, g))
-        frames, times, t_reset = _capture(rec, mjpeg_url, 0.35, 0.9, args.resize_width,
-                                           action=lambda: reset_position(worker.driver, dw, dh))
-        offset.add_reset(frames, times, t_reset)
-    print(f"  capture offset: {offset.summary()}")
+    # --- clapperboard: measure the capture-pipeline offset via the dedicated app.
+    # Δ is ~constant per session, so once at startup is enough (the app-switch is
+    # cheap at this cadence). True Skate animates its own visuals, so the offset
+    # cannot be timed in-game — see vision/clapperboard.py.
+    if args.no_clapperboard:
+        print("Clapperboard disabled (--no-clapperboard) — offset stamped null.")
+    else:
+        print(f"Calibrating capture offset via {args.clapperboard_bundle} "
+              f"({args.clapperboard_taps} taps)...")
+        try:
+            offset = calibrate_via_app(worker.driver, mjpeg_url, dw, dh,
+                                       app_bundle=args.clapperboard_bundle,
+                                       k=args.clapperboard_taps)
+            worker.ensure_foreground()  # ensure True Skate is back up before collecting
+        except Exception as exc:  # noqa: BLE001
+            print(f"  calibration failed ({exc}); continuing with null offset. "
+                  f"Is the Clapperboard app installed? (bundle {args.clapperboard_bundle})")
+        print(f"  capture offset: {offset.summary()}")
     notify(f"[{device}] SLS collection starting in {cycle[0]} "
            f"(offset={offset.offset_s}s). Cycle of {len(cycle)} parks, {args.per_park_hours}h each.",
            title="TrueSkate SLS collect", tags=["camera"])
@@ -273,12 +286,11 @@ def main() -> None:
                     print(f"[collect_sls] switch detected → {cycle[park_idx]}")
                 continue
 
-            # --- one collection iteration: reset (clapperboard) + gesture (sample) ---
-            # Capture window 1: reset snap → feeds the clapperboard.
-            r_frames, r_times, t_reset = _capture(
-                rec, mjpeg_url, 0.35, 0.5, args.resize_width,
+            # --- one collection iteration: reset the board, then the gesture sample ---
+            # Reset window also feeds the park-change detector.
+            r_frames, _r_times, _ = _capture(
+                rec, mjpeg_url, 0.0, 0.4, args.resize_width,
                 action=lambda: reset_position(worker.driver, dw, dh))
-            offset.add_reset(r_frames, r_times, t_reset)
             if detector is not None and detector.feed(r_frames):
                 continue  # a reload started during the reset window — loop to monitor it
 

@@ -1,22 +1,27 @@
 """Capture-pipeline latency calibration — the "clapperboard".
 
 Measures Δ, the end-to-end lag between issuing an on-screen command and that
-change appearing in a decoded MJPEG frame (game render + MJPEG encode + iproxy
-USB tunnel + requests buffering + PIL decode), by timing the board's visible
-response to a reset/waypoint tap.
+change appearing in a decoded MJPEG frame (render + MJPEG encode + iproxy USB
+tunnel + requests buffering + PIL decode).
+
+PRIMARY method — ``calibrate_via_app``: switch to the dedicated Clapperboard app
+(a full-screen black/white toggle that flips INSTANTLY, no animation; see the
+sibling Clapperboard repo), tap to flip at a known time, and time the flip in the
+MJPEG. True Skate animates everything (the board reset, its menus), so no in-game
+visual has a timeable onset — hence a dedicated instant target.
+
+FALLBACK method — ``offset_from_reset`` / ``calibrate_capture_offset``: time the
+board's snap-back to the reset waypoint via ``board_localizer``. Kept for
+reference but less reliable (the reset animates and the localizer glitches mid-
+transition), so the app method is preferred.
 
 Δ is DISTINCT from the 0.45s orange-trace render lag
-(``train_trace_extractor._DEFAULT_LATENCY_S``): that is True Skate's internal
-trace animation delay, used only for trace-warmth gating when self-labeling.
-Δ is the *pipeline* lag — a frame stamped (monotonic) at ``t`` shows screen state
-from ``t − Δ`` — used to pair each frame to the correct point in the gesture
-timeline.
-
-Per-frame pairing precision is floored by the MJPEG frame interval (≈1/fps):
-averaging many resets tightens the Δ ESTIMATE, never that per-frame quantization.
-
-The detector reuses ``board_localizer.locate_board`` — wiring that previously
-standalone CV into the live loop for the first time.
+(``train_trace_extractor._DEFAULT_LATENCY_S``), which is True Skate's internal
+trace animation delay used only for trace-warmth gating. Δ is the *pipeline* lag —
+a frame stamped (monotonic) at ``t`` shows screen state from ``t − Δ`` — used to
+pair each frame to the correct point in the gesture timeline. Per-frame precision
+is floored by the MJPEG frame interval (≈1/fps); averaging tightens the ESTIMATE,
+not that quantization.
 """
 from __future__ import annotations
 
@@ -36,6 +41,12 @@ _BASELINE_MAX_STD = 0.02  # reject the sample if the board wasn't still pre/post
 _MAX_WINDOW_S = 1.0       # only look this far past the tap for the response
 _MIN_DISPLACEMENT = 0.08  # the reset must move the board home by at least this far
                           # (skips no-op / in-place-flick resets that can't be timed)
+
+# Primary (app-based) calibration constants.
+DEFAULT_CLAPPERBOARD_BUNDLE = "com.embodiedstates.clapperboard"
+_TRUESKATE_BUNDLE = "com.trueaxis.skate"
+_LUM_THRESHOLD = 25.0     # whole-frame mean-luminance jump that counts as the flip
+_LUM_WINDOW_S = 0.8       # look this far past the tap for the flip
 
 
 def board_centroid(rgb: np.ndarray) -> tuple[float, float] | None:
@@ -106,7 +117,10 @@ class RollingCaptureOffset:
     samples: list[float] = field(default_factory=list)
 
     def add_reset(self, frames: list, times: list[float], t0: float, **kw) -> float | None:
-        d = offset_from_reset(frames, times, t0, **kw)
+        return self.add_sample(offset_from_reset(frames, times, t0, **kw))
+
+    def add_sample(self, d: float | None) -> float | None:
+        """Add a pre-measured Δ sample (e.g. from the app-based calibration)."""
         if d is not None and d >= 0:
             self.samples.append(d)
             if len(self.samples) > self.window:
@@ -183,13 +197,90 @@ def calibrate_capture_offset(
     return est
 
 
+def _lum_onset(
+    frames: list,
+    times: list[float],
+    t0: float,
+    *,
+    threshold: float = _LUM_THRESHOLD,
+    max_window_s: float = _LUM_WINDOW_S,
+) -> float | None:
+    """Δ for one black<->white flip: time of the first post-tap frame whose
+    whole-frame mean luminance differs from the pre-tap baseline by > threshold,
+    minus t0. Returns None if no flip is seen in the window."""
+    pre = [f for t, f in zip(times, frames) if t < t0]
+    post = [(t, f) for t, f in zip(times, frames) if t0 <= t <= t0 + max_window_s]
+    if not pre or not post:
+        return None
+    base = float(np.asarray(pre[-1], dtype=np.float32).mean())
+    for t, f in post:  # capture order
+        if abs(float(np.asarray(f, dtype=np.float32).mean()) - base) > threshold:
+            return float(t - t0)
+    return None
+
+
+def calibrate_via_app(
+    driver,
+    mjpeg_url: str,
+    device_w: float,
+    device_h: float,
+    *,
+    app_bundle: str = DEFAULT_CLAPPERBOARD_BUNDLE,
+    trueskate_bundle: str = _TRUESKATE_BUNDLE,
+    k: int = 10,
+    lum_threshold: float = _LUM_THRESHOLD,
+    return_to_trueskate: bool = True,
+) -> RollingCaptureOffset:
+    """Measure Δ with the dedicated Clapperboard app (PRIMARY method).
+
+    Switches to the app, taps to flip the full screen black<->white at a known
+    time, times the flip in the MJPEG, repeats k times, and switches back. The
+    instant full-frame flip gives a clean onset that in-game visuals (which
+    animate) cannot. Δ is ~constant per session, so this runs once at startup
+    (and optionally periodically). Requires the Clapperboard app installed
+    (bundle ``app_bundle``). Imports are local so the module stays importable
+    without Appium.
+    """
+    from trueskate_ai.vision.color_recorder import TimestampedColorRecorder
+
+    rec = TimestampedColorRecorder()
+    est = RollingCaptureOffset(window=max(k, 30))
+    driver.activate_app(app_bundle)
+    time.sleep(1.2)  # app launch + first-frame settle
+    try:
+        for _ in range(k):
+            rec.start(mjpeg_url, resize_width=128)
+            time.sleep(0.35)  # pre-tap baseline frames
+            t0 = time.monotonic()
+            try:
+                driver.execute_script("mobile: tap", {"x": 0.5 * device_w, "y": 0.5 * device_h})
+            except Exception:  # noqa: BLE001
+                rec.stop()
+                continue
+            time.sleep(_LUM_WINDOW_S)
+            frames, times = rec.stop()
+            est.add_sample(_lum_onset(frames, times, t0, threshold=lum_threshold))
+            time.sleep(0.15)  # decorrelate consecutive flips
+    finally:
+        if return_to_trueskate:
+            try:
+                driver.activate_app(trueskate_bundle)
+                time.sleep(1.0)
+            except Exception:  # noqa: BLE001
+                pass
+    return est
+
+
 # --- self-test (offline timing logic) + optional on-device calibration -----
 if __name__ == "__main__":
     import argparse
 
     ap = argparse.ArgumentParser(description="Clapperboard capture-offset calibration.")
     ap.add_argument("--device", default=None, help="Device name; if set, run on-device calibration")
-    ap.add_argument("-k", type=int, default=8)
+    ap.add_argument("--method", choices=["app", "reset"], default="app",
+                    help="app: dedicated Clapperboard app (primary); reset: board-snap fallback")
+    ap.add_argument("--bundle", default=DEFAULT_CLAPPERBOARD_BUNDLE, help="Clapperboard app bundle id")
+    ap.add_argument("-k", type=int, default=10)
     args = ap.parse_args()
 
     # Offline: inject a synthetic centroid_fn (board displaced at P_base, snaps to
@@ -232,6 +323,15 @@ if __name__ == "__main__":
         est.add_reset(frames, times, t0, centroid_fn=fake_centroid)
     print(f"[PASS] rolling: offset={est.offset_s:.3f}s jitter={est.jitter_s} n={est.n}")
 
+    # _lum_onset: black baseline, flips to white after the lag → onset at lag (quantized).
+    black = np.zeros((4, 4, 3), dtype=np.uint8)
+    white = np.full((4, 4, 3), 255, dtype=np.uint8)
+    lframes = [black if times[i] < onset_t else white for i in range(len(times))]
+    dl = _lum_onset(lframes, times, t0)
+    assert dl is not None and lag <= dl < lag + frame_interval + 1e-9, (dl, lag)
+    assert _lum_onset([black] * len(times), times, t0) is None  # no flip → None
+    print(f"[PASS] lum-onset (app flip): recovered Δ={dl:.3f}s; no-flip → None")
+
     if args.device:
         import sys
         from pathlib import Path
@@ -247,7 +347,11 @@ if __name__ == "__main__":
         print(f"Connecting to {cfg['name']} (needs WDA+Appium up)...")
         w.connect()
         try:
-            est = calibrate_capture_offset(w.driver, w.mjpeg_url, w.device_w, w.device_h, k=args.k)
-            print(f"On-device: {est.summary()}  (jitter floor ≈ 1/fps)")
+            if args.method == "app":
+                est = calibrate_via_app(w.driver, w.mjpeg_url, w.device_w, w.device_h,
+                                        app_bundle=args.bundle, k=args.k)
+            else:
+                est = calibrate_capture_offset(w.driver, w.mjpeg_url, w.device_w, w.device_h, k=args.k)
+            print(f"On-device ({args.method}): {est.summary()}  (jitter floor ≈ 1/fps)")
         finally:
             w.disconnect()
