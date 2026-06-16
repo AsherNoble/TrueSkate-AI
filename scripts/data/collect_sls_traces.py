@@ -180,7 +180,7 @@ def main() -> None:
     ap.add_argument("--resize-width", type=int, default=512)
     ap.add_argument("--max-frames-per-sample", type=int, default=24)
     ap.add_argument("--recipe-dir", type=Path, default=_REPO_ROOT / "trick_libraries")
-    ap.add_argument("--warmup-resets", type=int, default=8, help="Clapperboard seeding resets.")
+    ap.add_argument("--warmup-resets", type=int, default=12, help="Clapperboard seeding resets.")
     ap.add_argument("--no-caffeinate", action="store_true")
     ap.add_argument("--no-park-detect", action="store_true",
                     help="Single-park mode: never auto-advance (still prompts on the timer).")

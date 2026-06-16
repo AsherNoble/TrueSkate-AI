@@ -31,9 +31,11 @@ from trueskate_ai.vision.board_localizer import locate_board
 
 # Tuning (normalised board coords; seconds). Validate/adjust on-device.
 _MOVE_EPS = 0.04          # board-centroid move that counts as "responded to reset"
-_BASELINE_FRAMES = 4      # pre-tap frames used to fix the settled board position
-_BASELINE_MAX_STD = 0.02  # reject the sample if the board wasn't still pre-tap
+_BASELINE_FRAMES = 4      # pre/post frames used to fix the settled board positions
+_BASELINE_MAX_STD = 0.02  # reject the sample if the board wasn't still pre/post
 _MAX_WINDOW_S = 1.0       # only look this far past the tap for the response
+_MIN_DISPLACEMENT = 0.08  # the reset must move the board home by at least this far
+                          # (skips no-op / in-place-flick resets that can't be timed)
 
 
 def board_centroid(rgb: np.ndarray) -> tuple[float, float] | None:
@@ -41,6 +43,16 @@ def board_centroid(rgb: np.ndarray) -> tuple[float, float] | None:
     bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
     pose = locate_board(bgr)
     return (pose.cx, pose.cy) if pose is not None else None
+
+
+def _settled_mean(centroids: list[tuple[float, float]]) -> np.ndarray | None:
+    """Mean of the centroids if they're internally still, else None."""
+    if len(centroids) < 2:
+        return None
+    arr = np.asarray(centroids, dtype=np.float64)
+    if arr[:, 0].std() > _BASELINE_MAX_STD or arr[:, 1].std() > _BASELINE_MAX_STD:
+        return None
+    return arr.mean(axis=0)
 
 
 def offset_from_reset(
@@ -51,31 +63,38 @@ def offset_from_reset(
     centroid_fn=board_centroid,
     move_eps: float = _MOVE_EPS,
     max_window_s: float = _MAX_WINDOW_S,
+    min_displacement: float = _MIN_DISPLACEMENT,
 ) -> float | None:
-    """Δ for one reset: time of the first post-tap frame whose board centroid
-    departs the pre-tap settled position by > ``move_eps``, minus ``t0``.
+    """Δ for one reset: time of the first post-tap frame where the board has left
+    its displaced (pre-tap) position AND moved toward the settled reset-home
+    position, minus ``t0``.
 
-    ``t0`` is the monotonic time the reset tap was issued. Returns Δ seconds, or
-    None when not measurable: no board detected, board not still pre-tap, or the
-    board was already at the reset spot (no motion). ``centroid_fn`` is injectable
+    Anchoring onset to "closer to home than the start" rejects the spurious
+    far-flung detections the localizer emits during the reset transition (a
+    one-frame jump away from both endpoints), which a naive "moved by > eps" test
+    would mis-time. Returns Δ seconds, or None when not measurable: no/unstable
+    board, board not still pre- or post-reset, or the reset didn't actually move
+    the board home (no-op / in-place-flick reset). ``centroid_fn`` is injectable
     so the timing logic is unit-testable without real board frames.
     """
     pre = [(t, f) for t, f in zip(times, frames) if t < t0]
     post = [(t, f) for t, f in zip(times, frames) if t0 <= t <= t0 + max_window_s]
-    if len(pre) < 2 or not post:
+    if len(pre) < 2 or len(post) < 3:
         return None
-    base_cs = [c for _, f in pre[-_BASELINE_FRAMES:] if (c := centroid_fn(f)) is not None]
-    if len(base_cs) < 2:
+    p_base = _settled_mean([c for _, f in pre[-_BASELINE_FRAMES:] if (c := centroid_fn(f)) is not None])
+    p_home = _settled_mean([c for _, f in post[-_BASELINE_FRAMES:] if (c := centroid_fn(f)) is not None])
+    if p_base is None or p_home is None:
         return None
-    base = np.asarray(base_cs, dtype=np.float64)
-    if base[:, 0].std() > _BASELINE_MAX_STD or base[:, 1].std() > _BASELINE_MAX_STD:
-        return None  # board wasn't settled pre-tap → baseline untrustworthy
-    bx, by = float(base[:, 0].mean()), float(base[:, 1].mean())
-    for t, f in post:  # post is in capture order
+    d_bh = float(np.hypot(*(p_base - p_home)))
+    if d_bh < min_displacement:
+        return None  # the reset didn't move the board home — can't time it
+    for t, f in post:  # capture order
         c = centroid_fn(f)
         if c is None:
             continue
-        if abs(c[0] - bx) > move_eps or abs(c[1] - by) > move_eps:
+        c = np.asarray(c, dtype=np.float64)
+        # left the displaced start AND is now closer to home than the start was
+        if float(np.hypot(*(c - p_base))) > move_eps and float(np.hypot(*(c - p_home))) < d_bh:
             return float(t - t0)
     return None
 
@@ -132,25 +151,25 @@ def calibrate_capture_offset(
     feeds them to the rolling estimator. Imports are local to keep this module
     importable (and the pure functions above unit-testable) without Appium.
     """
-    from trueskate_ai.data.gesture_sampling import sample_flick
-    from trueskate_ai.sim.gestures import scale_to_device
-    from trueskate_ai.sim.touch_actions import curved_drag, reset_position
+    from trueskate_ai.sim.gestures import execute_static_push
+    from trueskate_ai.sim.touch_actions import reset_position
     from trueskate_ai.vision.color_recorder import TimestampedColorRecorder
 
-    rng = rng or np.random.default_rng(0)
+    _ = rng  # kept for signature compatibility; displacement is now a fixed push
     rec = TimestampedColorRecorder()
     est = RollingCaptureOffset(window=max(k, 30))
     for _ in range(k):
         if displace:
-            g = sample_flick(rng)
-            pts = [scale_to_device(x, y, device_w, device_h) for x, y in g["waypoints"]]
-            easing = None if g["easing_power"] == 1.0 else (lambda t, p=g["easing_power"]: t ** p)
+            # Roll the board AWAY with a push (NOT an in-place flick) so the reset
+            # produces a large, crisp snap-back. Verified on-device: a flick barely
+            # moves the centroid and the reset is then untimeable; a push gives a
+            # ~0.2-normalised snap with a clean onset.
             try:
-                curved_drag(driver, pts, total_duration=g["duration"], easing=easing)
-                time.sleep(0.3)  # let the board settle off-reset
+                execute_static_push(driver, device_w=device_w, device_h=device_h)
+                time.sleep(0.7)  # the board must fully STOP or the baseline is unstable
             except Exception:  # noqa: BLE001
                 pass
-        rec.start(mjpeg_url)
+        rec.start(mjpeg_url, resize_width=512)
         time.sleep(baseline_warmup_s)  # capture pre-tap (settled) frames
         t0 = time.monotonic()
         try:
@@ -173,22 +192,40 @@ if __name__ == "__main__":
     ap.add_argument("-k", type=int, default=8)
     args = ap.parse_args()
 
-    # Offline: inject a synthetic centroid_fn (board jumps after a known lag) and
-    # confirm offset_from_reset recovers the lag at frame quantization.
+    # Offline: inject a synthetic centroid_fn (board displaced at P_base, snaps to
+    # home P_home after a known lag) and confirm offset_from_reset recovers the lag
+    # at frame quantization. P_base=(0.50,0.40) -> P_home=(0.50,0.60): d=0.20 > min.
     fps, lag = 20.0, 0.12
     t0 = 100.0
     times = [t0 - 0.30 + i / fps for i in range(20)]  # ~6 pre, ~14 post
     frames = list(range(len(times)))                  # frame ids; centroid_fn keys off them
     onset_t = t0 + lag
+    frame_interval = 1.0 / fps
 
     def fake_centroid(fid):
-        t = times[fid]
-        return (0.50, 0.55) if t < onset_t else (0.50, 0.65)  # jumps 0.10 in y after lag
+        return (0.50, 0.40) if times[fid] < onset_t else (0.50, 0.60)
 
     d = offset_from_reset(frames, times, t0, centroid_fn=fake_centroid)
-    frame_interval = 1.0 / fps
     assert d is not None and lag <= d < lag + frame_interval + 1e-9, (d, lag)
     print(f"[PASS] offline: recovered Δ={d:.3f}s for injected lag={lag:.3f}s (≤ +1 frame {frame_interval:.3f}s)")
+
+    # Spurious far misdetection at the transition must be REJECTED (not timed).
+    spurious_idx = next(i for i, t in enumerate(times) if t >= onset_t)
+
+    def fake_with_spurious(fid):
+        if times[fid] < onset_t:
+            return (0.50, 0.40)
+        if fid == spurious_idx:
+            return (0.90, 0.10)   # far from both base and home — localizer glitch
+        return (0.50, 0.60)
+
+    d2 = offset_from_reset(frames, times, t0, centroid_fn=fake_with_spurious)
+    assert d2 is not None and lag < d2 <= lag + 2 * frame_interval + 1e-9, (d2, lag)
+    print(f"[PASS] spurious far-jump rejected: Δ={d2:.3f}s (skipped the glitch frame)")
+
+    # No-op reset (board never displaced) → not measurable.
+    assert offset_from_reset(frames, times, t0, centroid_fn=lambda fid: (0.50, 0.55)) is None
+    print("[PASS] no-displacement reset → None (correctly skipped)")
 
     est = RollingCaptureOffset(window=5)
     for _ in range(5):
