@@ -54,6 +54,12 @@ _TRACE_COLLECT = bool(os.environ.get("TRACE_COLLECT"))
 _TRACE_EVAL_CAP = int(os.environ.get("TRACE_EVAL_CAP", "2500"))
 _TRACE_WINDOW_S = (0.0, 2.0)   # gesture + lingering-trace window (rel. to gesture start)
 _TRACE_MAX_FRAMES = 24
+# Per-device capture-pipeline offset (s) for frame<->gesture pairing — measured by
+# the clapperboard (vision/clapperboard.calibrate_capture_offset). Stamp it via
+# TRUESKATE_CAPTURE_OFFSET_S so this corpus's meta matches the SLS corpus's; None
+# when unmeasured (a downstream loader can fall back to a per-device offset table).
+_CAPTURE_OFFSET_ENV = os.environ.get("TRUESKATE_CAPTURE_OFFSET_S")
+_CAPTURE_OFFSET_S = float(_CAPTURE_OFFSET_ENV) if _CAPTURE_OFFSET_ENV else None
 
 
 def _save_trace_eval(eval_dir: Path, frames, frame_times, params, device_id: str) -> int:
@@ -74,6 +80,7 @@ def _save_trace_eval(eval_dir: Path, frames, frame_times, params, device_id: str
         "params": [float(p) for p in params],
         "frame_times": saved_times,
         "device_id": device_id,
+        "capture_offset_s": _CAPTURE_OFFSET_S,
     }))
     return len(idxs)
 
