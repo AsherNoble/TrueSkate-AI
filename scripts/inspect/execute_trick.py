@@ -82,7 +82,7 @@ def main() -> None:
                 recipe,
                 device_w=worker.device_w,
                 device_h=worker.device_h,
-                wda_url=f"http://127.0.0.1:{worker._cfg['wda_port']}",
+                spin_button_xy=worker.spin_button_xy,
                 timing_device_key=worker.device_id,
             )
             print(f"[{device['name']}] Gestures fired.")
