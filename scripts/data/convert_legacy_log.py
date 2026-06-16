@@ -40,6 +40,9 @@ _CANONICAL_H = 812.0
 _MISCONFIG_W = 414.0
 _MISCONFIG_H = 896.0
 
+# Canonical value: trueskate_ai.rl.cmaes.action_param.PARAMS_PER_SLOT. Kept as a
+# local literal so this stdlib-only legacy converter need not import the gesture
+# stack (numpy + selenium) and stays runnable without PYTHONPATH=src.
 PARAMS_PER_SLOT = 8  # x0,y0,x1,y1,x2,y2,duration,easing — delays follow all slots
 
 

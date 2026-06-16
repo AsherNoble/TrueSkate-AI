@@ -28,6 +28,7 @@ from typing import Callable
 
 from trueskate_ai.rl.cmaes.action_param import execute_gesture_params
 from trueskate_ai.rl.reward import capture_and_detect_with_diagnostics
+from trueskate_ai.sim.gestures import DEFAULT_SPIN_BUTTON_XY
 from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position, skip_loading_screen
 from trueskate_ai.sim.trick_info_reader import TrickResult
 from trueskate_ai.vision.color_recorder import TimestampedColorRecorder
@@ -193,7 +194,8 @@ def add_device_selection_args(parser) -> None:
 # Constants
 # ---------------------------------------------------------------------------
 
-_BUNDLE_ID = "com.trueaxis.skate"
+BUNDLE_ID = "com.trueaxis.skate"   # public: True Skate app bundle id (imported by launch_services)
+_BUNDLE_ID = BUNDLE_ID             # private alias kept so existing internal references stay untouched
 _APP_STATE_FOREGROUND = 4
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _DEAD_THRESHOLD = 5      # consecutive failures before a worker is considered dead
@@ -333,9 +335,9 @@ class DeviceWorker:
     @property
     def spin_button_xy(self) -> tuple[float, float]:
         # Normalised [0, 1] coords of True Skate's rotate button. Every DEVICES
-        # entry sets this; the default mirrors them (was a stale logical-point
-        # tuple that never matched a real device).
-        value = self._cfg.get("spin_button_xy", (0.0604, 0.4040))
+        # entry sets this; the fallback mirrors them via the shared
+        # DEFAULT_SPIN_BUTTON_XY constant (a device may still override per-row).
+        value = self._cfg.get("spin_button_xy", DEFAULT_SPIN_BUTTON_XY)
         return float(value[0]), float(value[1])
 
     # -- connection ---------------------------------------------------------

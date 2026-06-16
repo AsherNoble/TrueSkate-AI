@@ -15,7 +15,13 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from trueskate_ai.sim.gestures import Y_BOUND_MAX, Y_BOUND_MIN, execute_static_push, scale_to_device
+from trueskate_ai.sim.gestures import (
+    DEFAULT_SPIN_BUTTON_XY,
+    Y_BOUND_MAX,
+    Y_BOUND_MIN,
+    execute_static_push,
+    scale_to_device,
+)
 from trueskate_ai.sim.touch_actions import (
     PointerInput,
     build_curved_drag,
@@ -133,7 +139,7 @@ def execute_gesture_recipe(
     *,
     device_w: float,
     device_h: float,
-    spin_button_xy: tuple[float, float] = (0.0604, 0.4040),
+    spin_button_xy: tuple[float, float] = DEFAULT_SPIN_BUTTON_XY,
     on_post_push=None,
 ) -> None:
     """Execute a decoded gesture recipe on-device.
@@ -212,7 +218,7 @@ def execute_gesture_params_vector(
     *,
     device_w: float,
     device_h: float,
-    spin_button_xy: tuple[float, float] = (0.0604, 0.4040),
+    spin_button_xy: tuple[float, float] = DEFAULT_SPIN_BUTTON_XY,
     on_post_push=None,
 ) -> GestureRecipe:
     """Decode a normalised [-1, 1] gesture parameter vector and execute it on-device."""

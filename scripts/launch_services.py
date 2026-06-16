@@ -30,6 +30,7 @@ if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from trueskate_ai.rl.device_worker import (
+    BUNDLE_ID,
     DEVICES,
     add_device_selection_args,
     resolve_devices,
@@ -471,9 +472,7 @@ def _launch_trueskate_on_devices(devices: list[dict]) -> None:
     """
     from appium import webdriver
     from appium.options.ios import XCUITestOptions
-    
-    _BUNDLE_ID = "com.trueaxis.skate"
-    
+
     for device in devices:
         name = device["name"]
         try:
@@ -485,7 +484,7 @@ def _launch_trueskate_on_devices(devices: list[dict]) -> None:
             options = XCUITestOptions()
             options.platform_name = "iOS"
             options.automation_name = "XCUITest"
-            options.bundle_id = _BUNDLE_ID
+            options.bundle_id = BUNDLE_ID
             options.udid = udid
             options.wda_local_port = device["wda_port"]
             options.use_prebuilt_wda = True
@@ -512,13 +511,13 @@ def _launch_trueskate_on_devices(devices: list[dict]) -> None:
             # Always re-activate before dismissing the loading screen so the
             # "open" and "skip" steps stay coupled, even if Appium reports the
             # app as already foreground.
-            state = driver.query_app_state(_BUNDLE_ID)
+            state = driver.query_app_state(BUNDLE_ID)
             if state == 4:
                 print(f"[{name}] True Skate already in foreground")
             else:
                 print(f"[{name}] True Skate not in foreground (state={state})")
 
-            driver.activate_app(_BUNDLE_ID)
+            driver.activate_app(BUNDLE_ID)
             time.sleep(1.5)
 
             try:

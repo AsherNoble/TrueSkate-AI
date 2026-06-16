@@ -14,11 +14,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+from trueskate_ai.rl.cmaes.action_param import PARAMS_PER_SLOT
 from trueskate_ai.rl.reward import near_miss_multiplier, normalize_trick_name
 from trueskate_ai.sim.known_tricks import KNOWN_TRICKS
 from trueskate_ai.sim.trick_info_reader import TrickResult
-
-_PARAMS_PER_SLOT = 8  # mirrors action_param.PARAMS_PER_SLOT (kept local to avoid import cycle)
 
 
 def _resolve_failure_multiplier(spec) -> Callable[[float], float]:
@@ -86,10 +85,10 @@ class Curriculum:
                 tuple(float(v) for v in slot) for slot in raw_means
             )
             for i, slot in enumerate(initial_means):
-                if len(slot) != _PARAMS_PER_SLOT:
+                if len(slot) != PARAMS_PER_SLOT:
                     raise ValueError(
                         f"Curriculum {path}: initial_means[{i}] must have exactly "
-                        f"{_PARAMS_PER_SLOT} values (3 waypoints * 2 coords + duration "
+                        f"{PARAMS_PER_SLOT} values (3 waypoints * 2 coords + duration "
                         f"+ easing), got {len(slot)}"
                     )
         else:
@@ -169,7 +168,7 @@ if __name__ == "__main__":
     cases = [
         (TrickResult("KICKFLIP", "landed"),       1.0),
         (TrickResult("KICKFLIP", "failed"),       0.9),     # near_miss(1.0) = 0.9
-        (TrickResult("VARIAL KICKFLIP", "landed"), c.rewards.get("VARIAL KICKFLIP", c.default_reward)),
+        (TrickResult("VARIAL KICKFLIP", "landed"), 0.4),  # VARIAL KICKFLIP tier in kickflip.json; landed → no near_miss multiplier
         (TrickResult("OLLIE", "landed"),          c.default_reward),  # in KNOWN_TRICKS, not in rewards
         (TrickResult("BLATANT NONSENSE", "landed"), 0.0),
         (None,                                     0.0),

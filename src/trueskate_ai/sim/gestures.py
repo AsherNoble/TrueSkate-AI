@@ -25,6 +25,10 @@ Y_BOUND_MAX: float = 0.88   # bottom of the valid RL gesture area (avoids home i
 X_BOUND_MIN: float = 0.12   # left edge hosts in-game buttons (spin ~x=0.06, clip/replay
 X_BOUND_MAX: float = 1.0    # below it) — gestures grazing them open the replay-clip UI
 
+# Normalised [0, 1] coords of True Skate's rotate/spin button. Shared default
+# for the gesture executors and the per-device config fallback in device_worker.
+DEFAULT_SPIN_BUTTON_XY: tuple[float, float] = (0.0604, 0.4040)
+
 
 def scale_to_device(x: float, y: float, device_w: float, device_h: float) -> tuple[float, float]:
     """Map a normalised coordinate point (x, y in [0, 1]) to a device's logical points."""
