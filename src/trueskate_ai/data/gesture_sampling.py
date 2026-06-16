@@ -202,6 +202,26 @@ def sample_recipe(
     )
 
 
+def clamp_in_bounds(s: GestureSample) -> GestureSample:
+    """Defensive chokepoint: guarantee a sampled gesture lies within the RL
+    coordinate bounds (X_BOUND_MIN..MAX, Y_BOUND_MIN..MAX), so the collector can
+    never execute — or mislabel — an out-of-bounds action whatever the sampling
+    path or any future change. Clamps the SAMPLE itself (mutates in place), so the
+    saved label always matches what executes. Normalised coords are absolute
+    (0/1 = screen edges); clamping constrains, it never rescales.
+    """
+    if s.kind == "flick" and s.waypoints is not None:
+        s.waypoints = [
+            (float(np.clip(x, X_BOUND_MIN, X_BOUND_MAX)),
+             float(np.clip(y, Y_BOUND_MIN, Y_BOUND_MAX)))
+            for x, y in s.waypoints
+        ]
+    elif s.params is not None and s.num_gestures is not None:
+        bounds = build_param_bounds(s.num_gestures, s.use_spin)
+        s.params = [float(v) for v in clamp_params(np.asarray(s.params, dtype=np.float64), bounds)]
+    return s
+
+
 def sample_mixture(
     rng: np.random.Generator,
     *,
@@ -210,7 +230,8 @@ def sample_mixture(
     use_spin: bool = False,
     recipe_vectors: list[tuple[list[float], int, bool, str]] | None = None,
 ) -> GestureSample:
-    """Draw one gesture from the flick / nslot / recipe mixture.
+    """Draw one gesture from the flick / nslot / recipe mixture, guaranteed
+    within the coordinate bounds (via clamp_in_bounds).
 
     fracs = (flick, nslot, recipe). If no recipes are available the recipe share
     is redistributed to nslot (so the mix never silently stalls).
@@ -223,15 +244,17 @@ def sample_mixture(
     r = float(rng.uniform(0, total))
     if r < f_flick:
         g = sample_flick(rng)
-        return GestureSample(
+        s = GestureSample(
             kind="flick",
             waypoints=g["waypoints"],
             duration=g["duration"],
             easing_power=g["easing_power"],
         )
-    if r < f_flick + f_nslot:
-        return sample_nslot(rng, num_gestures, use_spin)
-    return sample_recipe(rng, recipe_vectors)
+    elif r < f_flick + f_nslot:
+        s = sample_nslot(rng, num_gestures, use_spin)
+    else:
+        s = sample_recipe(rng, recipe_vectors)
+    return clamp_in_bounds(s)
 
 
 def load_recipe_vectors(recipe_dir: Path, mode: str = "median") -> list[tuple[list[float], int, bool, str]]:
