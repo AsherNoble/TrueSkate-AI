@@ -9,9 +9,10 @@ lands, whiffs, or bumps a wall, and varied board positions are desirable.
 
 Per phone, it collects in one park for --per-park-hours, then ntfy-prompts you to
 walk over and load the next SLS park; it KEEPS collecting in the current park
-until it detects you actually switched (no idle time if you're away), then resets
-the timer and advances. The command->frame pipeline latency (the "clapperboard")
-is measured once at startup via the dedicated Clapperboard app (vision/clapperboard).
+until you tap the ntfy "I switched parks" button (no idle time if you're away),
+then it advances + resets the timer. The command->frame pipeline latency (the
+"clapperboard") is measured once at startup via the dedicated Clapperboard app
+(vision/clapperboard).
 
 Prereqs: WDA + Appium up for the device (python scripts/launch_services.py --personal).
 
@@ -22,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import re
 import signal
 import subprocess
@@ -31,6 +33,10 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
+
+# The Appium client (urllib3) spams "connection pool is full" under our rapid
+# request cadence; harmless, but quiet it so the run log stays readable.
+logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
 
 _HERE = Path(__file__).resolve().parent
 _REPO_ROOT = _HERE.parent.parent
@@ -42,12 +48,11 @@ from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker  # noqa: E402
 from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import curved_drag, reset_position  # noqa: E402
-from trueskate_ai.utils.notify import notify  # noqa: E402
+from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
 from trueskate_ai.vision.clapperboard import (  # noqa: E402
     DEFAULT_CLAPPERBOARD_BUNDLE, RollingCaptureOffset, calibrate_via_app,
 )
 from trueskate_ai.vision.color_recorder import TimestampedColorRecorder  # noqa: E402
-from trueskate_ai.vision.park_change import ParkChangeDetector  # noqa: E402
 
 # The 11 installed SLS arenas, in cycle order. Switching is MANUAL (you load the
 # park), so these are labels for prompting + tagging — no brittle menu nav.
@@ -194,8 +199,10 @@ def main() -> None:
     ap.add_argument("--no-clapperboard", action="store_true",
                     help="Skip capture-offset calibration (offset stamped null).")
     ap.add_argument("--no-caffeinate", action="store_true")
-    ap.add_argument("--no-park-detect", action="store_true",
-                    help="Single-park mode: never auto-advance (still prompts on the timer).")
+    ap.add_argument("--no-rotate", action="store_true",
+                    help="Single-park mode: collect in one park, never prompt/advance.")
+    ap.add_argument("--confirm-poll-s", type=float, default=10.0,
+                    help="How often to check ntfy for your 'switched' tap after a prompt.")
     args = ap.parse_args()
 
     cfg = next((d for d in DEVICES if d["name"].lower() == args.device.lower()), None)
@@ -232,7 +239,6 @@ def main() -> None:
 
     rec = TimestampedColorRecorder()
     offset = RollingCaptureOffset()
-    detector = None if args.no_park_detect else ParkChangeDetector()
 
     def write_session_meta(saved: int, park_idx: int) -> None:
         (out_root / "session_meta.json").write_text(json.dumps({
@@ -268,7 +274,9 @@ def main() -> None:
 
     park_idx = 0
     deadline = time.monotonic() + args.per_park_hours * 3600.0
-    prompted = False
+    awaiting = False        # prompted to switch, waiting for the user's ntfy tap
+    prompt_ts = 0.0
+    last_poll = 0.0
     saved = 0
     i = 0
     global_deadline = (time.monotonic() + args.max_hours * 3600.0) if args.max_hours else None
@@ -279,27 +287,10 @@ def main() -> None:
                 print("[collect_sls] global --max-hours reached.")
                 break
 
-            # Park reload in progress → don't fight the user's menu nav; just watch.
-            if detector is not None and detector.in_transition:
-                frames, times, _, _ = _capture(rec, mjpeg_url, 0.0, 0.6, args.resize_width)
-                if detector.feed(frames):
-                    park_idx = (park_idx + 1) % len(cycle)
-                    deadline = time.monotonic() + args.per_park_hours * 3600.0
-                    prompted = False
-                    notify(f"[{device}] detected switch — now collecting in {cycle[park_idx]}",
-                           title="TrueSkate SLS collect", tags=["white_check_mark"])
-                    print(f"[collect_sls] switch detected → {cycle[park_idx]}")
-                continue
-
             # --- one collection iteration: reset the board, then the gesture sample ---
-            # Reset window also feeds the park-change detector.
-            r_frames, _r_times, _, _ = _capture(
-                rec, mjpeg_url, 0.0, 0.4, args.resize_width,
-                action=lambda: reset_position(worker.driver, dw, dh))
-            if detector is not None and detector.feed(r_frames):
-                continue  # a reload started during the reset window — loop to monitor it
+            reset_position(worker.driver, dw, dh)
+            time.sleep(0.3)  # board settle
 
-            # Capture window 2: the gesture → the sample.
             g = sample_mixture(rng, fracs=fracs, num_gestures=args.num_gestures,
                                use_spin=args.use_spin, recipe_vectors=recipe_vectors)
             try:
@@ -308,11 +299,6 @@ def main() -> None:
                     action=lambda: _execute(worker, g))
             except Exception as exc:  # noqa: BLE001
                 print(f"  gesture {i} failed: {exc}")
-                continue
-
-            switched = detector.feed(g_frames) if detector is not None else False
-            if detector is not None and detector.in_transition:
-                # a reload began mid-gesture — discard this (garbage) sample, go monitor
                 continue
 
             n = _save_sample(out_root / _park_tag(cycle[park_idx]) / f"sample_{saved:05d}",
@@ -326,20 +312,29 @@ def main() -> None:
                       f"offset={offset.offset_s}s frames={n}")
                 write_session_meta(saved, park_idx)
 
+            # --- park rotation: prompt on the timer, advance when you tap "switched" ---
             now = time.monotonic()
-            if switched:
-                park_idx = (park_idx + 1) % len(cycle)
-                deadline = now + args.per_park_hours * 3600.0
-                prompted = False
-                notify(f"[{device}] detected switch — now collecting in {cycle[park_idx]}",
-                       title="TrueSkate SLS collect", tags=["white_check_mark"])
-                print(f"[collect_sls] switch detected → {cycle[park_idx]}")
-            elif detector is not None and not prompted and now >= deadline:
+            if args.no_rotate:
+                continue
+            if awaiting:
+                if now - last_poll >= args.confirm_poll_s:
+                    last_poll = now
+                    if poll_confirmation("SWITCHED", since_ts=prompt_ts):
+                        park_idx = (park_idx + 1) % len(cycle)
+                        deadline = now + args.per_park_hours * 3600.0
+                        awaiting = False
+                        notify(f"[{device}] confirmed — now collecting in {cycle[park_idx]}",
+                               title="TrueSkate SLS collect", tags=["white_check_mark"])
+                        print(f"[collect_sls] switch confirmed → {cycle[park_idx]}")
+            elif now >= deadline:
                 nxt = cycle[(park_idx + 1) % len(cycle)]
-                notify(f"[{device}] {args.per_park_hours}h done in {cycle[park_idx]} — walk over "
-                       f"and load: {nxt}. Still collecting until you do.",
-                       title="TrueSkate SLS switch park", priority="high", tags=["walking"])
-                prompted = True
+                prompt_ts = time.time()
+                notify(f"[{device}] {args.per_park_hours}h in {cycle[park_idx]} — please load "
+                       f"{nxt}, then tap the button. Still collecting here until you do.",
+                       title="TrueSkate: switch park", priority="high", tags=["walking"],
+                       actions=confirm_button_action("I switched parks"))
+                awaiting = True
+                last_poll = now
                 print(f"[collect_sls] timer fired — prompted to switch to {nxt}")
     finally:
         write_session_meta(saved, park_idx)
