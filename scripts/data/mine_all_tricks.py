@@ -39,11 +39,35 @@ if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from trueskate_ai.rl.cmaes.action_param import (
+    SPIN_PARAMS,
     build_param_bounds,
     clamp_params,
     infer_layout,
     unpack_gesture_params,
 )
+
+
+def _median_recipe_params(
+    matrix: np.ndarray, rewards: np.ndarray, use_spin: bool
+) -> list[float]:
+    """Median the structural params; inherit the spin block from a real sample.
+
+    The spin gate (params[-SPIN_PARAMS]) is a binary on/off decision
+    (enabled = gate >= 0), not a continuous value — medianing a mixed on/off
+    column drifts it toward 0 and fabricates an arbitrary spin decision. Instead:
+    majority-vote the gate, then carry the WHOLE [gate, t_start, t_end] triple
+    from the best-reward sample on the winning side, so the timing window stays
+    consistent with a configuration that was actually flown. Ties -> enabled.
+    """
+    median = np.median(matrix, axis=0)
+    if not use_spin:
+        return median.tolist()
+    spin_on = matrix[:, -SPIN_PARAMS] >= 0.0
+    enable = spin_on.sum() >= (~spin_on).sum()  # majority vote; ties -> enabled
+    side = spin_on if enable else ~spin_on
+    rep = int(np.argmax(np.where(side, rewards, -np.inf)))  # best reward on winning side
+    median[-SPIN_PARAMS:] = matrix[rep, -SPIN_PARAMS:]      # inherit real spin triple
+    return median.tolist()
 
 
 def _sanitize_filename(name: str) -> str:
@@ -68,8 +92,9 @@ def main() -> None:
                         help="Glob for JSONL run logs (quote it)")
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--min-samples", type=int, default=1)
-    parser.add_argument("--landed-only", action="store_true", default=True,
-                        help="(default on) only status=='landed' rows")
+    parser.add_argument("--landed-only", action=argparse.BooleanOptionalAction, default=True,
+                        help="Only status=='landed' rows (default on; "
+                             "--no-landed-only to include failed attempts)")
     args = parser.parse_args()
 
     log_paths = sorted(glob.glob(args.logs))
@@ -93,7 +118,9 @@ def main() -> None:
                     continue
                 if r.get("type") in ("run_config", "generation_summary"):
                     continue
-                if r.get("trick_status") != "landed" or not r.get("trick_name"):
+                if not r.get("trick_name"):
+                    continue
+                if args.landed_only and r.get("trick_status") != "landed":
                     continue
                 params = r.get("params")
                 if not params:
@@ -109,7 +136,8 @@ def main() -> None:
                         (params, float(r.get("reward", 0.0)), r["trick_name"])
                     )
 
-    print(f"{rows} landed evals across {len(log_paths)} logs → "
+    eval_kind = "landed evals" if args.landed_only else "evals"
+    print(f"{rows} {eval_kind} across {len(log_paths)} logs → "
           f"{len(groups)} (trick, N, spin) groups")
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -128,10 +156,12 @@ def main() -> None:
         best_idx = int(np.argmax(rewards))
         output = {
             "trick": comp,
-            "median_gestures": _unpack_to_recipe(np.median(matrix, axis=0).tolist()),
+            "median_gestures": _unpack_to_recipe(
+                _median_recipe_params(matrix, rewards, use_spin)
+            ),
             "best_gestures": _unpack_to_recipe(samples[best_idx][0]),
             "sample_count": len(samples),
-            "landed_only": True,
+            "landed_only": args.landed_only,
             "num_gestures": n,
             "use_spin": use_spin,
             "reward_stats": {
