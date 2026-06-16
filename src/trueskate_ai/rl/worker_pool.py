@@ -16,7 +16,7 @@ Public API:
 import logging
 import time
 
-from trueskate_ai.rl.device_worker import ALL_DEAD_TIMEOUT, DEVICES, DeviceWorker
+from trueskate_ai.rl.device_worker import ALL_DEAD_TIMEOUT, DeviceWorker
 
 
 class AllWorkersDeadError(RuntimeError):
@@ -30,10 +30,22 @@ class WorkerPool:
     connects all workers, ``__exit__`` disconnects them.
     """
 
-    def __init__(self, device_cfgs: list[dict] | None = None) -> None:
-        """Build one DeviceWorker per config. Defaults to the module DEVICES list."""
-        cfgs = DEVICES if device_cfgs is None else device_cfgs
-        self._workers: list[DeviceWorker] = [DeviceWorker(cfg) for cfg in cfgs]
+    def __init__(self, device_cfgs: list[dict]) -> None:
+        """Build one DeviceWorker per config. Caller must pass explicit cfgs.
+
+        No default: an implicit "all DEVICES" fallback would bypass role
+        filtering and could silently grab the personal iPhone 11 (role=
+        "personal") during an unattended run. Callers select the roster via
+        device_worker.select_devices/resolve_devices. Both real callers
+        (cmaes_optimizer, ppo.trainer) already pass an explicit list.
+        """
+        if not device_cfgs:
+            raise ValueError(
+                "WorkerPool requires a non-empty device_cfgs list; refusing to "
+                "default to the full DEVICES fleet (includes the personal phone). "
+                "Use select_devices()/resolve_devices() to pick the roster."
+            )
+        self._workers: list[DeviceWorker] = [DeviceWorker(cfg) for cfg in device_cfgs]
 
     def __len__(self) -> int:
         return len(self._workers)

@@ -42,6 +42,11 @@ from trueskate_ai.utils.notify import notify
 # rig is alive but producing nothing (lost focus, app exited, bad params).
 _ZERO_LAND_GEN_ALERT = 6
 
+# Coordinate-param sigma applied to a warm-started mean: deliberately tighter
+# than the cold-start _COORD_SIGMA (in action_param) so CMA-ES explores locally
+# around a known-good recipe instead of wandering off it.
+_WARM_START_COORD_SIGMA = 0.05
+
 # Passive trace-extraction data capture during CMA-ES runs (TRACE_COLLECT=1).
 # Each eval's executed gesture vector IS the label; the worker returns color
 # frames. We save a downsampled trace-window subset per eval up to a cap.
@@ -226,11 +231,15 @@ def run(
         seed:        CMA-ES random seed.
         wait_time:   Seconds to wait after gestures before first OCR screenshot.
         settle_time: Seconds to wait after board reset before next attempt.
-        pop_size:    CMA-ES population size (rounded down to nearest multiple
-                     of device count).
+        pop_size:    CMA-ES population size, snapped to a multiple of the
+                     connected-device count — rounded DOWN, but never below the
+                     device count (a smaller pop_size is bumped UP to one
+                     candidate per device).
         log_dir:     Root directory for run logs and frame composites.
-        devices:     List of device config dicts. Defaults to DEVICES from
-                     device_worker module.
+        devices:     Explicit non-empty list of device config dicts (required).
+                     Select the roster with device_worker.resolve_devices();
+                     there is no implicit full-fleet default (it would enlist
+                     the personal phone on an unattended run).
         curriculum:  Curriculum object providing the per-trick reward scorer.
                      Workers call ``curriculum.score`` directly.
         initial_mean: Optional path to trick library JSON; when provided,
@@ -255,11 +264,29 @@ def run(
         )
 
     # --- Connect workers (skips any device whose services aren't running) --
+    if not devices:
+        raise ValueError(
+            "run() requires an explicit non-empty `devices` list; select the "
+            "roster with device_worker.resolve_devices() (no implicit full-fleet "
+            "default — it would enlist the personal phone on an unattended run)."
+        )
     pool = WorkerPool(devices)
     pool.connect_all()
     n_workers = len(pool)
 
+    # Defensive: connect_all() already raises when zero devices connect, but a
+    # zero-worker pool here would ZeroDivisionError in the pop_size math below —
+    # and that happens before `es`/`executor` exist, so the run's finally block
+    # would then raise NameError and mask the real cause. Fail loud and early.
+    if n_workers == 0:
+        raise RuntimeError(
+            "No device workers connected — start at least one device with "
+            "'python scripts/launch_services.py [--device NAME]' before CMA-ES."
+        )
+
     # --- Auto-round pop_size and max_evals ---------------------------------
+    # Snap pop_size to a whole multiple of n_workers so every round fills all
+    # workers, but never below n_workers (one candidate per device minimum).
     original_pop_size = pop_size
     pop_size = max(n_workers, (pop_size // n_workers) * n_workers)
     original_max_evals = max_evals
@@ -345,7 +372,7 @@ def run(
                 lo, hi = param_bounds[idx]
                 print(f"  param[{idx}] = {cma_mean[idx]:.4f} → clamped to [{lo:.4f}, {hi:.4f}]")
             cma_mean = clamp_params(cma_mean, param_bounds)
-        cma_stds[build_coordinate_mask(num_gestures, use_spin)] = 0.05
+        cma_stds[build_coordinate_mask(num_gestures, use_spin)] = _WARM_START_COORD_SIGMA
         print(f"Loaded initial mean from trick library: {initial_mean}")
 
     es = cma.CMAEvolutionStrategy(

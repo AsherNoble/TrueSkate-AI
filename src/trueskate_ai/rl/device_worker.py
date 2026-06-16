@@ -386,6 +386,16 @@ class DeviceWorker:
         actual = self.driver.get_window_size()
         exp_w, exp_h = int(self._cfg["logical_w"]), int(self._cfg["logical_h"])
         if actual["width"] != exp_w or actual["height"] != exp_h:
+            # The session we just opened is unusable on a mismatch — quit it
+            # (best-effort) so a flapping mismatch doesn't leak an Appium/WDA
+            # session per reconnect. The quit must never mask the RuntimeError
+            # below, which names the actual fix (Display Zoom). Null the handle
+            # so a later _reconnect()/disconnect() doesn't re-quit a dead driver.
+            try:
+                self.driver.quit()
+            except Exception:
+                pass
+            self.driver = None
             raise RuntimeError(
                 f"[{self.device_id}] screen dimensions mismatch: "
                 f"expected {exp_w}×{exp_h}, got {actual['width']}×{actual['height']}. "
@@ -626,6 +636,11 @@ class DeviceWorker:
             action_end_time = time.monotonic()
             if wait_time > 0:
                 time.sleep(wait_time)
+            # Stamp AFTER the settle sleep so reward_eval_s measures capture+score
+            # only — action_end_time predates the sleep and would fold wait_time in.
+            # (action_end_time still anchors the capture window below: capture
+            #  reckons from gesture end, not post-settle.)
+            reward_eval_start_time = time.monotonic()
             ocr_failure_dir = run_dir / "ocr_failures" if run_dir is not None else None
             eval_label = f"eval_{eval_num:05d}_{self.device_id}"
             trick_result, capture_diag = capture_and_detect_with_diagnostics(
@@ -645,7 +660,13 @@ class DeviceWorker:
                 trace_rec.stop()
             logging.warning("[%s] eval %d failed: %s", self.device_id, eval_num, exc)
             self.record_failure()
-            if self._failure_streak % 5 == 0:
+            # Once the worker is dead (streak >= _DEAD_THRESHOLD), try to revive it
+            # on this failure and on every subsequent failure until one succeeds.
+            # Don't gate on a modulo of the streak: _reconnect() zeroes the streak
+            # on success, so a modulo could only ever fire once, and a failed
+            # reconnect would then go quiet instead of retrying. `not self.alive`
+            # ties the trigger to the single source of truth (_DEAD_THRESHOLD).
+            if not self.alive:
                 self._reconnect()
             print(
                 f"[eval {eval_num:05d} | gen {generation:04d}] "
@@ -704,7 +725,7 @@ class DeviceWorker:
             "app_relaunched": relaunched,
             "in_skatepark": in_skatepark,
             "action_exec_s": action_end_time - action_start_time,
-            "reward_eval_s": reward_end_time - action_end_time,
+            "reward_eval_s": reward_end_time - reward_eval_start_time,
             "eval_total_s": reward_end_time - eval_start_time,
             "capture_attempts": int(capture_diag["captures_attempted"]),
             "skipped_captures": int(capture_diag["skipped_captures"]),
