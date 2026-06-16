@@ -193,8 +193,8 @@ class ContinuousTrickMonitor:
         if resp is not None:
             try:
                 resp.close()
-            except Exception:
-                pass
+            except Exception as exc:  # close failures at teardown are benign
+                logging.debug("ContinuousTrickMonitor response close failed: %s", exc)
         if self._thread is not None:
             self._thread.join(timeout=2.0)
             self._thread = None
@@ -270,6 +270,12 @@ def capture_and_detect_with_diagnostics(
 
     Args:
         driver: Appium WebDriver instance.
+        capture_count: Window-sizing factor only (with capture_interval). NOT a
+            frame count — the loop captures as fast as screenshots return.
+        capture_interval: Seconds-per-unit factor used solely to size the
+            detection window (capture_count * capture_interval). It does NOT
+            rate-limit captures — there is no inter-frame sleep. Ignored when
+            max_window_s is set.
         max_window_s: Hard cap on the detection window. Defaults to
             capture_count * capture_interval when None.
         ocr_failure_dir: If set, anchor-found-but-no-match evals dump frames +
@@ -390,8 +396,10 @@ def get_reward(
         wait_time: Seconds to wait after gestures finish before first screenshot.
         penalty: Optional RepetitionPenalty. When provided, landed tricks receive
             a diminishing multiplier and their count is incremented.
-        capture_count: Number of screenshots to capture per eval.
-        capture_interval: Seconds between consecutive screenshots.
+        capture_count: Window-sizing factor (with capture_interval), not a hard
+            screenshot count — the capture loop is not rate-limited.
+        capture_interval: Seconds-per-unit factor that sizes the detection window
+            as capture_count * capture_interval. Does NOT space out screenshots.
         action_start_time: Optional monotonic timestamp that anchors the
             capture window start.
 

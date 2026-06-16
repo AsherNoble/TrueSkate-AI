@@ -73,9 +73,14 @@ class TrickConditionedPolicy(nn.Module):
 
     def act_deterministic(self, trick_idx: torch.Tensor) -> PolicySample:
         """Use the policy mean as the action (for eval/replay)."""
-        means, _, value = self.forward(trick_idx)
+        means, std, value = self.forward(trick_idx)
         action = torch.tanh(means)
-        log_prob = torch.zeros_like(value)
+        # Real squashed log-prob of the mode (pre_tanh == means) under the
+        # current policy, so it can never be mistaken for a fake zero if fed
+        # back as old_log_prob in a PPO update.
+        log_prob = self._squashed_log_prob(
+            dist=Normal(means, std), pre_tanh_action=means, squashed_action=action
+        )
         return PolicySample(action=action, log_prob=log_prob, value=value)
 
     def evaluate_actions(

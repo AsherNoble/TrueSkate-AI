@@ -12,8 +12,8 @@ import numpy as np
 from trueskate_ai.rl.device_worker import DeviceWorker
 from trueskate_ai.rl.reward import (
     ContinuousTrickMonitor,
+    capture_and_detect_with_diagnostics,
     compute_conditioned_reward,
-    get_conditioned_reward,
     merge_trick_results,
 )
 from trueskate_ai.rl.ppo.trick_conditioned_action import execute_gesture_params_vector
@@ -111,14 +111,13 @@ def _collect_one(
     )
     action_end_time = time.monotonic()
     monitor_result, monitor_diag = monitor.stop()
-    reward, trick_result, capture_diag = get_conditioned_reward(
+    # Capture/detect once, then score the monitor+capture merge a single time.
+    time.sleep(wait_time)  # detection-window wait (was inside get_conditioned_reward)
+    trick_result, capture_diag = capture_and_detect_with_diagnostics(
         worker.driver,
-        target_trick=task.target_trick,
-        wait_time=wait_time,
         capture_count=capture_count,
         capture_interval=capture_interval,
         action_start_time=action_end_time,
-        return_diagnostics=True,
     )
     combined_result = merge_trick_results(monitor_result, trick_result)
     reward = compute_conditioned_reward(combined_result, target_trick=task.target_trick)
