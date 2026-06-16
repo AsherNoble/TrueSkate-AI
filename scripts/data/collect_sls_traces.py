@@ -94,7 +94,8 @@ def _capture(rec: TimestampedColorRecorder, mjpeg_url: str, pre_s: float, hold_s
              resize_width: int, action=None):
     """Record a window: warm up pre_s, mark t0, run `action` (if any), hold hold_s.
 
-    Returns (frames, times, t0) where t0 is the monotonic time `action` started.
+    Returns (frames, times, t0, t_end): t0 is the monotonic time `action` started,
+    t_end the monotonic time the synchronous `action` returned.
     """
     rec.start(mjpeg_url, resize_width=resize_width)
     if pre_s > 0:
@@ -102,10 +103,11 @@ def _capture(rec: TimestampedColorRecorder, mjpeg_url: str, pre_s: float, hold_s
     t0 = time.monotonic()
     if action is not None:
         action()
+    t_end = time.monotonic()  # synchronous action (gesture/reset) has fully executed
     if hold_s > 0:
         time.sleep(hold_s)
     frames, times = rec.stop()
-    return frames, times, t0
+    return frames, times, t0, t_end
 
 
 def _downsample(items: list, max_n: int) -> list[int]:
@@ -131,30 +133,33 @@ def _execute(worker: DeviceWorker, g) -> None:
         )
 
 
-def _save_sample(sample_dir: Path, frames: list, times: list[float], t_gesture: float,
+def _save_sample(sample_dir: Path, frames: list, times: list[float], t_gesture_end: float,
                  g, park: str, park_idx: int, offset: RollingCaptureOffset,
                  dw: float, dh: float, max_frames: int) -> int:
-    """Save the gesture-window frames (at/after t_gesture) + meta. Returns n saved."""
-    gest = [(t, f) for t, f in zip(times, frames) if t >= t_gesture]
-    if not gest:
+    """Save downsampled frames + meta. frame_times are relative to the gesture
+    CALL-RETURN (t_gesture_end), the tight anchor — see vision/clapperboard. Returns n saved."""
+    if not frames:
         return 0
-    keep = _downsample(gest, max_frames)
+    pairs = list(zip(times, frames))
+    keep = _downsample(pairs, max_frames)
     sample_dir.mkdir(parents=True, exist_ok=True)
     frame_times = []
     for out_i, src_i in enumerate(keep):
-        t, fr = gest[src_i]
+        t, fr = pairs[src_i]
         Image.fromarray(fr, mode="RGB").save(sample_dir / f"frame_{out_i:03d}.png")
-        frame_times.append(round(t - t_gesture, 4))
+        frame_times.append(round(t - t_gesture_end, 4))
     meta = {
         "device_logical_w": dw,
         "device_logical_h": dh,
         "park": park,
         "park_change_index": park_idx,
         "spin_active": bool(g.use_spin) if g.kind != "flick" else False,
-        "gesture_start_monotonic": t_gesture,
-        "frame_times": frame_times,        # relative to gesture start (s)
+        "gesture_end_monotonic": t_gesture_end,
+        "frame_times": frame_times,        # relative to the gesture call-return (s)
         "n_frames": len(frame_times),
-        # frame at frame_time reflects screen state at frame_time - capture_offset_s
+        # The on-screen gesture spans frame_times [capture_offset_s - duration,
+        # capture_offset_s]; a frame at ft shows the effect of a command whose call
+        # returned at ft - capture_offset_s. capture_offset_s is small/negative.
         "capture_offset_s": offset.offset_s,
         "capture_offset_jitter_s": offset.jitter_s,
         **g.meta(),
@@ -276,7 +281,7 @@ def main() -> None:
 
             # Park reload in progress → don't fight the user's menu nav; just watch.
             if detector is not None and detector.in_transition:
-                frames, times, _ = _capture(rec, mjpeg_url, 0.0, 0.6, args.resize_width)
+                frames, times, _, _ = _capture(rec, mjpeg_url, 0.0, 0.6, args.resize_width)
                 if detector.feed(frames):
                     park_idx = (park_idx + 1) % len(cycle)
                     deadline = time.monotonic() + args.per_park_hours * 3600.0
@@ -288,7 +293,7 @@ def main() -> None:
 
             # --- one collection iteration: reset the board, then the gesture sample ---
             # Reset window also feeds the park-change detector.
-            r_frames, _r_times, _ = _capture(
+            r_frames, _r_times, _, _ = _capture(
                 rec, mjpeg_url, 0.0, 0.4, args.resize_width,
                 action=lambda: reset_position(worker.driver, dw, dh))
             if detector is not None and detector.feed(r_frames):
@@ -298,7 +303,7 @@ def main() -> None:
             g = sample_mixture(rng, fracs=fracs, num_gestures=args.num_gestures,
                                use_spin=args.use_spin, recipe_vectors=recipe_vectors)
             try:
-                g_frames, g_times, t_gesture = _capture(
+                g_frames, g_times, _, t_gesture_end = _capture(
                     rec, mjpeg_url, 0.0, 0.6, args.resize_width,  # tail captures post-trick motion
                     action=lambda: _execute(worker, g))
             except Exception as exc:  # noqa: BLE001
@@ -311,7 +316,7 @@ def main() -> None:
                 continue
 
             n = _save_sample(out_root / _park_tag(cycle[park_idx]) / f"sample_{saved:05d}",
-                             g_frames, g_times, t_gesture, g, cycle[park_idx], park_idx,
+                             g_frames, g_times, t_gesture_end, g, cycle[park_idx], park_idx,
                              offset, dw, dh, args.max_frames_per_sample)
             if n:
                 saved += 1

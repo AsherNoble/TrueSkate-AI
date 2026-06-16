@@ -15,13 +15,22 @@ board's snap-back to the reset waypoint via ``board_localizer``. Kept for
 reference but less reliable (the reset animates and the localizer glitches mid-
 transition), so the app method is preferred.
 
+Anchor to the COMMAND'S CALL-RETURN, not its issue time. Appium's synchronous
+``mobile:tap`` (and the W3C gesture calls) return ~0.07s AFTER their visual effect
+is captured, with the large, VARIABLE command overhead (~0.8-0.9s, ±0.1s on this
+rig) happening BEFORE the effect. Measured on-device: flip-vs-call-issue jitters
+±0.1s, but flip-vs-call-return is −0.073s ± 0.015s (sub-frame). So Δ is defined as
+``Δ = (flip-frame monotonic time) − (command call-return monotonic time)`` (a
+small negative number), and a frame at ``t`` shows the effect of a command whose
+call returned at ``t − Δ``. The collector likewise anchors a gesture's frames to
+that gesture call's return; the on-screen gesture then spans frame-times
+``[Δ − duration, Δ]``.
+
 Δ is DISTINCT from the 0.45s orange-trace render lag
-(``train_trace_extractor._DEFAULT_LATENCY_S``), which is True Skate's internal
-trace animation delay used only for trace-warmth gating. Δ is the *pipeline* lag —
-a frame stamped (monotonic) at ``t`` shows screen state from ``t − Δ`` — used to
-pair each frame to the correct point in the gesture timeline. Per-frame precision
-is floored by the MJPEG frame interval (≈1/fps); averaging tightens the ESTIMATE,
-not that quantization.
+(``train_trace_extractor._DEFAULT_LATENCY_S``), True Skate's internal trace
+animation delay used only for trace-warmth gating. Per-frame precision is floored
+by the MJPEG frame interval (≈1/fps); averaging tightens the ESTIMATE, not that
+quantization.
 """
 from __future__ import annotations
 
@@ -45,8 +54,8 @@ _MIN_DISPLACEMENT = 0.08  # the reset must move the board home by at least this 
 # Primary (app-based) calibration constants.
 DEFAULT_CLAPPERBOARD_BUNDLE = "com.embodiedstates.clapperboard"
 _TRUESKATE_BUNDLE = "com.trueaxis.skate"
-_LUM_THRESHOLD = 25.0     # whole-frame mean-luminance jump that counts as the flip
-_LUM_WINDOW_S = 0.8       # look this far past the tap for the flip
+_LUM_THRESHOLD = 25.0      # whole-frame mean-luminance jump that counts as the flip
+_LUM_BASELINE_FRAMES = 3   # pre-flip frames used to fix the dark/light baseline
 
 
 def board_centroid(rgb: np.ndarray) -> tuple[float, float] | None:
@@ -120,8 +129,9 @@ class RollingCaptureOffset:
         return self.add_sample(offset_from_reset(frames, times, t0, **kw))
 
     def add_sample(self, d: float | None) -> float | None:
-        """Add a pre-measured Δ sample (e.g. from the app-based calibration)."""
-        if d is not None and d >= 0:
+        """Add a pre-measured Δ sample. Δ may be NEGATIVE — the app-based offset
+        (flip-frame minus command call-return) is ~-0.07s; only None is dropped."""
+        if d is not None:
             self.samples.append(d)
             if len(self.samples) > self.window:
                 self.samples.pop(0)
@@ -200,22 +210,23 @@ def calibrate_capture_offset(
 def _lum_onset(
     frames: list,
     times: list[float],
-    t0: float,
+    anchor: float,
     *,
     threshold: float = _LUM_THRESHOLD,
-    max_window_s: float = _LUM_WINDOW_S,
+    baseline_frames: int = _LUM_BASELINE_FRAMES,
 ) -> float | None:
-    """Δ for one black<->white flip: time of the first post-tap frame whose
-    whole-frame mean luminance differs from the pre-tap baseline by > threshold,
-    minus t0. Returns None if no flip is seen in the window."""
-    pre = [f for t, f in zip(times, frames) if t < t0]
-    post = [(t, f) for t, f in zip(times, frames) if t0 <= t <= t0 + max_window_s]
-    if not pre or not post:
+    """Signed Δ of a full-screen black<->white flip relative to ``anchor``: the
+    monotonic time of the first frame whose whole-frame mean luminance differs
+    from the pre-flip baseline (mean of the first ``baseline_frames`` frames) by
+    > threshold, minus ``anchor``. NEGATIVE when the flip precedes ``anchor`` —
+    e.g. the flip is captured ~0.07s before the synchronous tap call returns.
+    None if no flip is seen. Scans all frames so the anchor may sit mid-window."""
+    if len(frames) < baseline_frames + 1:
         return None
-    base = float(np.asarray(pre[-1], dtype=np.float32).mean())
-    for t, f in post:  # capture order
+    base = float(np.mean([np.asarray(f, dtype=np.float32).mean() for f in frames[:baseline_frames]]))
+    for t, f in zip(times, frames):  # capture order
         if abs(float(np.asarray(f, dtype=np.float32).mean()) - base) > threshold:
-            return float(t - t0)
+            return float(t - anchor)
     return None
 
 
@@ -233,13 +244,13 @@ def calibrate_via_app(
 ) -> RollingCaptureOffset:
     """Measure Δ with the dedicated Clapperboard app (PRIMARY method).
 
-    Switches to the app, taps to flip the full screen black<->white at a known
-    time, times the flip in the MJPEG, repeats k times, and switches back. The
-    instant full-frame flip gives a clean onset that in-game visuals (which
-    animate) cannot. Δ is ~constant per session, so this runs once at startup
-    (and optionally periodically). Requires the Clapperboard app installed
-    (bundle ``app_bundle``). Imports are local so the module stays importable
-    without Appium.
+    Switches to the app, taps to flip the full screen black<->white, times the
+    flip relative to the tap call's RETURN (the tight anchor — see module docs),
+    repeats k times, and switches back. The instant full-frame flip gives a clean
+    onset that in-game visuals (which animate) cannot. Δ is ~constant per session,
+    so this runs once at startup (and optionally periodically). Requires the
+    Clapperboard app installed (bundle ``app_bundle``). Imports are local so the
+    module stays importable without Appium.
     """
     from trueskate_ai.vision.color_recorder import TimestampedColorRecorder
 
@@ -250,16 +261,16 @@ def calibrate_via_app(
     try:
         for _ in range(k):
             rec.start(mjpeg_url, resize_width=128)
-            time.sleep(0.35)  # pre-tap baseline frames
-            t0 = time.monotonic()
+            time.sleep(0.4)  # pre-flip baseline frames (the synchronous tap is slow)
             try:
                 driver.execute_script("mobile: tap", {"x": 0.5 * device_w, "y": 0.5 * device_h})
             except Exception:  # noqa: BLE001
                 rec.stop()
                 continue
-            time.sleep(_LUM_WINDOW_S)
+            t_ret = time.monotonic()  # call returned; the flip was captured ~Δ (negative) before this
+            time.sleep(0.3)           # ensure the flip frame is in the buffer
             frames, times = rec.stop()
-            est.add_sample(_lum_onset(frames, times, t0, threshold=lum_threshold))
+            est.add_sample(_lum_onset(frames, times, t_ret, threshold=lum_threshold))
             time.sleep(0.15)  # decorrelate consecutive flips
     finally:
         if return_to_trueskate:
@@ -323,14 +334,19 @@ if __name__ == "__main__":
         est.add_reset(frames, times, t0, centroid_fn=fake_centroid)
     print(f"[PASS] rolling: offset={est.offset_s:.3f}s jitter={est.jitter_s} n={est.n}")
 
-    # _lum_onset: black baseline, flips to white after the lag → onset at lag (quantized).
+    # _lum_onset is anchor-relative (signed), baseline from the FIRST frames, so
+    # the anchor may sit before OR after the flip.
     black = np.zeros((4, 4, 3), dtype=np.uint8)
     white = np.full((4, 4, 3), 255, dtype=np.uint8)
     lframes = [black if times[i] < onset_t else white for i in range(len(times))]
-    dl = _lum_onset(lframes, times, t0)
+    flip_t = next(times[i] for i in range(len(times)) if times[i] >= onset_t)
+    dl = _lum_onset(lframes, times, t0)                  # anchor before the flip → +lag
     assert dl is not None and lag <= dl < lag + frame_interval + 1e-9, (dl, lag)
+    ret_anchor = flip_t + 0.20                           # anchor after the flip (like a call-return)
+    dl2 = _lum_onset(lframes, times, ret_anchor)
+    assert dl2 is not None and dl2 < 0 and abs(dl2 - (flip_t - ret_anchor)) < 1e-9, dl2
     assert _lum_onset([black] * len(times), times, t0) is None  # no flip → None
-    print(f"[PASS] lum-onset (app flip): recovered Δ={dl:.3f}s; no-flip → None")
+    print(f"[PASS] lum-onset signed: +{dl:.3f}s before-anchor, {dl2:.3f}s after-anchor; no-flip → None")
 
     if args.device:
         import sys
