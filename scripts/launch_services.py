@@ -35,7 +35,6 @@ from trueskate_ai.rl.device_worker import (
     resolve_devices,
     select_devices,
 )
-from trueskate_ai.sim.touch_actions import skip_loading_screen
 from trueskate_ai.utils.notify import notify
 
 load_dotenv(_REPO_ROOT / ".env")
@@ -93,6 +92,25 @@ def _is_service_responding(url: str, timeout: int = 2) -> bool:
         return requests.get(url, timeout=timeout).status_code == 200
     except requests.exceptions.RequestException:
         return False
+
+
+def _drain_pipe(proc: subprocess.Popen) -> None:
+    """Discard a long-running child's stdout on a daemon thread.
+
+    Appium and iproxy run for the whole session with nobody reading their
+    output; once the ~64KB OS pipe buffer fills, the child blocks on write()
+    and the rig wedges silently. A read-and-discard reader keeps it flowing.
+    Mirrors WDA's reader thread, minus the line parsing. The thread exits when
+    the pipe closes on terminate()/kill(), so it needs no join.
+    """
+    def _drain():
+        try:
+            for _ in proc.stdout:
+                pass  # discard; we only care that the buffer never fills
+        except Exception:
+            pass  # pipe torn down mid-read during shutdown — best-effort
+
+    threading.Thread(target=_drain, daemon=True).start()
 
 
 # ---------------------------------------------------------------------------
@@ -185,15 +203,16 @@ def _start_appium(device: dict) -> bool:
         proc = subprocess.Popen(
             ["appium", "--port", str(port)],
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
         )
         time.sleep(3)
 
         if proc.poll() is not None:
-            stdout, stderr = proc.communicate()
+            # Crashed during startup — surface its output (stderr merged in).
+            output, _ = proc.communicate()
             print(f"[{name}] Appium failed to start")
-            print(f"  Error: {stderr if stderr else stdout}")
+            print(f"  Error: {output}")
             return False
 
         if not _is_service_responding(url, timeout=5):
@@ -201,6 +220,8 @@ def _start_appium(device: dict) -> bool:
             return False
 
         _processes[name]["appium"] = proc
+        # Drain stdout so a chatty Appium can't fill the pipe buffer and hang.
+        _drain_pipe(proc)
         print(f"[{name}] Appium running (PID: {proc.pid})")
         return True
 
@@ -334,10 +355,11 @@ def _start_iproxy(device: dict) -> bool:
         wda_proc = subprocess.Popen(
             ["iproxy", str(wda_local_port), str(wda_device_port), "-u", udid],
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
         )
         _processes[name]["iproxy_wda"] = wda_proc
+        _drain_pipe(wda_proc)  # undrained pipe wedges the tunnel
         time.sleep(0.5)
         print(f"[{name}] WDA iproxy running (PID: {wda_proc.pid})")
 
@@ -346,10 +368,11 @@ def _start_iproxy(device: dict) -> bool:
         mjpeg_proc = subprocess.Popen(
             ["iproxy", str(mjpeg_local_port), str(mjpeg_device_port), "-u", udid],
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
         )
         _processes[name]["iproxy_mjpeg"] = mjpeg_proc
+        _drain_pipe(mjpeg_proc)  # undrained pipe wedges the tunnel
         time.sleep(0.5)
         print(f"[{name}] MJPEG iproxy running (PID: {mjpeg_proc.pid})")
 
@@ -454,8 +477,6 @@ def _launch_trueskate_on_devices(devices: list[dict]) -> None:
     for device in devices:
         name = device["name"]
         try:
-            # print(f"[{name}] Opening True Skate...")
-            
             udid = os.environ.get(device["env_key"])
             if not udid:
                 print(f"[{name}] Skipping: {device['env_key']} not set in .env")
@@ -507,7 +528,6 @@ def _launch_trueskate_on_devices(devices: list[dict]) -> None:
                 # Reproduce that ordering to stabilize first-touch dispatch.
                 driver.execute_script('mobile: tap', {'x': 0.8454 * logical_w, 'y': 0.8393 * logical_h})
                 time.sleep(0.25)
-                # skip_loading_screen(driver, logical_w, logical_h, duration=1.0)
                 time.sleep(0.3)
             except Exception as e:
                 print(f"[{name}] Warning: Could not skip loading screen: {e}")
