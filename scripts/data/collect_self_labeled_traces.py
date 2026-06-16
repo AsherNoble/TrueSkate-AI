@@ -37,10 +37,9 @@ _REPO_ROOT = _HERE.parent.parent
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
+from trueskate_ai.data.gesture_sampling import sample_flick  # noqa: E402
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker  # noqa: E402
-from trueskate_ai.sim.gestures import (  # noqa: E402
-    X_BOUND_MAX, X_BOUND_MIN, Y_BOUND_MAX, Y_BOUND_MIN, scale_to_device,
-)
+from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import curved_drag, reset_position  # noqa: E402
 from trueskate_ai.vision.color_recorder import TimestampedColorRecorder  # noqa: E402
 
@@ -77,33 +76,9 @@ def switch_to_park(driver, dw, dh, park: str) -> None:
     time.sleep(3.0)  # park load
 
 
-# The board sits center-ish (localizer: ~(0.42-0.50, 0.54-0.55)). True Skate only
-# renders the orange finger-trace for flicks ON/NEAR the board — arbitrary
-# empty-space drags produce no trace and don't move the board (verified
-# 2026-06-14). So calibration gestures START on the board and FLICK outward,
-# mimicking real trick input, to maximise trace yield while still covering a
-# diverse spread of directions/speeds for Model 1 to generalise.
-_BOARD_X = (0.38, 0.62)
-_BOARD_Y = (0.50, 0.80)
-
-
-def _sample_gesture(rng: np.random.Generator) -> dict:
-    """A board-centered flick: start on the board, flick outward in a random dir."""
-    sx = float(rng.uniform(*_BOARD_X))
-    sy = float(rng.uniform(*_BOARD_Y))
-    ang = float(rng.uniform(0, 2 * np.pi))
-    mag = float(rng.uniform(0.18, 0.45))         # flick reach (normalised)
-    ex = float(np.clip(sx + mag * np.cos(ang), X_BOUND_MIN, X_BOUND_MAX))
-    ey = float(np.clip(sy + mag * np.sin(ang), Y_BOUND_MIN, Y_BOUND_MAX))
-    if int(rng.integers(0, 2)) == 0:
-        waypoints = [(sx, sy), (ex, ey)]                       # straight flick
-    else:
-        mx = float(np.clip((sx + ex) / 2 + rng.uniform(-0.08, 0.08), X_BOUND_MIN, X_BOUND_MAX))
-        my = float(np.clip((sy + ey) / 2 + rng.uniform(-0.08, 0.08), Y_BOUND_MIN, Y_BOUND_MAX))
-        waypoints = [(sx, sy), (mx, my), (ex, ey)]             # curved flick
-    duration = float(rng.uniform(0.12, 0.4))     # flicks are fast
-    easing_power = float(rng.uniform(0.6, 2.0))
-    return {"waypoints": waypoints, "duration": duration, "easing_power": easing_power}
+# The random board-centered flick sampler lives in
+# trueskate_ai.data.gesture_sampling (shared with the SLS collector) — imported
+# above as sample_flick.
 
 
 def main() -> None:
@@ -152,7 +127,7 @@ def main() -> None:
             except Exception as exc:  # noqa: BLE001
                 print(f"  reset failed: {exc}")
 
-        g = _sample_gesture(rng)
+        g = sample_flick(rng)
         pts_dev = [scale_to_device(x, y, dw, dh) for x, y in g["waypoints"]]
         easing = None if g["easing_power"] == 1.0 else (lambda t, p=g["easing_power"]: t ** p)
 

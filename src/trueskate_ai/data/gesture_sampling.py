@@ -1,0 +1,240 @@
+"""Random gesture samplers for trace/frame collection.
+
+Single source of truth for the gestures the trace collectors fire. Three modes,
+mixed by `sample_mixture`, give the sequence model a broad (frame -> known-gesture)
+corpus across visual domains:
+
+- "flick"  — a board-centered outward flick (the original self-label sampler);
+             trace-rich, board roughly stationary. Executed via curved_drag.
+- "nslot"  — a full random N-slot gesture vector within the CMA-ES bounds;
+             broadest timing/overlap coverage. Executed via execute_gesture_params
+             (pushes first, like a real trick fire).
+- "recipe" — a converged trick-library recipe, jittered within bounds; dense
+             coverage near the real-trick manifold. Packed to a vector and
+             executed via execute_gesture_params.
+
+The executed gesture is always the label — outcome (land / wall-bump / whiff) is
+irrelevant for this corpus, which is what lets it run in obstacle-heavy SLS parks.
+"""
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+
+from trueskate_ai.rl.cmaes.action_param import (
+    PARAMS_PER_SLOT,
+    SPIN_PARAMS,
+    build_param_bounds,
+    clamp_params,
+)
+from trueskate_ai.sim.gestures import (
+    X_BOUND_MAX,
+    X_BOUND_MIN,
+    Y_BOUND_MAX,
+    Y_BOUND_MIN,
+)
+
+# Board sits center-ish (localizer: ~(0.42-0.50, 0.54-0.55)). True Skate only
+# renders the orange finger-trace for flicks ON/NEAR the board, so flicks START
+# on the board and flick outward (verified 2026-06-14, see the standalone
+# collector's notes). Kept here as the single definition.
+_BOARD_X = (0.38, 0.62)
+_BOARD_Y = (0.50, 0.80)
+
+# Per-param jitter sigmas for "recipe" mode, in the vector's native units,
+# indexed within a slot as [x0,y0,x1,y1,x2,y2,duration,easing].
+_COORD_JITTER = 0.03
+_DUR_JITTER = 0.05
+_EASING_JITTER = 0.2
+_DELAY_JITTER = 0.05
+_SPIN_T_JITTER = 0.05
+
+
+@dataclass
+class GestureSample:
+    """A sampled gesture in one of three executable forms.
+
+    kind == "flick": use waypoints/duration/easing_power (curved_drag, no push).
+    kind in {"nslot","recipe"}: use params/num_gestures/use_spin (execute_gesture_params).
+    """
+    kind: str
+    waypoints: list[tuple[float, float]] | None = None
+    duration: float | None = None
+    easing_power: float | None = None
+    params: list[float] | None = None
+    num_gestures: int | None = None
+    use_spin: bool = False
+    source: str | None = None  # recipe filename for kind == "recipe"
+
+    def meta(self) -> dict:
+        """JSON-serialisable description for the sample's meta.json."""
+        d: dict = {"gesture_distribution": self.kind}
+        if self.kind == "flick":
+            d.update(
+                waypoints=self.waypoints,
+                duration=self.duration,
+                easing_power=self.easing_power,
+            )
+        else:
+            d.update(
+                params=self.params,
+                num_gestures=self.num_gestures,
+                use_spin=self.use_spin,
+            )
+            if self.source:
+                d["recipe_source"] = self.source
+        return d
+
+
+def sample_flick(rng: np.random.Generator) -> dict:
+    """A board-centered flick: start on the board, flick outward in a random dir.
+
+    Returns the legacy dict {waypoints, duration, easing_power} so the original
+    self-labeled-trace collector can import this verbatim.
+    """
+    sx = float(rng.uniform(*_BOARD_X))
+    sy = float(rng.uniform(*_BOARD_Y))
+    ang = float(rng.uniform(0, 2 * np.pi))
+    mag = float(rng.uniform(0.18, 0.45))  # flick reach (normalised)
+    ex = float(np.clip(sx + mag * np.cos(ang), X_BOUND_MIN, X_BOUND_MAX))
+    ey = float(np.clip(sy + mag * np.sin(ang), Y_BOUND_MIN, Y_BOUND_MAX))
+    if int(rng.integers(0, 2)) == 0:
+        waypoints = [(sx, sy), (ex, ey)]  # straight flick
+    else:
+        mx = float(np.clip((sx + ex) / 2 + rng.uniform(-0.08, 0.08), X_BOUND_MIN, X_BOUND_MAX))
+        my = float(np.clip((sy + ey) / 2 + rng.uniform(-0.08, 0.08), Y_BOUND_MIN, Y_BOUND_MAX))
+        waypoints = [(sx, sy), (mx, my), (ex, ey)]  # curved flick
+    duration = float(rng.uniform(0.12, 0.4))  # flicks are fast
+    easing_power = float(rng.uniform(0.6, 2.0))
+    return {"waypoints": waypoints, "duration": duration, "easing_power": easing_power}
+
+
+def sample_nslot(rng: np.random.Generator, num_gestures: int, use_spin: bool) -> GestureSample:
+    """A full random gesture vector, uniform within the CMA-ES bounds."""
+    bounds = build_param_bounds(num_gestures, use_spin)
+    raw = rng.uniform(bounds[:, 0], bounds[:, 1])
+    params = clamp_params(np.asarray(raw, dtype=np.float64), bounds)
+    return GestureSample(
+        kind="nslot",
+        params=[float(v) for v in params],
+        num_gestures=num_gestures,
+        use_spin=use_spin,
+    )
+
+
+def recipe_to_vector(recipe: dict) -> tuple[list[float], int, bool]:
+    """Pack a decoded trick recipe (gestures/delays/spin) into a param vector.
+
+    Inverse of action_param.unpack_gesture_params for the canonical 3-waypoint
+    slot layout. Raises ValueError if a gesture isn't 3 waypoints.
+    """
+    gestures = recipe["gestures"]
+    vec: list[float] = []
+    for g in gestures:
+        pts = g["points"]
+        if len(pts) != 3:
+            raise ValueError(f"recipe gesture has {len(pts)} waypoints, expected 3")
+        for px, py in pts:
+            vec.extend([float(px), float(py)])
+        vec.extend([float(g["duration"]), float(g["easing_power"])])
+    vec.extend(float(d) for d in recipe.get("delays", []))
+    spin = recipe.get("spin")
+    use_spin = bool(spin)
+    if use_spin:
+        vec.extend([
+            1.0 if spin.get("enabled") else -1.0,
+            float(spin["t_start"]),
+            float(spin["t_end"]),
+        ])
+    n = len(gestures)
+    expected = PARAMS_PER_SLOT * n + max(0, n - 1) + (SPIN_PARAMS if use_spin else 0)
+    if len(vec) != expected:
+        raise ValueError(f"packed length {len(vec)} != expected {expected} for N={n}")
+    return vec, n, use_spin
+
+
+def _load_recipe_vectors(recipe_paths: list[Path], mode: str = "median") -> list[tuple[list[float], int, bool, str]]:
+    """Load and pack recipes from trick-library JSONs; skip any that don't fit."""
+    out: list[tuple[list[float], int, bool, str]] = []
+    for p in recipe_paths:
+        try:
+            data = json.loads(Path(p).read_text())
+            recipe = data.get(f"{mode}_gestures") or data.get("best_gestures") or data.get("median_gestures")
+            if not recipe:
+                continue
+            vec, n, use_spin = recipe_to_vector(recipe)
+            out.append((vec, n, use_spin, Path(p).name))
+        except (ValueError, KeyError, json.JSONDecodeError, OSError):
+            continue  # incompatible/legacy library — skip, don't crash the run
+    return out
+
+
+def sample_recipe(
+    rng: np.random.Generator, recipe_vectors: list[tuple[list[float], int, bool, str]]
+) -> GestureSample:
+    """Jitter a random converged recipe within its bounds."""
+    vec, n, use_spin, name = recipe_vectors[int(rng.integers(0, len(recipe_vectors)))]
+    bounds = build_param_bounds(n, use_spin)
+    arr = np.asarray(vec, dtype=np.float64)
+    # Per-param jitter: coords/dur/easing within each slot, then delays, then spin t's.
+    sigma = np.empty_like(arr)
+    for slot in range(n):
+        base = slot * PARAMS_PER_SLOT
+        sigma[base:base + 6] = _COORD_JITTER          # 3 waypoints * 2 coords
+        sigma[base + 6] = _DUR_JITTER
+        sigma[base + 7] = _EASING_JITTER
+    delay_start = n * PARAMS_PER_SLOT
+    sigma[delay_start:delay_start + max(0, n - 1)] = _DELAY_JITTER
+    if use_spin:
+        sigma[-SPIN_PARAMS] = 0.0                       # keep the gate sign stable
+        sigma[-SPIN_PARAMS + 1:] = _SPIN_T_JITTER
+    jittered = arr + rng.normal(0.0, 1.0, size=arr.shape) * sigma
+    params = clamp_params(jittered, bounds)
+    return GestureSample(
+        kind="recipe",
+        params=[float(v) for v in params],
+        num_gestures=n,
+        use_spin=use_spin,
+        source=name,
+    )
+
+
+def sample_mixture(
+    rng: np.random.Generator,
+    *,
+    fracs: tuple[float, float, float] = (0.6, 0.25, 0.15),
+    num_gestures: int = 2,
+    use_spin: bool = False,
+    recipe_vectors: list[tuple[list[float], int, bool, str]] | None = None,
+) -> GestureSample:
+    """Draw one gesture from the flick / nslot / recipe mixture.
+
+    fracs = (flick, nslot, recipe). If no recipes are available the recipe share
+    is redistributed to nslot (so the mix never silently stalls).
+    """
+    f_flick, f_nslot, f_recipe = fracs
+    if not recipe_vectors:
+        f_nslot += f_recipe
+        f_recipe = 0.0
+    total = f_flick + f_nslot + f_recipe
+    r = float(rng.uniform(0, total))
+    if r < f_flick:
+        g = sample_flick(rng)
+        return GestureSample(
+            kind="flick",
+            waypoints=g["waypoints"],
+            duration=g["duration"],
+            easing_power=g["easing_power"],
+        )
+    if r < f_flick + f_nslot:
+        return sample_nslot(rng, num_gestures, use_spin)
+    return sample_recipe(rng, recipe_vectors)
+
+
+def load_recipe_vectors(recipe_dir: Path, mode: str = "median") -> list[tuple[list[float], int, bool, str]]:
+    """Pack all trick-library recipes under recipe_dir (top-level *.json only)."""
+    paths = sorted(Path(recipe_dir).glob("*.json"))
+    return _load_recipe_vectors(paths, mode=mode)
