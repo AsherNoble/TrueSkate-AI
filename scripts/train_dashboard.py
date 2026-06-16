@@ -7,19 +7,30 @@ land rate, and the latest landed tricks.
 
 Usage:
     python scripts/train_dashboard.py [--port 8400] [--host 0.0.0.0]
-        [--stream-host 100.83.159.74] [--log-root logs/overnight]
+        [--stream-host HOST] [--log-root logs/overnight]
+
+--stream-host defaults to $TRUESKATE_STREAM_HOST (from .env) or 127.0.0.1.
 
 Open http://127.0.0.1:8400/ (or the tailnet IP from your phone).
 """
 import argparse
 import functools
 import json
+import os
 import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(_REPO_ROOT / ".env")
+
+# Tailnet host the view_device streams are bound to. Override via .env /
+# TRUESKATE_STREAM_HOST; localhost fallback keeps the dashboard usable on the
+# host machine (view_device binds 127.0.0.1; tailscale serve proxies it).
+_DEFAULT_STREAM_HOST = os.environ.get("TRUESKATE_STREAM_HOST", "127.0.0.1")
 
 DEVICES = ["iPhone_XR", "iPhone_XR2"]
 STREAM_PORTS = {"iPhone_XR": 8300, "iPhone_XR2": 8301}
@@ -124,8 +135,8 @@ td{padding:1px 8px 1px 0;white-space:nowrap}
 @media (max-width:900px){.wrap{grid-template-columns:1fr 1fr;grid-template-rows:300px 1fr}.log{grid-column:1/3}}
 </style></head>
 <body><div class="wrap">
-<div class="cam"><iframe src="http://__STREAM_HOST__:8300/" allow="autoplay"></iframe><div class="lbl">XR1</div></div>
-<div class="cam"><iframe src="http://__STREAM_HOST__:8301/" allow="autoplay"></iframe><div class="lbl">XR2</div></div>
+<div class="cam"><iframe src="http://__STREAM_HOST__:__PORT_XR__/" allow="autoplay"></iframe><div class="lbl">XR1</div></div>
+<div class="cam"><iframe src="http://__STREAM_HOST__:__PORT_XR2__/" allow="autoplay"></iframe><div class="lbl">XR2</div></div>
 <div class="log" id="log">loading…</div>
 </div>
 <script>
@@ -165,7 +176,14 @@ class _Handler(BaseHTTPRequestHandler):
             ]).encode()
             ctype = "application/json"
         else:
-            body = _PAGE.replace("__STREAM_HOST__", self.stream_host).encode()
+            # STREAM_PORTS is the single source for the per-device stream ports;
+            # substitute them so the dict and the HTML can't silently drift.
+            body = (
+                _PAGE.replace("__STREAM_HOST__", self.stream_host)
+                .replace("__PORT_XR__", str(STREAM_PORTS["iPhone_XR"]))
+                .replace("__PORT_XR2__", str(STREAM_PORTS["iPhone_XR2"]))
+                .encode()
+            )
             ctype = "text/html; charset=utf-8"
         self.send_response(200)
         self.send_header("Content-Type", ctype)
@@ -182,8 +200,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Combined training dashboard.")
     parser.add_argument("--port", type=int, default=8400)
     parser.add_argument("--host", default="0.0.0.0")
-    parser.add_argument("--stream-host", default="100.83.159.74",
-                        help="Host the view_device streams are bound to")
+    parser.add_argument("--stream-host", default=_DEFAULT_STREAM_HOST,
+                        help="Host the view_device streams are bound to "
+                             "(env TRUESKATE_STREAM_HOST; default 127.0.0.1)")
     parser.add_argument("--log-root", type=Path, default=_REPO_ROOT / "logs" / "overnight")
     parser.add_argument("--log-delay", type=float, default=8.0,
                         help="Seconds to lag the log so it matches HLS stream latency (default 8)")

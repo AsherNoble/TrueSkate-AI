@@ -1,4 +1,8 @@
-"""Utility to verify and tune spin button logical coordinates on-device."""
+"""Utility to verify and tune spin button normalised coordinates on-device.
+
+Takes normalised [0, 1] coords (the spin_button_xy convention) and converts
+them to this device's logical pixels via scale_to_device before tapping.
+"""
 
 from __future__ import annotations
 
@@ -8,19 +12,24 @@ import time
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
-_REPO_ROOT = _HERE.parent
+_REPO_ROOT = _HERE.parents[1]  # scripts/inspect/ -> repo root
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
+from trueskate_ai.sim.gestures import scale_to_device
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Tap candidate spin-button coordinates to verify timing/placement."
     )
-    parser.add_argument("--x", type=float, default=25.0, help="Logical X coordinate.")
-    parser.add_argument("--y", type=float, default=362.0, help="Logical Y coordinate.")
+    # Normalised [0, 1] spin-button coords (matches DEVICES / spin_button_xy
+    # convention). Converted to logical pixels per-device at tap time.
+    parser.add_argument("--x", type=float, default=0.0604,
+                        help="Normalised [0,1] X (spin_button_xy convention).")
+    parser.add_argument("--y", type=float, default=0.4040,
+                        help="Normalised [0,1] Y (spin_button_xy convention).")
     parser.add_argument(
         "--device-index", type=int, default=0, help="Index into DeviceWorker DEVICES list."
     )
@@ -37,9 +46,13 @@ def main() -> None:
     worker.connect()
     try:
         worker.ensure_foreground()
+        # Convert normalised coords to this device's logical pixels, the same
+        # transform gesture execution uses, so calibration matches gameplay.
+        px, py = scale_to_device(args.x, args.y, worker.device_w, worker.device_h)
         for i in range(args.repeat):
-            worker.driver.execute_script("mobile: tap", {"x": args.x, "y": args.y})
-            print(f"Tap {i + 1}/{args.repeat} at ({args.x:.1f}, {args.y:.1f})")
+            worker.driver.execute_script("mobile: tap", {"x": px, "y": py})
+            print(f"Tap {i + 1}/{args.repeat} at norm ({args.x:.4f}, {args.y:.4f}) "
+                  f"-> logical ({px:.1f}, {py:.1f})")
             if i + 1 < args.repeat:
                 time.sleep(args.interval)
     finally:

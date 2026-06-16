@@ -132,10 +132,13 @@ class StatusTracker:
         """(overall evals/hr, recent evals/hr, recent lands/hr)."""
         elapsed_h = max(1e-9, (time.time() - self._start) / 3600.0)
         overall = self.total_evals / elapsed_h
-        if self._recent:
+        # N timestamped samples span N-1 intervals, so a per-hour rate divides
+        # event counts by (N-1), not N. Needs >=2 samples for a defined span.
+        # Matches scripts/train_dashboard.py's evals/hr calc.
+        if len(self._recent) >= 2:
             span_s = max(1.0, self._recent[-1][0] - self._recent[0][0])
             span_h = span_s / 3600.0
-            recent_evals = len(self._recent) / span_h
+            recent_evals = (len(self._recent) - 1) / span_h
             recent_lands = sum(1 for _, r in self._recent if r > 0) / span_h
         else:
             recent_evals = recent_lands = 0.0
