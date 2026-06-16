@@ -47,9 +47,11 @@ The difference between any two of these aspect ratios is **< 0.05%** — sub-pix
 ### Usable coordinate bounds
 
 ```
-X:         [0.0,         1.0        ]   full screen width
+X:         [X_BOUND_MIN, X_BOUND_MAX]   valid RL gesture area
 Y:         [Y_BOUND_MIN, Y_BOUND_MAX]   valid RL gesture area
 
+X_BOUND_MIN = 0.12   # left edge hosts in-game buttons (spin ~x=0.06, clip/replay below) — gestures grazing them open the replay-clip UI
+X_BOUND_MAX = 1.0    # right screen edge
 Y_BOUND_MIN = 0.12   # top of board play area (avoids game controls — reset pos, rewind, etc)
 Y_BOUND_MAX = 0.88   # bottom of board play area (avoids home indicator zone & game menu)
 ```
@@ -119,7 +121,7 @@ A gesture recipe pairs an ordered list of gestures with inter-gesture delays:
 
 ### `gestures`
 
-Ordered list of gesture objects. Most tricks use 2–3 gestures. Gestures are executed **sequentially** (not simultaneously) via the custom WDA endpoint.
+Ordered list of gesture objects. Most tricks use 2–3 gestures. Slots are scheduled by absolute start time (from the delay chain) and executed via `execute_n_slot_gestures()` (`sim/touch_actions.py`): short or negative inter-gesture gaps are bundled into a single overlapping W3C `perform()` payload; larger positive gaps fall back to separate, delay-compensated `perform()` calls.
 
 ### `delays`
 
@@ -130,7 +132,7 @@ delays: [0.12]         → 2-gesture recipe: wait 0.12 s after gesture 0 then fi
 delays: [0.12, 0.15]   → 3-gesture recipe: 0.12 s gap then 0.15 s gap
 ```
 
-Negative delays (inter-gesture overlap) are not currently supported via the WDA endpoint but are handled in the CMA-ES two-slot Appium path.
+Negative delays (inter-gesture overlap) are supported: `execute_n_slot_gestures()` reorders slots by absolute start time and bundles them into one combined W3C `perform()`, so a delay sweeping through the crossover point stays continuous.
 
 ### `spin` (optional)
 
@@ -145,9 +147,9 @@ Spin-family tricks (BIG SPIN, BIG FLIP, GAZELLE FLIP, …) need True Skate's rot
 ```
 
 - `enabled` — whether the rotate button fires this gesture (CMA-ES param: a gate thresholded at `>= 0`).
-- `t_start` / `t_end` — fractions `[0, 1]` of the schedule's total duration; the button is tapped **on** at `t_start·total` and **off** at `t_end·total` from a background thread synchronized with the gesture perform.
+- `t_start` / `t_end` — fractions `[0, 1]` of the schedule's total duration; the button is held DOWN by an extra finger from `t_start·total` to `t_end·total`, scheduled **inside the same single W3C `perform()`** as the drags (a HOLD, not a tap — an earlier concurrent-tap-from-a-background-thread design cancelled the in-flight gesture on the shared WDA session).
 
-The spin block is appended **after** the delays, so the vector length becomes `8N + (N−1) + 3 = 9N + 2` (vs `9N − 1` without spin). The two length classes are disjoint mod 9, so `infer_layout(len)` recovers `(N, use_spin)` from a vector alone — no separate flag is stored in logs. The rotate button's normalised position is per-device (`spin_button_xy` in `DEVICES`, default `(0.0604, 0.4040)`), left of the gesture area (`X_BOUND_MIN = 0.12`) so drags never hit it. Recipes without a `spin` key are pure curved drags (all legacy libraries).
+The spin block is appended **after** the delays, so the vector length becomes `8N + (N−1) + 3 = 9N + 2` (vs `9N − 1` without spin). The two length classes are disjoint mod 9, so `infer_layout(len)` recovers `(N, use_spin)` from a vector alone — no separate flag is stored in logs. The rotate button's normalised position is per-device (`spin_button_xy` in `DEVICES`, default `DEFAULT_SPIN_BUTTON_XY = (0.0604, 0.4040)` in `sim/gestures.py`), left of the gesture area (`X_BOUND_MIN = 0.12`) so drags never hit it. Recipes without a `spin` key are pure curved drags (all legacy libraries).
 
 ---
 
@@ -191,19 +193,19 @@ Libraries mined by `scripts/data/mine_all_tricks.py` also carry `num_gestures` (
    a perform() with trick gestures, or iOS interprets 3+ fingers as a system gesture).
 
 2. TRICK GESTURES
-   The gesture recipe fires after PUSH_PRE_DELAY total push time.
-   Each gesture is sent as an independent POST to:
-       /wda/perform_trick_gestures   (custom WDA endpoint, bypasses Appium)
-   WDA's synthesizeEventWithRecord blocks until the gesture completes, so the
-   Python-side requests.post returns exactly when the gesture finishes.
-   Inter-gesture delay is measured with time.perf_counter() and slept on the Python side.
+   The recipe fires after PUSH_PRE_DELAY total push time, via
+   execute_n_slot_gestures() (sim/touch_actions.py) — the SAME canonical path
+   the CMA-ES eval path uses. It schedules N slots by absolute start time and
+   picks sequential vs a single combined W3C perform() automatically: overlapping
+   (negative) delays, all-short delays, or an active spin force one bundled
+   perform(). Spin is a held finger inside that same payload.
 
 3. RESET
-   reset_position() taps the reset button at (device_w / 2, 50) to return
-   the board to its starting position.
+   reset_position() taps the reset button at (0.5·device_w, 0.0558·device_h)
+   to return the board to its starting position.
 ```
 
-Push constants are defined in `src/trueskate_ai/sim/gestures.py`. The execution loop is in `src/trueskate_ai/sim/gesture_recipe.py::execute_gesture_recipe()` (library replay) and `src/trueskate_ai/rl/cmaes/action_param.py::execute_gesture_params()` (CMA-ES eval path).
+Push constants are defined in `src/trueskate_ai/sim/gestures.py`. Both replay (`src/trueskate_ai/sim/gesture_recipe.py::execute_gesture_recipe`) and the CMA-ES eval path (`src/trueskate_ai/rl/cmaes/action_param.py::execute_gesture_params`) call the **same** canonical pair: `execute_static_push` (`sim/gestures.py`) then `execute_n_slot_gestures` (`sim/touch_actions.py`). The replay path additionally resets the board afterward.
 
 ---
 
@@ -213,7 +215,8 @@ Push constants are defined in `src/trueskate_ai/sim/gestures.py`. The execution 
 |---|---|
 | `scale_to_device()` | `src/trueskate_ai/sim/gestures.py` |
 | `execute_static_push()`, `PUSH_*` constants | `src/trueskate_ai/sim/gestures.py` |
-| `execute_gesture_recipe()` | `src/trueskate_ai/sim/gesture_recipe.py` |
+| `execute_gesture_recipe()` — delegates to push + `execute_n_slot_gestures` | `src/trueskate_ai/sim/gesture_recipe.py` |
+| `execute_n_slot_gestures()` (N-slot scheduler: sequential / combined / spin HOLD) | `src/trueskate_ai/sim/touch_actions.py` |
 | `build_curved_drag()`, `make_touch_pointer()`, `perform_pointer_actions()` | `src/trueskate_ai/sim/touch_actions.py` |
 | CMA-ES gesture parameter bounds, decode, execute | `src/trueskate_ai/rl/cmaes/action_param.py` |
 | PPO gesture parameter decode, execute | `src/trueskate_ai/rl/ppo/trick_conditioned_action.py` |
