@@ -14,10 +14,16 @@ then it advances + resets the timer. The command->frame pipeline latency (the
 "clapperboard") is measured once at startup via the dedicated Clapperboard app
 (vision/clapperboard).
 
-Prereqs: WDA + Appium up for the device (python scripts/launch_services.py --personal).
+Prereqs: WDA + Appium up for the device (python scripts/launch_services.py --devices iPhone_XR).
+
+Device selection mirrors the CMA-ES launcher's shared flags (--devices / --personal
+/ --all-devices); no hardcoded default, and the personal iPhone 11 is reachable only
+via an explicit --personal. Unlike CMA-ES (multi-device pool), this collector runs ONE
+phone per process, so exactly one device must resolve — run a second process for a
+second phone.
 
 Usage:
-    python scripts/data/collect_sls_traces.py --device iPhone_11 --per-park-hours 4
+    python scripts/data/collect_sls_traces.py --devices iPhone_XR --per-park-hours 8
 """
 from __future__ import annotations
 
@@ -45,7 +51,9 @@ if str(_REPO_ROOT / "src") not in sys.path:
 
 from trueskate_ai.data.gesture_sampling import load_recipe_vectors, sample_mixture  # noqa: E402
 from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E402
-from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker  # noqa: E402
+from trueskate_ai.rl.device_worker import (  # noqa: E402
+    DeviceWorker, add_device_selection_args, resolve_devices,
+)
 from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import curved_drag, reset_position  # noqa: E402
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
@@ -175,7 +183,6 @@ def _save_sample(sample_dir: Path, frames: list, times: list[float], t_gesture_e
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Multi-park random-gesture SLS trace collector.")
-    ap.add_argument("--device", default="iPhone_11", help="Device name from DEVICES")
     ap.add_argument("--out-dir", type=Path, default=_REPO_ROOT / "data" / "sls_traces")
     ap.add_argument("--per-park-hours", type=float, default=4.0,
                     help="Collect this long in a park before prompting to switch (keeps "
@@ -203,11 +210,26 @@ def main() -> None:
                     help="Single-park mode: collect in one park, never prompt/advance.")
     ap.add_argument("--confirm-poll-s", type=float, default=10.0,
                     help="How often to check ntfy for your 'switched' tap after a prompt.")
+    add_device_selection_args(ap)
     args = ap.parse_args()
 
-    cfg = next((d for d in DEVICES if d["name"].lower() == args.device.lower()), None)
-    if cfg is None:
-        raise SystemExit(f"Unknown device {args.device}. Valid: {[d['name'] for d in DEVICES]}")
+    # Same shared resolver as the CMA-ES launcher. This collector runs ONE phone per
+    # process, so require exactly one device — the no-flag default (whole collection
+    # roster) and --all-devices both resolve to >1 and are rejected, and the personal
+    # iPhone 11 is reachable only via an explicit --personal. Prevents an unattended
+    # job (human or agent) from silently grabbing the wrong phone.
+    try:
+        devices = resolve_devices(devices_arg=args.devices, personal=args.personal,
+                                  all_devices=args.all_devices)
+    except ValueError as exc:
+        raise SystemExit(str(exc))
+    if len(devices) != 1:
+        raise SystemExit(
+            f"collect_sls_traces runs ONE phone per process; selection resolved to "
+            f"{len(devices)} devices {[d['name'] for d in devices]}. Pass a single "
+            f"--devices NAME (e.g. --devices iPhone_XR), or --personal for the iPhone 11."
+        )
+    cfg = devices[0]
 
     # Park cycle, rotated to the requested start.
     cycle = list(DEFAULT_SLS_PARKS)
@@ -223,7 +245,8 @@ def main() -> None:
     caffeinate = None if args.no_caffeinate else _start_caffeinate()
 
     worker = DeviceWorker(cfg)
-    print(f"Connecting to {cfg['name']} (needs WDA+Appium up; run launch_services.py --personal)...")
+    print(f"Connecting to {cfg['name']} (needs WDA+Appium up; "
+          f"run launch_services.py --devices {cfg['name']})...")
     worker.connect()
     dw, dh, mjpeg_url, device = worker.device_w, worker.device_h, worker.mjpeg_url, cfg["name"]
 
