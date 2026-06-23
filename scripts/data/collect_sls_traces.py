@@ -57,9 +57,7 @@ from trueskate_ai.rl.device_worker import (  # noqa: E402
 from trueskate_ai.sim.gestures import execute_static_push, scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import curved_drag, reset_position  # noqa: E402
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
-from trueskate_ai.vision.clapperboard import (  # noqa: E402
-    DEFAULT_CLAPPERBOARD_BUNDLE, RollingCaptureOffset, calibrate_via_app,
-)
+from trueskate_ai.vision.clapperboard import RollingCaptureOffset  # noqa: E402
 from trueskate_ai.vision.dal_capture import DalFrameRecorder, resolve_device_name  # noqa: E402
 
 # The 11 installed SLS arenas, in cycle order. Switching is MANUAL (you load the
@@ -200,16 +198,12 @@ def main() -> None:
     ap.add_argument("--resize-width", type=int, default=512)
     ap.add_argument("--max-frames-per-sample", type=int, default=24)
     ap.add_argument("--recipe-dir", type=Path, default=_REPO_ROOT / "trick_libraries")
-    ap.add_argument("--clapperboard-taps", type=int, default=12,
-                    help="Clapperboard app taps to seed the capture offset at startup.")
-    ap.add_argument("--clapperboard-bundle", default=DEFAULT_CLAPPERBOARD_BUNDLE,
-                    help="Bundle id of the installed Clapperboard app.")
     ap.add_argument("--no-clapperboard", action="store_true",
-                    help="Skip capture-offset calibration (offset stamped null).")
+                    help="Explicitly accept a null capture offset (silences the no-offset warning).")
     ap.add_argument("--capture-offset-s", type=float, default=None,
-                    help="Stamp this capture offset Δ directly (skip on-device calibration). "
-                         "Use the cross-pipeline Δ_DAL from experiments/cross_pipeline_delta.py "
-                         "while the Clapperboard is invisible to DAL (renders black).")
+                    help="Stamp this capture offset Δ_DAL directly. Measure it separately via "
+                         "experiments/cross_pipeline_delta.py — the in-process Clapperboard "
+                         "calibration is disabled under DAL (its app-switch wedges the stream).")
     ap.add_argument("--no-caffeinate", action="store_true")
     ap.add_argument("--no-rotate", action="store_true",
                     help="Single-park mode: collect in one park, never prompt/advance.")
@@ -318,33 +312,22 @@ def main() -> None:
             **offset.summary(),
         }, indent=2))
 
-    # --- capture-pipeline offset Δ. NOTE: the Clapperboard app renders BLACK under
-    # AVFoundation/DAL (verified 2026-06-22), so the in-loop DAL clapperboard below
-    # yields nothing until the app is fixed. Until then pass --capture-offset-s with
-    # the cross-pipeline Δ_DAL (experiments/cross_pipeline_delta.py).
+    # --- capture-pipeline offset Δ. The in-process Clapperboard calibration is
+    # DELIBERATELY NOT run here: it would activate_app the Clapperboard, and
+    # app-switching is the CMIO-freeze trigger that persistently wedges the DAL
+    # stream we just opened (verified 2026-06-23 — see vision/dal_capture + journal).
+    # So under DAL capture, Δ MUST come from --capture-offset-s; measure it separately
+    # via experiments/cross_pipeline_delta.py (gap-first, so DAL stays live).
     if args.capture_offset_s is not None:
         offset.add_sample(args.capture_offset_s)
-        print(f"Using provided capture offset Δ_DAL={args.capture_offset_s}s "
-              f"(cross-pipeline; DAL clapperboard is blind to the app).")
+        print(f"Using provided capture offset Δ_DAL={args.capture_offset_s}s.")
     elif args.no_clapperboard:
-        print("Clapperboard disabled (--no-clapperboard) — offset stamped null.")
+        print("Capture offset stamped NULL (--no-clapperboard).")
     else:
-        print(f"Calibrating capture offset via {args.clapperboard_bundle} "
-              f"({args.clapperboard_taps} taps)...")
-        try:
-            # recorder=rec → the offset is timed in the SAME DAL pipeline we ship
-            # (its Δ differs from WDA MJPEG's; calibrate on what we actually use).
-            offset = calibrate_via_app(worker.driver, None, dw, dh, recorder=rec,
-                                       app_bundle=args.clapperboard_bundle,
-                                       k=args.clapperboard_taps)
-            worker.ensure_foreground()  # ensure True Skate is back up before collecting
-        except Exception as exc:  # noqa: BLE001
-            print(f"  calibration failed ({exc}); continuing with null offset. "
-                  f"Is the Clapperboard app installed? (bundle {args.clapperboard_bundle})")
-        print(f"  capture offset: {offset.summary()}")
-        if offset.offset_s is None:
-            print("  WARNING: DAL clapperboard saw no flip (the app renders BLACK under "
-                  "AVFoundation). Pass --capture-offset-s with the cross-pipeline Δ_DAL.")
+        print("WARNING: no --capture-offset-s — capture offset stamped NULL. In-process "
+              "Clapperboard calibration is DISABLED under DAL (its app-switch would wedge "
+              "the stream). Measure Δ_DAL via experiments/cross_pipeline_delta.py and pass "
+              "--capture-offset-s (or --no-clapperboard to silence this).")
     notify(f"[{device}] SLS collection starting in {cycle[0]} "
            f"(offset={offset.offset_s}s). Cycle of {len(cycle)} parks, {args.per_park_hours}h each.",
            title="TrueSkate SLS collect", tags=["camera"])

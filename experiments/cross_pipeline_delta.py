@@ -51,25 +51,26 @@ def _to_gray(frame) -> np.ndarray:
 
 
 def motion_onset(frames: list, times: list[float], *, baseline_n: int = 3,
-                 k_sigma: float = 5.0, abs_min: float = 2.5) -> float | None:
-    """Time of the first frame whose mean-abs-diff from the first (settled) frame
-    exceeds the baseline noise floor — i.e. the reset motion onset."""
+                 change_delta: float = 15.0, frac_thresh: float = 0.004) -> float | None:
+    """Time of the first frame where a CLUSTER of pixels has changed from the first
+    (settled) frame — the reset motion onset. Uses the fraction of pixels moving by
+    > change_delta gray levels (robust to a small but real moving board; a whole-frame
+    mean-abs-diff is too coarse and misses it — verified vs MJPEG in tmp/gap_diag)."""
     if len(frames) < baseline_n + 2:
         return None
     grays = [_to_gray(f) for f in frames]
     base = grays[0]
-    diffs = [float(np.mean(np.abs(g - base))) for g in grays]
-    seed = diffs[1:baseline_n + 1]
-    thresh = max(abs_min, float(np.mean(seed) + k_sigma * (np.std(seed) + 1e-6)))
-    for t, d in zip(times[1:], diffs[1:]):
-        if d > thresh:
+    fracs = [float(np.mean(np.abs(g - base) > change_delta)) for g in grays]
+    thresh = max(frac_thresh, max(fracs[1:baseline_n + 1]) * 2.0)  # above settled baseline
+    for t, fr in zip(times[1:], fracs[1:]):
+        if fr > thresh:
             return t
     return None
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Cross-pipeline Δ_DAL = Δ_MJPEG + (DAL−MJPEG gap).")
-    ap.add_argument("--device", default="iPhone_XR")
+    ap.add_argument("--device", default="iPhone_XR2")
     ap.add_argument("--resets", type=int, default=10, help="Board resets to measure the gap G")
     ap.add_argument("--k", type=int, default=12, help="Clapperboard taps for Δ_MJPEG")
     ap.add_argument("--resize-width", type=int, default=512)
@@ -95,18 +96,18 @@ def main() -> None:
         rec_dal.close(); worker.disconnect()
         raise SystemExit(f"No DAL frames (err {rec_dal.last_error!r}). Wedged/locked?")
     rec_mjpeg = TimestampedColorRecorder()
+    gaps: list[float] = []
+    delta_mjpeg = mjpeg_mad = None
+    mjpeg_n = 0
 
     try:
-        # --- Δ_MJPEG: clapperboard over the MJPEG pipeline (app visible there) ---
-        print(f"Measuring Δ_MJPEG via clapperboard ({args.k} taps)...")
-        est = calibrate_via_app(worker.driver, mjpeg_url, dw, dh, recorder=None, k=args.k)
-        worker.ensure_foreground()
-        delta_mjpeg = est.offset_s
-        print(f"  Δ_MJPEG = {delta_mjpeg} (mad {est.jitter_s}, n {est.n})")
+        # ORDER MATTERS: measure the DAL-dependent gap FIRST (DAL live), THEN the
+        # Clapperboard. The Clapperboard activate_app is the CMIO-freeze trigger that
+        # wedges DAL — fine once we're done reading it, but reversing this order froze
+        # DAL and the gap missed every reset (2026-06-22).
 
-        # --- G: DAL−MJPEG capture-latency gap from a shared reset motion ---
+        # --- G: DAL−MJPEG capture-latency gap from a shared reset motion (DAL live) ---
         print(f"Measuring DAL−MJPEG gap over {args.resets} resets...")
-        gaps: list[float] = []
         for r in range(args.resets):
             try:
                 execute_static_push(worker.driver, device_w=dw, device_h=dh)
@@ -123,13 +124,20 @@ def main() -> None:
             t_dal = motion_onset(dal_frames, dal_times)
             t_mj = motion_onset(mj_frames, mj_times)
             if t_dal is not None and t_mj is not None:
-                gap = t_dal - t_mj
-                gaps.append(gap)
-                print(f"  reset {r}: gap={gap:+.4f}s (dal_frames={len(dal_frames)} "
+                gaps.append(t_dal - t_mj)
+                print(f"  reset {r}: gap={gaps[-1]:+.4f}s (dal_frames={len(dal_frames)} "
                       f"mjpeg_frames={len(mj_frames)})")
             else:
                 print(f"  reset {r}: onset missed (dal={t_dal} mjpeg={t_mj}) — skipped")
             time.sleep(0.2)
+        rec_dal.close()  # done with DAL — release BEFORE the Clapperboard app-switch
+
+        # --- Δ_MJPEG: Clapperboard over MJPEG (app-switch OK; MJPEG survives it) ---
+        print(f"Measuring Δ_MJPEG via clapperboard ({args.k} taps)...")
+        est = calibrate_via_app(worker.driver, mjpeg_url, dw, dh, recorder=None, k=args.k)
+        worker.ensure_foreground()
+        delta_mjpeg, mjpeg_mad, mjpeg_n = est.offset_s, est.jitter_s, est.n
+        print(f"  Δ_MJPEG = {delta_mjpeg} (mad {mjpeg_mad}, n {mjpeg_n})")
     finally:
         rec_dal.close()
         try:
@@ -144,7 +152,7 @@ def main() -> None:
 
     result = {
         "device": cfg["name"], "avf_name": avf_name,
-        "delta_mjpeg_s": delta_mjpeg, "delta_mjpeg_mad_s": est.jitter_s, "delta_mjpeg_n": est.n,
+        "delta_mjpeg_s": delta_mjpeg, "delta_mjpeg_mad_s": mjpeg_mad, "delta_mjpeg_n": mjpeg_n,
         "gap_dal_minus_mjpeg_s": round(g, 4) if g is not None else None,
         "gap_mad_s": round(g_mad, 4) if g_mad is not None else None,
         "gap_n": len(gaps),
