@@ -54,13 +54,13 @@ from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E
 from trueskate_ai.rl.device_worker import (  # noqa: E402
     DeviceWorker, add_device_selection_args, resolve_devices,
 )
-from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
+from trueskate_ai.sim.gestures import execute_static_push, scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import curved_drag, reset_position  # noqa: E402
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
 from trueskate_ai.vision.clapperboard import (  # noqa: E402
     DEFAULT_CLAPPERBOARD_BUNDLE, RollingCaptureOffset, calibrate_via_app,
 )
-from trueskate_ai.vision.color_recorder import TimestampedColorRecorder  # noqa: E402
+from trueskate_ai.vision.dal_capture import DalFrameRecorder, resolve_device_name  # noqa: E402
 
 # The 11 installed SLS arenas, in cycle order. Switching is MANUAL (you load the
 # park), so these are labels for prompting + tagging — no brittle menu nav.
@@ -103,23 +103,24 @@ def _start_caffeinate():
         return None
 
 
-def _capture(rec: TimestampedColorRecorder, mjpeg_url: str, pre_s: float, hold_s: float,
-             resize_width: int, action=None):
-    """Record a window: warm up pre_s, mark t0, run `action` (if any), hold hold_s.
+def _capture(rec: DalFrameRecorder, pre_s: float, hold_s: float, action=None):
+    """Mark t0, run `action`, hold, then slice the persistent buffer.
+
+    The DAL recorder streams continuously, so we do NOT start/stop it per sample
+    (that would re-open the exclusive device thousands of times and wedge it — see
+    vision/dal_capture). Instead we mark the gesture call window and `window()` the
+    rolling buffer, including a `pre_s` lead-in that's already buffered for free.
 
     Returns (frames, times, t0, t_end): t0 is the monotonic time `action` started,
     t_end the monotonic time the synchronous `action` returned.
     """
-    rec.start(mjpeg_url, resize_width=resize_width)
-    if pre_s > 0:
-        time.sleep(pre_s)
     t0 = time.monotonic()
     if action is not None:
         action()
     t_end = time.monotonic()  # synchronous action (gesture/reset) has fully executed
     if hold_s > 0:
         time.sleep(hold_s)
-    frames, times = rec.stop()
+    frames, times = rec.window(t0 - pre_s, time.monotonic())
     return frames, times, t0, t_end
 
 
@@ -205,6 +206,10 @@ def main() -> None:
                     help="Bundle id of the installed Clapperboard app.")
     ap.add_argument("--no-clapperboard", action="store_true",
                     help="Skip capture-offset calibration (offset stamped null).")
+    ap.add_argument("--capture-offset-s", type=float, default=None,
+                    help="Stamp this capture offset Δ directly (skip on-device calibration). "
+                         "Use the cross-pipeline Δ_DAL from experiments/cross_pipeline_delta.py "
+                         "while the Clapperboard is invisible to DAL (renders black).")
     ap.add_argument("--no-caffeinate", action="store_true")
     ap.add_argument("--no-rotate", action="store_true",
                     help="Single-park mode: collect in one park, never prompt/advance.")
@@ -248,7 +253,46 @@ def main() -> None:
     print(f"Connecting to {cfg['name']} (needs WDA+Appium up; "
           f"run launch_services.py --devices {cfg['name']})...")
     worker.connect()
-    dw, dh, mjpeg_url, device = worker.device_w, worker.device_h, worker.mjpeg_url, cfg["name"]
+    dw, dh, device = worker.device_w, worker.device_h, cfg["name"]
+
+    # Capture via the AVFoundation/DAL screen-mirror (steady 30fps), NOT WDA MJPEG
+    # (~10-15fps variable). The recorder streams continuously and we window-slice it
+    # per sample — see vision/dal_capture for why per-sample open/close wedges it.
+    if not worker.avf_name:
+        raise SystemExit(
+            f"{device} has no avf_name in DEVICES — can't DAL-capture. Run "
+            f"'python scripts/view_device.py --list' and set it (by NAME, not index)."
+        )
+    avf_name = resolve_device_name(worker.avf_name) or worker.avf_name
+    print(f"Opening DAL capture '{avf_name}' at 30fps (resize_width={args.resize_width})...")
+    rec = DalFrameRecorder(fps=30, resize_width=args.resize_width)
+    rec.open(avf_name)
+    if not rec.wait_for_frames(timeout_s=10.0):
+        rec.close()
+        raise SystemExit(
+            f"DAL capture for '{avf_name}' delivered no frames (last ffmpeg err: "
+            f"{rec.last_error!r}). The CMIO session is likely wedged — open QuickTime "
+            f"> New Movie Recording, pick the device once, quit QuickTime, then retry "
+            f"(or replug the phone). The phone must also be unlocked, screen on."
+        )
+    print(f"  DAL frames flowing (got {rec.frame_count} during warmup).")
+    # Frames arriving is NOT enough: a wedged CMIO session delivers frozen duplicate
+    # frames that pass wait_for_frames. Force a guaranteed visible change (push+reset)
+    # and confirm the decoded content actually moved before starting a run.
+    try:
+        execute_static_push(worker.driver, device_w=dw, device_h=dh)
+        time.sleep(0.6)
+        reset_position(worker.driver, dw, dh)
+        time.sleep(1.2)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  (liveness nudge failed: {exc})")
+    if (rec.content_stale_age or 99.0) > 2.5:
+        rec.close()
+        raise SystemExit(
+            "DAL stream is FROZEN — frames arrive but content never changes (CMIO wedge). "
+            "Open QuickTime > New Movie Recording, select the device once, quit QuickTime "
+            "(or replug the phone), then retry. Phone must be unlocked, screen on.")
+    print(f"  DAL live (content_stale_age={rec.content_stale_age:.2f}s).")
 
     session = time.strftime("%Y%m%d_%H%M%S")
     out_root = args.out_dir / f"{device}_{session}"
@@ -260,7 +304,6 @@ def main() -> None:
     print(f"Loaded {len(recipe_vectors)} packable recipes for the perturbed-recipe share.")
     fracs = (args.flick_frac, args.nslot_frac, args.recipe_frac)
 
-    rec = TimestampedColorRecorder()
     offset = RollingCaptureOffset()
 
     def write_session_meta(saved: int, park_idx: int) -> None:
@@ -270,20 +313,28 @@ def main() -> None:
             "fracs": {"flick": fracs[0], "nslot": fracs[1], "recipe": fracs[2]},
             "num_gestures": args.num_gestures, "use_spin": args.use_spin,
             "samples_saved": saved, "current_park_index": park_idx,
+            "capture": {"method": "avfoundation_dal", "fps": 30,
+                        "resize_width": args.resize_width, "avf_name": avf_name},
             **offset.summary(),
         }, indent=2))
 
-    # --- clapperboard: measure the capture-pipeline offset via the dedicated app.
-    # Δ is ~constant per session, so once at startup is enough (the app-switch is
-    # cheap at this cadence). True Skate animates its own visuals, so the offset
-    # cannot be timed in-game — see vision/clapperboard.py.
-    if args.no_clapperboard:
+    # --- capture-pipeline offset Δ. NOTE: the Clapperboard app renders BLACK under
+    # AVFoundation/DAL (verified 2026-06-22), so the in-loop DAL clapperboard below
+    # yields nothing until the app is fixed. Until then pass --capture-offset-s with
+    # the cross-pipeline Δ_DAL (experiments/cross_pipeline_delta.py).
+    if args.capture_offset_s is not None:
+        offset.add_sample(args.capture_offset_s)
+        print(f"Using provided capture offset Δ_DAL={args.capture_offset_s}s "
+              f"(cross-pipeline; DAL clapperboard is blind to the app).")
+    elif args.no_clapperboard:
         print("Clapperboard disabled (--no-clapperboard) — offset stamped null.")
     else:
         print(f"Calibrating capture offset via {args.clapperboard_bundle} "
               f"({args.clapperboard_taps} taps)...")
         try:
-            offset = calibrate_via_app(worker.driver, mjpeg_url, dw, dh,
+            # recorder=rec → the offset is timed in the SAME DAL pipeline we ship
+            # (its Δ differs from WDA MJPEG's; calibrate on what we actually use).
+            offset = calibrate_via_app(worker.driver, None, dw, dh, recorder=rec,
                                        app_bundle=args.clapperboard_bundle,
                                        k=args.clapperboard_taps)
             worker.ensure_foreground()  # ensure True Skate is back up before collecting
@@ -291,6 +342,9 @@ def main() -> None:
             print(f"  calibration failed ({exc}); continuing with null offset. "
                   f"Is the Clapperboard app installed? (bundle {args.clapperboard_bundle})")
         print(f"  capture offset: {offset.summary()}")
+        if offset.offset_s is None:
+            print("  WARNING: DAL clapperboard saw no flip (the app renders BLACK under "
+                  "AVFoundation). Pass --capture-offset-s with the cross-pipeline Δ_DAL.")
     notify(f"[{device}] SLS collection starting in {cycle[0]} "
            f"(offset={offset.offset_s}s). Cycle of {len(cycle)} parks, {args.per_park_hours}h each.",
            title="TrueSkate SLS collect", tags=["camera"])
@@ -310,6 +364,33 @@ def main() -> None:
                 print("[collect_sls] global --max-hours reached.")
                 break
 
+            # --- DAL health. TWO failure modes:
+            #   (1) hard stall — no frames at all (ffmpeg died / device gone).
+            #   (2) FROZEN — a CMIO wedge keeps delivering BITWISE-IDENTICAL duplicate
+            #       frames, so last_frame_age stays ~0 and is_alive stays True; only
+            #       content_stale_age catches it. The collector resets+gestures every
+            #       iteration, so >8s without any content change means frozen.
+            # A restart re-opens ffmpeg but CANNOT clear a CMIO wedge (needs a QuickTime
+            # re-activate / replug), so after restarting we FORCE a screen change and
+            # confirm the content actually moved — else STOP, never save frozen frames
+            # labelled with gestures.
+            stale = rec.content_stale_age or 0.0
+            if not rec.is_alive() or (rec.last_frame_age or 0.0) > 3.0 or stale > 8.0:
+                why = ("dead" if not rec.is_alive()
+                       else f"frozen {stale:.0f}s" if stale > 8.0
+                       else f"no-frames {rec.last_frame_age:.0f}s")
+                print(f"[collect_sls] DAL {why} (err={rec.last_error!r}) — restarting capture...")
+                ok = rec.restart()
+                if ok:
+                    reset_position(worker.driver, dw, dh)  # force a visible change
+                    time.sleep(1.2)
+                if not ok or (rec.content_stale_age or 99.0) > 2.5:
+                    notify(f"[{device}] DAL capture wedged/frozen, can't self-heal — stopping. "
+                           f"QuickTime re-activate / replug needed.",
+                           title="TrueSkate SLS collect", priority="high", tags=["warning"])
+                    print("[collect_sls] DAL did not return LIVE frames after restart — stopping.")
+                    break
+
             # --- one collection iteration: reset the board, then the gesture sample ---
             reset_position(worker.driver, dw, dh)
             time.sleep(0.3)  # board settle
@@ -318,7 +399,7 @@ def main() -> None:
                                use_spin=args.use_spin, recipe_vectors=recipe_vectors)
             try:
                 g_frames, g_times, _, t_gesture_end = _capture(
-                    rec, mjpeg_url, 0.0, 0.6, args.resize_width,  # tail captures post-trick motion
+                    rec, 0.2, 0.6,  # 0.2s buffered lead-in + 0.6s tail for post-trick motion
                     action=lambda: _execute(worker, g))
             except Exception as exc:  # noqa: BLE001
                 print(f"  gesture {i} failed: {exc}")
@@ -361,6 +442,7 @@ def main() -> None:
                 print(f"[collect_sls] timer fired — prompted to switch to {nxt}")
     finally:
         write_session_meta(saved, park_idx)
+        rec.close()  # release the EXCLUSIVE DAL device — a leaked ffmpeg wedges the next open
         worker.disconnect()
         if caffeinate and caffeinate.poll() is None:
             caffeinate.terminate()

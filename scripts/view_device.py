@@ -59,7 +59,6 @@ Caveats:
 import argparse
 import functools
 import http.server
-import os
 import shutil
 import signal
 import socketserver
@@ -81,45 +80,22 @@ STALL_TIMEOUT = 12.0   # seconds without a fresh segment ⇒ encoder hung
 START_GRACE = 15.0     # seconds to allow first segment after each (re)launch
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-_SHIM_SRC = _REPO_ROOT / "tools" / "enable_dal.c"
-_SHIM_DYLIB = _REPO_ROOT / "tools" / "libenable_dal.dylib"
+if str(_REPO_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-
-def _require_ffmpeg() -> None:
-    if shutil.which("ffmpeg") is None:
-        sys.exit("ffmpeg not found. Install with: brew install ffmpeg")
-
-
-def _shim_env() -> dict:
-    """Environment for ffmpeg with the CoreMediaIO DAL shim injected.
-
-    Builds tools/libenable_dal.dylib from tools/enable_dal.c on first run (or
-    when the source is newer). Needs clang, which these Macs have via Xcode.
-    """
-    if not _SHIM_DYLIB.exists() or _SHIM_DYLIB.stat().st_mtime < _SHIM_SRC.stat().st_mtime:
-        print(f"Building DAL shim → {_SHIM_DYLIB}")
-        subprocess.run(
-            ["clang", "-x", "c", "-dynamiclib", str(_SHIM_SRC),
-             "-framework", "CoreMediaIO", "-framework", "CoreFoundation",
-             "-o", str(_SHIM_DYLIB)],
-            check=True,
-        )
-    env = os.environ.copy()
-    env["DYLD_INSERT_LIBRARIES"] = str(_SHIM_DYLIB)
-    return env
+# The DAL shim env + device listing are owned by the package (one source of
+# truth, shared with the SLS collector's DalFrameRecorder).
+from trueskate_ai.vision.dal_capture import (  # noqa: E402
+    list_dal_devices, require_ffmpeg, shim_env,
+)
 
 
 def list_devices() -> None:
     """Print AVFoundation capture devices. The iPhone shows up by its display
     name (e.g. 'Asher’s iPhone') once plugged in, unlocked, and trusted."""
-    _require_ffmpeg()
-    # ffmpeg prints the device table to stderr and exits non-zero by design.
-    proc = subprocess.run(
-        ["ffmpeg", "-hide_banner", "-f", "avfoundation", "-list_devices", "true", "-i", ""],
-        capture_output=True, text=True, env=_shim_env(),
-    )
-    print(proc.stderr.rstrip())
-    print("\nPass the iPhone's [index] or exact name to --device, e.g.:")
+    print(list_dal_devices())
+    print("\nPass the iPhone's exact NAME to --device (indices reorder between "
+          "calls), e.g.:")
     print("    python scripts/view_device.py --device \"Asher’s iPhone\"   # curly ’, not '")
 
 
@@ -202,7 +178,7 @@ def build_ffmpeg_cmd(device: str, out_dir: Path, framerate: int, bitrate: str,
 
 
 def _spawn_encoder(cmd: list[str]) -> subprocess.Popen:
-    return subprocess.Popen(cmd, env=_shim_env())
+    return subprocess.Popen(cmd, env=shim_env())
 
 
 def _terminate_encoder(proc: subprocess.Popen | None) -> None:
@@ -330,7 +306,7 @@ def main() -> None:
     if not args.device:
         parser.error("--device is required (use --list to discover it).")
 
-    _require_ffmpeg()
+    require_ffmpeg()
     tmp = Path(tempfile.mkdtemp(prefix="trueskate_view_"))
     (tmp / "index.html").write_text(_index_html())
     try:

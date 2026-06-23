@@ -52,7 +52,9 @@ _MIN_DISPLACEMENT = 0.08  # the reset must move the board home by at least this 
                           # (skips no-op / in-place-flick resets that can't be timed)
 
 # Primary (app-based) calibration constants.
-DEFAULT_CLAPPERBOARD_BUNDLE = "com.embodiedstates.clapperboard"
+# Re-signed under Asher's own team (free signing requires a team-unique bundle id),
+# so the rig's installed id is com.ashernoble.*, not the original com.embodiedstates.*.
+DEFAULT_CLAPPERBOARD_BUNDLE = "com.ashernoble.clapperboard"
 _TRUESKATE_BUNDLE = "com.trueaxis.skate"
 _LUM_THRESHOLD = 25.0      # whole-frame mean-luminance jump that counts as the flip
 _LUM_BASELINE_FRAMES = 3   # pre-flip frames used to fix the dark/light baseline
@@ -232,10 +234,12 @@ def _lum_onset(
 
 def calibrate_via_app(
     driver,
-    mjpeg_url: str,
+    capture_source: str | None,
     device_w: float,
     device_h: float,
     *,
+    recorder=None,
+    action_fn=None,
     app_bundle: str = DEFAULT_CLAPPERBOARD_BUNDLE,
     trueskate_bundle: str = _TRUESKATE_BUNDLE,
     k: int = 10,
@@ -251,25 +255,46 @@ def calibrate_via_app(
     so this runs once at startup (and optionally periodically). Requires the
     Clapperboard app installed (bundle ``app_bundle``). Imports are local so the
     module stays importable without Appium.
+
+    ``recorder`` — an ALREADY-OPEN persistent capture (e.g. a
+    ``vision.dal_capture.DalFrameRecorder``) whose rolling buffer is sliced per tap
+    via ``window(t_pre, now)``; the same Δ method applies (the DAL stream mirrors
+    whatever's foregrounded, so it still sees the flip). Pass ``recorder=None`` to use
+    a transient per-tap ``TimestampedColorRecorder`` reading ``capture_source`` (the
+    WDA MJPEG url) — the legacy path. The flip is timed in whichever pipeline records
+    it, so Δ is correct for the capture you actually ship.
+
+    ``action_fn`` — the on-screen action whose CALL-RETURN anchors Δ; defaults to a
+    center ``mobile: tap``. Inject a drag (finger-up on the button) to measure Δ for a
+    gesture's call-return vs a tap's — see experiments/clapperboard_drag_vs_tap.py.
     """
     from trueskate_ai.vision.color_recorder import TimestampedColorRecorder
 
-    rec = TimestampedColorRecorder()
+    do_action = action_fn or (
+        lambda: driver.execute_script("mobile: tap", {"x": 0.5 * device_w, "y": 0.5 * device_h}))
+    persistent = recorder is not None
+    rec = recorder if persistent else TimestampedColorRecorder()
     est = RollingCaptureOffset(window=max(k, 30))
     driver.activate_app(app_bundle)
     time.sleep(1.2)  # app launch + first-frame settle
     try:
         for _ in range(k):
-            rec.start(mjpeg_url, resize_width=128)
+            t_pre = time.monotonic()
+            if not persistent:
+                rec.start(capture_source, resize_width=128)
             time.sleep(0.4)  # pre-flip baseline frames (the synchronous tap is slow)
             try:
-                driver.execute_script("mobile: tap", {"x": 0.5 * device_w, "y": 0.5 * device_h})
+                do_action()
             except Exception:  # noqa: BLE001
-                rec.stop()
+                if not persistent:
+                    rec.stop()
                 continue
             t_ret = time.monotonic()  # call returned; the flip was captured ~Δ (negative) before this
             time.sleep(0.3)           # ensure the flip frame is in the buffer
-            frames, times = rec.stop()
+            if persistent:
+                frames, times = rec.window(t_pre, time.monotonic())
+            else:
+                frames, times = rec.stop()
             est.add_sample(_lum_onset(frames, times, t_ret, threshold=lum_threshold))
             time.sleep(0.15)  # decorrelate consecutive flips
     finally:
