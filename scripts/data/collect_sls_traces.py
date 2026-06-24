@@ -244,14 +244,17 @@ def main() -> None:
     caffeinate = None if args.no_caffeinate else _start_caffeinate()
 
     worker = DeviceWorker(cfg)
-    print(f"Connecting to {cfg['name']} (needs WDA+Appium up; "
-          f"run launch_services.py --devices {cfg['name']})...")
-    worker.connect()
-    dw, dh, device = worker.device_w, worker.device_h, cfg["name"]
+    device = cfg["name"]
 
-    # Capture via the AVFoundation/DAL screen-mirror (steady 30fps), NOT WDA MJPEG
-    # (~10-15fps variable). The recorder streams continuously and we window-slice it
-    # per sample — see vision/dal_capture for why per-sample open/close wedges it.
+    # Open DAL capture FIRST — BEFORE the slow worker.connect() (~20s of Appium/WDA
+    # setup). Capture is via the AVFoundation/DAL screen-mirror (steady 30fps), NOT WDA
+    # MJPEG (~10-15fps variable); the recorder streams continuously and we window-slice
+    # it per sample — see vision/dal_capture for why per-sample open/close wedges it.
+    # CRITICAL ORDERING: the CMIO session you activate (QuickTime > New Movie Recording)
+    # goes dormant within ~1-2 min, and connect() alone eats most of that window, so
+    # opening DAL *after* connect always finds the session already wedged (I/O error).
+    # avf_name is config-only (DeviceWorker.avf_name property), so it's available now,
+    # pre-connect. The driver-dependent liveness check stays after connect (needs dims).
     if not worker.avf_name:
         raise SystemExit(
             f"{device} has no avf_name in DEVICES — can't DAL-capture. Run "
@@ -270,6 +273,13 @@ def main() -> None:
             f"(or replug the phone). The phone must also be unlocked, screen on."
         )
     print(f"  DAL frames flowing (got {rec.frame_count} during warmup).")
+
+    # Now the slow part: Appium/WDA connect (~20s). DAL keeps streaming in background.
+    print(f"Connecting to {cfg['name']} (needs WDA+Appium up; "
+          f"run launch_services.py --devices {cfg['name']})...")
+    worker.connect()
+    dw, dh = worker.device_w, worker.device_h
+
     # Frames arriving is NOT enough: a wedged CMIO session delivers frozen duplicate
     # frames that pass wait_for_frames. Force a guaranteed visible change (push+reset)
     # and confirm the decoded content actually moved before starting a run.
