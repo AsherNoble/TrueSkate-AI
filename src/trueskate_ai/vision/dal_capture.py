@@ -87,14 +87,23 @@ def list_dal_devices() -> str:
 
 
 def resolve_device_name(substr: str) -> str | None:
-    """Find the full AVFoundation VIDEO device name containing ``substr``.
+    """Find the AVFoundation VIDEO device for the iOS **screen mirror** ``substr``.
 
-    ffmpeg matches a device by a leading substring (e.g. ``"Test XR_1"`` selects
-    ``"Test XR_1 Camera"``), so the returned name — or ``substr`` itself — is a
-    valid ``-i`` target. Returns None if no video device matches.
+    A connected iPhone exposes TWO video devices: the bare screen-mirror device
+    (e.g. ``"Test XR_1"``) and a Continuity Camera (``"Test XR_1 Camera"``) — and
+    the Camera is usually listed FIRST. A naive "first name containing substr"
+    therefore returns the Camera feed (the lens, not the screen), silently
+    capturing the wrong thing. So:
+
+      1. exact case-insensitive match wins (the bare screen-mirror name), else
+      2. the first containing match that is NOT a ``… Camera`` continuity device, else
+      3. the first containing match (last-resort fallback).
+
+    Returns None if no video device matches.
     """
     listing = list_dal_devices()
     in_video = False
+    matches: list[str] = []
     for line in listing.splitlines():
         if "AVFoundation video devices:" in line:
             in_video = True
@@ -106,8 +115,16 @@ def resolve_device_name(substr: str) -> str | None:
             continue
         m = re.search(r"\]\s*\[\d+\]\s*(.+?)\s*$", line)
         if m and substr.lower() in m.group(1).lower():
-            return m.group(1)
-    return None
+            matches.append(m.group(1))
+    if not matches:
+        return None
+    for name in matches:  # 1: exact screen-mirror name
+        if name.lower() == substr.lower():
+            return name
+    for name in matches:  # 2: skip the Continuity Camera variant
+        if not name.lower().endswith(" camera"):
+            return name
+    return matches[0]      # 3: fallback
 
 
 class DalFrameRecorder:
@@ -157,8 +174,10 @@ class DalFrameRecorder:
     def open(self, device_name: str) -> None:
         """Spawn the persistent ffmpeg stream and start buffering frames.
 
-        ``device_name`` is matched by AVFoundation as a leading substring, so a
-        config alias like ``"Test XR_1"`` resolves to ``"Test XR_1 Camera"``.
+        Pass the EXACT screen-mirror device name (e.g. ``"Test XR_1"``); ffmpeg
+        matches by leading substring, so a bare name would otherwise open the
+        ``"Test XR_1 Camera"`` Continuity lens, not the screen. Use
+        ``resolve_device_name`` to get the right name.
         """
         require_ffmpeg()
         if self._proc is not None:
