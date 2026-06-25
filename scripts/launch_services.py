@@ -670,6 +670,12 @@ def main():
         "iproxy_wda": "WDA iproxy",
         "iproxy_mjpeg": "MJPEG iproxy",
     }
+    # Health-aware WDA check: a wedged-but-ALIVE xcodebuild (sleeping, 0% CPU, NOT
+    # serving its port) passes proc.poll() forever, so liveness alone let a dead WDA
+    # sit unrecovered for 12.5h. Probe the actual port too; only act after sustained
+    # unresponsiveness (~30s) so a normal busy stall — e.g. a collector retrieving a
+    # ~77 MB segment over WDA — isn't mistaken for a wedge.
+    _WDA_HEALTH_FAIL_LIMIT = 15  # consecutive 2s ticks of /status failure => wedged
     try:
         while True:
             time.sleep(2)
@@ -687,11 +693,23 @@ def main():
                         died = label
                         break
 
+                # Wedged-but-alive WDA: proc lives but the port stops answering.
+                if died is None:
+                    wda_url = f"http://localhost:{device['wda_port']}/status"
+                    if _is_service_responding(wda_url, timeout=3):
+                        procs["wda_health_fails"] = 0
+                    else:
+                        procs["wda_health_fails"] = procs.get("wda_health_fails", 0) + 1
+                        if procs["wda_health_fails"] >= _WDA_HEALTH_FAIL_LIMIT:
+                            died = "WebDriverAgent (wedged: alive but not serving)"
+                            procs["wda_health_fails"] = 0
+
                 if died:
                     msg = f"{name}: {died} died — restarting device services."
-                    print(f"\n[{name}] {died} process died unexpectedly")
+                    print(f"\n[{name}] {died} — restarting")
                     notify(msg, title="TrueSkate rig", priority="high", tags=["warning"])
                     _restart_device(device)
+                    procs["wda_health_fails"] = 0  # fresh stack; don't carry stale fails
 
     except KeyboardInterrupt:
         _signal_handler(None, None)
