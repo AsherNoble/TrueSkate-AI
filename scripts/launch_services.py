@@ -61,7 +61,7 @@ def _resolve_wda_project_path() -> Path:
 
 
 WDA_PROJECT_PATH = _resolve_wda_project_path()
-WDA_STARTUP_TIMEOUT = 60
+WDA_STARTUP_TIMEOUT = 240  # first WDA build compiles ~2-3 min
 
 # Per-device restart backoff (seconds), indexed by consecutive-failure count.
 # The last value repeats. Backoff decays back to 0 after a device stays healthy
@@ -202,12 +202,16 @@ def _start_appium(device: dict) -> bool:
 
     try:
         proc = subprocess.Popen(
-            ["appium", "--port", str(port)],
+            ["appium", "--port", str(port), "--allow-insecure", "xcuitest:xctest_screen_record"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
         )
-        time.sleep(3)
+        # Cold start on this rig can take ~10s; poll instead of a fixed 3s wait.
+        for _ in range(30):
+            if proc.poll() is None and _is_service_responding(url, timeout=2):
+                break
+            time.sleep(1)
 
         if proc.poll() is not None:
             # Crashed during startup — surface its output (stderr merged in).
