@@ -116,6 +116,25 @@ def _device_free_gb(udid: str) -> float | None:
     return None
 
 
+def _recover_session(worker: DeviceWorker) -> bool:
+    """True if the worker has a live WDA session, reconnecting once if it dropped.
+
+    Called after a recording error: a transient XCTDaemon hiccup (e.g. Code=7 "Failed
+    to write file") usually leaves the session itself fine — the cheap probe succeeds
+    and we just skip the bad segment — but a dropped WDA session needs one reconnect
+    before the next segment can record.
+    """
+    try:
+        worker.driver.get_window_size()
+        return True
+    except Exception:  # noqa: BLE001 — session likely dropped; try one reconnect
+        pass
+    try:
+        return bool(worker._reconnect())
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Segment-based XCTest SLS trace collector.")
     ap.add_argument("--out-dir", type=Path, default=_REPO_ROOT / "data" / "sls_xctest")
@@ -223,15 +242,38 @@ def main() -> None:
                 break
 
             cur_park = cycle[park_idx]
-            rec.start()
+            try:
+                rec.start()
+            except Exception as exc:  # noqa: BLE001
+                # XCTest recording can transiently fail (XCTDaemon "Failed to write
+                # file" Code=7 — a wedged recording daemon) or the WDA session may have
+                # dropped. Abort any partial recording (orphaned on-device recordings
+                # pile up and re-wedge the daemon), recover the session, and SKIP this
+                # segment — never crash the whole run over one bad segment.
+                print(f"[seg {segment_idx}] recording start failed: {exc!r} — abort + skip")
+                try:
+                    rec.abort()
+                except Exception:  # noqa: BLE001
+                    pass
+                if not _recover_session(worker):
+                    print("[collect_xctest] session unrecoverable — exit for supervisor restart.")
+                    break
+                time.sleep(2.0)
+                continue
             seg_deadline = time.monotonic() + args.segment_min * 60.0
             events: list[dict] = []
             park_switched = False
+            seg_aborted = False
 
             while not _STOP and time.monotonic() < seg_deadline:
                 if global_deadline and time.monotonic() > global_deadline:
                     break
-                reset_position(worker.driver, dw, dh)
+                try:
+                    reset_position(worker.driver, dw, dh)
+                except Exception as exc:  # noqa: BLE001 — WDA session dropped mid-segment
+                    print(f"[seg {segment_idx}] reset failed mid-segment: {exc!r} — close segment")
+                    seg_aborted = True
+                    break
                 time.sleep(0.3)  # board settle into the reset state
                 g = sample_mixture(rng, fracs=fracs, num_gestures=args.num_gestures,
                                    use_spin=args.use_spin, recipe_vectors=recipe_vectors)
@@ -281,8 +323,33 @@ def main() -> None:
                     print(f"[collect_xctest] timer fired — prompted to switch to {nxt}")
 
             # --- close + save the segment (partial segments on STOP/switch are still saved) ---
+            if seg_aborted:
+                # session dropped mid-segment: discard the partial recording, recover, skip.
+                try:
+                    rec.abort()
+                except Exception:  # noqa: BLE001
+                    pass
+                if not _recover_session(worker):
+                    print("[collect_xctest] session unrecoverable — exit for supervisor restart.")
+                    break
+                continue
             mov_path = out_root / f"segment_{segment_idx:05d}.mov"
-            res = rec.stop_and_save(mov_path)
+            try:
+                res = rec.stop_and_save(mov_path)
+            except Exception as exc:  # noqa: BLE001
+                # stop/retrieve failed (oversized payload → RemoteDisconnected, or an
+                # XCTDaemon write error): the segment is lost, but abort + recover and
+                # keep collecting instead of crashing (which would orphan the recording).
+                print(f"[seg {segment_idx}] stop_and_save failed: {exc!r} — segment lost, continue")
+                try:
+                    rec.abort()
+                except Exception:  # noqa: BLE001
+                    pass
+                if not _recover_session(worker):
+                    print("[collect_xctest] session unrecoverable — exit for supervisor restart.")
+                    break
+                segment_idx += 1  # keep segment numbering monotonic even on a lost segment
+                continue
             manifest_path = out_root / f"segment_{segment_idx:05d}.json"
             manifest = {
                 "device": device, "device_logical_w": dw, "device_logical_h": dh,
