@@ -196,20 +196,40 @@ def _check_device_connected(device: dict) -> bool:
     return False
 
 
+def _kill_port(port: int) -> None:
+    """Kill whatever TCP-listens on ``port`` — a wedged Appium/iproxy holding it."""
+    try:
+        r = subprocess.run(["lsof", "-ti", f":{port}"], capture_output=True, text=True)
+        for pid in r.stdout.split():
+            subprocess.run(["kill", "-9", pid], capture_output=True)
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _start_appium(device: dict) -> bool:
     name = device["name"]
     port = device["appium_port"]
     url = f"http://localhost:{port}/status"
 
-    if _is_service_responding(url):
-        print(f"[{name}] Appium already running on port {port}")
-        _processes[name]["appium_was_running"] = True
-        return True
+    # Tolerate a momentarily BUSY Appium (one serving a live collector): retry the
+    # health check a few times before concluding it's dead, so we never kill a working
+    # server out from under a collector.
+    for _ in range(5):
+        if _is_service_responding(url, timeout=4):
+            print(f"[{name}] Appium already running on port {port}")
+            _processes[name]["appium_was_running"] = True
+            return True
+        if not _is_port_in_use(port):
+            break  # port free → start a fresh Appium below
+        time.sleep(2)
 
     if _is_port_in_use(port):
-        print(f"[{name}] Port {port} in use but Appium not responding")
-        print(f"  Kill the process: lsof -ti :{port} | xargs kill")
-        return False
+        # Held but never answered across retries → a WEDGED Appium. Don't abort (that
+        # strands this device AND used to block the other device's WDA) — kill the
+        # holder and start fresh.
+        print(f"[{name}] Port {port} wedged (held, not responding) — killing the holder")
+        _kill_port(port)
+        time.sleep(2)
 
     print(f"[{name}] Starting Appium on port {port}...")
 
@@ -600,37 +620,28 @@ def main():
             "iproxy_mjpeg": None,
         }
 
-    # Check all devices connected
+    # Bring up each device INDEPENDENTLY: one device's wedged Appium/WDA must NOT abort
+    # the launcher and strand the other (the bug that kept XR2's WDA down while XR1's
+    # Appium flaked). Skip a device that won't come up — the per-device monitor below
+    # restarts whatever it's tracking. Only give up entirely if NO device comes up.
+    ready = []
     for device in selected_devices:
+        name = device["name"]
         if not _check_device_connected(device):
-            print(f"\nStartup failed: {device['name']} not connected")
-            sys.exit(1)
+            print(f"[{name}] not connected — skipping\n")
+            continue
+        if _start_appium(device) and _start_iproxy(device) and _start_wda(device):
+            ready.append(device)
+            print(f"[{name}] services up\n")
+        else:
+            print(f"[{name}] startup incomplete — skipping this device\n")
+            _cleanup_device(name)
 
-    print()
-
-    # Start Appium for each device
-    for device in selected_devices:
-        if not _start_appium(device):
-            print(f"\nStartup failed: Appium for {device['name']}")
-            _cleanup()
-            sys.exit(1)
-        print()
-
-    # Start iproxy tunnels first so WDA detection works properly
-    for device in selected_devices:
-        if not _start_iproxy(device):
-            print(f"\nStartup failed: iproxy for {device['name']}")
-            _cleanup()
-            sys.exit(1)
-        print()
-
-    # Start WDA for each device (after iproxy so it can detect already-running WDA)
-    for device in selected_devices:
-        if not _start_wda(device):
-            print(f"\nStartup failed: WDA for {device['name']}")
-            _cleanup()
-            sys.exit(1)
-        print()
+    if not ready:
+        print("\nStartup failed: no device came up")
+        _cleanup()
+        sys.exit(1)
+    selected_devices = ready
 
     print("=" * 60)
     print("Environment ready!")
