@@ -165,6 +165,19 @@ def _cleanup():
 # Per-device launchers
 # ---------------------------------------------------------------------------
 
+def _coredevice_available(udid: str) -> bool:
+    """CoreDevice (xcrun devicectl) view of the device — the transport xcodebuild/WDA
+    actually use. libimobiledevice's ``idevice_id`` flakes empty intermittently on
+    this rig (esp. after a reboot/usbmux hiccup), which would falsely fail the gate and
+    stop WDA from ever starting; CoreDevice stays reliable, so we trust it as a fallback."""
+    try:
+        r = subprocess.run(["xcrun", "devicectl", "list", "devices"],
+                           capture_output=True, text=True, timeout=30)
+    except Exception:  # noqa: BLE001
+        return False
+    return any(udid in line and "available" in line.lower() for line in r.stdout.splitlines())
+
+
 def _check_device_connected(device: dict) -> bool:
     name = device["name"]
     udid = os.environ.get(device["env_key"])
@@ -175,7 +188,7 @@ def _check_device_connected(device: dict) -> bool:
     print(f"[{name}] Checking device connection...")
     result = subprocess.run(["idevice_id", "-l"], capture_output=True, text=True)
 
-    if udid in result.stdout:
+    if udid in result.stdout or _coredevice_available(udid):
         print(f"[{name}] Device found")
         return True
 
@@ -404,7 +417,7 @@ def _wait_for_device(device: dict, timeout: int = _DEVICE_USB_WAIT_S) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
         result = subprocess.run(["idevice_id", "-l"], capture_output=True, text=True)
-        if udid in result.stdout:
+        if udid in result.stdout or _coredevice_available(udid):
             return True
         print(f"[{name}] Waiting for device to reappear on USB...")
         time.sleep(3)
