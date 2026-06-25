@@ -119,8 +119,12 @@ def _device_free_gb(udid: str) -> float | None:
 def main() -> None:
     ap = argparse.ArgumentParser(description="Segment-based XCTest SLS trace collector.")
     ap.add_argument("--out-dir", type=Path, default=_REPO_ROOT / "data" / "sls_xctest")
-    ap.add_argument("--segment-min", type=float, default=5.0,
-                    help="Max minutes per .mov segment (bounds device storage + retrieval size).")
+    ap.add_argument("--segment-min", type=float, default=1.0,
+                    help="Max minutes per .mov segment. KEEP SHORT: stop_and_save retrieves the "
+                         "whole .mov as ONE base64 HTTP response over Appium/WDA, and gameplay "
+                         "motion runs ~76 MB/min at 30fps full-res. Retrieval is reliable to "
+                         "~114 MB (~90s); a 5-min segment (~380 MB) aborts the connection "
+                         "(RemoteDisconnected) and the segment is lost. 1 min (~77 MB) is safe.")
     ap.add_argument("--per-park-hours", type=float, default=4.0)
     ap.add_argument("--start-park", default=None)
     ap.add_argument("--max-hours", type=float, default=None)

@@ -24,9 +24,14 @@ Requirements:
   * iOS 18+ real device: the appium-xcuitest driver auto-deletes the on-device
     recording attachment on stop, so device free space stays high across segments.
 
-Segment sizing: ~5 Mbps (~37 MB/min) at full res. Bound segments (``--segment-min``
-in the collector) so the on-device attachment + host file stay small and read/write
-stays fast.
+Segment sizing — CRITICAL: ``stop_and_save`` retrieves the ENTIRE segment as one
+base64 blob inside a single Appium/WDA HTTP response (see ``stop_and_save``). Gameplay
+motion runs ~76 MB/min at 30fps full-res (measured 2026-06-26, not the ~37 the old
+note assumed). Retrieval is reliable to ~114 MB / ~90s; beyond that the WDA test-runner
+chokes serializing the payload and aborts the connection (``RemoteDisconnected`` →
+the collector crashes and the segment is lost). Keep ``--segment-min`` at 1 (~77 MB).
+A 5-min segment (~380 MB) fails every time — that bug produced 121 crash-restarts and
+zero saved segments before it was found.
 """
 from __future__ import annotations
 
@@ -111,7 +116,11 @@ class XCTestScreenRecorder:
         return self._start_info
 
     def stop_and_save(self, mov_path: str | Path) -> RecordingResult:
-        """Stop, retrieve the segment .mov to ``mov_path`` on the host, return anchors."""
+        """Stop, retrieve the segment .mov to ``mov_path`` on the host, return anchors.
+
+        The whole .mov comes back base64 in ONE HTTP response (``res["payload"]``). This
+        caps usable segment length: >~114 MB aborts the connection. See module docstring.
+        """
         if not self._recording:
             raise RuntimeError("XCTestScreenRecorder is not recording.")
         res = self.driver.execute_script(_STOP_CMD, {})
