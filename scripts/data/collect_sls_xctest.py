@@ -200,6 +200,9 @@ def main() -> None:
                     help="Screenshot-check the gameplay state every N gestures (1 = every gesture).")
     ap.add_argument("--menu-recover-after", type=int, default=2,
                     help="Consecutive non-gameplay detections before relaunching True Skate.")
+    ap.add_argument("--max-start-fails", type=int, default=8,
+                    help="Consecutive recording-start failures before exiting for a clean "
+                         "supervisor restart (avoids hammering/re-wedging the XCTest daemon).")
     add_device_selection_args(ap)
     args = ap.parse_args()
 
@@ -257,6 +260,7 @@ def main() -> None:
     segment_idx = 0
     total_gestures = 0
     total_menu_skips = 0
+    start_fail_streak = 0
     global_deadline = (time.monotonic() + args.max_hours * 3600.0) if args.max_hours else None
 
     def _device_aligner_spawn(manifest_path: Path):
@@ -283,16 +287,30 @@ def main() -> None:
                 # dropped. Abort any partial recording (orphaned on-device recordings
                 # pile up and re-wedge the daemon), recover the session, and SKIP this
                 # segment — never crash the whole run over one bad segment.
-                print(f"[seg {segment_idx}] recording start failed: {exc!r} — abort + skip")
+                start_fail_streak += 1
+                print(f"[seg {segment_idx}] recording start failed (streak {start_fail_streak}): "
+                      f"{exc!r} — abort + skip")
                 try:
                     rec.abort()
                 except Exception:  # noqa: BLE001
                     pass
+                # Don't hammer rec.start(): a tight retry loop on a transient failure
+                # RE-WEDGES the XCTest recording daemon — observed ~14k retries keeping it
+                # stuck even across a reboot. After a few fails, EXIT so the supervisor
+                # restarts us after a pause, giving the daemon a real break instead.
+                if start_fail_streak >= args.max_start_fails:
+                    notify(f"[{device}] {start_fail_streak} consecutive recording-start failures "
+                           f"— exiting for a clean restart (likely a wedged XCTest daemon; "
+                           f"a device reboot may be needed).",
+                           title="TrueSkate SLS collect", priority="high", tags=["warning"])
+                    print(f"[collect_xctest] {start_fail_streak} start-fails — exit for supervisor restart.")
+                    break
                 if not _recover_session(worker):
                     print("[collect_xctest] session unrecoverable — exit for supervisor restart.")
                     break
-                time.sleep(2.0)
+                time.sleep(3.0)
                 continue
+            start_fail_streak = 0  # rec.start() succeeded
             seg_deadline = time.monotonic() + args.segment_min * 60.0
             events: list[dict] = []
             park_switched = False
