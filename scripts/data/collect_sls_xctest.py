@@ -47,11 +47,12 @@ if str(_REPO_ROOT / "src") not in sys.path:
 from trueskate_ai.data.gesture_sampling import load_recipe_vectors, sample_mixture  # noqa: E402
 from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E402
 from trueskate_ai.rl.device_worker import (  # noqa: E402
-    DeviceWorker, add_device_selection_args, resolve_devices,
+    BUNDLE_ID, DeviceWorker, add_device_selection_args, resolve_devices,
 )
 from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
-from trueskate_ai.sim.touch_actions import curved_drag, reset_position  # noqa: E402
+from trueskate_ai.sim.touch_actions import curved_drag, reset_position, skip_loading_screen  # noqa: E402
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
+from trueskate_ai.vision.gameplay_filter import is_menu_frame  # noqa: E402
 from trueskate_ai.vision.xctest_capture import XCTestScreenRecorder  # noqa: E402
 
 # Same 11 SLS arenas + cycle order as the DAL collector (labels for prompting/tagging).
@@ -135,6 +136,29 @@ def _recover_session(worker: DeviceWorker) -> bool:
         return False
 
 
+def _exit_replay(worker: DeviceWorker) -> None:
+    """Force True Skate back to live skatepark gameplay from a replay/menu state.
+
+    Terminate + relaunch is coordinate-free and reliable (the replay BACK button isn't
+    in a stable enough spot to tap blindly, and a wrong tap could open Share). The
+    XCTest recording keeps running across this — the loading frames simply aren't logged
+    (the guard skips non-gameplay), so they never become samples.
+    """
+    d = worker.driver
+    try:
+        d.terminate_app(BUNDLE_ID)
+    except Exception:  # noqa: BLE001
+        pass
+    time.sleep(1.0)
+    try:
+        d.activate_app(BUNDLE_ID)
+        time.sleep(1.0)
+        skip_loading_screen(d, worker.device_w, worker.device_h)
+        time.sleep(1.0)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[exit_replay] relaunch error: {exc!r}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Segment-based XCTest SLS trace collector.")
     ap.add_argument("--out-dir", type=Path, default=_REPO_ROOT / "data" / "sls_xctest")
@@ -168,6 +192,14 @@ def main() -> None:
     ap.add_argument("--no-caffeinate", action="store_true")
     ap.add_argument("--no-rotate", action="store_true")
     ap.add_argument("--confirm-poll-s", type=float, default=10.0)
+    ap.add_argument("--no-gameplay-guard", action="store_true",
+                    help="Disable the in-loop replay/menu guard (by default, gestures fired "
+                         "while True Skate is in replay/menu are NOT logged, and the app is "
+                         "relaunched to return to live gameplay).")
+    ap.add_argument("--gameplay-check-every", type=int, default=1,
+                    help="Screenshot-check the gameplay state every N gestures (1 = every gesture).")
+    ap.add_argument("--menu-recover-after", type=int, default=2,
+                    help="Consecutive non-gameplay detections before relaunching True Skate.")
     add_device_selection_args(ap)
     args = ap.parse_args()
 
@@ -224,6 +256,7 @@ def main() -> None:
     last_poll = 0.0
     segment_idx = 0
     total_gestures = 0
+    total_menu_skips = 0
     global_deadline = (time.monotonic() + args.max_hours * 3600.0) if args.max_hours else None
 
     def _device_aligner_spawn(manifest_path: Path):
@@ -264,6 +297,8 @@ def main() -> None:
             events: list[dict] = []
             park_switched = False
             seg_aborted = False
+            seg_iter = 0
+            non_gameplay_streak = 0
 
             while not _STOP and time.monotonic() < seg_deadline:
                 if global_deadline and time.monotonic() > global_deadline:
@@ -275,6 +310,26 @@ def main() -> None:
                     seg_aborted = True
                     break
                 time.sleep(0.3)  # board settle into the reset state
+
+                # --- gameplay guard: never log a gesture fired into the replay/menu ---
+                if not args.no_gameplay_guard and seg_iter % max(1, args.gameplay_check_every) == 0:
+                    try:
+                        if is_menu_frame(worker.driver.get_screenshot_as_png()):
+                            non_gameplay_streak += 1
+                            total_menu_skips += 1
+                            print(f"[seg {segment_idx}] replay/menu detected "
+                                  f"(streak {non_gameplay_streak}) — skipping gesture (not logged)")
+                            if non_gameplay_streak >= args.menu_recover_after:
+                                print(f"[seg {segment_idx}] relaunching True Skate to exit replay...")
+                                _exit_replay(worker)
+                                non_gameplay_streak = 0
+                            seg_iter += 1
+                            continue  # do not fire/log a gesture into the menu
+                        non_gameplay_streak = 0
+                    except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
+                        print(f"[seg {segment_idx}] gameplay check failed: {exc!r} — proceeding")
+                seg_iter += 1
+
                 g = sample_mixture(rng, fracs=fracs, num_gestures=args.num_gestures,
                                    use_spin=args.use_spin, recipe_vectors=recipe_vectors)
                 t0 = time.time()
@@ -381,9 +436,10 @@ def main() -> None:
         if caffeinate and caffeinate.poll() is None:
             caffeinate.terminate()
         notify(f"[{device}] XCTest SLS collection stopped: {segment_idx} segments, "
-               f"{total_gestures} gestures → {out_root.name}",
+               f"{total_gestures} gestures, {total_menu_skips} menu-skipped → {out_root.name}",
                title="TrueSkate SLS collect", tags=["checkered_flag"])
-        print(f"\nDone: {segment_idx} segments, {total_gestures} gestures → {out_root}")
+        print(f"\nDone: {segment_idx} segments, {total_gestures} gestures, "
+              f"{total_menu_skips} skipped (replay/menu) → {out_root}")
 
 
 if __name__ == "__main__":
