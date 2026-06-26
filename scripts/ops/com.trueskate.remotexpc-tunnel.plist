@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Root LaunchDaemon: the appium-ios-remotexpc tunnel registry for the rig's iPhones.
+  Without this, the appium-xcuitest driver can't reach the tunnel registry, so XCTest
+  screen-recording attachments are never auto-deleted -> they accumulate in testmanagerd
+  until recording wedges with "Failed to write file" (the bug that benched both phones).
+
+  Must run as ROOT (tunnel-creation needs root for the RemoteServiceDiscovery tunnel) and
+  is a DAEMON, not a user agent. APPIUM_HOME is pinned so root finds the user's installed
+  xcuitest driver.
+
+  Install (run as the user, will prompt for your password):
+    sudo cp /Users/training-server/trueskate-ai/scripts/ops/com.trueskate.remotexpc-tunnel.plist /Library/LaunchDaemons/
+    sudo chown root:wheel /Library/LaunchDaemons/com.trueskate.remotexpc-tunnel.plist
+    sudo launchctl bootstrap system /Library/LaunchDaemons/com.trueskate.remotexpc-tunnel.plist
+  Check:  sudo launchctl print system/com.trueskate.remotexpc-tunnel | head
+          tail -f /Users/training-server/trueskate-ai/logs/remotexpc_tunnel.log
+  Stop:   sudo launchctl bootout system/com.trueskate.remotexpc-tunnel
+-->
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.trueskate.remotexpc-tunnel</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/appium</string>
+    <string>driver</string>
+    <string>run</string>
+    <string>xcuitest</string>
+    <string>tunnel-creation</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>APPIUM_HOME</key><string>/Users/training-server/.appium</string>
+    <key>HOME</key><string>/Users/training-server</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>/Users/training-server/trueskate-ai/logs/remotexpc_tunnel.log</string>
+  <key>StandardErrorPath</key><string>/Users/training-server/trueskate-ai/logs/remotexpc_tunnel.log</string>
+</dict></plist>
