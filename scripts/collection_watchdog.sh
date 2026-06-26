@@ -41,33 +41,48 @@ newest_mtime() {
 
 alerted=0
 last_remind=0
+seen_healthy=0   # only arm stop-alerts AFTER we've seen the device collect, so a
+first=1          # benched/not-yet-started device doesn't fire a spurious "stopped".
 echo "[$LABEL-watchdog] online: tag=$DEVICE_TAG port=$WDA_PORT stall=${STALL_SECONDS}s check=${CHECK_INTERVAL}s"
-push "Watchdog online - will alert if $LABEL stops collecting (no new segment > $((STALL_SECONDS/60))m)." "eyes" "low"
+push "Watchdog online for $LABEL - alerts if it STOPS collecting (no new segment > $((STALL_SECONDS/60))m, once it has started)." "eyes" "low"
 
 while true; do
   now=$(date +%s)
   mtime=$(newest_mtime)
   if [ -z "$mtime" ]; then age=999999; else age=$(( now - mtime )); fi
-  echo "$(date '+%Y-%m-%d %H:%M:%S') age=${age}s $([ "$age" -gt "$STALL_SECONDS" ] && echo STALLED || echo ok)"
+  echo "$(date '+%Y-%m-%d %H:%M:%S') age=${age}s seen_healthy=${seen_healthy} $([ "$age" -gt "$STALL_SECONDS" ] && echo STALLED || echo ok)"
 
-  if [ "$age" -gt "$STALL_SECONDS" ]; then
-    proc=$(pgrep -f "collect_sls_xctest.*${DEVICE_TAG}" >/dev/null 2>&1 && echo alive || echo DEAD)
-    wda=$(curl -s -m4 "http://localhost:${WDA_PORT}/status" >/dev/null 2>&1 && echo up || echo DOWN)
-    mins=$(( age / 60 ))
-    if [ "$alerted" -eq 0 ]; then
-      push "$LABEL STOPPED collecting - no new segment for ${mins}m. collector=${proc} WDA${WDA_PORT}=${wda}" "warning" "high"
-      echo "[$LABEL-watchdog] ALERT: stalled ${mins}m (collector=$proc wda=$wda)"
-      alerted=1; last_remind=$now
-    elif [ $(( now - last_remind )) -ge "$REMIND_SECONDS" ]; then
-      push "$LABEL STILL down - ${mins}m, no recovery. collector=${proc} WDA${WDA_PORT}=${wda}" "warning" "high"
-      last_remind=$now
+  if [ "$age" -le "$STALL_SECONDS" ]; then
+    # --- collecting ---
+    if [ "$seen_healthy" -eq 0 ]; then
+      seen_healthy=1
+      # Note only if we had to WAIT for it (first check already healthy => the
+      # "online" message above already says it's armed).
+      [ "$first" -eq 0 ] && push "$LABEL started collecting - watchdog now armed." "white_check_mark" "low"
     fi
-  else
     if [ "$alerted" -eq 1 ]; then
       push "$LABEL collecting again - recovered." "white_check_mark" "default"
       echo "[$LABEL-watchdog] RECOVERED"
       alerted=0
     fi
+  else
+    # --- not collecting ---
+    if [ "$seen_healthy" -eq 0 ]; then
+      echo "[$LABEL-watchdog] not collecting yet (age=${age}s) - waiting for first segment before arming stop-alerts."
+    else
+      proc=$(pgrep -f "collect_sls_xctest.*${DEVICE_TAG}" >/dev/null 2>&1 && echo alive || echo DEAD)
+      wda=$(curl -s -m4 "http://localhost:${WDA_PORT}/status" >/dev/null 2>&1 && echo up || echo DOWN)
+      mins=$(( age / 60 ))
+      if [ "$alerted" -eq 0 ]; then
+        push "$LABEL STOPPED collecting - no new segment for ${mins}m. collector=${proc} WDA${WDA_PORT}=${wda}" "warning" "high"
+        echo "[$LABEL-watchdog] ALERT: stalled ${mins}m (collector=$proc wda=$wda)"
+        alerted=1; last_remind=$now
+      elif [ $(( now - last_remind )) -ge "$REMIND_SECONDS" ]; then
+        push "$LABEL STILL down - ${mins}m, no recovery. collector=${proc} WDA${WDA_PORT}=${wda}" "warning" "high"
+        last_remind=$now
+      fi
+    fi
   fi
+  first=0
   sleep "$CHECK_INTERVAL"
 done
