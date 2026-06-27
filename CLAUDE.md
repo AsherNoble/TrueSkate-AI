@@ -58,6 +58,18 @@ tmp/                # Debug output (gitignored)
 
 **PPO (experimental, secondary track)** — `src/trueskate_ai/rl/ppo/` (`trainer`, `policy`, `collector`, `buffer`, `trick_conditioned_action`, `metrics`) is a live but secondary trick-conditioned policy-gradient track. Reward there is binary (`compute_conditioned_reward` in `rl/reward.py`). CMA-ES remains the active approach.
 
+### SLS Frame→Gesture Data Collection (XCTest 30fps — active, independent of CMA-ES)
+
+A second track collects a **frame→gesture corpus** (for a future sequence model that predicts the gesture from a clip of frames). It fires random SLS-mix gestures and records the screen — NOT CMA-ES, no reward. Headless 30fps capture is Apple's **XCTest screen recording via Appium** (`src/trueskate_ai/vision/xctest_capture.py`); the CoreMediaIO/DAL screen-mirror path is dead on this rig's macOS/iOS (see memory `ios-dal-screen-capture-wedge`).
+
+- **Collector** `scripts/data/collect_sls_xctest.py` — records bounded `--segment-min` `.mov` segments (default **60s — keep short**: `stop_and_save` returns the whole `.mov` as one base64 HTTP response, which fails above ~114 MB / ~90s) while firing gestures + logging a per-gesture manifest. Hardened with: a **gameplay guard** (`vision/gameplay_filter.is_menu_frame` — skips gestures fired into True Skate's replay/menu, relaunches to exit), per-segment resilience (a failed segment is skipped, never fatal), and a **start-fail cap** (`--max-start-fails`: hammering `rec.start()` re-wedges the recorder, so it exits for a clean supervisor restart).
+- **Aligner** `scripts/data/align_xctest_traces.py` — slices each gesture's frame window from the `.mov` → per-gesture sample dirs (`frame_NNN.png` + `meta.json`), deletes the `.mov`. Async per segment. Δ (command→pixel offset) is currently 0 (uncalibrated; repro-validated, a constant `frame_times` shift to refine later).
+- **Corpus filter** `scripts/data/flag_menu_samples.py` — marks already-collected replay/menu samples with a `.menu` file. **Training loaders MUST exclude any sample dir containing `.menu`.**
+
+**CRITICAL OPERATIONAL PREREQ — the remotexpc tunnel daemon.** The appium-xcuitest driver only auto-deletes on-device XCTest recording attachments when its **remotexpc tunnel registry is reachable**, which needs a ROOT daemon: `sudo appium driver run xcuitest tunnel-creation` (staged as `scripts/ops/com.trueskate.remotexpc-tunnel.plist` → `/Library/LaunchDaemons/`). Without it, attachments accumulate in testmanagerd until recording wedges with `XCTDaemon.ScreenRecordingError Code=7 "Failed to write file"` (despite free disk) — this benched BOTH phones. Recovery: ensure the daemon is up, then `scripts/recover_remotexpc_attachments.sh` (wraps the official `appium … cleanup-videos`, `--dry-run`/`--delete`) clears the backlog. See memory `xctest-recording-attachments-accumulate`.
+
+**Rig ops (launchd):** `com.trueskate.services` (launch_services: Appium+WDA+iproxy, health-aware monitor), `com.trueskate.collect.xr1|xr2` (supervised collectors via `scripts/rig_collect.sh`), `com.trueskate.watchdog.xr1|xr2` (`scripts/collection_watchdog.sh`: ntfy alert if a phone stops producing segments), and the root `com.trueskate.remotexpc-tunnel`. Ports are +3/device (XR1 wda 8100, XR2 wda 8103).
+
 ### Labeling Pipeline (legacy — pre-RL pivot)
 
 `trace_extractor.py` → `video_labeler.py` → `visualize.py`. CV-based touch label extraction from screen recordings. Superseded by RL approach but code remains.
@@ -101,3 +113,5 @@ Located at `experiments/rl_poc_experiment_journal.md`. Read at start of relevant
 - CMA-ES multimodal problem: unimodal Gaussian averages over bimodal landscape → IPOP/BIPOP restarts or novelty bonus needed
 - Hard flip reward tier missing (currently scores 0.0)
 - Long-term: hierarchical architecture — sequence model over trick names commanding low-level RL policies
+- **SLS capture: XCTest recorder depends on the root remotexpc tunnel daemon** — if it's down, attachments accumulate and recording wedges ("Failed to write file"); see the SLS collection section + memory `xctest-recording-attachments-accumulate`.
+- **SLS capture spatial coverage** — `reset_position` returns the board to a fixed anchor each gesture, so capture concentrates in one park zone. A "wander" mode (relocate + reset to local waypoints) would broaden it (idea parked, not built).
