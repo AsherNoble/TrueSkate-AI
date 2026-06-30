@@ -77,6 +77,28 @@ def _device() -> torch.device:
     return torch.device("cpu")
 
 
+def _start_relative_frame_times(meta: dict) -> list[float]:
+    """frame_times relative to gesture START (what label_frames expects).
+
+    `self_labeled_traces` store times relative to gesture START
+    (`gesture_start_monotonic`). The SLS / XCTest collectors store them relative
+    to gesture END (`gesture_end_monotonic` / `gesture_video_time_s`, with a
+    `capture_offset_s`). For an end-relative frame at fe, the start-relative time
+    is fe + duration (start = end − duration). The capture→pixel Δ is already
+    folded into the SLS/XCTest frame_times by the aligner; the residual render
+    lag stays in `latency_s`.
+    """
+    ft = meta["frame_times"]
+    end_relative = (
+        any(k in meta for k in ("gesture_end_monotonic", "gesture_video_time_s"))
+        or ("capture_offset_s" in meta and "gesture_start_monotonic" not in meta)
+    )
+    if end_relative:
+        dur = float(meta["duration"])
+        return [float(t) + dur for t in ft]
+    return [float(t) for t in ft]
+
+
 class SelfLabeledTraceDataset(Dataset):
     """(color frame -> touch heatmap) from a self_labeled_traces session dir.
 
@@ -95,16 +117,24 @@ class SelfLabeledTraceDataset(Dataset):
         rng = np.random.default_rng(rng_seed)
         kept_pos = gated = neg = 0
         root = Path(session_dir)
-        sample_dirs = sorted(root.glob("sample_*")) or sorted(root.glob("*/sample_*"))
+        # rglob: handles flat (self_labeled: <session>/sample_*) AND nested
+        # (SLS/XCTest: <session>/<park>/sample_*) corpora uniformly.
+        sample_dirs = sorted(p for p in root.rglob("sample_*") if p.is_dir())
+        skipped_nonflick = 0
         for sample_dir in sample_dirs:
             meta_path = sample_dir / "meta.json"
             if not meta_path.exists():
                 continue
             meta = json.loads(meta_path.read_text())
+            if "waypoints" not in meta:
+                # Model 1 predicts ONE touch heatmap → only single-touch flick
+                # samples apply; params/nslot/recipe (multi-gesture) are skipped.
+                skipped_nonflick += 1
+                continue
             waypoints = [tuple(p) for p in meta["waypoints"]]
             labels = label_frames(
                 waypoints, meta["duration"], meta["easing_power"],
-                meta["frame_times"], latency_s=latency_s,
+                _start_relative_frame_times(meta), latency_s=latency_s,
                 spin_active=meta.get("spin_active", False),
             )
             for fi, lab in enumerate(labels):
@@ -127,7 +157,8 @@ class SelfLabeledTraceDataset(Dataset):
                     continue
                 self._cache(img, lab.x, lab.y); kept_pos += 1
         print(f"  dataset: {kept_pos} trace-aligned positives + {neg} negatives kept, "
-              f"{gated} gated (latency={latency_s}s, require_trace={require_trace})")
+              f"{gated} gated, {skipped_nonflick} non-flick skipped "
+              f"(latency={latency_s}s, require_trace={require_trace})")
         if not self._frames:
             raise RuntimeError(f"No labeled frames found under {session_dir}")
 
