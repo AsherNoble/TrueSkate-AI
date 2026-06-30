@@ -28,9 +28,8 @@ import numpy as np
 
 _HERE = Path(__file__).resolve().parent
 _REPO_ROOT = _HERE.parent.parent
-for p in (_REPO_ROOT / "src", _REPO_ROOT / "experiments"):
-    if str(p) not in sys.path:
-        sys.path.insert(0, str(p))
+if str(_REPO_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 import cv2  # noqa: E402
 import torch  # noqa: E402
@@ -45,7 +44,7 @@ _DEFAULT_LATENCY_S = 0.45
 _TRACE_WARM_THRESHOLD = 200  # min warm-orange px near the label to count as trace-aligned
 
 from trueskate_ai.vision.self_label import label_frames  # noqa: E402
-from gaussian_bump_predictor import GaussianBumpPredictor, GaussianBumpLoss  # noqa: E402
+from trueskate_ai.vision.gaussian_bump_predictor import GaussianBumpPredictor, GaussianBumpLoss  # noqa: E402
 
 _H, _W = 288, 128          # working resolution (≈ portrait 2.25:1; still resolves the trace, ~3x faster than 416x192)
 _HEATMAP_SIGMA = 6.0
