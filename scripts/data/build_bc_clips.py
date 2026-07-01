@@ -125,12 +125,20 @@ def write_clip_json(out_dir: Path, fps: float, strokes: list[Stroke],
 
 
 def build_clip(clip_dir: Path, out_dir: Path, model, h: int, w: int, device,
-               *, fps: float, active_thresh: float) -> int:
-    """Label one expert clip dir -> its clip.json. Returns #strokes assembled."""
+               *, fps: float, active_thresh: float, latency_s: float) -> int:
+    """Label one expert clip dir -> its clip.json. Returns #strokes assembled.
+
+    Model 1 is trained (self_label `latency_s`) to predict the LAGGING orange
+    trace — its touch at frame time `t` reflects the real finger at `t - latency`
+    (see self_label.label_frames: `t = ft - latency_s`). So we place each frame's
+    touch at `t - latency_s`, otherwise every assembled stroke's t_start/t_end is
+    ~latency late and Model 2 would condition on post-touch frames. The shift is
+    constant, so run-segmentation gaps/durations are unchanged.
+    """
     frames = _sorted_frames(clip_dir)
     if not frames:
         raise RuntimeError(f"no frames in {clip_dir}")
-    times = np.arange(len(frames), dtype=np.float64) / fps
+    times = np.arange(len(frames), dtype=np.float64) / fps - latency_s
     active, xs, ys = frames_to_touch_track(model, frames, h, w, device, active_thresh=active_thresh)
     strokes = assemble_strokes(active, xs, ys, times)
     write_clip_json(out_dir, fps, strokes, frames)
@@ -152,7 +160,8 @@ def _run(args) -> None:
     for cd in clip_dirs:
         rel = cd.relative_to(args.clips_root)
         out = args.out / rel
-        n = build_clip(cd, out, model, h, w, device, fps=args.fps, active_thresh=args.active_thresh)
+        n = build_clip(cd, out, model, h, w, device, fps=args.fps,
+                       active_thresh=args.active_thresh, latency_s=args.latency_s)
         total += n
         print(f"  {rel}: {n} strokes -> {out/'clip.json'}")
     print(f"done: {len(clip_dirs)} clips, {total} strokes total")
@@ -224,6 +233,10 @@ def main() -> None:
     ap.add_argument("--fps", type=float, default=30.0, help="Frame rate of the expert recordings.")
     ap.add_argument("--active-thresh", type=float, default=0.30,
                     help="Min peak heatmap response to count a frame as a touch.")
+    ap.add_argument("--latency-s", type=float, default=0.45,
+                    help="Model 1 predicts the LAGGING trace; subtract its training latency_s so "
+                         "stroke times track the real finger, not the swoosh. MUST match the "
+                         "Model 1 checkpoint's training latency (default 0.45, the validated value).")
     args = ap.parse_args()
 
     if args.smoke:
