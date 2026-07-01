@@ -28,7 +28,11 @@ class SequencePolicyConfig:
     m_past: int = 4            # past strokes conditioned on
     m_out: int = 1             # strokes predicted per decision (chunk size)
     img_ch: int = 3
-    img_h: int = 96
+    # Portrait, NOT square — the screen is ~2.16:1 (19.5:9) and must not be
+    # squished to 1:1 (that distorts board/trace geometry the encoder reads).
+    # 208×96 = 2.167:1, within 0.1% of the device 896/414 = 2.164:1; both ÷16.
+    # FrameEncoder ends in AdaptiveAvgPool2d(1), so H≠W needs no arch change.
+    img_h: int = 208
     img_w: int = 96
     d_model: int = 256
     n_heads: int = 8

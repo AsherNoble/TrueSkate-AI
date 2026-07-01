@@ -129,13 +129,15 @@ def main() -> None:
     ap.add_argument("--m-past", type=int, default=4)
     ap.add_argument("--m-out", type=int, default=1)
     ap.add_argument("--d-model", type=int, default=256)
-    ap.add_argument("--img", type=int, default=96, help="Square frame resolution fed to the encoder.")
+    ap.add_argument("--img-h", type=int, default=208,
+                    help="Frame height fed to the encoder (portrait; ~2.16:1 with --img-w). Raise to compress less.")
+    ap.add_argument("--img-w", type=int, default=96, help="Frame width fed to the encoder.")
     ap.add_argument("--out", type=Path, default=_REPO_ROOT / "notebooks" / "models" / "sequence_model.pth")
     args = ap.parse_args()
 
     cfg = SequencePolicyConfig(
         n_frames=args.n_frames, m_past=args.m_past, m_out=args.m_out,
-        d_model=args.d_model, img_h=args.img, img_w=args.img,
+        d_model=args.d_model, img_h=args.img_h, img_w=args.img_w,
     )
 
     if args.smoke:
