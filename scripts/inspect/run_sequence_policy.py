@@ -120,11 +120,12 @@ def _on_device(args) -> None:
             runner.observe(frame)
             strokes = runner.act()
             vec, n, pre_delay = runner.to_param_vector(strokes[:k])
-            print(f"[{dev['name']}] step {step + 1}: {_fmt(strokes)}  pre_delay={pre_delay:.3f}s")
+            push = args.push_every > 0 and step % args.push_every == 0
+            print(f"[{dev['name']}] step {step + 1}: {_fmt(strokes)}  pre_delay={pre_delay:.3f}s push={push}")
             if pre_delay > 0:
                 time.sleep(min(pre_delay, 1.0))                     # honour predicted inter-stroke wait (capped)
             execute_gesture_params(worker.driver, np.asarray(vec, dtype=np.float64),
-                                   worker.device_w, worker.device_h)
+                                   worker.device_w, worker.device_h, static_push=push)
             runner.commit(strokes[:k])
     finally:
         worker.disconnect()
@@ -137,6 +138,9 @@ def main() -> None:
     ap.add_argument("--steps", type=int, default=10, help="Number of decisions to run.")
     ap.add_argument("--execute-k", type=int, default=None,
                     help="Strokes to execute per decision (default: all m_out). Receding-horizon uses < m_out.")
+    ap.add_argument("--push-every", type=int, default=0,
+                    help="Force a board static-push every N decisions (0 = never; streaming policy default). "
+                         "CMA-ES pushes every trick; a continuous policy should not.")
     ap.add_argument("--dry-run", action="store_true", help="No device; synthetic frames prove the inference path.")
     args = ap.parse_args()
 
