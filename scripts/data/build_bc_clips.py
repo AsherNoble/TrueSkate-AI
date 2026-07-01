@@ -98,9 +98,13 @@ def frames_to_touch_track(model, frame_paths: list[Path], h: int, w: int, device
 # --- clip.json writer ------------------------------------------------------
 
 def _sorted_frames(clip_dir: Path) -> list[Path]:
-    """Frames in a clip dir, in temporal order. Prefer frame_*.png; else any png."""
-    fp = sorted(clip_dir.glob("frame_*.png"))
-    return fp or sorted(clip_dir.glob("*.png"))
+    """Frames in a clip dir, temporal order. Prefer frame_* (png>jpg); else any image
+    (covers legacy img_*.jpg from extract_frames.py)."""
+    for pat in ("frame_*.png", "frame_*.jpg", "*.png", "*.jpg"):
+        fp = sorted(clip_dir.glob(pat))
+        if fp:
+            return fp
+    return []
 
 
 def write_clip_json(out_dir: Path, fps: float, strokes: list[Stroke],
