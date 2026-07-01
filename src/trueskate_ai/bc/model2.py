@@ -79,7 +79,12 @@ class SequencePolicy(nn.Module):
             d_model=d, nhead=cfg.n_heads, dim_feedforward=d * cfg.ff_mult,
             dropout=cfg.dropout, batch_first=True, activation="gelu",
         )
-        self.encoder = nn.TransformerEncoder(layer, num_layers=cfg.n_layers)
+        # enable_nested_tensor=False: the padded-batch fast path calls
+        # aten::_nested_tensor_from_mask_left_aligned, unimplemented on MPS (the
+        # rig's device) — it only triggers in eval() with a key-padding mask, so
+        # it crashed inference though training was fine. Disabling it is
+        # numerically identical and removes that train/eval divergence.
+        self.encoder = nn.TransformerEncoder(layer, num_layers=cfg.n_layers, enable_nested_tensor=False)
         self.head = nn.Sequential(
             nn.LayerNorm(d), nn.Linear(d, d), nn.GELU(),
             nn.Linear(d, cfg.m_out * cfg.stroke_dim),
