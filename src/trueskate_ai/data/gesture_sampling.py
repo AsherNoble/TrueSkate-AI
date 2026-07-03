@@ -37,12 +37,19 @@ from trueskate_ai.sim.gestures import (
     Y_BOUND_MIN,
 )
 
-# Board sits center-ish (localizer: ~(0.42-0.50, 0.54-0.55)). True Skate only
-# renders the orange finger-trace for flicks ON/NEAR the board, so flicks START
-# on the board and flick outward (verified 2026-06-14, see the standalone
-# collector's notes). Kept here as the single definition.
-_BOARD_X = (0.38, 0.62)
-_BOARD_Y = (0.50, 0.80)
+# Flick START-point sampling region. The orange finger-trace follows the FINGER
+# path anywhere on screen — NOT only on/near the board (verified live: a static
+# push far from the board still renders a full trace). So starts are sampled
+# broadly, near-uniformly over the safe screen bounds, giving Model 1 (a per-frame
+# touch LOCALIZER) positional coverage with no blind spots. A small inset keeps
+# onsets off the very edge; the global X/Y bounds remain the single source.
+_START_INSET = 0.02
+_FLICK_START_X = (X_BOUND_MIN, X_BOUND_MAX - _START_INSET)                 # ~0.12 .. 0.98
+_FLICK_START_Y = (Y_BOUND_MIN + _START_INSET, Y_BOUND_MAX - _START_INSET)  # ~0.14 .. 0.86
+
+# Every flick must leave a full, clean trace: guarantee this minimum start->end
+# displacement (post-bounds-clip). Edge starts are aimed inward to satisfy it.
+_FLICK_MIN_REACH = 0.15
 
 # Per-param jitter sigmas for "recipe" mode, in the vector's native units,
 # indexed within a slot as [x0,y0,x1,y1,x2,y2,duration,easing].
@@ -89,18 +96,37 @@ class GestureSample:
         return d
 
 
-def sample_flick(rng: np.random.Generator) -> dict:
-    """A board-centered flick: start on the board, flick outward in a random dir.
+def _flick_end(rng: np.random.Generator, sx: float, sy: float, mag: float) -> tuple[float, float]:
+    """End point ~mag from (sx, sy). Uniform direction while it keeps a full trace
+    in-bounds; otherwise aimed toward screen center so edge starts flick inward."""
+    for _ in range(8):
+        ang = float(rng.uniform(0, 2 * np.pi))
+        ex = float(np.clip(sx + mag * np.cos(ang), X_BOUND_MIN, X_BOUND_MAX))
+        ey = float(np.clip(sy + mag * np.sin(ang), Y_BOUND_MIN, Y_BOUND_MAX))
+        if np.hypot(ex - sx, ey - sy) >= _FLICK_MIN_REACH:
+            return ex, ey
+    # every uniform angle clipped short (start hugs an edge): aim at the interior
+    cx = (X_BOUND_MIN + X_BOUND_MAX) / 2
+    cy = (Y_BOUND_MIN + Y_BOUND_MAX) / 2
+    ang = float(np.arctan2(cy - sy, cx - sx))
+    ex = float(np.clip(sx + mag * np.cos(ang), X_BOUND_MIN, X_BOUND_MAX))
+    ey = float(np.clip(sy + mag * np.sin(ang), Y_BOUND_MIN, Y_BOUND_MAX))
+    return ex, ey
 
+
+def sample_flick(rng: np.random.Generator) -> dict:
+    """A flick from a broadly-sampled start point, reaching outward in a random dir.
+
+    Start is sampled near-uniformly over the safe screen bounds (_FLICK_START_X/_Y)
+    so Model 1 sees touch onsets everywhere, not just at board center. Every flick
+    keeps a full trace (>= _FLICK_MIN_REACH); starts near an edge are aimed inward.
     Returns the legacy dict {waypoints, duration, easing_power} so the original
     self-labeled-trace collector can import this verbatim.
     """
-    sx = float(rng.uniform(*_BOARD_X))
-    sy = float(rng.uniform(*_BOARD_Y))
-    ang = float(rng.uniform(0, 2 * np.pi))
+    sx = float(rng.uniform(*_FLICK_START_X))
+    sy = float(rng.uniform(*_FLICK_START_Y))
     mag = float(rng.uniform(0.18, 0.45))  # flick reach (normalised)
-    ex = float(np.clip(sx + mag * np.cos(ang), X_BOUND_MIN, X_BOUND_MAX))
-    ey = float(np.clip(sy + mag * np.sin(ang), Y_BOUND_MIN, Y_BOUND_MAX))
+    ex, ey = _flick_end(rng, sx, sy, mag)
     if int(rng.integers(0, 2)) == 0:
         waypoints = [(sx, sy), (ex, ey)]  # straight flick
     else:
