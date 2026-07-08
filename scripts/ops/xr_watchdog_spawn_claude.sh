@@ -31,10 +31,13 @@ export PATH="/usr/local/bin:/opt/homebrew/bin:/Applications/Tailscale.app/Conten
 mkdir -p "$(dirname "$LOG")"
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG"; }
 
-# newest segment age (seconds) for a device glob; 999999 if none / unreachable
+# newest segment age (seconds) for a device glob; 999999 if none / unreachable.
+# Scans only the 3 most-recent session dirs (the active one + a couple, robust to a
+# just-rolled empty dir) — NOT all ~150 historical sessions, and avoids per-file
+# `-exec stat` fork storms. Keeps each check to a couple seconds.
 newest_age() {
   local ts
-  ts=$(tailscale ssh "$RIG" "find /Users/training-server/trueskate-ai/data/sls_xctest/$1_*/ -name 'segment_*.json' -exec stat -f '%m' {} \; 2>/dev/null | sort -rn | head -1" 2>/dev/null)
+  ts=$(tailscale ssh "$RIG" "for d in \$(ls -dt /Users/training-server/trueskate-ai/data/sls_xctest/$1_*/ 2>/dev/null | head -3); do find \"\$d\" -name 'segment_*.json' -exec stat -f '%m' {} \; ; done 2>/dev/null | sort -rn | head -1" 2>/dev/null)
   [ -z "$ts" ] && { echo 999999; return; }
   echo $(( $(date +%s) - ts ))
 }
