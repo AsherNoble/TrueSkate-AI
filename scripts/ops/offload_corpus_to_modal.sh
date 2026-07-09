@@ -25,13 +25,15 @@ SPOT="${SPOT:-4}"                 # random frames to pixel-verify per session
 
 log(){ echo "$(date '+%F %T') $*"; }
 
-# order sessions ascending by frame count (quick wins + frees disk sooner)
+# order sessions ascending by frame count (quick wins + frees disk sooner).
+# bash 3.2 compatible (macOS /bin/bash): temp file + while-read, no mapfile/arrays.
 log "sizing sessions..."
-mapfile -t ORDER < <(for S in "$ROOT"/*/; do
+ORDER_FILE=$(mktemp)
+for S in "$ROOT"/*/; do
   n=$(find "$S" -name 'frame_*.png' 2>/dev/null | wc -l | tr -d ' '); echo "$n $S"
-done | sort -n | awk '{print $2}')
+done | sort -n | awk '{print $2}' > "$ORDER_FILE"
 
-for S in "${ORDER[@]}"; do
+while IFS= read -r S <&3; do
   SESS=$(basename "$S")
   LOCAL=$(find "$S" -name 'frame_*.png' 2>/dev/null | wc -l | tr -d ' ')
   [ "$LOCAL" -eq 0 ] && { log "SKIP $SESS (0 frames)"; continue; }
@@ -73,5 +75,6 @@ PYEOF
   rm -rf "$S"
   FREE=$(df -g / | tail -1 | awk '{print $4}')
   log "  OK: verified $REMOTE frames on Modal, DELETED local $SESS (free now ${FREE}GB)"
-done
+done 3< "$ORDER_FILE"
+rm -f "$ORDER_FILE"
 log "OFFLOAD COMPLETE"
