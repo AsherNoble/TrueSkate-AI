@@ -25,6 +25,17 @@ SPOT="${SPOT:-4}"                 # random frames to pixel-verify per session
 
 log(){ echo "$(date '+%F %T') $*"; }
 
+# recursive remote frame count — `modal volume ls` has NO recursive flag, so use
+# the Python API (Volume.listdir(recursive=True)). Prints 0 on any error.
+remote_count(){ "$PY" -c "
+import modal, sys
+try:
+    vol = modal.Volume.from_name(sys.argv[1])
+    print(sum(1 for e in vol.listdir(sys.argv[2], recursive=True) if e.path.endswith('.png') and 'frame_' in e.path))
+except Exception:
+    print(0)
+" "$VOL" "$1" 2>/dev/null; }
+
 # order sessions ascending by frame count (quick wins + frees disk sooner).
 # bash 3.2 compatible (macOS /bin/bash): temp file + while-read, no mapfile/arrays.
 log "sizing sessions..."
@@ -38,12 +49,15 @@ while IFS= read -r S <&3; do
   LOCAL=$(find "$S" -name 'frame_*.png' 2>/dev/null | wc -l | tr -d ' ')
   [ "$LOCAL" -eq 0 ] && { log "SKIP $SESS (0 frames)"; continue; }
 
-  log "UPLOAD $SESS ($LOCAL frames)..."
-  if ! "$MODAL" volume put "$VOL" "$S" "/$SESS" >/dev/null 2>&1; then
-    log "  ERROR: upload failed for $SESS -> KEEP local, continue"; continue
+  # skip re-upload if the session is already fully on Modal (idempotent re-runs)
+  REMOTE=$(remote_count "/$SESS"); REMOTE=${REMOTE:-0}
+  if [ "$REMOTE" -ne "$LOCAL" ]; then
+    log "UPLOAD $SESS ($LOCAL frames; remote has $REMOTE)..."
+    "$MODAL" volume put --force "$VOL" "$S" "/$SESS" >/dev/null 2>&1
+    REMOTE=$(remote_count "/$SESS"); REMOTE=${REMOTE:-0}
+  else
+    log "VERIFY $SESS (already $REMOTE frames on Modal)..."
   fi
-
-  REMOTE=$("$MODAL" volume ls -r "$VOL" "/$SESS" 2>/dev/null | grep -c 'frame_.*\.png')
   if [ "$REMOTE" -ne "$LOCAL" ]; then
     log "  ERROR: count mismatch $SESS local=$LOCAL remote=$REMOTE -> KEEP local, continue"; continue
   fi
