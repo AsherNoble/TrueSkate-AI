@@ -1,26 +1,23 @@
 #!/bin/bash
 # offload_corpus_to_modal.sh — upload the SLS corpus to the Modal volume, verify,
-# THEN delete the local copy to free the rig. HYBRID + hardened against hangs.
+# THEN delete the local copy to free the rig. PARALLEL + stall-hardened.
 #
-# WHY HYBRID: `modal volume put` on a folder does one HTTP put per file. Over a
-# many-thousand-file session that per-file overhead caps throughput at ~1.7 MB/s
-# AND a single stalled connection wedges forever (no client-side timeout — this
-# actually happened: a 29k-frame session hung 15h with a dead socket). So:
-#   * small/medium sessions  -> per-frame upload, count-match + pixel spot-check.
-#   * monster sessions (>= FRAME_TAR_THRESHOLD frames) -> tar the dir into ONE
-#     file and upload that (kills per-file overhead + stall risk). Verified by
-#     tar-contents count + pixel-fidelity spot-check from the tar + remote-size
-#     match. Sessions are processed SMALLEST-FIRST so freed space is available to
-#     stage a monster's tar (needs ~dir-size free) by the time we reach it.
+# WHY PARALLEL: the rig's uplink is the bottleneck — ~15 Mbps capacity, but a
+# single `modal volume put` connection only reaches ~0.6 MB/s (packet loss caps
+# one TCP flow). WORKERS concurrent uploaders aggregate toward the ~1.88 MB/s
+# ceiling (~3x). Per-frame upload for every session (no tar): the bottleneck is
+# raw uplink, not per-file overhead, and per-frame keeps the full pixel-exact
+# verify with zero disk staging (uploads only read; deletes only free space, so
+# disk monotonically recovers even with N sessions in flight).
 #
-# EVERY upload runs under a STALL-WATCHDOG: if the put child goes STALL_SECS with
-# no CPU progress AND no open inet socket, it is killed and retried (RETRIES x).
-# macOS has no `timeout`; that missing guard is exactly why the first run hung.
+# STALL-WATCHDOG on every put: if the child goes STALL_SECS with no CPU progress
+# AND no open inet socket, it is killed and retried (RETRIES x). macOS has no
+# `timeout`; that missing guard is why the first run hung 15h on a dead socket.
 #
-# PARANOID by design (this deletes weeks-of-collection data): a session's local
-# frames are removed ONLY after its verification passes. Any failure => KEEP local,
-# log, continue. Resumable + idempotent: already-uploaded sessions are re-verified
-# and skip re-upload; already-deleted sessions are simply absent.
+# PARANOID (this deletes weeks-of-collection data): a session's local frames are
+# removed ONLY after count-match on Modal AND N random frames round-trip
+# pixel-exact. Any failure => KEEP local, log, continue. Idempotent/resumable:
+# already-uploaded sessions skip re-upload; already-deleted are absent.
 #
 # Run (survives SSH drop):
 #   cd /Users/training-server/trueskate-ai
@@ -33,14 +30,18 @@ VOL="${MODAL_VOLUME:-trueskate-corpus}"
 MODAL="$REPO/.venv/bin/modal"
 PY="$REPO/.venv/bin/python"
 ROOT=data/sls_xctest
-SPOT="${SPOT:-4}"                         # random frames to pixel-verify per session
-FRAME_TAR_THRESHOLD="${FRAME_TAR_THRESHOLD:-150000}"  # >= this many frames -> tar path
-STALL_SECS="${STALL_SECS:-900}"           # kill a put after this long with no progress
-POLL="${POLL:-60}"                        # watchdog sample interval (s)
-CPU_MIN_DELTA="${CPU_MIN_DELTA:-1.0}"     # CPU-secs/poll below which (and no socket) = stalled
-RETRIES="${RETRIES:-3}"                   # put attempts before giving up on a session
+WORKERS="${WORKERS:-3}"                    # concurrent uploaders (target uplink ceiling)
+SPOT="${SPOT:-4}"                          # random frames to pixel-verify per session
+STALL_SECS="${STALL_SECS:-900}"            # kill a put after this long with no progress
+POLL="${POLL:-60}"                         # watchdog sample interval (s)
+CPU_MIN_DELTA="${CPU_MIN_DELTA:-1.0}"      # CPU-secs/poll below which (and no socket) = stalled
+RETRIES="${RETRIES:-3}"                    # put attempts before giving up on a session
 
-log(){ echo "$(date '+%F %T') $*"; }
+CLAIMS=$(mktemp -d)                        # atomic per-session claim dir (mkdir = lock)
+ORDER_FILE=$(mktemp)
+trap 'rm -rf "$CLAIMS" "$ORDER_FILE"' EXIT
+
+log(){ echo "$(date '+%F %T') [w${WID:-main}] $*"; }
 
 # CPU seconds consumed by a pid (ps time is [H:]MM:SS[.cc]); centiseconds dropped.
 cpu_secs(){
@@ -62,23 +63,8 @@ except Exception:
     print(0)
 " "$VOL" "$1" 2>/dev/null; }
 
-# size (bytes) of a single remote file, or -1 if absent / no size attr.
-remote_size(){ "$PY" -c "
-import modal, sys, os
-try:
-    vol = modal.Volume.from_name(sys.argv[1]); p = sys.argv[2]
-    d = os.path.dirname(p) or '/'; name = os.path.basename(p)
-    for e in vol.listdir(d):
-        if e.path.rstrip('/').endswith(name):
-            print(getattr(e, 'size', -1)); break
-    else:
-        print(-1)
-except Exception:
-    print(-1)
-" "$VOL" "$1" 2>/dev/null; }
-
 # run `modal volume put SRC DST` under a stall-watchdog with retries. Returns 0 on
-# a clean (non-stalled) exit-0, else 1 after RETRIES. SRC may be a dir or a file.
+# a clean (non-stalled) exit-0, else 1 after RETRIES.
 run_put(){
   local src="$1" dst="$2" attempt pid cpu last delta stall rc
   attempt=1
@@ -92,7 +78,6 @@ run_put(){
       cpu=$(cpu_secs "$pid")
       delta=$(awk -v a="$cpu" -v b="$last" 'BEGIN{d=a-b; print (d<0?0:d)}')
       last="$cpu"
-      # alive if it burned CPU this window OR still holds an inet socket
       if awk -v d="$delta" -v m="$CPU_MIN_DELTA" 'BEGIN{exit !(d>=m)}' \
          || lsof -nP -p "$pid" -a -i >/dev/null 2>&1; then
         stall=0
@@ -115,7 +100,7 @@ run_put(){
   return 1
 }
 
-# --- per-frame path: upload dir, count-match, pixel spot-check N frames, delete ---
+# upload dir, count-match, pixel spot-check N frames, delete. Verify-then-delete.
 offload_per_frame(){
   local S="$1" SESS="$2" LOCAL="$3" REMOTE OK
   REMOTE=$(remote_count "/$SESS"); REMOTE=${REMOTE:-0}
@@ -128,14 +113,14 @@ offload_per_frame(){
   fi
   [ "$REMOTE" -ne "$LOCAL" ] && { log "  ERROR: count mismatch $SESS local=$LOCAL remote=$REMOTE -> KEEP"; return 1; }
 
-  OK=$("$PY" - "$S" "$SESS" "$VOL" "$SPOT" "$MODAL" <<'PYEOF'
+  OK=$("$PY" - "$S" "$SESS" "$VOL" "$SPOT" "$MODAL" "$WID" <<'PYEOF'
 import sys, glob, os, random, subprocess, cv2, numpy as np
-S, SESS, VOL, SPOT, MODAL = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5]
+S, SESS, VOL, SPOT, MODAL, WID = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5], sys.argv[6]
 frames = sorted(glob.glob(os.path.join(S, '**', 'frame_*.png'), recursive=True))
 random.seed(0); ok = True
 for f in random.sample(frames, min(SPOT, len(frames))):
     rel = os.path.relpath(f, S)
-    dl = '/tmp/_verify_' + rel.replace('/', '_')
+    dl = '/tmp/_verify_w%s_%s' % (WID, rel.replace('/', '_'))   # per-worker tmp, no clobber
     subprocess.run([MODAL, 'volume', 'get', '--force', VOL, '/' + SESS + '/' + rel, dl], capture_output=True)
     a, b = cv2.imread(f), cv2.imread(dl)
     md = int(np.abs(a.astype(int) - b.astype(int)).max()) if (a is not None and b is not None and a.shape == b.shape) else -1
@@ -150,69 +135,25 @@ PYEOF
   log "  OK: verified $REMOTE frames on Modal, DELETED local $SESS (free now $(df -g / | tail -1 | awk '{print $4}')GB)"
 }
 
-# --- tar path: stage dir->one .tar, verify contents+fidelity, upload, size-match, delete ---
-offload_tar(){
-  local S="$1" SESS="$2" LOCAL="$3" tarf need_kb free_kb tcount lsize rsize OK
-  tarf="$ROOT/$SESS.tar"
-  need_kb=$(du -sk "$S" | awk '{print $1}')
-  free_kb=$(df -k / | tail -1 | awk '{print $4}')
-  if [ "$free_kb" -lt $((need_kb + 5000000)) ]; then   # need dir-size + ~5GB buffer
-    log "  SKIP-TAR $SESS: free ${free_kb}KB < need ${need_kb}KB+buffer -> KEEP local"; return 1
-  fi
-  log "TAR $SESS ($LOCAL frames) -> $tarf ..."
-  rm -f "$tarf"
-  tar -C "$ROOT" -cf "$tarf" "$SESS" || { log "  ERROR: tar build failed $SESS -> KEEP"; rm -f "$tarf"; return 1; }
-  tcount=$(tar -tf "$tarf" | grep -c 'frame_.*\.png')
-  [ "$tcount" -ne "$LOCAL" ] && { log "  ERROR: tar count $tcount != $LOCAL $SESS -> KEEP"; rm -f "$tarf"; return 1; }
-
-  # pixel-fidelity: extract N random frames FROM the tar, compare to the live dir.
-  OK=$("$PY" - "$S" "$tarf" "$SPOT" <<'PYEOF'
-import sys, glob, os, random, tarfile, tempfile, cv2, numpy as np
-S, TARF, SPOT = sys.argv[1], sys.argv[2], int(sys.argv[3])
-frames = sorted(glob.glob(os.path.join(S, '**', 'frame_*.png'), recursive=True))
-sess = os.path.basename(S.rstrip('/'))                 # tar was built with `tar -C ROOT SESS`
-random.seed(0); ok = True
-with tarfile.open(TARF) as tf:
-    for f in random.sample(frames, min(SPOT, len(frames))):
-        arc = sess + '/' + os.path.relpath(f, S)       # SESS/park/.../frame.png member name
-        try:
-            m = tf.getmember(arc); ex = tf.extractfile(m).read()
-        except KeyError:
-            ok = False; continue
-        b = cv2.imdecode(np.frombuffer(ex, np.uint8), cv2.IMREAD_COLOR)
-        a = cv2.imread(f)
-        md = int(np.abs(a.astype(int) - b.astype(int)).max()) if (a is not None and b is not None and a.shape == b.shape) else -1
-        if md != 0: ok = False
-print('OK' if ok else 'FAIL')
-PYEOF
-)
-  [ "$OK" != "OK" ] && { log "  ERROR: tar fidelity spot-check FAILED $SESS -> KEEP"; rm -f "$tarf"; return 1; }
-
-  log "  uploading $SESS.tar ($(du -h "$tarf" | awk '{print $1}'))..."
-  run_put "$tarf" "/$SESS.tar" || { log "  ERROR: tar put gave up $SESS -> KEEP (tar left)"; return 1; }
-  lsize=$(stat -f%z "$tarf"); rsize=$(remote_size "/$SESS.tar")
-  [ "$lsize" != "$rsize" ] && { log "  ERROR: tar remote size $rsize != local $lsize $SESS -> KEEP"; return 1; }
-  rm -rf "$S" "$tarf"
-  log "  OK(tar): $SESS as $SESS.tar ($LOCAL frames, ${lsize}B), DELETED local (free now $(df -g / | tail -1 | awk '{print $4}')GB)"
+# a worker walks the size-ordered list, atomically claims each unclaimed session
+# (mkdir is atomic), and offloads it. Free workers naturally grab the next job.
+worker(){
+  WID="$1"
+  while IFS= read -r LINE; do
+    local LOCAL="${LINE%% *}" S="${LINE#* }" SESS
+    SESS=$(basename "$S")
+    [ -d "$S" ] || continue                         # already deleted by a peer
+    mkdir "$CLAIMS/$SESS" 2>/dev/null || continue   # a peer owns this session
+    [ "$LOCAL" -eq 0 ] && { log "SKIP $SESS (0 frames)"; continue; }
+    offload_per_frame "$S" "$SESS" "$LOCAL"
+  done < "$ORDER_FILE"
 }
 
-# order sessions ascending by frame count (quick wins first; frees disk to stage
-# a monster's tar by the time we reach it). bash 3.2 compatible (temp file loop).
-log "sizing sessions (tar threshold=${FRAME_TAR_THRESHOLD} frames)..."
-ORDER_FILE=$(mktemp)
+log "sizing sessions (WORKERS=$WORKERS)..."
 for S in "$ROOT"/*/; do
   n=$(find "$S" -name 'frame_*.png' 2>/dev/null | wc -l | tr -d ' '); echo "$n $S"
 done | sort -n > "$ORDER_FILE"
 
-while IFS= read -r LINE <&3; do
-  LOCAL=${LINE%% *}; S=${LINE#* }
-  SESS=$(basename "$S")
-  [ "$LOCAL" -eq 0 ] && { log "SKIP $SESS (0 frames)"; continue; }
-  if [ "$LOCAL" -ge "$FRAME_TAR_THRESHOLD" ]; then
-    offload_tar "$S" "$SESS" "$LOCAL"
-  else
-    offload_per_frame "$S" "$SESS" "$LOCAL"
-  fi
-done 3< "$ORDER_FILE"
-rm -f "$ORDER_FILE"
+for w in $(seq 1 "$WORKERS"); do worker "$w" & done
+wait
 log "OFFLOAD COMPLETE"
