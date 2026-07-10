@@ -170,10 +170,11 @@ offload_tar(){
 import sys, glob, os, random, tarfile, tempfile, cv2, numpy as np
 S, TARF, SPOT = sys.argv[1], sys.argv[2], int(sys.argv[3])
 frames = sorted(glob.glob(os.path.join(S, '**', 'frame_*.png'), recursive=True))
+sess = os.path.basename(S.rstrip('/'))                 # tar was built with `tar -C ROOT SESS`
 random.seed(0); ok = True
 with tarfile.open(TARF) as tf:
     for f in random.sample(frames, min(SPOT, len(frames))):
-        arc = os.path.relpath(f, os.path.dirname(S))   # SESS/park/.../frame.png
+        arc = sess + '/' + os.path.relpath(f, S)       # SESS/park/.../frame.png member name
         try:
             m = tf.getmember(arc); ex = tf.extractfile(m).read()
         except KeyError:
