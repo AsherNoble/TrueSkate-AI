@@ -35,7 +35,11 @@ SPOT="${SPOT:-4}"                          # random frames to pixel-verify per s
 STALL_SECS="${STALL_SECS:-900}"            # kill a put after this long with no progress
 POLL="${POLL:-60}"                         # watchdog sample interval (s)
 CPU_MIN_DELTA="${CPU_MIN_DELTA:-1.0}"      # CPU-secs/poll below which (and no socket) = stalled
-RETRIES="${RETRIES:-3}"                    # put attempts before giving up on a session
+RETRIES="${RETRIES:-3}"                    # put attempts per session PER ROUND
+RETRY_BACKOFF="${RETRY_BACKOFF:-60}"       # grows each retry: backoff*attempt seconds
+MAX_ROUNDS="${MAX_ROUNDS:-30}"             # re-sweep the whole corpus this many times
+ROUND_COOLDOWN="${ROUND_COOLDOWN:-1200}"   # wait between rounds when work remains (ride out outages)
+PUT_ERR="${PUT_ERR:-logs/put_errors.log}"  # captured Modal stderr (was /dev/null — failed blind)
 
 CLAIMS=$(mktemp -d)                        # atomic per-session claim dir (mkdir = lock)
 ORDER_FILE=$(mktemp)
@@ -66,10 +70,11 @@ except Exception:
 # run `modal volume put SRC DST` under a stall-watchdog with retries. Returns 0 on
 # a clean (non-stalled) exit-0, else 1 after RETRIES.
 run_put(){
-  local src="$1" dst="$2" attempt pid cpu last delta stall rc
+  local src="$1" dst="$2" attempt pid cpu last delta stall rc errf
   attempt=1
+  errf=$(mktemp)
   while [ "$attempt" -le "$RETRIES" ]; do
-    "$MODAL" volume put --force "$VOL" "$src" "$dst" >/dev/null 2>&1 &
+    "$MODAL" volume put --force "$VOL" "$src" "$dst" >/dev/null 2>"$errf" &
     pid=$!
     last=$(cpu_secs "$pid"); stall=0
     while kill -0 "$pid" 2>/dev/null; do
@@ -92,11 +97,17 @@ run_put(){
     done
     wait "$pid" 2>/dev/null; rc=$?
     if [ "$rc" -eq 0 ] && [ "$stall" -lt "$STALL_SECS" ]; then
-      return 0
+      rm -f "$errf"; return 0
     fi
-    log "  put attempt $attempt failed (rc=$rc, stall=$stall) — retry"
+    # surface the real Modal error (was swallowed to /dev/null); keep the log terse
+    local emsg
+    emsg=$(grep -iE 'error|exception|refused|timeout|denied|unauthor|not found|connection' "$errf" 2>/dev/null | tail -1)
+    [ -n "$emsg" ] && { echo "$(date '+%F %T') [w${WID:-?}] $dst attempt $attempt: $emsg" >> "$PUT_ERR"; }
+    log "  put attempt $attempt failed (rc=$rc, stall=$stall)${emsg:+: ${emsg:0:80}} — retry"
     attempt=$((attempt + 1))
+    [ "$attempt" -le "$RETRIES" ] && sleep $((RETRY_BACKOFF * (attempt - 1)))   # growing backoff
   done
+  rm -f "$errf"
   return 1
 }
 
@@ -149,11 +160,33 @@ worker(){
   done < "$ORDER_FILE"
 }
 
-log "sizing sessions (WORKERS=$WORKERS)..."
-for S in "$ROOT"/*/; do
-  n=$(find "$S" -name 'frame_*.png' 2>/dev/null | wc -l | tr -d ' '); echo "$n $S"
-done | sort -n > "$ORDER_FILE"
+# count how many session dirs are still local
+local_remaining(){ local n=0 S; for S in "$ROOT"/*/; do [ -d "$S" ] && n=$((n+1)); done; echo "$n"; }
 
-for w in $(seq 1 "$WORKERS"); do worker "$w" & done
-wait
-log "OFFLOAD COMPLETE"
+# LOOP-UNTIL-DONE: each round re-sweeps every still-local session with fresh claims.
+# A session that exhausts its per-round retries (e.g. during an outage) is KEPT
+# local and simply retried next round after a cooldown — no permanent abandonment.
+for round in $(seq 1 "$MAX_ROUNDS"); do
+  [ "$(local_remaining)" -eq 0 ] && { log "nothing local — done"; break; }
+  log "=== round $round/$MAX_ROUNDS: sizing $(local_remaining) local sessions ==="
+  : > "$ORDER_FILE"
+  for S in "$ROOT"/*/; do
+    [ -d "$S" ] || continue
+    n=$(find "$S" -name 'frame_*.png' 2>/dev/null | wc -l | tr -d ' '); echo "$n $S"
+  done | sort -n > "$ORDER_FILE"
+  rm -rf "$CLAIMS"/* 2>/dev/null                 # fresh claims each round
+  for w in $(seq 1 "$WORKERS"); do worker "$w" & done
+  wait
+  left=$(local_remaining)
+  [ "$left" -eq 0 ] && { log "all sessions offloaded"; break; }
+  if [ "$round" -lt "$MAX_ROUNDS" ]; then
+    log "round $round done — $left session(s) still local, cooldown ${ROUND_COOLDOWN}s then retry"
+    sleep "$ROUND_COOLDOWN"
+  fi
+done
+
+if [ "$(local_remaining)" -eq 0 ]; then
+  log "OFFLOAD COMPLETE"
+else
+  log "OFFLOAD INCOMPLETE — $(local_remaining) session(s) still local after $MAX_ROUNDS rounds (see $PUT_ERR)"
+fi
