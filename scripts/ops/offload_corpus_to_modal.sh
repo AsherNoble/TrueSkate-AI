@@ -31,6 +31,9 @@ RETRY_BACKOFF="${RETRY_BACKOFF:-60}"
 MAX_ROUNDS="${MAX_ROUNDS:-40}"
 ROUND_COOLDOWN="${ROUND_COOLDOWN:-1200}"
 PUT_ERR="${PUT_ERR:-logs/put_errors.log}"
+QUIESCENT_MIN="${QUIESCENT_MIN:-0}"         # >0: only offload sessions with NO file touched in the
+                                            # last N min (never touch a session collection is still
+                                            # writing). 0 = offload everything (manual one-shot).
 
 CLAIMS=$(mktemp -d)
 trap 'rm -rf "$CLAIMS" tmp/_stage_w* 2>/dev/null' EXIT
@@ -130,13 +133,22 @@ offload_session(){
   fi
 }
 
-local_remaining(){ local n=0 S; for S in "$ROOT"/*/; do [ -d "$S" ] && n=$((n+1)); done; echo "$n"; }
+# a session is offload-eligible only if quiescent: no file touched within
+# QUIESCENT_MIN minutes (cheap depth-1 check — adding a frame bumps its sample
+# dir's mtime). QUIESCENT_MIN=0 => always eligible. This is what makes it SAFE to
+# run while collection is live: an actively-growing session is never offloaded.
+is_settled(){
+  [ "$QUIESCENT_MIN" -eq 0 ] && return 0
+  [ -z "$(find "$1" -maxdepth 1 -mmin -"$QUIESCENT_MIN" 2>/dev/null | head -1)" ]
+}
+
+local_remaining(){ local n=0 S; for S in "$ROOT"/*/; do [ -d "$S" ] && is_settled "$S" && n=$((n+1)); done; echo "$n"; }
 
 for round in $(seq 1 "$MAX_ROUNDS"); do
   [ "$(local_remaining)" -eq 0 ] && { log "nothing local — done"; break; }
   log "=== round $round/$MAX_ROUNDS: $(local_remaining) sessions local ==="
-  # smallest-first so quick wins free disk sooner
-  for S in $(for d in "$ROOT"/*/; do [ -d "$d" ] && echo "$(find "$d" -name 'frame_*.png' | wc -l | tr -d ' ') $d"; done | sort -n | awk '{print $2}'); do
+  # smallest-first so quick wins free disk sooner; skip non-quiescent (live) sessions
+  for S in $(for d in "$ROOT"/*/; do [ -d "$d" ] && is_settled "$d" && echo "$(find "$d" -name 'frame_*.png' | wc -l | tr -d ' ') $d"; done | sort -n | awk '{print $2}'); do
     WID=main offload_session "$S"
   done
   [ "$(local_remaining)" -eq 0 ] && { log "all sessions offloaded"; break; }

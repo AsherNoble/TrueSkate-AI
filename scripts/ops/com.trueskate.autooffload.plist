@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Auto-offload: hourly, upload any QUIESCENT (settled) SLS session to the Modal
+  volume in ~1GB chunks, verify remote-count==local, then delete it locally — so
+  collection can run indefinitely without filling the rig's disk (the failure that
+  started all this). SAFE while collecting: QUIESCENT_MIN=45 means a session with
+  ANY file touched in the last 45 min (i.e. still being written) is never offloaded.
+  launchd is single-instance, so a long offload run won't stack with the next tick.
+
+  Install (as training-server, on the RIG):
+    cp /Users/training-server/trueskate-ai/scripts/ops/com.trueskate.autooffload.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.trueskate.autooffload.plist
+    launchctl enable gui/$(id -u)/com.trueskate.autooffload
+  Check:  tail -f /Users/training-server/trueskate-ai/logs/autooffload.log
+  Stop:   launchctl bootout gui/$(id -u)/com.trueskate.autooffload
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.trueskate.autooffload</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/training-server/trueskate-ai/scripts/ops/offload_corpus_to_modal.sh</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>QUIESCENT_MIN</key>
+        <string>45</string>
+        <key>WORKERS</key>
+        <string>2</string>
+        <key>MODAL_VOLUME</key>
+        <string>trueskate-corpus</string>
+    </dict>
+
+    <key>StartInterval</key>
+    <integer>3600</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/training-server/trueskate-ai/logs/autooffload.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/training-server/trueskate-ai/logs/autooffload.log</string>
+</dict>
+</plist>
