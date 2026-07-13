@@ -40,13 +40,15 @@ def _park_tag(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
 
 
-def _latest_preview_frame(corpus_root: Path, device: str) -> Path | None:
+def _latest_preview_frame(corpus_root: Path, device: str) -> dict | None:
     """Newest aligned SLS-collector frame for `device` — stand-in for live video.
 
     Walks sessions newest-first, then that session's most-recently-aligned
     segment marker, and reads its manifest for the last gesture's (park,
     gesture_index) to go straight to that sample dir — no directory-tree glob
-    over the whole (potentially huge) corpus.
+    over the whole (potentially huge) corpus. Returns the frame path plus the
+    gesture's own call-end timestamp (rig clock) and park, so the UI can show
+    how stale the footage is without trusting the viewer's own clock.
     """
     sessions = sorted(corpus_root.glob(f"{device}_*"), key=lambda p: p.name, reverse=True)
     for session in sessions:
@@ -62,10 +64,15 @@ def _latest_preview_frame(corpus_root: Path, device: str) -> Path | None:
             if not gestures:
                 continue
             last = gestures[-1]
-            sample_dir = session / _park_tag(last.get("park", "park")) / f"sample_{last['gesture_index']:06d}"
+            park = last.get("park") or "?"
+            sample_dir = session / _park_tag(park) / f"sample_{last['gesture_index']:06d}"
             frames = sorted(sample_dir.glob("frame_*.png"))
             if frames:
-                return frames[-1]
+                return {
+                    "path": frames[-1],
+                    "captured_at": last.get("t_call_end_epoch_s"),
+                    "park": park,
+                }
     return None
 
 
@@ -153,10 +160,19 @@ _PAGE = """<!doctype html>
 <style>
 html,body{margin:0;background:#0d1117;color:#c9d1d9;font:13px/1.5 ui-monospace,Menlo,monospace;height:100%}
 .wrap{display:grid;grid-template-columns:280px 280px 1fr;gap:10px;padding:10px;height:calc(100vh - 20px)}
-.cam{display:flex;flex-direction:column;min-height:0}
-img.screen{width:100%;flex:1;min-height:0;border:1px solid #30363d;border-radius:8px;background:#000;object-fit:contain}
-.lbl{text-align:center;color:#58a6ff;font-weight:600;padding:4px 0 0}
-.lbl .stat{font-weight:400}
+.cam{display:flex;flex-direction:column;min-height:0;border:1px solid #30363d;border-radius:8px;
+     overflow:hidden;background:#0d1117;align-self:start}
+.cam-hdr{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;
+         background:#161b22;border-bottom:1px solid #30363d;flex:0 0 auto}
+.cam-hdr .cam-dev{color:#58a6ff;font-weight:700}
+img.screen{width:100%;flex:0 0 auto;aspect-ratio:414/896;object-fit:contain;background:#000}
+.cam-footer{padding:8px 10px;font-size:11px;color:#8b949e;line-height:1.6}
+.cam-footer b{color:#e6edf3}
+.badge{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:700;letter-spacing:.02em}
+.badge.live{background:#1a7f37;color:#fff}
+.badge.delayed{background:#9e6a03;color:#fff}
+.badge.stale{background:#b62324;color:#fff}
+.badge.none{background:#30363d;color:#8b949e}
 .log{overflow-y:auto;border:1px solid #30363d;border-radius:8px;padding:12px}
 h2{font-size:13px;margin:4px 0;color:#58a6ff}
 .dev{margin-bottom:18px}
@@ -169,10 +185,16 @@ td{padding:1px 8px 1px 0;white-space:nowrap}
 @media (max-width:900px){.wrap{grid-template-columns:1fr 1fr;grid-template-rows:300px 1fr}.log{grid-column:1/3}}
 </style></head>
 <body><div class="wrap">
-<div class="cam"><img class="screen" id="cam-iPhone_XR" alt="iPhone_XR preview">
-  <div class="lbl">XR1 <span class="stat">(SLS corpus, ~60-75s lag)</span></div></div>
-<div class="cam"><img class="screen" id="cam-iPhone_XR2" alt="iPhone_XR2 preview">
-  <div class="lbl">XR2 <span class="stat">(SLS corpus, ~60-75s lag)</span></div></div>
+<div class="cam">
+  <div class="cam-hdr"><span class="cam-dev">XR1</span><span class="badge none" id="badge-iPhone_XR">—</span></div>
+  <img class="screen" id="cam-iPhone_XR" alt="iPhone_XR preview">
+  <div class="cam-footer" id="foot-iPhone_XR">loading…</div>
+</div>
+<div class="cam">
+  <div class="cam-hdr"><span class="cam-dev">XR2</span><span class="badge none" id="badge-iPhone_XR2">—</span></div>
+  <img class="screen" id="cam-iPhone_XR2" alt="iPhone_XR2 preview">
+  <div class="cam-footer" id="foot-iPhone_XR2">loading…</div>
+</div>
 <div class="log" id="log">loading…</div>
 </div>
 <script>
@@ -194,17 +216,46 @@ async function tick(){
       </div>`).join('');
   }catch(e){ document.getElementById('log').textContent = 'fetch failed: '+e; }
 }
-function refreshCams(){
+// Age thresholds (seconds): the collector lands a new frame every ~60-75s, so
+// "live" gives one missed cycle of slack before calling it delayed/stale.
+const LIVE_MAX_S = 150, DELAYED_MAX_S = 900;
+function fmtAge(s){
+  if (s == null) return '?';
+  if (s < 60) return `${Math.round(s)}s`;
+  if (s < 3600) return `${Math.round(s / 60)}m`;
+  return `${Math.round(s / 3600)}h`;
+}
+function badgeInfo(s){
+  if (s == null) return ['none', '—'];
+  if (s <= LIVE_MAX_S) return ['live', 'LIVE-ISH'];
+  if (s <= DELAYED_MAX_S) return ['delayed', 'DELAYED'];
+  return ['stale', 'STALE'];
+}
+async function refreshCams(){
   const t = Date.now();
   for (const dev of ['iPhone_XR', 'iPhone_XR2']) {
     const img = document.getElementById('cam-' + dev);
-    fetch(`/preview/${dev}.jpg?t=${t}`).then(r => { if (r.ok) return r.blob(); throw 0; })
-      .then(b => {
-        const old = img.src;
-        img.src = URL.createObjectURL(b);
-        if (old.startsWith('blob:')) URL.revokeObjectURL(old);
-      })
-      .catch(() => {});
+    const badge = document.getElementById('badge-' + dev);
+    const foot = document.getElementById('foot-' + dev);
+    try {
+      const r = await fetch(`/preview/${dev}.jpg?t=${t}`);
+      if (!r.ok) throw 0;
+      const ageS = r.headers.get('X-Age-S');
+      const capturedAt = r.headers.get('X-Captured-At');
+      const park = r.headers.get('X-Park');
+      const blob = await r.blob();
+      const old = img.src;
+      img.src = URL.createObjectURL(blob);
+      if (old.startsWith('blob:')) URL.revokeObjectURL(old);
+      const ageNum = ageS !== null ? parseFloat(ageS) : null;
+      const [cls, label] = badgeInfo(ageNum);
+      badge.textContent = label;
+      badge.className = 'badge ' + cls;
+      foot.innerHTML = `captured <b>${capturedAt || '?'}</b> (${fmtAge(ageNum)} ago)<br>park: <b>${park || '?'}</b>`;
+    } catch (e) {
+      badge.textContent = '—'; badge.className = 'badge none';
+      foot.textContent = 'no footage yet';
+    }
   }
 }
 tick(); setInterval(tick, 5000);
@@ -229,11 +280,26 @@ class _Handler(BaseHTTPRequestHandler):
             device = self.path[len("/preview/"):].split("?", 1)[0]
             if device.endswith(".jpg"):
                 device = device[:-len(".jpg")]
-            frame = _latest_preview_frame(self.corpus_root, device) if device in DEVICES else None
-            if frame is None:
+            info = _latest_preview_frame(self.corpus_root, device) if device in DEVICES else None
+            if info is None:
                 self._send(404, b"no preview frame yet", "text/plain")
                 return
-            self._send(200, frame.read_bytes(), "image/png")
+            body = info["path"].read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "image/png")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            captured_at = info.get("captured_at")
+            if captured_at is not None:
+                # Age computed with THIS process's clock (the rig's own), never the
+                # viewer's — the rig clock has been known to drift from other
+                # references, so cross-machine comparisons are unreliable.
+                self.send_header("X-Age-S", str(round(time.time() - captured_at)))
+                self.send_header("X-Captured-At",
+                                  time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(captured_at)))
+            self.send_header("X-Park", info.get("park") or "?")
+            self.end_headers()
+            self.wfile.write(body)
             return
         else:
             body = _PAGE.encode()
