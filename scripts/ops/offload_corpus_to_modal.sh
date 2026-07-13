@@ -4,7 +4,8 @@
 # minutes dies with HTTP 504). So we upload each session in ~CHUNK_DIRS-sample-dir
 # batches (~1GB, well under the timeout). Batches stage via cp into a per-worker
 # temp dir and put to /<session>/<park>, so frames keep their real path. Sessions
-# process one at a time; batches within a session run WORKERS-wide to use the uplink.
+# (and the parks within a session) process one at a time; batches within a park
+# run WORKERS-wide to use the uplink.
 #
 # Re-uploading is cheap+idempotent: Modal content-addresses blocks, so a batch that
 # already landed dedups on the next attempt (no re-transfer). A session is deleted
@@ -109,22 +110,31 @@ batch_worker(){
   done
 }
 
-# upload one session in batches, then verify + delete.
+# upload one session in batches, then verify + delete. A session can hold MULTIPLE
+# park subdirs (collect_sls_xctest.py rotates parks every --per-park-hours within
+# the same session dir) — every park must be uploaded, or LOCAL (all-parks frame
+# count) never matches REMOTE and the session is retried forever without progress.
 offload_session(){
-  local S="$1" LOCAL PARKPATH
+  local S="$1" LOCAL PARKDIRS NPARKS parkpath
   SESS=$(basename "$S")
-  PARKPATH=$(ls -d "$S"*/ 2>/dev/null | head -1); [ -z "$PARKPATH" ] && { log "SKIP $SESS (no park dir)"; return 1; }
-  PARK=$(basename "$PARKPATH")
-  SAMPLE_FILE=$(mktemp); ls -d "$PARKPATH"sample_*/ 2>/dev/null > "$SAMPLE_FILE"
-  local NSAMP; NSAMP=$(grep -c . "$SAMPLE_FILE")
-  NBATCH=$(( (NSAMP + CHUNK_DIRS - 1) / CHUNK_DIRS ))
+  PARKDIRS=$(ls -d "$S"*/ 2>/dev/null); [ -z "$PARKDIRS" ] && { log "SKIP $SESS (no park dir)"; return 1; }
+  NPARKS=$(echo "$PARKDIRS" | grep -c .)
   LOCAL=$(find "$S" -name 'frame_*.png' | wc -l | tr -d ' ')
-  log "SESSION $SESS: $LOCAL frames, $NSAMP sample dirs -> $NBATCH batches of $CHUNK_DIRS"
-  export SESS PARK SAMPLE_FILE NBATCH CHUNK_DIRS CLAIMS VOL MODAL PY PUT_ERR STALL_SECS POLL CPU_MIN_DELTA RETRIES RETRY_BACKOFF
-  rm -rf "$CLAIMS"/b* 2>/dev/null
-  local w; for w in $(seq 1 "$WORKERS"); do batch_worker "$w" & done
-  wait
-  rm -f "$SAMPLE_FILE"
+  log "SESSION $SESS: $LOCAL frames across $NPARKS park(s)"
+  export SESS CHUNK_DIRS CLAIMS VOL MODAL PY PUT_ERR STALL_SECS POLL CPU_MIN_DELTA RETRIES RETRY_BACKOFF
+  while IFS= read -r parkpath; do
+    [ -z "$parkpath" ] && continue
+    PARK=$(basename "$parkpath")
+    SAMPLE_FILE=$(mktemp); ls -d "${parkpath}"sample_*/ 2>/dev/null > "$SAMPLE_FILE"
+    local NSAMP; NSAMP=$(grep -c . "$SAMPLE_FILE")
+    NBATCH=$(( (NSAMP + CHUNK_DIRS - 1) / CHUNK_DIRS ))
+    log "  PARK $PARK: $NSAMP sample dirs -> $NBATCH batches of $CHUNK_DIRS"
+    export PARK SAMPLE_FILE NBATCH
+    rm -rf "$CLAIMS"/b* 2>/dev/null
+    local w; for w in $(seq 1 "$WORKERS"); do batch_worker "$w" & done
+    wait
+    rm -f "$SAMPLE_FILE"
+  done <<< "$PARKDIRS"
   local REMOTE; REMOTE=$(remote_count "/$SESS"); REMOTE=${REMOTE:-0}
   if [ "$REMOTE" -eq "$LOCAL" ]; then
     rm -rf "$S"; log "  OK: $SESS fully on Modal ($REMOTE frames), DELETED local (free $(df -g / | tail -1 | awk '{print $4}')GB)"
