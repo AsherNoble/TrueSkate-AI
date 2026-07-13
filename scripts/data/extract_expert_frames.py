@@ -17,6 +17,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -30,7 +31,13 @@ _VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".avi"}
 
 def extract_video(video: Path, out_dir: Path, *, target_fps: float,
                   resize: tuple[int, int] | None = None, grayscale: bool = False) -> int:
-    """Decode `video` -> frame_%06d.png in out_dir at ~target_fps. Returns #frames."""
+    """Decode `video` -> frame_%06d.png in out_dir at ~target_fps. Returns #frames.
+
+    Also writes `_extract_meta.json` recording the TRUE achieved fps. We never
+    upsample, so a source video with native fps below `target_fps` is written out
+    at its native cadence — build_bc_clips.py reads this sidecar (falling back to
+    its own --fps) instead of assuming every clip matches the requested rate, so
+    frame timestamps stay in sync with the real inter-frame spacing."""
     import cv2
 
     cap = cv2.VideoCapture(str(video))
@@ -38,6 +45,7 @@ def extract_video(video: Path, out_dir: Path, *, target_fps: float,
         raise RuntimeError(f"cannot open {video}")
     native = cap.get(cv2.CAP_PROP_FPS) or target_fps
     step = max(1.0, native / target_fps)          # >1 downsamples; clamped so we never upsample
+    achieved_fps = native / step
     out_dir.mkdir(parents=True, exist_ok=True)
 
     src_idx, next_keep, kept = 0, 0.0, 0
@@ -55,6 +63,8 @@ def extract_video(video: Path, out_dir: Path, *, target_fps: float,
             next_keep += step
         src_idx += 1
     cap.release()
+    (out_dir / "_extract_meta.json").write_text(
+        json.dumps({"fps": achieved_fps, "native_fps": native, "target_fps": target_fps}))
     return kept
 
 

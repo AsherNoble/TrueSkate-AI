@@ -107,6 +107,20 @@ def _sorted_frames(clip_dir: Path) -> list[Path]:
     return []
 
 
+def _extracted_fps(clip_dir: Path) -> float | None:
+    """True achieved fps from extract_expert_frames.py's `_extract_meta.json`
+    sidecar, if present. Extraction never upsamples, so a source video whose
+    native fps is below --fps is written out slower than requested; trusting
+    --fps blindly here would desync stroke t_start/t_end from the real frames."""
+    meta_path = clip_dir / "_extract_meta.json"
+    if not meta_path.exists():
+        return None
+    try:
+        return float(json.loads(meta_path.read_text())["fps"])
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        return None
+
+
 def write_clip_json(out_dir: Path, fps: float, strokes: list[Stroke],
                     src_frames: list[Path]) -> Path:
     """Write a SequenceDataset clip: frame_%06d.png symlinks + clip.json."""
@@ -142,10 +156,11 @@ def build_clip(clip_dir: Path, out_dir: Path, model, h: int, w: int, device,
     frames = _sorted_frames(clip_dir)
     if not frames:
         raise RuntimeError(f"no frames in {clip_dir}")
-    times = np.arange(len(frames), dtype=np.float64) / fps - latency_s
+    clip_fps = _extracted_fps(clip_dir) or fps
+    times = np.arange(len(frames), dtype=np.float64) / clip_fps - latency_s
     active, xs, ys = frames_to_touch_track(model, frames, h, w, device, active_thresh=active_thresh)
     strokes = assemble_strokes(active, xs, ys, times)
-    write_clip_json(out_dir, fps, strokes, frames)
+    write_clip_json(out_dir, clip_fps, strokes, frames)
     return len(strokes)
 
 
