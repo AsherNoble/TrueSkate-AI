@@ -47,15 +47,23 @@ if [ "${FREE_GB:-0}" -lt "$LOCAL_MIN_GB" ]; then
 fi
 
 # --- 2. MODAL volume usage (once Modal is set up) ------------------------
-MODAL_MSG=""
 if command -v modal >/dev/null 2>&1 && [ -f "$HOME/.modal.toml" ]; then
-  # `modal volume` has no direct byte total; sum the listing. Best-effort; failures are non-fatal.
+  # `modal volume` has no direct byte total; sum the listing. Best-effort, but a
+  # failed check must stay VISIBLE, not silently read as "usage is fine": expired
+  # Modal auth / a CLI or JSON-schema change previously collapsed to a bare `-1`,
+  # which never exceeds MODAL_MAX_GB and fell straight through to the healthy path.
   USED_GB=$(modal volume ls "$MODAL_VOLUME" --json 2>/dev/null \
     | "$REPO/.venv/bin/python" -c "import sys,json;
 try:
     d=json.load(sys.stdin); print(int(sum(f.get('size',0) for f in d)/1e9))
-except Exception: print(-1)" 2>/dev/null || echo -1)
-  if [ "${USED_GB:-0}" -gt "$MODAL_MAX_GB" ]; then
+except Exception: print('ERROR')" 2>/dev/null || echo ERROR)
+  if ! [[ "$USED_GB" =~ ^[0-9]+$ ]]; then
+    [ "$(get_state)" != "MODAL_CHECK_FAILED" ] && notify "Modal volume usage check failed (CLI/auth/schema issue) — guard is blind to Modal usage until this is fixed." high
+    set_state MODAL_CHECK_FAILED
+    log "MODAL CHECK FAILED (usage unknown)"
+    exit 0
+  fi
+  if [ "$USED_GB" -gt "$MODAL_MAX_GB" ]; then
     MODAL_MSG="MODAL volume '$MODAL_VOLUME' near free-tier cap: ${USED_GB}GB / 1024GB. Prune old data or upgrade the plan."
     [ "$(get_state)" != "MODAL_HIGH" ] && notify "$MODAL_MSG" high
     set_state MODAL_HIGH
@@ -66,7 +74,7 @@ fi
 
 # --- healthy: recovery note if we were previously in an alert state -----
 if [ "$(get_state)" != "OK" ]; then
-  notify "Storage recovered: local ${FREE_GB}GB free. Guard clear." default
+  notify "Storage guard clear: local ${FREE_GB}GB free, Modal usage check OK." default
   set_state OK
 fi
 log "OK local=${FREE_GB}GB"
