@@ -24,6 +24,7 @@ import functools
 import json
 import re
 import sys
+import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -84,35 +85,77 @@ def _newest_jsonl(log_root: Path, device: str) -> Path | None:
     return runs[0] if runs else None
 
 
+# Per-device tail-read cache: {device: {"path", "pos", "target", "rows"}}. A run
+# JSONL only ever grows, and /data is polled every 5s for the run's whole
+# multi-hour duration, so re-reading and re-parsing the entire file from byte 0
+# on every poll gets slower as the run goes on. Instead each poll seeks to
+# where the last poll stopped and parses only the newly appended lines.
+_STATUS_CACHE: dict[str, dict] = {}
+_STATUS_LOCK = threading.Lock()
+
+
+def _tail_new_rows(cached: dict) -> None:
+    """Parse whatever complete (newline-terminated) lines were appended to
+    cached["path"] since cached["pos"], updating cached["rows"]/["target"] and
+    advancing cached["pos"]. A torn trailing line (writer mid-flush) is left
+    unconsumed so it's picked up whole on a later poll instead of being lost."""
+    try:
+        with cached["path"].open("rb") as f:
+            f.seek(cached["pos"])
+            chunk = f.read()
+    except OSError:
+        return
+    last_nl = chunk.rfind(b"\n")
+    if last_nl == -1:
+        return
+    for raw in chunk[:last_nl].split(b"\n"):
+        line = raw.decode("utf-8", "replace").strip()
+        if not line:
+            continue
+        try:
+            r = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if r.get("type") == "run_config":
+            cached["target"] = r.get("target")
+        elif "trick_name" in r or "eval_num" in r:
+            cached["rows"].append(r)
+    cached["pos"] += last_nl + 1
+
+
+def _visible_rows(rows: list[dict], log_delay_s: float) -> list[dict]:
+    """Hide rows newer than the stream latency so the log never references a
+    trick the (HLS-delayed) video hasn't shown yet. Rows are append-ordered by
+    time, so "too new" is always a suffix — trim from the tail, not a full scan.
+    Always returns a fresh list: the caller reads it after releasing the cache
+    lock, and `rows` here is the live cached list another thread may append to."""
+    if log_delay_s <= 0:
+        return list(rows)
+    cutoff = time.time() - log_delay_s
+    end = len(rows)
+    while end > 0:
+        try:
+            ts = time.mktime(time.strptime(rows[end - 1]["timestamp"][:19], "%Y-%m-%dT%H:%M:%S"))
+        except (KeyError, ValueError):
+            break  # unparseable -> treat as visible, matching the original scan's behavior
+        if ts <= cutoff:
+            break
+        end -= 1
+    return rows[:end]
+
+
 def _device_status(log_root: Path, device: str, log_delay_s: float = 0.0) -> dict:
     j = _newest_jsonl(log_root, device)
     if j is None:
         return {"device": device, "trick": "—", "evals": 0, "note": "no run found"}
-    target = None
-    rows = []
-    # Hide rows newer than the stream latency so the log never references a
-    # trick the (HLS-delayed) video hasn't shown yet.
-    cutoff = time.time() - log_delay_s
-    with j.open() as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                r = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if r.get("type") == "run_config":
-                target = r.get("target")
-            elif "trick_name" in r or "eval_num" in r:
-                if log_delay_s > 0:
-                    try:
-                        ts = time.mktime(time.strptime(r["timestamp"][:19], "%Y-%m-%dT%H:%M:%S"))
-                        if ts > cutoff:
-                            continue
-                    except (KeyError, ValueError):
-                        pass
-                rows.append(r)
+    with _STATUS_LOCK:
+        cached = _STATUS_CACHE.get(device)
+        if cached is None or cached["path"] != j:
+            cached = {"path": j, "pos": 0, "target": None, "rows": []}
+            _STATUS_CACHE[device] = cached
+        _tail_new_rows(cached)
+        target = cached["target"]
+        rows = _visible_rows(cached["rows"], log_delay_s)
     evals = len(rows)
     lands = [r for r in rows if r.get("trick_status") == "landed"]
     target_lands = [
