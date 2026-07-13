@@ -44,11 +44,14 @@ def _latest_preview_frame(corpus_root: Path, device: str) -> dict | None:
     """Newest aligned SLS-collector frame for `device` — stand-in for live video.
 
     Walks sessions newest-first, then that session's most-recently-aligned
-    segment marker, and reads its manifest for the last gesture's (park,
-    gesture_index) to go straight to that sample dir — no directory-tree glob
-    over the whole (potentially huge) corpus. Returns the frame path plus the
-    gesture's own call-end timestamp (rig clock) and park, so the UI can show
-    how stale the footage is without trusting the viewer's own clock.
+    segment marker, then that manifest's gestures newest-first, to find the
+    latest sample dir that has frames and isn't flagged `.menu` (replay/menu
+    contamination — see flag_menu_samples.py; a flagged or frame-less gesture
+    is skipped in favor of an earlier one in the same manifest before falling
+    back to an older marker/session) — no directory-tree glob over the whole
+    (potentially huge) corpus. Returns the frame path plus the gesture's own
+    call-end timestamp (rig clock) and park, so the UI can show how stale the
+    footage is without trusting the viewer's own clock.
     """
     sessions = sorted(corpus_root.glob(f"{device}_*"), key=lambda p: p.name, reverse=True)
     for session in sessions:
@@ -60,19 +63,18 @@ def _latest_preview_frame(corpus_root: Path, device: str) -> dict | None:
                 manifest = json.loads(manifest_path.read_text())
             except (OSError, json.JSONDecodeError):
                 continue
-            gestures = manifest.get("gestures", [])
-            if not gestures:
-                continue
-            last = gestures[-1]
-            park = last.get("park") or "?"
-            sample_dir = session / _park_tag(park) / f"sample_{last['gesture_index']:06d}"
-            frames = sorted(sample_dir.glob("frame_*.png"))
-            if frames:
-                return {
-                    "path": frames[-1],
-                    "captured_at": last.get("t_call_end_epoch_s"),
-                    "park": park,
-                }
+            for gesture in reversed(manifest.get("gestures", [])):
+                park = gesture.get("park") or "?"
+                sample_dir = session / _park_tag(park) / f"sample_{gesture['gesture_index']:06d}"
+                if (sample_dir / ".menu").exists():
+                    continue
+                frames = sorted(sample_dir.glob("frame_*.png"))
+                if frames:
+                    return {
+                        "path": frames[-1],
+                        "captured_at": gesture.get("t_call_end_epoch_s"),
+                        "park": park,
+                    }
     return None
 
 
