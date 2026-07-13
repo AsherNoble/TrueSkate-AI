@@ -9,6 +9,7 @@ passing points to these functions.
 Gesture and coordinate conventions: GESTURES.md at the repo root.
 """
 import logging
+import os
 import time
 from dataclasses import dataclass
 from itertools import count
@@ -22,6 +23,12 @@ _DEFAULT_COMBINED_THRESHOLD = 0.6
 _MIN_COMBINED_THRESHOLD = 0.45
 _MAX_COMBINED_THRESHOLD = 0.75
 _MAX_SEQUENTIAL_COMPENSATION = 0.25
+# Minimum stagger (s) between consecutive finger-DOWNS in a combined multi-finger
+# payload. True Skate reads a simultaneous 2-finger touch as a camera gesture that
+# opens the park editor (confirmed: nslot/recipe open it ~8.6%/3.2% of the time,
+# flick never; a 0.12s stagger drops that to 0). Env-gated so only the SLS collector
+# enables it (set TRUESKATE_MIN_FINGER_STAGGER_S); CMA-ES executes unchanged.
+_MIN_FINGER_STAGGER_S = float(os.environ.get("TRUESKATE_MIN_FINGER_STAGGER_S", "0") or "0")
 
 
 @dataclass(frozen=True)
@@ -377,6 +384,9 @@ def execute_n_slot_gestures(
     # inter-slot delays for the (possibly reordered) schedule. Sorting
     # guarantees every start is non-decreasing, so each delay >= -duration.
     starts = [s - raw_starts[0] for s in raw_starts]
+    if _MIN_FINGER_STAGGER_S > 0.0:
+        for i in range(1, n):
+            starts[i] = max(starts[i], starts[i - 1] + _MIN_FINGER_STAGGER_S)
     delays = [
         starts[i + 1] - starts[i] - gestures_durations[i] for i in range(n - 1)
     ]
