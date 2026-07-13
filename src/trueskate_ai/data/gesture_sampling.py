@@ -248,6 +248,22 @@ def _push_out_bolt_zone(x: float, y: float) -> tuple[float, float]:
     return x, y
 
 
+def _restore_min_reach(sx: float, sy: float, ex: float, ey: float) -> tuple[float, float]:
+    """If the bolt-zone push shrank a flick's start->end displacement below
+    _FLICK_MIN_REACH, push the end point further out along the same direction
+    (clipped to bounds) to restore the guarantee _flick_end originally made."""
+    dx, dy = ex - sx, ey - sy
+    dist = float(np.hypot(dx, dy))
+    if dist >= _FLICK_MIN_REACH:
+        return ex, ey
+    if dist < 1e-9:
+        dx, dy, dist = 1.0, 0.0, 1.0  # degenerate: start==end, pick an arbitrary direction
+    scale = _FLICK_MIN_REACH / dist
+    ex2 = float(np.clip(sx + dx * scale, X_BOUND_MIN, X_BOUND_MAX))
+    ey2 = float(np.clip(sy + dy * scale, Y_BOUND_MIN, Y_BOUND_MAX))
+    return ex2, ey2
+
+
 def clamp_in_bounds(s: GestureSample) -> GestureSample:
     """Defensive chokepoint: guarantee a sampled gesture lies within the RL
     coordinate bounds (X_BOUND_MIN..MAX, Y_BOUND_MIN..MAX) AND outside the top-left
@@ -258,12 +274,18 @@ def clamp_in_bounds(s: GestureSample) -> GestureSample:
     coords are absolute (0/1 = screen edges); clamping constrains, it never rescales.
     """
     if s.kind == "flick" and s.waypoints is not None:
-        s.waypoints = [
+        pushed = [
             _push_out_bolt_zone(
                 float(np.clip(x, X_BOUND_MIN, X_BOUND_MAX)),
                 float(np.clip(y, Y_BOUND_MIN, Y_BOUND_MAX)))
             for x, y in s.waypoints
         ]
+        # The bolt-zone push can move the start point close enough to the end
+        # point to violate _FLICK_MIN_REACH (see _restore_min_reach); only the
+        # first/last waypoints define that displacement, so re-check just those.
+        sx, sy = pushed[0]
+        pushed[-1] = _restore_min_reach(sx, sy, *pushed[-1])
+        s.waypoints = pushed
     elif s.params is not None and s.num_gestures is not None:
         bounds = build_param_bounds(s.num_gestures, s.use_spin)
         arr = clamp_params(np.asarray(s.params, dtype=np.float64), bounds)
