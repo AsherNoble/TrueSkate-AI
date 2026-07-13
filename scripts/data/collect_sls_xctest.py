@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import re
 import signal
 import subprocess
@@ -43,6 +44,12 @@ _HERE = Path(__file__).resolve().parent
 _REPO_ROOT = _HERE.parent.parent
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
+
+# SLS mixture gestures include multi-finger nslot/recipe touches; simultaneous
+# finger-downs can trigger True Skate's park editor (see gesture_sampling docs).
+# touch_actions reads this env var at import time, so it must be set before the
+# import below. CMA-ES training never sets it, so its execution is unaffected.
+os.environ.setdefault("TRUESKATE_MIN_FINGER_STAGGER_S", "0.12")
 
 from trueskate_ai.data.gesture_sampling import load_recipe_vectors, sample_mixture  # noqa: E402
 from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E402
