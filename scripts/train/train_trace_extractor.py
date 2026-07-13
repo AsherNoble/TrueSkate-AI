@@ -119,8 +119,13 @@ class SelfLabeledTraceDataset(Dataset):
         # rglob: handles flat (self_labeled: <session>/sample_*) AND nested
         # (SLS/XCTest: <session>/<park>/sample_*) corpora uniformly.
         sample_dirs = sorted(p for p in root.rglob("sample_*") if p.is_dir())
-        skipped_nonflick = 0
+        skipped_nonflick = skipped_menu = 0
         for sample_dir in sample_dirs:
+            # flag_menu_samples.py marks replay/menu-contaminated samples with a
+            # `.menu` file; those frames aren't real gameplay and must be excluded.
+            if (sample_dir / ".menu").exists():
+                skipped_menu += 1
+                continue
             meta_path = sample_dir / "meta.json"
             if not meta_path.exists():
                 continue
@@ -156,7 +161,8 @@ class SelfLabeledTraceDataset(Dataset):
                     continue
                 self._cache(img, lab.x, lab.y); kept_pos += 1
         print(f"  dataset: {kept_pos} trace-aligned positives + {neg} negatives kept, "
-              f"{gated} gated, {skipped_nonflick} non-flick skipped "
+              f"{gated} gated, {skipped_nonflick} non-flick skipped, "
+              f"{skipped_menu} menu/replay skipped "
               f"(latency={latency_s}s, require_trace={require_trace})")
         if not self._frames:
             raise RuntimeError(f"No labeled frames found under {session_dir}")
