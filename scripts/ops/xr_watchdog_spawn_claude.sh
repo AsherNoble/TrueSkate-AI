@@ -19,6 +19,7 @@
 set -u
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
+REPO="$(cd "$HERE/../.." && pwd)"
 PROMPT_FILE="$HERE/xr_fix_agent_prompt.md"
 RIG="training-server@training-server"
 STALL_SECONDS="${STALL_SECONDS:-900}"          # no new segment this long => down (15 min)
@@ -30,6 +31,14 @@ export PATH="/usr/local/bin:/opt/homebrew/bin:/Applications/Tailscale.app/Conten
 
 mkdir -p "$(dirname "$LOG")"
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG"; }
+# independent alert path: the fixer's OWN ntfy escalation (in its prompt) is the
+# normal signal, but if the fixer crashes before it can even run, that path never
+# fires — this is the only other way anyone finds out this watchdog failed too.
+notify() {  # $1 message
+  PYTHONPATH="$REPO/src" "$REPO/.venv/bin/python" -c "
+from trueskate_ai.utils.notify import notify
+notify('''$1''', title='TrueSkate xr watchdog', priority='urgent')" 2>/dev/null || true
+}
 
 # newest segment age (seconds) for a device glob; 999999 if none / unreachable.
 # Scans only the 3 most-recent session dirs (the active one + a couple, robust to a
@@ -68,11 +77,17 @@ if [ -f "$STAMP" ]; then
   fi
 fi
 
-date +%s > "$STAMP"
 log "STALE:$DOWN — spawning bounded claude fixer"
 "$CLAUDE" -p "$(cat "$PROMPT_FILE")
 
 WATCHDOG TRIGGER: these collectors are STALE (no new segment):$DOWN. Diagnose and recover within your bounds; if the cause is out of bounds (needs sudo / disk / hands-on), stop and escalate to Asher via ntfy with the exact command." \
   --allowedTools "Bash(tailscale ssh:*)" \
   >> "$LOG" 2>&1
-log "fixer session ended (exit $?)"
+FIXER_RC=$?
+# stamp AFTER the run completes, not before — the cooldown should measure from
+# when the fixer actually finished, not when it was merely launched.
+date +%s > "$STAMP"
+log "fixer session ended (exit $FIXER_RC)"
+if [ "$FIXER_RC" -ne 0 ]; then
+  notify "xr watchdog: claude fixer exited $FIXER_RC while STALE:$DOWN — it may not have run its own escalation. Check $LOG on this laptop."
+fi
