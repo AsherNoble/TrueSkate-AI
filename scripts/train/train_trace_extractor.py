@@ -43,6 +43,7 @@ from PIL import Image  # noqa: E402
 _DEFAULT_LATENCY_S = 0.45
 _TRACE_WARM_THRESHOLD = 200  # min warm-orange px near the label to count as trace-aligned
 
+from trueskate_ai.bc.frame_prep import prep_frame_rgb  # noqa: E402
 from trueskate_ai.vision.self_label import label_frames  # noqa: E402
 from trueskate_ai.vision.gaussian_bump_predictor import GaussianBumpPredictor, GaussianBumpLoss  # noqa: E402
 
@@ -168,8 +169,7 @@ class SelfLabeledTraceDataset(Dataset):
             raise RuntimeError(f"No labeled frames found under {session_dir}")
 
     def _cache(self, bgr: np.ndarray, nx: float, ny: float) -> None:
-        rgb = cv2.cvtColor(cv2.resize(bgr, (_W, _H)), cv2.COLOR_BGR2RGB)
-        self._frames.append(rgb.astype(np.uint8))
+        self._frames.append(prep_frame_rgb(bgr, _H, _W, normalize=False))
         hm = make_heatmap(nx * _W, ny * _H, _H, _W) if nx >= 0 else np.zeros((_H, _W), np.float32)
         self._heatmaps.append(hm.astype(np.float16))
 

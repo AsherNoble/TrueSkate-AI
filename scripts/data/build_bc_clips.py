@@ -40,6 +40,7 @@ if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from trueskate_ai.bc.assemble import Stroke, assemble_strokes  # noqa: E402
+from trueskate_ai.bc.frame_prep import prep_frame_rgb  # noqa: E402
 
 
 # --- Model 1 inference -----------------------------------------------------
@@ -79,8 +80,7 @@ def frames_to_touch_track(model, frame_paths: list[Path], h: int, w: int, device
                 img = cv2.imread(str(p))
                 if img is None:
                     raise FileNotFoundError(p)
-                img = cv2.cvtColor(cv2.resize(img, (w, h)), cv2.COLOR_BGR2RGB)
-                imgs.append(img.astype(np.float32) / 255.0)
+                imgs.append(prep_frame_rgb(img, h, w))
             x = torch.from_numpy(np.stack(imgs).transpose(0, 3, 1, 2)).to(device)
             hm = model(x)                                    # (B,1,h,w) sigmoid
             hm = hm.squeeze(1).cpu().numpy()                 # (B,h,w)
