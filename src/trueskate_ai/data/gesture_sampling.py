@@ -51,6 +51,15 @@ _FLICK_START_Y = (Y_BOUND_MIN + _START_INSET, Y_BOUND_MAX - _START_INSET)  # ~0.
 # displacement (post-bounds-clip). Edge starts are aimed inward to satisfy it.
 _FLICK_MIN_REACH = 0.15
 
+# A True Skate update added a "Bolt Challenges" indicator (the "(N/M)" circle-
+# exclamation) in the TOP-LEFT corner. A gesture finger that lands on it opens the
+# Bolt Challenges modal, which the collector then blindly fires into — corrupting
+# ~12% of samples. Frame-onset forensics traced every modal-open to a waypoint near
+# (0.14, 0.20-0.24); this corner rect covers the indicator's hit target plus margin,
+# and clamp_in_bounds() keeps ALL waypoints out of it (pushed right, off the strip).
+_BOLT_EXCL_X = (X_BOUND_MIN, 0.20)
+_BOLT_EXCL_Y = (Y_BOUND_MIN, 0.30)
+
 # Per-param jitter sigmas for "recipe" mode, in the vector's native units,
 # indexed within a slot as [x0,y0,x1,y1,x2,y2,duration,easing].
 _COORD_JITTER = 0.03
@@ -228,23 +237,41 @@ def sample_recipe(
     )
 
 
+def _push_out_bolt_zone(x: float, y: float) -> tuple[float, float]:
+    """Push a waypoint out of the top-left Bolt-Challenges indicator rect by moving
+    it RIGHT to the rect's edge — clearing the whole left-edge button strip in that
+    band (see _BOLT_EXCL_X/Y). Points outside the rect pass through unchanged."""
+    x0, x1 = _BOLT_EXCL_X
+    y0, y1 = _BOLT_EXCL_Y
+    if x0 <= x < x1 and y0 <= y < y1:  # half-open: x==x1 is already outside
+        return x1, y
+    return x, y
+
+
 def clamp_in_bounds(s: GestureSample) -> GestureSample:
     """Defensive chokepoint: guarantee a sampled gesture lies within the RL
-    coordinate bounds (X_BOUND_MIN..MAX, Y_BOUND_MIN..MAX), so the collector can
-    never execute — or mislabel — an out-of-bounds action whatever the sampling
-    path or any future change. Clamps the SAMPLE itself (mutates in place), so the
-    saved label always matches what executes. Normalised coords are absolute
-    (0/1 = screen edges); clamping constrains, it never rescales.
+    coordinate bounds (X_BOUND_MIN..MAX, Y_BOUND_MIN..MAX) AND outside the top-left
+    Bolt-Challenges indicator rect (_BOLT_EXCL_*), so the collector can never
+    execute — or mislabel — an out-of-bounds action or one that opens the Bolt modal,
+    whatever the sampling path or any future change. Clamps the SAMPLE itself
+    (mutates in place), so the saved label always matches what executes. Normalised
+    coords are absolute (0/1 = screen edges); clamping constrains, it never rescales.
     """
     if s.kind == "flick" and s.waypoints is not None:
         s.waypoints = [
-            (float(np.clip(x, X_BOUND_MIN, X_BOUND_MAX)),
-             float(np.clip(y, Y_BOUND_MIN, Y_BOUND_MAX)))
+            _push_out_bolt_zone(
+                float(np.clip(x, X_BOUND_MIN, X_BOUND_MAX)),
+                float(np.clip(y, Y_BOUND_MIN, Y_BOUND_MAX)))
             for x, y in s.waypoints
         ]
     elif s.params is not None and s.num_gestures is not None:
         bounds = build_param_bounds(s.num_gestures, s.use_spin)
-        s.params = [float(v) for v in clamp_params(np.asarray(s.params, dtype=np.float64), bounds)]
+        arr = clamp_params(np.asarray(s.params, dtype=np.float64), bounds)
+        for slot in range(s.num_gestures):
+            b = slot * PARAMS_PER_SLOT
+            for c in (0, 2, 4):  # the slot's 3 waypoint (x, y) pairs
+                arr[b + c], arr[b + c + 1] = _push_out_bolt_zone(float(arr[b + c]), float(arr[b + c + 1]))
+        s.params = [float(v) for v in arr]
     return s
 
 
