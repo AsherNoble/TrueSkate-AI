@@ -43,9 +43,6 @@ from PIL import Image  # noqa: E402
 _DEFAULT_LATENCY_S = 0.45
 _TRACE_WARM_THRESHOLD = 200  # min warm-orange px near the label to count as trace-aligned
 
-from trueskate_ai.bc.frame_prep import prep_frame_rgb  # noqa: E402
-from trueskate_ai.vision.self_label import label_frames  # noqa: E402
-from trueskate_ai.vision.gaussian_bump_predictor import GaussianBumpPredictor, GaussianBumpLoss  # noqa: E402
 
 _H, _W = 288, 128          # working resolution (≈ portrait 2.25:1; still resolves the trace, ~3x faster than 416x192)
 _HEATMAP_SIGMA = 6.0
@@ -105,27 +102,44 @@ class SelfLabeledTraceDataset(Dataset):
     Each sample dir contributes one item per captured frame: the frame image
     paired with a Gaussian heatmap at the ground-truth touch position computed
     from the known gesture + the frame timestamp (latency_s tunable).
+
+    By default this dataset does NOT preload full-resolution frames into memory;
+    it collects frame paths and label params and loads/processes frames on-the-fly
+    in __getitem__. For small datasets or tests set cache_frames=True to preserve
+    the legacy behaviour of caching preprocessed frames & heatmaps.
     """
 
     def __init__(self, session_dir: str | Path, *, latency_s: float = _DEFAULT_LATENCY_S,
-                 require_trace: bool = True, rng_seed: int = 0):
-        # Each candidate frame is loaded from disk ONCE here (also needed for the
-        # trace gate) and cached resized in memory, so training epochs do no disk
-        # I/O — full-res-PNG-per-item was ~6 min/epoch; this is seconds.
-        self._frames: list[np.ndarray] = []   # uint8 [H,W,3] RGB
-        self._heatmaps: list[np.ndarray] = []  # float16 [H,W]
+                 require_trace: bool = True, rng_seed: int = 0, cache_frames: bool = False):
+        self.cache_frames = cache_frames
+        if cache_frames:
+            # Legacy behaviour: keep preprocessed frames & heatmaps in memory
+            self._frames: list[np.ndarray] = []   # uint8 [H,W,3] RGB (preprocessed)
+            self._heatmaps: list[np.ndarray] = []  # float16 [H,W]
+        else:
+            # Memory-efficient: keep only paths and label params (nx, ny)
+            self._frame_paths: list[Path] = []
+            self._heatmap_params: list[tuple[float, float]] = []  # (nx, ny) normalized, nx<0 => no-touch
+
         rng = np.random.default_rng(rng_seed)
+        # lazy import to avoid heavy deps (e.g., selenium) when running --smoke
+        from trueskate_ai.vision.self_label import label_frames  # noqa: E402
         kept_pos = gated = neg = 0
         root = Path(session_dir)
         # rglob: handles flat (self_labeled: <session>/sample_*) AND nested
         # (SLS/XCTest: <session>/<park>/sample_*) corpora uniformly.
         sample_dirs = sorted(p for p in root.rglob("sample_*") if p.is_dir())
-        skipped_nonflick = skipped_menu = 0
+        skipped_nonflick = skipped_menu = skipped_editor = 0
         for sample_dir in sample_dirs:
             # flag_menu_samples.py marks replay/menu-contaminated samples with a
             # `.menu` file; those frames aren't real gameplay and must be excluded.
             if (sample_dir / ".menu").exists():
                 skipped_menu += 1
+                continue
+            # flag_editor_samples.py marks park-editor-contaminated samples with
+            # `.editor`; those are not live gameplay and must be excluded too.
+            if (sample_dir / ".editor").exists():
+                skipped_editor += 1
                 continue
             meta_path = sample_dir / "meta.json"
             if not meta_path.exists():
@@ -137,6 +151,7 @@ class SelfLabeledTraceDataset(Dataset):
                 skipped_nonflick += 1
                 continue
             waypoints = [tuple(p) for p in meta["waypoints"]]
+            from trueskate_ai.vision.self_label import label_frames  # lazy import to avoid heavy deps during --smoke
             labels = label_frames(
                 waypoints, meta["duration"], meta["easing_power"],
                 _start_relative_frame_times(meta), latency_s=latency_s,
@@ -148,37 +163,80 @@ class SelfLabeledTraceDataset(Dataset):
                     continue
                 if not lab.active:
                     if rng.random() <= _NEG_KEEP_FRAC:
-                        img = cv2.imread(str(frame_path))
-                        if img is not None:
-                            self._cache(img, -1.0, -1.0); neg += 1
+                        if cache_frames:
+                            img = cv2.imread(str(frame_path))
+                            if img is not None:
+                                self._cache(img, -1.0, -1.0)
+                                neg += 1
+                        else:
+                            # store path + negative label (no-touch)
+                            self._frame_paths.append(frame_path)
+                            self._heatmap_params.append((-1.0, -1.0))
+                            neg += 1
                     continue
-                img = cv2.imread(str(frame_path))
-                if img is None:
-                    continue
-                # Trace-presence gate: keep an active frame only if the orange
-                # trace actually appears near the (latency-shifted) label.
-                if require_trace and _warm_img(img, lab.x, lab.y) < _TRACE_WARM_THRESHOLD:
-                    gated += 1
-                    continue
-                self._cache(img, lab.x, lab.y); kept_pos += 1
+                # For active labels we need to apply the warm/trace gate. This
+                # requires inspecting the frame briefly but we do not keep the
+                # full-res image in memory when cache_frames=False.
+                if cache_frames:
+                    img = cv2.imread(str(frame_path))
+                    if img is None:
+                        continue
+                    if require_trace and _warm_img(img, lab.x, lab.y) < _TRACE_WARM_THRESHOLD:
+                        gated += 1
+                        continue
+                    self._cache(img, lab.x, lab.y)
+                    kept_pos += 1
+                else:
+                    img = cv2.imread(str(frame_path))
+                    if img is None:
+                        continue
+                    if require_trace and _warm_img(img, lab.x, lab.y) < _TRACE_WARM_THRESHOLD:
+                        gated += 1
+                        continue
+                    # store path + normalized label coords for on-the-fly heatmap
+                    self._frame_paths.append(frame_path)
+                    self._heatmap_params.append((lab.x, lab.y))
+                    kept_pos += 1
         print(f"  dataset: {kept_pos} trace-aligned positives + {neg} negatives kept, "
               f"{gated} gated, {skipped_nonflick} non-flick skipped, "
-              f"{skipped_menu} menu/replay skipped "
-              f"(latency={latency_s}s, require_trace={require_trace})")
-        if not self._frames:
-            raise RuntimeError(f"No labeled frames found under {session_dir}")
+              f"{skipped_menu} menu/replay skipped, {skipped_editor} editor skipped "
+              f"(latency={latency_s}s, require_trace={require_trace}, cache_frames={cache_frames})")
+        if cache_frames:
+            if not self._frames:
+                raise RuntimeError(f"No labeled frames found under {session_dir}")
+        else:
+            if not self._frame_paths:
+                raise RuntimeError(f"No labeled frames found under {session_dir}")
 
     def _cache(self, bgr: np.ndarray, nx: float, ny: float) -> None:
+        # preprocess + store small tensors in memory (legacy path)
+        from trueskate_ai.bc.frame_prep import prep_frame_rgb  # lazy import
         self._frames.append(prep_frame_rgb(bgr, _H, _W, normalize=False))
         hm = make_heatmap(nx * _W, ny * _H, _H, _W) if nx >= 0 else np.zeros((_H, _W), np.float32)
         self._heatmaps.append(hm.astype(np.float16))
 
     def __len__(self) -> int:
-        return len(self._frames)
+        return len(self._frames) if self.cache_frames else len(self._frame_paths)
 
     def __getitem__(self, idx: int):
-        frame = torch.from_numpy(self._frames[idx].astype(np.float32) / 255.0).permute(2, 0, 1)
-        heatmap = torch.from_numpy(self._heatmaps[idx].astype(np.float32)).unsqueeze(0)
+        if self.cache_frames:
+            frame = torch.from_numpy(self._frames[idx].astype(np.float32) / 255.0).permute(2, 0, 1)
+            heatmap = torch.from_numpy(self._heatmaps[idx].astype(np.float32)).unsqueeze(0)
+            return {"image": frame, "heatmap": heatmap}
+        # load frame on-the-fly and compute heatmap from stored normalized params
+        frame_path = self._frame_paths[idx]
+        bgr = cv2.imread(str(frame_path))
+        if bgr is None:
+            raise RuntimeError(f"Failed to read frame {frame_path}")
+        from trueskate_ai.bc.frame_prep import prep_frame_rgb  # lazy import
+        proc = prep_frame_rgb(bgr, _H, _W, normalize=False)
+        frame = torch.from_numpy(proc.astype(np.float32) / 255.0).permute(2, 0, 1)
+        nx, ny = self._heatmap_params[idx]
+        if nx >= 0:
+            hm = make_heatmap(nx * _W, ny * _H, _H, _W, sigma=_HEATMAP_SIGMA)
+        else:
+            hm = np.zeros((_H, _W), np.float32)
+        heatmap = torch.from_numpy(hm.astype(np.float32)).unsqueeze(0)
         return {"image": frame, "heatmap": heatmap}
 
 
@@ -204,13 +262,25 @@ def train(dataset: Dataset, *, epochs: int, batch_size: int, lr: float,
     dev = _device()
     print(f"device={dev}  samples={len(dataset)}  epochs={epochs}  batch={batch_size}  base_ch={base_channels}")
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
-    model = GaussianBumpPredictor(in_channels=3, base_channels=base_channels).to(dev)
-    loss_fn = GaussianBumpLoss()
+    if smoke:
+        # tiny smoke model to avoid importing heavy extras (matplotlib, etc.)
+        import torch.nn as nn
+        model = nn.Sequential(
+            nn.Conv2d(3, base_channels, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(base_channels, 1, kernel_size=1),
+        ).to(dev)
+        loss_fn = nn.MSELoss()
+    else:
+        from trueskate_ai.vision.gaussian_bump_predictor import GaussianBumpPredictor, GaussianBumpLoss  # lazy import
+        model = GaussianBumpPredictor(in_channels=3, base_channels=base_channels).to(dev)
+        loss_fn = GaussianBumpLoss()
     opt = torch.optim.Adam(model.parameters(), lr=lr)
 
     for ep in range(epochs):
         model.train()
         running = 0.0
+        step_count = 0
         for batch in loader:
             img = batch["image"].to(dev)
             target = batch["heatmap"].to(dev)
@@ -220,9 +290,11 @@ def train(dataset: Dataset, *, epochs: int, batch_size: int, lr: float,
             loss.backward()
             opt.step()
             running += float(loss.item())
+            step_count += 1
             if smoke:
                 break  # one step is enough to prove the pipeline
-        print(f"  epoch {ep + 1}/{epochs}  loss={running / max(1, len(loader)):.5f}")
+        avg_loss = (running / step_count) if step_count > 0 else 0.0
+        print(f"  epoch {ep + 1}/{epochs}  loss={avg_loss:.5f}  (steps={step_count})")
         if smoke:
             break
 
