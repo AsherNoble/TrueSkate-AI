@@ -1,8 +1,12 @@
-"""Combined training dashboard: phone-screen preview + distilled training log.
+"""Canonical training dashboard: phone-screen preview + training log + Mode A heartbeat.
 
-Serves a single page with a per-device screen preview and a distilled
-per-device log built from the newest run JSONL: current trick, eval counts,
-throughput, rolling land rate, and the latest landed tricks.
+Serves a single page — the only rig dashboard — with a per-device screen
+preview and a distilled per-device log built from the newest run JSONL
+(current trick, eval counts, throughput, rolling land rate, latest landed
+tricks), plus a top heartbeat bar for Mode A (CMA-ES) runs sourced from
+``logs/status.json`` (written by ``trueskate_ai.monitoring.status.StatusTracker``).
+Absorbs what used to be the separate ``status_server.py`` — that script is
+retired; two dashboards on two ports was one too many.
 
 The screen preview is NOT the old view_device.py HLS stream — that path is the
 AVFoundation/CoreMediaIO "DAL" screen-mirror capture, which is wedged at the OS
@@ -13,9 +17,15 @@ disk (`data/sls_xctest/<device>_*/.../sample_NNNNNN/frame_NNN.png`) — real
 gameplay frames, zero extra device/WDA traffic, but refreshed only on the
 collector's segment cadence (~60-75s), not true live video.
 
+Meant to run continuously (launchd, RunAtLoad+KeepAlive) rather than be
+spawned per training run — Mode A's heartbeat bar just shows "idle" when
+``logs/status.json`` is absent or stale, which is the common case since Mode B
+collection is the rig's current default activity.
+
 Usage:
     python scripts/train_dashboard.py [--port 8400] [--host 0.0.0.0]
         [--log-root logs/overnight] [--corpus-root data/sls_xctest]
+        [--status-path logs/status.json]
 
 Open http://127.0.0.1:8400/ (or the tailnet IP from another device).
 """
@@ -204,7 +214,10 @@ _PAGE = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 html,body{margin:0;background:#0d1117;color:#c9d1d9;font:13px/1.5 ui-monospace,Menlo,monospace;height:100%}
-.wrap{display:grid;grid-template-columns:280px 280px 1fr;gap:10px;padding:10px;height:calc(100vh - 20px)}
+.heartbeat{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;background:#161b22;
+           border-bottom:1px solid #30363d;font-size:.8rem;color:#8b949e}
+.heartbeat b{color:#e6edf3}
+.wrap{display:grid;grid-template-columns:280px 280px 1fr;gap:10px;padding:10px;height:calc(100vh - 40px)}
 .cam{display:flex;flex-direction:column;min-height:0;border:1px solid #30363d;border-radius:8px;
      overflow:hidden;background:#0d1117;align-self:start}
 .cam-hdr{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;
@@ -229,7 +242,9 @@ table{border-collapse:collapse;width:100%}
 td{padding:1px 8px 1px 0;white-space:nowrap}
 @media (max-width:900px){.wrap{grid-template-columns:1fr 1fr;grid-template-rows:300px 1fr}.log{grid-column:1/3}}
 </style></head>
-<body><div class="wrap">
+<body>
+<div class="heartbeat"><span class="badge none" id="hb-pill">—</span><span id="hb-text">loading heartbeat…</span></div>
+<div class="wrap">
 <div class="cam">
   <div class="cam-hdr"><span class="cam-dev">XR1</span><span class="badge none" id="badge-iPhone_XR">—</span></div>
   <img class="screen" id="cam-iPhone_XR" alt="iPhone_XR preview">
@@ -303,16 +318,38 @@ async function refreshCams(){
     }
   }
 }
+async function tickHeartbeat(){
+  const pill = document.getElementById('hb-pill'), el = document.getElementById('hb-text');
+  let s;
+  try { s = await (await fetch('/status.json', {cache:'no-store'})).json(); }
+  catch(e){ pill.textContent='—'; pill.className='badge none'; el.textContent='heartbeat unreachable'; return; }
+  if (s.state === 'no-status-yet') {
+    pill.textContent = 'IDLE'; pill.className = 'badge none';
+    el.textContent = 'Mode A (CMA-ES): no training run active';
+    return;
+  }
+  const ageS = (Date.now() - Date.parse(s.updated_at)) / 1000;
+  const stale = ageS > 180;
+  pill.textContent = stale ? `STALE ${Math.round(ageS)}s` : 'LIVE';
+  pill.className = 'badge ' + (stale ? 'stale' : 'live');
+  const deadTxt = (s.dead && s.dead.length) ? ` · dead: ${s.dead.join(', ')}` : '';
+  el.innerHTML = `Mode A: <b>${s.target}</b> · run ${s.run_id} · gen ${s.generation} · ` +
+    `evals ${s.total_evals}/${s.max_evals} · land rate ${((s.land_rate||0)*100).toFixed(1)}% · ` +
+    `best ${s.best_reward} ${s.best_trick||''}${deadTxt}`;
+}
 tick(); setInterval(tick, 5000);
 refreshCams(); setInterval(refreshCams, 10000);
+tickHeartbeat(); setInterval(tickHeartbeat, 5000);
 </script></body></html>"""
 
 
 class _Handler(BaseHTTPRequestHandler):
-    def __init__(self, *args, log_root: Path, corpus_root: Path, log_delay_s: float, **kwargs):
+    def __init__(self, *args, log_root: Path, corpus_root: Path, log_delay_s: float,
+                 status_path: Path, **kwargs):
         self.log_root = log_root
         self.corpus_root = corpus_root
         self.log_delay_s = log_delay_s
+        self.status_path = status_path
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -320,6 +357,14 @@ class _Handler(BaseHTTPRequestHandler):
             body = json.dumps([
                 _device_status(self.log_root, d, self.log_delay_s) for d in DEVICES
             ]).encode()
+            ctype = "application/json"
+        elif self.path.startswith("/status.json"):
+            # Mode A (CMA-ES) heartbeat, written by StatusTracker. Absent/stale
+            # is the normal state whenever Mode B collection is what's running.
+            if self.status_path.exists():
+                body = self.status_path.read_bytes()
+            else:
+                body = json.dumps({"state": "no-status-yet"}).encode()
             ctype = "application/json"
         elif self.path.startswith("/preview/"):
             device = self.path[len("/preview/"):].split("?", 1)[0]
@@ -377,10 +422,12 @@ def main() -> None:
                         help="SLS/XCTest collector output — source of the screen-preview frames.")
     parser.add_argument("--log-delay", type=float, default=8.0,
                         help="Seconds to lag the log so it doesn't outrun the preview frames.")
+    parser.add_argument("--status-path", type=Path, default=_REPO_ROOT / "logs" / "status.json",
+                        help="Mode A heartbeat file written by StatusTracker (default: logs/status.json).")
     args = parser.parse_args()
 
     handler = functools.partial(_Handler, log_root=args.log_root, corpus_root=args.corpus_root,
-                                log_delay_s=args.log_delay)
+                                log_delay_s=args.log_delay, status_path=args.status_path.resolve())
     try:
         httpd = ThreadingHTTPServer((args.host, args.port), handler)
     except OSError as e:

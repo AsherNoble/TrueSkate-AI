@@ -319,9 +319,9 @@ def run(
         print(f"TRACE_COLLECT on — saving up to {_TRACE_EVAL_CAP} eval(s) of color "
               f"trace frames to {trace_root}")
 
-    # Heartbeat status (served by scripts/status_server.py over Tailscale) +
-    # push notifications. status.json lives at the log-dir root so the server
-    # always points at the latest run.
+    # Heartbeat status (read by scripts/train_dashboard.py's Mode A bar) +
+    # push notifications. status.json lives at the log-dir root so the
+    # dashboard always points at the latest run.
     status = StatusTracker(
         Path(log_dir) / "status.json",
         run_id=run_dir.name,

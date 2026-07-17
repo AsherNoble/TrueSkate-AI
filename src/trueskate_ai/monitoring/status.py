@@ -2,8 +2,9 @@
 
 ``StatusTracker`` accumulates live run metrics (throughput, per-device eval
 counts, last trick, best, alive/dead) and writes them atomically to a JSON file
-on every generation. ``scripts/status_server.py`` serves that file over
-``tailscale serve`` so Asher can glance at the rig from his phone on the road.
+on every generation. ``scripts/train_dashboard.py`` (the rig's one dashboard,
+always running on :8400) reads that file for its Mode A heartbeat bar so Asher
+can glance at the rig from his phone on the road.
 
 The file is the single source of truth for "is the rig actually working?":
   * ``updated_at`` going stale  → training stalled / process died.

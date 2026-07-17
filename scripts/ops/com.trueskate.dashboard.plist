@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  RIG-side LaunchAgent: the one canonical training dashboard
+  (scripts/train_dashboard.py), always running on :8400 regardless of whether
+  Mode A (CMA-ES) or Mode B (SLS collection) is active. Absorbed what used to
+  be a separate status_server.py on :8200 — see train_dashboard.py's module
+  docstring.
+
+  Install (as training-server, on the rig):
+    cp /Users/training-server/trueskate-ai/scripts/ops/com.trueskate.dashboard.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.trueskate.dashboard.plist
+    launchctl enable gui/$(id -u)/com.trueskate.dashboard
+  Check:  launchctl print gui/$(id -u)/com.trueskate.dashboard | head
+          tail -f /Users/training-server/trueskate-ai/logs/dashboard_agent.log
+  Stop:   launchctl bootout gui/$(id -u)/com.trueskate.dashboard
+
+  Open from any tailnet device: http://<tailscale-ip>:8400/ (plain HTTP,
+  direct to the tailnet IP — no `tailscale serve` involved).
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.trueskate.dashboard</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/training-server/trueskate-ai/.venv/bin/python</string>
+        <string>scripts/train_dashboard.py</string>
+        <string>--port</string>
+        <string>8400</string>
+        <string>--host</string>
+        <string>0.0.0.0</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/training-server/trueskate-ai</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/training-server/trueskate-ai/logs/dashboard_agent.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/training-server/trueskate-ai/logs/dashboard_agent.log</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+</dict>
+</plist>
