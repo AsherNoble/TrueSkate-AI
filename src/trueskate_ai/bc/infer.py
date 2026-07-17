@@ -12,9 +12,9 @@ Per decision:
     #   execute vec via action_param.execute_gesture_params after waiting pre_delay_s
     runner.commit(strokes[:k])                # record executed strokes so the next act() conditions on them
 
-Frame convention matches training exactly (`sequence_dataset._load_frame`):
-`observe` takes a **BGR uint8 H×W×3** array (as cv2 returns), resizes to
-(img_w, img_h), converts to RGB, scales to [0, 1], and stores CHW.
+Frame convention matches training exactly — both go through `bc.frame_prep.
+prep_frame_rgb`: `observe` takes a **BGR uint8 H×W×3** array (as cv2 returns),
+resizes to (img_w, img_h), converts to RGB, scales to [0, 1], and stores CHW.
 
 delay-timing note: `strokes_to_param_vector` packs only the N-1 delays *between*
 strokes (each stroke's `delay_before`, skipping the first), so the first stroke's
@@ -28,6 +28,7 @@ from collections import deque
 
 import numpy as np
 
+from trueskate_ai.bc.frame_prep import prep_frame_rgb
 from trueskate_ai.bc.gesture_tokens import STROKE_DIM, decode, encode, strokes_to_param_vector
 from trueskate_ai.bc.model2 import SequencePolicy, SequencePolicyConfig
 
@@ -60,10 +61,7 @@ class SequencePolicyRunner:
 
     def observe(self, frame_bgr: np.ndarray) -> None:
         """Push one BGR uint8 H×W×3 frame (cv2 convention), transformed as in training."""
-        import cv2
-
-        img = cv2.resize(np.asarray(frame_bgr), (self.cfg.img_w, self.cfg.img_h))
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
+        img = prep_frame_rgb(frame_bgr, self.cfg.img_h, self.cfg.img_w)
         self._frames.append(img.transpose(2, 0, 1))                    # (C,H,W)
 
     def _frames_tensor(self):

@@ -40,6 +40,7 @@ if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from trueskate_ai.bc.assemble import Stroke, assemble_strokes  # noqa: E402
+from trueskate_ai.bc.frame_prep import prep_frame_rgb  # noqa: E402
 
 
 # --- Model 1 inference -----------------------------------------------------
@@ -79,8 +80,7 @@ def frames_to_touch_track(model, frame_paths: list[Path], h: int, w: int, device
                 img = cv2.imread(str(p))
                 if img is None:
                     raise FileNotFoundError(p)
-                img = cv2.cvtColor(cv2.resize(img, (w, h)), cv2.COLOR_BGR2RGB)
-                imgs.append(img.astype(np.float32) / 255.0)
+                imgs.append(prep_frame_rgb(img, h, w))
             x = torch.from_numpy(np.stack(imgs).transpose(0, 3, 1, 2)).to(device)
             hm = model(x)                                    # (B,1,h,w) sigmoid
             hm = hm.squeeze(1).cpu().numpy()                 # (B,h,w)
@@ -105,6 +105,20 @@ def _sorted_frames(clip_dir: Path) -> list[Path]:
         if fp:
             return fp
     return []
+
+
+def _extracted_fps(clip_dir: Path) -> float | None:
+    """True achieved fps from extract_expert_frames.py's `_extract_meta.json`
+    sidecar, if present. Extraction never upsamples, so a source video whose
+    native fps is below --fps is written out slower than requested; trusting
+    --fps blindly here would desync stroke t_start/t_end from the real frames."""
+    meta_path = clip_dir / "_extract_meta.json"
+    if not meta_path.exists():
+        return None
+    try:
+        return float(json.loads(meta_path.read_text())["fps"])
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        return None
 
 
 def write_clip_json(out_dir: Path, fps: float, strokes: list[Stroke],
@@ -142,10 +156,11 @@ def build_clip(clip_dir: Path, out_dir: Path, model, h: int, w: int, device,
     frames = _sorted_frames(clip_dir)
     if not frames:
         raise RuntimeError(f"no frames in {clip_dir}")
-    times = np.arange(len(frames), dtype=np.float64) / fps - latency_s
+    clip_fps = _extracted_fps(clip_dir) or fps
+    times = np.arange(len(frames), dtype=np.float64) / clip_fps - latency_s
     active, xs, ys = frames_to_touch_track(model, frames, h, w, device, active_thresh=active_thresh)
     strokes = assemble_strokes(active, xs, ys, times)
-    write_clip_json(out_dir, fps, strokes, frames)
+    write_clip_json(out_dir, clip_fps, strokes, frames)
     return len(strokes)
 
 

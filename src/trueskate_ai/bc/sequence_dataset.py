@@ -20,14 +20,41 @@ Clip on-disk format (one dir per clip under `root`):
 from __future__ import annotations
 
 import json
+from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+from trueskate_ai.bc.frame_prep import prep_frame_rgb
 from trueskate_ai.bc.gesture_tokens import STROKE_DIM, encode
 from trueskate_ai.bc.model2 import SequencePolicyConfig
+
+# Bounds the frame cache GLOBALLY across every clip in a dataset (not per clip —
+# many small per-clip caches would still sum to unbounded memory as a corpus
+# grows). Frames evicted under pressure are simply re-decoded on next access,
+# trading some re-decode I/O for a memory ceiling instead of an eventual OOM.
+_MAX_CACHED_FRAMES = 20_000
+
+
+class _FrameCache:
+    """LRU frame cache shared by every `_Clip` in one `SequenceDataset`."""
+
+    def __init__(self, maxsize: int = _MAX_CACHED_FRAMES):
+        self._maxsize = maxsize
+        self._store: OrderedDict[tuple[int, int], np.ndarray] = OrderedDict()
+
+    def get(self, clip_idx: int, frame_idx: int, load) -> np.ndarray:
+        key = (clip_idx, frame_idx)
+        if key in self._store:
+            self._store.move_to_end(key)
+            return self._store[key]
+        img = load()
+        self._store[key] = img
+        if len(self._store) > self._maxsize:
+            self._store.popitem(last=False)
+        return img
 
 
 def _load_frame(path: Path, h: int, w: int) -> np.ndarray:
@@ -35,24 +62,22 @@ def _load_frame(path: Path, h: int, w: int) -> np.ndarray:
     img = cv2.imread(str(path))
     if img is None:
         raise FileNotFoundError(path)
-    img = cv2.cvtColor(cv2.resize(img, (w, h)), cv2.COLOR_BGR2RGB)
-    return (img.astype(np.float32) / 255.0).transpose(2, 0, 1)  # (C,H,W)
+    return prep_frame_rgb(img, h, w).transpose(2, 0, 1)  # (C,H,W)
 
 
 class _Clip:
-    def __init__(self, clip_dir: Path, h: int, w: int):
+    def __init__(self, clip_idx: int, clip_dir: Path, h: int, w: int, cache: _FrameCache):
         meta = json.loads((clip_dir / "clip.json").read_text())
         self.fps = float(meta["fps"])
         self.strokes = meta["strokes"]
         self.frame_paths = sorted(clip_dir.glob("frame_*.png"))
         self.frame_times = np.array([i / self.fps for i in range(len(self.frame_paths))], dtype=np.float64)
         self._h, self._w = h, w
-        self._cache: dict[int, np.ndarray] = {}
+        self._clip_idx = clip_idx
+        self._cache = cache
 
     def frame(self, i: int) -> np.ndarray:
-        if i not in self._cache:
-            self._cache[i] = _load_frame(self.frame_paths[i], self._h, self._w)
-        return self._cache[i]
+        return self._cache.get(self._clip_idx, i, lambda: _load_frame(self.frame_paths[i], self._h, self._w))
 
     def frames_before(self, t: float, n: int) -> np.ndarray:
         """The n most-recent frames with time <= t, front-padded by repeat if short."""
@@ -72,8 +97,9 @@ class SequenceDataset(Dataset):
         self.index: list[tuple[int, int]] = []  # (clip_idx, stroke_idx = decision point)
         root = Path(root)
         clip_dirs = sorted(d for d in root.glob("**/") if (d / "clip.json").exists())
+        cache = _FrameCache()
         for ci, d in enumerate(clip_dirs):
-            clip = _Clip(d, cfg.img_h, cfg.img_w)
+            clip = _Clip(ci, d, cfg.img_h, cfg.img_w, cache)
             self.clips.append(clip)
             n = len(clip.strokes)
             for si in range(n - cfg.m_out + 1):   # need a full m_out target

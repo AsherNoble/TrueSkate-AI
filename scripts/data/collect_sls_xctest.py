@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import re
 import signal
 import subprocess
@@ -44,6 +45,12 @@ _REPO_ROOT = _HERE.parent.parent
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
+# SLS mixture gestures include multi-finger nslot/recipe touches; simultaneous
+# finger-downs can trigger True Skate's park editor (see gesture_sampling docs).
+# touch_actions reads this env var at import time, so it must be set before the
+# import below. CMA-ES training never sets it, so its execution is unaffected.
+os.environ.setdefault("TRUESKATE_MIN_FINGER_STAGGER_S", "0.12")
+
 from trueskate_ai.data.gesture_sampling import load_recipe_vectors, sample_mixture  # noqa: E402
 from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E402
 from trueskate_ai.rl.device_worker import (  # noqa: E402
@@ -52,7 +59,7 @@ from trueskate_ai.rl.device_worker import (  # noqa: E402
 from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import curved_drag, reset_position, skip_loading_screen  # noqa: E402
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
-from trueskate_ai.vision.gameplay_filter import is_menu_frame  # noqa: E402
+from trueskate_ai.vision.gameplay_filter import is_editor_frame, is_menu_frame  # noqa: E402
 from trueskate_ai.vision.xctest_capture import XCTestScreenRecorder  # noqa: E402
 
 # Same 11 SLS arenas + cycle order as the DAL collector (labels for prompting/tagging).
@@ -78,7 +85,6 @@ def _park_tag(name: str) -> str:
 
 def _start_caffeinate():
     try:
-        import os
         p = subprocess.Popen(["caffeinate", "-dimsu", "-w", str(os.getpid())])
         print(f"[collect_xctest] caffeinate active (PID {p.pid}).")
         return p
@@ -94,7 +100,7 @@ def _execute(worker: DeviceWorker, g) -> None:
         pts = [scale_to_device(x, y, dw, dh) for x, y in g.waypoints]
         easing = None if g.easing_power == 1.0 else (lambda t, p=g.easing_power: t ** p)
         curved_drag(worker.driver, pts, total_duration=g.duration, easing=easing)
-    else:  # nslot / recipe
+    else:  # nslot / recipe / spin
         spin_xy = worker.spin_button_xy if g.use_spin else None
         execute_gesture_params(
             worker.driver, np.asarray(g.params, dtype=np.float64), dw, dh,
@@ -175,8 +181,15 @@ def main() -> None:
     ap.add_argument("--flick-frac", type=float, default=0.6)
     ap.add_argument("--nslot-frac", type=float, default=0.25)
     ap.add_argument("--recipe-frac", type=float, default=0.15)
+    ap.add_argument("--spin-frac", type=float, default=0.0,
+                    help="TRUE share [0,1] of fires that are guaranteed-spin gestures (rotate "
+                         "button HELD); the flick/nslot/recipe mix keeps its ratios in the "
+                         "remaining share. 0.2 = ~20%% of fires hold the spin button — the "
+                         "knob to grow the spin-family corpus.")
     ap.add_argument("--num-gestures", type=int, default=2)
-    ap.add_argument("--use-spin", action="store_true")
+    ap.add_argument("--use-spin", action="store_true",
+                    help="Legacy: make the plain nslot branch spin-capable (~half gate-off). "
+                         "Prefer --spin-frac for controlled, guaranteed spin coverage.")
     ap.add_argument("--recipe-dir", type=Path, default=_REPO_ROOT / "trick_libraries")
     ap.add_argument("--fps", type=int, default=30)
     ap.add_argument("--tail-s", type=float, default=1.0,
@@ -206,6 +219,19 @@ def main() -> None:
     add_device_selection_args(ap)
     args = ap.parse_args()
 
+    # Validate the gesture mix BEFORE any device contact: a bad value would
+    # otherwise surface as a per-gesture ValueError mid-run and crash-loop the
+    # launchd job (wedge-adjacent churn on the XCTest recorder).
+    spin_frac = min(1.0, max(0.0, args.spin_frac))
+    if spin_frac != args.spin_frac:
+        print(f"WARNING: --spin-frac {args.spin_frac} outside [0, 1]; clamped to {spin_frac}.")
+        args.spin_frac = spin_frac
+    if args.flick_frac + args.nslot_frac + args.recipe_frac <= 0 and args.spin_frac <= 0:
+        raise SystemExit("All gesture mixture weights are zero — nothing to sample "
+                         "(--flick-frac/--nslot-frac/--recipe-frac/--spin-frac).")
+    if args.num_gestures < 1:
+        raise SystemExit(f"--num-gestures must be >= 1, got {args.num_gestures}")
+
     try:
         devices = resolve_devices(devices_arg=args.devices, personal=args.personal,
                                   all_devices=args.all_devices)
@@ -234,7 +260,6 @@ def main() -> None:
     print(f"Connecting to {device} (needs WDA+Appium up; run launch_services.py)...")
     worker.connect()
     dw, dh = worker.device_w, worker.device_h
-    import os
     udid = os.environ.get(cfg.get("env_key", ""), "") or cfg.get("udid", "")
 
     rec = XCTestScreenRecorder(worker.driver, fps=args.fps)
@@ -247,6 +272,8 @@ def main() -> None:
     recipe_vectors = load_recipe_vectors(args.recipe_dir)
     print(f"Loaded {len(recipe_vectors)} packable recipes.")
     fracs = (args.flick_frac, args.nslot_frac, args.recipe_frac)
+    print(f"Gesture mix: base weights flick={args.flick_frac} nslot={args.nslot_frac} "
+          f"recipe={args.recipe_frac}; spin share={args.spin_frac} (guaranteed-hold slice).")
 
     notify(f"[{device}] XCTest SLS collection starting in {cycle[0]} "
            f"({args.segment_min:.0f}-min segments, {args.per_park_hours}h/park).",
@@ -332,23 +359,27 @@ def main() -> None:
                 # --- gameplay guard: never log a gesture fired into the replay/menu ---
                 if not args.no_gameplay_guard and seg_iter % max(1, args.gameplay_check_every) == 0:
                     try:
-                        if is_menu_frame(worker.driver.get_screenshot_as_png()):
+                        _guard_png = worker.driver.get_screenshot_as_png()
+                        _in_editor = is_editor_frame(_guard_png)
+                        if _in_editor or is_menu_frame(_guard_png):
                             non_gameplay_streak += 1
                             total_menu_skips += 1
-                            print(f"[seg {segment_idx}] replay/menu detected "
+                            _what = "park editor" if _in_editor else "replay/menu"
+                            print(f"[seg {segment_idx}] {_what} detected "
                                   f"(streak {non_gameplay_streak}) — skipping gesture (not logged)")
                             if non_gameplay_streak >= args.menu_recover_after:
-                                print(f"[seg {segment_idx}] relaunching True Skate to exit replay...")
+                                print(f"[seg {segment_idx}] relaunching True Skate to exit {_what}...")
                                 _exit_replay(worker)
                                 non_gameplay_streak = 0
                             seg_iter += 1
-                            continue  # do not fire/log a gesture into the menu
+                            continue  # do not fire/log a gesture into the menu/editor
                         non_gameplay_streak = 0
                     except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
                         print(f"[seg {segment_idx}] gameplay check failed: {exc!r} — proceeding")
                 seg_iter += 1
 
-                g = sample_mixture(rng, fracs=fracs, num_gestures=args.num_gestures,
+                g = sample_mixture(rng, fracs=fracs, spin_frac=args.spin_frac,
+                                   num_gestures=args.num_gestures,
                                    use_spin=args.use_spin, recipe_vectors=recipe_vectors)
                 t0 = time.time()
                 try:
@@ -357,6 +388,23 @@ def main() -> None:
                     print(f"  gesture {total_gestures} failed: {exc}")
                     continue
                 t1 = time.time()
+                # --- post-gesture PARK-EDITOR check ---
+                # True Skate's park editor is opened DURING a (multi-finger) gesture, and the
+                # NEXT reset_position closes it again — so the pre-gesture guard above never
+                # catches it (it checks right after a reset, when the editor is already closed).
+                # Check here, right after the gesture: if it landed in the editor, DROP this
+                # sample so editor frames never enter the dataset. Persistent editor (if reset
+                # ever fails to close it) is still caught + relaunched by the pre-gesture guard.
+                if not args.no_gameplay_guard:
+                    try:
+                        time.sleep(0.35)  # let the editor UI render before scoring
+                        if is_editor_frame(worker.driver.get_screenshot_as_png()):
+                            total_menu_skips += 1
+                            print(f"[seg {segment_idx}] gesture opened the park editor "
+                                  f"— dropping sample (not logged)")
+                            continue  # do NOT log a gesture that landed in the editor
+                    except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
+                        print(f"[seg {segment_idx}] post-gesture editor check failed: {exc!r} — proceeding")
                 events.append({
                     "gesture_index": total_gestures,
                     "t_call_start_epoch_s": t0,
@@ -433,6 +481,11 @@ def main() -> None:
                 "fps": res.fps, "codec": res.codec,
                 "capture_offset_s": args.capture_offset_s,
                 "tail_s": args.tail_s,
+                # Sampler config, so a corpus session is reconstructable without
+                # console logs (mirrors the DAL collector's session_meta.json).
+                "mix": {"flick": args.flick_frac, "nslot": args.nslot_frac,
+                        "recipe": args.recipe_frac, "spin_frac": args.spin_frac},
+                "num_gestures": args.num_gestures, "use_spin": args.use_spin,
                 "mov": mov_path.name, "n_gestures": len(events), "gestures": events,
             }
             manifest_path.write_text(json.dumps(manifest, indent=2))

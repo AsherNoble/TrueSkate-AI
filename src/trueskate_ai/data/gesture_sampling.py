@@ -1,6 +1,6 @@
 """Random gesture samplers for trace/frame collection.
 
-Single source of truth for the gestures the trace collectors fire. Three modes,
+Single source of truth for the gestures the trace collectors fire. Four modes,
 mixed by `sample_mixture`, give the sequence model a broad (frame -> known-gesture)
 corpus across visual domains:
 
@@ -12,6 +12,10 @@ corpus across visual domains:
 - "recipe" — a converged trick-library recipe, jittered within bounds; dense
              coverage near the real-trick manifold. Packed to a vector and
              executed via execute_gesture_params.
+- "spin"   — a random N-slot gesture with the spin (rotate-button) HOLD guaranteed
+             active, for spin-family coverage. Same held-finger execution path as
+             nslot (execute_gesture_params -> execute_n_slot_gestures), gated by
+             sample_mixture's `spin_frac`.
 
 The executed gesture is always the label — outcome (land / wall-bump / whiff) is
 irrelevant for this corpus, which is what lets it run in obstacle-heavy SLS parks.
@@ -68,13 +72,19 @@ _EASING_JITTER = 0.2
 _DELAY_JITTER = 0.05
 _SPIN_T_JITTER = 0.05
 
+# Minimum hold window (fraction of total gesture duration) for a guaranteed-spin
+# sample, so the rotate button is HELD long enough to be visible in the frames —
+# a uniform t_start/t_end can otherwise collapse to a near-zero-length press.
+_SPIN_MIN_HOLD = 0.25
+
 
 @dataclass
 class GestureSample:
-    """A sampled gesture in one of three executable forms.
+    """A sampled gesture in one of four executable forms.
 
     kind == "flick": use waypoints/duration/easing_power (curved_drag, no push).
-    kind in {"nslot","recipe"}: use params/num_gestures/use_spin (execute_gesture_params).
+    kind in {"nslot","recipe","spin"}: use params/num_gestures/use_spin
+    (execute_gesture_params).
     """
     kind: str
     waypoints: list[tuple[float, float]] | None = None
@@ -158,6 +168,29 @@ def sample_nslot(rng: np.random.Generator, num_gestures: int, use_spin: bool) ->
         num_gestures=num_gestures,
         use_spin=use_spin,
     )
+
+
+def sample_spin(rng: np.random.Generator, num_gestures: int) -> GestureSample:
+    """A random N-slot gesture with the spin HOLD guaranteed ACTIVE.
+
+    Like sample_nslot(use_spin=True), but the spin gate is forced enabled and the
+    hold window spans at least _SPIN_MIN_HOLD of the gesture. A uniform spin block
+    would leave ~half the samples gate-off (no spin at all) and allow near-zero
+    hold windows — both dilute genuine spin coverage. The base gesture stays fully
+    random (this corpus is outcome-agnostic), so the label is a random gesture with
+    a visibly-held rotate button: exactly the (frames -> gesture) pair the video
+    model needs to learn spin-family tricks. Tagged kind="spin" so the corpus is
+    filterable, but executes on the identical held-finger path as an nslot sample.
+    """
+    s = sample_nslot(rng, num_gestures, use_spin=True)
+    assert s.params is not None
+    t_start = float(rng.uniform(0.0, 1.0 - _SPIN_MIN_HOLD))
+    t_end = float(rng.uniform(t_start + _SPIN_MIN_HOLD, 1.0))
+    # gate: the enable threshold is >= 0; the 0.05 floor keeps a margin off it.
+    gate = float(rng.uniform(0.05, 1.0))
+    s.params[-SPIN_PARAMS:] = [gate, t_start, t_end]
+    s.kind = "spin"
+    return s
 
 
 def recipe_to_vector(recipe: dict) -> tuple[list[float], int, bool]:
@@ -248,6 +281,22 @@ def _push_out_bolt_zone(x: float, y: float) -> tuple[float, float]:
     return x, y
 
 
+def _restore_min_reach(sx: float, sy: float, ex: float, ey: float) -> tuple[float, float]:
+    """If the bolt-zone push shrank a flick's start->end displacement below
+    _FLICK_MIN_REACH, push the end point further out along the same direction
+    (clipped to bounds) to restore the guarantee _flick_end originally made."""
+    dx, dy = ex - sx, ey - sy
+    dist = float(np.hypot(dx, dy))
+    if dist >= _FLICK_MIN_REACH:
+        return ex, ey
+    if dist < 1e-9:
+        dx, dy, dist = 1.0, 0.0, 1.0  # degenerate: start==end, pick an arbitrary direction
+    scale = _FLICK_MIN_REACH / dist
+    ex2 = float(np.clip(sx + dx * scale, X_BOUND_MIN, X_BOUND_MAX))
+    ey2 = float(np.clip(sy + dy * scale, Y_BOUND_MIN, Y_BOUND_MAX))
+    return ex2, ey2
+
+
 def clamp_in_bounds(s: GestureSample) -> GestureSample:
     """Defensive chokepoint: guarantee a sampled gesture lies within the RL
     coordinate bounds (X_BOUND_MIN..MAX, Y_BOUND_MIN..MAX) AND outside the top-left
@@ -258,12 +307,18 @@ def clamp_in_bounds(s: GestureSample) -> GestureSample:
     coords are absolute (0/1 = screen edges); clamping constrains, it never rescales.
     """
     if s.kind == "flick" and s.waypoints is not None:
-        s.waypoints = [
+        pushed = [
             _push_out_bolt_zone(
                 float(np.clip(x, X_BOUND_MIN, X_BOUND_MAX)),
                 float(np.clip(y, Y_BOUND_MIN, Y_BOUND_MAX)))
             for x, y in s.waypoints
         ]
+        # The bolt-zone push can move the start point close enough to the end
+        # point to violate _FLICK_MIN_REACH (see _restore_min_reach); only the
+        # first/last waypoints define that displacement, so re-check just those.
+        sx, sy = pushed[0]
+        pushed[-1] = _restore_min_reach(sx, sy, *pushed[-1])
+        s.waypoints = pushed
     elif s.params is not None and s.num_gestures is not None:
         bounds = build_param_bounds(s.num_gestures, s.use_spin)
         arr = clamp_params(np.asarray(s.params, dtype=np.float64), bounds)
@@ -279,21 +334,38 @@ def sample_mixture(
     rng: np.random.Generator,
     *,
     fracs: tuple[float, float, float] = (0.6, 0.25, 0.15),
+    spin_frac: float = 0.0,
     num_gestures: int = 2,
     use_spin: bool = False,
     recipe_vectors: list[tuple[list[float], int, bool, str]] | None = None,
 ) -> GestureSample:
-    """Draw one gesture from the flick / nslot / recipe mixture, guaranteed
+    """Draw one gesture from the flick / nslot / recipe / spin mixture, guaranteed
     within the coordinate bounds (via clamp_in_bounds).
 
-    fracs = (flick, nslot, recipe). If no recipes are available the recipe share
-    is redistributed to nslot (so the mix never silently stalls).
+    fracs = (flick, nslot, recipe) is the non-spin base mix; if no recipes are
+    available the recipe share is redistributed to nslot (so the mix never silently
+    stalls). spin_frac is a TRUE share of all fires in [0, 1]: the base mix keeps
+    its internal ratios but is scaled to the remaining (1 - spin_frac), so
+    spin_frac=0.2 yields ~20% guaranteed-spin gestures (a held rotate button)
+    whatever fracs sums to. It is the knob to grow the spin-family corpus,
+    independent of `use_spin` (which only makes the plain nslot branch
+    spin-capable, ~half of those gate-off).
     """
     f_flick, f_nslot, f_recipe = fracs
     if not recipe_vectors:
         f_nslot += f_recipe
         f_recipe = 0.0
-    total = f_flick + f_nslot + f_recipe
+    # spin_frac as a raw weight would dilute: e.g. defaults (sum 1.0) + 0.2 give
+    # 0.2/1.2 ≈ 17%, not 20%. Scale the base mix to (1 - spin_frac) instead so
+    # the advertised share is exact.
+    f_spin = min(1.0, max(0.0, spin_frac))
+    base_total = f_flick + f_nslot + f_recipe
+    if base_total <= 0 and f_spin <= 0:
+        raise ValueError("sample_mixture: all mixture weights are zero")
+    if base_total > 0:
+        scale = (1.0 - f_spin) / base_total
+        f_flick, f_nslot, f_recipe = f_flick * scale, f_nslot * scale, f_recipe * scale
+    total = f_flick + f_nslot + f_recipe + f_spin
     r = float(rng.uniform(0, total))
     if r < f_flick:
         g = sample_flick(rng)
@@ -305,8 +377,10 @@ def sample_mixture(
         )
     elif r < f_flick + f_nslot:
         s = sample_nslot(rng, num_gestures, use_spin)
-    else:
+    elif r < f_flick + f_nslot + f_recipe:
         s = sample_recipe(rng, recipe_vectors)
+    else:
+        s = sample_spin(rng, num_gestures)
     return clamp_in_bounds(s)
 
 
