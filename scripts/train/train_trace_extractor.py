@@ -66,6 +66,15 @@ def make_heatmap(x: float, y: float, H: int, W: int, sigma: float = _HEATMAP_SIG
     return np.exp(-(((xs - x) ** 2 + (ys - y) ** 2) / (2 * sigma ** 2))).astype(np.float32)
 
 
+def _build_heatmap(nx: float, ny: float, sx: float, sy: float) -> np.ndarray:
+    """Label heatmap: drag bump (nx, ny) ∪ spin-button bump (sx, sy), max-combined.
+    A coord pair < 0 = that bump absent; both absent = all-zero (negative frame)."""
+    hm = make_heatmap(nx * _W, ny * _H, _H, _W) if nx >= 0 else np.zeros((_H, _W), np.float32)
+    if sx >= 0:
+        hm = np.maximum(hm, make_heatmap(sx * _W, sy * _H, _H, _W))
+    return hm
+
+
 def _device() -> torch.device:
     if torch.backends.mps.is_available():
         return torch.device("mps")
@@ -91,8 +100,10 @@ def _start_relative_frame_times(meta: dict) -> list[float]:
         or ("capture_offset_s" in meta and "gesture_start_monotonic" not in meta)
     )
     if end_relative:
-        dur = float(meta["duration"])
-        return [float(t) + dur for t in ft]
+        # payload_total_s: a spin_flick payload outlasts its drag (held spin
+        # button), and the end anchor is the PAYLOAD end, not the drag end.
+        total = float(meta.get("payload_total_s", meta["duration"]))
+        return [float(t) + total for t in ft]
     return [float(t) for t in ft]
 
 
@@ -102,6 +113,11 @@ class SelfLabeledTraceDataset(Dataset):
     Each sample dir contributes one item per captured frame: the frame image
     paired with a Gaussian heatmap at the ground-truth touch position computed
     from the known gesture + the frame timestamp (latency_s tunable).
+
+    spin_flick samples add a SECOND bump at the spin-button coord while the
+    rotate button is held (meta: spin_active + spin_hold_start_s/end_s) — at
+    inference, spin state = heatmap mass near the button. Hold-window frames
+    past the drag are spin-only positives, never negatives.
 
     By default this dataset does NOT preload full-resolution frames into memory;
     it collects frame paths and label params and loads/processes frames on-the-fly
@@ -117,14 +133,16 @@ class SelfLabeledTraceDataset(Dataset):
             self._frames: list[np.ndarray] = []   # uint8 [H,W,3] RGB (preprocessed)
             self._heatmaps: list[np.ndarray] = []  # float16 [H,W]
         else:
-            # Memory-efficient: keep only paths and label params (nx, ny)
+            # Memory-efficient: keep only paths and label params
             self._frame_paths: list[Path] = []
-            self._heatmap_params: list[tuple[float, float]] = []  # (nx, ny) normalized, nx<0 => no-touch
+            # (nx, ny, sx, sy) normalized: drag bump + spin-button bump; <0 = absent
+            self._heatmap_params: list[tuple[float, float, float, float]] = []
 
         rng = np.random.default_rng(rng_seed)
-        # lazy import to avoid heavy deps (e.g., selenium) when running --smoke
+        # lazy imports to avoid heavy deps (e.g., selenium) when running --smoke
         from trueskate_ai.vision.self_label import label_frames  # noqa: E402
-        kept_pos = gated = neg = 0
+        from trueskate_ai.sim.gestures import DEFAULT_SPIN_BUTTON_XY  # noqa: E402
+        kept_pos = spin_pos = gated = neg = 0
         root = Path(session_dir)
         # rglob: handles flat (self_labeled: <session>/sample_*) AND nested
         # (SLS/XCTest: <session>/<park>/sample_*) corpora uniformly.
@@ -151,54 +169,49 @@ class SelfLabeledTraceDataset(Dataset):
                 skipped_nonflick += 1
                 continue
             waypoints = [tuple(p) for p in meta["waypoints"]]
-            from trueskate_ai.vision.self_label import label_frames  # lazy import to avoid heavy deps during --smoke
+            # spin_flick: the held rotate button is a SECOND labelled touch at
+            # the spin-button coord for its hold window — never unlabelled noise.
+            spin_hold = None
+            if meta.get("spin_active") and meta.get("spin_hold_start_s") is not None:
+                spin_hold = (float(meta["spin_hold_start_s"]), float(meta["spin_hold_end_s"]))
+            sxy = meta.get("spin_button_xy") or DEFAULT_SPIN_BUTTON_XY
             labels = label_frames(
                 waypoints, meta["duration"], meta["easing_power"],
                 _start_relative_frame_times(meta), latency_s=latency_s,
-                spin_active=meta.get("spin_active", False),
+                spin_hold=spin_hold,
             )
             for fi, lab in enumerate(labels):
                 frame_path = sample_dir / f"frame_{fi:03d}.png"
                 if not frame_path.exists():
                     continue
-                if not lab.active:
-                    if rng.random() <= _NEG_KEEP_FRAC:
-                        if cache_frames:
-                            img = cv2.imread(str(frame_path))
-                            if img is not None:
-                                self._cache(img, -1.0, -1.0)
-                                neg += 1
-                        else:
-                            # store path + negative label (no-touch)
-                            self._frame_paths.append(frame_path)
-                            self._heatmap_params.append((-1.0, -1.0))
-                            neg += 1
+                if not lab.active and not lab.spin_on:
+                    if rng.random() <= _NEG_KEEP_FRAC and self._add(frame_path, -1.0, -1.0, -1.0, -1.0):
+                        neg += 1
                     continue
-                # For active labels we need to apply the warm/trace gate. This
-                # requires inspecting the frame briefly but we do not keep the
-                # full-res image in memory when cache_frames=False.
-                if cache_frames:
+                drag_x = drag_y = -1.0
+                if lab.active:
+                    # The warm/trace gate applies to the DRAG bump only: a held
+                    # spin button renders no orange swoosh, so gating it would
+                    # erase every spin label.
                     img = cv2.imread(str(frame_path))
                     if img is None:
                         continue
                     if require_trace and _warm_img(img, lab.x, lab.y) < _TRACE_WARM_THRESHOLD:
                         gated += 1
-                        continue
-                    self._cache(img, lab.x, lab.y)
+                        if not lab.spin_on:
+                            continue  # pure drag positive without a trace — drop, as before
+                        # drag bump dropped; the frame stays as a spin-only positive
+                    else:
+                        drag_x, drag_y = lab.x, lab.y
+                sx, sy = (float(sxy[0]), float(sxy[1])) if lab.spin_on else (-1.0, -1.0)
+                if not self._add(frame_path, drag_x, drag_y, sx, sy):
+                    continue
+                if drag_x >= 0:
                     kept_pos += 1
-                else:
-                    img = cv2.imread(str(frame_path))
-                    if img is None:
-                        continue
-                    if require_trace and _warm_img(img, lab.x, lab.y) < _TRACE_WARM_THRESHOLD:
-                        gated += 1
-                        continue
-                    # store path + normalized label coords for on-the-fly heatmap
-                    self._frame_paths.append(frame_path)
-                    self._heatmap_params.append((lab.x, lab.y))
-                    kept_pos += 1
-        print(f"  dataset: {kept_pos} trace-aligned positives + {neg} negatives kept, "
-              f"{gated} gated, {skipped_nonflick} non-flick skipped, "
+                if lab.spin_on:
+                    spin_pos += 1
+        print(f"  dataset: {kept_pos} trace-aligned positives + {spin_pos} spin-hold positives "
+              f"+ {neg} negatives kept, {gated} gated, {skipped_nonflick} non-flick skipped, "
               f"{skipped_menu} menu/replay skipped, {skipped_editor} editor skipped "
               f"(latency={latency_s}s, require_trace={require_trace}, cache_frames={cache_frames})")
         if cache_frames:
@@ -208,12 +221,20 @@ class SelfLabeledTraceDataset(Dataset):
             if not self._frame_paths:
                 raise RuntimeError(f"No labeled frames found under {session_dir}")
 
-    def _cache(self, bgr: np.ndarray, nx: float, ny: float) -> None:
-        # preprocess + store small tensors in memory (legacy path)
-        from trueskate_ai.bc.frame_prep import prep_frame_rgb  # lazy import
-        self._frames.append(prep_frame_rgb(bgr, _H, _W, normalize=False))
-        hm = make_heatmap(nx * _W, ny * _H, _H, _W) if nx >= 0 else np.zeros((_H, _W), np.float32)
-        self._heatmaps.append(hm.astype(np.float16))
+    def _add(self, frame_path: Path, nx: float, ny: float, sx: float, sy: float) -> bool:
+        """Store one frame + label params; a coord pair < 0 = that bump absent."""
+        if self.cache_frames:
+            bgr = cv2.imread(str(frame_path))
+            if bgr is None:
+                return False
+            # preprocess + store small tensors in memory (legacy path)
+            from trueskate_ai.bc.frame_prep import prep_frame_rgb  # lazy import
+            self._frames.append(prep_frame_rgb(bgr, _H, _W, normalize=False))
+            self._heatmaps.append(_build_heatmap(nx, ny, sx, sy).astype(np.float16))
+        else:
+            self._frame_paths.append(frame_path)
+            self._heatmap_params.append((nx, ny, sx, sy))
+        return True
 
     def __len__(self) -> int:
         return len(self._frames) if self.cache_frames else len(self._frame_paths)
@@ -231,12 +252,8 @@ class SelfLabeledTraceDataset(Dataset):
         from trueskate_ai.bc.frame_prep import prep_frame_rgb  # lazy import
         proc = prep_frame_rgb(bgr, _H, _W, normalize=False)
         frame = torch.from_numpy(proc.astype(np.float32) / 255.0).permute(2, 0, 1)
-        nx, ny = self._heatmap_params[idx]
-        if nx >= 0:
-            hm = make_heatmap(nx * _W, ny * _H, _H, _W, sigma=_HEATMAP_SIGMA)
-        else:
-            hm = np.zeros((_H, _W), np.float32)
-        heatmap = torch.from_numpy(hm.astype(np.float32)).unsqueeze(0)
+        nx, ny, sx, sy = self._heatmap_params[idx]
+        heatmap = torch.from_numpy(_build_heatmap(nx, ny, sx, sy).astype(np.float32)).unsqueeze(0)
         return {"image": frame, "heatmap": heatmap}
 
 
