@@ -219,6 +219,19 @@ def main() -> None:
     add_device_selection_args(ap)
     args = ap.parse_args()
 
+    # Validate the gesture mix BEFORE any device contact: a bad value would
+    # otherwise surface as a per-gesture ValueError mid-run and crash-loop the
+    # launchd job (wedge-adjacent churn on the XCTest recorder).
+    spin_frac = min(1.0, max(0.0, args.spin_frac))
+    if spin_frac != args.spin_frac:
+        print(f"WARNING: --spin-frac {args.spin_frac} outside [0, 1]; clamped to {spin_frac}.")
+        args.spin_frac = spin_frac
+    if args.flick_frac + args.nslot_frac + args.recipe_frac <= 0 and args.spin_frac <= 0:
+        raise SystemExit("All gesture mixture weights are zero — nothing to sample "
+                         "(--flick-frac/--nslot-frac/--recipe-frac/--spin-frac).")
+    if args.num_gestures < 1:
+        raise SystemExit(f"--num-gestures must be >= 1, got {args.num_gestures}")
+
     try:
         devices = resolve_devices(devices_arg=args.devices, personal=args.personal,
                                   all_devices=args.all_devices)
