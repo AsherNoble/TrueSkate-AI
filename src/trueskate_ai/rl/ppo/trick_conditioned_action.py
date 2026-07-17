@@ -9,8 +9,6 @@ Gesture and coordinate conventions: GESTURES.md at the repo root.
 
 from __future__ import annotations
 
-import threading
-import time
 from dataclasses import dataclass
 
 import numpy as np
@@ -126,13 +124,6 @@ def _finger_pause(finger: PointerInput, pause_secs: float) -> None:
         finger.create_pause(pause_secs)
 
 
-def _tap_at_time(driver, start_time: float, target_offset: float, tap_xy: tuple[float, float]) -> None:
-    delay = max(0.0, (start_time + target_offset) - time.monotonic())
-    if delay > 0:
-        time.sleep(delay)
-    driver.execute_script("mobile: tap", {"x": tap_xy[0], "y": tap_xy[1]})
-
-
 def execute_gesture_recipe(
     driver,
     recipe: GestureRecipe,
@@ -152,7 +143,6 @@ def execute_gesture_recipe(
     fingers = [make_touch_pointer("finger0"), make_touch_pointer("finger1")]
     finger_available = [0.0, 0.0]
     finger_has_actions = [False, False]
-    has_gesture = False
 
     for slot_idx, slot in enumerate(recipe.slots):
         if not slot.enabled:
@@ -162,7 +152,11 @@ def execute_gesture_recipe(
         finger_idx = 0 if finger_available[0] <= finger_available[1] else 1
         actual_start = max(requested_start, finger_available[finger_idx])
 
-        # Position before waiting to keep WDA pointer sequencing stable.
+        # Position before waiting to keep WDA pointer sequencing stable, then
+        # RE-ISSUE the start move via include_start_move=True: WDA drops a
+        # standalone zero-duration move when a pause follows it, so pointer_down
+        # would otherwise fire at the pointer origin — the spurious top-left
+        # swipe that opens the menu (same fix as execute_n_slot_gestures).
         fingers[finger_idx].create_pointer_move(
             x=points[0][0], y=points[0][1], duration=0
         )
@@ -175,41 +169,41 @@ def execute_gesture_recipe(
             points,
             total_duration=slot.duration,
             easing=easing,
-            include_start_move=False,
+            include_start_move=True,
         )
         finger_available[finger_idx] = actual_start + slot.duration
         finger_has_actions[finger_idx] = True
-        has_gesture = True
 
     total_duration = max(finger_available + [0.01])
 
-    if not has_gesture and recipe.spin.enabled:
-        spin_point = scale_to_device(spin_button_xy[0], spin_button_xy[1], device_w, device_h)
-        time.sleep(recipe.spin.t_start * total_duration)
-        driver.execute_script("mobile: tap", {"x": spin_point[0], "y": spin_point[1]})
-        time.sleep(max(0.0, (recipe.spin.t_end - recipe.spin.t_start) * total_duration))
-        driver.execute_script("mobile: tap", {"x": spin_point[0], "y": spin_point[1]})
-        return
+    # Spin is a HOLD control: a dedicated finger is held DOWN on the rotate button
+    # from t_start*total to t_end*total, scheduled INSIDE the same single W3C
+    # perform() as the drags. (A prior design fired `mobile: tap` from a background
+    # thread concurrent with the perform — that cancelled the in-flight gesture on
+    # the shared WDA session and nullified the trick; see rl_poc journal 2026-06-14.
+    # This mirrors touch_actions.execute_n_slot_gestures' held-finger spin path.)
+    active_fingers = [fingers[i] for i in range(len(fingers)) if finger_has_actions[i]]
+    if recipe.spin.enabled:
+        bx, by = scale_to_device(spin_button_xy[0], spin_button_xy[1], device_w, device_h)
+        start_offset = max(0.0, recipe.spin.t_start * total_duration)
+        hold = max(0.0, (recipe.spin.t_end - recipe.spin.t_start) * total_duration)
+        sf = make_touch_pointer("spin")
+        # Position, wait, then RE-ISSUE the move before pointer_down (same WDA
+        # dropped-move workaround as the slots above). Kept as a verbatim mirror
+        # of touch_actions' spin block — deliberately not _finger_pause — so the
+        # two implementations stay diffable against each other.
+        sf.create_pointer_move(x=bx, y=by, duration=0)
+        if start_offset > 0:
+            sf.create_pause(start_offset)
+        sf.create_pointer_move(x=bx, y=by, duration=0)
+        sf.create_pointer_down()
+        if hold > 0:
+            sf.create_pause(hold)
+        sf.create_pointer_up(0)
+        active_fingers.append(sf)
 
-    action_thread: threading.Thread | None = None
-    if recipe.spin.enabled and has_gesture:
-        spin_point = scale_to_device(spin_button_xy[0], spin_button_xy[1], device_w, device_h)
-        start_offset = recipe.spin.t_start * total_duration
-        end_offset = recipe.spin.t_end * total_duration
-
-        def _spin_runner(start_time: float) -> None:
-            _tap_at_time(driver, start_time, start_offset, spin_point)
-            _tap_at_time(driver, start_time, end_offset, spin_point)
-
-        start_time = time.monotonic()
-        action_thread = threading.Thread(target=_spin_runner, args=(start_time,), daemon=True)
-        action_thread.start()
-
-    if has_gesture:
-        active_fingers = [fingers[i] for i in range(len(fingers)) if finger_has_actions[i]]
+    if active_fingers:
         perform_pointer_actions(driver, active_fingers)
-    if action_thread is not None:
-        action_thread.join(timeout=max(1.0, total_duration + 0.5))
 
 
 def execute_gesture_params_vector(
