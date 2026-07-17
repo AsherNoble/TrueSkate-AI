@@ -37,7 +37,7 @@ QUIESCENT_MIN="${QUIESCENT_MIN:-0}"         # >0: only offload sessions with NO 
                                             # writing). 0 = offload everything (manual one-shot).
 
 CLAIMS=$(mktemp -d)
-trap 'rm -rf "$CLAIMS" tmp/_stage_w* 2>/dev/null' EXIT
+trap 'rm -rf "$CLAIMS" tmp/_stage_w* tmp/_stage_manifests 2>/dev/null' EXIT
 
 log(){ echo "$(date '+%F %T') [w${WID:-main}] $*"; }
 
@@ -79,7 +79,8 @@ run_put(){
     done
     wait "$pid" 2>/dev/null; rc=$?
     if [ "$rc" -eq 0 ] && [ "$stall" -lt "$STALL_SECS" ]; then rm -f "$errf"; return 0; fi
-    emsg=$(grep -iE 'status|error|exception|refused|timeout|denied|unauthor|not found|connection' "$errf" 2>/dev/null | grep -viE '^[[:space:]]*[╭╰│]' | tail -1 | tr -d '│╭╰ ')
+    # strip ANSI first: rich colour-codes the border chars, defeating the ^[╭╰│] filter
+    emsg=$(sed $'s/\x1b\\[[0-9;]*m//g' "$errf" 2>/dev/null | grep -iE 'status|error|exception|refused|timeout|denied|unauthor|not found|connection' | grep -viE '^[[:space:]]*[╭╰│]' | tail -1 | tr -d '│╭╰ ')
     [ -n "$emsg" ] && echo "$(date '+%F %T') $dst try $attempt: $emsg" >> "$PUT_ERR"
     log "  put try $attempt failed (rc=$rc stall=$stall)${emsg:+: $emsg} — retry"
     attempt=$((attempt+1)); [ "$attempt" -le "$RETRIES" ] && sleep $((RETRY_BACKOFF*(attempt-1)))
@@ -135,11 +136,24 @@ offload_session(){
     wait
     rm -f "$SAMPLE_FILE"
   done <<< "$PARKDIRS"
+  # Session-root segment manifests (mix/device/fps/spin_frac provenance): must
+  # land on the volume BEFORE the local delete or they die with it. Tiny put;
+  # a failure keeps the session for the next round (dedup makes the retry free).
+  local MOK=1 MSTAGE=tmp/_stage_manifests
+  rm -rf "$MSTAGE"; mkdir -p "$MSTAGE"
+  if cp "$S"segment_*.json "$MSTAGE"/ 2>/dev/null; then
+    if run_put "$MSTAGE" "/$SESS"; then
+      log "  manifests ok ($(ls "$MSTAGE" | wc -l | tr -d ' ') segment_*.json)"
+    else
+      MOK=0; log "  manifests FAILED — keeping session for next round"
+    fi
+  fi
+  rm -rf "$MSTAGE"
   local REMOTE; REMOTE=$(remote_count "/$SESS"); REMOTE=${REMOTE:-0}
-  if [ "$REMOTE" -eq "$LOCAL" ]; then
+  if [ "$REMOTE" -eq "$LOCAL" ] && [ "$MOK" -eq 1 ]; then
     rm -rf "$S"; log "  OK: $SESS fully on Modal ($REMOTE frames), DELETED local (free $(df -g / | tail -1 | awk '{print $4}')GB)"
   else
-    log "  KEEP $SESS: remote $REMOTE != local $LOCAL (some batches pending) — retry next round"
+    log "  KEEP $SESS: remote $REMOTE vs local $LOCAL, manifests_ok=$MOK — retry next round"
   fi
 }
 
