@@ -99,6 +99,7 @@ class MjpegFrameSaver:
 
     def _loop(self) -> None:
         buf, n, t0 = b"", 0, time.monotonic()
+        resp = None
         try:
             resp = requests.get(self.url, stream=True, timeout=5)
             for chunk in resp.iter_content(chunk_size=4096):
@@ -120,14 +121,21 @@ class MjpegFrameSaver:
                         t = time.monotonic() - t0
                         (self.out_dir / f"f_{self.saved:03d}_t{t:06.3f}.jpg").write_bytes(jpeg)
                         self.saved += 1
-            resp.close()
         except Exception as exc:  # noqa: BLE001 — frames are evidence, not a gate
             print(f"  [mjpeg] stream ended: {exc!r}")
+        finally:
+            if resp is not None:
+                try:
+                    resp.close()
+                except Exception:  # noqa: BLE001
+                    pass
 
     def __exit__(self, *exc) -> None:
         self._stop = True
         if self._thread is not None:
-            self._thread.join(timeout=3.0)
+            # a hair over the stream's 5s read timeout, so a blocked read can
+            # surface before the thread is abandoned
+            self._thread.join(timeout=6.0)
 
 
 def _relaunch(worker: DeviceWorker) -> None:
@@ -149,10 +157,13 @@ def _fire(worker: DeviceWorker, params: list[float], log, tag: str, tail_s: floa
     rec: dict = {"tag": tag, "n_params": len(params), "ok": False,
                  "editor": False, "menu": False, "error": None, "exec_s": None}
     dw, dh = worker.device_w, worker.device_h
-    reset_position(worker.driver, dw, dh)
-    time.sleep(0.3)
     t0 = time.monotonic()
     try:
+        # Reset inside the try so one WDA blip records an error on this fire
+        # instead of killing the whole run.
+        reset_position(worker.driver, dw, dh)
+        time.sleep(_RESET_SETTLE_S)
+        t0 = time.monotonic()  # re-stamp: exec_s times the gesture, not the reset
         execute_gesture_params(
             worker.driver, np.asarray(params, dtype=np.float64), dw, dh,
             spin_button_xy=worker.spin_button_xy, timing_device_key=worker.device_id,
@@ -164,7 +175,7 @@ def _fire(worker: DeviceWorker, params: list[float], log, tag: str, tail_s: floa
     rec["exec_s"] = round(time.monotonic() - t0, 3)
     time.sleep(tail_s)
     # Mirror the collector's post-gesture guard (editor opens DURING the gesture).
-    time.sleep(0.35)
+    time.sleep(_GUARD_SETTLE_S)
     try:
         png = worker.driver.get_screenshot_as_png()
         rec["editor"] = bool(is_editor_frame(png))
@@ -226,8 +237,7 @@ def main() -> None:
     # Never run against a phone whose collector is live (session conflict + wedge risk).
     # NB: end-anchor the device name — a bare substring match on "iPhone_XR" would
     # also match the iPhone_XR2 collector's command line.
-    import subprocess
-    r = subprocess.run(["pgrep", "-f", rf"collect_sls_xctest\.py.*--devices {cfg['name']}($| )"],
+    r = subprocess.run(["pgrep", "-f", rf"collect_sls_xctest\.py.*--devices[= ]{cfg['name']}($| )"],
                        capture_output=True, text=True)
     if r.stdout.strip():
         raise SystemExit(f"A collector is RUNNING for {cfg['name']} (pids {r.stdout.split()}). "
@@ -266,16 +276,16 @@ def main() -> None:
         if args.ppo_module is not None:
             print("\n=== Phase 3: fixed-PPO spin fires ===")
             tca = _load_ppo_module(args.ppo_module)
-            act = np.full(42, -1.0)
+            act = np.full(_PPO_ACTION_DIM, -1.0)
             act[0:8] = [0.0, 0.0, 0.1, 0.1, 0.2, 0.2, 0.0, 0.0]  # mid-screen drag slot
             act[8] = 1.0                                          # slot 0 enabled
             act[39], act[40], act[41] = 1.0, -1.0, 0.0            # spin ON, hold 0..0.5
             ppo_recs = []
             for i in range(2):
                 rec = {"tag": f"ppo{i}", "ok": False, "error": None}
-                reset_position(worker.driver, worker.device_w, worker.device_h)
-                time.sleep(0.3)
                 try:
+                    reset_position(worker.driver, worker.device_w, worker.device_h)
+                    time.sleep(_RESET_SETTLE_S)
                     tca.execute_gesture_params_vector(
                         worker.driver, act, device_w=worker.device_w,
                         device_h=worker.device_h, spin_button_xy=worker.spin_button_xy)
@@ -285,6 +295,7 @@ def main() -> None:
                     traceback.print_exc()
                 time.sleep(args.tail_s)
                 log.write(json.dumps(rec) + "\n")
+                log.flush()
                 print(f"  [ppo{i}] {'OK' if rec['ok'] else 'ERR ' + str(rec['error'])}")
                 ppo_recs.append(rec)
             summary["ppo"] = {"fires": len(ppo_recs),
@@ -292,7 +303,6 @@ def main() -> None:
 
         if not args.skip_visual:
             print("\n=== Phase 4: recipe control vs +spin, MJPEG frames ===")
-            from trueskate_ai.data.gesture_sampling import load_recipe_vectors
             recipes = [rv for rv in load_recipe_vectors(_REPO / "trick_libraries")
                        if not rv[2]]  # no-spin recipes only
             if not recipes:
@@ -303,9 +313,9 @@ def main() -> None:
                 spin_vec = list(vec) + [1.0, 0.05, 0.95]  # gate ON, hold ~whole gesture
                 for tag, v in (("control", list(vec)), ("spin", spin_vec)):
                     reset_position(worker.driver, worker.device_w, worker.device_h)
-                    time.sleep(0.3)
+                    time.sleep(_RESET_SETTLE_S)
                     with MjpegFrameSaver(worker.mjpeg_url, args.out / "frames" / tag) as sav:
-                        _fire(worker, v, log, f"visual-{tag}", tail_s=2.0)
+                        _fire(worker, v, log, f"visual-{tag}", tail_s=_VISUAL_TAIL_S)
                         time.sleep(0.5)
                     print(f"  [{tag}] saved {sav.saved} frames -> {args.out / 'frames' / tag}")
                 summary["visual_recipe"] = name
@@ -316,7 +326,12 @@ def main() -> None:
     (args.out / "summary.json").write_text(json.dumps(summary, indent=2))
     print("\n=== SUMMARY ===")
     print(json.dumps(summary, indent=2))
-    errs = summary.get("spin", {}).get("errors", 0) + summary.get("ppo", {}).get("errors", 0)
+    if summary.get("spin", {}).get("fires", 0) == 0:
+        print("\nVERDICT: FAIL — no spin fires executed (bad --vectors?)")
+        raise SystemExit(1)
+    errs = (summary.get("spin", {}).get("errors", 0)
+            + summary.get("control", {}).get("errors", 0)
+            + summary.get("ppo", {}).get("errors", 0))
     if errs:
         print(f"\nVERDICT: FAIL — {errs} execution error(s); see fires.jsonl")
         raise SystemExit(1)
