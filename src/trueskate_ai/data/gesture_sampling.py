@@ -16,6 +16,11 @@ corpus across visual domains:
              active, for spin-family coverage. Same held-finger execution path as
              nslot (execute_gesture_params -> execute_n_slot_gestures), gated by
              sample_mixture's `spin_frac`.
+- "spin_flick" — a single-finger flick with the spin HOLD guaranteed active and
+             OUTLASTING the drag (curved_drag_with_spin_hold — no push, both
+             touches label-accounted). The only spin form Model 1 can train on
+             (meta stays flick-shaped); splits the spin_frac slice with "spin"
+             at _SPIN_FLICK_SHARE.
 
 The executed gesture is always the label — outcome (land / wall-bump / whiff) is
 irrelevant for this corpus, which is what lets it run in obstacle-heavy SLS parks.
@@ -77,12 +82,29 @@ _SPIN_T_JITTER = 0.05
 # a uniform t_start/t_end can otherwise collapse to a near-zero-length press.
 _SPIN_MIN_HOLD = 0.25
 
+# spin_flick hold window (ABSOLUTE seconds, relative to the flick touch-down at
+# payload t=0). Drag-first: the spin press joins >= 0.12s after the flick's
+# touch-down — the same stagger execute_n_slot_gestures enforces between drag
+# downs, because near-simultaneous multi-finger downs read as the park-editor
+# camera gesture. The hold OUTLASTS the flick into the tail window, like real
+# spin play (button held through the rotation), so the pressed button stays
+# visible for >= ~12 frames at 30fps.
+_SPIN_FLICK_HOLD_START = (0.12, 0.35)
+_SPIN_FLICK_HOLD_END_AFTER_DRAG = (0.3, 0.9)   # added to the flick duration
+_SPIN_FLICK_MIN_HOLD_S = 0.4
+
+# Within the spin_frac slice: share drawn as spin_flick (Model-1 trainable,
+# single finger + held button) vs "spin" (nslot + held button, Model-2 fuel).
+_SPIN_FLICK_SHARE = 0.5
+
 
 @dataclass
 class GestureSample:
-    """A sampled gesture in one of four executable forms.
+    """A sampled gesture in one of five executable forms.
 
     kind == "flick": use waypoints/duration/easing_power (curved_drag, no push).
+    kind == "spin_flick": flick fields + spin_hold_*_s
+    (curved_drag_with_spin_hold, no push).
     kind in {"nslot","recipe","spin"}: use params/num_gestures/use_spin
     (execute_gesture_params).
     """
@@ -94,16 +116,34 @@ class GestureSample:
     num_gestures: int | None = None
     use_spin: bool = False
     source: str | None = None  # recipe filename for kind == "recipe"
+    # spin_flick hold window, ABSOLUTE seconds from the payload start (= flick
+    # touch-down). Params-spin kinds carry their window inside params; meta()
+    # decodes it so every consumer reads the same named fields.
+    spin_hold_start_s: float | None = None
+    spin_hold_end_s: float | None = None
+    # Stamped by the collector (worker.spin_button_xy) just before execution so
+    # the logged coord always matches the button the held finger actually hit.
+    spin_button_xy: tuple[float, float] | None = None
 
     def meta(self) -> dict:
         """JSON-serialisable description for the sample's meta.json."""
         d: dict = {"gesture_distribution": self.kind}
-        if self.kind == "flick":
+        if self.kind in ("flick", "spin_flick"):
             d.update(
                 waypoints=self.waypoints,
                 duration=self.duration,
                 easing_power=self.easing_power,
             )
+            if self.kind == "spin_flick":
+                d.update(
+                    spin_active=True,
+                    spin_hold_start_s=self.spin_hold_start_s,
+                    spin_hold_end_s=self.spin_hold_end_s,
+                    # The hold outlasts the drag by construction, so the W3C
+                    # payload (and the gesture call window the aligner anchors
+                    # on) ends when the button lifts, not when the drag does.
+                    payload_total_s=max(self.duration or 0.0, self.spin_hold_end_s or 0.0),
+                )
         else:
             d.update(
                 params=self.params,
@@ -112,6 +152,10 @@ class GestureSample:
             )
             if self.source:
                 d["recipe_source"] = self.source
+            if self.use_spin and self.params:
+                d.update(_params_spin_fields(self.params, self.num_gestures or 1))
+        if self.spin_button_xy is not None and d.get("spin_active"):
+            d["spin_button_xy"] = [float(self.spin_button_xy[0]), float(self.spin_button_xy[1])]
         return d
 
 
@@ -191,6 +235,71 @@ def sample_spin(rng: np.random.Generator, num_gestures: int) -> GestureSample:
     s.params[-SPIN_PARAMS:] = [gate, t_start, t_end]
     s.kind = "spin"
     return s
+
+
+def sample_spin_flick(rng: np.random.Generator) -> GestureSample:
+    """A single-finger flick with the spin (rotate) button HELD past the drag.
+
+    The spin form Model 1 can train on: meta stays flick-shaped (waypoints/
+    duration/easing_power pass the dataset's flick filter) and the held button
+    is carried as an explicit hold window, so the extra finger is a labelled
+    touch, never unmodelled noise. Drag-first, spin press joining >=
+    _SPIN_FLICK_HOLD_START[0] later (editor mitigation — see constants above);
+    the hold runs into the tail window like real spin play. Straight flicks are
+    materialised as 3 waypoints (exact midpoint — same path) so meta ==
+    execution == label math.
+    """
+    f = sample_flick(rng)
+    wps = [tuple(p) for p in f["waypoints"]]
+    if len(wps) == 2:
+        (sx, sy), (ex, ey) = wps
+        wps = [(sx, sy), ((sx + ex) / 2.0, (sy + ey) / 2.0), (ex, ey)]
+    dur = float(f["duration"])
+    hold_start = float(rng.uniform(*_SPIN_FLICK_HOLD_START))
+    hold_end = dur + float(rng.uniform(*_SPIN_FLICK_HOLD_END_AFTER_DRAG))
+    hold_end = max(hold_end, hold_start + _SPIN_FLICK_MIN_HOLD_S)
+    return GestureSample(
+        kind="spin_flick",
+        waypoints=wps,
+        duration=dur,
+        easing_power=float(f["easing_power"]),
+        spin_hold_start_s=hold_start,
+        spin_hold_end_s=hold_end,
+    )
+
+
+def schedule_total_s(durations: list[float], delays: list[float]) -> float:
+    """Nominal N-slot schedule length in seconds: earliest-start-normalised max
+    slot end. Mirrors execute_n_slot_gestures' spin_total (pre-stagger — the
+    collector's 0.12s finger stagger can stretch the real schedule slightly)."""
+    starts = [0.0]
+    for i in range(1, len(durations)):
+        starts.append(starts[i - 1] + durations[i - 1] + delays[i - 1])
+    base = min(starts)
+    return max(s - base + d for s, d in zip(starts, durations))
+
+
+def _params_spin_fields(params: list[float], num_gestures: int) -> dict:
+    """Decoded spin provenance for a params-vector (spin-layout) sample.
+
+    Emits spin_active plus the nominal hold window in ABSOLUTE seconds from
+    schedule start — the same reference frame spin_flick uses — so stats and
+    Model 2 never re-derive from the raw trailing [gate, t_start, t_end] block.
+    """
+    gate, t0, t1 = (float(v) for v in params[-SPIN_PARAMS:])
+    if gate < 0:  # gate-off: spin block present but the hold never fires
+        return {"spin_active": False}
+    durations = [float(params[i * PARAMS_PER_SLOT + 6]) for i in range(num_gestures)]
+    d0 = num_gestures * PARAMS_PER_SLOT
+    delays = [float(v) for v in params[d0:d0 + max(0, num_gestures - 1)]]
+    total = schedule_total_s(durations, delays)
+    ts, te = sorted((t0, t1))  # unpack_gesture_params orders the window the same way
+    return {
+        "spin_active": True,
+        "spin_hold_start_s": ts * total,
+        "spin_hold_end_s": te * total,
+        "payload_total_s": total,
+    }
 
 
 def recipe_to_vector(recipe: dict) -> tuple[list[float], int, bool]:
@@ -306,7 +415,7 @@ def clamp_in_bounds(s: GestureSample) -> GestureSample:
     (mutates in place), so the saved label always matches what executes. Normalised
     coords are absolute (0/1 = screen edges); clamping constrains, it never rescales.
     """
-    if s.kind == "flick" and s.waypoints is not None:
+    if s.kind in ("flick", "spin_flick") and s.waypoints is not None:
         pushed = [
             _push_out_bolt_zone(
                 float(np.clip(x, X_BOUND_MIN, X_BOUND_MAX)),
@@ -317,7 +426,13 @@ def clamp_in_bounds(s: GestureSample) -> GestureSample:
         # point to violate _FLICK_MIN_REACH (see _restore_min_reach); only the
         # first/last waypoints define that displacement, so re-check just those.
         sx, sy = pushed[0]
-        pushed[-1] = _restore_min_reach(sx, sy, *pushed[-1])
+        ex, ey = _restore_min_reach(sx, sy, *pushed[-1])
+        # The reach restore extends along start->end, which can land the end
+        # BACK inside the bolt rect (end pushed to the rect's edge with the
+        # start further right → the direction points left). Zone exclusion is
+        # the hard invariant (it opens the Bolt modal), so it gets the last
+        # word — accepting a rare shorter-than-_FLICK_MIN_REACH trace.
+        pushed[-1] = _push_out_bolt_zone(ex, ey)
         s.waypoints = pushed
     elif s.params is not None and s.num_gestures is not None:
         bounds = build_param_bounds(s.num_gestures, s.use_spin)
@@ -349,7 +464,8 @@ def sample_mixture(
     spin_frac=0.2 yields ~20% guaranteed-spin gestures (a held rotate button)
     whatever fracs sums to. It is the knob to grow the spin-family corpus,
     independent of `use_spin` (which only makes the plain nslot branch
-    spin-capable, ~half of those gate-off).
+    spin-capable, ~half of those gate-off). The spin slice itself splits
+    _SPIN_FLICK_SHARE spin_flick (Model-1 trainable) / rest nslot-spin.
     """
     f_flick, f_nslot, f_recipe = fracs
     if not recipe_vectors:
@@ -379,6 +495,8 @@ def sample_mixture(
         s = sample_nslot(rng, num_gestures, use_spin)
     elif r < f_flick + f_nslot + f_recipe:
         s = sample_recipe(rng, recipe_vectors)
+    elif float(rng.uniform(0.0, 1.0)) < _SPIN_FLICK_SHARE:
+        s = sample_spin_flick(rng)
     else:
         s = sample_spin(rng, num_gestures)
     return clamp_in_bounds(s)
