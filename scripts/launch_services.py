@@ -175,7 +175,14 @@ def _coredevice_available(udid: str) -> bool:
                            capture_output=True, text=True, timeout=30)
     except Exception:  # noqa: BLE001
         return False
-    return any(udid in line and "available" in line.lower() for line in r.stdout.splitlines())
+    # NB: a plain substring test for "available" also matches "unavailable" (a
+    # disconnected-but-remembered device), which made the launcher burn 2x240s
+    # WDA builds (exit 70) per cycle against an absent phone instead of
+    # reporting "not connected". (?<!un) keeps every other "available" variant.
+    return any(
+        udid in line and re.search(r"(?<!un)available", line.lower())
+        for line in r.stdout.splitlines()
+    )
 
 
 def _check_device_connected(device: dict) -> bool:
