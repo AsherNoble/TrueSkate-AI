@@ -52,7 +52,7 @@ newest_mtime() {
 # end-anchors the device tag: a bare "iPhone_XR" would also match the iPhone_XR2
 # collector's command line and report a dead XR1 collector as alive.
 stack_status() {
-  proc=$(pgrep -f "collect_sls_xctest.*--devices ${DEVICE_TAG}($| )" >/dev/null 2>&1 && echo alive || echo DEAD)
+  proc=$(pgrep -f "collect_sls_xctest.*--devices[= ]${DEVICE_TAG}($| )" >/dev/null 2>&1 && echo alive || echo DEAD)
   wda=$(curl -s -m4 "http://localhost:${WDA_PORT}/status" >/dev/null 2>&1 && echo up || echo DOWN)
   echo "collector=${proc} WDA${WDA_PORT}=${wda}"
 }
@@ -63,7 +63,7 @@ started=$(date +%s)
 seen_healthy=0   # only arm stop-alerts AFTER we've seen the device collect, so a
 first=1          # benched/not-yet-started device doesn't fire a spurious "stopped".
 echo "[$LABEL-watchdog] online: tag=$DEVICE_TAG port=$WDA_PORT stall=${STALL_SECONDS}s check=${CHECK_INTERVAL}s"
-push "Watchdog online for $LABEL - alerts if it STOPS collecting (no new segment > $((STALL_SECONDS/60))m, once it has started)." "eyes" "low"
+push "Watchdog online for $LABEL - alerts if it STOPS collecting (no new segment > $((STALL_SECONDS/60))m, once it has started); or if NO first segment within $((NEVER_ARMED_ALERT_SECONDS/60))m of watchdog start." "eyes" "low"
 
 while true; do
   now=$(date +%s)
