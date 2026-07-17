@@ -401,8 +401,9 @@ def execute_n_slot_gestures(
     # Combined when: forced; any overlap requires a single payload; or every gap
     # is short enough that a single bundled payload preserves the schedule better
     # than separate WDA calls.
-    # Spin forces the combined single-payload path: one perform() in flight
-    # racing the spin-button tap thread (the topology the PPO path validated).
+    # Spin forces the combined single-payload path: a held spin finger must share
+    # the drags' perform() (the old concurrent tap-thread design cancelled the
+    # in-flight gesture on the shared WDA session — since removed everywhere).
     spin_active = bool(spin and spin.get("enabled") and spin_button_pt is not None)
 
     has_delays = len(delays) > 0
