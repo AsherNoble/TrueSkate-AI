@@ -85,7 +85,6 @@ def _park_tag(name: str) -> str:
 
 def _start_caffeinate():
     try:
-        import os
         p = subprocess.Popen(["caffeinate", "-dimsu", "-w", str(os.getpid())])
         print(f"[collect_xctest] caffeinate active (PID {p.pid}).")
         return p
@@ -101,7 +100,7 @@ def _execute(worker: DeviceWorker, g) -> None:
         pts = [scale_to_device(x, y, dw, dh) for x, y in g.waypoints]
         easing = None if g.easing_power == 1.0 else (lambda t, p=g.easing_power: t ** p)
         curved_drag(worker.driver, pts, total_duration=g.duration, easing=easing)
-    else:  # nslot / recipe
+    else:  # nslot / recipe / spin
         spin_xy = worker.spin_button_xy if g.use_spin else None
         execute_gesture_params(
             worker.driver, np.asarray(g.params, dtype=np.float64), dw, dh,
@@ -182,8 +181,15 @@ def main() -> None:
     ap.add_argument("--flick-frac", type=float, default=0.6)
     ap.add_argument("--nslot-frac", type=float, default=0.25)
     ap.add_argument("--recipe-frac", type=float, default=0.15)
+    ap.add_argument("--spin-frac", type=float, default=0.0,
+                    help="TRUE share [0,1] of fires that are guaranteed-spin gestures (rotate "
+                         "button HELD); the flick/nslot/recipe mix keeps its ratios in the "
+                         "remaining share. 0.2 = ~20%% of fires hold the spin button — the "
+                         "knob to grow the spin-family corpus.")
     ap.add_argument("--num-gestures", type=int, default=2)
-    ap.add_argument("--use-spin", action="store_true")
+    ap.add_argument("--use-spin", action="store_true",
+                    help="Legacy: make the plain nslot branch spin-capable (~half gate-off). "
+                         "Prefer --spin-frac for controlled, guaranteed spin coverage.")
     ap.add_argument("--recipe-dir", type=Path, default=_REPO_ROOT / "trick_libraries")
     ap.add_argument("--fps", type=int, default=30)
     ap.add_argument("--tail-s", type=float, default=1.0,
@@ -241,7 +247,6 @@ def main() -> None:
     print(f"Connecting to {device} (needs WDA+Appium up; run launch_services.py)...")
     worker.connect()
     dw, dh = worker.device_w, worker.device_h
-    import os
     udid = os.environ.get(cfg.get("env_key", ""), "") or cfg.get("udid", "")
 
     rec = XCTestScreenRecorder(worker.driver, fps=args.fps)
@@ -254,6 +259,8 @@ def main() -> None:
     recipe_vectors = load_recipe_vectors(args.recipe_dir)
     print(f"Loaded {len(recipe_vectors)} packable recipes.")
     fracs = (args.flick_frac, args.nslot_frac, args.recipe_frac)
+    print(f"Gesture mix: base weights flick={args.flick_frac} nslot={args.nslot_frac} "
+          f"recipe={args.recipe_frac}; spin share={args.spin_frac} (guaranteed-hold slice).")
 
     notify(f"[{device}] XCTest SLS collection starting in {cycle[0]} "
            f"({args.segment_min:.0f}-min segments, {args.per_park_hours}h/park).",
@@ -355,7 +362,8 @@ def main() -> None:
                         print(f"[seg {segment_idx}] gameplay check failed: {exc!r} — proceeding")
                 seg_iter += 1
 
-                g = sample_mixture(rng, fracs=fracs, num_gestures=args.num_gestures,
+                g = sample_mixture(rng, fracs=fracs, spin_frac=args.spin_frac,
+                                   num_gestures=args.num_gestures,
                                    use_spin=args.use_spin, recipe_vectors=recipe_vectors)
                 t0 = time.time()
                 try:
@@ -440,6 +448,11 @@ def main() -> None:
                 "fps": res.fps, "codec": res.codec,
                 "capture_offset_s": args.capture_offset_s,
                 "tail_s": args.tail_s,
+                # Sampler config, so a corpus session is reconstructable without
+                # console logs (mirrors the DAL collector's session_meta.json).
+                "mix": {"flick": args.flick_frac, "nslot": args.nslot_frac,
+                        "recipe": args.recipe_frac, "spin_frac": args.spin_frac},
+                "num_gestures": args.num_gestures, "use_spin": args.use_spin,
                 "mov": mov_path.name, "n_gestures": len(events), "gestures": events,
             }
             manifest_path.write_text(json.dumps(manifest, indent=2))
