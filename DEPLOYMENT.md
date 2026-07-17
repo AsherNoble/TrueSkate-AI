@@ -75,16 +75,15 @@ The rig runs in one of two modes. They are mutually exclusive on a given device
 Evolutionary optimization of gesture parameters against a reward curriculum.
 
 - **Entry point:** `scripts/run_training.py` — a self-healing supervisor that
-  launches services, the status dashboard, and `train_cmaes.py`, wrapping
-  everything in `caffeinate` while it runs.
+  launches services and `train_cmaes.py`, wrapping everything in `caffeinate`
+  while it runs. It does NOT launch a dashboard — see §9, the dashboard runs
+  continuously under its own launchd agent, independent of any training run.
 - **Required flag:** `--curriculum <path>` (e.g. `curricula/360_flip.json`).
 - **Common flags:** `--initial-mean <trick_library.json>` (warm start),
   `--max-evals` (default 100000), `--pop-size` (default 24), `--seed`
-  (default 42), `--status-port` (default 8200), `--no-status-server`,
-  `--no-caffeinate`.
+  (default 42), `--no-caffeinate`.
 - **Children supervised:** `launch_services.py` (Appium + WDA + iproxy per
-  device, self-healing), `status_server.py` (dashboard on `:8200`),
-  `train_cmaes.py` (restarts with a bumped seed).
+  device, self-healing), `train_cmaes.py` (restarts with a bumped seed).
 
 Manual run (inside `tmux` so it survives an SSH drop):
 
@@ -140,6 +139,7 @@ source; jobs marked otherwise are referenced operationally but their plists are
 | Label | Type | In repo | Purpose |
 |---|---|---|---|
 | `com.trueskate.training` | user LaunchAgent | ✅ `deploy/` | Mode A supervisor |
+| `com.trueskate.dashboard` | user LaunchAgent | ✅ `scripts/ops/` | The one rig dashboard, `train_dashboard.py` on `:8400` — runs independent of Mode A/B |
 | `com.trueskate.remotexpc-tunnel` | root LaunchDaemon | ✅ `scripts/ops/` | Mode B recording prerequisite |
 | `com.trueskate.watchdog.<LABEL>` | user LaunchAgent | ⚠️ logic only (`scripts/collection_watchdog.sh`); plist not committed | Mode B collector liveness alerts |
 | `com.trueskate.services` | user LaunchAgent | ❌ not committed | Per CLAUDE.md: Appium + WDA + iproxy + health monitor |
@@ -237,8 +237,10 @@ couldn't get back in" on a headless, rarely-logged-in box:
 3. **Enable Tailscale SSH:** `sudo tailscale up --ssh`; connect with
    `tailscale ssh training-server@<host>`. No port-forwarding, no exposed ports.
 4. **MagicDNS on** so the host is addressable by name, not a DHCP-roulette IP.
-5. **Publish the dashboard** over the tailnet only:
-   `tailscale serve --bg 8200` (undo with `tailscale serve --https=443 off`).
+5. **The dashboard is plain HTTP direct to the tailnet IP**, not published via
+   `tailscale serve`: `scripts/train_dashboard.py` binds `0.0.0.0:8400` and is
+   reached at `http://<tailscale-ip>:8400/` — Tailscale routes that IP:port
+   node-to-node with no serve/funnel config needed.
 6. **Auto-login** on the host so it returns to a working GUI session after a
    power blip — required for LaunchAgents and for WDA/USB.
 
@@ -290,13 +292,18 @@ These prevent the most common physical and overnight failures:
 
 ## 9. Monitoring
 
-- **Mode A dashboard:** `status_server.py` on `:8200` (published via
-  `tailscale serve`) — per-device alive/dead, evals & lands, evals/hr, last
-  trick, best, and a **STALE** badge if `logs/status.json` stops updating
-  (training stalled).
+- **Dashboard:** `scripts/train_dashboard.py` on `:8400` — the rig's one
+  dashboard, covering both modes. Per-device screen preview (`iPhone_XR` /
+  `iPhone_XR2`) + distilled training log for whatever's currently running
+  (Mode A or Mode B), plus a top heartbeat bar reading `logs/status.json` for
+  Mode A: per-device alive/dead, evals & lands, evals/hr, last trick, best,
+  and a **STALE** badge if the heartbeat stops updating (training stalled).
+  The bar shows **IDLE** when no Mode A run is active — the common case, since
+  Mode B collection is the rig's default activity. Runs continuously under
+  `com.trueskate.dashboard` (launchd, RunAtLoad+KeepAlive), reachable at
+  `http://<tailscale-ip>:8400/` regardless of which mode is running.
 - **Mode B liveness:** `scripts/collection_watchdog.sh` (§4.3) ntfy alerts on a
-  stalled collector. A separate live-stream dashboard exists in
-  `scripts/train_dashboard.py` (`iPhone_XR` / `iPhone_XR2` streams).
+  stalled collector.
 - **Push (ntfy):** topic `NTFY_TOPIC` in `.env`. Mode A pushes run start/finish,
   a device going down, N consecutive zero-land generations, all-devices-dead
   abort, and supervisor stop.

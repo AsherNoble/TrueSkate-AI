@@ -151,6 +151,18 @@ Spin-family tricks (BIG SPIN, BIG FLIP, GAZELLE FLIP, …) need True Skate's rot
 
 The spin block is appended **after** the delays, so the vector length becomes `8N + (N−1) + 3 = 9N + 2` (vs `9N − 1` without spin). The two length classes are disjoint mod 9, so `infer_layout(len)` recovers `(N, use_spin)` from a vector alone — no separate flag is stored in logs. The rotate button's normalised position is per-device (`spin_button_xy` in `DEVICES`, default `DEFAULT_SPIN_BUTTON_XY = (0.0604, 0.4040)` in `sim/gestures.py`), left of the gesture area (`X_BOUND_MIN = 0.12`) so drags never hit it. Recipes without a `spin` key are pure curved drags (all legacy libraries).
 
+### `spin_flick` (SLS corpus sample kind)
+
+The SLS collector's Model-1-trainable spin form (`gesture_sampling.sample_spin_flick`, drawn inside the `--spin-frac` slice alongside nslot-`spin`): a single-finger curved flick plus the spin button held by a second finger — executed via `curved_drag_with_spin_hold()` (`sim/touch_actions.py`) in one W3C payload, **no push**, so every touch in the frames is label-accounted. Unlike the recipe spin block's schedule-fraction `t_start`/`t_end`, the hold window is stored in **absolute seconds from the flick touch-down** and OUTLASTS the drag (real spin play holds the button through the rotation). Sample `meta.json` fields:
+
+- flick fields as usual: `waypoints` (always 3), `duration`, `easing_power`
+- `spin_active: true`
+- `spin_hold_start_s` / `spin_hold_end_s` — hold window, seconds from payload start (start ≥ 0.12 s after the drag-down: near-simultaneous multi-finger downs read as the park-editor camera gesture)
+- `payload_total_s` — full payload length (= hold end). The end-relative `frame_times` anchor: the gesture call ends when the button lifts, not when the drag does
+- `spin_button_xy` — the normalised button coord that actually fired (stamped by the collector)
+
+Params-vector kinds (`spin`, and `nslot`/`recipe` carrying a spin block) emit the same decoded `spin_active`/`spin_hold_start_s`/`spin_hold_end_s`/`payload_total_s` meta fields (nominal, pre-stagger schedule) so no consumer re-derives from the raw trailing block.
+
 ---
 
 ## Trick Library File Format
@@ -218,6 +230,7 @@ Push constants are defined in `src/trueskate_ai/sim/gestures.py`. Both replay (`
 | `execute_gesture_recipe()` — delegates to push + `execute_n_slot_gestures` | `src/trueskate_ai/sim/gesture_recipe.py` |
 | `execute_n_slot_gestures()` (N-slot scheduler: sequential / combined / spin HOLD) | `src/trueskate_ai/sim/touch_actions.py` |
 | `build_curved_drag()`, `make_touch_pointer()`, `perform_pointer_actions()` | `src/trueskate_ai/sim/touch_actions.py` |
+| `curved_drag_with_spin_hold()` (spin_flick: drag + held spin button, one payload, no push) | `src/trueskate_ai/sim/touch_actions.py` |
 | CMA-ES gesture parameter bounds, decode, execute | `src/trueskate_ai/rl/cmaes/action_param.py` |
 | PPO gesture parameter decode, execute | `src/trueskate_ai/rl/ppo/trick_conditioned_action.py` |
 | Library recipe replay | `scripts/inspect/execute_trick.py` |

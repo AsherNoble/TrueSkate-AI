@@ -57,7 +57,9 @@ from trueskate_ai.rl.device_worker import (  # noqa: E402
     BUNDLE_ID, DeviceWorker, add_device_selection_args, resolve_devices,
 )
 from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
-from trueskate_ai.sim.touch_actions import curved_drag, reset_position, skip_loading_screen  # noqa: E402
+from trueskate_ai.sim.touch_actions import (  # noqa: E402
+    curved_drag, curved_drag_with_spin_hold, reset_position, skip_loading_screen,
+)
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
 from trueskate_ai.vision.gameplay_filter import is_editor_frame, is_menu_frame  # noqa: E402
 from trueskate_ai.vision.xctest_capture import XCTestScreenRecorder  # noqa: E402
@@ -100,6 +102,15 @@ def _execute(worker: DeviceWorker, g) -> None:
         pts = [scale_to_device(x, y, dw, dh) for x, y in g.waypoints]
         easing = None if g.easing_power == 1.0 else (lambda t, p=g.easing_power: t ** p)
         curved_drag(worker.driver, pts, total_duration=g.duration, easing=easing)
+    elif g.kind == "spin_flick":
+        pts = [scale_to_device(x, y, dw, dh) for x, y in g.waypoints]
+        easing = None if g.easing_power == 1.0 else (lambda t, p=g.easing_power: t ** p)
+        bx, by = g.spin_button_xy or worker.spin_button_xy
+        curved_drag_with_spin_hold(
+            worker.driver, pts, total_duration=g.duration, easing=easing,
+            spin_button_pt=scale_to_device(bx, by, dw, dh),
+            hold_start_s=g.spin_hold_start_s, hold_end_s=g.spin_hold_end_s,
+        )
     else:  # nslot / recipe / spin
         spin_xy = worker.spin_button_xy if g.use_spin else None
         execute_gesture_params(
@@ -381,6 +392,9 @@ def main() -> None:
                 g = sample_mixture(rng, fracs=fracs, spin_frac=args.spin_frac,
                                    num_gestures=args.num_gestures,
                                    use_spin=args.use_spin, recipe_vectors=recipe_vectors)
+                if g.kind == "spin_flick" or g.use_spin:
+                    # stamp before meta() so the logged coord is the one that fires
+                    g.spin_button_xy = worker.spin_button_xy
                 t0 = time.time()
                 try:
                     _execute(worker, g)

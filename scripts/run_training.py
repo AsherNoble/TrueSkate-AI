@@ -4,9 +4,12 @@ Starts and babysits the whole rig as child processes, keeps the Mac awake with
 ``caffeinate``, and restarts any piece that dies:
 
     services  — scripts/launch_services.py (already self-heals per device)
-    status    — scripts/status_server.py   (Tailscale dashboard)
     training  — scripts/train/train_cmaes.py (restarted with a bumped seed
                 whenever it exits, so collection runs continuously for 24h)
+
+The dashboard (scripts/train_dashboard.py) is NOT spawned here — it runs
+continuously under its own launchd agent on :8400 and picks up this run's
+``logs/status.json`` heartbeat automatically. See DEPLOYMENT.md §9.
 
 Usage (typical home run, over `tailscale ssh` inside tmux):
 
@@ -87,7 +90,6 @@ class Supervisor:
         self.device_arg = ",".join(d["name"] for d in devices)
         self.caffeinate: subprocess.Popen | None = None
         self.services: subprocess.Popen | None = None
-        self.status: subprocess.Popen | None = None
         self.training: subprocess.Popen | None = None
         self.seed = args.seed
         self.training_restarts = 0
@@ -97,12 +99,6 @@ class Supervisor:
 
     def _services_cmd(self) -> list[str]:
         return [_PY, str(_HERE / "launch_services.py"), "--devices", self.device_arg]
-
-    def _status_cmd(self) -> list[str]:
-        return [
-            _PY, str(_HERE / "status_server.py"),
-            "--port", str(self.args.status_port),
-        ]
 
     def _training_cmd(self) -> list[str]:
         cmd = [
@@ -127,11 +123,6 @@ class Supervisor:
 
         print(f"[supervisor] Launching services for: {self.device_arg}")
         self.services = subprocess.Popen(self._services_cmd())
-
-        if not self.args.no_status_server:
-            self.status = subprocess.Popen(self._status_cmd())
-            print(f"[supervisor] Status server on :{self.args.status_port} "
-                  f"(expose: tailscale serve --bg {self.args.status_port})")
 
         if not _wait_for_services(self.devices, _SERVICES_READY_TIMEOUT_S):
             notify("Services failed to come up — no WDA. Supervisor still retrying.",
@@ -166,10 +157,6 @@ class Supervisor:
                     self._restart("services", "services", self._services_cmd)
                     _wait_for_services(self.devices, _SERVICES_READY_TIMEOUT_S)
 
-                if self.status and self.status.poll() is not None:
-                    self._restart("status server", "status", self._status_cmd,
-                                  notify_it=False)
-
                 if self.training and self.training.poll() is not None:
                     # Training finished or crashed — bump seed and relaunch so
                     # 24h collection never just stops.
@@ -192,7 +179,6 @@ class Supervisor:
         self._stop = True
         for name, proc in (
             ("training", self.training),
-            ("status", self.status),
             ("services", self.services),
         ):
             if proc and proc.poll() is None:
@@ -222,8 +208,6 @@ def main() -> None:
                         help="Starting seed; bumped on each training restart.")
     parser.add_argument("--wait-time", type=float, default=0.0)
     parser.add_argument("--settle-time", type=float, default=0.5)
-    parser.add_argument("--status-port", type=int, default=8200)
-    parser.add_argument("--no-status-server", action="store_true")
     parser.add_argument("--no-caffeinate", action="store_true")
     add_device_selection_args(parser)
     args = parser.parse_args()
