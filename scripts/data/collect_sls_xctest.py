@@ -59,7 +59,7 @@ from trueskate_ai.rl.device_worker import (  # noqa: E402
 from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import curved_drag, reset_position, skip_loading_screen  # noqa: E402
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
-from trueskate_ai.vision.gameplay_filter import is_menu_frame  # noqa: E402
+from trueskate_ai.vision.gameplay_filter import is_editor_frame, is_menu_frame  # noqa: E402
 from trueskate_ai.vision.xctest_capture import XCTestScreenRecorder  # noqa: E402
 
 # Same 11 SLS arenas + cycle order as the DAL collector (labels for prompting/tagging).
@@ -359,17 +359,20 @@ def main() -> None:
                 # --- gameplay guard: never log a gesture fired into the replay/menu ---
                 if not args.no_gameplay_guard and seg_iter % max(1, args.gameplay_check_every) == 0:
                     try:
-                        if is_menu_frame(worker.driver.get_screenshot_as_png()):
+                        _guard_png = worker.driver.get_screenshot_as_png()
+                        _in_editor = is_editor_frame(_guard_png)
+                        if _in_editor or is_menu_frame(_guard_png):
                             non_gameplay_streak += 1
                             total_menu_skips += 1
-                            print(f"[seg {segment_idx}] replay/menu detected "
+                            _what = "park editor" if _in_editor else "replay/menu"
+                            print(f"[seg {segment_idx}] {_what} detected "
                                   f"(streak {non_gameplay_streak}) — skipping gesture (not logged)")
                             if non_gameplay_streak >= args.menu_recover_after:
-                                print(f"[seg {segment_idx}] relaunching True Skate to exit replay...")
+                                print(f"[seg {segment_idx}] relaunching True Skate to exit {_what}...")
                                 _exit_replay(worker)
                                 non_gameplay_streak = 0
                             seg_iter += 1
-                            continue  # do not fire/log a gesture into the menu
+                            continue  # do not fire/log a gesture into the menu/editor
                         non_gameplay_streak = 0
                     except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
                         print(f"[seg {segment_idx}] gameplay check failed: {exc!r} — proceeding")
@@ -385,6 +388,23 @@ def main() -> None:
                     print(f"  gesture {total_gestures} failed: {exc}")
                     continue
                 t1 = time.time()
+                # --- post-gesture PARK-EDITOR check ---
+                # True Skate's park editor is opened DURING a (multi-finger) gesture, and the
+                # NEXT reset_position closes it again — so the pre-gesture guard above never
+                # catches it (it checks right after a reset, when the editor is already closed).
+                # Check here, right after the gesture: if it landed in the editor, DROP this
+                # sample so editor frames never enter the dataset. Persistent editor (if reset
+                # ever fails to close it) is still caught + relaunched by the pre-gesture guard.
+                if not args.no_gameplay_guard:
+                    try:
+                        time.sleep(0.35)  # let the editor UI render before scoring
+                        if is_editor_frame(worker.driver.get_screenshot_as_png()):
+                            total_menu_skips += 1
+                            print(f"[seg {segment_idx}] gesture opened the park editor "
+                                  f"— dropping sample (not logged)")
+                            continue  # do NOT log a gesture that landed in the editor
+                    except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
+                        print(f"[seg {segment_idx}] post-gesture editor check failed: {exc!r} — proceeding")
                 events.append({
                     "gesture_index": total_gestures,
                     "t_call_start_epoch_s": t0,
