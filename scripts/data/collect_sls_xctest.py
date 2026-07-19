@@ -402,23 +402,23 @@ def main() -> None:
                     print(f"  gesture {total_gestures} failed: {exc}")
                     continue
                 t1 = time.time()
-                # --- post-gesture PARK-EDITOR check ---
-                # True Skate's park editor is opened DURING a (multi-finger) gesture, and the
-                # NEXT reset_position closes it again — so the pre-gesture guard above never
-                # catches it (it checks right after a reset, when the editor is already closed).
-                # Check here, right after the gesture: if it landed in the editor, DROP this
-                # sample so editor frames never enter the dataset. Persistent editor (if reset
-                # ever fails to close it) is still caught + relaunched by the pre-gesture guard.
+                # --- post-gesture menu/editor check ---
+                # A gesture can open non-gameplay UI after the pre-gesture guard.  The NEXT
+                # reset may close it, so check before logging and drop the contaminated window.
                 if not args.no_gameplay_guard:
                     try:
-                        time.sleep(0.35)  # let the editor UI render before scoring
-                        if is_editor_frame(worker.driver.get_screenshot_as_png()):
+                        time.sleep(0.35)  # let any newly-opened UI render before scoring
+                        _post_png = worker.driver.get_screenshot_as_png()
+                        _post_editor = is_editor_frame(_post_png)
+                        _post_menu = is_menu_frame(_post_png)
+                        if _post_editor or _post_menu:
                             total_menu_skips += 1
-                            print(f"[seg {segment_idx}] gesture opened the park editor "
+                            _what = "park editor" if _post_editor else "replay/app menu"
+                            print(f"[seg {segment_idx}] gesture opened the {_what} "
                                   f"— dropping sample (not logged)")
-                            continue  # do NOT log a gesture that landed in the editor
+                            continue  # do NOT log a gesture that landed in non-gameplay UI
                     except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
-                        print(f"[seg {segment_idx}] post-gesture editor check failed: {exc!r} — proceeding")
+                        print(f"[seg {segment_idx}] post-gesture UI check failed: {exc!r} — proceeding")
                 events.append({
                     "gesture_index": total_gestures,
                     "t_call_start_epoch_s": t0,

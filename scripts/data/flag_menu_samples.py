@@ -7,10 +7,12 @@ those ``(menu-frame, random-gesture)`` pairs are noise for a frame->gesture mode
 collector now guards against this in-loop (``--no-gameplay-guard`` to disable); this
 script cleans what was collected *before* the guard.
 
-Uses ``vision.gameplay_filter.is_menu_frame`` on each sample's middle frame (the replay
-state is stable across a sample's ~1.2s window). NON-DESTRUCTIVE by default: writes a
-``.menu`` marker in each flagged sample dir so a training loader can exclude any sample
-dir containing ``.menu``. ``--delete`` removes flagged dirs instead.
+Uses ``vision.gameplay_filter.is_menu_frame`` across each sample. Replay state is
+normally stable, but the gray app-hub navigation can fade in/out within a sample,
+so checking only the middle frame leaves partially contaminated samples behind.
+NON-DESTRUCTIVE by default: writes a ``.menu`` marker in each flagged sample dir
+so a training loader can exclude any sample dir containing ``.menu``. ``--delete``
+removes flagged dirs instead.
 
     python scripts/data/flag_menu_samples.py [--device iPhone_XR2] [--dry-run] [--delete]
 """
@@ -47,8 +49,15 @@ def main() -> None:
             frames = sorted(sd.glob("frame_*.png"))
             if not frames:
                 continue
+            # Probe the likely hits first, then exhaust the sample.  The full
+            # scan matters for hub-nav contamination that appears only in the
+            # lead-in/tail while replay menus usually short-circuit at midpoint.
+            mid = len(frames) // 2
+            ordered = list(dict.fromkeys((frames[mid], frames[0], frames[-1])))
+            priority = set(ordered)
+            ordered.extend(frame for frame in frames if frame not in priority)
             try:
-                flagged = is_menu_frame(frames[len(frames) // 2])
+                flagged = any(is_menu_frame(frame) for frame in ordered)
             except Exception:  # noqa: BLE001 — a bad frame shouldn't abort the sweep
                 continue
             if flagged:
