@@ -60,6 +60,8 @@ image = (
     )
     .add_local_file(str(_REPO_ROOT / "scripts" / "train" / "train_trace_extractor.py"),
                     remote_path="/root/scripts/train/train_trace_extractor_legacy.py")
+    .add_local_file(str(_REPO_ROOT / "scripts" / "data" / "build_bc_clips.py"),
+                    remote_path="/root/scripts/data/build_bc_clips.py")
 )
 corpus = modal.Volume.from_name(CORPUS_VOLUME)
 models = modal.Volume.from_name(MODELS_VOLUME, create_if_missing=True)
@@ -85,6 +87,19 @@ def _load_legacy_trainer():
         "/root/scripts/train/train_trace_extractor_legacy.py",
     )
     mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _load_build_bc_clips():
+    """Import the Model-1 -> peaks -> tracks -> strokes bridge inside the container."""
+    import importlib.util
+    import sys
+    spec = importlib.util.spec_from_file_location(
+        "build_bc_clips", "/root/scripts/data/build_bc_clips.py")
+    mod = importlib.util.module_from_spec(spec)
+    # Register before exec: @dataclass resolves cls.__module__ via sys.modules.
+    sys.modules[spec.name] = mod
     spec.loader.exec_module(mod)
     return mod
 
@@ -236,6 +251,126 @@ def sweep_latency_one(latency: float, data_match: str, max_samples: int) -> dict
     return {"latency_s": latency, **ds.stats, "retained_frames": len(ds)}
 
 
+@app.function(image=image, gpu=GPU, timeout=3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def stroke_recovery_remote(checkpoint_name: str, data_match: str = "supercrown",
+                           max_samples: int = 600, peak_threshold: float = 0.45,
+                           activity_threshold: float = 0.5, tol: float = 0.12) -> dict:
+    """STROKE-level recovery of Model 1 over the corpus (the Model-2-relevant metric).
+
+    Model 2 consumes assembled strokes, so we measure whether Model 1 -> peaks ->
+    causal tracks -> assemble_strokes recovers the command-manifest ground-truth
+    strokes.  Matching is on start+end endpoint geometry (latency-independent).
+    """
+    import json
+    from collections import Counter
+    from pathlib import Path
+
+    import numpy as np
+    import torch
+
+    from trueskate_ai.vision.temporal_trace_dataset import (
+        _schedule_from_meta, _UnsupportedSample, discover_sample_paths)
+    bb = _load_build_bc_clips()
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    ext = bb.load_trace_extractor(Path(f"/models/{checkpoint_name}"), device)
+    inf, _ = bb.resolve_inference_config(ext)
+    inf["peak_threshold"] = peak_threshold
+    inf["activity_threshold"] = activity_threshold
+
+    def gt_eps(touches):
+        out = []
+        for t in touches:
+            if t.constant_xy is not None or len(t.waypoints) < 2:
+                continue
+            out.append((np.asarray(t.waypoints[0], float),
+                        np.asarray(t.waypoints[-1], float)))
+        return out
+
+    def rec_eps(strokes):
+        return [(np.array([s.params[0], s.params[1]]),
+                 np.array([s.params[4], s.params[5]])) for s in strokes]
+
+    def match(gt, rec, t):
+        pairs = sorted(
+            (0.5 * (np.linalg.norm(gs - rs) + np.linalg.norm(ge - re)), gi, ri)
+            for gi, (gs, ge) in enumerate(gt) for ri, (rs, re) in enumerate(rec))
+        ug, ur, m = set(), set(), []
+        for d, gi, ri in pairs:
+            if d <= t and gi not in ug and ri not in ur:
+                ug.add(gi); ur.add(ri); m.append(d)
+        return m
+
+    paths = discover_sample_paths(Path("/corpus"), include_path_term=data_match or None,
+                                  max_samples=max_samples or None)
+    tols = (0.05, 0.08, 0.10, 0.12, 0.15, 0.20)
+    n_gt = n_rec = n_samples = skipped = 0
+    matched = {t: 0 for t in tols}
+    per_kind: dict = {}
+    ep_errs: list = []
+    for sd in paths:
+        if any((sd / f).exists() for f in (".menu", ".editor", ".modal")):
+            skipped += 1; continue
+        try:
+            meta = json.loads((sd / "meta.json").read_text())
+        except (OSError, json.JSONDecodeError):
+            skipped += 1; continue
+        frames = sorted(sd.glob("frame_*.png"))
+        if len(frames) < 2:
+            skipped += 1; continue
+        try:
+            touches, _total, kind, _req = _schedule_from_meta(
+                meta, sd, max_touches=4, finger_stagger_s=None)
+        except (_UnsupportedSample, ValueError, KeyError):
+            skipped += 1; continue
+        gt = gt_eps(touches)
+        if not gt:
+            skipped += 1; continue
+        ft = meta.get("frame_times")
+        times = (np.asarray(ft, float) if ft and len(ft) == len(frames)
+                 else np.arange(len(frames), dtype=float) / 30.0)
+        try:
+            tracks = bb.frames_to_touch_tracks(
+                ext.model, frames, times, ext.h, ext.w, device,
+                model_type=bb._TEMPORAL_MODEL_TYPE,
+                active_thresh=float(inf["peak_threshold"]),
+                activity_thresh=float(inf["activity_threshold"]),
+                max_touches=int(inf["max_touches"]),
+                peak_nms_radius_px=int(inf["peak_nms_radius_px"]))
+        except Exception:  # noqa: BLE001
+            skipped += 1; continue
+        rec = rec_eps(bb.touch_tracks_to_strokes(tracks))
+        n_samples += 1; n_gt += len(gt); n_rec += len(rec)
+        pk = per_kind.setdefault(kind, [0, 0, 0])
+        pk[0] += len(gt); pk[1] += len(rec)
+        for t in tols:
+            m = match(gt, rec, t)
+            matched[t] += len(m)
+            if abs(t - tol) < 1e-9:
+                pk[2] += len(m); ep_errs.extend(m)
+    result = {
+        "checkpoint": checkpoint_name, "peak_threshold": peak_threshold,
+        "n_samples": n_samples, "skipped": skipped, "n_gt": n_gt, "n_rec": n_rec,
+        "recall_by_tol": {f"{t:.2f}": (matched[t] / n_gt if n_gt else 0.0) for t in tols},
+        "precision_by_tol": {f"{t:.2f}": (matched[t] / n_rec if n_rec else 0.0) for t in tols},
+        "matched_by_tol": {f"{t:.2f}": matched[t] for t in tols},
+        "endpoint_err_mean_at_tol": (float(np.mean(ep_errs)) if ep_errs else None),
+        "endpoint_err_median_at_tol": (float(np.median(ep_errs)) if ep_errs else None),
+        "tol": tol,
+        "per_kind": {k: {"gt": v[0], "rec": v[1], "matched": v[2],
+                         "recall": (v[2] / v[0] if v[0] else 0.0)}
+                     for k, v in sorted(per_kind.items())},
+    }
+    # Persist to the models volume so a flaky client connection cannot lose the
+    # result: fetch with `modal volume get trueskate-models stroke_recovery_*.json`.
+    out = Path(f"/models/stroke_recovery_{checkpoint_name.replace('.pth','')}_pt{peak_threshold:g}.json")
+    out.write_text(json.dumps(result, indent=2))
+    models.commit()
+    print(json.dumps(result, indent=2))
+    return result
+
+
 @app.function(image=image, volumes={"/corpus": corpus}, timeout=3600)
 def audit_selection_remote(data_match: str = "supercrown", max_samples: int = 100) -> dict:
     """Inspect selected metadata without paying to read any frame pixels."""
@@ -280,7 +415,9 @@ def audit_selection_remote(data_match: str = "supercrown", max_samples: int = 10
 
 @app.local_entrypoint()
 def main(smoke: bool = False, sweep_latency: bool = False,
-         audit_selection: bool = False, epochs: int = 40, latency_s: float = 0.2,
+         audit_selection: bool = False, stroke_recovery: bool = False,
+         recovery_checkpoint: str = "", recovery_peak_threshold: float = 0.45,
+         recovery_tol: float = 0.12, epochs: int = 40, latency_s: float = 0.2,
          base_channels: int = 16, hidden_channels: int = 32, downsample_stages: int = 2,
          batch_size: int = 2, lr: float = 1e-3,
          img_h: int = 288, img_w: int = 128, sequence_length: int = 24,
@@ -319,6 +456,15 @@ def main(smoke: bool = False, sweep_latency: bool = False,
     if audit_selection:
         import json
         print(json.dumps(audit_selection_remote.remote(data_match, max_samples), indent=2))
+        return
+    if stroke_recovery:
+        import json
+        if not recovery_checkpoint:
+            raise SystemExit("--recovery-checkpoint <name.pth> is required for --stroke-recovery")
+        result = stroke_recovery_remote.remote(
+            recovery_checkpoint, data_match=data_match, max_samples=max_samples,
+            peak_threshold=recovery_peak_threshold, tol=recovery_tol)
+        print(json.dumps(result, indent=2))
         return
     scope = f"subdir {data_subdir}" if data_subdir else "corpus"
     scope += f" filtered by {data_match!r}" if data_match else ""
