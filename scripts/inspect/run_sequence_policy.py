@@ -1,11 +1,11 @@
 """Deploy Model 2 on-device: receding-horizon gesture-sequence policy.
 
 Closes the last BC gap (step H): load a trained SequencePolicy, and each decision
-grab the screen, predict the next stroke-chunk, and execute it via the same
+sample the recent MJPEG window, predict the next action group, and execute it via the same
 `execute_gesture_params` device path CMA-ES uses. Predicted strokes are committed
 back into the policy's history so the next decision conditions on what was played.
 
-    grab screenshot (BGR) -> runner.observe -> runner.act -> to_param_vector
+    resample MJPEG window -> runner.replace_window -> runner.act -> to_param_vector
         -> wait pre_delay_s -> execute_gesture_params -> runner.commit -> repeat
 
 The inference core is `trueskate_ai.bc.infer` (pure torch). This script is the
@@ -33,7 +33,7 @@ _REPO_ROOT = _HERE.parent.parent
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from trueskate_ai.bc.infer import SequencePolicyRunner, load_policy  # noqa: E402
+from trueskate_ai.bc.infer import SequencePolicyRunner, TimestampedMjpegBuffer, load_policy  # noqa: E402
 from trueskate_ai.bc.model2 import SequencePolicy, SequencePolicyConfig  # noqa: E402
 
 
@@ -67,15 +67,14 @@ def _dry_run(args) -> None:
     model, cfg = _load_or_fresh(args.model, device)
     runner = SequencePolicyRunner(model, cfg, device)
     rng = np.random.default_rng(0)
-    k = args.execute_k or cfg.m_out
-    print(f"dry-run: {args.steps} decisions, executing {k}/{cfg.m_out} strokes each (synthetic frames)\n")
+    print(f"dry-run: {args.steps} decisions, executing predicted active prefixes (synthetic frames)\n")
     for step in range(args.steps):
         # synthetic BGR frame at the device's native-ish portrait size
         runner.observe(rng.integers(0, 255, (455, 210, 3), dtype=np.uint8))
         strokes = runner.act()
-        vec, n, pre_delay = runner.to_param_vector(strokes[:k])
+        vec, n, pre_delay = runner.to_param_vector(strokes)
         print(f"  step {step + 1}: {_fmt(strokes)}  -> {n}-slot vec (len {len(vec)}), pre_delay={pre_delay:.3f}s")
-        runner.commit(strokes[:k])
+        runner.commit(strokes)
     print("\nDRY-RUN OK — observe -> act -> decode -> param-vector -> commit all run.")
 
 
@@ -94,7 +93,6 @@ def _active_devices() -> list[dict]:
 
 
 def _on_device(args) -> None:
-    import cv2
     from trueskate_ai.rl.cmaes.action_param import execute_gesture_params
     from trueskate_ai.rl.device_worker import DeviceWorker
 
@@ -106,28 +104,34 @@ def _on_device(args) -> None:
 
     device = _device()
     model, cfg = _load_or_fresh(args.model, device)
-    k = args.execute_k or cfg.m_out
-
     dev = devices[0]
     print(f"[{dev['name']}] connecting...")
     worker = DeviceWorker(dev, calibrate_touch_on_connect=False)
     worker.connect()
     runner = SequencePolicyRunner(model, cfg, device)
+    capture = TimestampedMjpegBuffer()
+    capture.start(worker.mjpeg_url)
     try:
         for step in range(args.steps):
-            png = worker.driver.get_screenshot_as_png()
-            frame = cv2.imdecode(np.frombuffer(png, np.uint8), cv2.IMREAD_COLOR)  # BGR
-            runner.observe(frame)
+            deadline = time.monotonic() + args.frame_timeout
+            frames = capture.recent_window(cfg.n_frames, args.frame_window)
+            while not frames and time.monotonic() < deadline:
+                time.sleep(0.02)
+                frames = capture.recent_window(cfg.n_frames, args.frame_window)
+            if not frames:
+                raise RuntimeError(f"no live MJPEG frame before decision (capture error: {capture.error!r})")
+            runner.replace_window(frames)
             strokes = runner.act()
-            vec, n, pre_delay = runner.to_param_vector(strokes[:k])
+            vec, n, pre_delay = runner.to_param_vector(strokes)
             push = args.push_every > 0 and step % args.push_every == 0
             print(f"[{dev['name']}] step {step + 1}: {_fmt(strokes)}  pre_delay={pre_delay:.3f}s push={push}")
             if pre_delay > 0:
                 time.sleep(min(pre_delay, 1.0))                     # honour predicted inter-stroke wait (capped)
             execute_gesture_params(worker.driver, np.asarray(vec, dtype=np.float64),
                                    worker.device_w, worker.device_h, static_push=push)
-            runner.commit(strokes[:k])
+            runner.commit(strokes)
     finally:
+        capture.stop()
         worker.disconnect()
     print(f"[{dev['name']}] done: {args.steps} decisions.")
 
@@ -136,8 +140,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Deploy Model 2 (gesture-sequence policy) on-device.")
     ap.add_argument("--model", type=Path, default=None, help="Trained Model 2 checkpoint.")
     ap.add_argument("--steps", type=int, default=10, help="Number of decisions to run.")
-    ap.add_argument("--execute-k", type=int, default=None,
-                    help="Strokes to execute per decision (default: all m_out). Receding-horizon uses < m_out.")
+    ap.add_argument("--frame-window", type=float, default=0.2, help="Seconds spanned by each live frame window.")
+    ap.add_argument("--frame-timeout", type=float, default=5.0, help="Seconds to wait for the first MJPEG frame.")
     ap.add_argument("--push-every", type=int, default=0,
                     help="Force a board static-push every N decisions (0 = never; streaming policy default). "
                          "CMA-ES pushes every trick; a continuous policy should not.")

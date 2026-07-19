@@ -74,6 +74,7 @@ class SyntheticSequenceDataset(Dataset):
             "past_strokes": torch.from_numpy(past),
             "past_mask": torch.from_numpy(mask),
             "target": torch.from_numpy(target),
+            "target_mask": torch.ones(c.m_out, dtype=torch.bool),
         }
 
 
@@ -97,8 +98,9 @@ def train(dataset: Dataset, cfg: SequencePolicyConfig, *, epochs: int, batch_siz
             past = batch["past_strokes"].to(dev)
             mask = batch["past_mask"].to(dev)
             target = batch["target"].to(dev)
-            pred = model(frames, past, past_mask=mask)
-            loss = stroke_loss(pred, target)
+            target_mask = batch["target_mask"].to(dev)
+            pred, activity_logits = model(frames, past, past_mask=mask)
+            loss = stroke_loss(pred, target, target_mask, activity_logits)
             opt.zero_grad()
             loss.backward()
             opt.step()
@@ -112,7 +114,7 @@ def train(dataset: Dataset, cfg: SequencePolicyConfig, *, epochs: int, batch_siz
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"model_state": model.state_dict(), "config": config_to_dict(cfg),
-                "stroke_dim": STROKE_DIM}, out_path)
+                "stroke_dim": STROKE_DIM, "checkpoint_version": 2}, out_path)
     print(f"saved checkpoint → {out_path}")
     return last
 

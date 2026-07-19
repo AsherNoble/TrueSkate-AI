@@ -2,7 +2,8 @@
 
 `(n recent frames + m past strokes) -> next strokes`. A CNN frame encoder + a
 Transformer set-encoder with a readout query token (decision/behaviour-transformer
-style), regressing the next stroke-chunk in normalised [0, 1] token space
+style), regressing a padded action group in normalised [0, 1] token space plus
+a contiguous slot-activity prefix
 (see `gesture_tokens.py`).
 
 Why a *readout* encoder and not a per-step causal decoder: our action is already
@@ -26,7 +27,7 @@ class SequencePolicyConfig:
     stroke_dim: int = STROKE_DIM
     n_frames: int = 6          # recent visual history (≈0.2 s at 30 fps)
     m_past: int = 4            # past strokes conditioned on
-    m_out: int = 1             # strokes predicted per decision (chunk size)
+    m_out: int = 1             # maximum strokes in one overlapping action group
     img_ch: int = 3
     # Portrait, NOT square — the screen is ~2.16:1 (19.5:9) and must not be
     # squished to 1:1 (that distorts board/trace geometry the encoder reads).
@@ -85,17 +86,18 @@ class SequencePolicy(nn.Module):
         # it crashed inference though training was fine. Disabling it is
         # numerically identical and removes that train/eval divergence.
         self.encoder = nn.TransformerEncoder(layer, num_layers=cfg.n_layers, enable_nested_tensor=False)
-        self.head = nn.Sequential(
+        self.stroke_head = nn.Sequential(
             nn.LayerNorm(d), nn.Linear(d, d), nn.GELU(),
             nn.Linear(d, cfg.m_out * cfg.stroke_dim),
         )
+        self.activity_head = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, cfg.m_out))
 
     def forward(
         self,
         frames: torch.Tensor,          # (B, n_frames, C, H, W)
         past_strokes: torch.Tensor,    # (B, m_past, stroke_dim) — normalised [0,1]
         past_mask: torch.Tensor | None = None,  # (B, m_past) True = real, False = pad
-    ) -> torch.Tensor:                 # (B, m_out, stroke_dim) in [0,1]
+    ) -> tuple[torch.Tensor, torch.Tensor]:  # strokes [0,1], activity logits
         B, nf = frames.shape[0], frames.shape[1]
         d = self.cfg.d_model
         dev = frames.device
@@ -125,20 +127,25 @@ class SequencePolicy(nn.Module):
         kpm = torch.cat(key_padding, dim=1)
         out = self.encoder(seq, src_key_padding_mask=kpm)
         readout = out[:, -1]  # the query token
-        pred = self.head(readout).view(B, self.cfg.m_out, self.cfg.stroke_dim)
-        return torch.sigmoid(pred)
+        pred = self.stroke_head(readout).view(B, self.cfg.m_out, self.cfg.stroke_dim)
+        return torch.sigmoid(pred), self.activity_head(readout)
 
 
 def build_policy(cfg: SequencePolicyConfig | None = None) -> SequencePolicy:
     return SequencePolicy(cfg or SequencePolicyConfig())
 
 
-def stroke_loss(pred: torch.Tensor, target: torch.Tensor,
-                weights: torch.Tensor | None = None) -> torch.Tensor:
-    """MSE in normalised token space. `weights` optionally reweights stroke dims."""
+def stroke_loss(pred: torch.Tensor, target: torch.Tensor, target_mask: torch.Tensor,
+                activity_logits: torch.Tensor, weights: torch.Tensor | None = None) -> torch.Tensor:
+    """Masked stroke regression plus supervised contiguous slot activity."""
+    error = (pred - target) ** 2
     if weights is not None:
-        return (weights * (pred - target) ** 2).mean()
-    return torch.nn.functional.mse_loss(pred, target)
+        error = error * weights
+    mask = target_mask.unsqueeze(-1).to(error.dtype)
+    regression = (error * mask).sum() / (mask.sum() * pred.shape[-1]).clamp_min(1)
+    activity = torch.nn.functional.binary_cross_entropy_with_logits(
+        activity_logits, target_mask.to(activity_logits.dtype))
+    return regression + activity
 
 
 def config_to_dict(cfg: SequencePolicyConfig) -> dict:
