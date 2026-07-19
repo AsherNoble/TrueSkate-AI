@@ -16,12 +16,12 @@
 #       nohup bash scripts/ops/offload_corpus_to_modal.sh > logs/offload.log 2>&1 &
 set -u
 
-REPO=/Users/training-server/trueskate-ai
+REPO="${REPO:-/Users/training-server/trueskate-ai}"
 cd "$REPO" || exit 1
 VOL="${MODAL_VOLUME:-trueskate-corpus}"
-MODAL="$REPO/.venv/bin/modal"
-PY="$REPO/.venv/bin/python"
-ROOT=data/sls_xctest
+MODAL="${MODAL:-$REPO/.venv/bin/modal}"
+PY="${PY:-$REPO/.venv/bin/python}"
+ROOT="${ROOT:-data/sls_xctest}"
 WORKERS="${WORKERS:-3}"                     # concurrent batch uploaders
 CHUNK_DIRS="${CHUNK_DIRS:-90}"              # sample dirs per batch (~11MB each -> ~1GB/put)
 STALL_SECS="${STALL_SECS:-900}"
@@ -35,11 +35,88 @@ PUT_ERR="${PUT_ERR:-logs/put_errors.log}"
 QUIESCENT_MIN="${QUIESCENT_MIN:-0}"         # >0: only offload sessions with NO file touched in the
                                             # last N min (never touch a session collection is still
                                             # writing). 0 = offload everything (manual one-shot).
+MIN_SPIN_FRAC="${MIN_SPIN_FRAC:-0}"         # >0: require every segment manifest in a session to
+                                            # record mix.spin_frac >= this value. Unknown, malformed,
+                                            # mixed, and pre-spin sessions stay local. 0 = no filter.
 
 CLAIMS=$(mktemp -d)
 trap 'rm -rf "$CLAIMS" tmp/_stage_w* tmp/_stage_manifests 2>/dev/null' EXIT
 
 log(){ echo "$(date '+%F %T') [w${WID:-main}] $*"; }
+
+normalize_min_spin_frac(){
+  "$PY" - "$1" <<'PY'
+import math
+import sys
+
+try:
+    value = float(sys.argv[1])
+except (TypeError, ValueError):
+    raise SystemExit(1)
+if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+    raise SystemExit(1)
+print("0" if value == 0.0 else format(value, ".12g"))
+PY
+}
+
+if ! MIN_SPIN_FRAC=$(normalize_min_spin_frac "$MIN_SPIN_FRAC"); then
+  log "ERROR: MIN_SPIN_FRAC must be a finite number in [0, 1]"
+  exit 2
+fi
+
+spin_filter_enabled(){ [ "$MIN_SPIN_FRAC" != "0" ]; }
+
+# With the filter enabled, a session is eligible only when it has at least one
+# segment manifest and EVERY manifest proves the requested sampler fraction.
+# Fail closed on absent/malformed provenance, non-numeric values, or impossible
+# fractions. The success/failure detail is suitable for the operator log.
+session_has_spin_provenance(){
+  local session="$1"
+  spin_filter_enabled || return 0
+  "$PY" - "$session" "$MIN_SPIN_FRAC" <<'PY'
+import json
+import math
+import sys
+from pathlib import Path
+
+session = Path(sys.argv[1])
+minimum = float(sys.argv[2])
+manifests = sorted(session.glob("segment_*.json"))
+if not manifests:
+    print("no segment_*.json manifests")
+    raise SystemExit(1)
+
+values = []
+for manifest in manifests:
+    try:
+        payload = json.loads(manifest.read_text())
+        if not isinstance(payload, dict):
+            raise ValueError("manifest root is not an object")
+        mix = payload.get("mix")
+        raw = mix.get("spin_frac") if isinstance(mix, dict) else None
+        if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+            raise ValueError("missing/non-numeric mix.spin_frac")
+        value = float(raw)
+        if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+            raise ValueError("mix.spin_frac outside [0, 1]")
+    except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
+        print(f"{manifest.name}: invalid provenance ({exc})")
+        raise SystemExit(1)
+    if value < minimum:
+        print(f"{manifest.name}: spin_frac={value:g} < {minimum:g}")
+        raise SystemExit(1)
+    values.append(value)
+
+print(f"{len(manifests)} manifest(s), minimum spin_frac={min(values):g}")
+PY
+}
+
+# Narrow fixture-test hook: it exercises only the provenance predicate and exits
+# before any Modal lookup, upload, or local deletion.
+if [ -n "${PROVENANCE_CHECK_ONLY:-}" ]; then
+  session_has_spin_provenance "$PROVENANCE_CHECK_ONLY"
+  exit $?
+fi
 
 cpu_secs(){
   ps -o time= -p "$1" 2>/dev/null | tr -d ' ' | awk '{
@@ -116,8 +193,15 @@ batch_worker(){
 # the same session dir) — every park must be uploaded, or LOCAL (all-parks frame
 # count) never matches REMOTE and the session is retried forever without progress.
 offload_session(){
-  local S="$1" LOCAL PARKDIRS NPARKS parkpath
+  local S="$1" LOCAL PARKDIRS NPARKS parkpath PROVENANCE_DETAIL
   SESS=$(basename "$S")
+  if spin_filter_enabled; then
+    if ! PROVENANCE_DETAIL=$(session_has_spin_provenance "$S"); then
+      log "SKIP $SESS (spin provenance: $PROVENANCE_DETAIL)"
+      return 0
+    fi
+    log "PROVENANCE $SESS: $PROVENANCE_DETAIL"
+  fi
   PARKDIRS=$(ls -d "$S"*/ 2>/dev/null); [ -z "$PARKDIRS" ] && { log "SKIP $SESS (no park dir)"; return 1; }
   NPARKS=$(echo "$PARKDIRS" | grep -c .)
   LOCAL=$(find "$S" -name 'frame_*.png' | wc -l | tr -d ' ')
@@ -147,13 +231,20 @@ offload_session(){
     else
       MOK=0; log "  manifests FAILED — keeping session for next round"
     fi
+  elif spin_filter_enabled; then
+    MOK=0; log "  manifests disappeared after provenance check — keeping session"
   fi
   rm -rf "$MSTAGE"
-  local REMOTE; REMOTE=$(remote_count "/$SESS"); REMOTE=${REMOTE:-0}
-  if [ "$REMOTE" -eq "$LOCAL" ] && [ "$MOK" -eq 1 ]; then
+  local REMOTE POK=1; REMOTE=$(remote_count "/$SESS"); REMOTE=${REMOTE:-0}
+  # Re-check immediately before deletion so a provenance race can never turn an
+  # unknown/low-spin session into a local delete after its frame upload.
+  if spin_filter_enabled && ! PROVENANCE_DETAIL=$(session_has_spin_provenance "$S"); then
+    POK=0; log "  provenance no longer eligible ($PROVENANCE_DETAIL) — keeping session"
+  fi
+  if [ "$REMOTE" -eq "$LOCAL" ] && [ "$MOK" -eq 1 ] && [ "$POK" -eq 1 ]; then
     rm -rf "$S"; log "  OK: $SESS fully on Modal ($REMOTE frames), DELETED local (free $(df -g / | tail -1 | awk '{print $4}')GB)"
   else
-    log "  KEEP $SESS: remote $REMOTE vs local $LOCAL, manifests_ok=$MOK — retry next round"
+    log "  KEEP $SESS: remote $REMOTE vs local $LOCAL, manifests_ok=$MOK, provenance_ok=$POK — retry next round"
   fi
 }
 
@@ -166,17 +257,45 @@ is_settled(){
   [ -z "$(find "$1" -maxdepth 1 -mmin -"$QUIESCENT_MIN" 2>/dev/null | head -1)" ]
 }
 
-local_remaining(){ local n=0 S; for S in "$ROOT"/*/; do [ -d "$S" ] && is_settled "$S" && n=$((n+1)); done; echo "$n"; }
+is_offload_eligible(){
+  is_settled "$1" || return 1
+  session_has_spin_provenance "$1" >/dev/null
+}
+
+eligible_remaining(){ local n=0 S; for S in "$ROOT"/*/; do [ -d "$S" ] && is_offload_eligible "$S" && n=$((n+1)); done; echo "$n"; }
+
+log_spin_provenance_skips(){
+  spin_filter_enabled || return 0
+  local S SESS DETAIL MARKER
+  for S in "$ROOT"/*/; do
+    [ -d "$S" ] && is_settled "$S" || continue
+    if ! DETAIL=$(session_has_spin_provenance "$S"); then
+      SESS=$(basename "$S"); MARKER="$CLAIMS/skip_$SESS"
+      if mkdir "$MARKER" 2>/dev/null; then
+        log "SKIP $SESS (spin provenance: $DETAIL; kept local)"
+      fi
+    fi
+  done
+}
 
 for round in $(seq 1 "$MAX_ROUNDS"); do
-  [ "$(local_remaining)" -eq 0 ] && { log "nothing local — done"; break; }
-  log "=== round $round/$MAX_ROUNDS: $(local_remaining) sessions local ==="
+  log_spin_provenance_skips
+  [ "$(eligible_remaining)" -eq 0 ] && { log "nothing eligible — done"; break; }
+  log "=== round $round/$MAX_ROUNDS: $(eligible_remaining) eligible sessions ==="
   # smallest-first so quick wins free disk sooner; skip non-quiescent (live) sessions
-  for S in $(for d in "$ROOT"/*/; do [ -d "$d" ] && is_settled "$d" && echo "$(find "$d" -name 'frame_*.png' | wc -l | tr -d ' ') $d"; done | sort -n | awk '{print $2}'); do
+  for S in $(for d in "$ROOT"/*/; do [ -d "$d" ] && is_offload_eligible "$d" && echo "$(find "$d" -name 'frame_*.png' | wc -l | tr -d ' ') $d"; done | sort -n | awk '{print $2}'); do
     WID=main offload_session "$S"
   done
-  [ "$(local_remaining)" -eq 0 ] && { log "all sessions offloaded"; break; }
-  [ "$round" -lt "$MAX_ROUNDS" ] && { log "round $round done, $(local_remaining) remain — cooldown ${ROUND_COOLDOWN}s"; sleep "$ROUND_COOLDOWN"; }
+  [ "$(eligible_remaining)" -eq 0 ] && { log "all eligible sessions offloaded"; break; }
+  [ "$round" -lt "$MAX_ROUNDS" ] && { log "round $round done, $(eligible_remaining) eligible remain — cooldown ${ROUND_COOLDOWN}s"; sleep "$ROUND_COOLDOWN"; }
 done
 
-if [ "$(local_remaining)" -eq 0 ]; then log "OFFLOAD COMPLETE"; else log "OFFLOAD INCOMPLETE — $(local_remaining) local after $MAX_ROUNDS rounds (see $PUT_ERR)"; fi
+if [ "$(eligible_remaining)" -eq 0 ]; then
+  if spin_filter_enabled; then
+    log "OFFLOAD COMPLETE — no eligible spin sessions remain; excluded sessions kept local"
+  else
+    log "OFFLOAD COMPLETE"
+  fi
+else
+  log "OFFLOAD INCOMPLETE — $(eligible_remaining) eligible local after $MAX_ROUNDS rounds (see $PUT_ERR)"
+fi

@@ -5,6 +5,8 @@
   collection can run indefinitely without filling the rig's disk (the failure that
   started all this). SAFE while collecting: QUIESCENT_MIN=45 means a session with
   ANY file touched in the last 45 min (i.e. still being written) is never offloaded.
+  MIN_SPIN_FRAC=0.8 additionally keeps unknown/pre-spin sessions local while the
+  current storage objective sends only verified spin-heavy sessions to Modal.
   launchd is single-instance, so a long offload run won't stack with the next tick.
 
   Install (as training-server, on the RIG):
@@ -33,6 +35,8 @@
         <string>45</string>
         <key>WORKERS</key>
         <string>2</string>
+        <key>MIN_SPIN_FRAC</key>
+        <string>0.8</string>
         <key>MODAL_VOLUME</key>
         <string>trueskate-corpus</string>
     </dict>
