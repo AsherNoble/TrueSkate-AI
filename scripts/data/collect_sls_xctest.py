@@ -359,6 +359,25 @@ def main() -> None:
             while not _STOP and time.monotonic() < seg_deadline:
                 if global_deadline and time.monotonic() > global_deadline:
                     break
+
+                # --- foreground guard: catches True Skate being fully backgrounded
+                # (e.g. a stray gesture opened iOS's share sheet and a later blind tap
+                # landed on Files/Home). The pixel-based menu/editor guard below only
+                # recognizes True Skate's OWN UI signatures, so it is structurally blind
+                # to "a different app is on screen" — this is a cheap OS-level check
+                # (no screenshot) that catches it directly. Reuses the same
+                # ensure_foreground() the CMA-ES/PPO loops already rely on.
+                if not args.no_gameplay_guard:
+                    try:
+                        if worker.ensure_foreground():
+                            print(f"[seg {segment_idx}] True Skate was backgrounded — "
+                                  f"relaunched (not logged)")
+                            total_menu_skips += 1
+                            seg_iter += 1
+                            continue
+                    except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
+                        print(f"[seg {segment_idx}] foreground check failed: {exc!r} — proceeding")
+
                 try:
                     reset_position(worker.driver, dw, dh)
                 except Exception as exc:  # noqa: BLE001 — WDA session dropped mid-segment
@@ -402,6 +421,19 @@ def main() -> None:
                     print(f"  gesture {total_gestures} failed: {exc}")
                     continue
                 t1 = time.time()
+                # --- post-gesture foreground check: a gesture that itself backgrounds
+                # True Skate (e.g. lands on a share-sheet destination) must not be logged
+                # as a clean gameplay sample. Recover immediately rather than waiting for
+                # the next loop iteration's guard to notice.
+                if not args.no_gameplay_guard:
+                    try:
+                        if worker.ensure_foreground():
+                            total_menu_skips += 1
+                            print(f"[seg {segment_idx}] gesture backgrounded True Skate "
+                                  f"— relaunched, dropping sample (not logged)")
+                            continue
+                    except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
+                        print(f"[seg {segment_idx}] post-gesture foreground check failed: {exc!r} — proceeding")
                 # --- post-gesture menu/editor check ---
                 # A gesture can open non-gameplay UI after the pre-gesture guard.  The NEXT
                 # reset may close it, so check before logging and drop the contaminated window.
