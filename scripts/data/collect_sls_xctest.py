@@ -207,6 +207,17 @@ def main() -> None:
                          "button HELD); the flick/nslot/recipe mix keeps its ratios in the "
                          "remaining share. 0.2 = ~20%% of fires hold the spin button — the "
                          "knob to grow the spin-family corpus.")
+    ap.add_argument("--no-reset", action="store_true",
+                    help="Skip reset_position between gestures. Required for stationary "
+                         "runs: reset is a tap, and its own rendered mark would land in "
+                         "the next sample's window as an unlabelled touch.")
+    ap.add_argument("--park-label", default=None,
+                    help="Pin collection to a single named park (e.g. 'The Workshop') "
+                         "instead of the SLS rotation. Sets the sample-dir park tag, so "
+                         "training can select it with --data-match. Implies --no-rotate.")
+    ap.add_argument("--align-video", action="store_true",
+                    help="Pass --video to the aligner: one h264 clip per sample instead "
+                         "of N PNGs (~150x smaller on static scenes, 1 inode not N).")
     ap.add_argument("--static-frac", type=float, default=0.0,
                     help="TRUE share [0,1] of fires that are STATIONARY touches — holds "
                          "(long_press, 0.1-1.5s) and taps, split ~80/20. These have an "
@@ -279,7 +290,13 @@ def main() -> None:
     cfg = devices[0]
 
     cycle = list(DEFAULT_SLS_PARKS)
-    if args.start_park is not None:
+    if args.park_label:
+        # Single fixed park: the label only tags the sample dirs, so the park must
+        # already be loaded on the device (the SLS rotation is prompt-driven and
+        # would be meaningless here).
+        cycle = [args.park_label]
+        args.no_rotate = True
+    elif args.start_park is not None:
         if args.start_park.isdigit():
             start = int(args.start_park) % len(cycle)
         else:
@@ -329,11 +346,11 @@ def main() -> None:
     def _device_aligner_spawn(manifest_path: Path):
         if args.no_align:
             return
-        subprocess.Popen(
-            [sys.executable, str(_HERE / "align_xctest_traces.py"),
-             "--segment", str(manifest_path), "--delete-mov"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
+        cmd = [sys.executable, str(_HERE / "align_xctest_traces.py"),
+               "--segment", str(manifest_path), "--delete-mov"]
+        if args.align_video:
+            cmd.append("--video")
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     try:
         while not _STOP:
@@ -404,7 +421,13 @@ def main() -> None:
                         print(f"[seg {segment_idx}] foreground check failed: {exc!r} — proceeding")
 
                 try:
-                    reset_position(worker.driver, dw, dh)
+                    # reset_position is itself a TAP, and a tap renders its own mark
+                    # ~1.06s later — which lands inside the next sample's window and
+                    # would train the model on an unlabelled touch at (0.5, 0.056).
+                    # Stationary gestures never move the board, so --no-reset both
+                    # removes that contaminant and speeds the loop up.
+                    if not args.no_reset:
+                        reset_position(worker.driver, dw, dh)
                 except Exception as exc:  # noqa: BLE001 — WDA session dropped mid-segment
                     print(f"[seg {segment_idx}] reset failed mid-segment: {exc!r} — close segment")
                     seg_aborted = True
