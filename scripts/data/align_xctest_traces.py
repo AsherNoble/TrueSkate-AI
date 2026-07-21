@@ -129,6 +129,18 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
     if not mov.exists():
         print(f"[align] {manifest_path.name}: .mov missing ({mov.name}) — skip")
         return 0
+    # CLAIM the segment before doing any work. The collector spawns one aligner per
+    # segment asynchronously, so a concurrent `--session` sweep would otherwise
+    # re-align segments already in flight and, with --delete-mov, pull the .mov out
+    # from under the running process (observed: 3/9 samples survived). The .aligned
+    # marker is only written on completion, so it cannot prevent this on its own.
+    claim = seg_dir / (manifest_path.stem + ".aligning")
+    try:
+        claim.touch(exist_ok=False)
+    except FileExistsError:
+        print(f"[align] {manifest_path.name}: already being aligned "
+              f"({claim.name} exists) — skip. Delete it if a previous run died.")
+        return 0
     started_at = float(manifest["started_at_epoch_s"])
     dw, dh = manifest["device_logical_w"], manifest["device_logical_h"]
     manifest_delta = manifest.get("capture_offset_s")
@@ -136,66 +148,70 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
 
     saved = 0
     deltas_used: set[float] = set()
-    for ev in gestures:
-        delta = _delta_for(ev, delta_override, manifest_delta)
-        deltas_used.add(delta)
-        if anchor == "start":
-            # Anchor on when the touch's FIRST PIXELS land: t_call_start + Δ. The old
-            # `t_call_end` anchor was when Appium's HTTP perform() RETURNED, which
-            # trails the actual touch by the whole call wall (median 1.7s on the SLS
-            # corpus vs ~0.23s of real payload) — so with only 0.3s of lead-in the
-            # stroke was frequently over before the window even opened.
-            gv = (float(ev["t_call_start_epoch_s"]) - started_at) + delta
-        else:
-            gv = (float(ev["t_call_end_epoch_s"]) - started_at) + delta
-        start = max(0.0, gv - pre_s)
-        dur = pre_s + window_s
-        sample_dir = seg_dir / _park_tag(ev.get("park", "park")) / f"sample_{ev['gesture_index']:06d}"
-        raw = sample_dir / "_raw"
-        raw.mkdir(parents=True, exist_ok=True)
-        # INPUT-seek (-ss before -i): fast keyframe seek + accurate decode-to-pos in modern
-        # ffmpeg; output PTS reset to 0 at `start`, so frame i is at video PTS start + i/fps.
-        r = subprocess.run(
-            ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.3f}", "-i", str(mov),
-             "-t", f"{dur:.3f}", "-vf", f"fps={fps},scale={resize_width}:-2",
-             "-vsync", "0", str(raw / "f_%04d.png")],
-            capture_output=True, text=True,
-        )
-        frames = sorted(raw.glob("f_*.png"))
-        if r.returncode != 0 or not frames:
-            print(f"  g{ev['gesture_index']}: no frames (ffmpeg rc={r.returncode}) {r.stderr[:120]}")
-            shutil.rmtree(sample_dir, ignore_errors=True)
-            continue
-        times = [start + i / fps for i in range(len(frames))]   # absolute video PTS
-        keep = _even_indices(len(frames), max_frames)
-        frame_times = []
-        for out_i, src_i in enumerate(keep):
-            frames[src_i].rename(sample_dir / f"frame_{out_i:03d}.png")
-            # frame_time 0 == the touch's first pixels (start anchor + Δ)
-            frame_times.append(round(times[src_i] - gv, 4))
-        shutil.rmtree(raw, ignore_errors=True)
-        meta = {
-            **{k: v for k, v in ev.items()},                     # gesture params + call times + park
-            "device_logical_w": dw, "device_logical_h": dh,
-            "gesture_video_time_s": round(gv, 4),
-            "capture_offset_s": delta,
-            "anchor": anchor,
-            "frame_times": frame_times,
-            "n_frames": len(frame_times),
-            "segment_index": manifest.get("segment_index"),
-            "session": seg_dir.name,
-        }
-        if anchor == "start":
-            # temporal_trace_dataset._is_end_relative() keys off this: its presence
-            # switches the label scheduler to the START-relative branch, which is what
-            # these frame_times now are. Without it the scheduler would add the payload
-            # duration and place every touch a full stroke too late.
-            meta["gesture_start_monotonic"] = float(ev["t_call_start_epoch_s"])
-        if video:
-            meta["frames_format"] = ("mp4" if _encode_sample_video(
-                sample_dir, len(frame_times), fps, video_crf) else "png")
-        (sample_dir / "meta.json").write_text(json.dumps(meta, indent=2))
-        saved += 1
+    try:
+        for ev in gestures:
+            delta = _delta_for(ev, delta_override, manifest_delta)
+            deltas_used.add(delta)
+            if anchor == "start":
+                # Anchor on when the touch's FIRST PIXELS land: t_call_start + Δ. The old
+                # `t_call_end` anchor was when Appium's HTTP perform() RETURNED, which
+                # trails the actual touch by the whole call wall (median 1.7s on the SLS
+                # corpus vs ~0.23s of real payload) — so with only 0.3s of lead-in the
+                # stroke was frequently over before the window even opened.
+                gv = (float(ev["t_call_start_epoch_s"]) - started_at) + delta
+            else:
+                gv = (float(ev["t_call_end_epoch_s"]) - started_at) + delta
+            start = max(0.0, gv - pre_s)
+            dur = pre_s + window_s
+            sample_dir = seg_dir / _park_tag(ev.get("park", "park")) / f"sample_{ev['gesture_index']:06d}"
+            raw = sample_dir / "_raw"
+            raw.mkdir(parents=True, exist_ok=True)
+            # INPUT-seek (-ss before -i): fast keyframe seek + accurate decode-to-pos in modern
+            # ffmpeg; output PTS reset to 0 at `start`, so frame i is at video PTS start + i/fps.
+            r = subprocess.run(
+                ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.3f}", "-i", str(mov),
+                 "-t", f"{dur:.3f}", "-vf", f"fps={fps},scale={resize_width}:-2",
+                 "-vsync", "0", str(raw / "f_%04d.png")],
+                capture_output=True, text=True,
+            )
+            frames = sorted(raw.glob("f_*.png"))
+            if r.returncode != 0 or not frames:
+                print(f"  g{ev['gesture_index']}: no frames (ffmpeg rc={r.returncode}) {r.stderr[:120]}")
+                shutil.rmtree(sample_dir, ignore_errors=True)
+                continue
+            times = [start + i / fps for i in range(len(frames))]   # absolute video PTS
+            keep = _even_indices(len(frames), max_frames)
+            frame_times = []
+            for out_i, src_i in enumerate(keep):
+                frames[src_i].rename(sample_dir / f"frame_{out_i:03d}.png")
+                # frame_time 0 == the touch's first pixels (start anchor + Δ)
+                frame_times.append(round(times[src_i] - gv, 4))
+            shutil.rmtree(raw, ignore_errors=True)
+            meta = {
+                **{k: v for k, v in ev.items()},                     # gesture params + call times + park
+                "device_logical_w": dw, "device_logical_h": dh,
+                "gesture_video_time_s": round(gv, 4),
+                "capture_offset_s": delta,
+                "anchor": anchor,
+                "frame_times": frame_times,
+                "n_frames": len(frame_times),
+                "segment_index": manifest.get("segment_index"),
+                "session": seg_dir.name,
+            }
+            if anchor == "start":
+                # temporal_trace_dataset._is_end_relative() keys off this: its presence
+                # switches the label scheduler to the START-relative branch, which is what
+                # these frame_times now are. Without it the scheduler would add the payload
+                # duration and place every touch a full stroke too late.
+                meta["gesture_start_monotonic"] = float(ev["t_call_start_epoch_s"])
+            if video:
+                meta["frames_format"] = ("mp4" if _encode_sample_video(
+                    sample_dir, len(frame_times), fps, video_crf) else "png")
+            (sample_dir / "meta.json").write_text(json.dumps(meta, indent=2))
+            saved += 1
+
+    finally:
+        claim.unlink(missing_ok=True)
 
     # mark processed + optionally drop the (large) .mov to free host space
     (seg_dir / (manifest_path.stem + ".aligned")).write_text(
