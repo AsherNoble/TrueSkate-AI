@@ -69,6 +69,15 @@ _FLICK_MIN_REACH = 0.15
 _BOLT_EXCL_X = (X_BOUND_MIN, 0.20)
 _BOLT_EXCL_Y = (Y_BOUND_MIN, 0.30)
 
+# Stationary-touch ("static") arm — the Model 1 MVP. Hold durations span short to
+# long so the model sees a wide range of touch lifetimes; the floor is above the
+# ~0.2s a bare tap already renders, so a "hold" is always distinguishable from a tap.
+_HOLD_MIN_S = 0.10
+_HOLD_MAX_S = 1.50
+# Share of the static slice that are instantaneous taps rather than holds. Taps are
+# the Δ clapperboard; holds carry the timing supervision. Mirrors _SPIN_FLICK_SHARE.
+_TAP_SHARE = 0.20
+
 # Per-param jitter sigmas for "recipe" mode, in the vector's native units,
 # indexed within a slot as [x0,y0,x1,y1,x2,y2,duration,easing].
 _COORD_JITTER = 0.03
@@ -100,13 +109,20 @@ _SPIN_FLICK_SHARE = 0.5
 
 @dataclass
 class GestureSample:
-    """A sampled gesture in one of five executable forms.
+    """A sampled gesture in one of seven executable forms.
 
     kind == "flick": use waypoints/duration/easing_power (curved_drag, no push).
     kind == "spin_flick": flick fields + spin_hold_*_s
     (curved_drag_with_spin_hold, no push).
     kind in {"nslot","recipe","spin"}: use params/num_gestures/use_spin
     (execute_gesture_params).
+    kind in {"hold","tap"}: use point/hold_duration_s (long_press / tap). These are
+    STATIONARY touches — zero path length. They exist for the Model 1 MVP: a held
+    point has an unambiguous (x, y) and a known onset AND liftoff, so it supervises
+    localisation and touch timing without the direction/speed ambiguity a completed
+    drag trace carries. Measured on-device (Stage 0): a stationary touch renders the
+    normal orange mark at the commanded point, visible for hold + ~0.16s; a tap
+    renders for ~0.2s (~6 frames at 30fps).
     """
     kind: str
     waypoints: list[tuple[float, float]] | None = None
@@ -116,6 +132,9 @@ class GestureSample:
     num_gestures: int | None = None
     use_spin: bool = False
     source: str | None = None  # recipe filename for kind == "recipe"
+    # Stationary-touch kinds ("hold" / "tap"). hold_duration_s is 0.0 for a tap.
+    point: tuple[float, float] | None = None
+    hold_duration_s: float | None = None
     # spin_flick hold window, ABSOLUTE seconds from the payload start (= flick
     # touch-down). Params-spin kinds carry their window inside params; meta()
     # decodes it so every consumer reads the same named fields.
@@ -144,6 +163,16 @@ class GestureSample:
                     # on) ends when the button lifts, not when the drag does.
                     payload_total_s=max(self.duration or 0.0, self.spin_hold_end_s or 0.0),
                 )
+        elif self.kind in ("hold", "tap"):
+            # A stationary touch is fully described by where and for how long. The
+            # label pipeline turns this into a single constant-position touch
+            # interval (_TouchInterval(constant_xy=...)), the same representation
+            # already used for the spin-button hold.
+            d.update(
+                point=[float(self.point[0]), float(self.point[1])] if self.point else None,
+                hold_duration_s=float(self.hold_duration_s or 0.0),
+                payload_total_s=float(self.hold_duration_s or 0.0),
+            )
         else:
             d.update(
                 params=self.params,
@@ -406,6 +435,32 @@ def _restore_min_reach(sx: float, sy: float, ex: float, ey: float) -> tuple[floa
     return ex2, ey2
 
 
+def sample_hold(rng: np.random.Generator, *, min_s: float = _HOLD_MIN_S,
+                max_s: float = _HOLD_MAX_S) -> GestureSample:
+    """A stationary press at a uniformly-sampled interior point, held min_s..max_s.
+
+    The duration is what makes a hold worth more than a tap: the rendered mark
+    lasts as long as the finger is down, so onset AND liftoff are both observable
+    and the model has to learn touch timing, not just position.
+    """
+    x = float(rng.uniform(*_FLICK_START_X))
+    y = float(rng.uniform(*_FLICK_START_Y))
+    return GestureSample(kind="hold", point=(x, y),
+                         hold_duration_s=float(rng.uniform(min_s, max_s)))
+
+
+def sample_tap(rng: np.random.Generator) -> GestureSample:
+    """An instantaneous tap at a uniformly-sampled interior point.
+
+    Kept as its own arm because a tap is the crispest possible timing marker: it
+    renders a ~0.2s mark with a sharp onset, which is what makes it usable as the
+    command->pixel (Δ) clapperboard.
+    """
+    x = float(rng.uniform(*_FLICK_START_X))
+    y = float(rng.uniform(*_FLICK_START_Y))
+    return GestureSample(kind="tap", point=(x, y), hold_duration_s=0.0)
+
+
 def clamp_in_bounds(s: GestureSample) -> GestureSample:
     """Defensive chokepoint: guarantee a sampled gesture lies within the RL
     coordinate bounds (X_BOUND_MIN..MAX, Y_BOUND_MIN..MAX) AND outside the top-left
@@ -434,6 +489,10 @@ def clamp_in_bounds(s: GestureSample) -> GestureSample:
         # word — accepting a rare shorter-than-_FLICK_MIN_REACH trace.
         pushed[-1] = _push_out_bolt_zone(ex, ey)
         s.waypoints = pushed
+    elif s.kind in ("hold", "tap") and s.point is not None:
+        s.point = _push_out_bolt_zone(
+            float(np.clip(s.point[0], X_BOUND_MIN, X_BOUND_MAX)),
+            float(np.clip(s.point[1], Y_BOUND_MIN, Y_BOUND_MAX)))
     elif s.params is not None and s.num_gestures is not None:
         bounds = build_param_bounds(s.num_gestures, s.use_spin)
         arr = clamp_params(np.asarray(s.params, dtype=np.float64), bounds)
@@ -450,12 +509,13 @@ def sample_mixture(
     *,
     fracs: tuple[float, float, float] = (0.6, 0.25, 0.15),
     spin_frac: float = 0.0,
+    static_frac: float = 0.0,
     num_gestures: int = 2,
     use_spin: bool = False,
     recipe_vectors: list[tuple[list[float], int, bool, str]] | None = None,
 ) -> GestureSample:
-    """Draw one gesture from the flick / nslot / recipe / spin mixture, guaranteed
-    within the coordinate bounds (via clamp_in_bounds).
+    """Draw one gesture from the flick / nslot / recipe / spin / static mixture,
+    guaranteed within the coordinate bounds (via clamp_in_bounds).
 
     fracs = (flick, nslot, recipe) is the non-spin base mix; if no recipes are
     available the recipe share is redistributed to nslot (so the mix never silently
@@ -466,23 +526,37 @@ def sample_mixture(
     independent of `use_spin` (which only makes the plain nslot branch
     spin-capable, ~half of those gate-off). The spin slice itself splits
     _SPIN_FLICK_SHARE spin_flick (Model-1 trainable) / rest nslot-spin.
+
+    static_frac is the same kind of true share for STATIONARY touches (the Model 1
+    MVP arm): it splits _TAP_SHARE taps / rest holds. static_frac=1.0 gives a
+    pure hold/tap run, which is what the MVP collection uses.
     """
     f_flick, f_nslot, f_recipe = fracs
     if not recipe_vectors:
         f_nslot += f_recipe
         f_recipe = 0.0
-    # spin_frac as a raw weight would dilute: e.g. defaults (sum 1.0) + 0.2 give
-    # 0.2/1.2 ≈ 17%, not 20%. Scale the base mix to (1 - spin_frac) instead so
-    # the advertised share is exact.
+    # spin_frac/static_frac as raw weights would dilute: e.g. defaults (sum 1.0)
+    # + 0.2 give 0.2/1.2 ≈ 17%, not 20%. Scale the base mix to the remainder
+    # instead so the advertised shares are exact.
     f_spin = min(1.0, max(0.0, spin_frac))
+    f_static = min(1.0, max(0.0, static_frac))
+    if f_spin + f_static > 1.0:
+        raise ValueError(
+            f"sample_mixture: spin_frac + static_frac must be <= 1.0, "
+            f"got {f_spin} + {f_static}")
     base_total = f_flick + f_nslot + f_recipe
-    if base_total <= 0 and f_spin <= 0:
+    if base_total <= 0 and f_spin <= 0 and f_static <= 0:
         raise ValueError("sample_mixture: all mixture weights are zero")
     if base_total > 0:
-        scale = (1.0 - f_spin) / base_total
+        scale = (1.0 - f_spin - f_static) / base_total
         f_flick, f_nslot, f_recipe = f_flick * scale, f_nslot * scale, f_recipe * scale
-    total = f_flick + f_nslot + f_recipe + f_spin
+    total = f_flick + f_nslot + f_recipe + f_spin + f_static
     r = float(rng.uniform(0, total))
+    if r >= total - f_static:
+        # static slice: taps are the crisp Δ marker, holds carry touch timing
+        s = (sample_tap(rng) if float(rng.uniform(0.0, 1.0)) < _TAP_SHARE
+             else sample_hold(rng))
+        return clamp_in_bounds(s)
     if r < f_flick:
         g = sample_flick(rng)
         s = GestureSample(

@@ -40,6 +40,10 @@ XCTEST_FINGER_STAGGER_S = 0.12
 
 _PARAMS_PER_SLOT = 8
 _SPIN_PARAMS = 3
+# A tap is instantaneous as a COMMAND but not as PIXELS: measured on-device it
+# renders a mark for ~0.2s (~6 frames at 30fps). Give tap intervals that minimum
+# width so the frames that actually show the mark are labelled as touch-active.
+_TAP_MIN_VISIBLE_S = 0.2
 _FRAME_RE = re.compile(r"^frame_(\d+)\.(?:png|jpe?g)$", re.IGNORECASE)
 
 
@@ -369,6 +373,30 @@ def _drag_interval(
     )
 
 
+def _static_schedule(meta: dict, sample_path: Path) -> tuple[list[_TouchInterval], float]:
+    """Schedule for a STATIONARY touch sample ("hold" / "tap").
+
+    One finger, one position, held for ``hold_duration_s`` from the payload start.
+    A tap has hold_duration_s == 0; it still renders a mark for ~0.2s, so it gets a
+    minimum interval rather than a zero-length one that ``center_at`` could never
+    match (start_s <= t <= end_s is inclusive, but a zero-width window would only
+    ever catch a frame landing exactly on it).
+    """
+    identity = f"{sample_path}: {meta.get('gesture_distribution')}"
+    point = meta.get("point")
+    if point is None:
+        raise _UnsupportedSample(f"{identity}: stationary sample has no point")
+    xy = _validate_xy(point, identity=f"{identity} point")
+    hold = float(meta.get("hold_duration_s") or 0.0)
+    if not math.isfinite(hold) or hold < 0.0:
+        raise ValueError(f"{identity} hold_duration_s must be finite and >= 0, got {hold!r}")
+    end = max(hold, _TAP_MIN_VISIBLE_S)
+    return (
+        [_TouchInterval(start_s=0.0, end_s=end, source_order=0, kind="hold", constant_xy=xy)],
+        end,
+    )
+
+
 def _auto_finger_stagger(meta: dict, configured: float | None) -> float:
     if configured is not None:
         stagger = float(configured)
@@ -539,7 +567,9 @@ def _schedule_from_meta(
     finger_stagger_s: float | None,
 ) -> tuple[list[_TouchInterval], float, str, int]:
     kind = str(meta.get("gesture_distribution", "")).casefold()
-    if "waypoints" in meta or kind in {"flick", "spin_flick"}:
+    if kind in {"hold", "tap"}:
+        touches, total = _static_schedule(meta, sample_path)
+    elif "waypoints" in meta or kind in {"flick", "spin_flick"}:
         touches, total = _flick_schedule(meta, sample_path)
         kind = kind or ("spin_flick" if meta.get("spin_active") else "flick")
     elif "params" in meta or kind in {"nslot", "recipe", "spin"}:

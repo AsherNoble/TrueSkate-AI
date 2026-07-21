@@ -58,7 +58,8 @@ from trueskate_ai.rl.device_worker import (  # noqa: E402
 )
 from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import (  # noqa: E402
-    curved_drag, curved_drag_with_spin_hold, reset_position, skip_loading_screen,
+    curved_drag, curved_drag_with_spin_hold, long_press, reset_position,
+    skip_loading_screen, tap,
 )
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
 from trueskate_ai.vision.gameplay_filter import is_editor_frame, is_menu_frame  # noqa: E402
@@ -98,7 +99,16 @@ def _start_caffeinate():
 def _execute(worker: DeviceWorker, g) -> None:
     """Fire one sampled gesture (curved flicks required — straight swipes don't play)."""
     dw, dh = worker.device_w, worker.device_h
-    if g.kind == "flick":
+    if g.kind in ("hold", "tap"):
+        # Stationary touch (Model 1 MVP): no path, so nothing to curve. A tap is
+        # just a hold of zero length — both render the normal orange mark at the
+        # commanded point (measured Stage 0, 2026-07-21).
+        x, y = scale_to_device(g.point[0], g.point[1], dw, dh)
+        if g.kind == "tap":
+            tap(worker.driver, x, y)
+        else:
+            long_press(worker.driver, x, y, duration=g.hold_duration_s)
+    elif g.kind == "flick":
         pts = [scale_to_device(x, y, dw, dh) for x, y in g.waypoints]
         easing = None if g.easing_power == 1.0 else (lambda t, p=g.easing_power: t ** p)
         curved_drag(worker.driver, pts, total_duration=g.duration, easing=easing)
@@ -197,6 +207,12 @@ def main() -> None:
                          "button HELD); the flick/nslot/recipe mix keeps its ratios in the "
                          "remaining share. 0.2 = ~20%% of fires hold the spin button — the "
                          "knob to grow the spin-family corpus.")
+    ap.add_argument("--static-frac", type=float, default=0.0,
+                    help="TRUE share [0,1] of fires that are STATIONARY touches — holds "
+                         "(long_press, 0.1-1.5s) and taps, split ~80/20. These have an "
+                         "unambiguous (x,y) plus a known onset and liftoff, with no "
+                         "direction/speed ambiguity: the Model 1 MVP arm. 1.0 = a pure "
+                         "hold/tap run.")
     ap.add_argument("--num-gestures", type=int, default=2)
     ap.add_argument("--use-spin", action="store_true",
                     help="Legacy: make the plain nslot branch spin-capable (~half gate-off). "
@@ -237,9 +253,17 @@ def main() -> None:
     if spin_frac != args.spin_frac:
         print(f"WARNING: --spin-frac {args.spin_frac} outside [0, 1]; clamped to {spin_frac}.")
         args.spin_frac = spin_frac
-    if args.flick_frac + args.nslot_frac + args.recipe_frac <= 0 and args.spin_frac <= 0:
+    static_frac = min(1.0, max(0.0, args.static_frac))
+    if static_frac != args.static_frac:
+        print(f"WARNING: --static-frac {args.static_frac} outside [0, 1]; clamped to {static_frac}.")
+        args.static_frac = static_frac
+    if args.spin_frac + args.static_frac > 1.0:
+        raise SystemExit(f"--spin-frac ({args.spin_frac}) + --static-frac ({args.static_frac}) "
+                         "exceeds 1.0 — they are true shares of all fires.")
+    if (args.flick_frac + args.nslot_frac + args.recipe_frac <= 0
+            and args.spin_frac <= 0 and args.static_frac <= 0):
         raise SystemExit("All gesture mixture weights are zero — nothing to sample "
-                         "(--flick-frac/--nslot-frac/--recipe-frac/--spin-frac).")
+                         "(--flick-frac/--nslot-frac/--recipe-frac/--spin-frac/--static-frac).")
     if args.num_gestures < 1:
         raise SystemExit(f"--num-gestures must be >= 1, got {args.num_gestures}")
 
@@ -284,7 +308,8 @@ def main() -> None:
     print(f"Loaded {len(recipe_vectors)} packable recipes.")
     fracs = (args.flick_frac, args.nslot_frac, args.recipe_frac)
     print(f"Gesture mix: base weights flick={args.flick_frac} nslot={args.nslot_frac} "
-          f"recipe={args.recipe_frac}; spin share={args.spin_frac} (guaranteed-hold slice).")
+          f"recipe={args.recipe_frac}; spin share={args.spin_frac} (guaranteed-hold slice); "
+          f"static share={args.static_frac} (stationary hold/tap).")
 
     notify(f"[{device}] XCTest SLS collection starting in {cycle[0]} "
            f"({args.segment_min:.0f}-min segments, {args.per_park_hours}h/park).",
@@ -409,6 +434,7 @@ def main() -> None:
                 seg_iter += 1
 
                 g = sample_mixture(rng, fracs=fracs, spin_frac=args.spin_frac,
+                                   static_frac=args.static_frac,
                                    num_gestures=args.num_gestures,
                                    use_spin=args.use_spin, recipe_vectors=recipe_vectors)
                 if g.kind == "spin_flick" or g.use_spin:
