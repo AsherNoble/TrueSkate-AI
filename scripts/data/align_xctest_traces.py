@@ -86,6 +86,33 @@ def _delta_for(ev: dict, override: float | None, manifest_delta: float | None) -
                               _DELTA_ACTIONCHAINS_S)
 
 
+def _encode_sample_video(sample_dir: Path, n_frames: int, fps: int, crf: int) -> bool:
+    """Pack a sample's frame_NNN.png into one h264 clip, deleting the PNGs.
+
+    ~30x smaller than the PNG sequence at crf 20 (benchmarked on 333 real corpus
+    frames: 4.5% error in the path-glow statistic, so the orange trace survives),
+    and 1 inode instead of N — which matters as much as bytes, the corpus volume
+    having hit 2.37M files against a 500k inode limit.
+
+    Returns False and leaves the PNGs untouched if encoding fails: a sample that
+    exists as PNGs is strictly better than one lost to a bad encode.
+    """
+    out = sample_dir / "frames.mp4"
+    r = subprocess.run(
+        ["ffmpeg", "-y", "-v", "error", "-framerate", str(fps),
+         "-i", str(sample_dir / "frame_%03d.png"),
+         "-c:v", "libx264", "-crf", str(crf), "-pix_fmt", "yuv420p", str(out)],
+        capture_output=True, text=True,
+    )
+    if r.returncode != 0 or not out.exists():
+        print(f"  {sample_dir.name}: video encode failed ({r.stderr[:120]}) — keeping PNGs")
+        out.unlink(missing_ok=True)
+        return False
+    for i in range(n_frames):
+        (sample_dir / f"frame_{i:03d}.png").unlink(missing_ok=True)
+    return True
+
+
 def _even_indices(n: int, max_n: int) -> list[int]:
     if n <= max_n:
         return list(range(n))
@@ -94,7 +121,8 @@ def _even_indices(n: int, max_n: int) -> list[int]:
 
 def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: int,
                   resize_width: int, max_frames: int, delta_override: float | None,
-                  delete_mov: bool, anchor: str = "start") -> int:
+                  delete_mov: bool, anchor: str = "start",
+                  video: bool = False, video_crf: int = 20) -> int:
     manifest = json.loads(manifest_path.read_text())
     seg_dir = manifest_path.parent
     mov = seg_dir / manifest["mov"]
@@ -163,6 +191,9 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
             # these frame_times now are. Without it the scheduler would add the payload
             # duration and place every touch a full stroke too late.
             meta["gesture_start_monotonic"] = float(ev["t_call_start_epoch_s"])
+        if video:
+            meta["frames_format"] = ("mp4" if _encode_sample_video(
+                sample_dir, len(frame_times), fps, video_crf) else "png")
         (sample_dir / "meta.json").write_text(json.dumps(meta, indent=2))
         saved += 1
 
@@ -202,6 +233,13 @@ def main() -> None:
                     help="Override the command->pixel Δ for every gesture. Default is "
                          "per-kind measured values (see _DELTA_BY_KIND).")
     ap.add_argument("--delete-mov", action="store_true", help="Delete the .mov after a successful align.")
+    ap.add_argument("--video", action="store_true",
+                    help="Store each sample as one frames.mp4 instead of N PNGs: ~30x "
+                         "smaller and 1 inode instead of N. The dataset loader reads "
+                         "either format transparently.")
+    ap.add_argument("--video-crf", type=int, default=20,
+                    help="x264 CRF for --video. 20 keeps the orange trace intact "
+                         "(measured 4.5%% error in the path-glow statistic).")
     args = ap.parse_args()
 
     if args.segment:
@@ -220,7 +258,7 @@ def main() -> None:
                 m, pre_s=args.pre_s, window_s=args.window_s, fps=args.fps,
                 resize_width=args.resize_width, max_frames=args.max_frames,
                 delta_override=args.delta_s, delete_mov=args.delete_mov,
-                anchor=args.anchor)
+                anchor=args.anchor, video=args.video, video_crf=args.video_crf)
         except Exception as exc:  # noqa: BLE001
             print(f"[align] {m.name} FAILED: {exc}")
     print(f"[align] done: {total} samples across {len(manifests)} segment(s)")

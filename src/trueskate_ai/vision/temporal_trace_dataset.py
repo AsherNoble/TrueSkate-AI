@@ -595,6 +595,44 @@ def _is_end_relative(meta: dict) -> bool:
     )
 
 
+_VIDEO_NAME = "frames.mp4"
+
+
+def _video_path(sample_path: Path) -> Path | None:
+    """The sample's video container, if it is video-backed rather than PNG-backed.
+
+    Storing a sample's frames as one h264 clip instead of 24 PNGs is ~30x smaller
+    and — just as important on the corpus volume — 1 inode instead of 24. Frames
+    within a sample are the same scene milliseconds apart, so inter-frame
+    compression is enormously effective where per-frame PNG can exploit nothing.
+    """
+    candidate = sample_path / _VIDEO_NAME
+    return candidate if candidate.is_file() else None
+
+
+def _decode_video(path: Path) -> list[np.ndarray]:
+    """Decode every frame of a sample clip to BGR, in order.
+
+    Decoded whole rather than seeked per-frame: the clips are ~1-2s, and random
+    access into inter-coded video costs far more than one sequential pass.
+    """
+    capture = cv2.VideoCapture(str(path))
+    if not capture.isOpened():
+        raise RuntimeError(f"Could not open sample video {path}")
+    frames: list[np.ndarray] = []
+    try:
+        while True:
+            ok, frame = capture.read()
+            if not ok:
+                break
+            frames.append(frame)
+    finally:
+        capture.release()
+    if not frames:
+        raise RuntimeError(f"Sample video decoded zero frames: {path}")
+    return frames
+
+
 def _frame_paths(sample_path: Path) -> dict[int, Path]:
     result: dict[int, Path] = {}
     try:
@@ -681,7 +719,18 @@ def _build_sequence_record(
     except _UnsupportedSample:
         stats["unsupported_skipped"] += 1
         return _BuildResult(None, stats)
-    frames_by_index = _frame_paths(sample_path)
+    # Video-backed samples carry no per-frame files, so synthesise the same
+    # index->path keys the PNG path produces and seed the loader cache with the
+    # decoded frames. Everything downstream (menu detection, trace gating, the
+    # uint8 cache) then works identically for both storage formats.
+    sample_video = _video_path(sample_path)
+    prefetched_bgr: dict[Path, np.ndarray] = {}
+    if sample_video is not None:
+        decoded = _decode_video(sample_video)
+        frames_by_index = {i: sample_path / f"frame_{i:03d}.png" for i in range(len(decoded))}
+        prefetched_bgr = {frames_by_index[i]: img for i, img in enumerate(decoded)}
+    else:
+        frames_by_index = _frame_paths(sample_path)
     raw_times = meta.get("frame_times")
     if not isinstance(raw_times, list) or not raw_times:
         stats["missing_frames_skipped"] += 1
@@ -714,7 +763,7 @@ def _build_sequence_record(
     selected_paths = tuple(frames_by_index[index] for index in selected_indices)
     # One FUSE read per retained frame at most.  Menu detection, warm-trace
     # gating, and the optional uint8 cache all share this map within a worker.
-    loaded_bgr: dict[Path, np.ndarray] = {}
+    loaded_bgr: dict[Path, np.ndarray] = prefetched_bgr
 
     def load_bgr(frame_path: Path) -> np.ndarray:
         image = loaded_bgr.get(frame_path)
