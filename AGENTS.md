@@ -19,6 +19,8 @@ pip install -r requirements.txt
 
 External tools: Appium (npm), WebDriverAgent (Xcode), ffmpeg, libimobiledevice.
 
+- **XR rig access:** By default, and almost always, the XR phones are connected to `training-server`, not this laptop. Run XR device/service commands there via the tailnet (`tailscale ssh training-server@training-server`); only use a local connection when explicitly confirmed.
+
 - Device UDID stored in `.env` (not hardcoded)
 - WDA project: `~/Projects/WebDriverAgent` (needs `-allowProvisioningUpdates` after Xcode updates)
 - Appium: localhost:4723, WDA: localhost:8100
@@ -68,7 +70,7 @@ A second track collects a **frame→gesture corpus** (for a future sequence mode
 
 **CRITICAL OPERATIONAL PREREQ — the remotexpc tunnel daemon.** The appium-xcuitest driver only auto-deletes on-device XCTest recording attachments when its **remotexpc tunnel registry is reachable**, which needs a ROOT daemon: `sudo appium driver run xcuitest tunnel-creation` (staged as `scripts/ops/com.trueskate.remotexpc-tunnel.plist` → `/Library/LaunchDaemons/`). Without it, attachments accumulate in testmanagerd until recording wedges with `XCTDaemon.ScreenRecordingError Code=7 "Failed to write file"` (despite free disk) — this benched BOTH phones. Recovery: ensure the daemon is up, then `scripts/recover_remotexpc_attachments.sh` (wraps the official `appium … cleanup-videos`, `--dry-run`/`--delete`) clears the backlog. See memory `xctest-recording-attachments-accumulate`.
 
-**Rig ops (launchd):** `com.trueskate.services` (launch_services: Appium+WDA+iproxy, health-aware monitor), `com.trueskate.collect.xr1|xr2` (supervised collectors via `scripts/rig_collect.sh`), `com.trueskate.watchdog.xr1|xr2` (`scripts/collection_watchdog.sh`: ntfy alert if a phone stops producing segments), and the root `com.trueskate.remotexpc-tunnel`. Ports are +3/device (XR1 wda 8100, XR2 wda 8103).
+**Rig ops (launchd):** `com.trueskate.services` (launch_services: Appium+WDA+iproxy, health-aware monitor), `com.trueskate.collect.xr1|xr2` (supervised collectors via `scripts/rig_collect.sh`), `com.trueskate.watchdog.xr1|xr2` (`scripts/collection_watchdog.sh`: one persistent fleet incident alert on state change, then one recovery — never periodic reminders), and the root `com.trueskate.remotexpc-tunnel`. Ports are +3/device (XR1 wda 8100, XR2 wda 8103).
 
 ### Labeling Pipeline (legacy — pre-RL pivot)
 
