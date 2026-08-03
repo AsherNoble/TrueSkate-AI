@@ -207,6 +207,10 @@ def main() -> None:
                          "button HELD); the flick/nslot/recipe mix keeps its ratios in the "
                          "remaining share. 0.2 = ~20%% of fires hold the spin button — the "
                          "knob to grow the spin-family corpus.")
+    ap.add_argument("--max-segments", type=int, default=None,
+                    help="Stop after N recorded segments. Useful for bounded pilot runs "
+                         "and for a supervisor that intentionally starts a fresh collector "
+                         "process per segment; it does not by itself calibrate timing.")
     ap.add_argument("--no-reset", action="store_true",
                     help="Skip reset_position between gestures. Required for stationary "
                          "runs: reset is a tap, and its own rendered mark would land in "
@@ -224,6 +228,10 @@ def main() -> None:
                          "unambiguous (x,y) plus a known onset and liftoff, with no "
                          "direction/speed ambiguity: the Model 1 MVP arm. 1.0 = a pure "
                          "hold/tap run.")
+    ap.add_argument("--tap-calibrate", action="store_true",
+                    help="Ask the offline aligner to require per-segment timing calibration "
+                         "from the known-position tap arm. Intended for --static-frac MVP "
+                         "collection; a rejected calibration preserves the source .mov.")
     ap.add_argument("--num-gestures", type=int, default=2)
     ap.add_argument("--use-spin", action="store_true",
                     help="Legacy: make the plain nslot branch spin-capable (~half gate-off). "
@@ -240,6 +248,9 @@ def main() -> None:
                     help="ntfy-alert if device free storage drops below this.")
     ap.add_argument("--no-align", action="store_true",
                     help="Do NOT auto-spawn the aligner after each segment (save .mov+manifest only).")
+    ap.add_argument("--wait-for-align", action="store_true",
+                    help="Run the post-segment aligner in the foreground instead of async. "
+                         "Use for a bounded calibration pilot so its go/no-go result is visible.")
     ap.add_argument("--no-caffeinate", action="store_true")
     ap.add_argument("--no-rotate", action="store_true")
     ap.add_argument("--confirm-poll-s", type=float, default=10.0)
@@ -256,6 +267,9 @@ def main() -> None:
                          "supervisor restart (avoids hammering/re-wedging the XCTest daemon).")
     add_device_selection_args(ap)
     args = ap.parse_args()
+
+    if args.no_align and (args.tap_calibrate or args.wait_for_align):
+        ap.error("--no-align cannot be combined with --tap-calibrate or --wait-for-align")
 
     # Validate the gesture mix BEFORE any device contact: a bad value would
     # otherwise surface as a per-gesture ValueError mid-run and crash-loop the
@@ -350,12 +364,26 @@ def main() -> None:
                "--segment", str(manifest_path), "--delete-mov"]
         if args.align_video:
             cmd.append("--video")
+        if args.tap_calibrate:
+            cmd.append("--tap-calibrate")
+        if args.wait_for_align:
+            # The stationary-touch MVP's calibration is an explicit go/no-go gate.
+            # Keep it foregrounded so the operator sees accepted/rejected rather
+            # than discovering an unaligned .mov after an async child exits.
+            result = subprocess.run(cmd)
+            if result.returncode != 0:
+                raise RuntimeError(f"aligner rejected/failed {manifest_path.name} "
+                                   f"(exit {result.returncode})")
+            return
         subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     try:
         while not _STOP:
             if global_deadline and time.monotonic() > global_deadline:
                 print("[collect_xctest] global --max-hours reached.")
+                break
+            if args.max_segments is not None and segment_idx >= args.max_segments:
+                print(f"[collect_xctest] --max-segments {args.max_segments} reached.")
                 break
 
             cur_park = cycle[park_idx]
@@ -579,7 +607,8 @@ def main() -> None:
                 # Sampler config, so a corpus session is reconstructable without
                 # console logs (mirrors the DAL collector's session_meta.json).
                 "mix": {"flick": args.flick_frac, "nslot": args.nslot_frac,
-                        "recipe": args.recipe_frac, "spin_frac": args.spin_frac},
+                        "recipe": args.recipe_frac, "spin_frac": args.spin_frac,
+                        "static_frac": args.static_frac},
                 "num_gestures": args.num_gestures, "use_spin": args.use_spin,
                 "mov": mov_path.name, "n_gestures": len(events), "gestures": events,
             }

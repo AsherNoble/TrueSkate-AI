@@ -7,10 +7,11 @@ collector's on-disk format (``frame_NNN.png`` + ``meta.json`` with ``frame_times
 
 Alignment: the manifest's ``started_at_epoch_s`` is video t0 (same epoch clock as the
 gesture call times), so a gesture whose call STARTED at host ``ts`` maps to video PTS
-``gv = (ts - started_at) + Δ``, where Δ is the measured command->pixel offset
-(``_DELTA_BY_KIND``). ``frame_time`` 0 is therefore the moment the touch's first
-pixels land. We extract ``[gv - pre, gv + window]`` at the native fps (fast INPUT-seek
-per gesture, so a 5-min segment isn't re-decoded N times), downscale to
+``gv = (ts - started_at) + Δ``. The per-kind offsets in ``_DELTA_BY_KIND`` are a
+fallback; ``--tap-calibrate`` instead derives the segment shift from the known-position
+tap arm of the stationary-touch MVP. ``frame_time`` 0 is therefore the moment the
+touch's first pixels land. We extract ``[gv - pre, gv + window]`` at the native fps
+(fast INPUT-seek per gesture, so a 5-min segment isn't re-decoded N times), downscale to
 ``--resize-width``, evenly downsample to ``--max-frames``, and stamp each kept frame's
 ``frame_time`` (video PTS - gv).
 
@@ -38,29 +39,33 @@ session dir (``--session <dir>`` processes every not-yet-aligned segment).
 from __future__ import annotations
 
 import argparse
+import math
 import json
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
+import cv2
 
-# Measured command->pixel offsets, seconds after `t_call_start_epoch_s` (XR1,
-# 2026-07-21, frame-differencing known touch points across 4 recordings; see memory
-# `xctest-command-to-pixel-delta`). Stable to <1 frame at 30fps: within-recording std
-# 0.017s, between-recording std 0.007s — so a CONSTANT Δ is valid, it does not drift
-# per segment.
-#
-# Δ depends on the Appium dispatch path, not just the rig: `mobile: tap` is ~0.12s
-# slower than the ActionChains path. Measured directly for tap (1.112, n=16) and
-# long_press (~0.98, n=8). Drag kinds are ActionChains like long_press, so they take
-# that value — INFERRED for drags, not directly measured. Re-measure with
-# `tmp/delta_stability.py` if the rig, iOS, or appium-xcuitest version changes.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT / "src"))
+
+from trueskate_ai.vision.tap_timing_calibration import (  # noqa: E402
+    detect_tap_onset,
+    fit_tap_offsets,
+)
+
+
+# Fallback command->pixel offsets, seconds after `t_call_start_epoch_s` (XR1,
+# 2026-07-21). They remain useful for legacy/non-MVP segments, but are not assumed
+# segment-stable: the stationary-touch MVP found large unexplained drift.  When
+# --tap-calibrate is enabled, its fitted tap offset shifts these values together and
+# preserves the measured tap-vs-ActionChains relative difference.
 _DELTA_TAP_S = 1.11
-# Refined from 0.98 by the end-to-end anchor check: with 0.98 the 9 hold samples all
-# landed +0.067..+0.10s late while taps landed exactly on 0, i.e. the ActionChains path
-# is ~0.08s slower than the coarse Stage 0 estimate. Verified back to ~0 residual.
 _DELTA_ACTIONCHAINS_S = 1.06
 _DELTA_BY_KIND = {
     "tap": _DELTA_TAP_S,
@@ -73,6 +78,10 @@ _DELTA_BY_KIND = {
 }
 
 
+class TapCalibrationRejected(RuntimeError):
+    """A requested per-segment calibration did not meet its evidence gate."""
+
+
 def _park_tag(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
 
@@ -80,10 +89,138 @@ def _park_tag(name: str) -> str:
 def _delta_for(ev: dict, override: float | None, manifest_delta: float | None) -> float:
     if override is not None:
         return override
-    if manifest_delta:
+    if manifest_delta is not None:
         return float(manifest_delta)
     return _DELTA_BY_KIND.get(str(ev.get("gesture_distribution", "")).casefold(),
                               _DELTA_ACTIONCHAINS_S)
+
+
+def _tap_point(ev: dict) -> tuple[float, float] | None:
+    """Return a valid normalised stationary-tap point, otherwise abstain."""
+    raw = ev.get("point")
+    if not isinstance(raw, (list, tuple)) or len(raw) != 2:
+        return None
+    try:
+        point = float(raw[0]), float(raw[1])
+    except (TypeError, ValueError):
+        return None
+    if not all(math.isfinite(value) and 0.0 <= value <= 1.0 for value in point):
+        return None
+    return point
+
+
+def _decode_calibration_window(
+    mov: Path,
+    *,
+    command_video_s: float,
+    fps: int,
+    reference_window_s: float,
+    search_after_s: float,
+    resize_width: int,
+) -> tuple[list, list[float]]:
+    """Decode a small tap-search window without retaining a whole segment in RAM."""
+    start = max(0.0, command_video_s - reference_window_s)
+    duration = (command_video_s - start) + search_after_s
+    with tempfile.TemporaryDirectory(prefix="trueskate-tap-cal-") as tmp:
+        raw = Path(tmp)
+        result = subprocess.run(
+            ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.3f}", "-i", str(mov),
+             "-t", f"{duration:.3f}", "-vf", f"fps={fps},scale={resize_width}:-2",
+             "-vsync", "0", str(raw / "f_%04d.png")],
+            capture_output=True, text=True,
+        )
+        paths = sorted(raw.glob("f_*.png"))
+        if result.returncode != 0 or not paths:
+            return [], []
+        frames = [cv2.imread(str(path), cv2.IMREAD_COLOR) for path in paths]
+        frames = [frame for frame in frames if frame is not None]
+    return frames, [start + index / fps for index in range(len(frames))]
+
+
+def _tap_calibration(
+    *,
+    manifest: dict,
+    mov: Path,
+    started_at: float,
+    fps: int,
+    delta_override: float | None,
+    manifest_delta: float | None,
+    min_taps: int,
+    max_mad_s: float,
+    search_after_s: float,
+    resize_width: int,
+) -> tuple[dict, float | None]:
+    """Fit a segment timing shift from its manifest-known tap marks.
+
+    The shift applies to all gesture kinds.  This retains the small measured
+    dispatch-path difference between a ``mobile: tap`` and ActionChains while
+    correcting the segment-level recorder/transport drift that the handover found.
+    """
+    tap_events = [
+        ev for ev in manifest.get("gestures", [])
+        if str(ev.get("gesture_distribution", "")).casefold() == "tap"
+    ]
+    reference_tap_delta = (
+        _delta_for(tap_events[0], delta_override, manifest_delta)
+        if tap_events else _DELTA_TAP_S
+    )
+    offsets: list[float] = []
+    detections: list[dict] = []
+    skipped = 0
+    for ev in tap_events:
+        point = _tap_point(ev)
+        try:
+            command_s = float(ev["t_call_start_epoch_s"]) - started_at
+        except (KeyError, TypeError, ValueError):
+            skipped += 1
+            continue
+        if point is None or not math.isfinite(command_s) or command_s < 0.0:
+            skipped += 1
+            continue
+        frames, times = _decode_calibration_window(
+            mov,
+            command_video_s=command_s,
+            fps=fps,
+            reference_window_s=0.5,
+            search_after_s=search_after_s,
+            resize_width=resize_width,
+        )
+        onset = detect_tap_onset(
+            frames, times, point_xy=point, command_s=command_s,
+        )
+        if onset is None:
+            skipped += 1
+            continue
+        offset = onset.onset_s - command_s
+        offsets.append(offset)
+        detections.append({
+            "gesture_index": ev.get("gesture_index"),
+            "onset_video_s": round(onset.onset_s, 4),
+            "offset_s": round(offset, 4),
+            "score": onset.score,
+            "threshold": onset.threshold,
+        })
+
+    fit = fit_tap_offsets(offsets, min_taps=min_taps, max_mad_s=max_mad_s)
+    info = {
+        "method": "known-point-local-frame-difference",
+        "tap_events": len(tap_events),
+        "tap_detections": len(offsets),
+        "tap_skipped": skipped,
+        "reference_tap_delta_s": round(reference_tap_delta, 4),
+        "candidate_offsets_s": [round(value, 4) for value in fit.candidate_offsets_s],
+        "inlier_offsets_s": [round(value, 4) for value in fit.inlier_offsets_s],
+        "tap_offset_s": None if fit.offset_s is None else round(fit.offset_s, 4),
+        "mad_s": None if fit.mad_s is None else round(fit.mad_s, 4),
+        "accepted": fit.accepted,
+        "reason": fit.reason,
+        "detections": detections,
+    }
+    if not fit.accepted or fit.offset_s is None:
+        return info, None
+    shift = fit.offset_s - reference_tap_delta
+    info["shift_s"] = round(shift, 4)
+    return info, shift
 
 
 def _encode_sample_video(sample_dir: Path, n_frames: int, fps: int, crf: int) -> bool:
@@ -122,7 +259,11 @@ def _even_indices(n: int, max_n: int) -> list[int]:
 def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: int,
                   resize_width: int, max_frames: int, delta_override: float | None,
                   delete_mov: bool, anchor: str = "start",
-                  video: bool = False, video_crf: int = 20) -> int:
+                  video: bool = False, video_crf: int = 20,
+                  tap_calibrate: bool = False, tap_calibration_min_taps: int = 2,
+                  tap_calibration_max_mad_s: float = 0.10,
+                  tap_calibration_search_s: float = 4.0,
+                  tap_calibration_width: int = 256) -> int:
     manifest = json.loads(manifest_path.read_text())
     seg_dir = manifest_path.parent
     mov = seg_dir / manifest["mov"]
@@ -148,9 +289,40 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
 
     saved = 0
     deltas_used: set[float] = set()
+    calibration_info: dict | None = None
+    calibration_shift_s = 0.0
     try:
+        if tap_calibrate:
+            calibration_info, shift = _tap_calibration(
+                manifest=manifest,
+                mov=mov,
+                started_at=started_at,
+                fps=fps,
+                delta_override=delta_override,
+                manifest_delta=manifest_delta,
+                min_taps=tap_calibration_min_taps,
+                max_mad_s=tap_calibration_max_mad_s,
+                search_after_s=tap_calibration_search_s,
+                resize_width=tap_calibration_width,
+            )
+            if shift is None:
+                # A failed calibration is a data-quality failure, not a reason to
+                # manufacture labels from the fallback constants.  Preserve the .mov
+                # for diagnosis and leave no .aligned marker so it can be retried.
+                rejected = seg_dir / (manifest_path.stem + ".calibration_rejected.json")
+                rejected.write_text(json.dumps(calibration_info, indent=2))
+                print(f"[align] {manifest_path.name}: tap calibration rejected "
+                      f"({calibration_info['reason']}); preserving {mov.name} "
+                      f"and wrote {rejected.name}")
+                raise TapCalibrationRejected(str(calibration_info["reason"]))
+            calibration_shift_s = shift
+            print(f"[align] {manifest_path.name}: tap calibration accepted "
+                  f"(Δtap={calibration_info['tap_offset_s']}s, "
+                  f"shift={calibration_shift_s:+.3f}s, "
+                  f"n={len(calibration_info['inlier_offsets_s'])}, "
+                  f"MAD={calibration_info['mad_s']}s)")
         for ev in gestures:
-            delta = _delta_for(ev, delta_override, manifest_delta)
+            delta = _delta_for(ev, delta_override, manifest_delta) + calibration_shift_s
             deltas_used.add(delta)
             if anchor == "start":
                 # Anchor on when the touch's FIRST PIXELS land: t_call_start + Δ. The old
@@ -192,12 +364,21 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                 "device_logical_w": dw, "device_logical_h": dh,
                 "gesture_video_time_s": round(gv, 4),
                 "capture_offset_s": delta,
+                "capture_offset_source": (
+                    "tap_self_calibrated" if calibration_info is not None
+                    else "per_kind_fallback"
+                ),
                 "anchor": anchor,
                 "frame_times": frame_times,
                 "n_frames": len(frame_times),
                 "segment_index": manifest.get("segment_index"),
                 "session": seg_dir.name,
             }
+            if calibration_info is not None:
+                # Keep provenance with every sample; the marker below retains the
+                # full segment report too.  Timing comes from rendered taps, while
+                # the touch coordinates remain the command manifest's labels.
+                meta["tap_calibration"] = calibration_info
             if anchor == "start":
                 # temporal_trace_dataset._is_end_relative() keys off this: its presence
                 # switches the label scheduler to the START-relative branch, which is what
@@ -216,7 +397,8 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
     # mark processed + optionally drop the (large) .mov to free host space
     (seg_dir / (manifest_path.stem + ".aligned")).write_text(
         json.dumps({"samples": saved, "anchor": anchor,
-                    "delta_s": sorted(deltas_used)}))
+                    "delta_s": sorted(deltas_used),
+                    "tap_calibration": calibration_info}))
     print(f"[align] {manifest_path.name}: {saved}/{len(gestures)} samples "
           f"(anchor={anchor}, Δ={sorted(deltas_used)}s) -> {seg_dir}")
     if delete_mov and saved > 0:
@@ -248,6 +430,18 @@ def main() -> None:
     ap.add_argument("--delta-s", type=float, default=None,
                     help="Override the command->pixel Δ for every gesture. Default is "
                          "per-kind measured values (see _DELTA_BY_KIND).")
+    ap.add_argument("--tap-calibrate", action="store_true",
+                    help="Require per-segment timing calibration from known-position "
+                         "stationary taps. Uses local frame differencing only for timing, "
+                         "preserves the .mov and writes no samples when taps disagree.")
+    ap.add_argument("--tap-calibration-min-taps", type=int, default=2,
+                    help="Minimum detected tap marks required by --tap-calibrate (default: 2).")
+    ap.add_argument("--tap-calibration-max-mad-s", type=float, default=0.10,
+                    help="Maximum allowed robust tap-offset MAD in seconds (default: 0.10).")
+    ap.add_argument("--tap-calibration-search-s", type=float, default=4.0,
+                    help="Seconds after each tap command to search for its rendered mark (default: 4).")
+    ap.add_argument("--tap-calibration-width", type=int, default=256,
+                    help="Decode width for tap calibration only; sample output still uses --resize-width.")
     ap.add_argument("--delete-mov", action="store_true", help="Delete the .mov after a successful align.")
     ap.add_argument("--video", action="store_true",
                     help="Store each sample as one frames.mp4 instead of N PNGs: ~30x "
@@ -257,6 +451,14 @@ def main() -> None:
                     help="x264 CRF for --video. 20 keeps the orange trace intact "
                          "(measured 4.5%% error in the path-glow statistic).")
     args = ap.parse_args()
+    if args.tap_calibration_min_taps < 1:
+        ap.error("--tap-calibration-min-taps must be >= 1")
+    if args.tap_calibration_max_mad_s < 0.0:
+        ap.error("--tap-calibration-max-mad-s must be >= 0")
+    if args.tap_calibration_search_s <= 0.0:
+        ap.error("--tap-calibration-search-s must be > 0")
+    if args.tap_calibration_width < 8:
+        ap.error("--tap-calibration-width must be >= 8")
 
     if args.segment:
         manifests = [args.segment]
@@ -268,16 +470,27 @@ def main() -> None:
             return
 
     total = 0
+    rejected = 0
     for m in manifests:
         try:
             total += align_segment(
                 m, pre_s=args.pre_s, window_s=args.window_s, fps=args.fps,
                 resize_width=args.resize_width, max_frames=args.max_frames,
                 delta_override=args.delta_s, delete_mov=args.delete_mov,
-                anchor=args.anchor, video=args.video, video_crf=args.video_crf)
+                anchor=args.anchor, video=args.video, video_crf=args.video_crf,
+                tap_calibrate=args.tap_calibrate,
+                tap_calibration_min_taps=args.tap_calibration_min_taps,
+                tap_calibration_max_mad_s=args.tap_calibration_max_mad_s,
+                tap_calibration_search_s=args.tap_calibration_search_s,
+                tap_calibration_width=args.tap_calibration_width)
+        except TapCalibrationRejected as exc:
+            rejected += 1
+            print(f"[align] {m.name} CALIBRATION REJECTED: {exc}")
         except Exception as exc:  # noqa: BLE001
             print(f"[align] {m.name} FAILED: {exc}")
     print(f"[align] done: {total} samples across {len(manifests)} segment(s)")
+    if rejected:
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":
