@@ -262,6 +262,12 @@
 - **Pilot ergonomics:** collector forwards `--tap-calibrate`; `--wait-for-align` makes its accepted/rejected result visible. `mvp_collect.sh` defaults to one segment, passes both flags, and no longer promises restarts are corrective.
 - **Offline experiment passed:** a synthetic h264 30fps `.mov` with a known 2.30s tap delay (within the observed drift range) was decoded through the real ffmpeg path; calibration recovered Δtap=2.30, shift=+1.19, and correctly assigned a hold Δ=2.25 (retaining the −0.05s path difference). 114 tests pass. The required one-real-segment gate remains blocked until hands-on WDA signing recovery; do **not** restart services before that recovery.
 
+## Model 1 Stage 0 — First Real Calibrated Segment Accepted (2026-08-04)
+
+- **Signing recovery unblocked the hardware gate.** After both XRs trusted the developer app, XR1 WDA was remotely healthy and ran the bounded `mvp_collect.sh` pilot; XR2's existing generic SLS collector was left untouched.
+- **Result:** 20 stationary-touch samples were written from one 60s segment. Three of five known taps were independently detected in the recording; their measured command→pixel offsets were 0.2333s, 0.2000s, and 0.1667s (median 0.2000s, MAD 0.0333s), so the <=0.10s fail-closed gate accepted the segment. The derived correction was -0.91s relative to the old reference and was stamped into every sample's `tap_calibration` provenance.
+- **Decision:** timing is now evidenced for this segment, not merely assumed. Continue only with bounded stationary batches that pass the same per-segment gate; rejected segments remain unlabelled for diagnosis.
+
 ## Fleet Watchdog: Transition-Only ntfy Alerts (2026-08-03)
 
 - **Eliminated unbounded outage spam:** the two per-XR watchdogs emitted paired `STILL down` notifications every hour for the same 13-day signing outage (~630 pushes). They now share one lock-protected, persistent fleet state (`healthy` / `degraded` / `down` / initial `pending`): one alert when an incident starts or changes severity, no reminders while unchanged, and one recovery with duration. Persisting the state prevents launchd restarts from re-paging an existing incident.
