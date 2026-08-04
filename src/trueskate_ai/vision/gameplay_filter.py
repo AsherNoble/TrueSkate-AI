@@ -1,4 +1,4 @@
-"""Detect True Skate's replay / camera-settings menu vs live skatepark gameplay.
+"""Detect True Skate menus vs live skatepark gameplay.
 
 The random-gesture SLS collector can tap True Skate into REPLAY mode and get stuck
 there for a long stretch — the park is still visible behind a replay, so the frames
@@ -6,12 +6,16 @@ there for a long stretch — the park is still visible behind a replay, so the f
 just poke the replay UI. Those ``(frame, random-gesture)`` pairs are noise for a
 frame->gesture model.
 
-The reliable discriminator is the **bottom button bar** (red ``BACK`` + teal
-``SHARE``/``HIDE``/``CAMERA``) that replay/menu shows and live gameplay never does.
-We score the saturated red and teal fraction of the bottom ~10% strip. Validated on
-known frames: live gameplay ~= (0.0, 0.0); replay/menu ~= (0.12, 0.12) — a clean,
-resolution-independent split (works on the full Appium screenshot and on the 512px
-aligned frames alike). This is a cheap heuristic, not the (untrained) SceneGuard CNN.
+Two bottom-bar signatures are reliable:
+
+* replay/camera menus have saturated red ``BACK`` plus teal action buttons;
+* the app hub has five repeated neutral-gray navigation cells (``ME``,
+  ``SKATEPARKS``, ``COMMUNITY``, ``SHOP``, ``SETTINGS``) on a dark band.
+
+Both checks are resolution-independent.  The hub check deliberately requires the
+repeated signature in at least four fifths of the screen, so a dark park, the home
+indicator, or the gameplay speedometer alone cannot trigger it.  These are cheap
+heuristics, not the (untrained) SceneGuard CNN.
 """
 from __future__ import annotations
 
@@ -32,6 +36,18 @@ TEAL_THRESH: float = 0.02
 # Backwards-compatible internal names used elsewhere in the module.
 _RED_THRESH = RED_THRESH
 _TEAL_THRESH = TEAL_THRESH
+
+# Main-hub bottom navigation.  The strip is divided into the five equal-width UI
+# cells.  A cell must contain both a mostly-dark background and enough neutral-gray
+# icon/text pixels; requiring four cells makes the detector conservative on dark
+# gameplay scenes with a home indicator or speedometer in only one/two cells.
+_HUB_STRIP_Y = 0.90
+_HUB_DARK_MAX = 0.22
+_HUB_NEUTRAL_MIN = 0.45
+_HUB_NEUTRAL_SAT_MAX = 0.20
+_HUB_DARK_FRAC = 0.42
+_HUB_NEUTRAL_FRAC = 0.08
+_HUB_MIN_CELLS = 4
 
 
 def _to_rgb01(img) -> np.ndarray:
@@ -97,13 +113,7 @@ def _to_rgb01(img) -> np.ndarray:
     return rgb
 
 
-def menu_bar_score(img) -> tuple[float, float]:
-    """(red_fraction, teal_fraction) of the bottom strip — the replay/menu button bar.
-
-    For images with very small height (<10 pixels) this function treats the frame as
-    non-menu and returns (0.0, 0.0) to avoid slicing errors and noisy statistics.
-    """
-    a = _to_rgb01(img)
+def _menu_bar_score_rgb(a: np.ndarray) -> tuple[float, float]:
     if a.ndim < 3 or a.shape[2] < 3:
         raise ValueError("Expected image with 3 colour channels (H, W, 3)")
     h = a.shape[0]
@@ -120,14 +130,62 @@ def menu_bar_score(img) -> tuple[float, float]:
     return float(red.mean()), float(teal.mean())
 
 
+def menu_bar_score(img) -> tuple[float, float]:
+    """(red_fraction, teal_fraction) of the bottom strip — the replay/menu button bar.
+
+    For images with very small height (<10 pixels) this function treats the frame as
+    non-menu and returns (0.0, 0.0) to avoid slicing errors and noisy statistics.
+    """
+    return _menu_bar_score_rgb(_to_rgb01(img))
+
+
+def _hub_nav_score_rgb(a: np.ndarray) -> tuple[int, tuple[tuple[float, float], ...]]:
+    """Score app-hub navigation cells in an already-normalized RGB frame."""
+    if a.ndim < 3 or a.shape[2] < 3:
+        raise ValueError("Expected image with 3 colour channels (H, W, 3)")
+    h, w = a.shape[:2]
+    if h < 10 or w < 5:
+        return 0, ()
+
+    strip = a[int(_HUB_STRIP_Y * h):, :, :3]
+    scores: list[tuple[float, float]] = []
+    hits = 0
+    for cell in np.array_split(strip, 5, axis=1):
+        high = cell.max(-1)
+        low = cell.min(-1)
+        dark_fraction = float((high < _HUB_DARK_MAX).mean())
+        neutral_fraction = float(
+            ((low > _HUB_NEUTRAL_MIN) &
+             ((high - low) < _HUB_NEUTRAL_SAT_MAX)).mean()
+        )
+        scores.append((dark_fraction, neutral_fraction))
+        if dark_fraction > _HUB_DARK_FRAC and neutral_fraction > _HUB_NEUTRAL_FRAC:
+            hits += 1
+    return hits, tuple(scores)
+
+
+def hub_nav_score(img) -> tuple[int, tuple[tuple[float, float], ...]]:
+    """Return the number and per-cell scores of app-hub navigation cells.
+
+    Each per-cell tuple is ``(dark_fraction, neutral_gray_fraction)`` over the
+    bottom 10% of the frame.  Public scores keep detector regressions inspectable
+    without duplicating its pixel thresholds in diagnostics/tests.
+    """
+    return _hub_nav_score_rgb(_to_rgb01(img))
+
+
 def is_menu_frame(img) -> bool:
-    """True if the frame is True Skate's replay/menu (NOT live skatepark gameplay)."""
-    rf, tf = menu_bar_score(img)
-    return rf > _RED_THRESH and tf > _TEAL_THRESH
+    """True for replay/camera menus or the five-cell app hub, never gameplay."""
+    a = _to_rgb01(img)
+    rf, tf = _menu_bar_score_rgb(a)
+    if rf > _RED_THRESH and tf > _TEAL_THRESH:
+        return True
+    hub_cells, _ = _hub_nav_score_rgb(a)
+    return hub_cells >= _HUB_MIN_CELLS
 
 
 def is_gameplay_frame(img) -> bool:
-    """True if the frame is live skatepark gameplay (no replay/menu button bar)."""
+    """True if the frame is live skatepark gameplay (no recognized menu UI)."""
     return not is_menu_frame(img)
 
 
