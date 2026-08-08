@@ -218,6 +218,7 @@
 - **Good finding — bigger push 360-flips the gap.** In SLS Super Crown the flatground 360 catches obstacles, but a vision-guided experiment (board localizer + OCR) showed `PUSH_COUNT=2` builds enough board speed to roll up the runway and cleanly 360-flip the yellow ledge/gap (PUSH_COUNT=1 → "360 FLIP + NOSE SLIDE" combos; =3 overshoots). The static push is now tunable via `PUSH_COUNT` / `PUSH_END_Y` env (`sim/gestures.py`). The earlier "0 360 lands in Super Crown" was a MISCOUNT — the 360 lands as combos (the journal's combo-tolerant-reward case), which the curriculum's max-component scoring credits.
 - **SLOP runs (wrong park) — STOPPED, no harm done.** Launched the 360-family (flip/double/triple) self-improvement on BOTH XRs but in SLS OBSTACLE arenas (XR1 Super Crown, XR2 another SLS arena), NOT the 360's clean flatground training park. The obstacle combos are park-/combo-flavored slop. Asher stopped the runs mid-trick; the orchestrator mines only on trick completion, so **NOTHING was mined — `trick_libraries/` is untouched (0 files modified 2026-06-14)**. The 7 run dirs (`logs/overnight/iPhone_XR*/00_360_flip/runs/cmaes_run_20260614_*`) each carry a `SLOP_DO_NOT_MINE.md` marker.
 - **Lesson (memory `dont-pollute-well-mined-params`):** self-improvement of a converged recipe must run in its CLEAN TRAINING PARK; verify the recipe lands cleanly there first. Trace-data collection (TRACE_COLLECT) is the separable goal and can run in any park.
+
 - **Salvageable: ~439 SLS-domain trace evals** captured by `TRACE_COLLECT` across those runs (color frame→known-gesture pairs) — valid Model-1 trace data regardless of land rate; the only part worth keeping from the slop runs.
 - **Tooling added this session:** `PUSH_COUNT`/`PUSH_END_Y`, `TRACE_COLLECT` (CMA-ES passively saves color trace frames + the gesture vector as label, capped/.noindex'd), board localizer tuned for live in-park frames (deck via tighter ROI + bright-surround + saturated-colour, not the menu bar/ledge), `scripts/inspect/vision_heartbeat.py`. All opt-in / default-off — normal CMA-ES + the well-mined params are unaffected.
 ## XCTest 30fps Collector: Crash-Loop Root Causes Found + Fixed (2026-06-26, branch feat/dal-capture-prep)
@@ -271,3 +272,9 @@
 ## Fleet Watchdog: Transition-Only ntfy Alerts (2026-08-03)
 
 - **Eliminated unbounded outage spam:** the two per-XR watchdogs emitted paired `STILL down` notifications every hour for the same 13-day signing outage (~630 pushes). They now share one lock-protected, persistent fleet state (`healthy` / `degraded` / `down` / initial `pending`): one alert when an incident starts or changes severity, no reminders while unchanged, and one recovery with duration. Persisting the state prevents launchd restarts from re-paging an existing incident.
+
+## Basic Model 1 Stationary-Hold Regressor (2026-08-09)
+
+- Added as an **additive first-principles experiment**, not a replacement for the temporal trace tracker or later full Model 1 work. It learns one clip-level target `{x, y, dur}` from a complete hold clip.
+- Corpus contract: one stationary non-spin hold, `dur` uniformly in `0.30–1.50s`; no taps, drags, multi-touch, or spin holds may enter train/validation/test. Calibration taps remain raw-recording controls only, allowing the proven per-segment timing gate to remain mandatory.
+- Initial protocol: 1,000 accepted clips in The Workshop; 70/15/15 split by recording segment; offline acceptance is median coordinate error <=0.03 normalized and duration MAE <=0.10s (with P90s reported). No live execution gate yet.
