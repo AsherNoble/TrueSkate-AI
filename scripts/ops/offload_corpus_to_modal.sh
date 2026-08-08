@@ -124,11 +124,14 @@ cpu_secs(){
     if(n==3) print a[1]*3600+a[2]*60+a[3]; else if(n==2) print a[1]*60+a[2]; else print 0; }'
 }
 
+# One sample is one meta.json, regardless of whether its frames are retained as
+# PNGs or the newer compact frames.mp4.  Counting PNGs silently reported zero
+# for video-backed sessions, making their upload verification meaningless.
 remote_count(){ "$PY" -c "
 import modal, sys
 try:
     vol = modal.Volume.from_name(sys.argv[1])
-    print(sum(1 for e in vol.listdir(sys.argv[2], recursive=True) if e.path.endswith('.png') and 'frame_' in e.path))
+    print(sum(1 for e in vol.listdir(sys.argv[2], recursive=True) if e.path.endswith('/meta.json')))
 except Exception:
     print(0)
 " "$VOL" "$1" 2>/dev/null; }
@@ -204,8 +207,8 @@ offload_session(){
   fi
   PARKDIRS=$(ls -d "$S"*/ 2>/dev/null); [ -z "$PARKDIRS" ] && { log "SKIP $SESS (no park dir)"; return 1; }
   NPARKS=$(echo "$PARKDIRS" | grep -c .)
-  LOCAL=$(find "$S" -name 'frame_*.png' | wc -l | tr -d ' ')
-  log "SESSION $SESS: $LOCAL frames across $NPARKS park(s)"
+  LOCAL=$(find "$S" -name meta.json -type f | wc -l | tr -d ' ')
+  log "SESSION $SESS: $LOCAL samples across $NPARKS park(s)"
   export SESS CHUNK_DIRS CLAIMS VOL MODAL PY PUT_ERR STALL_SECS POLL CPU_MIN_DELTA RETRIES RETRY_BACKOFF
   while IFS= read -r parkpath; do
     [ -z "$parkpath" ] && continue
@@ -242,7 +245,7 @@ offload_session(){
     POK=0; log "  provenance no longer eligible ($PROVENANCE_DETAIL) — keeping session"
   fi
   if [ "$REMOTE" -eq "$LOCAL" ] && [ "$MOK" -eq 1 ] && [ "$POK" -eq 1 ]; then
-    rm -rf "$S"; log "  OK: $SESS fully on Modal ($REMOTE frames), DELETED local (free $(df -g / | tail -1 | awk '{print $4}')GB)"
+    rm -rf "$S"; log "  OK: $SESS fully on Modal ($REMOTE samples), DELETED local (free $(df -g / | tail -1 | awk '{print $4}')GB)"
   else
     log "  KEEP $SESS: remote $REMOTE vs local $LOCAL, manifests_ok=$MOK, provenance_ok=$POK — retry next round"
   fi
@@ -283,7 +286,7 @@ for round in $(seq 1 "$MAX_ROUNDS"); do
   [ "$(eligible_remaining)" -eq 0 ] && { log "nothing eligible — done"; break; }
   log "=== round $round/$MAX_ROUNDS: $(eligible_remaining) eligible sessions ==="
   # smallest-first so quick wins free disk sooner; skip non-quiescent (live) sessions
-  for S in $(for d in "$ROOT"/*/; do [ -d "$d" ] && is_offload_eligible "$d" && echo "$(find "$d" -name 'frame_*.png' | wc -l | tr -d ' ') $d"; done | sort -n | awk '{print $2}'); do
+  for S in $(for d in "$ROOT"/*/; do [ -d "$d" ] && is_offload_eligible "$d" && echo "$(find "$d" -name meta.json -type f | wc -l | tr -d ' ') $d"; done | sort -n | awk '{print $2}'); do
     WID=main offload_session "$S"
   done
   [ "$(eligible_remaining)" -eq 0 ] && { log "all eligible sessions offloaded"; break; }
