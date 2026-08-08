@@ -12,6 +12,10 @@ PY="$REPO/.venv/bin/python"
 MODAL="$REPO/.venv/bin/modal"
 VOLUME="${MODAL_VOLUME:-trueskate-corpus}"
 MODELS="${MODELS_VOLUME:-trueskate-models}"
+# Modal corpus deletion is intentionally opt-in.  A caller must name the
+# retention rule before setting this to 1; capacity failure otherwise retains
+# all data and alerts the operator.
+ALLOW_MODAL_PRUNE="${ALLOW_MODAL_PRUNE:-0}"
 LOG="$REPO/logs/overnight_basic_hold_supervisor.log"
 LOCK="$REPO/tmp/overnight_basic_hold_supervisor.lock"
 cd "$REPO"
@@ -45,6 +49,11 @@ prune_if_needed(){
   available=$(echo "$report" | "$PY" -c 'import json,sys; print(json.load(sys.stdin)["available_bytes"])')
   [ "$available" -ge "$need" ] && return 0
   deficit=$((need - available))
+  if [ "$ALLOW_MODAL_PRUNE" != 1 ]; then
+    log "Modal has only $available free bytes; $need required. Retaining all existing Modal sessions."
+    notify "Modal capacity is insufficient for the basic-hold upload. No Modal data was deleted; choose an explicit retention rule to prune."
+    return 1
+  fi
   log "Modal needs $deficit more bytes; pruning oldest sessions as authorized"
   while [ "$deficit" -gt 0 ]; do
     candidate=$(echo "$report" | "$PY" -c 'import json,sys; d=json.load(sys.stdin); xs=sorted((x for x in d["sessions"] if x["bytes"]), key=lambda x:(x["mtime"],x["name"])); print((xs[0]["name"]+" "+str(xs[0]["bytes"])) if xs else "")')
