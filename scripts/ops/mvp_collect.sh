@@ -1,5 +1,5 @@
 #!/bin/bash
-# mvp_collect.sh — per-segment collector loop for the Model 1 MVP (stationary touches).
+# mvp_collect.sh — per-segment collector loop for basic Model 1 holds.
 #
 # WHY ONE SEGMENT PER PROCESS. This is a bounded MVP pilot: every segment has its own
 # manifest, a calibration report, and a contained failure surface. An earlier theory
@@ -40,7 +40,7 @@ while :; do
   echo "[mvp_collect] $(date '+%H:%M:%S') segment $i on $DEVICE"
   PYTHONPATH=src .venv/bin/python scripts/data/collect_sls_xctest.py \
     --devices "$DEVICE" \
-    --static-frac 1.0 \
+    --basic-holds \
     --tap-calibrate \
     --wait-for-align \
     --no-reset \

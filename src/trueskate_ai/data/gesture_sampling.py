@@ -78,6 +78,15 @@ _HOLD_MAX_S = 1.50
 # the Δ clapperboard; holds carry the timing supervision. Mirrors _SPIN_FLICK_SHARE.
 _TAP_SHARE = 0.20
 
+# Basic-hold Model 1 experiment.  This deliberately has a higher floor than
+# the general stationary sampler: below ~0.3s a hold is visually confusable
+# with the renderer's own post-lift orange-mark persistence.
+BASIC_HOLD_MIN_S = 0.30
+BASIC_HOLD_MAX_S = 1.50
+# These taps are calibration controls only.  They stay in the raw manifest so
+# the aligner can establish timing, but the basic-hold dataset rejects them.
+BASIC_HOLD_CALIBRATION_TAP_SHARE = 0.20
+
 # Per-param jitter sigmas for "recipe" mode, in the vector's native units,
 # indexed within a slot as [x0,y0,x1,y1,x2,y2,duration,easing].
 _COORD_JITTER = 0.03
@@ -459,6 +468,21 @@ def sample_tap(rng: np.random.Generator) -> GestureSample:
     x = float(rng.uniform(*_FLICK_START_X))
     y = float(rng.uniform(*_FLICK_START_Y))
     return GestureSample(kind="tap", point=(x, y), hold_duration_s=0.0)
+
+
+def sample_basic_hold_mixture(rng: np.random.Generator) -> GestureSample:
+    """Sample one basic-hold experiment event.
+
+    Four in five events are the sole trainable form: one stationary finger with
+    a duration in ``[BASIC_HOLD_MIN_S, BASIC_HOLD_MAX_S]``.  The remaining
+    events are known-position taps used only by the segment timing calibration;
+    callers must not put those controls in a learning dataset.
+    """
+    if float(rng.uniform(0.0, 1.0)) < BASIC_HOLD_CALIBRATION_TAP_SHARE:
+        return clamp_in_bounds(sample_tap(rng))
+    return clamp_in_bounds(
+        sample_hold(rng, min_s=BASIC_HOLD_MIN_S, max_s=BASIC_HOLD_MAX_S)
+    )
 
 
 def clamp_in_bounds(s: GestureSample) -> GestureSample:

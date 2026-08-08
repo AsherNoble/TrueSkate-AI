@@ -163,6 +163,16 @@ The SLS collector's Model-1-trainable spin form (`gesture_sampling.sample_spin_f
 
 Params-vector kinds (`spin`, and `nslot`/`recipe` carrying a spin block) emit the same decoded `spin_active`/`spin_hold_start_s`/`spin_hold_end_s`/`payload_total_s` meta fields (nominal, pre-stagger schedule) so no consumer re-derives from the raw trailing block.
 
+### Basic Model 1 hold experiment
+
+The additive basic Model 1 experiment intentionally does **not** use the general gesture schema. Its only learning target is a single stationary hold:
+
+```json
+{"point": [0.42, 0.65], "hold_duration_s": 0.80}
+```
+
+`point` is normalized screen position and `hold_duration_s` is constrained to `[0.30, 1.50]`. Its corpus loader admits only `gesture_distribution: "hold"`, one non-spin finger, accepted tap-calibration provenance, and no `.menu` marker. Known-position taps can be recorded as timing controls but are never model examples. The regression interface returns `{x, y, dur}` in those native units.
+
 ---
 
 ## Trick Library File Format

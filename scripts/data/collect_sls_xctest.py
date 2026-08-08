@@ -51,7 +51,9 @@ if str(_REPO_ROOT / "src") not in sys.path:
 # import below. CMA-ES training never sets it, so its execution is unaffected.
 os.environ.setdefault("TRUESKATE_MIN_FINGER_STAGGER_S", "0.12")
 
-from trueskate_ai.data.gesture_sampling import load_recipe_vectors, sample_mixture  # noqa: E402
+from trueskate_ai.data.gesture_sampling import (  # noqa: E402
+    load_recipe_vectors, sample_basic_hold_mixture, sample_mixture,
+)
 from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E402
 from trueskate_ai.rl.device_worker import (  # noqa: E402
     BUNDLE_ID, DeviceWorker, add_device_selection_args, resolve_devices,
@@ -228,6 +230,11 @@ def main() -> None:
                          "unambiguous (x,y) plus a known onset and liftoff, with no "
                          "direction/speed ambiguity: the Model 1 MVP arm. 1.0 = a pure "
                          "hold/tap run.")
+    ap.add_argument("--basic-holds", action="store_true",
+                    help="Collect the additive basic Model-1 experiment: 80%% one-finger "
+                         "holds uniformly 0.30-1.50s plus 20%% calibration-only taps. "
+                         "No drags, multi-touch, or spin holds are emitted. Use with "
+                         "--tap-calibrate and --no-reset.")
     ap.add_argument("--tap-calibrate", action="store_true",
                     help="Ask the offline aligner to require per-segment timing calibration "
                          "from the known-position tap arm. Intended for --static-frac MVP "
@@ -291,6 +298,17 @@ def main() -> None:
                          "(--flick-frac/--nslot-frac/--recipe-frac/--spin-frac/--static-frac).")
     if args.num_gestures < 1:
         raise SystemExit(f"--num-gestures must be >= 1, got {args.num_gestures}")
+    if args.basic_holds:
+        if args.spin_frac != 0.0 or args.static_frac != 0.0 or args.use_spin:
+            raise SystemExit("--basic-holds cannot be combined with --static-frac, --spin-frac, or --use-spin")
+        if any(value != default for value, default in (
+            (args.flick_frac, 0.6), (args.nslot_frac, 0.25), (args.recipe_frac, 0.15),
+        )):
+            raise SystemExit("--basic-holds cannot be combined with gesture-mixture fraction overrides")
+        if not args.tap_calibrate:
+            raise SystemExit("--basic-holds requires --tap-calibrate; uncalibrated hold clips are not admissible")
+        if not args.no_reset:
+            raise SystemExit("--basic-holds requires --no-reset; reset taps contaminate the next hold clip")
 
     try:
         devices = resolve_devices(devices_arg=args.devices, personal=args.personal,
@@ -484,10 +502,11 @@ def main() -> None:
                         print(f"[seg {segment_idx}] gameplay check failed: {exc!r} — proceeding")
                 seg_iter += 1
 
-                g = sample_mixture(rng, fracs=fracs, spin_frac=args.spin_frac,
-                                   static_frac=args.static_frac,
-                                   num_gestures=args.num_gestures,
-                                   use_spin=args.use_spin, recipe_vectors=recipe_vectors)
+                g = (sample_basic_hold_mixture(rng) if args.basic_holds else
+                     sample_mixture(rng, fracs=fracs, spin_frac=args.spin_frac,
+                                    static_frac=args.static_frac,
+                                    num_gestures=args.num_gestures,
+                                    use_spin=args.use_spin, recipe_vectors=recipe_vectors))
                 if g.kind == "spin_flick" or g.use_spin:
                     # stamp before meta() so the logged coord is the one that fires
                     g.spin_button_xy = worker.spin_button_xy
