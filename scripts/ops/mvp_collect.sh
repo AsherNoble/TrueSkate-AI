@@ -52,12 +52,11 @@ while :; do
     --out-dir "$OUT" \
     --no-caffeinate
   rc=$?
-  # A failed segment must not spin: back off so a wedged XCTest recorder gets a real
-  # break rather than a hammering retry loop (that re-wedges it — see memory
-  # xctest-recording-attachments-accumulate).
+  # A capped recorder-start failure is terminal. Restarting it here would hammer
+  # the wedged XCTest daemon and defeat collect_sls_xctest.py's safety cap.
   if [ $rc -ne 0 ]; then
-    echo "[mvp_collect] collector exited $rc — backing off 30s"
-    sleep 30
+    echo "[mvp_collect] collector exited $rc — STOPPED; recover recorder/tunnel before restart"
+    break
   else
     sleep 2
   fi
