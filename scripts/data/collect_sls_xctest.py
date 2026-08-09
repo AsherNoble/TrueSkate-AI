@@ -395,6 +395,7 @@ def main() -> None:
             return
         subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+    recovery_exit = False
     try:
         while not _STOP:
             if global_deadline and time.monotonic() > global_deadline:
@@ -430,9 +431,11 @@ def main() -> None:
                            f"a device reboot may be needed).",
                            title="TrueSkate SLS collect", priority="high", tags=["warning"])
                     print(f"[collect_xctest] {start_fail_streak} start-fails — exit for supervisor restart.")
+                    recovery_exit = True
                     break
                 if not _recover_session(worker):
                     print("[collect_xctest] session unrecoverable — exit for supervisor restart.")
+                    recovery_exit = True
                     break
                 time.sleep(3.0)
                 continue
@@ -654,6 +657,8 @@ def main() -> None:
                title="TrueSkate SLS collect", tags=["checkered_flag"])
         print(f"\nDone: {segment_idx} segments, {total_gestures} gestures, "
               f"{total_menu_skips} skipped (replay/menu) → {out_root}")
+    if recovery_exit:
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":
