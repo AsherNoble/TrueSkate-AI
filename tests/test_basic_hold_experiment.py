@@ -13,6 +13,7 @@ from trueskate_ai.data.gesture_sampling import (
 )
 from trueskate_ai.vision.basic_hold_dataset import (
     BasicHoldClipDataset,
+    split_by_command,
     split_by_segment,
 )
 from trueskate_ai.vision.basic_hold_regressor import BasicHoldRegressor
@@ -64,6 +65,20 @@ def test_segment_split_is_disjoint(tmp_path):
     dataset = BasicHoldClipDataset(tmp_path, sequence_length=2, image_height=10, image_width=8)
     train, validation, test = split_by_segment(dataset, seed=9)
     grouped = [set(dataset.segment_keys[index] for index in indices) for indices in (train, validation, test)]
+    assert all(grouped)
+    assert not (grouped[0] & grouped[1] or grouped[0] & grouped[2] or grouped[1] & grouped[2])
+
+
+def test_command_split_keeps_replayed_holds_in_one_partition(tmp_path):
+    # The old per-segment loop restarted the RNG at seed zero.  A command split
+    # must never let an exactly replayed hold appear on both sides.
+    for segment in ("segment_1", "segment_2", "segment_3", "segment_4", "segment_5"):
+        _write_sample(tmp_path, segment, f"sample_a_{segment}")
+        _write_sample(tmp_path, segment, f"sample_b_{segment}", duration=0.9)
+        _write_sample(tmp_path, segment, f"sample_c_{segment}", duration=1.2)
+    dataset = BasicHoldClipDataset(tmp_path, sequence_length=2, image_height=10, image_width=8)
+    train, validation, test = split_by_command(dataset, seed=9)
+    grouped = [set(dataset.command_keys[index] for index in indices) for indices in (train, validation, test)]
     assert all(grouped)
     assert not (grouped[0] & grouped[1] or grouped[0] & grouped[2] or grouped[1] & grouped[2])
 

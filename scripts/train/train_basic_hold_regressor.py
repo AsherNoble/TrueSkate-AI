@@ -20,7 +20,9 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_ROOT / "src"))
 
-from trueskate_ai.vision.basic_hold_dataset import BasicHoldClipDataset, split_by_segment  # noqa: E402
+from trueskate_ai.vision.basic_hold_dataset import (  # noqa: E402
+    BasicHoldClipDataset, split_by_command, split_by_segment,
+)
 from trueskate_ai.vision.basic_hold_regressor import BasicHoldRegressor  # noqa: E402
 from trueskate_ai.vision.basic_hold_training import (  # noqa: E402
     basic_hold_loss, basic_hold_metrics, passes_basic_hold_acceptance,
@@ -44,10 +46,13 @@ def _fingerprint(paths: tuple[Path, ...]) -> str:
 
 
 def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
-          seed: int, base_channels: int) -> dict:
+          seed: int, base_channels: int, split_strategy: str = "segment") -> dict:
     torch.manual_seed(seed)
     dataset = BasicHoldClipDataset(data)
-    train_indices, val_indices, test_indices = split_by_segment(dataset, seed=seed)
+    splitters = {"segment": split_by_segment, "command": split_by_command}
+    if split_strategy not in splitters:
+        raise ValueError(f"unknown split strategy {split_strategy!r}; choose from {sorted(splitters)}")
+    train_indices, val_indices, test_indices = splitters[split_strategy](dataset, seed=seed)
     train_loader = DataLoader(Subset(dataset, train_indices), batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(Subset(dataset, val_indices), batch_size=batch_size)
     test_loader = DataLoader(Subset(dataset, test_indices), batch_size=batch_size)
@@ -80,6 +85,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "image_height": dataset.image_height,
         "image_width": dataset.image_width,
         "split_seed": seed,
+        "split_strategy": split_strategy,
         "dataset_fingerprint": _fingerprint(dataset.sample_paths),
         "dataset_stats": dataset.stats,
         "split_sizes": {"train": len(train_indices), "validation": len(val_indices), "test": len(test_indices)},
@@ -105,6 +111,8 @@ def main() -> None:
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--base-channels", type=int, default=16)
+    parser.add_argument("--split-strategy", choices=("segment", "command"), default="segment",
+                        help="segment avoids neighbor leakage; command withholds exact replayed {x,y,dur} values.")
     parser.add_argument("--min-samples", type=int, default=1000,
                         help="Require this many accepted calibrated hold clips (0 disables the milestone gate).")
     args = parser.parse_args()
@@ -117,7 +125,8 @@ def main() -> None:
         parser.error(f"need {args.min_samples} accepted basic-hold clips; found {len(dataset_probe)} ({dataset_probe.stats})")
     out = args.out or _ROOT / "notebooks" / "models" / f"basic_hold_regressor_{time.strftime('%Y%m%d_%H%M%S')}.pth"
     result = train(data=args.data, out=out, epochs=args.epochs, batch_size=args.batch_size,
-                   lr=args.lr, seed=args.seed, base_channels=args.base_channels)
+                   lr=args.lr, seed=args.seed, base_channels=args.base_channels,
+                   split_strategy=args.split_strategy)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 
