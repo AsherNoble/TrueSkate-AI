@@ -2,7 +2,9 @@
 
 This deliberately uses ``batch_upload`` rather than the legacy corpus-offload
 script: the source corpus remains on the rig, and the requested remote directory
-is populated directly (without a duplicated nested directory).
+is populated directly (without a duplicated nested directory). Only sample
+directories admitted by the strict loader are transferred; raw recordings and
+rejected calibration segments never leave the rig.
 """
 from __future__ import annotations
 
@@ -20,8 +22,9 @@ if str(_ROOT / "src") not in sys.path:
 from trueskate_ai.vision.basic_hold_dataset import BasicHoldClipDataset  # noqa: E402
 
 
-def validate_corpus(root: Path, *, min_samples: int, require_unique_commands: bool) -> dict:
-    """Return upload provenance, rejecting incomplete or replayed corpora."""
+def validated_dataset(root: Path, *, min_samples: int,
+                      require_unique_commands: bool) -> BasicHoldClipDataset:
+    """Return an upload-safe dataset, rejecting incomplete or replayed corpora."""
     dataset = BasicHoldClipDataset(root)
     command_count = len(set(dataset.command_keys))
     if len(dataset) < min_samples:
@@ -31,9 +34,17 @@ def validate_corpus(root: Path, *, min_samples: int, require_unique_commands: bo
             f"need one exact command per accepted clip; found {command_count} distinct "
             f"commands across {len(dataset)} clips"
         )
+    return dataset
+
+
+def validate_corpus(root: Path, *, min_samples: int, require_unique_commands: bool) -> dict:
+    """Return upload provenance without ever broadening the eligible file set."""
+    dataset = validated_dataset(
+        root, min_samples=min_samples, require_unique_commands=require_unique_commands,
+    )
     return {
         "accepted": len(dataset),
-        "distinct_commands": command_count,
+        "distinct_commands": len(set(dataset.command_keys)),
         "dataset_stats": dataset.stats,
     }
 
@@ -57,17 +68,24 @@ def main() -> None:
     if not remote_subdir or "/../" in f"/{remote_subdir}/" or remote_subdir == "..":
         parser.error("--remote-subdir must be a safe non-root relative path")
 
-    provenance = validate_corpus(
+    dataset = validated_dataset(
         source,
         min_samples=args.min_samples,
         require_unique_commands=not args.allow_replayed_commands,
     )
     volume = modal.Volume.from_name(args.volume)
     with volume.batch_upload() as upload:
-        upload.put_directory(str(source), f"/{remote_subdir}")
+        for sample in dataset.sample_paths:
+            relative = sample.relative_to(source).as_posix()
+            # ``sample_paths`` is the strict-loader allow-list. In particular it
+            # excludes .menu-marked clips and never contains a session-level MOV.
+            upload.put_directory(str(sample), f"/{remote_subdir}/{relative}")
     print(json.dumps({
         "source": str(source), "volume": args.volume,
-        "remote_subdir": remote_subdir, **provenance,
+        "remote_subdir": remote_subdir,
+        "accepted": len(dataset),
+        "distinct_commands": len(set(dataset.command_keys)),
+        "dataset_stats": dataset.stats,
     }, indent=2, sort_keys=True))
 
 
