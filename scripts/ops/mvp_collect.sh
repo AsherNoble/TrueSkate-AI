@@ -31,6 +31,7 @@ PARK="The Workshop"
 # state (via BASIC_HOLD_SEED_FILE) so concurrent collectors cannot race and replay
 # a random sequence; labels make the source device explicit in each sample meta.
 SEED_FILE="${BASIC_HOLD_SEED_FILE:-$OUT/.basic_hold_next_seed}"
+TAP_FRAC="${BASIC_HOLD_TAP_FRAC:-0.20}"
 
 cd "$REPO" || exit 1
 mkdir -p logs "$OUT"
@@ -66,6 +67,7 @@ while :; do
   PYTHONPATH=src .venv/bin/python scripts/data/collect_sls_xctest.py \
     --devices "$DEVICE" \
     --basic-holds \
+    --basic-hold-tap-frac "$TAP_FRAC" \
     --tap-calibrate \
     --wait-for-align \
     --no-reset \

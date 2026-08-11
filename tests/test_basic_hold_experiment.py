@@ -101,5 +101,8 @@ def test_basic_hold_sampler_and_acceptance_contract():
     holds = [sample for sample in samples if sample.kind == "hold"]
     assert holds and all(BASIC_HOLD_MIN_S <= sample.hold_duration_s <= BASIC_HOLD_MAX_S for sample in holds)
     assert all(sample.kind in {"hold", "tap"} for sample in samples)
+    assert all(sample_basic_hold_mixture(rng, tap_fraction=0.0).kind == "hold" for _ in range(20))
+    with pytest.raises(ValueError, match="tap_fraction"):
+        sample_basic_hold_mixture(rng, tap_fraction=1.0)
     assert passes_basic_hold_acceptance({"coordinate_median": 0.03, "duration_mae": 0.10})
     assert not passes_basic_hold_acceptance({"coordinate_median": 0.031, "duration_mae": 0.10})

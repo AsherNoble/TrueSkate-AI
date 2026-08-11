@@ -52,7 +52,8 @@ if str(_REPO_ROOT / "src") not in sys.path:
 os.environ.setdefault("TRUESKATE_MIN_FINGER_STAGGER_S", "0.12")
 
 from trueskate_ai.data.gesture_sampling import (  # noqa: E402
-    load_recipe_vectors, sample_basic_hold_mixture, sample_mixture,
+    BASIC_HOLD_CALIBRATION_TAP_SHARE, load_recipe_vectors,
+    sample_basic_hold_mixture, sample_mixture,
 )
 from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E402
 from trueskate_ai.rl.device_worker import (  # noqa: E402
@@ -235,6 +236,9 @@ def main() -> None:
                          "holds uniformly 0.30-1.50s plus 20%% calibration-only taps. "
                          "No drags, multi-touch, or spin holds are emitted. Use with "
                          "--tap-calibrate and --no-reset.")
+    ap.add_argument("--basic-hold-tap-frac", type=float, default=BASIC_HOLD_CALIBRATION_TAP_SHARE,
+                    help="Calibration-only tap fraction for --basic-holds (default 0.20). "
+                         "Taps are never admitted by the strict hold training loader.")
     ap.add_argument("--tap-calibrate", action="store_true",
                     help="Ask the offline aligner to require per-segment timing calibration "
                          "from the known-position tap arm. Intended for --static-frac MVP "
@@ -309,6 +313,8 @@ def main() -> None:
             raise SystemExit("--basic-holds requires --tap-calibrate; uncalibrated hold clips are not admissible")
         if not args.no_reset:
             raise SystemExit("--basic-holds requires --no-reset; reset taps contaminate the next hold clip")
+        if not 0.0 <= args.basic_hold_tap_frac < 1.0:
+            raise SystemExit("--basic-hold-tap-frac must be in [0, 1) with --basic-holds")
 
     try:
         devices = resolve_devices(devices_arg=args.devices, personal=args.personal,
@@ -505,7 +511,7 @@ def main() -> None:
                         print(f"[seg {segment_idx}] gameplay check failed: {exc!r} — proceeding")
                 seg_iter += 1
 
-                g = (sample_basic_hold_mixture(rng) if args.basic_holds else
+                g = (sample_basic_hold_mixture(rng, tap_fraction=args.basic_hold_tap_frac) if args.basic_holds else
                      sample_mixture(rng, fracs=fracs, spin_frac=args.spin_frac,
                                     static_frac=args.static_frac,
                                     num_gestures=args.num_gestures,

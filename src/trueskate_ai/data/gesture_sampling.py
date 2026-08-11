@@ -470,7 +470,9 @@ def sample_tap(rng: np.random.Generator) -> GestureSample:
     return GestureSample(kind="tap", point=(x, y), hold_duration_s=0.0)
 
 
-def sample_basic_hold_mixture(rng: np.random.Generator) -> GestureSample:
+def sample_basic_hold_mixture(
+    rng: np.random.Generator, *, tap_fraction: float = BASIC_HOLD_CALIBRATION_TAP_SHARE,
+) -> GestureSample:
     """Sample one basic-hold experiment event.
 
     Four in five events are the sole trainable form: one stationary finger with
@@ -478,7 +480,9 @@ def sample_basic_hold_mixture(rng: np.random.Generator) -> GestureSample:
     events are known-position taps used only by the segment timing calibration;
     callers must not put those controls in a learning dataset.
     """
-    if float(rng.uniform(0.0, 1.0)) < BASIC_HOLD_CALIBRATION_TAP_SHARE:
+    if not 0.0 <= tap_fraction < 1.0:
+        raise ValueError(f"tap_fraction must be in [0, 1), got {tap_fraction}")
+    if float(rng.uniform(0.0, 1.0)) < tap_fraction:
         return clamp_in_bounds(sample_tap(rng))
     return clamp_in_bounds(
         sample_hold(rng, min_s=BASIC_HOLD_MIN_S, max_s=BASIC_HOLD_MAX_S)
