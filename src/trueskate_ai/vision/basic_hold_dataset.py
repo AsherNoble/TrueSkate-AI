@@ -114,6 +114,7 @@ class BasicHoldClipDataset(Dataset):
         self.image_width = image_width
         self.sample_paths, self.stats = discover_basic_hold_samples(self.root)
         self.segment_keys = tuple(self._segment_key(path) for path in self.sample_paths)
+        self.command_keys = tuple(self._command_key(path) for path in self.sample_paths)
 
     @staticmethod
     def _segment_key(sample: Path) -> str:
@@ -125,6 +126,15 @@ class BasicHoldClipDataset(Dataset):
         if session is not None and segment is not None:
             return f"{session}:segment_{int(segment):05d}"
         return f"legacy:{sample.parent.parent.name}"
+
+    @staticmethod
+    def _command_key(sample: Path) -> str:
+        """Stable identity for an exactly replayed stationary hold command."""
+        meta = json.loads((sample / "meta.json").read_text())
+        return ":".join(
+            f"{float(value):.9f}"
+            for value in (*meta["point"], float(meta["hold_duration_s"]))
+        )
 
     def __len__(self) -> int:
         return len(self.sample_paths)
@@ -149,24 +159,37 @@ class BasicHoldClipDataset(Dataset):
         }
 
 
+def _split_by_key(keys: tuple[str, ...], *, val_fraction: float, test_fraction: float,
+                  seed: int) -> tuple[list[int], list[int], list[int]]:
+    if not 0.0 < val_fraction < 1.0 or not 0.0 < test_fraction < 1.0 or val_fraction + test_fraction >= 1.0:
+        raise ValueError("validation/test fractions must be positive and sum to less than one")
+    groups = sorted(set(keys))
+    if len(groups) < 3:
+        raise ValueError("need at least three independent groups for train/validation/test")
+    rng = np.random.default_rng(seed)
+    shuffled = list(rng.permutation(groups))
+    n_test = max(1, round(len(groups) * test_fraction))
+    n_val = max(1, round(len(groups) * val_fraction))
+    if n_test + n_val >= len(groups):
+        n_val = 1
+        n_test = 1
+    test_groups = set(shuffled[:n_test])
+    val_groups = set(shuffled[n_test:n_test + n_val])
+    train = [i for i, key in enumerate(keys) if key not in test_groups | val_groups]
+    val = [i for i, key in enumerate(keys) if key in val_groups]
+    test = [i for i, key in enumerate(keys) if key in test_groups]
+    return train, val, test
+
+
 def split_by_segment(dataset: BasicHoldClipDataset, *, val_fraction: float = 0.15,
                      test_fraction: float = 0.15, seed: int = 0) -> tuple[list[int], list[int], list[int]]:
     """Deterministically split whole recording segments; never leak neighbors."""
-    if not 0.0 < val_fraction < 1.0 or not 0.0 < test_fraction < 1.0 or val_fraction + test_fraction >= 1.0:
-        raise ValueError("validation/test fractions must be positive and sum to less than one")
-    segments = sorted(set(dataset.segment_keys))
-    if len(segments) < 3:
-        raise ValueError("need at least three recording segments for train/validation/test")
-    rng = np.random.default_rng(seed)
-    shuffled = list(rng.permutation(segments))
-    n_test = max(1, round(len(segments) * test_fraction))
-    n_val = max(1, round(len(segments) * val_fraction))
-    if n_test + n_val >= len(segments):
-        n_val = 1
-        n_test = 1
-    test_segments = set(shuffled[:n_test])
-    val_segments = set(shuffled[n_test:n_test + n_val])
-    train = [i for i, key in enumerate(dataset.segment_keys) if key not in test_segments | val_segments]
-    val = [i for i, key in enumerate(dataset.segment_keys) if key in val_segments]
-    test = [i for i, key in enumerate(dataset.segment_keys) if key in test_segments]
-    return train, val, test
+    return _split_by_key(dataset.segment_keys, val_fraction=val_fraction,
+                         test_fraction=test_fraction, seed=seed)
+
+
+def split_by_command(dataset: BasicHoldClipDataset, *, val_fraction: float = 0.15,
+                     test_fraction: float = 0.15, seed: int = 0) -> tuple[list[int], list[int], list[int]]:
+    """Split by exact ``{x,y,dur}`` command, so replayed gestures never leak."""
+    return _split_by_key(dataset.command_keys, val_fraction=val_fraction,
+                         test_fraction=test_fraction, seed=seed)

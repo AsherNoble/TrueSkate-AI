@@ -51,7 +51,7 @@ def _trainer():
               volumes={"/corpus": corpus, "/models": models})
 def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
-                 base_channels: int = 16) -> dict:
+                 base_channels: int = 16, split_strategy: str = "segment") -> dict:
     trainer = _trainer()
     checkpoint = Path("/models") / f"basic_hold_{run_label}.pth"
     payload = trainer.train(
@@ -62,6 +62,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         lr=lr,
         seed=seed,
         base_channels=base_channels,
+        split_strategy=split_strategy,
     )
     result = {key: value for key, value in payload.items() if key != "state_dict"}
     result["checkpoint"] = checkpoint.name
@@ -74,9 +75,9 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
-         base_channels: int = 16) -> None:
+         base_channels: int = 16, split_strategy: str = "segment") -> None:
     result = train_remote.remote(
         data_subdir, run_label, epochs=epochs, batch_size=batch_size, lr=lr,
-        seed=seed, base_channels=base_channels,
+        seed=seed, base_channels=base_channels, split_strategy=split_strategy,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
