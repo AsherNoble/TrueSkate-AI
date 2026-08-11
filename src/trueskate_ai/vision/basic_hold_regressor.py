@@ -29,7 +29,7 @@ class BasicHoldRegressor(nn.Module):
             raise ValueError("base_channels must be >= 2")
         c = base_channels
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, c, 5, stride=2, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
+            nn.Conv2d(6, c, 5, stride=2, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
             nn.Conv2d(c, c * 2, 3, stride=2, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
             nn.Conv2d(c * 2, c * 4, 3, stride=2, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
         )
@@ -46,7 +46,14 @@ class BasicHoldRegressor(nn.Module):
         if frames.ndim != 5 or frames.shape[2] != 3:
             raise ValueError("frames must have shape [batch,time,3,height,width]")
         batch, steps = frames.shape[:2]
-        encoded = self.encoder(frames.flatten(0, 1))
+        # Samples include a fixed pre-touch lead-in.  Comparing every frame to
+        # that reference suppresses static orange UI and exposes the newly drawn
+        # touch mark—the causal visual evidence for this prediction task.
+        reference_frames = max(1, round(steps * 0.22))
+        reference = frames[:, :reference_frames].mean(dim=1, keepdim=True)
+        evidence = torch.abs(frames - reference)
+        encoder_input = torch.cat((frames, evidence), dim=2)
+        encoded = self.encoder(encoder_input.flatten(0, 1))
         height, width = encoded.shape[-2:]
         scores = self.spatial_score(encoded).reshape(batch, steps, height, width)
 
