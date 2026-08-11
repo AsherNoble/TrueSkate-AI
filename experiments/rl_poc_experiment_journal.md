@@ -278,3 +278,9 @@
 - Added as an **additive first-principles experiment**, not a replacement for the temporal trace tracker or later full Model 1 work. It learns one clip-level target `{x, y, dur}` from a complete hold clip.
 - Corpus contract: one stationary non-spin hold, `dur` uniformly in `0.30–1.50s`; no taps, drags, multi-touch, or spin holds may enter train/validation/test. Calibration taps remain raw-recording controls only, allowing the proven per-segment timing gate to remain mandatory.
 - Initial protocol: 1,000 accepted clips in The Workshop; 70/15/15 split by recording segment; offline acceptance is median coordinate error <=0.03 normalized and duration MAE <=0.10s (with P90s reported). No live execution gate yet.
+
+## Basic Hold Baseline Diagnosis: Spatial Signal Was Pooled Away (2026-08-11)
+
+- The first 1,008-clip Modal baseline plateaued near coordinate median 0.31--0.36 and duration MAE 0.27s, far outside the acceptance gate. This was not evidence that the rendered hold is unobservable: direct inspection found the orange mark at the command-normalised point for frames from onset to liftoff. The apparent screen-coordinate discrepancy was only the captured 512x1104 raster versus the XR's 414x896 logical input grid.
+- Root cause in the model: the encoder applied `AdaptiveAvgPool2d(1)` to every frame, erasing the spatial position before the x/y head. Replaced it with a spatial-score map and differentiable soft-argmax over time and space; the duration head consumes the ordered per-frame score series (peak + mean) rather than mean/max pooled frame embeddings.
+- Corpus caveat: repeated collector restarts reused the same seed, leaving only 18 distinct sampled hold commands replicated across 1,008 clips. This can validate visual extraction after the architecture fix but cannot establish generalisation. The next collection must use unique seeds (or a persisted RNG state) and be evaluated on held-out command values as well as held-out segments.
