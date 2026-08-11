@@ -15,7 +15,11 @@ from pathlib import Path
 
 import modal
 
-_ROOT = Path(__file__).resolve().parents[2]
+# During ``modal run`` this module is imported once from the repository to build
+# the image and once inside the container as ``/root/train_basic_hold_modal.py``.
+# The latter has no repository-depth parent chain, but does not need local assets.
+_SCRIPT_PATH = Path(__file__).resolve()
+_ROOT = _SCRIPT_PATH.parents[2] if len(_SCRIPT_PATH.parents) > 2 else _SCRIPT_PATH.parent
 CORPUS_VOLUME = os.environ.get("MODAL_CORPUS_VOLUME", "trueskate-corpus")
 MODELS_VOLUME = "trueskate-models"
 
