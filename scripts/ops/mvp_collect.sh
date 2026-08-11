@@ -58,11 +58,11 @@ while :; do
   printf '%s\n' "$next_seed" > "$SEED_FILE"
   # A rejected timing calibration is a deliberate fail-closed data-quality skip:
   # the source .mov is retained for diagnosis and starting the next bounded
-  # segment is safe.  Keep an exact per-invocation marker so stale rejection
-  # reports cannot mask a genuine recorder/session failure.
-  calibration_marker="tmp/.basic_hold_calibration_${DEVICE}_$$"
-  mkdir -p tmp
-  : > "$calibration_marker"
+  # segment is safe. Count this device's reports before firing rather than using
+  # a timestamp marker: report mtimes can be inherited/misaligned across the
+  # XCTest subprocess boundary, which previously turned a harmless rejection
+  # into a false recorder-failure stop.
+  rejections_before=$(find "$OUT" -type f -path "*/${DEVICE}_*/*.calibration_rejected.json" | wc -l | tr -d ' ')
   echo "[mvp_collect] $(date '+%H:%M:%S') segment $i on $DEVICE"
   PYTHONPATH=src .venv/bin/python scripts/data/collect_sls_xctest.py \
     --devices "$DEVICE" \
@@ -80,13 +80,12 @@ while :; do
     --out-dir "$OUT" \
     --no-caffeinate
   rc=$?
-  if [ $rc -ne 0 ] && find "$OUT" -name '*.calibration_rejected.json' -newer "$calibration_marker" -print -quit | grep -q .; then
-    rm -f "$calibration_marker"
+  rejections_after=$(find "$OUT" -type f -path "*/${DEVICE}_*/*.calibration_rejected.json" | wc -l | tr -d ' ')
+  if [ $rc -ne 0 ] && [ "$rejections_after" -gt "$rejections_before" ]; then
     echo "[mvp_collect] calibration rejected — no samples admitted; continuing with next seed"
     sleep 2
     continue
   fi
-  rm -f "$calibration_marker"
   # A capped recorder-start failure is terminal. Restarting it here would hammer
   # the wedged XCTest daemon and defeat collect_sls_xctest.py's safety cap.
   if [ $rc -ne 0 ]; then
