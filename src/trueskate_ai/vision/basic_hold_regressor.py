@@ -31,7 +31,10 @@ class BasicHoldRegressor(nn.Module):
         self.encoder = nn.Sequential(
             nn.Conv2d(6, c, 5, stride=2, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
             nn.Conv2d(c, c * 2, 3, stride=2, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
-            nn.Conv2d(c * 2, c * 4, 3, stride=2, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
+            # Keep this final map at 1/4 input resolution (72x32 at production
+            # size).  The former 1/8 map had only 16 horizontal cells, too coarse
+            # for the required <=0.03 normalised coordinate accuracy.
+            nn.Conv2d(c * 2, c * 4, 3, stride=1, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
         )
         # Deliberately no spatial pooling before this head.  See module docstring.
         self.spatial_score = nn.Conv2d(c * 4, 1, 1)
