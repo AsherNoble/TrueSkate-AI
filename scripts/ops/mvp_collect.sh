@@ -27,9 +27,21 @@ OUT="${2:-data/mvp_xctest}"
 MAX_LOOPS="${3:-1}"          # default = one go/no-go pilot; 0 = run until stopped
 REPO=/Users/training-server/trueskate-ai
 PARK="The Workshop"
+SEED_FILE="$OUT/.basic_hold_next_seed"
 
 cd "$REPO" || exit 1
-mkdir -p logs
+mkdir -p logs "$OUT"
+
+# Each one-segment invocation creates a fresh NumPy RNG in the collector.  Leaving
+# --seed at its default repeats the exact same hold/tap sequence after every
+# supervisor restart, which looks like a large corpus but has almost no command
+# diversity.  Persist and advance the seed *before* invoking the collector so a
+# crash/restart can only skip a seed, never replay one.
+if [ -s "$SEED_FILE" ] && grep -Eq '^[0-9]+$' "$SEED_FILE"; then
+  next_seed=$(cat "$SEED_FILE")
+else
+  next_seed=$(date +%s)
+fi
 
 i=0
 while :; do
@@ -37,6 +49,9 @@ while :; do
   if [ "$MAX_LOOPS" -gt 0 ] && [ "$i" -gt "$MAX_LOOPS" ]; then
     echo "[mvp_collect] reached max_loops=$MAX_LOOPS"; break
   fi
+  seed="$next_seed"
+  next_seed=$(( (next_seed + 1) % 2147483647 ))
+  printf '%s\n' "$next_seed" > "$SEED_FILE"
   echo "[mvp_collect] $(date '+%H:%M:%S') segment $i on $DEVICE"
   PYTHONPATH=src .venv/bin/python scripts/data/collect_sls_xctest.py \
     --devices "$DEVICE" \
@@ -49,6 +64,7 @@ while :; do
     --align-video \
     --segment-min 1 \
     --max-segments 1 \
+    --seed "$seed" \
     --out-dir "$OUT" \
     --no-caffeinate
   rc=$?
