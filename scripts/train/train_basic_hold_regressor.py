@@ -78,7 +78,9 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     model.load_state_dict(best["state_dict"])
     test = basic_hold_metrics(model, test_loader, device)
     payload = {
-        "model_type": "basic_hold_regressor_v1",
+        "model_type": "basic_hold_regressor_v2_spatiotemporal",
+        "uses_pre_touch_difference": True,
+        "spatial_map_stride": 4,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "base_channels": base_channels,
         "sequence_length": dataset.sequence_length,
