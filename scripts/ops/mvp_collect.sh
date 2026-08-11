@@ -27,7 +27,10 @@ OUT="${2:-data/mvp_xctest}"
 MAX_LOOPS="${3:-1}"          # default = one go/no-go pilot; 0 = run until stopped
 REPO=/Users/training-server/trueskate-ai
 PARK="The Workshop"
-SEED_FILE="$OUT/.basic_hold_next_seed"
+# A second phone may append to the same corpus.  Give it its own persisted seed
+# state (via BASIC_HOLD_SEED_FILE) so concurrent collectors cannot race and replay
+# a random sequence; labels make the source device explicit in each sample meta.
+SEED_FILE="${BASIC_HOLD_SEED_FILE:-$OUT/.basic_hold_next_seed}"
 
 cd "$REPO" || exit 1
 mkdir -p logs "$OUT"
