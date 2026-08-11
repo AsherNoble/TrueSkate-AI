@@ -289,3 +289,9 @@
 
 - The repaired spatial-temporal regressor passed its held-out **segment** test on the existing 1,008 clips: coordinate median **0.00881** (P90 0.01344) and duration MAE **0.01067s** (P90 0.02164s), versus acceptance limits of 0.03 and 0.10s. This confirms the clip contains enough visual evidence and that preserving spatial coordinates fixes the baseline failure.
 - This is deliberately not treated as command generalisation: the source corpus has only 18 exact `{x,y,duration}` commands. Collection now persists and advances its random seed; the new corpus had 156 accepted clips with 156 distinct commands at this checkpoint. The next authoritative run must split by command, never by segment alone.
+
+## Basic Hold Spatial-Temporal Repair — Command-Held-Out Pass (2026-08-11)
+
+- A second Modal run split the same 1,008 clips by exact `{x,y,duration}` command, leaving all 174 test commands absent from training. It passed: **0.01067** median coordinate error (P90 0.02110) and **0.02282s** duration MAE (P90 0.04798). The model is therefore locating and timing the rendered mark, not simply identifying duplicated clips or command IDs.
+- This is a meaningful causal check but still limited by the old corpus's 18 sampled command values. Keep the higher-standard new collection: independently generated, one distinct command per accepted clip, then use the same command split.
+- Ops repair during this collection: a genuinely rejected timing-calibration segment had been mistaken for a recorder failure because the shell loop compared report timestamps. The loop now compares the pre/post count of rejection reports for the exact device, continues fail-closed after a calibration rejection, and only stops for an actual recorder failure. A PID-verified target guard now stops that exact XR1 loop at 1,000 strict-loader admissions.
