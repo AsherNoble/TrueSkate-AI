@@ -1,20 +1,22 @@
 """Train the additive basic-hold Model 1 regressor on Modal.
 
-The corpus must already be a stable session under ``trueskate-corpus``.  This
-script mounts that session, writes both checkpoint and metrics JSON to
-``trueskate-models``, and keeps the experiment strictly hold-only.
+The corpus must already be stable in the volume named by
+``MODAL_CORPUS_VOLUME`` (``trueskate-corpus`` by default). This script mounts
+that volume, writes both checkpoint and metrics JSON to ``trueskate-models``,
+and keeps the experiment strictly hold-only.
 """
 from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import time
 from pathlib import Path
 
 import modal
 
 _ROOT = Path(__file__).resolve().parents[2]
-CORPUS_VOLUME = "trueskate-corpus"
+CORPUS_VOLUME = os.environ.get("MODAL_CORPUS_VOLUME", "trueskate-corpus")
 MODELS_VOLUME = "trueskate-models"
 
 app = modal.App("trueskate-basic-hold")
