@@ -15,7 +15,12 @@ def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor) -> torch.T
     """Robust endpoint error plus duration error in matched native scales."""
     if prediction.shape != target.shape or prediction.ndim != 2 or prediction.shape[1] != 5:
         raise ValueError("prediction and target must both have shape [batch,5]")
-    endpoints = F.smooth_l1_loss(prediction[:, :4], target[:, :4], beta=0.03)
+    # Component audit of the best command-held-out checkpoint: duration passes
+    # 98.7%, end 88.7%, but start only 78.7%.  Weight the start pair more
+    # heavily so optimisation spends capacity on the actual recovery bottleneck.
+    start = F.smooth_l1_loss(prediction[:, :2], target[:, :2], beta=0.03)
+    end = F.smooth_l1_loss(prediction[:, 2:4], target[:, 2:4], beta=0.03)
+    endpoints = 1.8 * start + end
     duration_scale = BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S
     duration = F.smooth_l1_loss(
         prediction[:, 4] / duration_scale, target[:, 4] / duration_scale, beta=0.05,
