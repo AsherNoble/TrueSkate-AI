@@ -11,13 +11,14 @@ class BasicLinearRegressor(nn.Module):
     """Predict ``[x0,y0,x1,y1,duration]`` while retaining spatial evidence."""
 
     def __init__(self, base_channels: int = 16, *, start_onset: float = .24,
-                 start_sigma: float = .05):
+                 start_sigma: float = .05, temporal_mixer: bool = False):
         super().__init__()
         if start_sigma <= 0:
             raise ValueError("start_sigma must be positive")
         c = base_channels
         self.start_onset = float(start_onset)
         self.start_sigma = float(start_sigma)
+        self.temporal_mixer_enabled = bool(temporal_mixer)
         self.encoder = nn.Sequential(
             # MVP-2 must distinguish both endpoints.  At 128px input width a
             # stride-four map has only 32 x-cells (one cell is ~0.031 in model
@@ -28,6 +29,16 @@ class BasicLinearRegressor(nn.Module):
             nn.Conv2d(c, c * 2, 3, stride=2, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
             nn.Conv2d(c * 2, c * 4, 3, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
         )
+        # The baseline scores each frame independently.  A finite linear drag
+        # is a trajectory, so this optional residual 3-D mixer lets an endpoint
+        # score use adjacent trace positions without discarding spatial detail.
+        # It is intentionally small (depthwise temporal filtering + pointwise
+        # mixing) so the controlled ablation changes temporal context only.
+        channels = c * 4
+        self.temporal_mixer = nn.Sequential(
+            nn.Conv3d(channels, channels, (3, 1, 1), padding=(1, 0, 0), groups=channels),
+            nn.GroupNorm(4, channels), nn.SiLU(), nn.Conv3d(channels, channels, 1),
+        ) if temporal_mixer else None
         # Start and end are not interchangeable visual concepts.  A shared map
         # plus an externally imposed time prior can collapse to the trace's
         # midpoint; give each endpoint its own learned spatial evidence.
@@ -61,6 +72,9 @@ class BasicLinearRegressor(nn.Module):
         difference = torch.abs(frames - reference)
         encoded = self.encoder(torch.cat((frames, difference), dim=2).flatten(0, 1))
         h, w = encoded.shape[-2:]
+        if self.temporal_mixer is not None:
+            encoded_5d = encoded.reshape(batch, steps, encoded.shape[1], h, w).transpose(1, 2)
+            encoded = (encoded_5d + self.temporal_mixer(encoded_5d)).transpose(1, 2).flatten(0, 1)
         start_scores = self.start_score(encoded).reshape(batch, steps, h, w)
         end_scores = self.end_score(encoded).reshape(batch, steps, h, w)
         # The pre-touch reference is the leading ~22% of every aligned clip.

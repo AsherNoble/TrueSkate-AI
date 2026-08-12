@@ -45,6 +45,17 @@ def _trainer():
     return module
 
 
+def _model_from_payload(payload, torch):
+    """Reconstruct a checkpoint using its recorded inference architecture."""
+    from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
+    return BasicLinearRegressor(
+        base_channels=int(payload["base_channels"]),
+        start_onset=float(payload.get("start_onset", .24)),
+        start_sigma=float(payload.get("start_sigma", .05)),
+        temporal_mixer=bool(payload.get("temporal_mixer", False)),
+    )
+
+
 @app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
               volumes={"/corpus": corpus, "/models": models})
 def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
@@ -52,7 +63,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  base_channels: int = 16, split_strategy: str = "command",
                  cache_frames: bool = True, split_seed: int | None = None,
                  map_weight: float = 0.0, start_onset: float = .24,
-                 start_sigma: float = .05) -> dict:
+                 start_sigma: float = .05, temporal_mixer: bool = False) -> dict:
     trainer = _trainer()
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
     payload = trainer.train(
@@ -66,6 +77,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         map_weight=map_weight,
         start_onset=start_onset,
         start_sigma=start_sigma,
+        temporal_mixer=temporal_mixer,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
@@ -86,7 +98,6 @@ def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0
     import torch
     from torch.utils.data import DataLoader, Subset
     from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
-    from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
     from trueskate_ai.vision.basic_linear_refinement import refine_linear_endpoints
     from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
 
@@ -94,7 +105,7 @@ def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
     _train, _val, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
-    model = BasicLinearRegressor(base_channels=int(payload["base_channels"])).to(device)
+    model = _model_from_payload(payload, torch).to(device)
     model.load_state_dict(payload["state_dict"])
     model.eval()
     batches = [(batch["frames"].to(device), batch["target"].to(device))
@@ -137,14 +148,13 @@ def evaluate_start_timing(data_subdir: str, checkpoint_name: str, *, seed: int =
     import torch
     from torch.utils.data import DataLoader, Subset
     from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
-    from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
     from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
     _train, _val, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
-    model = BasicLinearRegressor(base_channels=int(payload["base_channels"])).to(device)
+    model = _model_from_payload(payload, torch).to(device)
     model.load_state_dict(payload["state_dict"])
     model.eval()
     batches = [(batch["frames"].to(device), batch["target"].to(device))
@@ -187,14 +197,13 @@ def evaluate_start_timing_validation_selected(data_subdir: str, checkpoint_name:
     import torch
     from torch.utils.data import DataLoader, Subset
     from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
-    from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
     from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
     _train, val_indices, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
-    model = BasicLinearRegressor(base_channels=int(payload["base_channels"])).to(device)
+    model = _model_from_payload(payload, torch).to(device)
     model.load_state_dict(payload["state_dict"])
     model.eval()
 
@@ -315,13 +324,12 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
     import torch
     from torch.utils.data import DataLoader, Subset
     from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
-    from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
     _train, _val, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
-    model = BasicLinearRegressor(base_channels=int(payload["base_channels"])).to(device)
+    model = _model_from_payload(payload, torch).to(device)
     model.load_state_dict(payload["state_dict"])
     model.eval()
     residuals = []
@@ -362,7 +370,6 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
     import torch
     from torch.utils.data import DataLoader, Subset
     from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
-    from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
     from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
 
     checkpoint_names = [name.strip() for name in checkpoint_names.split(",") if name.strip()]
@@ -375,7 +382,7 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
     device = torch.device("cuda")
     models_local = []
     for payload in payloads:
-        model = BasicLinearRegressor(base_channels=int(payload["base_channels"])).to(device)
+        model = _model_from_payload(payload, torch).to(device)
         model.load_state_dict(payload["state_dict"])
         model.eval()
         models_local.append(model)
@@ -432,11 +439,12 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          base_channels: int = 16, split_strategy: str = "command",
          cache_frames: bool = True, split_seed: int | None = None,
          map_weight: float = 0.0, start_onset: float = .24,
-         start_sigma: float = .05) -> None:
+         start_sigma: float = .05, temporal_mixer: bool = False) -> None:
     result = train_remote.remote(
         data_subdir, run_label, epochs=epochs, batch_size=batch_size, lr=lr,
         seed=seed, base_channels=base_channels, split_strategy=split_strategy,
         cache_frames=cache_frames, split_seed=split_seed, map_weight=map_weight,
         start_onset=start_onset, start_sigma=start_sigma,
+        temporal_mixer=temporal_mixer,
     )
     print(json.dumps(result, indent=2, sort_keys=True))

@@ -116,6 +116,14 @@ def test_linear_regressor_accepts_explicit_start_time_prior():
         BasicLinearRegressor(start_sigma=0.)
 
 
+def test_linear_regressor_optional_temporal_mixer_preserves_output_contract():
+    model = BasicLinearRegressor(base_channels=4, temporal_mixer=True)
+    assert model.temporal_mixer is not None
+    output = model(torch.rand(2, 5, 3, 30, 18))
+    assert output.shape == (2, 5)
+    assert torch.all((output[:, :4] >= 0.0) & (output[:, :4] <= 1.0))
+
+
 def test_linear_regressor_retains_stride_two_spatial_endpoint_evidence():
     model = BasicLinearRegressor(base_channels=4)
     assert model.start_score is not model.end_score
