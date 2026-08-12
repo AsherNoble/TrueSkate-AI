@@ -109,9 +109,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         model.train()
         for batch in train_loader:
             optimizer.zero_grad(set_to_none=True)
-            prediction, start_scores, end_scores = model.forward_with_scores(batch["frames"].to(device))
-            loss = basic_linear_loss(prediction, batch["target"].to(device),
-                                     start_scores=start_scores, end_scores=end_scores)
+            loss = basic_linear_loss(model(batch["frames"].to(device)), batch["target"].to(device))
             loss.backward()
             optimizer.step()
         validation = basic_linear_metrics(model, val_loader, device)

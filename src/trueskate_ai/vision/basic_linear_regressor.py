@@ -36,7 +36,10 @@ class BasicLinearRegressor(nn.Module):
     @staticmethod
     def _read_xy(scores: torch.Tensor, time_prior: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         batch, steps, height, width = scores.shape
-        logits = scores.flatten(1) / .15 + time_prior.view(1, steps, 1, 1).expand_as(scores).flatten(1)
+        # A modestly sharper distribution than the hold baseline improves
+        # endpoint precision without the unstable hard-map supervision used in
+        # the rejected MVP-2 ablation.
+        logits = scores.flatten(1) / .10 + time_prior.view(1, steps, 1, 1).expand_as(scores).flatten(1)
         attention = torch.softmax(logits, dim=1).reshape_as(scores)
         xa = torch.linspace(0., 1., width, dtype=scores.dtype, device=scores.device)
         ya = torch.linspace(0., 1., height, dtype=scores.dtype, device=scores.device)
@@ -44,13 +47,7 @@ class BasicLinearRegressor(nn.Module):
                 (attention * ya.view(1, 1, height, 1)).sum((1, 2, 3)))
 
     def forward_with_scores(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Return the gesture plus raw start/end spatiotemporal score maps.
-
-        The maps are exposed for the training-only localisation objective.  A
-        coordinate loss alone permits a broad attention distribution whose
-        mean happens to be near an endpoint; that is inadequate for the
-        per-clip recovery gate.
-        """
+        """Return the gesture plus raw start/end score maps for inspection."""
         if frames.ndim != 5 or frames.shape[2] != 3:
             raise ValueError("frames must have shape [batch,time,3,height,width]")
         batch, steps = frames.shape[:2]
