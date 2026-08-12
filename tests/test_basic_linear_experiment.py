@@ -98,6 +98,12 @@ def test_linear_regressor_returns_native_bounded_quintuplets():
     assert gesture["dur"].shape == (2,)
 
 
+def test_linear_regressor_retains_stride_two_spatial_endpoint_evidence():
+    model = BasicLinearRegressor(base_channels=4)
+    encoded = model.encoder(torch.rand(2, 6, 30, 18))
+    assert encoded.shape[-2:] == (15, 9)
+
+
 def test_linear_sampler_and_acceptance_contract():
     rng = np.random.default_rng(8)
     samples = [sample_basic_linear_mixture(rng) for _ in range(200)]
