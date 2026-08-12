@@ -43,7 +43,14 @@ class BasicLinearRegressor(nn.Module):
         return ((attention * xa.view(1, 1, 1, width)).sum((1, 2, 3)),
                 (attention * ya.view(1, 1, height, 1)).sum((1, 2, 3)))
 
-    def forward(self, frames: torch.Tensor) -> torch.Tensor:
+    def forward_with_scores(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return the gesture plus raw start/end spatiotemporal score maps.
+
+        The maps are exposed for the training-only localisation objective.  A
+        coordinate loss alone permits a broad attention distribution whose
+        mean happens to be near an endpoint; that is inadequate for the
+        per-clip recovery gate.
+        """
         if frames.ndim != 5 or frames.shape[2] != 3:
             raise ValueError("frames must have shape [batch,time,3,height,width]")
         batch, steps = frames.shape[:2]
@@ -63,7 +70,11 @@ class BasicLinearRegressor(nn.Module):
         evidence = torch.maximum(start_scores, end_scores)
         series = torch.stack((evidence.amax((2, 3)), evidence.mean((2, 3))), dim=1)
         duration = BASIC_LINEAR_MIN_S + torch.sigmoid(self.duration_head(series)) * (BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S)
-        return torch.cat((x0[:, None], y0[:, None], x1[:, None], y1[:, None], duration), dim=1)
+        prediction = torch.cat((x0[:, None], y0[:, None], x1[:, None], y1[:, None], duration), dim=1)
+        return prediction, start_scores, end_scores
+
+    def forward(self, frames: torch.Tensor) -> torch.Tensor:
+        return self.forward_with_scores(frames)[0]
 
     @torch.no_grad()
     def predict_linear(self, frames: torch.Tensor) -> dict[str, torch.Tensor]:
