@@ -157,8 +157,12 @@ def evaluate_start_timing(data_subdir: str, checkpoint_name: str, *, seed: int =
         return torch.cat((x0[:, None], y0[:, None], base[:, 2:]), dim=1)
 
     results = {}
-    for onset in (.20, .22, .24, .26, .28):
-        for sigma in (.04, .06, .08, .10, .13, .17):
+    # The aligned clips retain 0.5s of lead-in.  Do not assume the rendered
+    # trail starts at the command timestamp: validate the actual temporal
+    # location on held-out commands, including the pre-command portion of the
+    # window.  This is an evaluation-only sweep over a frozen checkpoint.
+    for onset in (-.30, -.24, -.18, -.12, -.06, .00, .06, .12, .18, .24, .30):
+        for sigma in (.03, .05, .08, .12, .17):
             class TimedStart(torch.nn.Module):
                 def forward(self, frames):
                     return timed_start(frames, onset=onset, sigma=sigma)
