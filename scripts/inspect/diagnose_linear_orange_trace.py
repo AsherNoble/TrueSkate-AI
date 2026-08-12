@@ -79,6 +79,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=0, help="0 means all strict clips")
+    parser.add_argument("--examples", type=int, default=0,
+                        help="Include up to this many per-clip errors in the JSON report")
     args = parser.parse_args()
     paths, _stats = discover_basic_linear_samples(args.data)
     if args.limit:
@@ -86,6 +88,7 @@ def main() -> None:
     start_errors: list[float] = []
     end_errors: list[float] = []
     missed = 0
+    examples: list[dict] = []
     for sample in paths:
         meta = json.loads((sample / "meta.json").read_text())
         frames = _decode_frames(sample)
@@ -104,6 +107,9 @@ def main() -> None:
         else:
             start_errors.append(start)
             end_errors.append(end)
+            if len(examples) < args.examples:
+                examples.append({"sample": str(sample), "start_error": start, "end_error": end,
+                                 "duration": float(meta["duration"])})
     print(json.dumps({
         "samples": len(paths), "matched": len(start_errors), "missed": missed,
         "start_median": float(np.median(start_errors)) if start_errors else None,
@@ -112,6 +118,7 @@ def main() -> None:
         "end_p90": float(np.quantile(end_errors, .9)) if end_errors else None,
         "both_within_0.03": float(np.mean((np.asarray(start_errors) <= .03)
                                            & (np.asarray(end_errors) <= .03))) if start_errors else None,
+        "examples": examples,
     }, indent=2))
 
 
