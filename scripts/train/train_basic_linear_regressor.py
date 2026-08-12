@@ -104,7 +104,6 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     device = _device()
     model = BasicLinearRegressor(base_channels=base_channels).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=lr * .05)
     best: dict | None = None
     for epoch in range(1, epochs + 1):
         model.train()
@@ -113,7 +112,6 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
             loss = basic_linear_loss(model(batch["frames"].to(device)), batch["target"].to(device))
             loss.backward()
             optimizer.step()
-        scheduler.step()
         validation = basic_linear_metrics(model, val_loader, device)
         # The requested outcome is complete gesture recovery.  Median-only model
         # selection can prefer a checkpoint that is excellent on the easy half
