@@ -9,9 +9,35 @@ from trueskate_ai.data.gesture_sampling import BASIC_LINEAR_MAX_S, BASIC_LINEAR_
 
 RECOVERY_ENDPOINT_TOLERANCE = 0.03
 RECOVERY_DURATION_TOLERANCE_S = 0.10
+# The direct clips span -0.5s .. 1.77s around command time.  The first rendered
+# touch frame is therefore near 0.24 of the 32-frame model sequence.  This is a
+# deliberately loose (two-to-three-frame) supervision target, not a substitute
+# for the learned visual evidence.
+_TRACE_START_TIME = 0.24
+_TRACE_WINDOW_S = 2.27
+_TIME_SIGMA = 0.075
+_SPACE_SIGMA = 0.020
 
 
-def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+def _endpoint_map_loss(scores: torch.Tensor, xy: torch.Tensor, centre_time: torch.Tensor) -> torch.Tensor:
+    """Cross-entropy against a compact endpoint time/space Gaussian target."""
+    batch, steps, height, width = scores.shape
+    time = torch.linspace(0., 1., steps, dtype=scores.dtype, device=scores.device)
+    x = torch.linspace(0., 1., width, dtype=scores.dtype, device=scores.device)
+    y = torch.linspace(0., 1., height, dtype=scores.dtype, device=scores.device)
+    time_error = (time[None, :, None, None] - centre_time[:, None, None, None]) / _TIME_SIGMA
+    x_error = (x[None, None, None, :] - xy[:, 0, None, None, None]) / _SPACE_SIGMA
+    y_error = (y[None, None, :, None] - xy[:, 1, None, None, None]) / _SPACE_SIGMA
+    target_distribution = torch.exp(-0.5 * (time_error.square() + x_error.square() + y_error.square()))
+    target_distribution = target_distribution.flatten(1)
+    target_distribution = target_distribution / target_distribution.sum(dim=1, keepdim=True).clamp_min(1e-12)
+    log_probability = torch.log_softmax(scores.flatten(1) / 0.05, dim=1)
+    return -(target_distribution * log_probability).sum(dim=1).mean()
+
+
+def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor,
+                      *, start_scores: torch.Tensor | None = None,
+                      end_scores: torch.Tensor | None = None) -> torch.Tensor:
     """Robust endpoint error plus duration error in matched native scales."""
     if prediction.shape != target.shape or prediction.ndim != 2 or prediction.shape[1] != 5:
         raise ValueError("prediction and target must both have shape [batch,5]")
@@ -20,7 +46,15 @@ def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor) -> torch.T
     duration = F.smooth_l1_loss(
         prediction[:, 4] / duration_scale, target[:, 4] / duration_scale, beta=0.05,
     )
-    return endpoints + duration
+    if start_scores is None or end_scores is None:
+        return endpoints + duration
+    if start_scores.shape != end_scores.shape or start_scores.ndim != 4:
+        raise ValueError("start_scores and end_scores must be matching [batch,time,height,width] maps")
+    start_time = target.new_full((len(target),), _TRACE_START_TIME)
+    end_time = (_TRACE_START_TIME + target[:, 4] / _TRACE_WINDOW_S).clamp(max=0.95)
+    localisation = _endpoint_map_loss(start_scores, target[:, :2], start_time)
+    localisation = localisation + _endpoint_map_loss(end_scores, target[:, 2:4], end_time)
+    return endpoints + duration + 0.15 * localisation
 
 
 @torch.no_grad()
