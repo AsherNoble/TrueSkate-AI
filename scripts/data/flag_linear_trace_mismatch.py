@@ -21,7 +21,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_ROOT / "src"))
 
-from trueskate_ai.vision.basic_hold_dataset import _decode_frames
+from trueskate_ai.vision.basic_hold_dataset import DEFAULT_SEQUENCE_LENGTH, _decode_even_frames
 from trueskate_ai.vision.basic_linear_dataset import discover_basic_linear_samples
 
 
@@ -43,7 +43,9 @@ def _has_orange_near(mask: np.ndarray, xy: tuple[float, float], radius: float) -
 
 def _consistent(sample: Path, *, radius: float, start_window_s: float, end_window_s: float) -> tuple[bool, str]:
     meta = json.loads((sample / "meta.json").read_text())
-    frames = _decode_frames(sample)
+    # Match the model's fixed 32-frame representation.  Direct H.264 clips can
+    # contain more decodable frames than the retained alignment timestamps.
+    frames = _decode_even_frames(sample, DEFAULT_SEQUENCE_LENGTH)
     if len(frames) < 8:
         return False, "too_few_frames"
     times = np.asarray(meta.get("frame_times", []), dtype=np.float32)
