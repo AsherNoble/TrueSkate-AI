@@ -60,6 +60,35 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device) -
     }
 
 
+@torch.no_grad()
+def basic_linear_recovery_records(model: torch.nn.Module, loader, device: torch.device) -> list[dict[str, float]]:
+    """Return per-clip recovery evidence for post-hoc split audits.
+
+    The training loader need only provide tensors; optional ``sample_index`` lets
+    callers join records to dataset provenance (device, slope, duration) without
+    making model evaluation depend on filesystem metadata.
+    """
+    model.eval()
+    records: list[dict[str, float]] = []
+    for batch in loader:
+        prediction = model(batch["frames"].to(device))
+        target = batch["target"].to(device)
+        start = torch.linalg.vector_norm(prediction[:, :2] - target[:, :2], dim=1)
+        end = torch.linalg.vector_norm(prediction[:, 2:4] - target[:, 2:4], dim=1)
+        duration = torch.abs(prediction[:, 4] - target[:, 4])
+        recovered = ((start <= RECOVERY_ENDPOINT_TOLERANCE)
+                     & (end <= RECOVERY_ENDPOINT_TOLERANCE)
+                     & (duration <= RECOVERY_DURATION_TOLERANCE_S))
+        for index in range(len(start)):
+            records.append({
+                "start_error": float(start[index]),
+                "end_error": float(end[index]),
+                "duration_error": float(duration[index]),
+                "recovered": float(recovered[index]),
+            })
+    return records
+
+
 def passes_basic_linear_acceptance(metrics: dict[str, float]) -> bool:
     """MVP 2 gate: both endpoints must be localised, not merely their midpoint."""
     return (

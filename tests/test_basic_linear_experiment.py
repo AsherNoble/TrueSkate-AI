@@ -21,6 +21,7 @@ from trueskate_ai.vision.basic_linear_dataset import (
 )
 from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
 from trueskate_ai.vision.basic_linear_training import basic_linear_metrics, passes_basic_linear_acceptance
+from scripts.train.train_basic_linear_regressor import _IndexedSubset
 
 
 def _write_sample(root: Path, segment: str, name: str, *, kind: str = "linear",
@@ -145,3 +146,11 @@ def test_recovery_metric_requires_every_component_to_be_within_tolerance():
     ], batch_size=2)
     metrics = basic_linear_metrics(ExactThenNearMiss(), loader, torch.device("cpu"))
     assert metrics["gesture_recovery_accuracy"] == pytest.approx(.5)
+
+
+def test_indexed_subset_preserves_original_dataset_indices(tmp_path):
+    _write_sample(tmp_path, "segment_1", "one")
+    _write_sample(tmp_path, "segment_2", "two", points=[[.25, .65], [.62, .52]])
+    dataset = BasicLinearClipDataset(tmp_path, sequence_length=2, image_height=10, image_width=8)
+    item = _IndexedSubset(dataset, [1])[0]
+    assert item["sample_index"] == 1
