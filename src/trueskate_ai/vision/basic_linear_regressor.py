@@ -19,7 +19,11 @@ class BasicLinearRegressor(nn.Module):
             # coordinates), already the whole recovery tolerance.  Keep the
             # first layer dense and downsample only once so soft-argmax has
             # genuine sub-tolerance endpoint evidence.
-            nn.Conv2d(6, c, 5, stride=1, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
+            # RGB, pre-touch difference, and an explicit orange-motion cue. The
+            # rendered finger trace is orange; making that causal cue available
+            # avoids spending scarce capacity rediscovering a simple colour
+            # relation amid the board's much larger motion.
+            nn.Conv2d(7, c, 5, stride=1, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
             nn.Conv2d(c, c * 2, 3, stride=2, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
             nn.Conv2d(c * 2, c * 4, 3, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
         )
@@ -53,7 +57,13 @@ class BasicLinearRegressor(nn.Module):
             raise ValueError("frames must have shape [batch,time,3,height,width]")
         batch, steps = frames.shape[:2]
         reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
-        encoded = self.encoder(torch.cat((frames, torch.abs(frames - reference)), dim=2).flatten(0, 1))
+        difference = torch.abs(frames - reference)
+        red, green, blue = frames.unbind(dim=2)
+        # True Skate's finger glow is bright orange: red > green > blue. Gate
+        # by new-frame motion so static orange board art is not promoted.
+        orange = (red - green).clamp_min(0) * (green - blue).clamp_min(0)
+        orange = orange * difference.mean(dim=2)
+        encoded = self.encoder(torch.cat((frames, difference, orange.unsqueeze(2)), dim=2).flatten(0, 1))
         h, w = encoded.shape[-2:]
         start_scores = self.start_score(encoded).reshape(batch, steps, h, w)
         end_scores = self.end_score(encoded).reshape(batch, steps, h, w)
