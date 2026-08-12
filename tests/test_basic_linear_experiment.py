@@ -23,7 +23,7 @@ from trueskate_ai.vision.basic_linear_dataset import (
 )
 from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
 from trueskate_ai.vision.basic_linear_training import (
-    basic_linear_endpoint_map_loss, basic_linear_loss, basic_linear_metrics,
+    basic_linear_endpoint_map_loss, basic_linear_trajectory_map_loss, basic_linear_loss, basic_linear_metrics,
     passes_basic_linear_acceptance,
 )
 from scripts.train.train_basic_linear_regressor import _IndexedSubset
@@ -44,6 +44,7 @@ def _write_sample(root: Path, segment: str, name: str, *, kind: str = "linear",
         "tap_calibration": {"accepted": calibrated},
         "session": "test_session",
         "segment_index": int(segment.rsplit("_", 1)[-1]),
+        "frame_times": [-.5, 0., duration / 2, duration, duration + .3],
     }
     (sample / "meta.json").write_text(json.dumps(meta))
     if menu:
@@ -73,6 +74,8 @@ def test_linear_dataset_only_admits_calibrated_two_point_constant_velocity_lines
     item = dataset[0]
     assert item["frames"].shape == (4, 3, 20, 12)
     assert item["target"].tolist() == pytest.approx([.3, .4, .6, .55, .6])
+    assert item["trajectory_xy"].shape == (4, 2)
+    assert item["trajectory_mask"].dtype == torch.bool
 
     cached = BasicLinearClipDataset(tmp_path, sequence_length=4, image_height=20, image_width=12,
                                     cache_frames=True)
@@ -187,6 +190,21 @@ def test_linear_endpoint_map_auxiliary_requires_maps_and_is_differentiable():
     assert start.grad is not None and end.grad is not None
     direct = basic_linear_endpoint_map_loss(start.detach(), target[:, :2], torch.tensor([.24]))
     assert torch.isfinite(direct)
+
+
+def test_linear_trajectory_map_auxiliary_uses_active_frame_targets_and_is_differentiable():
+    scores = torch.rand(1, 4, 5, 6, requires_grad=True)
+    path = torch.tensor([[[.2, .3], [.3, .4], [.4, .5], [.5, .6]]])
+    mask = torch.tensor([[False, True, True, False]])
+    loss = basic_linear_trajectory_map_loss(scores, path, mask)
+    loss.backward()
+    assert torch.isfinite(loss)
+    assert scores.grad is not None
+    prediction = torch.tensor([[.3, .4, .6, .55, .6]], requires_grad=True)
+    target = prediction.detach().clone()
+    with pytest.raises(ValueError, match="trajectory targets"):
+        basic_linear_loss(prediction, target, start_scores=scores.detach(), end_scores=scores.detach(),
+                          trajectory_weight=.01)
 
 
 def test_indexed_subset_preserves_original_dataset_indices(tmp_path):

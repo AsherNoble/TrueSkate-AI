@@ -36,10 +36,37 @@ def basic_linear_endpoint_map_loss(scores: torch.Tensor, xy: torch.Tensor,
     return -(target * F.log_softmax(scores.flatten(1) / .15, dim=1)).sum(dim=1).mean()
 
 
+def basic_linear_trajectory_map_loss(scores: torch.Tensor, trajectory_xy: torch.Tensor,
+                                     trajectory_mask: torch.Tensor) -> torch.Tensor:
+    """Score-map CE against the manifest-known position at each active frame.
+
+    Unlike the old endpoint auxiliary this has no guessed onset/liftoff: the
+    per-frame target is computed from each sample's aligned ``frame_times`` and
+    constant-velocity command.  It supervises only the active path interval.
+    """
+    if (scores.ndim != 4 or trajectory_xy.shape != (*scores.shape[:2], 2)
+            or trajectory_mask.shape != scores.shape[:2]):
+        raise ValueError("scores [B,T,H,W], trajectory_xy [B,T,2], and mask [B,T] are required")
+    if not torch.any(trajectory_mask):
+        raise ValueError("trajectory supervision needs at least one active frame")
+    _batch, _steps, height, width = scores.shape
+    x = torch.linspace(0., 1., width, dtype=scores.dtype, device=scores.device)
+    y = torch.linspace(0., 1., height, dtype=scores.dtype, device=scores.device)
+    x_error = (x[None, None, None, :] - trajectory_xy[:, :, 0, None, None]) / .035
+    y_error = (y[None, None, :, None] - trajectory_xy[:, :, 1, None, None]) / .035
+    target = torch.exp(-.5 * (x_error.square() + y_error.square())).flatten(2)
+    target = target / target.sum(dim=2, keepdim=True).clamp_min(1e-12)
+    per_frame = -(target * F.log_softmax(scores.flatten(2) / .15, dim=2)).sum(dim=2)
+    mask = trajectory_mask.to(dtype=per_frame.dtype)
+    return (per_frame * mask).sum() / mask.sum().clamp_min(1.)
+
+
 def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor, *,
                       start_scores: torch.Tensor | None = None,
                       end_scores: torch.Tensor | None = None,
-                      map_weight: float = 0.0) -> torch.Tensor:
+                      map_weight: float = 0.0, trajectory_xy: torch.Tensor | None = None,
+                      trajectory_mask: torch.Tensor | None = None,
+                      trajectory_weight: float = 0.0) -> torch.Tensor:
     """Robust endpoint error plus duration error in matched native scales."""
     if prediction.shape != target.shape or prediction.ndim != 2 or prediction.shape[1] != 5:
         raise ValueError("prediction and target must both have shape [batch,5]")
@@ -53,17 +80,28 @@ def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor, *,
     duration = F.smooth_l1_loss(
         prediction[:, 4] / duration_scale, target[:, 4] / duration_scale, beta=0.05,
     )
-    if map_weight < 0:
-        raise ValueError("map_weight must be non-negative")
-    if map_weight == 0:
+    if map_weight < 0 or trajectory_weight < 0:
+        raise ValueError("map_weight and trajectory_weight must be non-negative")
+    if map_weight == 0 and trajectory_weight == 0:
         return endpoints + duration
     if start_scores is None or end_scores is None or start_scores.shape != end_scores.shape:
-        raise ValueError("score maps are required when map_weight is positive")
-    onset = target.new_full((len(target),), .24)
-    liftoff = (onset + target[:, 4] / 2.27).clamp(max=.88)
-    map_loss = basic_linear_endpoint_map_loss(start_scores, target[:, :2], onset)
-    map_loss = map_loss + basic_linear_endpoint_map_loss(end_scores, target[:, 2:4], liftoff)
-    return endpoints + duration + map_weight * map_loss
+        raise ValueError("score maps are required when auxiliary map weights are positive")
+    loss = endpoints + duration
+    if map_weight:
+        onset = target.new_full((len(target),), .24)
+        liftoff = (onset + target[:, 4] / 2.27).clamp(max=.88)
+        map_loss = basic_linear_endpoint_map_loss(start_scores, target[:, :2], onset)
+        map_loss = map_loss + basic_linear_endpoint_map_loss(end_scores, target[:, 2:4], liftoff)
+        loss = loss + map_weight * map_loss
+    if trajectory_weight:
+        if trajectory_xy is None or trajectory_mask is None:
+            raise ValueError("trajectory targets are required when trajectory_weight is positive")
+        # Each independent endpoint head benefits from spatial evidence along
+        # the true trace; endpoint losses still teach their different roles.
+        trajectory_loss = basic_linear_trajectory_map_loss(start_scores, trajectory_xy, trajectory_mask)
+        trajectory_loss = trajectory_loss + basic_linear_trajectory_map_loss(end_scores, trajectory_xy, trajectory_mask)
+        loss = loss + trajectory_weight * trajectory_loss
+    return loss
 
 
 @torch.no_grad()

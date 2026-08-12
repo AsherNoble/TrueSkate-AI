@@ -93,7 +93,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           seed: int, base_channels: int, split_seed: int | None = None, split_strategy: str = "command",
           cache_frames: bool = False, map_weight: float = 0.0, start_onset: float = .24,
           start_sigma: float = .05, end_onset: float = .24,
-          temporal_mixer: bool = False) -> dict:
+          temporal_mixer: bool = False, trajectory_weight: float = 0.0) -> dict:
     torch.manual_seed(seed)
     dataset = BasicLinearClipDataset(data, cache_frames=cache_frames)
     splitters = {"segment": split_by_segment, "command": split_by_command}
@@ -116,10 +116,13 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
             optimizer.zero_grad(set_to_none=True)
             frames = batch["frames"].to(device)
             target = batch["target"].to(device)
-            if map_weight:
+            if map_weight or trajectory_weight:
                 prediction, start_scores, end_scores = model.forward_with_scores(frames)
                 loss = basic_linear_loss(prediction, target, start_scores=start_scores,
-                                         end_scores=end_scores, map_weight=map_weight)
+                                         end_scores=end_scores, map_weight=map_weight,
+                                         trajectory_xy=batch["trajectory_xy"].to(device),
+                                         trajectory_mask=batch["trajectory_mask"].to(device),
+                                         trajectory_weight=trajectory_weight)
             else:
                 loss = basic_linear_loss(model(frames), target)
             loss.backward()
@@ -158,6 +161,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "image_width": dataset.image_width,
         "cache_frames": cache_frames,
         "endpoint_map_weight": map_weight,
+        "trajectory_map_weight": trajectory_weight,
         "start_onset": start_onset,
         "start_sigma": start_sigma,
         "end_onset": end_onset,
@@ -202,6 +206,8 @@ def main() -> None:
                         help="Aligned-clip anchor before duration-derived end timing.")
     parser.add_argument("--temporal-mixer", action="store_true",
                         help="Enable residual temporal mixing before endpoint score maps.")
+    parser.add_argument("--trajectory-weight", type=float, default=0.0,
+                        help="Optional low-weight per-frame manifest-trajectory score-map objective.")
     parser.add_argument("--split-strategy", choices=("segment", "command"), default="command",
                         help="command withholds exact {x0,y0,x1,y1,dur}; required generalisation protocol.")
     parser.add_argument("--min-samples", type=int, default=1000,
@@ -209,8 +215,9 @@ def main() -> None:
     parser.add_argument("--cache-frames", action="store_true",
                         help="Decode each accepted clip at most once; recommended for fixed, repeated epochs.")
     args = parser.parse_args()
-    if args.epochs < 1 or args.batch_size < 1 or args.lr <= 0 or args.map_weight < 0 or args.start_sigma <= 0:
-        parser.error("epochs, batch-size, lr, and start-sigma must be positive and map-weight non-negative")
+    if (args.epochs < 1 or args.batch_size < 1 or args.lr <= 0 or args.map_weight < 0
+            or args.trajectory_weight < 0 or args.start_sigma <= 0):
+        parser.error("epochs, batch-size, lr, and start-sigma must be positive; map weights non-negative")
     if args.min_samples < 0:
         parser.error("min-samples must be non-negative")
     dataset_probe = BasicLinearClipDataset(args.data)
@@ -223,7 +230,7 @@ def main() -> None:
                    split_strategy=args.split_strategy, cache_frames=args.cache_frames,
                    map_weight=args.map_weight, start_onset=args.start_onset,
                    start_sigma=args.start_sigma, end_onset=args.end_onset,
-                   temporal_mixer=args.temporal_mixer)
+                   temporal_mixer=args.temporal_mixer, trajectory_weight=args.trajectory_weight)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 

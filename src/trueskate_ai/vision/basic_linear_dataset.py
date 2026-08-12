@@ -6,6 +6,7 @@ import math
 from collections import Counter
 from pathlib import Path
 
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 
@@ -137,8 +138,25 @@ class BasicLinearClipDataset(Dataset):
             if self.cache_frames:
                 self._frame_cache[sample] = cached
         target = [value for point in meta["waypoints"] for value in point] + [meta["duration"]]
+        # The manifest times are touch-start-relative and the command is a
+        # constant-velocity two-point drag.  Preserve its exact per-frame
+        # trajectory as optional training supervision for score-map ablations;
+        # inactive lead-in/post-liftoff frames are explicitly masked.
+        raw_times = np.asarray(meta.get("frame_times", []), dtype=np.float32)
+        if raw_times.ndim != 1 or len(raw_times) == 0 or not np.isfinite(raw_times).all():
+            raise ValueError(f"{sample}: finite frame_times are required for a linear trajectory")
+        selected = np.linspace(0, len(raw_times) - 1, self.sequence_length).round().astype(int)
+        times = raw_times[selected]
+        (x0, y0), (x1, y1) = meta["waypoints"]
+        duration = float(meta["duration"])
+        fraction = np.clip(times / duration, 0.0, 1.0)
+        path = np.stack((float(x0) + fraction * (float(x1) - float(x0)),
+                         float(y0) + fraction * (float(y1) - float(y0))), axis=1)
+        active = (times >= 0.0) & (times <= duration)
         return {"frames": cached.float().div_(255.0),
-                "target": torch.tensor(target, dtype=torch.float32)}
+                "target": torch.tensor(target, dtype=torch.float32),
+                "trajectory_xy": torch.from_numpy(path.astype(np.float32)),
+                "trajectory_mask": torch.from_numpy(active)}
 
 
 def split_by_segment(dataset: BasicLinearClipDataset, *, val_fraction: float = .15,
