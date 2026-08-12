@@ -214,7 +214,7 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
 
 @app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
               volumes={"/corpus": corpus, "/models": models})
-def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: list[str], *, seed: int = 0,
+def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, seed: int = 0,
                                  batch_size: int = 8) -> dict:
     """Validation-select a convex checkpoint ensemble, then test it once.
 
@@ -229,6 +229,7 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: list[str], 
     from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
     from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
 
+    checkpoint_names = [name.strip() for name in checkpoint_names.split(",") if name.strip()]
     if len(checkpoint_names) < 2:
         raise ValueError("need at least two checkpoints")
     payloads = [torch.load(Path("/models") / name, map_location="cpu", weights_only=False)
