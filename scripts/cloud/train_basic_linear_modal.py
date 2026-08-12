@@ -212,6 +212,83 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
     return output
 
 
+@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: list[str], *, seed: int = 0,
+                                 batch_size: int = 8) -> dict:
+    """Validation-select a convex checkpoint ensemble, then test it once.
+
+    Every candidate has been trained on the same corpus/split.  We enumerate
+    fixed convex weights using validation commands only, so the test commands
+    remain untouched until the one selected evaluation.
+    """
+    import itertools
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+    from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
+    from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
+
+    if len(checkpoint_names) < 2:
+        raise ValueError("need at least two checkpoints")
+    payloads = [torch.load(Path("/models") / name, map_location="cpu", weights_only=False)
+                for name in checkpoint_names]
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
+    _train, val_indices, test_indices = split_by_command(data, seed=seed)
+    device = torch.device("cuda")
+    models_local = []
+    for payload in payloads:
+        model = BasicLinearRegressor(base_channels=int(payload["base_channels"])).to(device)
+        model.load_state_dict(payload["state_dict"])
+        model.eval()
+        models_local.append(model)
+
+    def batches(indices):
+        return [(batch["frames"].to(device), batch["target"].to(device))
+                for batch in DataLoader(Subset(data, indices), batch_size=batch_size)]
+
+    val_batches, test_batches = batches(val_indices), batches(test_indices)
+    candidate_weights = []
+    # 0.1 granularity is deliberately pre-declared and compact.  It covers
+    # individual checkpoints and two/three-way averages without test tuning.
+    for units in itertools.product(range(11), repeat=len(models_local)):
+        if sum(units) == 10:
+            candidate_weights.append(tuple(value / 10 for value in units))
+
+    def metrics_for(weights, data_batches):
+        class Ensemble(torch.nn.Module):
+            def forward(self, frames):
+                return sum(weight * model(frames) for weight, model in zip(weights, models_local))
+        return basic_linear_metrics(
+            Ensemble(), [{"frames": frames, "target": target} for frames, target in data_batches], device,
+        )
+
+    ranked = []
+    for weights in candidate_weights:
+        metric = metrics_for(weights, val_batches)
+        rank = (-metric["gesture_recovery_accuracy"],
+                metric["start_coordinate_median"] + metric["end_coordinate_median"] + metric["duration_mae"])
+        ranked.append((rank, weights, metric))
+    ranked.sort(key=lambda item: item[0])
+    _rank, selected_weights, validation = ranked[0]
+    test = metrics_for(selected_weights, test_batches)
+    output = {
+        "checkpoints": checkpoint_names,
+        "selected_weights": dict(zip(checkpoint_names, selected_weights)),
+        "validation": validation,
+        "test": test,
+        "validation_top5": [
+            {"weights": dict(zip(checkpoint_names, weights)), "metrics": metric}
+            for _rank, weights, metric in ranked[:5]
+        ],
+    }
+    (Path("/models") / "basic_linear_checkpoint_ensemble_20260812.json").write_text(
+        json.dumps(output, indent=2),
+    )
+    models.commit()
+    return output
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
