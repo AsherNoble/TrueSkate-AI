@@ -176,6 +176,71 @@ def evaluate_start_timing(data_subdir: str, checkpoint_name: str, *, seed: int =
     return output
 
 
+@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def evaluate_start_timing_validation_selected(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
+                                              batch_size: int = 8) -> dict:
+    """Select a frozen start-time prior on validation commands, then test once."""
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+    from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
+    from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
+
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
+    _train, val_indices, test_indices = split_by_command(data, seed=seed)
+    device = torch.device("cuda")
+    model = BasicLinearRegressor(base_channels=int(payload["base_channels"])).to(device)
+    model.load_state_dict(payload["state_dict"])
+    model.eval()
+
+    def batches(indices):
+        return [(batch["frames"].to(device), batch["target"].to(device))
+                for batch in DataLoader(Subset(data, indices), batch_size=batch_size)]
+    val_batches, test_batches = batches(val_indices), batches(test_indices)
+
+    def metric_for(onset: float, sigma: float, prepared):
+        class TimedStart(torch.nn.Module):
+            def forward(self, frames):
+                base, start_scores, _end_scores = model.forward_with_scores(frames)
+                time = torch.linspace(0., 1., frames.shape[1], dtype=frames.dtype, device=frames.device)
+                active = torch.where(time < .18, torch.full_like(time, -12.0), torch.zeros_like(time))
+                prior = active - ((time - onset) / sigma).square()
+                x0, y0 = model._read_xy(start_scores, prior)
+                return torch.cat((x0[:, None], y0[:, None], base[:, 2:]), dim=1)
+        return basic_linear_metrics(TimedStart(), [{"frames": frames, "target": target}
+                                                    for frames, target in prepared], device)
+
+    candidates = [(onset, sigma) for onset in (-.24, -.12, -.06, .00, .06, .12, .24)
+                  for sigma in (.05, .08, .12)]
+    ranked = []
+    for onset, sigma in candidates:
+        metric = metric_for(onset, sigma, val_batches)
+        rank = (-metric["gesture_recovery_accuracy"], metric["start_coordinate_median"])
+        ranked.append((rank, onset, sigma, metric))
+    ranked.sort(key=lambda item: item[0])
+    _rank, onset, sigma, validation = ranked[0]
+    test = metric_for(onset, sigma, test_batches)
+    output = {
+        "checkpoint": checkpoint_name,
+        "selected_onset": onset,
+        "selected_sigma": sigma,
+        "validation": validation,
+        "test": test,
+        "validation_top5": [
+            {"onset": candidate_onset, "sigma": candidate_sigma, "metrics": metric}
+            for _rank, candidate_onset, candidate_sigma, metric in ranked[:5]
+        ],
+    }
+    stem = Path(checkpoint_name).stem
+    (Path("/models") / f"{stem}_start_timing_validation_selected.json").write_text(
+        json.dumps(output, indent=2),
+    )
+    models.commit()
+    return output
+
+
 @app.function(image=image, timeout=3 * 3600, memory=8192,
               volumes={"/corpus": corpus, "/models": models})
 def audit_orange_endpoint_cue(data_subdir: str, *, seed: int = 0,
