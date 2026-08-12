@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 
 import torch
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Dataset, Subset
 
 _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT / "src") not in sys.path:
@@ -26,6 +26,7 @@ from trueskate_ai.vision.basic_linear_dataset import (  # noqa: E402
 from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor  # noqa: E402
 from trueskate_ai.vision.basic_linear_training import (  # noqa: E402
     basic_linear_loss, basic_linear_metrics, passes_basic_linear_acceptance,
+    basic_linear_recovery_records,
 )
 
 
@@ -43,6 +44,40 @@ def _fingerprint(paths: tuple[Path, ...]) -> str:
         digest.update(str(path).encode())
         digest.update(b"\n")
     return f"sha256:{len(paths)}:{digest.hexdigest()}"
+
+
+class _IndexedSubset(Dataset):
+    """Subset which retains the source-dataset index for audit joins."""
+    def __init__(self, dataset, indices: list[int]):
+        self.dataset, self.indices = dataset, indices
+
+    def __len__(self) -> int:
+        return len(self.indices)
+
+    def __getitem__(self, index: int):
+        item = dict(self.dataset[self.indices[index]])
+        item["sample_index"] = self.indices[index]
+        return item
+
+
+def _recovery_audit(model: torch.nn.Module, dataset: BasicLinearClipDataset,
+                    indices: list[int], device: torch.device, batch_size: int) -> dict:
+    records = basic_linear_recovery_records(
+        model, DataLoader(_IndexedSubset(dataset, indices), batch_size=batch_size), device,
+    )
+    buckets: dict[str, list[float]] = {}
+    for record, index in zip(records, indices):
+        meta = dataset._meta(dataset.sample_paths[index])
+        device_name = str(meta.get("device", "unknown"))
+        (x0, y0), (x1, y1) = meta["waypoints"]
+        slope = abs((float(y1) - float(y0)) / (float(x1) - float(x0)))
+        geometry = "low_slope" if slope < 0.8 else "mid_slope" if slope < 1.6 else "high_slope"
+        for key in (f"device:{device_name}", f"geometry:{geometry}"):
+            buckets.setdefault(key, []).append(record["recovered"])
+    return {
+        key: {"samples": len(values), "gesture_recovery_accuracy": float(sum(values) / len(values))}
+        for key, values in sorted(buckets.items())
+    }
 
 
 def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
@@ -109,6 +144,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "best_epoch": best["epoch"],
         "validation": best["validation"],
         "test": test,
+        "test_recovery_audit": _recovery_audit(model, dataset, test_indices, device, batch_size),
         "passes_acceptance": passes_basic_linear_acceptance(test),
         "state_dict": best["state_dict"],
     }
