@@ -38,6 +38,7 @@ while :; do
     --devices "$DEVICE" \
     --basic-linears \
     --tap-calibrate \
+    --wait-for-align \
     --no-reset \
     --park-label "$PARK" \
     --align-video \
