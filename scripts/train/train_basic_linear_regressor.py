@@ -90,14 +90,15 @@ def _recovery_audit(model: torch.nn.Module, dataset: BasicLinearClipDataset,
 
 
 def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
-          seed: int, base_channels: int, split_strategy: str = "command",
+          seed: int, base_channels: int, split_seed: int | None = None, split_strategy: str = "command",
           cache_frames: bool = False) -> dict:
     torch.manual_seed(seed)
     dataset = BasicLinearClipDataset(data, cache_frames=cache_frames)
     splitters = {"segment": split_by_segment, "command": split_by_command}
     if split_strategy not in splitters:
         raise ValueError(f"unknown split strategy {split_strategy!r}; choose from {sorted(splitters)}")
-    train_indices, val_indices, test_indices = splitters[split_strategy](dataset, seed=seed)
+    split_seed = seed if split_seed is None else split_seed
+    train_indices, val_indices, test_indices = splitters[split_strategy](dataset, seed=split_seed)
     train_loader = DataLoader(Subset(dataset, train_indices), batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(Subset(dataset, val_indices), batch_size=batch_size)
     test_loader = DataLoader(Subset(dataset, test_indices), batch_size=batch_size)
@@ -145,7 +146,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "image_height": dataset.image_height,
         "image_width": dataset.image_width,
         "cache_frames": cache_frames,
-        "split_seed": seed,
+        "split_seed": split_seed,
         "split_strategy": split_strategy,
         "dataset_fingerprint": _fingerprint(dataset.sample_paths),
         "dataset_stats": dataset.stats,
@@ -172,6 +173,8 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--split-seed", type=int, default=None,
+                        help="Optional independent deterministic split seed; use to vary initialization without moving holdout.")
     parser.add_argument("--base-channels", type=int, default=16)
     parser.add_argument("--split-strategy", choices=("segment", "command"), default="command",
                         help="command withholds exact {x0,y0,x1,y1,dur}; required generalisation protocol.")
@@ -190,7 +193,7 @@ def main() -> None:
                      f"({dataset_probe.stats})")
     out = args.out or _ROOT / "notebooks" / "models" / f"basic_linear_regressor_{time.strftime('%Y%m%d_%H%M%S')}.pth"
     result = train(data=args.data, out=out, epochs=args.epochs, batch_size=args.batch_size,
-                   lr=args.lr, seed=args.seed, base_channels=args.base_channels,
+                   lr=args.lr, seed=args.seed, split_seed=args.split_seed, base_channels=args.base_channels,
                    split_strategy=args.split_strategy, cache_frames=args.cache_frames)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")

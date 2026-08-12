@@ -50,7 +50,7 @@ def _trainer():
 def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
                  base_channels: int = 16, split_strategy: str = "command",
-                 cache_frames: bool = True) -> dict:
+                 cache_frames: bool = True, split_seed: int | None = None) -> dict:
     trainer = _trainer()
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
     payload = trainer.train(
@@ -60,6 +60,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         batch_size=batch_size,
         lr=lr,
         seed=seed,
+        split_seed=split_seed,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
@@ -215,10 +216,10 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
          base_channels: int = 16, split_strategy: str = "command",
-         cache_frames: bool = True) -> None:
+         cache_frames: bool = True, split_seed: int | None = None) -> None:
     result = train_remote.remote(
         data_subdir, run_label, epochs=epochs, batch_size=batch_size, lr=lr,
         seed=seed, base_channels=base_channels, split_strategy=split_strategy,
-        cache_frames=cache_frames,
+        cache_frames=cache_frames, split_seed=split_seed,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
