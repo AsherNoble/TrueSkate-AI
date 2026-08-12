@@ -186,6 +186,7 @@ def test_linear_collector_uses_a_device_specific_seed_file():
     source = Path("scripts/ops/mvp_collect_linear.sh").read_text()
     assert ".basic_linear_next_seed_${DEVICE}" in source
     assert "device_seed=$(printf '%s' \"$DEVICE\" | cksum" in source
+    assert 'printf \'%s\\n\' "$next_seed" > "$SEED_FILE"' in source
 
 
 def test_linear_finalizer_can_target_a_fresh_modal_volume():
