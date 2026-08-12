@@ -40,7 +40,6 @@ while :; do
     --tap-calibrate \
     --wait-for-align \
     --no-reset \
-    --no-gameplay-guard \
     --park-label "$PARK" \
     --align-video \
     --segment-min 1 \
