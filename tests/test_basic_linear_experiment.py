@@ -150,6 +150,9 @@ def test_recovery_metric_requires_every_component_to_be_within_tolerance():
     ], batch_size=2)
     metrics = basic_linear_metrics(ExactThenNearMiss(), loader, torch.device("cpu"))
     assert metrics["gesture_recovery_accuracy"] == pytest.approx(.5)
+    assert metrics["start_recovery_accuracy"] == pytest.approx(1.0)
+    assert metrics["end_recovery_accuracy"] == pytest.approx(.5)
+    assert metrics["duration_recovery_accuracy"] == pytest.approx(1.0)
 
 
 def test_indexed_subset_preserves_original_dataset_indices(tmp_path):

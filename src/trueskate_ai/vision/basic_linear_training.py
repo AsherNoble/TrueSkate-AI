@@ -31,6 +31,9 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device) -
     end_errors: list[float] = []
     duration_errors: list[float] = []
     recovered: list[float] = []
+    start_recovered: list[float] = []
+    end_recovered: list[float] = []
+    duration_recovered: list[float] = []
     for batch in loader:
         prediction = model(batch["frames"].to(device))
         target = batch["target"].to(device)
@@ -40,6 +43,9 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device) -
         start = torch.linalg.vector_norm(prediction[:, :2] - target[:, :2], dim=1)
         end = torch.linalg.vector_norm(prediction[:, 2:4] - target[:, 2:4], dim=1)
         duration = torch.abs(prediction[:, 4] - target[:, 4])
+        start_recovered.extend((start <= RECOVERY_ENDPOINT_TOLERANCE).float().cpu().tolist())
+        end_recovered.extend((end <= RECOVERY_ENDPOINT_TOLERANCE).float().cpu().tolist())
+        duration_recovered.extend((duration <= RECOVERY_DURATION_TOLERANCE_S).float().cpu().tolist())
         recovered.extend(((start <= RECOVERY_ENDPOINT_TOLERANCE)
                           & (end <= RECOVERY_ENDPOINT_TOLERANCE)
                           & (duration <= RECOVERY_DURATION_TOLERANCE_S)).float().cpu().tolist())
@@ -55,6 +61,9 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device) -
         "duration_mae": float(np.mean(duration_errors)),
         "duration_p90": float(np.quantile(duration_errors, 0.90)),
         "gesture_recovery_accuracy": float(np.mean(recovered)),
+        "start_recovery_accuracy": float(np.mean(start_recovered)),
+        "end_recovery_accuracy": float(np.mean(end_recovered)),
+        "duration_recovery_accuracy": float(np.mean(duration_recovered)),
         "recovery_endpoint_tolerance": RECOVERY_ENDPOINT_TOLERANCE,
         "recovery_duration_tolerance_s": RECOVERY_DURATION_TOLERANCE_S,
     }
