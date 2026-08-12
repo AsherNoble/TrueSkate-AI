@@ -57,13 +57,15 @@ def test_linear_dataset_only_admits_calibrated_two_point_constant_velocity_lines
     _write_sample(tmp_path, "segment_2", "sample_near_vertical", points=[[.4, .3], [.45, .5]])
     _write_sample(tmp_path, "segment_3", "sample_curve", easing=2.0)
     _write_sample(tmp_path, "segment_3", "sample_menu", menu=True)
+    mismatch = _write_sample(tmp_path, "segment_4", "sample_mismatch")
+    (mismatch / ".trace_mismatch").write_text("mismatched rendered trace\n")
 
     dataset = BasicLinearClipDataset(tmp_path, sequence_length=4, image_height=20, image_width=12)
     assert dataset.sample_paths == (accepted,)
     assert dataset.stats == {
-        "accepted": 1, "discovered": 6, "rejected_menu_marked": 1,
+        "accepted": 1, "discovered": 7, "rejected_menu_marked": 1,
         "rejected_near_vertical": 1, "rejected_not_constant_velocity": 1,
-        "rejected_not_linear": 1, "rejected_uncalibrated": 1,
+        "rejected_not_linear": 1, "rejected_trace_mismatch": 1, "rejected_uncalibrated": 1,
     }
     item = dataset[0]
     assert item["frames"].shape == (4, 3, 20, 12)
