@@ -272,6 +272,35 @@ def test_aligner_preserves_source_when_requested_calibration_rejects(monkeypatch
     assert not report["accepted"]
 
 
+def test_direct_video_extracts_a_compact_clip_without_temporary_pngs(tmp_path):
+    aligner = _aligner_module()
+    source = tmp_path / "segment.mov"
+    writer = cv2.VideoWriter(str(source), cv2.VideoWriter_fourcc(*"mp4v"), 30, (80, 120))
+    assert writer.isOpened()
+    for index in range(75):
+        writer.write(np.full((120, 80, 3), index, dtype=np.uint8))
+    writer.release()
+    encoded = subprocess.run(
+        ["ffmpeg", "-y", "-v", "error", "-i", str(source), "-c:v", "libx264",
+         "-pix_fmt", "yuv420p", str(tmp_path / "segment_h264.mov")],
+        capture_output=True, text=True,
+    )
+    assert encoded.returncode == 0, encoded.stderr
+    sample = tmp_path / "sample"
+    assert aligner._extract_sample_video(
+        tmp_path / "segment_h264.mov", sample, start_s=0.1, duration_s=1.2,
+        resize_width=64, output_fps=20.0, max_frames=24, crf=20,
+    )
+    video = sample / "frames.mp4"
+    assert video.is_file() and video.stat().st_size > 0
+    cap = cv2.VideoCapture(str(video))
+    try:
+        assert cap.get(cv2.CAP_PROP_FRAME_COUNT) == pytest.approx(24, abs=1)
+    finally:
+        cap.release()
+    assert not list(sample.glob("*.png"))
+
+
 def test_aligner_cli_exits_nonzero_when_requested_calibration_rejects(monkeypatch, tmp_path):
     aligner = _aligner_module()
     mov = tmp_path / "segment_00000.mov"

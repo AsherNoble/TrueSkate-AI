@@ -250,6 +250,33 @@ def _encode_sample_video(sample_dir: Path, n_frames: int, fps: int, crf: int) ->
     return True
 
 
+def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, duration_s: float,
+                          resize_width: int, output_fps: float, max_frames: int,
+                          crf: int) -> bool:
+    """Slice, downsample, and encode a compact sample video in one ffmpeg pass.
+
+    The former compact-video path first decoded every requested frame to PNG and
+    then encoded those PNGs back to H.264.  For a fixed clip-level regressor
+    that is needless disk I/O and roughly doubles the alignment wall time.  This
+    direct path has exactly the same source window and resize contract while
+    avoiding temporary files entirely.
+    """
+    sample_dir.mkdir(parents=True, exist_ok=True)
+    out = sample_dir / "frames.mp4"
+    r = subprocess.run(
+        ["ffmpeg", "-y", "-v", "error", "-ss", f"{start_s:.3f}", "-i", str(mov),
+         "-t", f"{duration_s:.3f}", "-vf", f"fps={output_fps:.8f},scale={resize_width}:-2",
+         "-frames:v", str(max_frames), "-c:v", "libx264", "-crf", str(crf),
+         "-pix_fmt", "yuv420p", str(out)],
+        capture_output=True, text=True,
+    )
+    if r.returncode != 0 or not out.exists() or out.stat().st_size == 0:
+        print(f"  {sample_dir.name}: direct video extract failed ({r.stderr[:120]})")
+        out.unlink(missing_ok=True)
+        return False
+    return True
+
+
 def _even_indices(n: int, max_n: int) -> list[int]:
     if n <= max_n:
         return list(range(n))
@@ -260,6 +287,7 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                   resize_width: int, max_frames: int, delta_override: float | None,
                   delete_mov: bool, anchor: str = "start",
                   video: bool = False, video_crf: int = 20,
+                  direct_video: bool = False,
                   tap_calibrate: bool = False, tap_calibration_min_taps: int = 2,
                   tap_calibration_max_mad_s: float = 0.10,
                   tap_calibration_search_s: float = 4.0,
@@ -336,29 +364,49 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
             start = max(0.0, gv - pre_s)
             dur = pre_s + window_s
             sample_dir = seg_dir / _park_tag(ev.get("park", "park")) / f"sample_{ev['gesture_index']:06d}"
-            raw = sample_dir / "_raw"
-            raw.mkdir(parents=True, exist_ok=True)
-            # INPUT-seek (-ss before -i): fast keyframe seek + accurate decode-to-pos in modern
-            # ffmpeg; output PTS reset to 0 at `start`, so frame i is at video PTS start + i/fps.
-            r = subprocess.run(
-                ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.3f}", "-i", str(mov),
-                 "-t", f"{dur:.3f}", "-vf", f"fps={fps},scale={resize_width}:-2",
-                 "-vsync", "0", str(raw / "f_%04d.png")],
-                capture_output=True, text=True,
-            )
-            frames = sorted(raw.glob("f_*.png"))
-            if r.returncode != 0 or not frames:
-                print(f"  g{ev['gesture_index']}: no frames (ffmpeg rc={r.returncode}) {r.stderr[:120]}")
-                shutil.rmtree(sample_dir, ignore_errors=True)
-                continue
-            times = [start + i / fps for i in range(len(frames))]   # absolute video PTS
-            keep = _even_indices(len(frames), max_frames)
-            frame_times = []
-            for out_i, src_i in enumerate(keep):
-                frames[src_i].rename(sample_dir / f"frame_{out_i:03d}.png")
-                # frame_time 0 == the touch's first pixels (start anchor + Δ)
-                frame_times.append(round(times[src_i] - gv, 4))
-            shutil.rmtree(raw, ignore_errors=True)
+            if direct_video:
+                # Keep 32 evenly spaced time samples over the same window the
+                # PNG path used.  The dataset selects across decoded frames, so
+                # the explicit count both bounds storage and preserves temporal
+                # coverage for the clip-level endpoint model.
+                output_fps = (max_frames - 1) / max(dur - 1 / fps, 1 / fps)
+                if not _extract_sample_video(
+                    mov, sample_dir, start_s=start, duration_s=dur,
+                    resize_width=resize_width, output_fps=output_fps,
+                    max_frames=max_frames, crf=video_crf,
+                ):
+                    shutil.rmtree(sample_dir, ignore_errors=True)
+                    continue
+                frame_times = [round(i / output_fps - pre_s, 4) for i in range(max_frames)]
+                frames_format = "mp4"
+            else:
+                frames_format = None
+            if not direct_video:
+                raw = sample_dir / "_raw"
+                raw.mkdir(parents=True, exist_ok=True)
+                # INPUT-seek (-ss before -i): fast keyframe seek + accurate decode-to-pos in modern
+                # ffmpeg; output PTS reset to 0 at `start`, so frame i is at video PTS start + i/fps.
+                r = subprocess.run(
+                    ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.3f}", "-i", str(mov),
+                     "-t", f"{dur:.3f}", "-vf", f"fps={fps},scale={resize_width}:-2",
+                     "-vsync", "0", str(raw / "f_%04d.png")],
+                    capture_output=True, text=True,
+                )
+                frames = sorted(raw.glob("f_*.png"))
+                if r.returncode != 0 or not frames:
+                    print(f"  g{ev['gesture_index']}: no frames (ffmpeg rc={r.returncode}) {r.stderr[:120]}")
+                    shutil.rmtree(sample_dir, ignore_errors=True)
+                    continue
+                times = [start + i / fps for i in range(len(frames))]   # absolute video PTS
+                keep = _even_indices(len(frames), max_frames)
+                frame_times = []
+                for out_i, src_i in enumerate(keep):
+                    frames[src_i].rename(sample_dir / f"frame_{out_i:03d}.png")
+                    # frame_time 0 == the touch's first pixels (start anchor + Δ)
+                    frame_times.append(round(times[src_i] - gv, 4))
+                shutil.rmtree(raw, ignore_errors=True)
+                frames_format = ("mp4" if video and _encode_sample_video(
+                    sample_dir, len(frame_times), fps, video_crf) else "png")
             meta = {
                 **{k: v for k, v in ev.items()},                     # gesture params + call times + park
                 "device_logical_w": dw, "device_logical_h": dh,
@@ -385,9 +433,8 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                 # these frame_times now are. Without it the scheduler would add the payload
                 # duration and place every touch a full stroke too late.
                 meta["gesture_start_monotonic"] = float(ev["t_call_start_epoch_s"])
-            if video:
-                meta["frames_format"] = ("mp4" if _encode_sample_video(
-                    sample_dir, len(frame_times), fps, video_crf) else "png")
+            if video or direct_video:
+                meta["frames_format"] = frames_format
             (sample_dir / "meta.json").write_text(json.dumps(meta, indent=2))
             saved += 1
 
@@ -447,6 +494,9 @@ def main() -> None:
                     help="Store each sample as one frames.mp4 instead of N PNGs: ~30x "
                          "smaller and 1 inode instead of N. The dataset loader reads "
                          "either format transparently.")
+    ap.add_argument("--direct-video", action="store_true",
+                    help="Slice and encode compact videos directly from the segment MOV. "
+                         "Avoids temporary PNGs; implies --video.")
     ap.add_argument("--video-crf", type=int, default=20,
                     help="x264 CRF for --video. 20 keeps the orange trace intact "
                          "(measured 4.5%% error in the path-glow statistic).")
@@ -459,6 +509,8 @@ def main() -> None:
         ap.error("--tap-calibration-search-s must be > 0")
     if args.tap_calibration_width < 8:
         ap.error("--tap-calibration-width must be >= 8")
+    if args.direct_video:
+        args.video = True
 
     if args.segment:
         manifests = [args.segment]
@@ -478,6 +530,7 @@ def main() -> None:
                 resize_width=args.resize_width, max_frames=args.max_frames,
                 delta_override=args.delta_s, delete_mov=args.delete_mov,
                 anchor=args.anchor, video=args.video, video_crf=args.video_crf,
+                direct_video=args.direct_video,
                 tap_calibrate=args.tap_calibrate,
                 tap_calibration_min_taps=args.tap_calibration_min_taps,
                 tap_calibration_max_mad_s=args.tap_calibration_max_mad_s,

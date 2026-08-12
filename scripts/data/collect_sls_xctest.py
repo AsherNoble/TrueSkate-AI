@@ -417,6 +417,10 @@ def main() -> None:
                "--segment", str(manifest_path), "--delete-mov"]
         if args.align_video:
             cmd.append("--video")
+            # Compact MVP clips are ultimately consumed as MP4.  Do the slice
+            # and H.264 encode once rather than materialising temporary PNGs.
+            if args.basic_holds or args.basic_linears:
+                cmd.append("--direct-video")
         if args.tap_calibrate:
             cmd.append("--tap-calibrate")
         if args.wait_for_align:
