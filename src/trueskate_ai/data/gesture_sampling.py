@@ -87,6 +87,16 @@ BASIC_HOLD_MAX_S = 1.50
 # the aligner can establish timing, but the basic-hold dataset rejects them.
 BASIC_HOLD_CALIBRATION_TAP_SHARE = 0.20
 
+# Basic-linear Model 2 experiment.  These are deliberately *two-point*,
+# constant-velocity drags, so every path is a finite ``y = mx + c`` segment.
+# The horizontal-reach floor excludes vertical/near-vertical lines, whose slope
+# is ill-conditioned and outside this MVP's stated contract.
+BASIC_LINEAR_MIN_S = 0.30
+BASIC_LINEAR_MAX_S = 1.20
+BASIC_LINEAR_MIN_DX = 0.16
+BASIC_LINEAR_MAX_ABS_SLOPE = 2.5
+BASIC_LINEAR_CALIBRATION_TAP_SHARE = 0.20
+
 # Per-param jitter sigmas for "recipe" mode, in the vector's native units,
 # indexed within a slot as [x0,y0,x1,y1,x2,y2,duration,easing].
 _COORD_JITTER = 0.03
@@ -125,6 +135,8 @@ class GestureSample:
     (curved_drag_with_spin_hold, no push).
     kind in {"nslot","recipe","spin"}: use params/num_gestures/use_spin
     (execute_gesture_params).
+    kind == "linear": use exactly two waypoints plus duration (constant-velocity
+    curved_drag).  It is Model 2's finite ``y=mx+c``-segment form.
     kind in {"hold","tap"}: use point/hold_duration_s (long_press / tap). These are
     STATIONARY touches — zero path length. They exist for the Model 1 MVP: a held
     point has an unambiguous (x, y) and a known onset AND liftoff, so it supervises
@@ -156,7 +168,7 @@ class GestureSample:
     def meta(self) -> dict:
         """JSON-serialisable description for the sample's meta.json."""
         d: dict = {"gesture_distribution": self.kind}
-        if self.kind in ("flick", "spin_flick"):
+        if self.kind in ("flick", "spin_flick", "linear"):
             d.update(
                 waypoints=self.waypoints,
                 duration=self.duration,
@@ -172,6 +184,8 @@ class GestureSample:
                     # on) ends when the button lifts, not when the drag does.
                     payload_total_s=max(self.duration or 0.0, self.spin_hold_end_s or 0.0),
                 )
+            elif self.kind == "linear":
+                d["payload_total_s"] = float(self.duration or 0.0)
         elif self.kind in ("hold", "tap"):
             # A stationary touch is fully described by where and for how long. The
             # label pipeline turns this into a single constant-position touch
@@ -489,6 +503,51 @@ def sample_basic_hold_mixture(
     )
 
 
+def sample_basic_linear_mixture(
+    rng: np.random.Generator, *, tap_fraction: float = BASIC_LINEAR_CALIBRATION_TAP_SHARE,
+) -> GestureSample:
+    """Sample one calibrated-MVP linear drag or a calibration-only tap.
+
+    Trainable examples are two-waypoint, constant-velocity drags with a nonzero
+    horizontal reach.  The endpoint construction bounds the absolute slope, so
+    the command has a stable finite ``y=mx+c`` representation while retaining
+    broad screen coverage.  Taps remain timing clapperboards only and strict
+    Model-2 loaders reject them.
+    """
+    if not 0.0 <= tap_fraction < 1.0:
+        raise ValueError(f"tap_fraction must be in [0, 1), got {tap_fraction}")
+    if float(rng.uniform(0.0, 1.0)) < tap_fraction:
+        return clamp_in_bounds(sample_tap(rng))
+
+    # Retry instead of clipping a random vector: clipping can turn a legitimate
+    # finite slope into a nearly vertical edge path.
+    for _ in range(64):
+        sx = float(rng.uniform(*_FLICK_START_X))
+        sy = float(rng.uniform(*_FLICK_START_Y))
+        dx = float(rng.uniform(BASIC_LINEAR_MIN_DX, 0.48))
+        if bool(rng.integers(0, 2)):
+            dx = -dx
+        slope = float(rng.uniform(-BASIC_LINEAR_MAX_ABS_SLOPE, BASIC_LINEAR_MAX_ABS_SLOPE))
+        ex, ey = sx + dx, sy + slope * dx
+        if not (X_BOUND_MIN <= ex <= X_BOUND_MAX and Y_BOUND_MIN <= ey <= Y_BOUND_MAX):
+            continue
+        sample = GestureSample(
+            kind="linear", waypoints=[(sx, sy), (float(ex), float(ey))],
+            duration=float(rng.uniform(BASIC_LINEAR_MIN_S, BASIC_LINEAR_MAX_S)),
+            easing_power=1.0,
+        )
+        # The global clamp also protects against the Bolt modal.  It may move an
+        # endpoint, so only return the command if it still obeys the strict
+        # MVP-2 contract that the loader will later enforce.
+        sample = clamp_in_bounds(sample)
+        (x0, y0), (x1, y1) = sample.waypoints
+        clamped_dx = x1 - x0
+        if (abs(clamped_dx) >= BASIC_LINEAR_MIN_DX
+                and abs((y1 - y0) / clamped_dx) <= BASIC_LINEAR_MAX_ABS_SLOPE):
+            return sample
+    raise RuntimeError("could not sample an in-bounds finite-slope linear drag")
+
+
 def clamp_in_bounds(s: GestureSample) -> GestureSample:
     """Defensive chokepoint: guarantee a sampled gesture lies within the RL
     coordinate bounds (X_BOUND_MIN..MAX, Y_BOUND_MIN..MAX) AND outside the top-left
@@ -498,7 +557,7 @@ def clamp_in_bounds(s: GestureSample) -> GestureSample:
     (mutates in place), so the saved label always matches what executes. Normalised
     coords are absolute (0/1 = screen edges); clamping constrains, it never rescales.
     """
-    if s.kind in ("flick", "spin_flick") and s.waypoints is not None:
+    if s.kind in ("flick", "spin_flick", "linear") and s.waypoints is not None:
         pushed = [
             _push_out_bolt_zone(
                 float(np.clip(x, X_BOUND_MIN, X_BOUND_MAX)),

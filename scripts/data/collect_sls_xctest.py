@@ -53,7 +53,8 @@ os.environ.setdefault("TRUESKATE_MIN_FINGER_STAGGER_S", "0.12")
 
 from trueskate_ai.data.gesture_sampling import (  # noqa: E402
     BASIC_HOLD_CALIBRATION_TAP_SHARE, load_recipe_vectors,
-    sample_basic_hold_mixture, sample_mixture,
+    BASIC_LINEAR_CALIBRATION_TAP_SHARE, sample_basic_hold_mixture,
+    sample_basic_linear_mixture, sample_mixture,
 )
 from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E402
 from trueskate_ai.rl.device_worker import (  # noqa: E402
@@ -100,7 +101,7 @@ def _start_caffeinate():
 
 
 def _execute(worker: DeviceWorker, g) -> None:
-    """Fire one sampled gesture (curved flicks required — straight swipes don't play)."""
+    """Fire one sampled gesture; explicit MVP-2 linear drags are an exception."""
     dw, dh = worker.device_w, worker.device_h
     if g.kind in ("hold", "tap"):
         # Stationary touch (Model 1 MVP): no path, so nothing to curve. A tap is
@@ -111,7 +112,7 @@ def _execute(worker: DeviceWorker, g) -> None:
             tap(worker.driver, x, y)
         else:
             long_press(worker.driver, x, y, duration=g.hold_duration_s)
-    elif g.kind == "flick":
+    elif g.kind in ("flick", "linear"):
         pts = [scale_to_device(x, y, dw, dh) for x, y in g.waypoints]
         easing = None if g.easing_power == 1.0 else (lambda t, p=g.easing_power: t ** p)
         curved_drag(worker.driver, pts, total_duration=g.duration, easing=easing)
@@ -239,6 +240,12 @@ def main() -> None:
     ap.add_argument("--basic-hold-tap-frac", type=float, default=BASIC_HOLD_CALIBRATION_TAP_SHARE,
                     help="Calibration-only tap fraction for --basic-holds (default 0.20). "
                          "Taps are never admitted by the strict hold training loader.")
+    ap.add_argument("--basic-linears", action="store_true",
+                    help="Collect MVP-2 only: 80%% calibrated single-finger, two-point, "
+                         "constant-velocity finite-slope drags plus 20%% calibration-only taps. "
+                         "No holds, curved paths, multi-touch, or spin holds are emitted.")
+    ap.add_argument("--basic-linear-tap-frac", type=float, default=BASIC_LINEAR_CALIBRATION_TAP_SHARE,
+                    help="Calibration-only tap fraction for --basic-linears (default 0.20).")
     ap.add_argument("--tap-calibrate", action="store_true",
                     help="Ask the offline aligner to require per-segment timing calibration "
                          "from the known-position tap arm. Intended for --static-frac MVP "
@@ -302,6 +309,8 @@ def main() -> None:
                          "(--flick-frac/--nslot-frac/--recipe-frac/--spin-frac/--static-frac).")
     if args.num_gestures < 1:
         raise SystemExit(f"--num-gestures must be >= 1, got {args.num_gestures}")
+    if args.basic_holds and args.basic_linears:
+        raise SystemExit("--basic-holds and --basic-linears are mutually exclusive")
     if args.basic_holds:
         if args.spin_frac != 0.0 or args.static_frac != 0.0 or args.use_spin:
             raise SystemExit("--basic-holds cannot be combined with --static-frac, --spin-frac, or --use-spin")
@@ -315,6 +324,19 @@ def main() -> None:
             raise SystemExit("--basic-holds requires --no-reset; reset taps contaminate the next hold clip")
         if not 0.0 <= args.basic_hold_tap_frac < 1.0:
             raise SystemExit("--basic-hold-tap-frac must be in [0, 1) with --basic-holds")
+    if args.basic_linears:
+        if args.spin_frac != 0.0 or args.static_frac != 0.0 or args.use_spin:
+            raise SystemExit("--basic-linears cannot be combined with --static-frac, --spin-frac, or --use-spin")
+        if any(value != default for value, default in (
+            (args.flick_frac, 0.6), (args.nslot_frac, 0.25), (args.recipe_frac, 0.15),
+        )):
+            raise SystemExit("--basic-linears cannot be combined with gesture-mixture fraction overrides")
+        if not args.tap_calibrate:
+            raise SystemExit("--basic-linears requires --tap-calibrate; uncalibrated linear clips are not admissible")
+        if not args.no_reset:
+            raise SystemExit("--basic-linears requires --no-reset; reset taps contaminate the next linear clip")
+        if not 0.0 <= args.basic_linear_tap_frac < 1.0:
+            raise SystemExit("--basic-linear-tap-frac must be in [0, 1) with --basic-linears")
 
     try:
         devices = resolve_devices(devices_arg=args.devices, personal=args.personal,
@@ -512,6 +534,7 @@ def main() -> None:
                 seg_iter += 1
 
                 g = (sample_basic_hold_mixture(rng, tap_fraction=args.basic_hold_tap_frac) if args.basic_holds else
+                     sample_basic_linear_mixture(rng, tap_fraction=args.basic_linear_tap_frac) if args.basic_linears else
                      sample_mixture(rng, fracs=fracs, spin_frac=args.spin_frac,
                                     static_frac=args.static_frac,
                                     num_gestures=args.num_gestures,
