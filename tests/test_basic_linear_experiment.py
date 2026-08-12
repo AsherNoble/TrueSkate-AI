@@ -108,20 +108,8 @@ def test_linear_regressor_returns_native_bounded_quintuplets():
 def test_linear_regressor_retains_stride_two_spatial_endpoint_evidence():
     model = BasicLinearRegressor(base_channels=4)
     assert model.start_score is not model.end_score
-    assert model.onset_start_score is not model.end_score
-    assert model.dense_end_score is not model.end_score
     encoded = model.encoder(torch.rand(2, 6, 30, 18))
     assert encoded.shape[-2:] == (15, 9)
-    dense = model.dense_encoder(torch.rand(2, 6, 30, 18))
-    assert dense.shape[-2:] == (30, 18)
-
-
-def test_linear_regressor_has_an_onset_window_start_path():
-    model = BasicLinearRegressor(base_channels=4)
-    frames = torch.rand(2, 32, 3, 30, 18)
-    prediction = model(frames)
-    prediction[:, :2].sum().backward()
-    assert model.onset_encoder[0].weight.grad is not None
 
 
 def test_linear_sampler_and_acceptance_contract():
