@@ -69,8 +69,15 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
             loss.backward()
             optimizer.step()
         validation = basic_linear_metrics(model, val_loader, device)
-        score = (validation["start_coordinate_median"] + validation["end_coordinate_median"]
-                 + validation["duration_mae"])
+        # The requested outcome is complete gesture recovery.  Median-only model
+        # selection can prefer a checkpoint that is excellent on the easy half
+        # while failing too many endpoint pairs, so rank recovery first and use
+        # the native errors only as a stable tie-breaker.
+        score = (
+            -validation["gesture_recovery_accuracy"],
+            validation["start_coordinate_median"] + validation["end_coordinate_median"]
+            + validation["duration_mae"],
+        )
         print(f"epoch={epoch} val_start_med={validation['start_coordinate_median']:.4f} "
               f"val_end_med={validation['end_coordinate_median']:.4f} "
               f"val_duration_mae={validation['duration_mae']:.4f} "

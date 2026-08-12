@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import pytest
 import torch
+from torch.utils.data import DataLoader
 
 from trueskate_ai.data.gesture_sampling import (
     BASIC_LINEAR_MAX_ABS_SLOPE,
@@ -19,7 +20,7 @@ from trueskate_ai.vision.basic_linear_dataset import (
     split_by_segment,
 )
 from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
-from trueskate_ai.vision.basic_linear_training import passes_basic_linear_acceptance
+from trueskate_ai.vision.basic_linear_training import basic_linear_metrics, passes_basic_linear_acceptance
 
 
 def _write_sample(root: Path, segment: str, name: str, *, kind: str = "linear",
@@ -120,3 +121,18 @@ def test_linear_sampler_and_acceptance_contract():
     assert passes_basic_linear_acceptance(metrics)
     assert not passes_basic_linear_acceptance({**metrics, "end_coordinate_median": .031})
     assert not passes_basic_linear_acceptance({**metrics, "gesture_recovery_accuracy": .949})
+
+
+def test_recovery_metric_requires_every_component_to_be_within_tolerance():
+    class ExactThenNearMiss(torch.nn.Module):
+        def forward(self, frames):
+            # First is exactly recoverable; second exceeds only the end tolerance.
+            return torch.tensor([[.3, .4, .6, .55, .6], [.3, .4, .631, .55, .6]],
+                                dtype=frames.dtype, device=frames.device)
+
+    loader = DataLoader([
+        {"frames": torch.zeros(3, 3, 10, 8), "target": torch.tensor([.3, .4, .6, .55, .6])},
+        {"frames": torch.zeros(3, 3, 10, 8), "target": torch.tensor([.3, .4, .6, .55, .6])},
+    ], batch_size=2)
+    metrics = basic_linear_metrics(ExactThenNearMiss(), loader, torch.device("cpu"))
+    assert metrics["gesture_recovery_accuracy"] == pytest.approx(.5)
