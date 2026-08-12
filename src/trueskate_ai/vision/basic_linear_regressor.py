@@ -19,11 +19,7 @@ class BasicLinearRegressor(nn.Module):
             # coordinates), already the whole recovery tolerance.  Keep the
             # first layer dense and downsample only once so soft-argmax has
             # genuine sub-tolerance endpoint evidence.
-            # RGB, pre-touch difference, and an explicit orange-motion cue. The
-            # rendered finger trace is orange; making that causal cue available
-            # avoids spending scarce capacity rediscovering a simple colour
-            # relation amid the board's much larger motion.
-            nn.Conv2d(7, c, 5, stride=1, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
+            nn.Conv2d(6, c, 5, stride=1, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
             nn.Conv2d(c, c * 2, 3, stride=2, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
             nn.Conv2d(c * 2, c * 4, 3, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
         )
@@ -51,6 +47,40 @@ class BasicLinearRegressor(nn.Module):
         return ((attention * xa.view(1, 1, 1, width)).sum((1, 2, 3)),
                 (attention * ya.view(1, 1, height, 1)).sum((1, 2, 3)))
 
+    @staticmethod
+    def _refine_from_orange(frames: torch.Tensor, reference: torch.Tensor, xy: torch.Tensor,
+                            centre_time: torch.Tensor, *, spatial_sigma: float = .085,
+                            time_sigma: float = .11) -> tuple[torch.Tensor, torch.Tensor]:
+        """Locally refine an endpoint from the rendered orange finger glow.
+
+        The learned heads provide a robust global proposal; restricting this
+        deterministic cue to its proposal neighbourhood avoids unrelated orange
+        board/game elements that make a global colour detector unreliable.
+        """
+        batch, steps, _channels, height, width = frames.shape
+        red, green, blue = frames.unbind(dim=2)
+        motion = torch.abs(frames - reference).mean(dim=2)
+        orange = ((red - green + .12).relu() * (green - blue + .12).relu()
+                  * (red - .20).relu() * motion)
+        time = torch.linspace(0., 1., steps, dtype=frames.dtype, device=frames.device)
+        xa = torch.linspace(0., 1., width, dtype=frames.dtype, device=frames.device)
+        ya = torch.linspace(0., 1., height, dtype=frames.dtype, device=frames.device)
+        time_weight = torch.exp(-.5 * ((time[None, :, None, None] - centre_time[:, None, None, None])
+                                       / time_sigma).square())
+        x_weight = torch.exp(-.5 * ((xa[None, None, None, :] - xy[:, 0, None, None, None])
+                                    / spatial_sigma).square())
+        y_weight = torch.exp(-.5 * ((ya[None, None, :, None] - xy[:, 1, None, None, None])
+                                    / spatial_sigma).square())
+        weight = orange * time_weight * x_weight * y_weight
+        normalizer = weight.sum((1, 2, 3)).clamp_min(1e-8)
+        refined_x = (weight * xa.view(1, 1, 1, width)).sum((1, 2, 3)) / normalizer
+        refined_y = (weight * ya.view(1, 1, height, 1)).sum((1, 2, 3)) / normalizer
+        # Keep the neural proposal dominant when the local orange evidence is
+        # weak (e.g. motion blur), while correcting the several-pixel tail.
+        confidence = (normalizer / normalizer.detach().median().clamp_min(1e-8)).clamp(0., 1.)
+        blend = .55 * confidence
+        return xy[:, 0] * (1 - blend) + refined_x * blend, xy[:, 1] * (1 - blend) + refined_y * blend
+
     def forward_with_scores(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Return the gesture plus raw start/end score maps for inspection."""
         if frames.ndim != 5 or frames.shape[2] != 3:
@@ -58,12 +88,7 @@ class BasicLinearRegressor(nn.Module):
         batch, steps = frames.shape[:2]
         reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
         difference = torch.abs(frames - reference)
-        red, green, blue = frames.unbind(dim=2)
-        # True Skate's finger glow is bright orange: red > green > blue. Gate
-        # by new-frame motion so static orange board art is not promoted.
-        orange = (red - green).clamp_min(0) * (green - blue).clamp_min(0)
-        orange = orange * difference.mean(dim=2)
-        encoded = self.encoder(torch.cat((frames, difference, orange.unsqueeze(2)), dim=2).flatten(0, 1))
+        encoded = self.encoder(torch.cat((frames, difference), dim=2).flatten(0, 1))
         h, w = encoded.shape[-2:]
         start_scores = self.start_score(encoded).reshape(batch, steps, h, w)
         end_scores = self.end_score(encoded).reshape(batch, steps, h, w)
@@ -89,6 +114,8 @@ class BasicLinearRegressor(nn.Module):
         end_prior = active - ((time[None, :] - liftoff[:, None]) / 0.15).square()
         x0, y0 = self._read_xy(start_scores, start_prior)
         x1, y1 = self._read_xy(end_scores, end_prior)
+        x0, y0 = self._refine_from_orange(frames, reference, torch.stack((x0, y0), dim=1), onset)
+        x1, y1 = self._refine_from_orange(frames, reference, torch.stack((x1, y1), dim=1), liftoff)
         prediction = torch.cat((x0[:, None], y0[:, None], x1[:, None], y1[:, None], duration), dim=1)
         return prediction, start_scores, end_scores
 
