@@ -78,6 +78,13 @@ def _decode_even_frames(sample: Path, count: int) -> list[np.ndarray]:
                 decoded.append(frame if ok else None)
         finally:
             capture.release()
+        # Some H.264 builds report a frame count but cannot reliably random-seek
+        # every index.  The clip remains valid, so fall back to sequential decode
+        # rather than rejecting a strict sample for decoder behavior alone.
+        if any(frame is None for frame in decoded):
+            decoded = _decode_frames(sample)
+            indices = np.linspace(0, len(decoded) - 1, count).round().astype(int)
+            decoded = [decoded[int(index)] for index in indices]
     if not decoded or any(frame is None for frame in decoded):
         raise ValueError(f"{sample}: unreadable selected frames")
     return decoded

@@ -182,3 +182,29 @@ def test_linear_dataset_decodes_only_selected_video_frames(monkeypatch, tmp_path
     dataset = BasicLinearClipDataset(tmp_path, sequence_length=4, image_height=20, image_width=12)
     assert dataset[0]["frames"].shape == (4, 3, 20, 12)
     assert calls == [4]
+
+
+def test_selected_video_decode_falls_back_when_random_seek_is_unreliable(monkeypatch, tmp_path):
+    import trueskate_ai.vision.basic_hold_dataset as holds
+
+    sample = tmp_path / "sample"
+    sample.mkdir()
+    (sample / "frames.mp4").write_bytes(b"placeholder")
+
+    class BrokenSeekCapture:
+        def __init__(self, *_args):
+            pass
+        def get(self, _property):
+            return 4
+        def set(self, *_args):
+            pass
+        def read(self):
+            return False, None
+        def release(self):
+            pass
+
+    frames = [np.full((3, 2, 3), index, np.uint8) for index in range(4)]
+    monkeypatch.setattr(holds.cv2, "VideoCapture", BrokenSeekCapture)
+    monkeypatch.setattr(holds, "_decode_frames", lambda _sample: frames)
+    selected = holds._decode_even_frames(sample, 2)
+    assert [int(frame[0, 0, 0]) for frame in selected] == [0, 3]
