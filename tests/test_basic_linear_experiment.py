@@ -108,6 +108,14 @@ def test_linear_regressor_returns_native_bounded_quintuplets():
     assert gesture["dur"].shape == (2,)
 
 
+def test_linear_regressor_accepts_explicit_start_time_prior():
+    model = BasicLinearRegressor(start_onset=-.24, start_sigma=.08)
+    assert model.start_onset == pytest.approx(-.24)
+    assert model.start_sigma == pytest.approx(.08)
+    with pytest.raises(ValueError, match="start_sigma"):
+        BasicLinearRegressor(start_sigma=0.)
+
+
 def test_linear_regressor_retains_stride_two_spatial_endpoint_evidence():
     model = BasicLinearRegressor(base_channels=4)
     assert model.start_score is not model.end_score
