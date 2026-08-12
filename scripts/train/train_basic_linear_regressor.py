@@ -92,7 +92,8 @@ def _recovery_audit(model: torch.nn.Module, dataset: BasicLinearClipDataset,
 def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           seed: int, base_channels: int, split_seed: int | None = None, split_strategy: str = "command",
           cache_frames: bool = False, map_weight: float = 0.0, start_onset: float = .24,
-          start_sigma: float = .05, temporal_mixer: bool = False) -> dict:
+          start_sigma: float = .05, end_onset: float = .24,
+          temporal_mixer: bool = False) -> dict:
     torch.manual_seed(seed)
     dataset = BasicLinearClipDataset(data, cache_frames=cache_frames)
     splitters = {"segment": split_by_segment, "command": split_by_command}
@@ -105,7 +106,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     test_loader = DataLoader(Subset(dataset, test_indices), batch_size=batch_size)
     device = _device()
     model = BasicLinearRegressor(base_channels=base_channels, start_onset=start_onset,
-                                 start_sigma=start_sigma, temporal_mixer=temporal_mixer).to(device)
+                                 start_sigma=start_sigma, end_onset=end_onset,
+                                 temporal_mixer=temporal_mixer).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     best: dict | None = None
     for epoch in range(1, epochs + 1):
@@ -158,6 +160,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "endpoint_map_weight": map_weight,
         "start_onset": start_onset,
         "start_sigma": start_sigma,
+        "end_onset": end_onset,
         "temporal_mixer": temporal_mixer,
         "split_seed": split_seed,
         "split_strategy": split_strategy,
@@ -195,6 +198,8 @@ def main() -> None:
                         help="Aligned-clip time prior centre for the start endpoint.")
     parser.add_argument("--start-sigma", type=float, default=.05,
                         help="Positive aligned-clip time-prior width for the start endpoint.")
+    parser.add_argument("--end-onset", type=float, default=.24,
+                        help="Aligned-clip anchor before duration-derived end timing.")
     parser.add_argument("--temporal-mixer", action="store_true",
                         help="Enable residual temporal mixing before endpoint score maps.")
     parser.add_argument("--split-strategy", choices=("segment", "command"), default="command",
@@ -217,7 +222,8 @@ def main() -> None:
                    lr=args.lr, seed=args.seed, split_seed=args.split_seed, base_channels=args.base_channels,
                    split_strategy=args.split_strategy, cache_frames=args.cache_frames,
                    map_weight=args.map_weight, start_onset=args.start_onset,
-                   start_sigma=args.start_sigma, temporal_mixer=args.temporal_mixer)
+                   start_sigma=args.start_sigma, end_onset=args.end_onset,
+                   temporal_mixer=args.temporal_mixer)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 

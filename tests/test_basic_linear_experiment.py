@@ -109,9 +109,10 @@ def test_linear_regressor_returns_native_bounded_quintuplets():
 
 
 def test_linear_regressor_accepts_explicit_start_time_prior():
-    model = BasicLinearRegressor(start_onset=-.24, start_sigma=.08)
+    model = BasicLinearRegressor(start_onset=-.24, start_sigma=.08, end_onset=.24)
     assert model.start_onset == pytest.approx(-.24)
     assert model.start_sigma == pytest.approx(.08)
+    assert model.end_onset == pytest.approx(.24)
     with pytest.raises(ValueError, match="start_sigma"):
         BasicLinearRegressor(start_sigma=0.)
 
