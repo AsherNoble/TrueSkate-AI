@@ -23,34 +23,11 @@ class BasicLinearRegressor(nn.Module):
             nn.Conv2d(c, c * 2, 3, stride=2, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
             nn.Conv2d(c * 2, c * 4, 3, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
         )
-        # The coarse stride-two maps are sufficient for duration and broad
-        # trace evidence, but an end-point readout has only 64 horizontal cells
-        # at the production width.  Preserve a dense parallel path so the end
-        # head can resolve the final rendered pixel below the 0.03 acceptance
-        # tolerance rather than interpolating a coarse activation centroid.
-        self.dense_encoder = nn.Sequential(
-            nn.Conv2d(6, c, 5, stride=1, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
-            nn.Conv2d(c, c, 3, stride=1, padding=1), nn.GroupNorm(1, c), nn.SiLU(),
-            nn.Conv2d(c, c * 2, 3, stride=1, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
-        )
-        # The start point exists only at trace onset.  A score map independently
-        # predicted for every frame must choose among the complete rendered
-        # line, so it has an inherent start-vs-trace ambiguity.  The calibrated
-        # clip contract places onset in frames 6--9 of 32; encode those four
-        # RGB+difference pairs together so this head can identify the pixel
-        # that first changes, including its short temporal context.
-        self.onset_encoder = nn.Sequential(
-            nn.Conv2d(24, c, 5, stride=1, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
-            nn.Conv2d(c, c * 2, 3, stride=2, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
-            nn.Conv2d(c * 2, c * 4, 3, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
-        )
         # Start and end are not interchangeable visual concepts.  A shared map
         # plus an externally imposed time prior can collapse to the trace's
         # midpoint; give each endpoint its own learned spatial evidence.
         self.start_score = nn.Conv2d(c * 4, 1, 1)
         self.end_score = nn.Conv2d(c * 4, 1, 1)
-        self.dense_end_score = nn.Conv2d(c * 2, 1, 1)
-        self.onset_start_score = nn.Conv2d(c * 4, 1, 1)
         self.duration_head = nn.Sequential(
             nn.Conv1d(2, c, 3, padding=1), nn.SiLU(), nn.Conv1d(c, c, 3, padding=1), nn.SiLU(),
             nn.AdaptiveAvgPool1d(8), nn.Flatten(), nn.Linear(c * 8, c * 2), nn.SiLU(), nn.Linear(c * 2, 1),
@@ -70,16 +47,6 @@ class BasicLinearRegressor(nn.Module):
         return ((attention * xa.view(1, 1, 1, width)).sum((1, 2, 3)),
                 (attention * ya.view(1, 1, height, 1)).sum((1, 2, 3)))
 
-    @staticmethod
-    def _read_xy_map(scores: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """Read one spatial score map without a trace-duration ambiguity."""
-        batch, height, width = scores.shape
-        attention = torch.softmax(scores.flatten(1) / .15, dim=1).reshape_as(scores)
-        xa = torch.linspace(0., 1., width, dtype=scores.dtype, device=scores.device)
-        ya = torch.linspace(0., 1., height, dtype=scores.dtype, device=scores.device)
-        return ((attention * xa.view(1, 1, width)).sum((1, 2)),
-                (attention * ya.view(1, height, 1)).sum((1, 2)))
-
     def forward_with_scores(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Return the gesture plus raw start/end score maps for inspection."""
         if frames.ndim != 5 or frames.shape[2] != 3:
@@ -88,21 +55,9 @@ class BasicLinearRegressor(nn.Module):
         reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
         difference = torch.abs(frames - reference)
         encoded = self.encoder(torch.cat((frames, difference), dim=2).flatten(0, 1))
-        dense_encoded = self.dense_encoder(torch.cat((frames, difference), dim=2).flatten(0, 1))
         h, w = encoded.shape[-2:]
         start_scores = self.start_score(encoded).reshape(batch, steps, h, w)
         end_scores = self.end_score(encoded).reshape(batch, steps, h, w)
-        dense_end_scores = self.dense_end_score(dense_encoded).reshape(
-            batch, steps, dense_encoded.shape[-2], dense_encoded.shape[-1],
-        )
-        # Use relative positions so the small synthetic tensors used by unit
-        # tests remain valid, while a 32-frame production clip resolves to its
-        # calibrated onset neighbourhood (indices 6--9).
-        onset_indices = torch.linspace(.19, .28, 4, device=frames.device).mul(steps - 1).round().long()
-        onset_rgb = frames.index_select(1, onset_indices)
-        onset_difference = difference.index_select(1, onset_indices)
-        onset_frames = torch.cat((onset_rgb, onset_difference), dim=2).flatten(1, 2)
-        onset_scores = self.onset_start_score(self.onset_encoder(onset_frames))[:, 0]
         # The pre-touch reference is the leading ~22% of every aligned clip.
         # Suppress that known no-gesture region, then make only a gentle learned
         # temporal preference.  Strong priors previously let background pixels in
@@ -116,14 +71,16 @@ class BasicLinearRegressor(nn.Module):
         # contain only board/camera motion.  The old ``+time`` end prior was
         # therefore systematically attracted to post-liftoff pixels.  The
         # direct clip window is -0.5s..~1.77s, so onset is near 0.24 and an
-        # estimated liftoff is onset + duration / 2.27.  Broad Gaussian priors
-        # retain tolerance for calibration/frame-rate variation while guiding
-        # each endpoint head to the causally relevant trace interval.
+        # estimated liftoff is onset + duration / 2.27.  A frozen-checkpoint
+        # ablation showed the start location is sharply concentrated at onset;
+        # use that information during training instead of asking the head to
+        # choose a start among the entire accumulated trace.
         onset = time.new_full((batch,), 0.24)
         liftoff = (onset + duration[:, 0] / 2.27).clamp(max=0.88)
+        start_prior = active - ((time[None, :] - onset[:, None]) / 0.05).square()
         end_prior = active - ((time[None, :] - liftoff[:, None]) / 0.15).square()
-        x0, y0 = self._read_xy_map(onset_scores)
-        x1, y1 = self._read_xy(dense_end_scores, end_prior)
+        x0, y0 = self._read_xy(start_scores, start_prior)
+        x1, y1 = self._read_xy(end_scores, end_prior)
         prediction = torch.cat((x0[:, None], y0[:, None], x1[:, None], y1[:, None], duration), dim=1)
         return prediction, start_scores, end_scores
 
