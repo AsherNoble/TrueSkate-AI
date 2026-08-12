@@ -104,7 +104,13 @@ def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0
                                                spatial_sigma=spatial_sigma, time_sigma=time_sigma)
         results[f"blend={blend}:space={spatial_sigma}:time={time_sigma}"] = basic_linear_metrics(
             Refined(), [{"frames": frames, "target": target} for frames, target in batches], device)
-    output = {"checkpoint": checkpoint_name, "test_samples": len(test_indices), "results": results}
+    class Base(torch.nn.Module):
+        def forward(self, frames):
+            return model(frames)
+    output = {"checkpoint": checkpoint_name, "test_samples": len(test_indices),
+              "baseline": basic_linear_metrics(Base(), [{"frames": frames, "target": target}
+                                                          for frames, target in batches], device),
+              "results": results}
     stem = Path(checkpoint_name).stem
     (Path("/models") / f"{stem}_refinement_grid.json").write_text(json.dumps(output, indent=2))
     models.commit()
