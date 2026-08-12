@@ -23,6 +23,16 @@ class BasicLinearRegressor(nn.Module):
             nn.Conv2d(c, c * 2, 3, stride=2, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
             nn.Conv2d(c * 2, c * 4, 3, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
         )
+        # The coarse stride-two maps are sufficient for duration and broad
+        # trace evidence, but an end-point readout has only 64 horizontal cells
+        # at the production width.  Preserve a dense parallel path so the end
+        # head can resolve the final rendered pixel below the 0.03 acceptance
+        # tolerance rather than interpolating a coarse activation centroid.
+        self.dense_encoder = nn.Sequential(
+            nn.Conv2d(6, c, 5, stride=1, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
+            nn.Conv2d(c, c, 3, stride=1, padding=1), nn.GroupNorm(1, c), nn.SiLU(),
+            nn.Conv2d(c, c * 2, 3, stride=1, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
+        )
         # The start point exists only at trace onset.  A score map independently
         # predicted for every frame must choose among the complete rendered
         # line, so it has an inherent start-vs-trace ambiguity.  The calibrated
@@ -39,6 +49,7 @@ class BasicLinearRegressor(nn.Module):
         # midpoint; give each endpoint its own learned spatial evidence.
         self.start_score = nn.Conv2d(c * 4, 1, 1)
         self.end_score = nn.Conv2d(c * 4, 1, 1)
+        self.dense_end_score = nn.Conv2d(c * 2, 1, 1)
         self.onset_start_score = nn.Conv2d(c * 4, 1, 1)
         self.duration_head = nn.Sequential(
             nn.Conv1d(2, c, 3, padding=1), nn.SiLU(), nn.Conv1d(c, c, 3, padding=1), nn.SiLU(),
@@ -77,9 +88,13 @@ class BasicLinearRegressor(nn.Module):
         reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
         difference = torch.abs(frames - reference)
         encoded = self.encoder(torch.cat((frames, difference), dim=2).flatten(0, 1))
+        dense_encoded = self.dense_encoder(torch.cat((frames, difference), dim=2).flatten(0, 1))
         h, w = encoded.shape[-2:]
         start_scores = self.start_score(encoded).reshape(batch, steps, h, w)
         end_scores = self.end_score(encoded).reshape(batch, steps, h, w)
+        dense_end_scores = self.dense_end_score(dense_encoded).reshape(
+            batch, steps, dense_encoded.shape[-2], dense_encoded.shape[-1],
+        )
         # Use relative positions so the small synthetic tensors used by unit
         # tests remain valid, while a 32-frame production clip resolves to its
         # calibrated onset neighbourhood (indices 6--9).
@@ -108,7 +123,7 @@ class BasicLinearRegressor(nn.Module):
         liftoff = (onset + duration[:, 0] / 2.27).clamp(max=0.88)
         end_prior = active - ((time[None, :] - liftoff[:, None]) / 0.15).square()
         x0, y0 = self._read_xy_map(onset_scores)
-        x1, y1 = self._read_xy(end_scores, end_prior)
+        x1, y1 = self._read_xy(dense_end_scores, end_prior)
         prediction = torch.cat((x0[:, None], y0[:, None], x1[:, None], y1[:, None], duration), dim=1)
         return prediction, start_scores, end_scores
 
