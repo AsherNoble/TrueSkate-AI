@@ -42,7 +42,7 @@ def _trainer():
     return module
 
 
-@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=16384,
+@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
               volumes={"/corpus": corpus, "/models": models})
 def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  batch_size: int = 8, lr: float = 1e-3, seed: int = 0,

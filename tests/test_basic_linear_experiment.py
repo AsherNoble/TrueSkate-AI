@@ -208,3 +208,8 @@ def test_selected_video_decode_falls_back_when_random_seek_is_unreliable(monkeyp
     monkeypatch.setattr(holds, "_decode_frames", lambda _sample: frames)
     selected = holds._decode_even_frames(sample, 2)
     assert [int(frame[0, 0, 0]) for frame in selected] == [0, 3]
+
+
+def test_modal_linear_training_reserves_cache_headroom():
+    source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
+    assert 'memory=32768' in source
