@@ -22,7 +22,10 @@ app = modal.App("trueskate-basic-linear")
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("libglib2.0-0")
-    .pip_install("torch", "opencv-python-headless", "numpy")
+    # gesture_sampling imports the shared CMA-ES bounds, which transitively
+    # imports the device gesture module.  The trainer never opens a WebDriver
+    # session, but that module declares Selenium classes at import time.
+    .pip_install("torch", "opencv-python-headless", "numpy", "selenium")
     .env({"PYTHONPATH": "/root/src"})
     .add_local_dir(str(_ROOT / "src" / "trueskate_ai"), remote_path="/root/src/trueskate_ai")
     .add_local_file(str(_ROOT / "scripts" / "train" / "train_basic_linear_regressor.py"),
