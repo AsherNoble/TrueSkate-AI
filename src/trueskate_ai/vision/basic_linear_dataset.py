@@ -22,6 +22,8 @@ from trueskate_ai.vision.basic_hold_dataset import (
 def _valid_meta(sample: Path, meta: dict) -> str | None:
     if (sample / ".menu").exists():
         return "menu_marked"
+    if (sample / ".trace_mismatch").exists():
+        return "trace_mismatch"
     if str(meta.get("gesture_distribution", "")).casefold() != "linear":
         return "not_linear"
     if bool(meta.get("spin_active", False)) or bool(meta.get("use_spin", False)):
