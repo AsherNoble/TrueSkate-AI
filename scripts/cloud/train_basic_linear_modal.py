@@ -118,6 +118,57 @@ def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0
     return output
 
 
+@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def evaluate_start_timing(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
+                          batch_size: int = 8) -> dict:
+    """Ablate the fixed start-time prior on a frozen held-out checkpoint.
+
+    This is intentionally post-training: it establishes whether the known
+    alignment window, rather than the learned spatial map, is limiting start
+    recovery before consuming another training run.
+    """
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+    from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
+    from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
+
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
+    _train, _val, test_indices = split_by_command(data, seed=seed)
+    device = torch.device("cuda")
+    model = BasicLinearRegressor(base_channels=int(payload["base_channels"])).to(device)
+    model.load_state_dict(payload["state_dict"])
+    model.eval()
+    batches = [(batch["frames"].to(device), batch["target"].to(device))
+               for batch in DataLoader(Subset(data, test_indices), batch_size=batch_size)]
+
+    def timed_start(frames, *, onset: float, sigma: float):
+        base, start_scores, _end_scores = model.forward_with_scores(frames)
+        steps = frames.shape[1]
+        time = torch.linspace(0., 1., steps, dtype=frames.dtype, device=frames.device)
+        active = torch.where(time < .18, torch.full_like(time, -12.0), torch.zeros_like(time))
+        prior = active - ((time - onset) / sigma).square()
+        x0, y0 = model._read_xy(start_scores, prior)
+        return torch.cat((x0[:, None], y0[:, None], base[:, 2:]), dim=1)
+
+    results = {}
+    for onset in (.20, .22, .24, .26, .28):
+        for sigma in (.04, .06, .08, .10, .13, .17):
+            class TimedStart(torch.nn.Module):
+                def forward(self, frames):
+                    return timed_start(frames, onset=onset, sigma=sigma)
+            results[f"onset={onset:.2f}:sigma={sigma:.2f}"] = basic_linear_metrics(
+                TimedStart(), [{"frames": frames, "target": target} for frames, target in batches], device,
+            )
+    output = {"checkpoint": checkpoint_name, "test_samples": len(test_indices), "results": results}
+    stem = Path(checkpoint_name).stem
+    (Path("/models") / f"{stem}_start_timing_grid.json").write_text(json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
