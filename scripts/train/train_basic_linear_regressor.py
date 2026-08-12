@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -68,7 +69,15 @@ def _recovery_audit(model: torch.nn.Module, dataset: BasicLinearClipDataset,
     buckets: dict[str, list[float]] = {}
     for record, index in zip(records, indices):
         meta = dataset._meta(dataset.sample_paths[index])
-        device_name = str(meta.get("device", "unknown"))
+        # New alignments stamp the manifest device explicitly.  Early MVP-2
+        # samples predate that provenance field, but their session name is
+        # canonical (e.g. iPhone_XR2_YYYY...) so use it as a backward-compatible
+        # audit-only fallback rather than silently collapsing them to unknown.
+        device_name = meta.get("device")
+        if not device_name:
+            match = re.match(r"(iPhone_[^_]+(?:\d+)?)_", str(meta.get("session", "")))
+            device_name = match.group(1) if match else "unknown"
+        device_name = str(device_name)
         (x0, y0), (x1, y1) = meta["waypoints"]
         slope = abs((float(y1) - float(y0)) / (float(x1) - float(x0)))
         geometry = "low_slope" if slope < 0.8 else "mid_slope" if slope < 1.6 else "high_slope"

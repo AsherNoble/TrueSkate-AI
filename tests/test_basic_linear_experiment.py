@@ -158,6 +158,17 @@ def test_indexed_subset_preserves_original_dataset_indices(tmp_path):
     assert item["sample_index"] == 1
 
 
+def test_linear_sample_meta_carries_device_provenance(tmp_path):
+    # The dataset preserves extra metadata emitted by the aligner; this fixture
+    # protects the field used by the held-out device recovery audit.
+    sample = _write_sample(tmp_path, "segment_1", "one")
+    meta = json.loads((sample / "meta.json").read_text())
+    meta["device"] = "iPhone_XR2"
+    (sample / "meta.json").write_text(json.dumps(meta))
+    dataset = BasicLinearClipDataset(tmp_path, sequence_length=2, image_height=10, image_width=8)
+    assert dataset._meta(dataset.sample_paths[0])["device"] == "iPhone_XR2"
+
+
 def test_linear_collector_exposes_native_resolution_option():
     result = subprocess.run(
         [sys.executable, "scripts/data/collect_sls_xctest.py", "--help"],
