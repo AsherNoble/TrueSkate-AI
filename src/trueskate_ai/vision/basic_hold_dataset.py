@@ -52,6 +52,37 @@ def _decode_frames(sample: Path) -> list[np.ndarray]:
     return decoded
 
 
+def _decode_even_frames(sample: Path, count: int) -> list[np.ndarray]:
+    """Decode only evenly selected frames when the source is a compact video.
+
+    Full video decode is correct but wasteful for clip regressors that always
+    resample a fixed-length sequence.  Seeking to selected frame numbers keeps
+    the same even temporal coverage while avoiding decode of ~30 unused frames
+    per 32-frame aligned clip (and many more for legacy high-fps clips).
+    """
+    if count < 1:
+        raise ValueError("count must be positive")
+    paths = _frame_paths(sample)
+    if paths:
+        indices = np.linspace(0, len(paths) - 1, count).round().astype(int)
+        decoded = [cv2.imread(str(paths[int(index)]), cv2.IMREAD_COLOR) for index in indices]
+    else:
+        capture = cv2.VideoCapture(str(sample / "frames.mp4"))
+        try:
+            total = max(1, int(capture.get(cv2.CAP_PROP_FRAME_COUNT)))
+            indices = np.linspace(0, total - 1, count).round().astype(int)
+            decoded = []
+            for index in indices:
+                capture.set(cv2.CAP_PROP_POS_FRAMES, int(index))
+                ok, frame = capture.read()
+                decoded.append(frame if ok else None)
+        finally:
+            capture.release()
+    if not decoded or any(frame is None for frame in decoded):
+        raise ValueError(f"{sample}: unreadable selected frames")
+    return decoded
+
+
 def _valid_meta(sample: Path, meta: dict) -> str | None:
     if (sample / ".menu").exists():
         return "menu_marked"
