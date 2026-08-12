@@ -4,10 +4,11 @@
 # may be added before the loader allow-list is uploaded.
 set -eu
 
-OUT="${1:?usage: finalize_basic_linear_run.sh OUT_DIR RUN_LABEL [target] [collector_pid_file]}"
-RUN_LABEL="${2:?usage: finalize_basic_linear_run.sh OUT_DIR RUN_LABEL [target] [collector_pid_file]}"
+OUT="${1:?usage: finalize_basic_linear_run.sh OUT_DIR RUN_LABEL [target] [collector_pid_file ...]}"
+RUN_LABEL="${2:?usage: finalize_basic_linear_run.sh OUT_DIR RUN_LABEL [target] [collector_pid_file ...]}"
 TARGET="${3:-1000}"
-PID_FILE="${4:-tmp/basic_linear_xr1.pid}"
+shift 3
+PID_FILES=("${@:-tmp/basic_linear_xr1.pid}")
 REPO=/Users/training-server/trueskate-ai
 
 cd "$REPO"
@@ -27,7 +28,12 @@ while :; do
   sleep 60
 done
 
-while [ -s "$PID_FILE" ] && kill -0 "$(tr -d '[:space:]' < "$PID_FILE")" 2>/dev/null; do
+while :; do
+  alive=0
+  for pid_file in "${PID_FILES[@]}"; do
+    [ -s "$pid_file" ] && kill -0 "$(tr -d '[:space:]' < "$pid_file")" 2>/dev/null && alive=1
+  done
+  [ "$alive" -eq 0 ] && break
   echo "[basic-linear-finalizer] collector still exiting"
   sleep 30
 done
