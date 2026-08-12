@@ -65,7 +65,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  cache_frames: bool = True, split_seed: int | None = None,
                  map_weight: float = 0.0, start_onset: float = .24,
                  start_sigma: float = .05, end_onset: float = .24,
-                 temporal_mixer: bool = False) -> dict:
+                 temporal_mixer: bool = False, trajectory_weight: float = 0.0) -> dict:
     trainer = _trainer()
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
     payload = trainer.train(
@@ -81,6 +81,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         start_sigma=start_sigma,
         end_onset=end_onset,
         temporal_mixer=temporal_mixer,
+        trajectory_weight=trajectory_weight,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
@@ -443,12 +444,13 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          cache_frames: bool = True, split_seed: int | None = None,
          map_weight: float = 0.0, start_onset: float = .24,
          start_sigma: float = .05, end_onset: float = .24,
-         temporal_mixer: bool = False) -> None:
+         temporal_mixer: bool = False, trajectory_weight: float = 0.0) -> None:
     result = train_remote.remote(
         data_subdir, run_label, epochs=epochs, batch_size=batch_size, lr=lr,
         seed=seed, base_channels=base_channels, split_strategy=split_strategy,
         cache_frames=cache_frames, split_seed=split_seed, map_weight=map_weight,
         start_onset=start_onset, start_sigma=start_sigma, end_onset=end_onset,
         temporal_mixer=temporal_mixer,
+        trajectory_weight=trajectory_weight,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
