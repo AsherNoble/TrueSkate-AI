@@ -31,14 +31,42 @@ def _orange_delta_mask(frame: np.ndarray, reference: np.ndarray) -> np.ndarray:
             & (hsv[:, :, 2] >= 90) & (difference >= 70))
 
 
-def _centre(mask: np.ndarray) -> np.ndarray | None:
+def _largest_component(mask: np.ndarray) -> tuple[int, np.ndarray] | None:
     count, _labels, stats, centroids = cv2.connectedComponentsWithStats(mask.astype(np.uint8), 8)
     candidates = [(stats[index, cv2.CC_STAT_AREA], centroids[index]) for index in range(1, count)
                   if stats[index, cv2.CC_STAT_AREA] >= 3]
     if not candidates:
         return None
-    _area, xy = max(candidates, key=lambda item: item[0])
-    return np.asarray(xy, dtype=np.float32)
+    area, xy = max(candidates, key=lambda item: item[0])
+    return int(area), np.asarray(xy, dtype=np.float32)
+
+
+def _trace_endpoints(masks: list[np.ndarray]) -> tuple[np.ndarray, np.ndarray] | None:
+    """Track the large, continuously moving orange component until it fades."""
+    candidates = [_largest_component(mask) for mask in masks]
+    # The finger blob covers hundreds of source pixels; tiny stationary orange
+    # changes from the board/UI are eliminated by this threshold.  Find the
+    # contiguous high-area run with the greatest physical displacement.
+    runs: list[list[tuple[int, np.ndarray]]] = []
+    current: list[tuple[int, np.ndarray]] = []
+    for candidate in candidates:
+        if candidate is not None and candidate[0] >= 250:
+            current.append(candidate)
+        elif current:
+            runs.append(current)
+            current = []
+    if current:
+        runs.append(current)
+    if not runs:
+        return None
+    run = max(runs, key=lambda values: float(np.linalg.norm(values[-1][1] - values[0][1])))
+    if len(run) < 2:
+        return None
+    start = run[0][1]
+    # The final fade frame can slightly pull the blob centroid back.  The farthest
+    # tracked location is the most stable visual estimate of liftoff.
+    end = max((xy for _area, xy in run), key=lambda xy: float(np.linalg.norm(xy - start)))
+    return start, end
 
 
 def _error(prediction: np.ndarray | None, target: np.ndarray, width: int, height: int) -> float | None:
@@ -63,15 +91,14 @@ def main() -> None:
         frames = _decode_frames(sample)
         reference = np.mean(frames[:7], axis=0)
         times = np.asarray(meta["frame_times"], dtype=np.float32)
-        masks = [_orange_delta_mask(frame, reference) for frame in frames]
-        active = [(index, _centre(mask)) for index, (mask, time) in enumerate(zip(masks, times)) if time >= 0]
-        active = [(index, xy) for index, xy in active if xy is not None]
-        if not active:
+        endpoints = _trace_endpoints([_orange_delta_mask(frame, reference) for frame in frames])
+        if endpoints is None:
             missed += 1
             continue
         width, height = frames[0].shape[1], frames[0].shape[0]
-        start = _error(active[0][1], np.asarray(meta["waypoints"][0]), width, height)
-        end = _error(active[-1][1], np.asarray(meta["waypoints"][1]), width, height)
+        start_xy, end_xy = endpoints
+        start = _error(start_xy, np.asarray(meta["waypoints"][0]), width, height)
+        end = _error(end_xy, np.asarray(meta["waypoints"][1]), width, height)
         if start is None or end is None:
             missed += 1
         else:
