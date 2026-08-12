@@ -44,4 +44,7 @@ def refine_linear_endpoints(frames: torch.Tensor, prediction: torch.Tensor, *,
     result = prediction.clone()
     result[:, :2] = refine(prediction[:, :2], onset)
     result[:, 2:4] = refine(prediction[:, 2:4], liftoff)
-    return result.clamp(0., 1.)
+    # Coordinates are normalised; duration remains in its native 0.30..1.20s
+    # interval and must never be clipped to one second during evaluation.
+    result[:, :4] = result[:, :4].clamp(0., 1.)
+    return result
