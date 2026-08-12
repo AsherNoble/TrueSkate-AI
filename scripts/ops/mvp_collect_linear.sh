@@ -23,7 +23,10 @@ mkdir -p logs "$OUT"
 if [ -s "$SEED_FILE" ] && grep -Eq '^[0-9]+$' "$SEED_FILE"; then
   next_seed=$(cat "$SEED_FILE")
 else
-  next_seed=$(date +%s)
+  # Avoid a same-second collision when both XR collectors are launched together.
+  # The device hash is fixed and fits the sampler's positive 31-bit seed range.
+  device_seed=$(printf '%s' "$DEVICE" | cksum | awk '{print $1}')
+  next_seed=$(( ( $(date +%s) + device_seed ) % 2147483647 ))
 fi
 
 i=0
