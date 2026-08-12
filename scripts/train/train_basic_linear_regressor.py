@@ -90,11 +90,11 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     model.load_state_dict(best["state_dict"])
     test = basic_linear_metrics(model, test_loader, device)
     payload = {
-        "model_type": "basic_linear_regressor_v1_spatiotemporal",
+        "model_type": "basic_linear_regressor_v2_stride2_spatiotemporal",
         "gesture_contract": "two-point, constant-velocity, finite-slope linear drag",
         "target_schema": ["x0", "y0", "x1", "y1", "duration_s"],
         "uses_pre_touch_difference": True,
-        "spatial_map_stride": 4,
+        "spatial_map_stride": 2,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "base_channels": base_channels,
         "sequence_length": dataset.sequence_length,

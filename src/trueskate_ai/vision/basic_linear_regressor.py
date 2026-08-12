@@ -14,7 +14,12 @@ class BasicLinearRegressor(nn.Module):
         super().__init__()
         c = base_channels
         self.encoder = nn.Sequential(
-            nn.Conv2d(6, c, 5, stride=2, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
+            # MVP-2 must distinguish both endpoints.  At 128px input width a
+            # stride-four map has only 32 x-cells (one cell is ~0.031 in model
+            # coordinates), already the whole recovery tolerance.  Keep the
+            # first layer dense and downsample only once so soft-argmax has
+            # genuine sub-tolerance endpoint evidence.
+            nn.Conv2d(6, c, 5, stride=1, padding=2), nn.GroupNorm(1, c), nn.SiLU(),
             nn.Conv2d(c, c * 2, 3, stride=2, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
             nn.Conv2d(c * 2, c * 4, 3, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
         )
