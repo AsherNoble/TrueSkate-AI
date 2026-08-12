@@ -113,6 +113,7 @@ def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0
               "results": results}
     stem = Path(checkpoint_name).stem
     (Path("/models") / f"{stem}_refinement_grid.json").write_text(json.dumps(output, indent=2))
+    (Path("/models") / f"{stem}_component_audit.json").write_text(json.dumps(output["baseline"], indent=2))
     models.commit()
     return output
 
