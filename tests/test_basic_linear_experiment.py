@@ -102,6 +102,7 @@ def test_linear_regressor_returns_native_bounded_quintuplets():
 
 def test_linear_regressor_retains_stride_two_spatial_endpoint_evidence():
     model = BasicLinearRegressor(base_channels=4)
+    assert model.start_score is not model.end_score
     encoded = model.encoder(torch.rand(2, 6, 30, 18))
     assert encoded.shape[-2:] == (15, 9)
 

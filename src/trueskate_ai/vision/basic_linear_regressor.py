@@ -23,7 +23,11 @@ class BasicLinearRegressor(nn.Module):
             nn.Conv2d(c, c * 2, 3, stride=2, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
             nn.Conv2d(c * 2, c * 4, 3, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
         )
-        self.spatial_score = nn.Conv2d(c * 4, 1, 1)
+        # Start and end are not interchangeable visual concepts.  A shared map
+        # plus an externally imposed time prior can collapse to the trace's
+        # midpoint; give each endpoint its own learned spatial evidence.
+        self.start_score = nn.Conv2d(c * 4, 1, 1)
+        self.end_score = nn.Conv2d(c * 4, 1, 1)
         self.duration_head = nn.Sequential(
             nn.Conv1d(2, c, 3, padding=1), nn.SiLU(), nn.Conv1d(c, c, 3, padding=1), nn.SiLU(),
             nn.AdaptiveAvgPool1d(8), nn.Flatten(), nn.Linear(c * 8, c * 2), nn.SiLU(), nn.Linear(c * 2, 1),
@@ -46,13 +50,18 @@ class BasicLinearRegressor(nn.Module):
         reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
         encoded = self.encoder(torch.cat((frames, torch.abs(frames - reference)), dim=2).flatten(0, 1))
         h, w = encoded.shape[-2:]
-        scores = self.spatial_score(encoded).reshape(batch, steps, h, w)
-        # Endpoint priors choose the first and last half of the rendered trace;
-        # the learned spatial scores still select actual onset/offset evidence.
+        start_scores = self.start_score(encoded).reshape(batch, steps, h, w)
+        end_scores = self.end_score(encoded).reshape(batch, steps, h, w)
+        # The pre-touch reference is the leading ~22% of every aligned clip.
+        # Suppress that known no-gesture region, then make only a gentle learned
+        # temporal preference.  Strong priors previously let background pixels in
+        # the pre-touch prefix dominate early-endpoint attention.
         time = torch.linspace(0., 1., steps, dtype=frames.dtype, device=frames.device)
-        x0, y0 = self._read_xy(scores, -4.0 * time)
-        x1, y1 = self._read_xy(scores, 4.0 * time)
-        series = torch.stack((scores.amax((2, 3)), scores.mean((2, 3))), dim=1)
+        active = torch.where(time < .18, torch.full_like(time, -12.0), torch.zeros_like(time))
+        x0, y0 = self._read_xy(start_scores, active - 1.5 * time)
+        x1, y1 = self._read_xy(end_scores, active + 1.5 * time)
+        evidence = torch.maximum(start_scores, end_scores)
+        series = torch.stack((evidence.amax((2, 3)), evidence.mean((2, 3))), dim=1)
         duration = BASIC_LINEAR_MIN_S + torch.sigmoid(self.duration_head(series)) * (BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S)
         return torch.cat((x0[:, None], y0[:, None], x1[:, None], y1[:, None], duration), dim=1)
 
