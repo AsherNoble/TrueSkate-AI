@@ -70,7 +70,9 @@ def test_linear_dataset_only_admits_calibrated_two_point_constant_velocity_lines
                                     cache_frames=True)
     first = cached[0]["frames"]
     second = cached[0]["frames"]
-    assert first.data_ptr() == second.data_ptr()
+    assert len(cached._frame_cache) == 1
+    assert next(iter(cached._frame_cache.values())).dtype == torch.uint8
+    assert torch.equal(first, second)
 
 
 def test_linear_segment_and_command_splits_are_disjoint(tmp_path):
