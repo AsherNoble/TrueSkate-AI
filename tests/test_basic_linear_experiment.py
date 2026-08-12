@@ -22,7 +22,10 @@ from trueskate_ai.vision.basic_linear_dataset import (
     split_by_segment,
 )
 from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
-from trueskate_ai.vision.basic_linear_training import basic_linear_metrics, passes_basic_linear_acceptance
+from trueskate_ai.vision.basic_linear_training import (
+    basic_linear_endpoint_map_loss, basic_linear_loss, basic_linear_metrics,
+    passes_basic_linear_acceptance,
+)
 from scripts.train.train_basic_linear_regressor import _IndexedSubset
 
 
@@ -153,6 +156,20 @@ def test_recovery_metric_requires_every_component_to_be_within_tolerance():
     assert metrics["start_recovery_accuracy"] == pytest.approx(1.0)
     assert metrics["end_recovery_accuracy"] == pytest.approx(.5)
     assert metrics["duration_recovery_accuracy"] == pytest.approx(1.0)
+
+
+def test_linear_endpoint_map_auxiliary_requires_maps_and_is_differentiable():
+    prediction = torch.tensor([[.3, .4, .6, .55, .6]], requires_grad=True)
+    target = torch.tensor([[.3, .4, .6, .55, .6]])
+    start = torch.rand(1, 4, 5, 6, requires_grad=True)
+    end = torch.rand(1, 4, 5, 6, requires_grad=True)
+    with pytest.raises(ValueError, match="score maps"):
+        basic_linear_loss(prediction, target, map_weight=.01)
+    loss = basic_linear_loss(prediction, target, start_scores=start, end_scores=end, map_weight=.01)
+    loss.backward()
+    assert start.grad is not None and end.grad is not None
+    direct = basic_linear_endpoint_map_loss(start.detach(), target[:, :2], torch.tensor([.24]))
+    assert torch.isfinite(direct)
 
 
 def test_indexed_subset_preserves_original_dataset_indices(tmp_path):
