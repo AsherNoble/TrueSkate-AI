@@ -79,13 +79,16 @@ class BasicLinearClipDataset(Dataset):
     """One calibrated straight drag clip, target ``[x0,y0,x1,y1,duration]``."""
 
     def __init__(self, root: str | Path, *, sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
-                 image_height: int = DEFAULT_IMAGE_HEIGHT, image_width: int = DEFAULT_IMAGE_WIDTH):
+                 image_height: int = DEFAULT_IMAGE_HEIGHT, image_width: int = DEFAULT_IMAGE_WIDTH,
+                 cache_frames: bool = False):
         if sequence_length < 1 or image_height < 1 or image_width < 1:
             raise ValueError("sequence/image dimensions must be positive")
         self.root = Path(root)
         self.sequence_length = sequence_length
         self.image_height = image_height
         self.image_width = image_width
+        self.cache_frames = cache_frames
+        self._frame_cache: dict[Path, torch.Tensor] = {}
         self.sample_paths, self.stats = discover_basic_linear_samples(self.root)
         self.segment_keys = tuple(self._segment_key(path) for path in self.sample_paths)
         self.command_keys = tuple(self._command_key(path) for path in self.sample_paths)
@@ -115,13 +118,18 @@ class BasicLinearClipDataset(Dataset):
         import numpy as np
         sample = self.sample_paths[index]
         meta = self._meta(sample)
-        source = _decode_frames(sample)
-        indices = np.linspace(0, len(source) - 1, self.sequence_length).round().astype(int)
-        frames = [cv2.cvtColor(cv2.resize(source[i], (self.image_width, self.image_height),
-                                           interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for i in indices]
-        array = np.stack(frames).astype(np.float32) / 255.0
+        cached = self._frame_cache.get(sample)
+        if cached is None:
+            source = _decode_frames(sample)
+            indices = np.linspace(0, len(source) - 1, self.sequence_length).round().astype(int)
+            frames = [cv2.cvtColor(cv2.resize(source[i], (self.image_width, self.image_height),
+                                               interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for i in indices]
+            array = np.stack(frames).astype(np.float32) / 255.0
+            cached = torch.from_numpy(array).permute(0, 3, 1, 2)
+            if self.cache_frames:
+                self._frame_cache[sample] = cached
         target = [value for point in meta["waypoints"] for value in point] + [meta["duration"]]
-        return {"frames": torch.from_numpy(array).permute(0, 3, 1, 2),
+        return {"frames": cached,
                 "target": torch.tensor(target, dtype=torch.float32)}
 
 
