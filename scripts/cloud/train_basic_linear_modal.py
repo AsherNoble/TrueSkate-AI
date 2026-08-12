@@ -176,6 +176,68 @@ def evaluate_start_timing(data_subdir: str, checkpoint_name: str, *, seed: int =
     return output
 
 
+@app.function(image=image, timeout=3 * 3600, memory=8192,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_orange_endpoint_cue(data_subdir: str, *, seed: int = 0,
+                             batch_size: int = 8) -> dict:
+    """Measure raw endpoint-cue observability on held-out commands.
+
+    This diagnostic is deliberately not an inference method: it uses each
+    target's duration to centre fixed temporal windows, then asks whether the
+    rendered warm-pixel evidence is spatially close enough to the labelled
+    endpoint.  It distinguishes an alignment/rendering ceiling from a learned
+    endpoint-reader failure without tuning a model on test commands.
+    """
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
+    _train, _val, test_indices = split_by_command(data, seed=seed)
+    totals = {key: 0 for key in ("samples", "start", "end", "both")}
+    time = torch.linspace(0., 1., data.sequence_length)
+    xa = torch.linspace(0., 1., data.image_width)
+    ya = torch.linspace(0., 1., data.image_height)
+
+    for batch in DataLoader(Subset(data, test_indices), batch_size=batch_size):
+        frames, target = batch["frames"], batch["target"]
+        reference = frames[:, :max(1, round(frames.shape[1] * .22))].mean(dim=1, keepdim=True)
+        red, green, blue = frames.unbind(dim=2)
+        motion = torch.abs(frames - reference).mean(dim=2)
+        warm = ((red - green + .12).relu() * (green - blue + .12).relu()
+                * (red - .20).relu() * motion)
+
+        def closest_error(xy, centre):
+            temporal = torch.exp(-.5 * ((time[None, :, None, None] - centre[:, None, None, None]) / .06).square())
+            index = (warm * temporal).flatten(1).argmax(dim=1)
+            plane = data.image_height * data.image_width
+            spatial = index.remainder(plane)
+            y = spatial.div(data.image_width, rounding_mode="floor")
+            x = spatial.remainder(data.image_width)
+            point = torch.stack((xa[x], ya[y]), dim=1)
+            return torch.linalg.vector_norm(point - xy, dim=1)
+
+        onset = target.new_full((len(target),), .24)
+        liftoff = (onset + target[:, 4] / 2.27).clamp(max=.88)
+        start = closest_error(target[:, :2], onset)
+        end = closest_error(target[:, 2:4], liftoff)
+        passed_start, passed_end = start <= .03, end <= .03
+        totals["samples"] += len(target)
+        totals["start"] += int(passed_start.sum())
+        totals["end"] += int(passed_end.sum())
+        totals["both"] += int((passed_start & passed_end).sum())
+    output = {
+        "diagnostic": "target-timed warm-pixel argmax; not an inference result",
+        "test_samples": totals["samples"],
+        "start_within_0.03": totals["start"] / totals["samples"],
+        "end_within_0.03": totals["end"] / totals["samples"],
+        "both_within_0.03": totals["both"] / totals["samples"],
+    }
+    (Path("/models") / "basic_linear_orange_cue_audit_20260813.json").write_text(json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
 @app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
               volumes={"/corpus": corpus, "/models": models})
 def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
