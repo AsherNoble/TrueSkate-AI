@@ -42,6 +42,7 @@ while :; do
     --no-reset \
     --park-label "$PARK" \
     --align-video \
+    --align-resize-width 128 \
     --segment-min 1 \
     --max-segments 1 \
     --seed "$seed" \

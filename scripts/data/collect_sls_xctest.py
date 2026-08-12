@@ -226,6 +226,10 @@ def main() -> None:
     ap.add_argument("--align-video", action="store_true",
                     help="Pass --video to the aligner: one h264 clip per sample instead "
                          "of N PNGs (~150x smaller on static scenes, 1 inode not N).")
+    ap.add_argument("--align-resize-width", type=int, default=512,
+                    help="Output width for aligned clips (default 512). Basic MVP clip regressors "
+                         "consume 128px-wide frames, so their runners set this to 128 to avoid "
+                         "storing and repeatedly decoding unused resolution.")
     ap.add_argument("--static-frac", type=float, default=0.0,
                     help="TRUE share [0,1] of fires that are STATIONARY touches — holds "
                          "(long_press, 0.1-1.5s) and taps, split ~80/20. These have an "
@@ -318,6 +322,8 @@ def main() -> None:
         raise SystemExit("--basic-holds and --basic-linears are mutually exclusive")
     if args.calibration_taps_per_segment < 2:
         raise SystemExit("--calibration-taps-per-segment must be >= 2: tap calibration needs two detections")
+    if args.align_resize_width < 8:
+        raise SystemExit("--align-resize-width must be >= 8")
     if args.basic_holds:
         if args.spin_frac != 0.0 or args.static_frac != 0.0 or args.use_spin:
             raise SystemExit("--basic-holds cannot be combined with --static-frac, --spin-frac, or --use-spin")
@@ -414,7 +420,8 @@ def main() -> None:
         if args.no_align:
             return
         cmd = [sys.executable, str(_HERE / "align_xctest_traces.py"),
-               "--segment", str(manifest_path), "--delete-mov"]
+               "--segment", str(manifest_path), "--delete-mov",
+               "--resize-width", str(args.align_resize_width)]
         if args.align_video:
             cmd.append("--video")
             # Compact MVP clips are ultimately consumed as MP4.  Do the slice

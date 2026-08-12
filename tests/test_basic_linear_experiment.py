@@ -1,5 +1,7 @@
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import cv2
 import numpy as np
@@ -154,3 +156,11 @@ def test_indexed_subset_preserves_original_dataset_indices(tmp_path):
     dataset = BasicLinearClipDataset(tmp_path, sequence_length=2, image_height=10, image_width=8)
     item = _IndexedSubset(dataset, [1])[0]
     assert item["sample_index"] == 1
+
+
+def test_linear_collector_exposes_native_resolution_option():
+    result = subprocess.run(
+        [sys.executable, "scripts/data/collect_sls_xctest.py", "--help"],
+        capture_output=True, text=True, check=True,
+    )
+    assert "--align-resize-width" in result.stdout
