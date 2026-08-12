@@ -15,7 +15,7 @@ from trueskate_ai.data.gesture_sampling import (
 )
 from trueskate_ai.vision.basic_hold_dataset import (
     DEFAULT_IMAGE_HEIGHT, DEFAULT_IMAGE_WIDTH, DEFAULT_SEQUENCE_LENGTH,
-    _decode_frames, _has_frames, _split_by_key,
+    _decode_even_frames, _has_frames, _split_by_key,
 )
 
 
@@ -124,10 +124,12 @@ class BasicLinearClipDataset(Dataset):
         meta = self._meta(sample)
         cached = self._frame_cache.get(sample)
         if cached is None:
-            source = _decode_frames(sample)
-            indices = np.linspace(0, len(source) - 1, self.sequence_length).round().astype(int)
-            frames = [cv2.cvtColor(cv2.resize(source[i], (self.image_width, self.image_height),
-                                               interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for i in indices]
+            source = _decode_even_frames(sample, self.sequence_length)
+            frames = [cv2.cvtColor(
+                image if image.shape[:2] == (self.image_height, self.image_width)
+                else cv2.resize(image, (self.image_width, self.image_height), interpolation=cv2.INTER_AREA),
+                cv2.COLOR_BGR2RGB,
+            ) for image in source]
             array = np.stack(frames)
             cached = torch.from_numpy(array).permute(0, 3, 1, 2)
             if self.cache_frames:

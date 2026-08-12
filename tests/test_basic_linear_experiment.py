@@ -164,3 +164,21 @@ def test_linear_collector_exposes_native_resolution_option():
         capture_output=True, text=True, check=True,
     )
     assert "--align-resize-width" in result.stdout
+
+
+def test_linear_dataset_decodes_only_selected_video_frames(monkeypatch, tmp_path):
+    accepted = _write_sample(tmp_path, "segment_1", "sample")
+    for frame in accepted.glob("frame_*.png"):
+        frame.unlink()
+    (accepted / "frames.mp4").write_bytes(b"placeholder")
+    calls: list[int] = []
+
+    def fake_decode(sample, count):
+        assert sample == accepted and count == 4
+        calls.append(count)
+        return [np.full((20, 12, 3), index, np.uint8) for index in range(count)]
+
+    monkeypatch.setattr("trueskate_ai.vision.basic_linear_dataset._decode_even_frames", fake_decode)
+    dataset = BasicLinearClipDataset(tmp_path, sequence_length=4, image_height=20, image_width=12)
+    assert dataset[0]["frames"].shape == (4, 3, 20, 12)
+    assert calls == [4]
