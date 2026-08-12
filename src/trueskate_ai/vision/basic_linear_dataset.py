@@ -88,6 +88,10 @@ class BasicLinearClipDataset(Dataset):
         self.image_height = image_height
         self.image_width = image_width
         self.cache_frames = cache_frames
+        # A 32×288×128 float clip is ~14 MiB; caching 1,000 of those would
+        # consume almost the entire 16 GiB Modal worker before the model or a
+        # batch exists. Store decoded RGB uint8 frames (~3.5 GiB for 1,000) and
+        # normalize only the selected sample returned to the trainer.
         self._frame_cache: dict[Path, torch.Tensor] = {}
         self.sample_paths, self.stats = discover_basic_linear_samples(self.root)
         self.segment_keys = tuple(self._segment_key(path) for path in self.sample_paths)
@@ -124,12 +128,12 @@ class BasicLinearClipDataset(Dataset):
             indices = np.linspace(0, len(source) - 1, self.sequence_length).round().astype(int)
             frames = [cv2.cvtColor(cv2.resize(source[i], (self.image_width, self.image_height),
                                                interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for i in indices]
-            array = np.stack(frames).astype(np.float32) / 255.0
+            array = np.stack(frames)
             cached = torch.from_numpy(array).permute(0, 3, 1, 2)
             if self.cache_frames:
                 self._frame_cache[sample] = cached
         target = [value for point in meta["waypoints"] for value in point] + [meta["duration"]]
-        return {"frames": cached,
+        return {"frames": cached.float().div_(255.0),
                 "target": torch.tensor(target, dtype=torch.float32)}
 
 
