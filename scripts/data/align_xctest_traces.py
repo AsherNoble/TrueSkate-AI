@@ -409,6 +409,7 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                     sample_dir, len(frame_times), fps, video_crf) else "png")
             meta = {
                 **{k: v for k, v in ev.items()},                     # gesture params + call times + park
+                "device": manifest.get("device"),
                 "device_logical_w": dw, "device_logical_h": dh,
                 "gesture_video_time_s": round(gv, 4),
                 "capture_offset_s": delta,
