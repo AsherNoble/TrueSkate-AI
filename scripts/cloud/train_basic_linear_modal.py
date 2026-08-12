@@ -169,6 +169,48 @@ def evaluate_start_timing(data_subdir: str, checkpoint_name: str, *, seed: int =
     return output
 
 
+@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
+                             batch_size: int = 8) -> dict:
+    """Describe signed endpoint residuals for an already-evaluated checkpoint."""
+    import numpy as np
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+    from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
+
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
+    _train, _val, test_indices = split_by_command(data, seed=seed)
+    device = torch.device("cuda")
+    model = BasicLinearRegressor(base_channels=int(payload["base_channels"])).to(device)
+    model.load_state_dict(payload["state_dict"])
+    model.eval()
+    residuals = []
+    with torch.no_grad():
+        for batch in DataLoader(Subset(data, test_indices), batch_size=batch_size):
+            predicted = model(batch["frames"].to(device)).cpu().numpy()
+            target = batch["target"].numpy()
+            residuals.append(predicted - target)
+    values = np.concatenate(residuals)
+    errors = np.linalg.norm(values[:, :4].reshape(-1, 2, 2), axis=2)
+    output = {
+        "checkpoint": checkpoint_name,
+        "test_samples": int(len(values)),
+        "mean_signed_residual": dict(zip(("x0", "y0", "x1", "y1", "duration"), values.mean(axis=0).tolist())),
+        "median_signed_residual": dict(zip(("x0", "y0", "x1", "y1", "duration"), np.median(values, axis=0).tolist())),
+        "start_end_error_correlation": float(np.corrcoef(errors[:, 0], errors[:, 1])[0, 1]),
+        "start_end_both_fail": float(np.mean((errors[:, 0] > .03) & (errors[:, 1] > .03))),
+        "start_only_fail": float(np.mean((errors[:, 0] > .03) & (errors[:, 1] <= .03))),
+        "end_only_fail": float(np.mean((errors[:, 0] <= .03) & (errors[:, 1] > .03))),
+    }
+    stem = Path(checkpoint_name).stem
+    (Path("/models") / f"{stem}_endpoint_residual_audit.json").write_text(json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
