@@ -91,7 +91,8 @@ def _recovery_audit(model: torch.nn.Module, dataset: BasicLinearClipDataset,
 
 def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           seed: int, base_channels: int, split_seed: int | None = None, split_strategy: str = "command",
-          cache_frames: bool = False, map_weight: float = 0.0) -> dict:
+          cache_frames: bool = False, map_weight: float = 0.0, start_onset: float = .24,
+          start_sigma: float = .05) -> dict:
     torch.manual_seed(seed)
     dataset = BasicLinearClipDataset(data, cache_frames=cache_frames)
     splitters = {"segment": split_by_segment, "command": split_by_command}
@@ -103,7 +104,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     val_loader = DataLoader(Subset(dataset, val_indices), batch_size=batch_size)
     test_loader = DataLoader(Subset(dataset, test_indices), batch_size=batch_size)
     device = _device()
-    model = BasicLinearRegressor(base_channels=base_channels).to(device)
+    model = BasicLinearRegressor(base_channels=base_channels, start_onset=start_onset,
+                                 start_sigma=start_sigma).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     best: dict | None = None
     for epoch in range(1, epochs + 1):
@@ -154,6 +156,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "image_width": dataset.image_width,
         "cache_frames": cache_frames,
         "endpoint_map_weight": map_weight,
+        "start_onset": start_onset,
+        "start_sigma": start_sigma,
         "split_seed": split_seed,
         "split_strategy": split_strategy,
         "dataset_fingerprint": _fingerprint(dataset.sample_paths),
@@ -186,6 +190,10 @@ def main() -> None:
     parser.add_argument("--base-channels", type=int, default=16)
     parser.add_argument("--map-weight", type=float, default=0.0,
                         help="Optional low-weight endpoint score-map auxiliary objective.")
+    parser.add_argument("--start-onset", type=float, default=.24,
+                        help="Aligned-clip time prior centre for the start endpoint.")
+    parser.add_argument("--start-sigma", type=float, default=.05,
+                        help="Positive aligned-clip time-prior width for the start endpoint.")
     parser.add_argument("--split-strategy", choices=("segment", "command"), default="command",
                         help="command withholds exact {x0,y0,x1,y1,dur}; required generalisation protocol.")
     parser.add_argument("--min-samples", type=int, default=1000,
@@ -193,8 +201,8 @@ def main() -> None:
     parser.add_argument("--cache-frames", action="store_true",
                         help="Decode each accepted clip at most once; recommended for fixed, repeated epochs.")
     args = parser.parse_args()
-    if args.epochs < 1 or args.batch_size < 1 or args.lr <= 0 or args.map_weight < 0:
-        parser.error("epochs, batch-size, lr must be positive and map-weight non-negative")
+    if args.epochs < 1 or args.batch_size < 1 or args.lr <= 0 or args.map_weight < 0 or args.start_sigma <= 0:
+        parser.error("epochs, batch-size, lr, and start-sigma must be positive and map-weight non-negative")
     if args.min_samples < 0:
         parser.error("min-samples must be non-negative")
     dataset_probe = BasicLinearClipDataset(args.data)
@@ -205,7 +213,8 @@ def main() -> None:
     result = train(data=args.data, out=out, epochs=args.epochs, batch_size=args.batch_size,
                    lr=args.lr, seed=args.seed, split_seed=args.split_seed, base_channels=args.base_channels,
                    split_strategy=args.split_strategy, cache_frames=args.cache_frames,
-                   map_weight=args.map_weight)
+                   map_weight=args.map_weight, start_onset=args.start_onset,
+                   start_sigma=args.start_sigma)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 

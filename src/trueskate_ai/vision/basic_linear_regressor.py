@@ -10,9 +10,14 @@ from trueskate_ai.data.gesture_sampling import BASIC_LINEAR_MAX_S, BASIC_LINEAR_
 class BasicLinearRegressor(nn.Module):
     """Predict ``[x0,y0,x1,y1,duration]`` while retaining spatial evidence."""
 
-    def __init__(self, base_channels: int = 16):
+    def __init__(self, base_channels: int = 16, *, start_onset: float = .24,
+                 start_sigma: float = .05):
         super().__init__()
+        if start_sigma <= 0:
+            raise ValueError("start_sigma must be positive")
         c = base_channels
+        self.start_onset = float(start_onset)
+        self.start_sigma = float(start_sigma)
         self.encoder = nn.Sequential(
             # MVP-2 must distinguish both endpoints.  At 128px input width a
             # stride-four map has only 32 x-cells (one cell is ~0.031 in model
@@ -75,9 +80,9 @@ class BasicLinearRegressor(nn.Module):
         # ablation showed the start location is sharply concentrated at onset;
         # use that information during training instead of asking the head to
         # choose a start among the entire accumulated trace.
-        onset = time.new_full((batch,), 0.24)
+        onset = time.new_full((batch,), self.start_onset)
         liftoff = (onset + duration[:, 0] / 2.27).clamp(max=0.88)
-        start_prior = active - ((time[None, :] - onset[:, None]) / 0.05).square()
+        start_prior = active - ((time[None, :] - onset[:, None]) / self.start_sigma).square()
         end_prior = active - ((time[None, :] - liftoff[:, None]) / 0.15).square()
         x0, y0 = self._read_xy(start_scores, start_prior)
         x1, y1 = self._read_xy(end_scores, end_prior)
