@@ -182,6 +182,11 @@ def test_linear_collector_exposes_native_resolution_option():
     assert "--align-resize-width" in result.stdout
 
 
+def test_linear_collector_uses_a_device_specific_seed_file():
+    source = Path("scripts/ops/mvp_collect_linear.sh").read_text()
+    assert ".basic_linear_next_seed_${DEVICE}" in source
+
+
 def test_linear_dataset_decodes_only_selected_video_frames(monkeypatch, tmp_path):
     accepted = _write_sample(tmp_path, "segment_1", "sample")
     for frame in accepted.glob("frame_*.png"):

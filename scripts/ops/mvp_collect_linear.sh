@@ -13,7 +13,10 @@ OUT="${2:-data/basic_linear_xctest}"
 MAX_LOOPS="${3:-1}"
 REPO=/Users/training-server/trueskate-ai
 PARK="The Workshop"
-SEED_FILE="${BASIC_LINEAR_SEED_FILE:-$OUT/.basic_linear_next_seed}"
+# A shared output directory can be collected by both XRs.  Keep their seed
+# streams independent; otherwise they read the same state before either writes
+# it and emit identical commands, defeating command-held-out generalisation.
+SEED_FILE="${BASIC_LINEAR_SEED_FILE:-$OUT/.basic_linear_next_seed_${DEVICE}}"
 
 cd "$REPO" || exit 1
 mkdir -p logs "$OUT"
