@@ -11,7 +11,35 @@ RECOVERY_ENDPOINT_TOLERANCE = 0.03
 RECOVERY_DURATION_TOLERANCE_S = 0.10
 
 
-def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+def basic_linear_endpoint_map_loss(scores: torch.Tensor, xy: torch.Tensor,
+                                   centre_time: torch.Tensor) -> torch.Tensor:
+    """A gentle spatial-temporal score-map target for endpoint attention.
+
+    This uses the *same* 0.15 temperature as ``BasicLinearRegressor._read_xy``.
+    It is intentionally an optional low-weight auxiliary: an earlier dense,
+    sharp classification objective overwhelmed coordinate learning rather than
+    regularising the broad attention distributions behind tail errors.
+    """
+    if scores.ndim != 4 or xy.shape != (scores.shape[0], 2):
+        raise ValueError("scores must be [batch,time,height,width] and xy [batch,2]")
+    batch, steps, height, width = scores.shape
+    if centre_time.shape != (batch,):
+        raise ValueError("centre_time must have shape [batch]")
+    time = torch.linspace(0., 1., steps, dtype=scores.dtype, device=scores.device)
+    x = torch.linspace(0., 1., width, dtype=scores.dtype, device=scores.device)
+    y = torch.linspace(0., 1., height, dtype=scores.dtype, device=scores.device)
+    time_error = (time[None, :, None, None] - centre_time[:, None, None, None]) / .055
+    x_error = (x[None, None, None, :] - xy[:, 0, None, None, None]) / .035
+    y_error = (y[None, None, :, None] - xy[:, 1, None, None, None]) / .035
+    target = torch.exp(-.5 * (time_error.square() + x_error.square() + y_error.square())).flatten(1)
+    target = target / target.sum(dim=1, keepdim=True).clamp_min(1e-12)
+    return -(target * F.log_softmax(scores.flatten(1) / .15, dim=1)).sum(dim=1).mean()
+
+
+def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor, *,
+                      start_scores: torch.Tensor | None = None,
+                      end_scores: torch.Tensor | None = None,
+                      map_weight: float = 0.0) -> torch.Tensor:
     """Robust endpoint error plus duration error in matched native scales."""
     if prediction.shape != target.shape or prediction.ndim != 2 or prediction.shape[1] != 5:
         raise ValueError("prediction and target must both have shape [batch,5]")
@@ -25,7 +53,17 @@ def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor) -> torch.T
     duration = F.smooth_l1_loss(
         prediction[:, 4] / duration_scale, target[:, 4] / duration_scale, beta=0.05,
     )
-    return endpoints + duration
+    if map_weight < 0:
+        raise ValueError("map_weight must be non-negative")
+    if map_weight == 0:
+        return endpoints + duration
+    if start_scores is None or end_scores is None or start_scores.shape != end_scores.shape:
+        raise ValueError("score maps are required when map_weight is positive")
+    onset = target.new_full((len(target),), .24)
+    liftoff = (onset + target[:, 4] / 2.27).clamp(max=.88)
+    map_loss = basic_linear_endpoint_map_loss(start_scores, target[:, :2], onset)
+    map_loss = map_loss + basic_linear_endpoint_map_loss(end_scores, target[:, 2:4], liftoff)
+    return endpoints + duration + map_weight * map_loss
 
 
 @torch.no_grad()
