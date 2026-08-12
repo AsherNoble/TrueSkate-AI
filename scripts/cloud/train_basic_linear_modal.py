@@ -93,7 +93,8 @@ def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0
     model.eval()
     batches = [(batch["frames"].to(device), batch["target"].to(device))
                for batch in DataLoader(Subset(data, test_indices), batch_size=batch_size)]
-    grid = [(0., .08, .10), (.25, .06, .10), (.5, .06, .10), (.25, .08, .13), (.5, .08, .13)]
+    grid = [(0., .08, .10), (.02, .06, .10), (.05, .06, .10),
+            (.10, .06, .10), (.05, .08, .13)]
     results = {}
     for blend, spatial_sigma, time_sigma in grid:
         class Refined(torch.nn.Module):
