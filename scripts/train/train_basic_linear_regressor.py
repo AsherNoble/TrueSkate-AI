@@ -72,7 +72,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
                  + validation["duration_mae"])
         print(f"epoch={epoch} val_start_med={validation['start_coordinate_median']:.4f} "
               f"val_end_med={validation['end_coordinate_median']:.4f} "
-              f"val_duration_mae={validation['duration_mae']:.4f}")
+              f"val_duration_mae={validation['duration_mae']:.4f} "
+              f"val_recovery={validation['gesture_recovery_accuracy']:.1%}")
         if best is None or score < best["score"]:
             best = {"score": score, "epoch": epoch,
                     "state_dict": {key: value.cpu() for key, value in model.state_dict().items()},

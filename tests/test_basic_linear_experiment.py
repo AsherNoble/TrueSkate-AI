@@ -107,6 +107,10 @@ def test_linear_sampler_and_acceptance_contract():
     assert all(sample_basic_linear_mixture(rng, tap_fraction=0.0).kind == "linear" for _ in range(20))
     with pytest.raises(ValueError, match="tap_fraction"):
         sample_basic_linear_mixture(rng, tap_fraction=1.0)
-    metrics = {"start_coordinate_median": .03, "end_coordinate_median": .03, "duration_mae": .10}
+    metrics = {
+        "start_coordinate_median": .03, "end_coordinate_median": .03,
+        "duration_mae": .10, "gesture_recovery_accuracy": .95,
+    }
     assert passes_basic_linear_acceptance(metrics)
     assert not passes_basic_linear_acceptance({**metrics, "end_coordinate_median": .031})
+    assert not passes_basic_linear_acceptance({**metrics, "gesture_recovery_accuracy": .949})

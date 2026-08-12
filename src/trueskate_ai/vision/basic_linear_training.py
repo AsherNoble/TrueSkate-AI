@@ -7,6 +7,9 @@ from torch.nn import functional as F
 
 from trueskate_ai.data.gesture_sampling import BASIC_LINEAR_MAX_S, BASIC_LINEAR_MIN_S
 
+RECOVERY_ENDPOINT_TOLERANCE = 0.03
+RECOVERY_DURATION_TOLERANCE_S = 0.10
+
 
 def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     """Robust endpoint error plus duration error in matched native scales."""
@@ -27,12 +30,19 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device) -
     start_errors: list[float] = []
     end_errors: list[float] = []
     duration_errors: list[float] = []
+    recovered: list[float] = []
     for batch in loader:
         prediction = model(batch["frames"].to(device))
         target = batch["target"].to(device)
         start_errors.extend(torch.linalg.vector_norm(prediction[:, :2] - target[:, :2], dim=1).cpu().tolist())
         end_errors.extend(torch.linalg.vector_norm(prediction[:, 2:4] - target[:, 2:4], dim=1).cpu().tolist())
         duration_errors.extend(torch.abs(prediction[:, 4] - target[:, 4]).cpu().tolist())
+        start = torch.linalg.vector_norm(prediction[:, :2] - target[:, :2], dim=1)
+        end = torch.linalg.vector_norm(prediction[:, 2:4] - target[:, 2:4], dim=1)
+        duration = torch.abs(prediction[:, 4] - target[:, 4])
+        recovered.extend(((start <= RECOVERY_ENDPOINT_TOLERANCE)
+                          & (end <= RECOVERY_ENDPOINT_TOLERANCE)
+                          & (duration <= RECOVERY_DURATION_TOLERANCE_S)).float().cpu().tolist())
     if not start_errors:
         raise ValueError("cannot evaluate an empty loader")
     endpoint_errors = start_errors + end_errors
@@ -44,6 +54,9 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device) -
         "endpoint_coordinate_p90": float(np.quantile(endpoint_errors, 0.90)),
         "duration_mae": float(np.mean(duration_errors)),
         "duration_p90": float(np.quantile(duration_errors, 0.90)),
+        "gesture_recovery_accuracy": float(np.mean(recovered)),
+        "recovery_endpoint_tolerance": RECOVERY_ENDPOINT_TOLERANCE,
+        "recovery_duration_tolerance_s": RECOVERY_DURATION_TOLERANCE_S,
     }
 
 
@@ -53,4 +66,5 @@ def passes_basic_linear_acceptance(metrics: dict[str, float]) -> bool:
         metrics["start_coordinate_median"] <= 0.03
         and metrics["end_coordinate_median"] <= 0.03
         and metrics["duration_mae"] <= 0.10
+        and metrics["gesture_recovery_accuracy"] >= 0.95
     )
