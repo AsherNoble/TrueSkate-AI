@@ -36,10 +36,11 @@ class BasicLinearRegressor(nn.Module):
     @staticmethod
     def _read_xy(scores: torch.Tensor, time_prior: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         batch, steps, height, width = scores.shape
-        # A modestly sharper distribution than the hold baseline improves
-        # endpoint precision without the unstable hard-map supervision used in
-        # the rejected MVP-2 ablation.
-        logits = scores.flatten(1) / .10 + time_prior.view(1, steps, 1, 1).expand_as(scores).flatten(1)
+        if time_prior.ndim == 1:
+            time_prior = time_prior.unsqueeze(0)
+        if time_prior.shape not in {(1, steps), (batch, steps)}:
+            raise ValueError("time_prior must have shape [time] or [batch,time]")
+        logits = scores.flatten(1) / .15 + time_prior[:, :, None, None].expand_as(scores).flatten(1)
         attention = torch.softmax(logits, dim=1).reshape_as(scores)
         xa = torch.linspace(0., 1., width, dtype=scores.dtype, device=scores.device)
         ya = torch.linspace(0., 1., height, dtype=scores.dtype, device=scores.device)
@@ -62,11 +63,22 @@ class BasicLinearRegressor(nn.Module):
         # the pre-touch prefix dominate early-endpoint attention.
         time = torch.linspace(0., 1., steps, dtype=frames.dtype, device=frames.device)
         active = torch.where(time < .18, torch.full_like(time, -12.0), torch.zeros_like(time))
-        x0, y0 = self._read_xy(start_scores, active - 1.5 * time)
-        x1, y1 = self._read_xy(end_scores, active + 1.5 * time)
         evidence = torch.maximum(start_scores, end_scores)
         series = torch.stack((evidence.amax((2, 3)), evidence.mean((2, 3))), dim=1)
         duration = BASIC_LINEAR_MIN_S + torch.sigmoid(self.duration_head(series)) * (BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S)
+        # The trace is visible from command onset to liftoff, while later frames
+        # contain only board/camera motion.  The old ``+time`` end prior was
+        # therefore systematically attracted to post-liftoff pixels.  The
+        # direct clip window is -0.5s..~1.77s, so onset is near 0.24 and an
+        # estimated liftoff is onset + duration / 2.27.  Broad Gaussian priors
+        # retain tolerance for calibration/frame-rate variation while guiding
+        # each endpoint head to the causally relevant trace interval.
+        onset = time.new_full((batch,), 0.24)
+        liftoff = (onset + duration[:, 0] / 2.27).clamp(max=0.88)
+        start_prior = active - ((time[None, :] - onset[:, None]) / 0.13).square()
+        end_prior = active - ((time[None, :] - liftoff[:, None]) / 0.15).square()
+        x0, y0 = self._read_xy(start_scores, start_prior)
+        x1, y1 = self._read_xy(end_scores, end_prior)
         prediction = torch.cat((x0[:, None], y0[:, None], x1[:, None], y1[:, None], duration), dim=1)
         return prediction, start_scores, end_scores
 
