@@ -65,6 +65,12 @@ def test_linear_dataset_only_admits_calibrated_two_point_constant_velocity_lines
     assert item["frames"].shape == (4, 3, 20, 12)
     assert item["target"].tolist() == pytest.approx([.3, .4, .6, .55, .6])
 
+    cached = BasicLinearClipDataset(tmp_path, sequence_length=4, image_height=20, image_width=12,
+                                    cache_frames=True)
+    first = cached[0]["frames"]
+    second = cached[0]["frames"]
+    assert first.data_ptr() == second.data_ptr()
+
 
 def test_linear_segment_and_command_splits_are_disjoint(tmp_path):
     for segment in ("segment_1", "segment_2", "segment_3", "segment_4", "segment_5"):

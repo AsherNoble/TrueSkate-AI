@@ -46,9 +46,10 @@ def _fingerprint(paths: tuple[Path, ...]) -> str:
 
 
 def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
-          seed: int, base_channels: int, split_strategy: str = "command") -> dict:
+          seed: int, base_channels: int, split_strategy: str = "command",
+          cache_frames: bool = False) -> dict:
     torch.manual_seed(seed)
-    dataset = BasicLinearClipDataset(data)
+    dataset = BasicLinearClipDataset(data, cache_frames=cache_frames)
     splitters = {"segment": split_by_segment, "command": split_by_command}
     if split_strategy not in splitters:
         raise ValueError(f"unknown split strategy {split_strategy!r}; choose from {sorted(splitters)}")
@@ -92,6 +93,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "sequence_length": dataset.sequence_length,
         "image_height": dataset.image_height,
         "image_width": dataset.image_width,
+        "cache_frames": cache_frames,
         "split_seed": seed,
         "split_strategy": split_strategy,
         "dataset_fingerprint": _fingerprint(dataset.sample_paths),
@@ -123,6 +125,8 @@ def main() -> None:
                         help="command withholds exact {x0,y0,x1,y1,dur}; required generalisation protocol.")
     parser.add_argument("--min-samples", type=int, default=1000,
                         help="Require this many accepted calibrated linear clips (0 disables the milestone gate).")
+    parser.add_argument("--cache-frames", action="store_true",
+                        help="Decode each accepted clip at most once; recommended for fixed, repeated epochs.")
     args = parser.parse_args()
     if args.epochs < 1 or args.batch_size < 1 or args.lr <= 0:
         parser.error("epochs, batch-size, and lr must be positive")
@@ -135,7 +139,7 @@ def main() -> None:
     out = args.out or _ROOT / "notebooks" / "models" / f"basic_linear_regressor_{time.strftime('%Y%m%d_%H%M%S')}.pth"
     result = train(data=args.data, out=out, epochs=args.epochs, batch_size=args.batch_size,
                    lr=args.lr, seed=args.seed, base_channels=args.base_channels,
-                   split_strategy=args.split_strategy)
+                   split_strategy=args.split_strategy, cache_frames=args.cache_frames)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 
