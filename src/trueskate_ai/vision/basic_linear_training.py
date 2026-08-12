@@ -15,17 +15,12 @@ def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor) -> torch.T
     """Robust endpoint error plus duration error in matched native scales."""
     if prediction.shape != target.shape or prediction.ndim != 2 or prediction.shape[1] != 5:
         raise ValueError("prediction and target must both have shape [batch,5]")
-    # The acceptance gate is clipped per sample; the baseline achieved strong
-    # medians but left a high-error tail just beyond 0.03.  Retain robust local
-    # learning while adding a modest squared-error term to pull that tail in.
-    endpoint_residual = prediction[:, :4] - target[:, :4]
     endpoints = F.smooth_l1_loss(prediction[:, :4], target[:, :4], beta=0.03)
-    endpoint_tail = endpoint_residual.square().mean()
     duration_scale = BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S
     duration = F.smooth_l1_loss(
         prediction[:, 4] / duration_scale, target[:, 4] / duration_scale, beta=0.05,
     )
-    return endpoints + 0.35 * endpoint_tail + duration
+    return endpoints + duration
 
 
 @torch.no_grad()

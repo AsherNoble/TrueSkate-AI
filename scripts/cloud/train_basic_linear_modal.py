@@ -72,6 +72,40 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
     return result
 
 
+@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
+                        batch_size: int = 8) -> dict:
+    """Grid-evaluate post-inference orange refinement on the held-out commands."""
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+    from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
+    from trueskate_ai.vision.basic_linear_refinement import refine_linear_endpoints
+    from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
+
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
+    _train, _val, test_indices = split_by_command(data, seed=seed)
+    device = torch.device("cuda")
+    model = BasicLinearRegressor(base_channels=int(payload["base_channels"])).to(device)
+    model.load_state_dict(payload["state_dict"])
+    model.eval()
+    batches = [(batch["frames"].to(device), batch["target"].to(device))
+               for batch in DataLoader(Subset(data, test_indices), batch_size=batch_size)]
+    grid = [(0., .08, .10), (.25, .06, .10), (.5, .06, .10), (.25, .08, .13), (.5, .08, .13)]
+    results = {}
+    for blend, spatial_sigma, time_sigma in grid:
+        class Refined(torch.nn.Module):
+            def forward(self, frames):
+                base = model(frames)
+                return refine_linear_endpoints(frames, base, blend=blend,
+                                               spatial_sigma=spatial_sigma, time_sigma=time_sigma)
+        results[f"blend={blend}:space={spatial_sigma}:time={time_sigma}"] = basic_linear_metrics(
+            Refined(), [{"frames": frames, "target": target} for frames, target in batches], device)
+    return {"checkpoint": checkpoint_name, "test_samples": len(test_indices), "results": results}
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
