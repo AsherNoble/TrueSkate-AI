@@ -134,7 +134,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     model.load_state_dict(best["state_dict"])
     test = basic_linear_metrics(model, test_loader, device)
     payload = {
-        "model_type": "basic_linear_regressor_v4_onset_window_start_head",
+        "model_type": "basic_linear_regressor_v5_dense_end_head",
         "gesture_contract": "two-point, constant-velocity, finite-slope linear drag",
         "target_schema": ["x0", "y0", "x1", "y1", "duration_s"],
         "uses_pre_touch_difference": True,
