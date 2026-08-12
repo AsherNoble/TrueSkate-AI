@@ -14,7 +14,6 @@ MAX_LOOPS="${3:-1}"
 REPO=/Users/training-server/trueskate-ai
 PARK="The Workshop"
 SEED_FILE="${BASIC_LINEAR_SEED_FILE:-$OUT/.basic_linear_next_seed}"
-TAP_FRAC="${BASIC_LINEAR_TAP_FRAC:-0.20}"
 
 cd "$REPO" || exit 1
 mkdir -p logs "$OUT"
@@ -38,7 +37,6 @@ while :; do
   PYTHONPATH=src .venv/bin/python scripts/data/collect_sls_xctest.py \
     --devices "$DEVICE" \
     --basic-linears \
-    --basic-linear-tap-frac "$TAP_FRAC" \
     --tap-calibrate \
     --wait-for-align \
     --no-reset \
