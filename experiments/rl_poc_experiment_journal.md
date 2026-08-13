@@ -372,3 +372,8 @@
 
 - XR2 timing calibration is intermittently invisible even while Appium/WDA health endpoints are live. Accepted five-control segments showed all controls with ActionChains/mobile-tap call walls around 1.08--1.13s; rejected segments mostly returned in 0.55--0.60s with zero controls detected. The gate correctly preserves and excludes every rejected `.mov`; no fallback label was manufactured.
 - An opt-in 0.1s ActionChains calibration-control dwell was implemented with an ActionChains reference-latency adjustment and tested locally. Its one clean XR2 pilot still detected zero of five controls and was rejected, so it is **not** enabled for production. XR2 remains on its previously demonstrated five-control instantaneous-tap configuration. The data-quality gate, device quotas, and fresh split are unchanged.
+
+## MVP 2 XR2 WDA Recovery Blocker (2026-08-13)
+
+- XR2 collection was paused after Appium began returning invalid WDA sessions. The phone is connected, unlocked, paired, developer-mode enabled, and its developer disk image/tunnel services are healthy. A controlled XR2 reboot did not restore WDA.
+- Direct Xcode evidence identifies the blocker: installing `WebDriverAgentRunner-Runner` fails with `0xe8008011` because the embedded provisioning profile for `com.asher.WebDriverAgentRunner.xctrunner` has expired. This needs a WDA signing/provisioning renewal in Xcode (`-allowProvisioningUpdates` cannot repair the already-built runner automatically here). No additional XR2 samples should be collected until WDA is re-signed; XR1 material remains strict but cannot satisfy a device-balanced fresh holdout alone.
