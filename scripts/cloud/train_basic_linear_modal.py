@@ -502,12 +502,13 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
             CachedEnsemble(), [{"frames": frames, "target": target} for frames, target in val_batches], device,
         )
 
-    def metrics_for_test(weights):
+    def metric_for_indices(weights, indices):
         class Ensemble(torch.nn.Module):
             def forward(self, frames):
                 return sum(weight * model(frames) for weight, model in zip(weights, models_local))
         return basic_linear_metrics(
-            Ensemble(), [{"frames": frames, "target": target} for frames, target in test_batches], device,
+            Ensemble(), [{"frames": frames, "target": target}
+                         for frames, target in batches(indices)], device,
         )
 
     ranked = []
@@ -518,7 +519,23 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
         ranked.append((rank, weights, metric))
     ranked.sort(key=lambda item: item[0])
     _rank, selected_weights, validation = ranked[0]
-    test = metrics_for_test(selected_weights)
+    test = metric_for_indices(selected_weights, test_indices)
+    test_by_device = None
+    if fresh_stratify_by_device:
+        # The partition is device-balanced by construction, but retain the
+        # individual scores in the same one-shot post-selection test phase.
+        # This makes a high pooled score falsifiable rather than allowing one
+        # phone to conceal a device-specific endpoint failure.
+        groups: dict[str, list[int]] = {}
+        for index in test_indices:
+            device_name = data._meta(data.sample_paths[index]).get("device")
+            if not isinstance(device_name, str) or not device_name:
+                raise ValueError("stratified test sample is missing explicit device provenance")
+            groups.setdefault(device_name, []).append(index)
+        test_by_device = {
+            device_name: metric_for_indices(selected_weights, indices)
+            for device_name, indices in sorted(groups.items())
+        }
     output = {
         "checkpoints": checkpoint_names,
         "fresh_holdout_source": fresh_holdout_source,
@@ -526,6 +543,7 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
         "selected_weights": dict(zip(checkpoint_names, selected_weights)),
         "validation": validation,
         "test": test,
+        "test_by_device": test_by_device,
         "validation_top5": [
             {"weights": dict(zip(checkpoint_names, weights)), "metrics": metric}
             for _rank, weights, metric in ranked[:5]
