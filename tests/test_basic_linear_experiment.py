@@ -136,6 +136,14 @@ def test_linear_regressor_optional_temporal_mixer_preserves_output_contract():
     assert torch.all((output[:, :4] >= 0.0) & (output[:, :4] <= 1.0))
 
 
+def test_linear_regressor_can_expose_separate_trajectory_track_scores():
+    model = BasicLinearRegressor(base_channels=4, trajectory_track=True)
+    prediction, start, end, track = model.forward_with_track_scores(torch.rand(2, 5, 3, 30, 18))
+    assert prediction.shape == (2, 5)
+    assert track.shape == start.shape == end.shape == (2, 5, 15, 9)
+    assert model.trajectory_fusion is not None
+
+
 def test_linear_regressor_retains_stride_two_spatial_endpoint_evidence():
     model = BasicLinearRegressor(base_channels=4)
     assert model.start_score is not model.end_score
@@ -213,6 +221,12 @@ def test_linear_trajectory_map_auxiliary_uses_active_frame_targets_and_is_differ
     with pytest.raises(ValueError, match="trajectory targets"):
         basic_linear_loss(prediction, target, start_scores=scores.detach(), end_scores=scores.detach(),
                           trajectory_weight=.01)
+    track = torch.rand(1, 4, 5, 6, requires_grad=True)
+    loss = basic_linear_loss(prediction, target, start_scores=scores.detach(), end_scores=scores.detach(),
+                             trajectory_xy=path, trajectory_mask=mask, trajectory_weight=.01,
+                             trajectory_scores=track)
+    loss.backward()
+    assert track.grad is not None
 
 
 def test_indexed_subset_preserves_original_dataset_indices(tmp_path):
