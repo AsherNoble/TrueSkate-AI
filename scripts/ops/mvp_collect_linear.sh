@@ -13,6 +13,10 @@ OUT="${2:-data/basic_linear_xctest}"
 MAX_LOOPS="${3:-1}"
 REPO=/Users/training-server/trueskate-ai
 PARK="The Workshop"
+# The calibration gate itself remains two consistent observed taps.  A delayed
+# recorder can render the first leading clapperboards before its useful window,
+# so callers may increase redundant controls without weakening that gate.
+CALIBRATION_TAPS_PER_SEGMENT="${BASIC_LINEAR_CALIBRATION_TAPS_PER_SEGMENT:-3}"
 # A shared output directory can be collected by both XRs.  Keep their seed
 # streams independent; otherwise they read the same state before either writes
 # it and emit identical commands, defeating command-held-out generalisation.
@@ -44,6 +48,7 @@ while :; do
     --devices "$DEVICE" \
     --basic-linears \
     --tap-calibrate \
+    --calibration-taps-per-segment "$CALIBRATION_TAPS_PER_SEGMENT" \
     --wait-for-align \
     --no-reset \
     --park-label "$PARK" \

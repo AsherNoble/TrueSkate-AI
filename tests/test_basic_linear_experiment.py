@@ -284,6 +284,8 @@ def test_linear_collector_uses_a_device_specific_seed_file():
     assert ".basic_linear_next_seed_${DEVICE}" in source
     assert "device_seed=$(printf '%s' \"$DEVICE\" | cksum" in source
     assert 'printf \'%s\\n\' "$next_seed" > "$SEED_FILE"' in source
+    assert 'BASIC_LINEAR_CALIBRATION_TAPS_PER_SEGMENT' in source
+    assert '--calibration-taps-per-segment "$CALIBRATION_TAPS_PER_SEGMENT"' in source
 
 
 def test_linear_finalizer_can_target_a_fresh_modal_volume():
