@@ -99,6 +99,14 @@ def test_linear_segment_and_command_splits_are_disjoint(tmp_path):
         assert not (grouped[0] & grouped[1] or grouped[0] & grouped[2] or grouped[1] & grouped[2])
 
 
+def test_linear_command_identity_includes_both_endpoints_and_duration(tmp_path):
+    _write_sample(tmp_path, "segment_1", "a", points=[[.30, .40], [.60, .55]], duration=.60)
+    _write_sample(tmp_path, "segment_2", "b", points=[[.30, .40], [.61, .55]], duration=.60)
+    _write_sample(tmp_path, "segment_3", "c", points=[[.30, .40], [.60, .55]], duration=.61)
+    dataset = BasicLinearClipDataset(tmp_path, sequence_length=2, image_height=10, image_width=8)
+    assert len(set(dataset.command_keys)) == 3
+
+
 def test_linear_regressor_returns_native_bounded_quintuplets():
     model = BasicLinearRegressor(base_channels=4)
     frames = torch.rand(2, 5, 3, 30, 18)
