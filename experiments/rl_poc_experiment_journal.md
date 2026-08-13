@@ -352,3 +352,7 @@
 
 - The new `basic_linear_xctest_4k_verified` corpus is generated independently with one strict clip per exact command. Its 1,000-clip target is guarded by a PID-verified collector stop and a finalizer that menu-scans, uploads only strict clips, and runs a temporal-mixer command split on its own dedicated Modal volume.
 - The stronger acceptance experiment then uploads the established 2,022-command corpus under `legacy/` and the new corpus under `fresh/` in a separate volume. It trains on all legacy commands plus the training slice of fresh commands, while validation and the final strict test consist only of fresh exact commands. Any exact command shared by the two subtrees raises an error before training. Checkpoint ensemble selection uses only this fresh validation slice.
+
+## MVP 2 Trajectory-Map Control (2026-08-13)
+
+- A temporal-mixer model with a separately supervised moving-contact map (`trajectory_weight=0.005`, path-map fusion enabled) was started on the old fixed 2,022-command benchmark with a new initialization and unchanged split. Validation reached only **70.6%** at epochs 5--6 and then regressed (61.1% at epoch 7), well below the temporal baseline/ensemble. It was stopped before test evaluation, so it is a negative control rather than a comparable held-out result. Do not spend fresh-holdout capacity on this architecture without a new evidence-backed redesign.
