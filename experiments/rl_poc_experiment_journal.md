@@ -377,3 +377,8 @@
 
 - XR2 collection was paused after Appium began returning invalid WDA sessions. The phone is connected, unlocked, paired, developer-mode enabled, and its developer disk image/tunnel services are healthy. A controlled XR2 reboot did not restore WDA.
 - Direct Xcode evidence identifies the blocker: installing `WebDriverAgentRunner-Runner` fails with `0xe8008011` because the embedded provisioning profile for `com.asher.WebDriverAgentRunner.xctrunner` has expired. This needs a WDA signing/provisioning renewal in Xcode (`-allowProvisioningUpdates` cannot repair the already-built runner automatically here). No additional XR2 samples should be collected until WDA is re-signed; XR1 material remains strict but cannot satisfy a device-balanced fresh holdout alone.
+
+## MVP 2 Signing Recovery Recheck (2026-08-14)
+
+- Rechecked `training-server`: the Xcode Apple-account token remains absent, with **zero** valid code-signing identities and **zero** provisioning profiles. A `build-for-testing -allowProvisioningUpdates` probe fails on missing account, profile, and development private key.
+- Tested the only plausible fallback—the local Mac—using a temporary copied WDA checkout and a separately named runner under its valid-looking Apple Development identity. Xcode likewise lacks usable account credentials/profiles and reports no matching development private key. Neither host can create an installable runner non-interactively. The required external action is Apple-account sign-in/certificate/profile renewal in Xcode; no corpus or model protocol was changed.
