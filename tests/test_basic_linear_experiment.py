@@ -325,3 +325,4 @@ def test_modal_linear_cpu_fallback_is_separate_and_labelled():
     assert "cpu=8.0" in source
     assert "cpu=8.0, timeout=12 * 3600, memory=16384" in source
     assert "temporal_mixer=temporal_mixer" in source
+    assert "trajectory_track=trajectory_track" in source
