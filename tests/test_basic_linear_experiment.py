@@ -31,7 +31,8 @@ from scripts.train.train_basic_linear_regressor import _IndexedSubset, split_wit
 
 def _write_sample(root: Path, segment: str, name: str, *, kind: str = "linear",
                   points: list[list[float]] | None = None, duration: float = 0.6,
-                  easing: float = 1.0, calibrated: bool = True, menu: bool = False) -> Path:
+                  easing: float = 1.0, calibrated: bool = True, menu: bool = False,
+                  device: str | None = None) -> Path:
     sample = root / segment / "the_workshop" / name
     sample.mkdir(parents=True)
     points = points or [[0.30, 0.40], [0.60, 0.55]]
@@ -46,6 +47,8 @@ def _write_sample(root: Path, segment: str, name: str, *, kind: str = "linear",
         "segment_index": int(segment.rsplit("_", 1)[-1]),
         "frame_times": [-.5, 0., duration / 2, duration, duration + .3],
     }
+    if device is not None:
+        meta["device"] = device
     (sample / "meta.json").write_text(json.dumps(meta))
     if menu:
         (sample / ".menu").touch()
@@ -127,6 +130,23 @@ def test_fresh_command_holdout_keeps_legacy_training_only_and_rejects_overlap(tm
     overlapping = BasicLinearClipDataset(tmp_path, sequence_length=2, image_height=10, image_width=8)
     with pytest.raises(ValueError, match="overlap"):
         split_with_fresh_command_holdout(overlapping, fresh_source="fresh", seed=3)
+
+
+def test_device_stratified_fresh_holdout_represents_each_phone_in_both_evaluations(tmp_path):
+    for device, x_offset in (("iPhone_XR", 0.0), ("iPhone_XR2", .10)):
+        for index in range(10):
+            _write_sample(tmp_path / "fresh", f"{device}_segment_{index}", f"{device}_{index}",
+                          points=[[.20 + x_offset + index * .01, .35],
+                                  [.55 + x_offset + index * .01, .50]],
+                          device=device)
+    dataset = BasicLinearClipDataset(tmp_path, sequence_length=2, image_height=10, image_width=8)
+    train, validation, test = split_with_fresh_command_holdout(
+        dataset, fresh_source="fresh", seed=3, stratify_by_device=True,
+    )
+    assert train
+    for partition in (validation, test):
+        devices = {dataset._meta(dataset.sample_paths[index])["device"] for index in partition}
+        assert devices == {"iPhone_XR", "iPhone_XR2"}
 
 
 def test_linear_regressor_returns_native_bounded_quintuplets():

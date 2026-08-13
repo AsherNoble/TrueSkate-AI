@@ -73,7 +73,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  start_sigma: float = .05, end_onset: float = .24,
                  temporal_mixer: bool = False, trajectory_weight: float = 0.0,
                  trajectory_track: bool = False, fresh_holdout_source: str | None = None,
-                 evaluate_test: bool = True) -> dict:
+                 evaluate_test: bool = True, fresh_stratify_by_device: bool = False) -> dict:
     trainer = _trainer()
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
     payload = trainer.train(
@@ -93,6 +93,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         trajectory_track=trajectory_track,
         fresh_holdout_source=fresh_holdout_source,
         evaluate_test=evaluate_test,
+        fresh_stratify_by_device=fresh_stratify_by_device,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
@@ -115,7 +116,7 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
                      start_sigma: float = .05, end_onset: float = .24,
                      temporal_mixer: bool = False, trajectory_weight: float = 0.0,
                      trajectory_track: bool = False, fresh_holdout_source: str | None = None,
-                     evaluate_test: bool = True) -> dict:
+                     evaluate_test: bool = True, fresh_stratify_by_device: bool = False) -> dict:
     """Scheduler-independent execution fallback for the same compact protocol.
 
     This is intentionally a separate function rather than silently removing a
@@ -141,6 +142,7 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
         trajectory_track=trajectory_track,
         fresh_holdout_source=fresh_holdout_source,
         evaluate_test=evaluate_test,
+        fresh_stratify_by_device=fresh_stratify_by_device,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
@@ -424,7 +426,8 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, seed: int = 0,
                                  batch_size: int = 8,
-                                 fresh_holdout_source: str | None = None) -> dict:
+                                 fresh_holdout_source: str | None = None,
+                                 fresh_stratify_by_device: bool = False) -> dict:
     """Validation-select a convex checkpoint ensemble, then test it once.
 
     Every candidate has been trained on the same corpus/split.  We enumerate
@@ -448,6 +451,7 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
     else:
         _train, val_indices, test_indices = _trainer().split_with_fresh_command_holdout(
             data, fresh_source=fresh_holdout_source, seed=seed,
+            stratify_by_device=fresh_stratify_by_device,
         )
     device = torch.device("cuda")
     models_local = []
@@ -518,6 +522,7 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
     output = {
         "checkpoints": checkpoint_names,
         "fresh_holdout_source": fresh_holdout_source,
+        "fresh_stratify_by_device": fresh_stratify_by_device,
         "selected_weights": dict(zip(checkpoint_names, selected_weights)),
         "validation": validation,
         "test": test,
@@ -527,6 +532,8 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
         ],
     }
     split_label = "command" if fresh_holdout_source is None else f"fresh_{fresh_holdout_source}"
+    if fresh_stratify_by_device:
+        split_label += "_device_stratified"
     (Path("/models") / f"basic_linear_checkpoint_ensemble_{split_label}.json").write_text(
         json.dumps(output, indent=2),
     )
@@ -543,7 +550,7 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          start_sigma: float = .05, end_onset: float = .24,
          temporal_mixer: bool = False, trajectory_weight: float = 0.0,
          trajectory_track: bool = False, fresh_holdout_source: str | None = None,
-         evaluate_test: bool = True) -> None:
+         evaluate_test: bool = True, fresh_stratify_by_device: bool = False) -> None:
     result = train_remote.remote(
         data_subdir, run_label, epochs=epochs, batch_size=batch_size, lr=lr,
         seed=seed, base_channels=base_channels, split_strategy=split_strategy,
@@ -554,5 +561,6 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
         trajectory_track=trajectory_track,
         fresh_holdout_source=fresh_holdout_source,
         evaluate_test=evaluate_test,
+        fresh_stratify_by_device=fresh_stratify_by_device,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
