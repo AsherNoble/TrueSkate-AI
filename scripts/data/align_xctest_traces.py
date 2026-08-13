@@ -160,10 +160,17 @@ def _tap_calibration(
         ev for ev in manifest.get("gestures", [])
         if str(ev.get("gesture_distribution", "")).casefold() == "tap"
     ]
-    reference_tap_delta = (
-        _delta_for(tap_events[0], delta_override, manifest_delta)
-        if tap_events else _DELTA_TAP_S
-    )
+    # A short held control uses the ActionChains dispatch route but remains a
+    # manifest `tap` so data loaders exclude it.  Its reference latency must
+    # match that route; otherwise its fitted segment shift would bias every
+    # following drag by the mobile-tap vs ActionChains difference.
+    if tap_events and tap_events[0].get("calibration_execution") == "short_hold":
+        reference_tap_delta = _DELTA_ACTIONCHAINS_S
+    else:
+        reference_tap_delta = (
+            _delta_for(tap_events[0], delta_override, manifest_delta)
+            if tap_events else _DELTA_TAP_S
+        )
     offsets: list[float] = []
     detections: list[dict] = []
     skipped = 0

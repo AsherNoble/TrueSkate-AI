@@ -306,6 +306,8 @@ def test_linear_collector_uses_a_device_specific_seed_file():
     assert 'printf \'%s\\n\' "$next_seed" > "$SEED_FILE"' in source
     assert 'BASIC_LINEAR_CALIBRATION_TAPS_PER_SEGMENT' in source
     assert '--calibration-taps-per-segment "$CALIBRATION_TAPS_PER_SEGMENT"' in source
+    assert 'BASIC_LINEAR_CALIBRATION_TAP_HOLD_S' in source
+    assert '--calibration-tap-hold-s "$CALIBRATION_TAP_HOLD_S"' in source
 
 
 def test_linear_finalizer_can_target_a_fresh_modal_volume():

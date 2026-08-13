@@ -100,7 +100,7 @@ def _start_caffeinate():
         return None
 
 
-def _execute(worker: DeviceWorker, g) -> None:
+def _execute(worker: DeviceWorker, g, *, calibration_tap_hold_s: float = 0.0) -> None:
     """Fire one sampled gesture; explicit MVP-2 linear drags are an exception."""
     dw, dh = worker.device_w, worker.device_h
     if g.kind in ("hold", "tap"):
@@ -109,7 +109,14 @@ def _execute(worker: DeviceWorker, g) -> None:
         # commanded point (measured Stage 0, 2026-07-21).
         x, y = scale_to_device(g.point[0], g.point[1], dw, dh)
         if g.kind == "tap":
-            tap(worker.driver, x, y)
+            # XCTest/Appium can dispatch an instantaneous mobile:tap too quickly
+            # for XR2 to render it reliably.  A short ActionChains hold remains
+            # a calibration-only `tap` in the manifest (and is therefore never a
+            # trainable linear sample), but produces a visible clapperboard.
+            if calibration_tap_hold_s:
+                long_press(worker.driver, x, y, duration=calibration_tap_hold_s)
+            else:
+                tap(worker.driver, x, y)
         else:
             long_press(worker.driver, x, y, duration=g.hold_duration_s)
     elif g.kind in ("flick", "linear"):
@@ -255,6 +262,9 @@ def main() -> None:
                     help="For --basic-holds/--basic-linears, reserve this many deterministic "
                          "tap clapperboards at the start of every segment (default 3). "
                          "They replace random calibration-arm draws and are never trainable clips.")
+    ap.add_argument("--calibration-tap-hold-s", type=float, default=0.0,
+                    help="Optional short ActionChains dwell for calibration-only tap controls. "
+                         "The manifest still labels these controls as taps, so strict MVP loaders exclude them.")
     ap.add_argument("--tap-calibrate", action="store_true",
                     help="Ask the offline aligner to require per-segment timing calibration "
                          "from the known-position tap arm. Intended for --static-frac MVP "
@@ -322,6 +332,8 @@ def main() -> None:
         raise SystemExit("--basic-holds and --basic-linears are mutually exclusive")
     if args.calibration_taps_per_segment < 2:
         raise SystemExit("--calibration-taps-per-segment must be >= 2: tap calibration needs two detections")
+    if args.calibration_tap_hold_s < 0.0 or args.calibration_tap_hold_s > 0.5:
+        raise SystemExit("--calibration-tap-hold-s must be in [0, 0.5]")
     if args.align_resize_width < 8:
         raise SystemExit("--align-resize-width must be >= 8")
     if args.basic_holds:
@@ -572,7 +584,13 @@ def main() -> None:
                     g.spin_button_xy = worker.spin_button_xy
                 t0 = time.time()
                 try:
-                    _execute(worker, g)
+                    calibration_hold_s = (
+                        args.calibration_tap_hold_s
+                        if (args.basic_holds or args.basic_linears)
+                        and segment_events < args.calibration_taps_per_segment
+                        else 0.0
+                    )
+                    _execute(worker, g, calibration_tap_hold_s=calibration_hold_s)
                 except Exception as exc:  # noqa: BLE001
                     print(f"  gesture {total_gestures} failed: {exc}")
                     continue
@@ -615,6 +633,9 @@ def main() -> None:
                     "park_change_index": park_idx,
                     **g.meta(),
                 })
+                if calibration_hold_s:
+                    events[-1]["calibration_execution"] = "short_hold"
+                    events[-1]["calibration_tap_hold_s"] = calibration_hold_s
                 segment_events += 1
                 total_gestures += 1
                 time.sleep(args.tail_s)  # trick plays out into the recording (response window)

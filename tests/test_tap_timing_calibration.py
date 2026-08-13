@@ -149,6 +149,34 @@ def test_segment_tap_calibration_preserves_dispatch_path_relative_offset(monkeyp
     assert aligner._delta_for(manifest["gestures"][1], None, None) + shift == pytest.approx(1.15)
 
 
+def test_short_hold_calibration_controls_use_actionchains_reference_latency(monkeypatch, tmp_path):
+    aligner = _aligner_module()
+    started_at = 1000.0
+    manifest = {
+        "gestures": [
+            {"gesture_distribution": "tap", "calibration_execution": "short_hold",
+             "point": [.5, .65], "t_call_start_epoch_s": started_at + 2.0},
+            {"gesture_distribution": "tap", "calibration_execution": "short_hold",
+             "point": [.5, .65], "t_call_start_epoch_s": started_at + 4.0},
+        ]
+    }
+
+    def fake_decode(_mov, *, command_video_s, **_kwargs):
+        frames, times, _point, command_s = _tap_window(onset_s=1.56, command_s=.5)
+        return frames, (times - command_s + command_video_s).tolist()
+
+    monkeypatch.setattr(aligner, "_decode_calibration_window", fake_decode)
+    info, shift = aligner._tap_calibration(
+        manifest=manifest, mov=tmp_path / "segment.mov", started_at=started_at,
+        fps=30, delta_override=None, manifest_delta=None, min_taps=2,
+        max_mad_s=.10, search_after_s=4.0, resize_width=256,
+    )
+    assert info["accepted"]
+    # Rendered onset is 1.06 s after the command, matching ActionChains.
+    assert info["tap_offset_s"] == pytest.approx(1.06, abs=1 / 30)
+    assert shift == pytest.approx(0.0, abs=1 / 30)
+
+
 @pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg is required by the production aligner")
 def test_aligner_recovers_a_known_offset_from_a_synthetic_mov(tmp_path):
     aligner = _aligner_module()

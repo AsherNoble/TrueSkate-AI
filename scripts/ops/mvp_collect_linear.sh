@@ -17,6 +17,7 @@ PARK="The Workshop"
 # recorder can render the first leading clapperboards before its useful window,
 # so callers may increase redundant controls without weakening that gate.
 CALIBRATION_TAPS_PER_SEGMENT="${BASIC_LINEAR_CALIBRATION_TAPS_PER_SEGMENT:-3}"
+CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0}"
 # A shared output directory can be collected by both XRs.  Keep their seed
 # streams independent; otherwise they read the same state before either writes
 # it and emit identical commands, defeating command-held-out generalisation.
@@ -49,6 +50,7 @@ while :; do
     --basic-linears \
     --tap-calibrate \
     --calibration-taps-per-segment "$CALIBRATION_TAPS_PER_SEGMENT" \
+    --calibration-tap-hold-s "$CALIBRATION_TAP_HOLD_S" \
     --wait-for-align \
     --no-reset \
     --park-label "$PARK" \
