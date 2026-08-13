@@ -99,6 +99,41 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
     return result
 
 
+@app.function(image=image, cpu=8.0, timeout=12 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
+                     batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
+                     base_channels: int = 16, split_strategy: str = "command",
+                     cache_frames: bool = True, split_seed: int | None = None) -> dict:
+    """Scheduler-independent execution fallback for the same compact protocol.
+
+    This is intentionally a separate function rather than silently removing a
+    GPU request.  The data split, model, optimiser and acceptance metric remain
+    identical; only the hardware differs, and the result is separately labelled.
+    """
+    trainer = _trainer()
+    checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
+    payload = trainer.train(
+        data=Path("/corpus") / data_subdir,
+        out=checkpoint,
+        epochs=epochs,
+        batch_size=batch_size,
+        lr=lr,
+        seed=seed,
+        split_seed=split_seed,
+        base_channels=base_channels,
+        split_strategy=split_strategy,
+        cache_frames=cache_frames,
+    )
+    result = {key: value for key, value in payload.items() if key != "state_dict"}
+    result["checkpoint"] = checkpoint.name
+    result["run_label"] = run_label
+    result["execution_hardware"] = "cpu"
+    (Path("/models") / f"basic_linear_{run_label}.json").write_text(json.dumps(result, indent=2))
+    models.commit()
+    return result
+
+
 @app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
