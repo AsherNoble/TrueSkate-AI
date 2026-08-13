@@ -367,3 +367,8 @@
 
 - The new corpus is partitioned by exact command with explicit `device` provenance. Fresh validation and test are independently stratified by XR/XR2 (15% from each device for each partition); every device must have at least three commands, and a command appearing with more than one device identity fails closed. Legacy material and fresh-training commands remain train-only.
 - Three temporal-mixer initializations will train against that one fixed split with test evaluation disabled. A convex 0.1-grid ensemble is selected only on the balanced fresh validation partition, then the selected mixture is evaluated exactly once on the balanced fresh test partition. MVP 2 passes only if that one strict result is at least 95% joint recovery under the unchanged endpoint/duration tolerances.
+
+## MVP 2 XR2 Calibration Reliability Check (2026-08-13)
+
+- XR2 timing calibration is intermittently invisible even while Appium/WDA health endpoints are live. Accepted five-control segments showed all controls with ActionChains/mobile-tap call walls around 1.08--1.13s; rejected segments mostly returned in 0.55--0.60s with zero controls detected. The gate correctly preserves and excludes every rejected `.mov`; no fallback label was manufactured.
+- An opt-in 0.1s ActionChains calibration-control dwell was implemented with an ActionChains reference-latency adjustment and tested locally. Its one clean XR2 pilot still detected zero of five controls and was rejected, so it is **not** enabled for production. XR2 remains on its previously demonstrated five-control instantaneous-tap configuration. The data-quality gate, device quotas, and fresh split are unchanged.
