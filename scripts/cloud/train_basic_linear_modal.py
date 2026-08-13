@@ -450,6 +450,17 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
                 for batch in DataLoader(Subset(data, indices), batch_size=batch_size)]
 
     val_batches, test_batches = batches(val_indices), batches(test_indices)
+
+    # The grid below has O(n_models^10) candidate weights.  Rerunning every
+    # neural model for each candidate needlessly turns a validation-only model
+    # selection into thousands of identical forward passes.  Cache only the
+    # validation predictions once; test frames are deliberately not evaluated
+    # until after selection, preserving the one-shot held-out protocol.
+    with torch.no_grad():
+        validation_predictions = [
+            [model(frames) for frames, _target in val_batches]
+            for model in models_local
+        ]
     candidate_weights = []
     # 0.1 granularity is deliberately pre-declared and compact.  It covers
     # individual checkpoints and two/three-way averages without test tuning.
@@ -457,23 +468,41 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
         if sum(units) == 10:
             candidate_weights.append(tuple(value / 10 for value in units))
 
-    def metrics_for(weights, data_batches):
+    def metrics_for_validation(weights):
+        class CachedEnsemble(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.index = 0
+
+            def forward(self, _frames):
+                value = sum(
+                    weight * validation_predictions[model_index][self.index]
+                    for model_index, weight in enumerate(weights)
+                )
+                self.index += 1
+                return value
+
+        return basic_linear_metrics(
+            CachedEnsemble(), [{"frames": frames, "target": target} for frames, target in val_batches], device,
+        )
+
+    def metrics_for_test(weights):
         class Ensemble(torch.nn.Module):
             def forward(self, frames):
                 return sum(weight * model(frames) for weight, model in zip(weights, models_local))
         return basic_linear_metrics(
-            Ensemble(), [{"frames": frames, "target": target} for frames, target in data_batches], device,
+            Ensemble(), [{"frames": frames, "target": target} for frames, target in test_batches], device,
         )
 
     ranked = []
     for weights in candidate_weights:
-        metric = metrics_for(weights, val_batches)
+        metric = metrics_for_validation(weights)
         rank = (-metric["gesture_recovery_accuracy"],
                 metric["start_coordinate_median"] + metric["end_coordinate_median"] + metric["duration_mae"])
         ranked.append((rank, weights, metric))
     ranked.sort(key=lambda item: item[0])
     _rank, selected_weights, validation = ranked[0]
-    test = metrics_for(selected_weights, test_batches)
+    test = metrics_for_test(selected_weights)
     output = {
         "checkpoints": checkpoint_names,
         "selected_weights": dict(zip(checkpoint_names, selected_weights)),
