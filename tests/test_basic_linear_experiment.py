@@ -315,7 +315,7 @@ def test_selected_video_decode_falls_back_when_random_seek_is_unreliable(monkeyp
 
 def test_modal_linear_training_reserves_cache_headroom():
     source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
-    assert 'memory=32768' in source
+    assert 'gpu=["L4", "A10", "T4"], timeout=3 * 3600, memory=16384' in source
 
 
 def test_modal_linear_cpu_fallback_is_separate_and_labelled():
