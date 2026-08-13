@@ -61,9 +61,9 @@ def _model_from_payload(payload, torch):
 # This compact clip regressor does not need A10G-class throughput.  The
 # dedicated 2k run spent hours queued without a container on A10G, while its
 # fixed 32 GiB memory headroom is what protects decoded-frame caching.  Accept
-# any of the compatible small-GPU pool in preference order so a scarce single
-# accelerator type cannot indefinitely block the deterministic protocol.
-@app.function(image=image, gpu=["L4", "A10", "T4"], timeout=3 * 3600, memory=16384,
+# any compatible accelerator from Modal's pool so a scarce named type cannot
+# indefinitely block the deterministic protocol.
+@app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
