@@ -102,7 +102,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
     return result
 
 
-@app.function(image=image, cpu=8.0, timeout=12 * 3600, memory=32768,
+@app.function(image=image, cpu=8.0, timeout=12 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
                      batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
