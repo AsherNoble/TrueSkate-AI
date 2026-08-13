@@ -356,3 +356,9 @@
 ## MVP 2 Trajectory-Map Control (2026-08-13)
 
 - A temporal-mixer model with a separately supervised moving-contact map (`trajectory_weight=0.005`, path-map fusion enabled) was started on the old fixed 2,022-command benchmark with a new initialization and unchanged split. Validation reached only **70.6%** at epochs 5--6 and then regressed (61.1% at epoch 7), well below the temporal baseline/ensemble. It was stopped before test evaluation, so it is a negative control rather than a comparable held-out result. Do not spend fresh-holdout capacity on this architecture without a new evidence-backed redesign.
+
+## MVP 2 First Independent Fresh-Holdout Result (2026-08-13)
+
+- The pooled temporal-mixer trained on 2,734 commands (2,022 legacy plus the fresh training slice), selected epoch 25 using only 153 fresh validation commands, then evaluated once on the disjoint 153-command fresh test slice. It obtained **94.12% strict joint recovery (144/153)**: start/end median coordinate errors **0.00635 / 0.00921**, duration MAE **0.01890s**, and component recovery **100.0% / 95.42% / 98.69%**. This is two clips below the 95% MVP gate, so MVP 2 is still not passed.
+- The remaining nine failures are endpoint tails, not duration. Device evidence is imbalanced in this otherwise clean fresh test (XR: 146 samples, 95.21%; XR2: 7 samples, 71.43%), so do not extrapolate an overall device conclusion from the XR2 figure. No post-test model or threshold tuning is allowed.
+- Next protocol: collect a **new, untouched, device-balanced** strict corpus (500 accepted/unique commands per XR) with independent persisted seeds and separate per-device target guards. Use it only for a new validation/test partition; retain the completed 3,040-command corpus as training data. The guard was corrected to count strict admissions by manifest `device`, preventing one phone from satisfying the other phone's quota.
