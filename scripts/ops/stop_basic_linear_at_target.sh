@@ -15,11 +15,21 @@ case "$TARGET" in
 esac
 
 while :; do
-  accepted=$(PYTHONPATH=src .venv/bin/python - "$OUT" <<'PY'
+  accepted=$(PYTHONPATH=src .venv/bin/python - "$OUT" "$DEVICE" <<'PY'
 import sys
+import json
 from pathlib import Path
 from trueskate_ai.vision.basic_linear_dataset import discover_basic_linear_samples
-print(len(discover_basic_linear_samples(Path(sys.argv[1]))[0]))
+
+root, device = Path(sys.argv[1]), sys.argv[2]
+samples, _stats = discover_basic_linear_samples(root)
+# The source directory may be shared by multiple collectors.  Count only the
+# explicit device so two independent target guards cannot accidentally stop
+# one phone early because the other supplied most of the corpus.
+print(sum(
+    json.loads((sample / "meta.json").read_text()).get("device") == device
+    for sample in samples
+))
 PY
 )
   echo "[basic-linear-target] accepted=$accepted target=$TARGET"
