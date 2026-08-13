@@ -52,7 +52,11 @@ class BasicLinearRegressor(nn.Module):
         # teaches the shared encoder where the moving contact is without
         # forcing either endpoint-specific head to score the entire trail.
         self.trajectory_score = nn.Conv2d(c * 4, 1, 1) if trajectory_track else None
-        self.trajectory_fusion = nn.Parameter(torch.zeros(())) if trajectory_track else None
+        # The path decoder starts as a near-zero correction to the established
+        # endpoint decoder.  It earns influence through endpoint loss after its
+        # own per-frame trajectory map has become useful; this avoids a cold
+        # untrained tracker destabilising command recovery.
+        self.trajectory_fusion = nn.Parameter(torch.tensor(-4.0)) if trajectory_track else None
         self.duration_head = nn.Sequential(
             nn.Conv1d(2, c, 3, padding=1), nn.SiLU(), nn.Conv1d(c, c, 3, padding=1), nn.SiLU(),
             nn.AdaptiveAvgPool1d(8), nn.Flatten(), nn.Linear(c * 8, c * 2), nn.SiLU(), nn.Linear(c * 2, 1),
@@ -72,6 +76,35 @@ class BasicLinearRegressor(nn.Module):
         return ((attention * xa.view(1, 1, 1, width)).sum((1, 2, 3)),
                 (attention * ya.view(1, 1, height, 1)).sum((1, 2, 3)))
 
+    @staticmethod
+    def _read_track_endpoints(scores: torch.Tensor, *, start_centre: torch.Tensor,
+                              end_centre: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Decode path-map contact positions, then select start and liftoff.
+
+        The trajectory map has one spatial softmax per frame (not one global
+        space-time softmax), matching its manifest supervision.  Known aligned
+        timing windows then reduce those contact positions to the two command
+        endpoints without asking the endpoint heads to represent every point
+        on the path.
+        """
+        batch, steps, height, width = scores.shape
+        spatial = torch.softmax(scores.flatten(2) / .15, dim=2).reshape_as(scores)
+        xa = torch.linspace(0., 1., width, dtype=scores.dtype, device=scores.device)
+        ya = torch.linspace(0., 1., height, dtype=scores.dtype, device=scores.device)
+        positions = torch.stack((
+            (spatial * xa.view(1, 1, 1, width)).sum((2, 3)),
+            (spatial * ya.view(1, 1, height, 1)).sum((2, 3)),
+        ), dim=2)
+        time = torch.linspace(0., 1., steps, dtype=scores.dtype, device=scores.device)
+
+        def select(centre: torch.Tensor, sigma: float) -> torch.Tensor:
+            temporal = torch.softmax(-((time[None, :] - centre[:, None]) / sigma).square(), dim=1)
+            return (positions * temporal[:, :, None]).sum(dim=1)
+
+        if start_centre.shape != (batch,) or end_centre.shape != (batch,):
+            raise ValueError("track endpoint centres must have shape [batch]")
+        return select(start_centre, .05), select(end_centre, .15)
+
     def _forward_scores(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor | None]:
         if frames.ndim != 5 or frames.shape[2] != 3:
             raise ValueError("frames must have shape [batch,time,3,height,width]")
@@ -87,12 +120,6 @@ class BasicLinearRegressor(nn.Module):
         end_scores = self.end_score(encoded).reshape(batch, steps, h, w)
         trajectory_scores = (self.trajectory_score(encoded).reshape(batch, steps, h, w)
                              if self.trajectory_score is not None else None)
-        if trajectory_scores is not None:
-            # Start/end heads retain independent evidence; the learned scalar
-            # decides how much the directly supervised moving-contact map may
-            # correct either one.
-            start_scores = start_scores + self.trajectory_fusion * trajectory_scores
-            end_scores = end_scores + self.trajectory_fusion * trajectory_scores
         # The pre-touch reference is the leading ~22% of every aligned clip.
         # Suppress that known no-gesture region, then make only a gentle learned
         # temporal preference.  Strong priors previously let background pixels in
@@ -119,6 +146,15 @@ class BasicLinearRegressor(nn.Module):
         end_prior = active - ((time[None, :] - liftoff[:, None]) / 0.15).square()
         x0, y0 = self._read_xy(start_scores, start_prior)
         x1, y1 = self._read_xy(end_scores, end_prior)
+        if trajectory_scores is not None:
+            track_start, track_end = self._read_track_endpoints(
+                trajectory_scores, start_centre=onset, end_centre=liftoff,
+            )
+            blend = torch.sigmoid(self.trajectory_fusion)
+            x0, y0 = ((1. - blend) * x0 + blend * track_start[:, 0],
+                      (1. - blend) * y0 + blend * track_start[:, 1])
+            x1, y1 = ((1. - blend) * x1 + blend * track_end[:, 0],
+                      (1. - blend) * y1 + blend * track_end[:, 1])
         prediction = torch.cat((x0[:, None], y0[:, None], x1[:, None], y1[:, None], duration), dim=1)
         return prediction, start_scores, end_scores, trajectory_scores
 

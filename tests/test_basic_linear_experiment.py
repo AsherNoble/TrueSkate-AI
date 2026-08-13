@@ -142,6 +142,7 @@ def test_linear_regressor_can_expose_separate_trajectory_track_scores():
     assert prediction.shape == (2, 5)
     assert track.shape == start.shape == end.shape == (2, 5, 15, 9)
     assert model.trajectory_fusion is not None
+    assert model.trajectory_fusion.item() == pytest.approx(-4.0)
 
 
 def test_linear_regressor_retains_stride_two_spatial_endpoint_evidence():
