@@ -309,3 +309,4 @@ def test_modal_linear_cpu_fallback_is_separate_and_labelled():
     assert "def train_remote_cpu(" in source
     assert 'execution_hardware"] = "cpu"' in source
     assert "cpu=8.0" in source
+    assert "temporal_mixer=temporal_mixer" in source
