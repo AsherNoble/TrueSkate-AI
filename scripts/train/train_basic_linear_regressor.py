@@ -14,6 +14,7 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset, Subset
 
@@ -89,19 +90,71 @@ def _recovery_audit(model: torch.nn.Module, dataset: BasicLinearClipDataset,
     }
 
 
+def split_with_fresh_command_holdout(dataset: BasicLinearClipDataset, *, fresh_source: str,
+                                    val_fraction: float = .15, test_fraction: float = .15,
+                                    seed: int = 0) -> tuple[list[int], list[int], list[int]]:
+    """Train on all legacy commands while reserving fresh commands for evaluation.
+
+    This makes a data-scale experiment honest without throwing away an already
+    collected training corpus: test commands come exclusively from the new
+    source, neither validation nor test commands occur in training, and an
+    exact command collision between legacy and fresh sources fails closed.
+    """
+    marker = fresh_source.strip("/")
+    if not marker or "/" in marker or marker in {".", ".."}:
+        raise ValueError("fresh_source must name one direct child under the dataset root")
+    fresh_indices = [
+        index for index, path in enumerate(dataset.sample_paths)
+        if marker in path.relative_to(dataset.root).parts
+    ]
+    if not fresh_indices:
+        raise ValueError(f"no samples found below fresh source {marker!r}")
+    fresh_keys = {dataset.command_keys[index] for index in fresh_indices}
+    fresh_index_set = set(fresh_indices)
+    legacy_keys = {
+        key for index, key in enumerate(dataset.command_keys)
+        if index not in fresh_index_set
+    }
+    overlap = fresh_keys & legacy_keys
+    if overlap:
+        raise ValueError(f"fresh/legacy command overlap ({len(overlap)} exact commands); refusing leakage")
+    if len(fresh_keys) < 3:
+        raise ValueError("need at least three fresh commands for train/validation/test")
+    rng = np.random.default_rng(seed)
+    shuffled = list(rng.permutation(sorted(fresh_keys)))
+    n_test = max(1, round(len(shuffled) * test_fraction))
+    n_val = max(1, round(len(shuffled) * val_fraction))
+    if n_test + n_val >= len(shuffled):
+        n_test = n_val = 1
+    test_keys = set(shuffled[:n_test])
+    val_keys = set(shuffled[n_test:n_test + n_val])
+    test = [index for index, key in enumerate(dataset.command_keys) if key in test_keys]
+    val = [index for index, key in enumerate(dataset.command_keys) if key in val_keys]
+    train = [index for index, key in enumerate(dataset.command_keys)
+             if key not in val_keys | test_keys]
+    return train, val, test
+
+
 def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           seed: int, base_channels: int, split_seed: int | None = None, split_strategy: str = "command",
           cache_frames: bool = False, map_weight: float = 0.0, start_onset: float = .24,
           start_sigma: float = .05, end_onset: float = .24,
           temporal_mixer: bool = False, trajectory_weight: float = 0.0,
-          trajectory_track: bool = False) -> dict:
+          trajectory_track: bool = False, fresh_holdout_source: str | None = None) -> dict:
     torch.manual_seed(seed)
     dataset = BasicLinearClipDataset(data, cache_frames=cache_frames)
     splitters = {"segment": split_by_segment, "command": split_by_command}
     if split_strategy not in splitters:
         raise ValueError(f"unknown split strategy {split_strategy!r}; choose from {sorted(splitters)}")
     split_seed = seed if split_seed is None else split_seed
-    train_indices, val_indices, test_indices = splitters[split_strategy](dataset, seed=split_seed)
+    if fresh_holdout_source is not None:
+        if split_strategy != "command":
+            raise ValueError("fresh_holdout_source requires command splitting")
+        train_indices, val_indices, test_indices = split_with_fresh_command_holdout(
+            dataset, fresh_source=fresh_holdout_source, seed=split_seed,
+        )
+    else:
+        train_indices, val_indices, test_indices = splitters[split_strategy](dataset, seed=split_seed)
     train_loader = DataLoader(Subset(dataset, train_indices), batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(Subset(dataset, val_indices), batch_size=batch_size)
     test_loader = DataLoader(Subset(dataset, test_indices), batch_size=batch_size)
@@ -176,6 +229,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "trajectory_track": trajectory_track,
         "split_seed": split_seed,
         "split_strategy": split_strategy,
+        "fresh_holdout_source": fresh_holdout_source,
         "dataset_fingerprint": _fingerprint(dataset.sample_paths),
         "dataset_stats": dataset.stats,
         "split_sizes": {"train": len(train_indices), "validation": len(val_indices), "test": len(test_indices)},
@@ -220,6 +274,9 @@ def main() -> None:
                         help="Use a separate moving-contact score map for trajectory supervision.")
     parser.add_argument("--split-strategy", choices=("segment", "command"), default="command",
                         help="command withholds exact {x0,y0,x1,y1,dur}; required generalisation protocol.")
+    parser.add_argument("--fresh-holdout-source", default=None,
+                        help="Direct corpus child whose commands exclusively supply validation/test; "
+                             "all other commands remain train-only.")
     parser.add_argument("--min-samples", type=int, default=1000,
                         help="Require this many accepted calibrated linear clips (0 disables the milestone gate).")
     parser.add_argument("--cache-frames", action="store_true",
@@ -241,7 +298,8 @@ def main() -> None:
                    map_weight=args.map_weight, start_onset=args.start_onset,
                    start_sigma=args.start_sigma, end_onset=args.end_onset,
                    temporal_mixer=args.temporal_mixer, trajectory_weight=args.trajectory_weight,
-                   trajectory_track=args.trajectory_track)
+                   trajectory_track=args.trajectory_track,
+                   fresh_holdout_source=args.fresh_holdout_source)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 

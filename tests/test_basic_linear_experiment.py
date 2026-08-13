@@ -26,7 +26,7 @@ from trueskate_ai.vision.basic_linear_training import (
     basic_linear_endpoint_map_loss, basic_linear_trajectory_map_loss, basic_linear_loss, basic_linear_metrics,
     passes_basic_linear_acceptance,
 )
-from scripts.train.train_basic_linear_regressor import _IndexedSubset
+from scripts.train.train_basic_linear_regressor import _IndexedSubset, split_with_fresh_command_holdout
 
 
 def _write_sample(root: Path, segment: str, name: str, *, kind: str = "linear",
@@ -105,6 +105,28 @@ def test_linear_command_identity_includes_both_endpoints_and_duration(tmp_path):
     _write_sample(tmp_path, "segment_3", "c", points=[[.30, .40], [.60, .55]], duration=.61)
     dataset = BasicLinearClipDataset(tmp_path, sequence_length=2, image_height=10, image_width=8)
     assert len(set(dataset.command_keys)) == 3
+
+
+def test_fresh_command_holdout_keeps_legacy_training_only_and_rejects_overlap(tmp_path):
+    for index in range(4):
+        _write_sample(tmp_path / "legacy", f"segment_{index}", f"legacy_{index}",
+                      points=[[.20 + index * .01, .40], [.60 + index * .01, .55]])
+    for index in range(8):
+        _write_sample(tmp_path / "fresh", f"segment_{index}", f"fresh_{index}",
+                      points=[[.30 + index * .01, .35], [.70 + index * .01, .50]])
+    dataset = BasicLinearClipDataset(tmp_path, sequence_length=2, image_height=10, image_width=8)
+    train, val, test = split_with_fresh_command_holdout(dataset, fresh_source="fresh", seed=3)
+    fresh = {index for index, path in enumerate(dataset.sample_paths)
+             if "fresh" in path.relative_to(tmp_path).parts}
+    legacy = set(range(len(dataset))) - fresh
+    assert set(val).issubset(fresh) and set(test).issubset(fresh)
+    assert legacy.issubset(train)
+    assert not ({dataset.command_keys[index] for index in train}
+                & ({dataset.command_keys[index] for index in val} | {dataset.command_keys[index] for index in test}))
+    _write_sample(tmp_path / "fresh", "segment_99", "dup", points=[[.20, .40], [.60, .55]])
+    overlapping = BasicLinearClipDataset(tmp_path, sequence_length=2, image_height=10, image_width=8)
+    with pytest.raises(ValueError, match="overlap"):
+        split_with_fresh_command_holdout(overlapping, fresh_source="fresh", seed=3)
 
 
 def test_linear_regressor_returns_native_bounded_quintuplets():
