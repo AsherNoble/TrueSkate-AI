@@ -11,8 +11,16 @@ shift 3
 PID_FILES=("${@:-tmp/basic_linear_xr1.pid}")
 REPO=/Users/training-server/trueskate-ai
 VOLUME="${MODAL_CORPUS_VOLUME:-trueskate-mvp}"
+# Keep the legacy finalizer's spatial baseline as its default, while letting a
+# separately collected corpus request the established temporal architecture
+# without changing its collection or held-out split protocol.
+TEMPORAL_MIXER="${BASIC_LINEAR_TEMPORAL_MIXER:-0}"
 
 cd "$REPO"
+case "$TEMPORAL_MIXER" in
+  0|1) ;;
+  *) echo "BASIC_LINEAR_TEMPORAL_MIXER must be 0 or 1" >&2; exit 2 ;;
+esac
 accepted_count() {
   PYTHONPATH=src .venv/bin/python - "$OUT" <<'PY'
 import sys
@@ -50,6 +58,9 @@ fi
 PYTHONPATH=src .venv/bin/python scripts/cloud/upload_basic_linear_corpus.py \
   --source "$OUT" --volume "$VOLUME" --remote-subdir basic_linear_xctest \
   --min-samples "$TARGET"
+TRAIN_ARGS=()
+if [ "$TEMPORAL_MIXER" = "1" ]; then TRAIN_ARGS+=(--temporal-mixer); fi
 env MODAL_CORPUS_VOLUME="$VOLUME" .venv/bin/modal run scripts/cloud/train_basic_linear_modal.py \
   --data-subdir basic_linear_xctest --run-label "$RUN_LABEL" \
-  --epochs 40 --batch-size 8 --lr 1e-3 --seed 0 --base-channels 16 --split-strategy command
+  --epochs 40 --batch-size 8 --lr 1e-3 --seed 0 --base-channels 16 --split-strategy command \
+  "${TRAIN_ARGS[@]}"
