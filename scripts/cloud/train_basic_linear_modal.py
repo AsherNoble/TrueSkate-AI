@@ -419,7 +419,8 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
 @app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, seed: int = 0,
-                                 batch_size: int = 8) -> dict:
+                                 batch_size: int = 8,
+                                 fresh_holdout_source: str | None = None) -> dict:
     """Validation-select a convex checkpoint ensemble, then test it once.
 
     Every candidate has been trained on the same corpus/split.  We enumerate
@@ -438,7 +439,12 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
     payloads = [torch.load(Path("/models") / name, map_location="cpu", weights_only=False)
                 for name in checkpoint_names]
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
-    _train, val_indices, test_indices = split_by_command(data, seed=seed)
+    if fresh_holdout_source is None:
+        _train, val_indices, test_indices = split_by_command(data, seed=seed)
+    else:
+        _train, val_indices, test_indices = _trainer().split_with_fresh_command_holdout(
+            data, fresh_source=fresh_holdout_source, seed=seed,
+        )
     device = torch.device("cuda")
     models_local = []
     for payload in payloads:
@@ -507,6 +513,7 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
     test = metrics_for_test(selected_weights)
     output = {
         "checkpoints": checkpoint_names,
+        "fresh_holdout_source": fresh_holdout_source,
         "selected_weights": dict(zip(checkpoint_names, selected_weights)),
         "validation": validation,
         "test": test,
@@ -515,7 +522,8 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
             for _rank, weights, metric in ranked[:5]
         ],
     }
-    (Path("/models") / "basic_linear_checkpoint_ensemble_20260812.json").write_text(
+    split_label = "command" if fresh_holdout_source is None else f"fresh_{fresh_holdout_source}"
+    (Path("/models") / f"basic_linear_checkpoint_ensemble_{split_label}.json").write_text(
         json.dumps(output, indent=2),
     )
     models.commit()
