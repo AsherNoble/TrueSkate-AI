@@ -140,7 +140,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           cache_frames: bool = False, map_weight: float = 0.0, start_onset: float = .24,
           start_sigma: float = .05, end_onset: float = .24,
           temporal_mixer: bool = False, trajectory_weight: float = 0.0,
-          trajectory_track: bool = False, fresh_holdout_source: str | None = None) -> dict:
+          trajectory_track: bool = False, fresh_holdout_source: str | None = None,
+          evaluate_test: bool = True) -> dict:
     torch.manual_seed(seed)
     dataset = BasicLinearClipDataset(data, cache_frames=cache_frames)
     splitters = {"segment": split_by_segment, "command": split_by_command}
@@ -207,7 +208,10 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
                     "validation": validation}
     assert best is not None
     model.load_state_dict(best["state_dict"])
-    test = basic_linear_metrics(model, test_loader, device)
+    # Multi-seed/ensemble protocols must not inspect a prospective test split
+    # per seed.  They train each candidate with validation-only selection, then
+    # expose the test commands once through evaluate_checkpoint_ensemble.
+    test = basic_linear_metrics(model, test_loader, device) if evaluate_test else None
     payload = {
         "model_type": "basic_linear_regressor_v3_separate_endpoint_heads_tight_start_prior",
         "gesture_contract": "two-point, constant-velocity, finite-slope linear drag",
@@ -236,8 +240,11 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "best_epoch": best["epoch"],
         "validation": best["validation"],
         "test": test,
-        "test_recovery_audit": _recovery_audit(model, dataset, test_indices, device, batch_size),
-        "passes_acceptance": passes_basic_linear_acceptance(test),
+        "test_recovery_audit": (
+            _recovery_audit(model, dataset, test_indices, device, batch_size)
+            if evaluate_test else None
+        ),
+        "passes_acceptance": passes_basic_linear_acceptance(test) if test is not None else None,
         "state_dict": best["state_dict"],
     }
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -281,6 +288,9 @@ def main() -> None:
                         help="Require this many accepted calibrated linear clips (0 disables the milestone gate).")
     parser.add_argument("--cache-frames", action="store_true",
                         help="Decode each accepted clip at most once; recommended for fixed, repeated epochs.")
+    parser.add_argument("--skip-test", action="store_true",
+                        help="Save a validation-selected checkpoint without evaluating its test split; "
+                             "use only when a later validation-selected ensemble will test once.")
     args = parser.parse_args()
     if (args.epochs < 1 or args.batch_size < 1 or args.lr <= 0 or args.map_weight < 0
             or args.trajectory_weight < 0 or args.start_sigma <= 0):
@@ -299,7 +309,8 @@ def main() -> None:
                    start_sigma=args.start_sigma, end_onset=args.end_onset,
                    temporal_mixer=args.temporal_mixer, trajectory_weight=args.trajectory_weight,
                    trajectory_track=args.trajectory_track,
-                   fresh_holdout_source=args.fresh_holdout_source)
+                   fresh_holdout_source=args.fresh_holdout_source,
+                   evaluate_test=not args.skip_test)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 
