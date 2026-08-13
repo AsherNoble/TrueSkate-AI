@@ -498,7 +498,8 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          cache_frames: bool = True, split_seed: int | None = None,
          map_weight: float = 0.0, start_onset: float = .24,
          start_sigma: float = .05, end_onset: float = .24,
-         temporal_mixer: bool = False, trajectory_weight: float = 0.0) -> None:
+         temporal_mixer: bool = False, trajectory_weight: float = 0.0,
+         trajectory_track: bool = False) -> None:
     result = train_remote.remote(
         data_subdir, run_label, epochs=epochs, batch_size=batch_size, lr=lr,
         seed=seed, base_channels=base_channels, split_strategy=split_strategy,
@@ -506,5 +507,6 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
         start_onset=start_onset, start_sigma=start_sigma, end_onset=end_onset,
         temporal_mixer=temporal_mixer,
         trajectory_weight=trajectory_weight,
+        trajectory_track=trajectory_track,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
