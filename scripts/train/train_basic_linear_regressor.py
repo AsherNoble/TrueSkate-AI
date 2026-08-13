@@ -105,7 +105,7 @@ def split_with_fresh_command_holdout(dataset: BasicLinearClipDataset, *, fresh_s
         raise ValueError("fresh_source must name one direct child under the dataset root")
     fresh_indices = [
         index for index, path in enumerate(dataset.sample_paths)
-        if marker in path.relative_to(dataset.root).parts
+        if path.relative_to(dataset.root).parts[0] == marker
     ]
     if not fresh_indices:
         raise ValueError(f"no samples found below fresh source {marker!r}")
