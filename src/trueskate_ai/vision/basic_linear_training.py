@@ -66,7 +66,8 @@ def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor, *,
                       end_scores: torch.Tensor | None = None,
                       map_weight: float = 0.0, trajectory_xy: torch.Tensor | None = None,
                       trajectory_mask: torch.Tensor | None = None,
-                      trajectory_weight: float = 0.0) -> torch.Tensor:
+                      trajectory_weight: float = 0.0,
+                      trajectory_scores: torch.Tensor | None = None) -> torch.Tensor:
     """Robust endpoint error plus duration error in matched native scales."""
     if prediction.shape != target.shape or prediction.ndim != 2 or prediction.shape[1] != 5:
         raise ValueError("prediction and target must both have shape [batch,5]")
@@ -96,10 +97,18 @@ def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor, *,
     if trajectory_weight:
         if trajectory_xy is None or trajectory_mask is None:
             raise ValueError("trajectory targets are required when trajectory_weight is positive")
-        # Each independent endpoint head benefits from spatial evidence along
-        # the true trace; endpoint losses still teach their different roles.
-        trajectory_loss = basic_linear_trajectory_map_loss(start_scores, trajectory_xy, trajectory_mask)
-        trajectory_loss = trajectory_loss + basic_linear_trajectory_map_loss(end_scores, trajectory_xy, trajectory_mask)
+        # A dedicated track score map avoids forcing endpoint-specific heads to
+        # label every intermediate contact position.  Retain the old two-head
+        # auxiliary as a backwards-compatible control when none is supplied.
+        if trajectory_scores is None:
+            trajectory_loss = basic_linear_trajectory_map_loss(start_scores, trajectory_xy, trajectory_mask)
+            trajectory_loss = trajectory_loss + basic_linear_trajectory_map_loss(end_scores, trajectory_xy, trajectory_mask)
+        else:
+            if trajectory_scores.shape != start_scores.shape:
+                raise ValueError("trajectory_scores must match endpoint score-map shape")
+            trajectory_loss = basic_linear_trajectory_map_loss(
+                trajectory_scores, trajectory_xy, trajectory_mask,
+            )
         loss = loss + trajectory_weight * trajectory_loss
     return loss
 

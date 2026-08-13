@@ -54,6 +54,7 @@ def _model_from_payload(payload, torch):
         start_sigma=float(payload.get("start_sigma", .05)),
         end_onset=float(payload.get("end_onset", .24)),
         temporal_mixer=bool(payload.get("temporal_mixer", False)),
+        trajectory_track=bool(payload.get("trajectory_track", False)),
     )
 
 
@@ -70,7 +71,8 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  cache_frames: bool = True, split_seed: int | None = None,
                  map_weight: float = 0.0, start_onset: float = .24,
                  start_sigma: float = .05, end_onset: float = .24,
-                 temporal_mixer: bool = False, trajectory_weight: float = 0.0) -> dict:
+                 temporal_mixer: bool = False, trajectory_weight: float = 0.0,
+                 trajectory_track: bool = False) -> dict:
     trainer = _trainer()
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
     payload = trainer.train(
@@ -87,6 +89,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         end_onset=end_onset,
         temporal_mixer=temporal_mixer,
         trajectory_weight=trajectory_weight,
+        trajectory_track=trajectory_track,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
@@ -107,7 +110,8 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
                      cache_frames: bool = True, split_seed: int | None = None,
                      map_weight: float = 0.0, start_onset: float = .24,
                      start_sigma: float = .05, end_onset: float = .24,
-                     temporal_mixer: bool = False, trajectory_weight: float = 0.0) -> dict:
+                     temporal_mixer: bool = False, trajectory_weight: float = 0.0,
+                     trajectory_track: bool = False) -> dict:
     """Scheduler-independent execution fallback for the same compact protocol.
 
     This is intentionally a separate function rather than silently removing a
@@ -130,6 +134,7 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
         end_onset=end_onset,
         temporal_mixer=temporal_mixer,
         trajectory_weight=trajectory_weight,
+        trajectory_track=trajectory_track,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,

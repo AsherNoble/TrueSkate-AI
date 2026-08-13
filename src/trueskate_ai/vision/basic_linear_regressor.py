@@ -12,7 +12,7 @@ class BasicLinearRegressor(nn.Module):
 
     def __init__(self, base_channels: int = 16, *, start_onset: float = .24,
                  start_sigma: float = .05, end_onset: float = .24,
-                 temporal_mixer: bool = False):
+                 temporal_mixer: bool = False, trajectory_track: bool = False):
         super().__init__()
         if start_sigma <= 0:
             raise ValueError("start_sigma must be positive")
@@ -21,6 +21,7 @@ class BasicLinearRegressor(nn.Module):
         self.start_sigma = float(start_sigma)
         self.end_onset = float(end_onset)
         self.temporal_mixer_enabled = bool(temporal_mixer)
+        self.trajectory_track_enabled = bool(trajectory_track)
         self.encoder = nn.Sequential(
             # MVP-2 must distinguish both endpoints.  At 128px input width a
             # stride-four map has only 32 x-cells (one cell is ~0.031 in model
@@ -46,6 +47,12 @@ class BasicLinearRegressor(nn.Module):
         # midpoint; give each endpoint its own learned spatial evidence.
         self.start_score = nn.Conv2d(c * 4, 1, 1)
         self.end_score = nn.Conv2d(c * 4, 1, 1)
+        # Endpoint maps must rank one particular moment of a rendered line.
+        # A separate path map, supervised at every manifest-active frame,
+        # teaches the shared encoder where the moving contact is without
+        # forcing either endpoint-specific head to score the entire trail.
+        self.trajectory_score = nn.Conv2d(c * 4, 1, 1) if trajectory_track else None
+        self.trajectory_fusion = nn.Parameter(torch.zeros(())) if trajectory_track else None
         self.duration_head = nn.Sequential(
             nn.Conv1d(2, c, 3, padding=1), nn.SiLU(), nn.Conv1d(c, c, 3, padding=1), nn.SiLU(),
             nn.AdaptiveAvgPool1d(8), nn.Flatten(), nn.Linear(c * 8, c * 2), nn.SiLU(), nn.Linear(c * 2, 1),
@@ -65,8 +72,7 @@ class BasicLinearRegressor(nn.Module):
         return ((attention * xa.view(1, 1, 1, width)).sum((1, 2, 3)),
                 (attention * ya.view(1, 1, height, 1)).sum((1, 2, 3)))
 
-    def forward_with_scores(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Return the gesture plus raw start/end score maps for inspection."""
+    def _forward_scores(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor | None]:
         if frames.ndim != 5 or frames.shape[2] != 3:
             raise ValueError("frames must have shape [batch,time,3,height,width]")
         batch, steps = frames.shape[:2]
@@ -79,6 +85,14 @@ class BasicLinearRegressor(nn.Module):
             encoded = (encoded_5d + self.temporal_mixer(encoded_5d)).transpose(1, 2).flatten(0, 1)
         start_scores = self.start_score(encoded).reshape(batch, steps, h, w)
         end_scores = self.end_score(encoded).reshape(batch, steps, h, w)
+        trajectory_scores = (self.trajectory_score(encoded).reshape(batch, steps, h, w)
+                             if self.trajectory_score is not None else None)
+        if trajectory_scores is not None:
+            # Start/end heads retain independent evidence; the learned scalar
+            # decides how much the directly supervised moving-contact map may
+            # correct either one.
+            start_scores = start_scores + self.trajectory_fusion * trajectory_scores
+            end_scores = end_scores + self.trajectory_fusion * trajectory_scores
         # The pre-touch reference is the leading ~22% of every aligned clip.
         # Suppress that known no-gesture region, then make only a gentle learned
         # temporal preference.  Strong priors previously let background pixels in
@@ -106,7 +120,19 @@ class BasicLinearRegressor(nn.Module):
         x0, y0 = self._read_xy(start_scores, start_prior)
         x1, y1 = self._read_xy(end_scores, end_prior)
         prediction = torch.cat((x0[:, None], y0[:, None], x1[:, None], y1[:, None], duration), dim=1)
+        return prediction, start_scores, end_scores, trajectory_scores
+
+    def forward_with_scores(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return the gesture plus effective start/end score maps for inspection."""
+        prediction, start_scores, end_scores, _trajectory_scores = self._forward_scores(frames)
         return prediction, start_scores, end_scores
+
+    def forward_with_track_scores(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return endpoint maps plus a separately supervised moving-contact map."""
+        prediction, start_scores, end_scores, trajectory_scores = self._forward_scores(frames)
+        if trajectory_scores is None:
+            raise RuntimeError("trajectory track was not enabled for this regressor")
+        return prediction, start_scores, end_scores, trajectory_scores
 
     def forward(self, frames: torch.Tensor) -> torch.Tensor:
         return self.forward_with_scores(frames)[0]

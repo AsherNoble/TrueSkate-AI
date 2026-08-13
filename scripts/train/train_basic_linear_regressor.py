@@ -93,7 +93,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           seed: int, base_channels: int, split_seed: int | None = None, split_strategy: str = "command",
           cache_frames: bool = False, map_weight: float = 0.0, start_onset: float = .24,
           start_sigma: float = .05, end_onset: float = .24,
-          temporal_mixer: bool = False, trajectory_weight: float = 0.0) -> dict:
+          temporal_mixer: bool = False, trajectory_weight: float = 0.0,
+          trajectory_track: bool = False) -> dict:
     torch.manual_seed(seed)
     dataset = BasicLinearClipDataset(data, cache_frames=cache_frames)
     splitters = {"segment": split_by_segment, "command": split_by_command}
@@ -107,7 +108,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     device = _device()
     model = BasicLinearRegressor(base_channels=base_channels, start_onset=start_onset,
                                  start_sigma=start_sigma, end_onset=end_onset,
-                                 temporal_mixer=temporal_mixer).to(device)
+                                 temporal_mixer=temporal_mixer,
+                                 trajectory_track=trajectory_track).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     best: dict | None = None
     for epoch in range(1, epochs + 1):
@@ -117,12 +119,17 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
             frames = batch["frames"].to(device)
             target = batch["target"].to(device)
             if map_weight or trajectory_weight:
-                prediction, start_scores, end_scores = model.forward_with_scores(frames)
+                if trajectory_track:
+                    prediction, start_scores, end_scores, trajectory_scores = model.forward_with_track_scores(frames)
+                else:
+                    prediction, start_scores, end_scores = model.forward_with_scores(frames)
+                    trajectory_scores = None
                 loss = basic_linear_loss(prediction, target, start_scores=start_scores,
                                          end_scores=end_scores, map_weight=map_weight,
                                          trajectory_xy=batch["trajectory_xy"].to(device),
                                          trajectory_mask=batch["trajectory_mask"].to(device),
-                                         trajectory_weight=trajectory_weight)
+                                         trajectory_weight=trajectory_weight,
+                                         trajectory_scores=trajectory_scores)
             else:
                 loss = basic_linear_loss(model(frames), target)
             loss.backward()
@@ -166,6 +173,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "start_sigma": start_sigma,
         "end_onset": end_onset,
         "temporal_mixer": temporal_mixer,
+        "trajectory_track": trajectory_track,
         "split_seed": split_seed,
         "split_strategy": split_strategy,
         "dataset_fingerprint": _fingerprint(dataset.sample_paths),
@@ -208,6 +216,8 @@ def main() -> None:
                         help="Enable residual temporal mixing before endpoint score maps.")
     parser.add_argument("--trajectory-weight", type=float, default=0.0,
                         help="Optional low-weight per-frame manifest-trajectory score-map objective.")
+    parser.add_argument("--trajectory-track", action="store_true",
+                        help="Use a separate moving-contact score map for trajectory supervision.")
     parser.add_argument("--split-strategy", choices=("segment", "command"), default="command",
                         help="command withholds exact {x0,y0,x1,y1,dur}; required generalisation protocol.")
     parser.add_argument("--min-samples", type=int, default=1000,
@@ -230,7 +240,8 @@ def main() -> None:
                    split_strategy=args.split_strategy, cache_frames=args.cache_frames,
                    map_weight=args.map_weight, start_onset=args.start_onset,
                    start_sigma=args.start_sigma, end_onset=args.end_onset,
-                   temporal_mixer=args.temporal_mixer, trajectory_weight=args.trajectory_weight)
+                   temporal_mixer=args.temporal_mixer, trajectory_weight=args.trajectory_weight,
+                   trajectory_track=args.trajectory_track)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 
