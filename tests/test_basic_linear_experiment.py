@@ -268,6 +268,8 @@ def test_linear_finalizer_can_target_a_fresh_modal_volume():
     source = Path("scripts/ops/finalize_basic_linear_run.sh").read_text()
     assert 'VOLUME="${MODAL_CORPUS_VOLUME:-trueskate-mvp}"' in source
     assert '--volume "$VOLUME"' in source
+    assert 'BASIC_LINEAR_TEMPORAL_MIXER' in source
+    assert 'TRAIN_ARGS+=(--temporal-mixer)' in source
 
 
 def test_linear_dataset_decodes_only_selected_video_frames(monkeypatch, tmp_path):
