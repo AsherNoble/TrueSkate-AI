@@ -300,6 +300,13 @@ def _start_wda(device: dict) -> bool:
             "-scheme", "WebDriverAgentRunner",
             "-destination", f"id={udid}",
             "-allowProvisioningUpdates",
+            # XCTest's default crash/sysdiagnose preflight can block before it
+            # launches WebDriverAgentRunner (observed as a long-lived
+            # `devicectl diagnose` child despite a healthy testmanagerd
+            # control session). WDA is an automation service, not a test
+            # artifact: disabling failure diagnostics avoids that preflight
+            # without weakening the recorder's own data-quality gates.
+            "-collect-test-diagnostics", "never",
             action,
         ]
 
