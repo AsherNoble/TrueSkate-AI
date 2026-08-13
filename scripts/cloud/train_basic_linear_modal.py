@@ -148,7 +148,7 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
     return result
 
 
-@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
+@app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
                         batch_size: int = 8) -> dict:
@@ -193,7 +193,7 @@ def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0
     return output
 
 
-@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
+@app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_start_timing(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
                           batch_size: int = 8) -> dict:
@@ -247,7 +247,7 @@ def evaluate_start_timing(data_subdir: str, checkpoint_name: str, *, seed: int =
     return output
 
 
-@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
+@app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_start_timing_validation_selected(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
                                               batch_size: int = 8) -> dict:
@@ -373,7 +373,7 @@ def audit_orange_endpoint_cue(data_subdir: str, *, seed: int = 0,
     return output
 
 
-@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
+@app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
                              batch_size: int = 8) -> dict:
@@ -414,7 +414,7 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
     return output
 
 
-@app.function(image=image, gpu="A10G", timeout=3 * 3600, memory=32768,
+@app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, seed: int = 0,
                                  batch_size: int = 8) -> dict:
