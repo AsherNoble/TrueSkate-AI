@@ -104,7 +104,10 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
 def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
                      batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
                      base_channels: int = 16, split_strategy: str = "command",
-                     cache_frames: bool = True, split_seed: int | None = None) -> dict:
+                     cache_frames: bool = True, split_seed: int | None = None,
+                     map_weight: float = 0.0, start_onset: float = .24,
+                     start_sigma: float = .05, end_onset: float = .24,
+                     temporal_mixer: bool = False, trajectory_weight: float = 0.0) -> dict:
     """Scheduler-independent execution fallback for the same compact protocol.
 
     This is intentionally a separate function rather than silently removing a
@@ -121,6 +124,12 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
         lr=lr,
         seed=seed,
         split_seed=split_seed,
+        map_weight=map_weight,
+        start_onset=start_onset,
+        start_sigma=start_sigma,
+        end_onset=end_onset,
+        temporal_mixer=temporal_mixer,
+        trajectory_weight=trajectory_weight,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
