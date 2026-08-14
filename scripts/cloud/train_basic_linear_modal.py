@@ -422,7 +422,7 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
     return output
 
 
-@app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
+@app.function(image=image, cpu=8.0, timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, seed: int = 0,
                                  batch_size: int = 8,
@@ -453,7 +453,10 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
             data, fresh_source=fresh_holdout_source, seed=seed,
             stratify_by_device=fresh_stratify_by_device,
         )
-    device = torch.device("cuda")
+    # Validation selection and one final ensemble forward pass are small
+    # compared with training.  Keeping this CPU-backed prevents the verdict
+    # from waiting behind scarce GPU capacity after all checkpoints are ready.
+    device = torch.device("cpu")
     models_local = []
     for payload in payloads:
         model = _model_from_payload(payload, torch).to(device)
