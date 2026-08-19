@@ -942,7 +942,7 @@ def audit_split_session_overlap(data_subdir: str, checkpoint_name: str, *,
 
 @app.function(image=image, cpu=4.0, timeout=3600, memory=8192,
               volumes={"/corpus": corpus, "/models": models})
-def audit_clip_frame_counts(data_subdir: str) -> dict:
+def audit_clip_frame_counts(data_subdir: str, *, limit: int = 0) -> dict:
     """Does each clip's video actually hold as many frames as its labels claim?
 
     `frame_times` is SYNTHESISED by the aligner from constants
@@ -953,7 +953,9 @@ def audit_clip_frame_counts(data_subdir: str) -> dict:
     clip whose pixels are time-compressed relative to labels that still claim the
     nominal schedule — silently, and invisibly to any metadata-only audit.
 
-    This reads only video headers, not pixels.
+    Decodes each clip to count frames: the header's CAP_PROP_FRAME_COUNT is
+    frequently estimated from duration x fps and can itself be off by one, which
+    is exactly the magnitude under test.
     """
     import json as _json
     import cv2
@@ -976,13 +978,31 @@ def audit_clip_frame_counts(data_subdir: str) -> dict:
         if not video.exists():
             return ("missing", None)
         capture = cv2.VideoCapture(str(video))
-        actual = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        reported = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = float(capture.get(cv2.CAP_PROP_FPS))
+        # CAP_PROP_FRAME_COUNT is often estimated from duration x fps rather than
+        # counted, so it can be off by one on its own.  Decode-and-count is the
+        # only trustworthy number when the whole claim is an off-by-one.
+        decoded = 0
+        while True:
+            ok, _frame = capture.read()
+            if not ok:
+                break
+            decoded += 1
         capture.release()
-        return ("ok", {"sample": str(sample.relative_to(root)), "claimed": claimed, "actual": actual})
+        times = meta["frame_times"]
+        return ("ok", {"sample": str(sample.relative_to(root)), "claimed": claimed,
+                       "actual": decoded, "reported": reported, "fps": fps,
+                       # Does the decoded video SPAN the window the labels assert?
+                       "video_span_s": (decoded - 1) / fps if fps > 0 else None,
+                       "label_span_s": float(times[-1]) - float(times[0])})
 
     # FUSE latency dominates and these are header reads, so fan out widely.
+    paths = sorted(root.rglob("meta.json"))
+    if limit:
+        paths = paths[:limit]
     with ThreadPoolExecutor(max_workers=32) as pool:
-        for status, row in pool.map(inspect, sorted(root.rglob("meta.json"))):
+        for status, row in pool.map(inspect, paths):
             if status == "ok":
                 rows.append(row)
             elif status == "missing":
@@ -1000,11 +1020,18 @@ def audit_clip_frame_counts(data_subdir: str) -> dict:
         "unreadable_meta": unreadable,
         "claimed_frames": {"min": int(claimed.min()), "max": int(claimed.max())} if len(rows) else {},
         "actual_frames": {"min": int(actual.min()), "max": int(actual.max())} if len(rows) else {},
+        "header_disagrees_with_decode": int(sum(
+            1 for r in rows if r["reported"] != r["actual"])),
         "clips_short": int(short.sum()),
         "clips_short_fraction": float(short.mean()) if len(rows) else 0.0,
         "shortfall_distribution": {
             str(int(deficit)): int((claimed - actual == deficit).sum())
             for deficit in sorted(set((claimed - actual).tolist()))
+        },
+        "timing": {
+            "fps": sorted({round(r["fps"], 4) for r in rows}),
+            "video_span_s": sorted({round(r["video_span_s"], 4) for r in rows}),
+            "label_span_s": sorted({round(r["label_span_s"], 4) for r in rows}),
         },
         "worst_examples": sorted(
             ({"sample": r["sample"], "claimed": r["claimed"], "actual": r["actual"]}

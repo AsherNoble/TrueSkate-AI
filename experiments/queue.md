@@ -288,7 +288,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   deliberately rather than inherit it.
 
 ## EQ-018 — Do the clip videos hold as many frames as their labels claim?
-- status: running
+- status: done: CONFIRMED — NO. All 3,040 clips hold 31 frames against 32 claimed (decode-verified,
+  header agrees). Root cause `align_xctest_traces.py:375` leaves 1/30s tail margin and the frame count
+  is never asserted. Pixels sit on a 31/30-stretched timebase while labels do not. Fixing it requires a
+  RETRAIN, not a re-eval. See the 2026-08-20 EQ-018 entry.
 - tier: FREE (cheap CPU, header reads only)
 - hypothesis: `frame_times` is synthesised by the aligner and nothing verifies the extracted mp4
   against it, while `_decode_even_frames` stretches whatever frames exist across the sequence length —
@@ -330,3 +333,35 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - kill: the corpus already spans multiple parks/days in the evaluated split — then coverage is fine.
 - why: EQ-007's certification protocol should choose its axes deliberately; EQ-017 showed session
   identity is the wrong axis to worry about.
+
+## EQ-021 — Fix the extractor: real tail margin plus a frame-count assertion
+- status: todo
+- tier: FREE to change, PAID to revalidate (requires a retrain)
+- hypothesis: extracting with `-t dur + 2/fps` (keeping `-frames:v 32`) and asserting the produced
+  frame count equals `max_frames` yields clips whose pixels and labels share one timebase.
+- method: change `_extract_sample_video`, add the assertion so a short extract fails the sample loudly
+  instead of being stretched silently; re-extract a pilot segment and confirm 32 frames and a 2.2667s
+  span; only then consider a corpus re-extract.
+- expected: 32 frames, span matching `frame_times`, and the assertion catching any regression.
+- kill: the source `.mov` files are gone for most of the corpus, so re-extraction is impossible — then
+  the fix applies only to future collection and the existing corpus keeps its documented 31/30 skew.
+- why: it is a silent label-timing defect affecting every clip, and it is cheap to prevent going
+  forward even if the existing corpus cannot be repaired.
+- CAUTION: do NOT shorten `frame_times` to 31 as a shortcut — that preserves the truncated content. And
+  do not re-evaluate existing checkpoints on corrected clips without retraining; they would
+  underestimate duration by ~3.2%.
+
+## EQ-022 — Is EQ-003's duration tail calibration residual or aligner phase jitter?
+- status: todo
+- tier: FREE where a `.mov` survives
+- hypothesis: `-ss` input seek lands on the source frame at or after the requested start, so frame 0
+  carries a per-clip offset in [0, 1/30s) that the `fps` filter re-stamps away — up to +/-0.45
+  label-frames of phase jitter, independent of tap calibration.
+- method: for a handful of segments whose `.mov` still exists, re-run extraction with
+  `-copyts` / `-show_entries frame=pts_time` before the `fps` filter and measure frame 0's true offset
+  clip-to-clip.
+- expected: a spread of order 1/30s, uncorrelated with the tap-calibration offset.
+- kill: frame 0's offset is constant across clips — then the jitter is calibration residual after all
+  and EQ-003's attribution stands.
+- why: EQ-003 attributed the whole low-headroom tail to tap-calibration residual. If a second,
+  independent source of per-clip timing error exists, that attribution is wrong and the fix differs.

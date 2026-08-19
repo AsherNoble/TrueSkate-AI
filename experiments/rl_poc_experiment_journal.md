@@ -1047,3 +1047,56 @@ from the declared method: analysed those offline rather than paying for a new ru
 - **Next:** EQ-019 (fix the legacy session key and extend the audit to the 2,022-command split before
   any cross-corpus claim); EQ-020 (device/park/day coverage is the real generalisation gap — quantify
   it for EQ-007's protocol).
+
+## EQ-018 — Every clip is one frame short of the window its labels assert (2026-08-20)
+
+The check the EQ-015 red team asked for. **Verdict: CONFIRMED — a real, uniform, decode-verified
+corpus-wide off-by-one.**
+
+- **Measured** over all 3,040 clips of `basic_linear_mixed_fresh_holdout`: `len(frame_times)` = **32**,
+  decoded video frames = **31**, for **every clip, no exceptions**. Verified by *decoding and counting*,
+  not by header metadata — `header_disagrees_with_decode = 0`, so this is not a
+  `CAP_PROP_FRAME_COUNT` estimation artefact. Timing (40-clip pass): fps exactly **13.6765**, video
+  span **2.1935 s**, label span **2.2667 s**, difference **+0.0732 s = 1.00 label-frame**.
+- **Root cause, one line** (`scripts/data/align_xctest_traces.py:375`):
+  `output_fps = (max_frames - 1) / max(dur - 1 / fps, 1 / fps)`. With `pre_s=0.5`, `window_s=1.8` →
+  `dur=2.3`, source `fps=30` → `output_fps=13.67647`, putting slot 31 at `dur − 1/30 = 2.2667 s`. The
+  ffmpeg call (lines 274-277) uses `-ss` input seek + `-t dur` + an `fps=` filter, leaving only
+  **1/30 s (0.4 output slots)** of tail margin; input-seek quantisation to the source's 1/30 grid eats
+  it and the filter flushes one slot short. `_extract_sample_video` checks only rc/size, and
+  `frame_times` is synthesised unconditionally from `range(max_frames)` at line 387.
+  **The frame count is a fragile function of `-t` versus slot positions and is never verified.**
+- **`_decode_even_frames` stretches, it does not pad** (`basic_hold_dataset.py:67,73,86`):
+  `linspace(0, total-1, count).round()` with total=31, count=32. So model index `i` shows source frame
+  `round(30i/31)` — content from an *earlier* real time than the label claims — while
+  `basic_linear_dataset.py:163` leaves the label grid undistorted. Pixels are on a 31/30-stretched
+  timebase, labels are not: a genuine timebase error, not a shuffle.
+- **My "sign mismatch" worry was a category error.** I flagged that the mapping predicts a +3.3%
+  duration overestimate while the measured global bias is −0.8%. No trained model reads duration off
+  index positions with a fixed `1/f` — it learns pixels→duration, and every training clip carries the
+  identical distortion, so the 31/30 factor is absorbed into the learned scale. There is no predicted
+  bias to compare against, and the residual is **not** evidence for or against the mapping.
+- **Fixing this invalidates every existing checkpoint.** On corrected 32-frame clips a given real
+  duration spans 30/31 as many index steps, so current models would underestimate duration by ~3.2%
+  (≈24 ms at the 0.75 s median). **Any fix must be paired with a retrain, not a re-eval.**
+- **Do NOT "fix" it by shortening `frame_times` to 31** — that keeps the truncated content. Correct fix:
+  extract with real margin (`-t dur + 2/fps`, keeping `-frames:v 32`) **and assert the produced frame
+  count equals `max_frames`**, failing the sample otherwise.
+- **A second, per-clip consequence of the same line — and it challenges EQ-003's attribution.** `-ss
+  start` lands on the source frame at or after `start`, so frame 0 carries a per-clip
+  ε ∈ [0, 1/30 s) that the `fps` filter then re-stamps away — **up to ±0.45 label-frames of genuine
+  per-clip phase jitter**. EQ-003 attributed the low-headroom tail wholly to tap-calibration residual;
+  this is a live alternative for part of it.
+- **Provenance correction (two artefacts were being conflated, both correct):**
+  - **Rendered** headroom, from `trail_frame_start` in the autopsy artefacts: min **−0.24**,
+    **6 clips < 2 frames**, **1 negative**; failures 2/6 below versus 1/300 above.
+  - **Commanded** headroom, from `headroom.json` (nominal constant onset): min **+7.81**, **0 clips**
+    below 2, 0 negative.
+  These are different quantities and do not contradict; the EQ-003/EQ-015 entries should say which is
+  which. Re-measured here rather than re-quoted.
+- **Accounting for the shortfall** (the true window is 30 intervals, not 31), rendered headroom becomes
+  min **−1.24**, **8 clips < 2**, **3 negative** — so the truncation population grows from 6 to 8 clips.
+  Still small: do not turn this into a quantitative claim about what a fix buys.
+- **Next:** EQ-021 (fix the extractor + assert frame count; requires a retrain to benefit), EQ-022
+  (measure the `-ss` phase jitter on segments whose `.mov` survives — decides whether EQ-003's tail is
+  calibration residual or aligner phase).
