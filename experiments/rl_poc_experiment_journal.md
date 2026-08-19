@@ -1712,3 +1712,43 @@ reduced it exactly as `duration_head` does, and trained a fresh head on it.
 - **Process note:** EQ-032's code was swept into the previous `docs:` consolidation commit by
   `git add -u`, so a reviewer reading that commit sees a docs message over a code change. Stage by
   path when a tick produces both.
+
+## EQ-005 — Model 2 is blocked on a TOOLING GAP, not on Model 1's accuracy (2026-08-20)
+
+EQ-005 asked: derive Model 1's fidelity target from Model 2's tolerance, instead of asserting 99%.
+Method was to inject noise ε into ground-truth gesture parameters, train Model 2, and find the ε at
+which it degrades. **Verdict: blocked as written — but the blocker is not what the project assumed,
+and the unblock is concrete and cheap.**
+
+- **Model 2 infrastructure is complete**: `src/trueskate_ai/bc/model2.py`, `sequence_dataset.py`,
+  `assemble.py`, `gesture_tokens.py`, `frame_prep.py`, `infer.py`, plus
+  `scripts/train/train_sequence_model.py` (full CLI: epochs, n-frames, m-past, m-out, d-model,
+  208×96 frames) and `scripts/inspect/run_sequence_policy.py`.
+- **But there is no trained Model 2 baseline on real data.** The only checkpoints are a synthetic
+  smoke (`tmp/model2_v2_smoke.pth`) and `notebooks/models/sequence_model.pth`. The 2026-07-19 entry
+  records why: Model-1-assembled clips were **~5% real strokes / ~95% spurious**, "useless to train
+  Model 2 on". So EQ-005's ε-sweep has no ε=0 arm to degrade *from*, and its kill criterion fires as
+  written.
+- **THE STRUCTURAL FINDING.** `build_bc_clips.py` requires `--model` (a Model 1 checkpoint) for real
+  mode — **there is no ground-truth path**. Every route to a Model 2 training corpus currently runs
+  through Model 1, which is why the whole milestone has been gated behind "Model 1 must reach 99%".
+  That gate is an artefact of the tooling, not a requirement: the SLS corpus carries **command
+  manifests**, and the machinery to turn them into ground-truth strokes already exists and is already
+  used — `_schedule_from_meta` (`temporal_trace_dataset.py:562`) yields the drag `_TouchInterval`
+  waypoints that the 2026-07-19 stroke-recovery study used as GT, and `assemble_strokes`
+  (`bc/assemble.py:88`) is the same assembler the Model-1 path feeds.
+- **So a Model 2 corpus with PERFECT gesture labels is buildable today, independent of Model 1.**
+  That single missing writer would deliver three things the project has been waiting on Model 1 for:
+  1. **proof Model 2 trains at all** on real frames — never yet demonstrated;
+  2. the **ε=0 arm**, i.e. the ceiling Model 2 can reach with flawless gestures;
+  3. the **tolerance curve** by injecting ε, which is exactly what turns "99%" from an assertion into
+     a derived requirement.
+- **Consequence for the milestone.** "~99% on Model 1 before Model 2" was set on 2026-07-19 as an
+  instinct, and the stroke-recovery negative was read as validating it. That reading conflated two
+  things: Model-1-*derived* clips are indeed unusable at 35% per-frame, but that says nothing about
+  whether Model 2 works, or about how much gesture error it tolerates. **Both questions are
+  answerable now, in the wrong order to what the roadmap assumes.**
+- **No spend this tick** — the finding is from reading the code and the existing artefacts.
+- **Next:** EQ-034 — add a ground-truth mode to `build_bc_clips.py` (manifest → `clip.json`, no Model 1),
+  then train Model 2 on it for the ε=0 baseline; EQ-035 — the ε-sweep that finally derives Model 1's
+  target. EQ-005 stays open, blocked on EQ-034, rather than closed.

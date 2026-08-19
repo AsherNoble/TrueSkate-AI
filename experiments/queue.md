@@ -92,7 +92,9 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   ambiguous invites re-litigating it every session.
 
 ## EQ-005 — Derive the Model-1 fidelity target instead of asserting 99%
-- status: todo
+- status: blocked-by EQ-034 — investigated 2026-08-20. Model 2's infrastructure is complete but has NO
+  trained baseline on real data, because `build_bc_clips.py` only builds clips THROUGH Model 1. The
+  blocker is a missing ground-truth writer, not Model 1's accuracy. See the 2026-08-20 EQ-005 entry.
 - tier: PAID
 - hypothesis: Model 2 has a tolerance to Model-1 error, and it is not 99% per knot.
 - method: inject controlled noise of magnitude eps into ground-truth gesture parameters,
@@ -592,3 +594,37 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: EQ-032's headline rests on a map that duration supervision produced, so the attribution is
   circular until this runs. It is the last question in the duration line and the only one needing a
   retrain.
+
+## EQ-034 — Ground-truth mode for build_bc_clips: a Model 2 corpus without Model 1
+- status: todo
+- tier: FREE to build, PAID to train
+- hypothesis: `clip.json` can be written directly from the command manifests, giving a Model 2 training
+  corpus with PERFECT gesture labels and no dependence on Model 1. The pieces already exist:
+  `_schedule_from_meta` (`temporal_trace_dataset.py:562`) yields GT drag waypoints — the same GT the
+  2026-07-19 stroke-recovery study used — and `assemble_strokes` (`bc/assemble.py:88`) is the shared
+  assembler.
+- method: add a `--ground-truth` mode to `build_bc_clips.py` that bypasses the Model 1 forward pass and
+  emits `clip.json` from the manifest; round-trip it through `SequenceDataset` exactly as `--smoke`
+  does; then train Model 2 on it.
+- expected: a Model 2 that trains on real frames with a reported metric — the first such baseline.
+- kill: Model 2 fails to learn even with perfect gestures — then the sequence architecture is the
+  problem and Model 1's fidelity is irrelevant to it, which is itself decisive.
+- why: this is the gate on EQ-005, and EQ-005 is the item that turns the project's "99% on Model 1"
+  target from an assertion into a measured requirement. It also decouples the two models: Model 2 can
+  be developed in parallel with Model 1 rather than behind it.
+
+## EQ-035 — The epsilon sweep: derive Model 1's actual requirement
+- status: todo
+- tier: PAID
+- blocked-by: EQ-034
+- hypothesis: Model 2 tolerates gesture-parameter error up to some epsilon; that epsilon, converted into
+  a per-knot recovery rate, IS Model 1's requirement.
+- method: with the GT corpus from EQ-034, perturb gesture parameters by controlled epsilon (endpoint
+  noise and duration noise, swept independently since EQ-003 showed they behave differently), retrain
+  Model 2 at each level, and find where performance departs from the epsilon=0 baseline.
+- expected: a curve giving the tolerated epsilon, converted to a per-knot requirement via the MVP-3
+  joint-gate arithmetic.
+- kill: performance is flat in epsilon across the whole plausible range — then Model 2 is insensitive to
+  gesture fidelity and the 99% target is simply wrong.
+- why: "99%" has been an assertion since 2026-07-19. This measures it. If the tolerated epsilon is loose,
+  the current 94.12% may already suffice and the milestone is closer than assumed.
