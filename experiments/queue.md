@@ -92,9 +92,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   ambiguous invites re-litigating it every session.
 
 ## EQ-005 — Derive the Model-1 fidelity target instead of asserting 99%
-- status: blocked-by EQ-034 — investigated 2026-08-20. Model 2's infrastructure is complete but has NO
-  trained baseline on real data, because `build_bc_clips.py` only builds clips THROUGH Model 1. The
-  blocker is a missing ground-truth writer, not Model 1's accuracy. See the 2026-08-20 EQ-005 entry.
+- status: blocked — and the 2026-08-20 "tooling gap" finding is RETRACTED. Expert play has no manifests
+  (verified: no meta.json under data/extracted_frames), and SLS gestures are random so a sequence model
+  learns nothing from them. Structure and labels sit on opposite sides, so the Model-1 gate is REAL.
+  See the 2026-08-20 EQ-034 retraction entry.
 - tier: PAID
 - hypothesis: Model 2 has a tolerance to Model-1 error, and it is not 99% per knot.
 - method: inject controlled noise of magnitude eps into ground-truth gesture parameters,
@@ -596,7 +597,9 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   retrain.
 
 ## EQ-034 — Ground-truth mode for build_bc_clips: a Model 2 corpus without Model 1
-- status: todo
+- status: done: RETRACTED as a route to EQ-005. Still worth building as a PLUMBING/CAPACITY check only
+  (does Model 2's architecture fit gesture sequences and does the training path run on real frames?),
+  never as a tolerance study — SLS gestures are random, so an epsilon sweep on them measures nothing.
 - tier: FREE to build, PAID to train
 - hypothesis: `clip.json` can be written directly from the command manifests, giving a Model 2 training
   corpus with PERFECT gesture labels and no dependence on Model 1. The pieces already exist:
@@ -614,9 +617,9 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   be developed in parallel with Model 1 rather than behind it.
 
 ## EQ-035 — The epsilon sweep: derive Model 1's actual requirement
-- status: todo
+- status: blocked — needs a STRUCTURED gesture corpus with labels, which does not exist. See EQ-036.
 - tier: PAID
-- blocked-by: EQ-034
+- blocked-by: EQ-036
 - hypothesis: Model 2 tolerates gesture-parameter error up to some epsilon; that epsilon, converted into
   a per-knot recovery rate, IS Model 1's requirement.
 - method: with the GT corpus from EQ-034, perturb gesture parameters by controlled epsilon (endpoint
@@ -628,3 +631,18 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   gesture fidelity and the 99% target is simply wrong.
 - why: "99%" has been an assertion since 2026-07-19. This measures it. If the tolerated epsilon is loose,
   the current 94.12% may already suffice and the milestone is closer than assumed.
+
+## EQ-036 — Two gates to Model 2, and the project tracks only one
+- status: todo (owner decision)
+- tier: FREE to decide, collection to execute
+- finding: Model 1 must be accurate enough AND must transfer to the parks the expert corpus uses. EQ-020
+  measured the MVP corpus as ONE park (`the_workshop`, 3,040/3,040 clips); the journal (2026-06) records
+  the expert clips as SLS-arena parks, expert transfer as a DOMAIN-GAP problem rather than a
+  data-quantity one, and those parks as NOT INSTALLED (store/download only).
+- options: (a) install/download an SLS-arena park and collect there, making Model 1's training domain
+  match the expert corpus; (b) re-record the expert corpus in an installed park (The Workshop, Glass
+  House, Underpass) so the domains match from the other side — cheapest if Asher is willing to replay;
+  (c) multi-park collection for domain robustness, which was started in 2026-06 and never finished.
+- why: a 99% single-park Model 1 does not imply a usable labeller for expert play, so the current target
+  can be met in full and still not unblock Model 2. Option (b) is likely cheapest and is entirely in
+  Asher's hands.

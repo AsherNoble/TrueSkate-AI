@@ -1752,3 +1752,48 @@ and the unblock is concrete and cheap.**
 - **Next:** EQ-034 — add a ground-truth mode to `build_bc_clips.py` (manifest → `clip.json`, no Model 1),
   then train Model 2 on it for the ε=0 baseline; EQ-035 — the ε-sweep that finally derives Model 1's
   target. EQ-005 stays open, blocked on EQ-034, rather than closed.
+
+## EQ-034 — RETRACTION of the EQ-005 finding: the Model-1 gate is REAL (2026-08-20)
+
+**The previous entry's headline — "Model 2 is blocked on a tooling gap, not on Model 1's accuracy" —
+is WRONG. Retracted in full.** It was written after one tick of code reading and did not check the
+one fact that decides it.
+
+- **Model 2 trains on EXPERT PLAY — Asher's own recorded gameplay — which has NO command manifests.**
+  Verified: `data/extracted_frames/` (the expert corpus) contains frame directories and no `meta.json`
+  anywhere. He plays by hand; no agent issues the touches, so nothing records them. **Model 1 exists
+  precisely to label expert play** — that is its stated purpose in the two-model spine
+  (`CLAUDE.md`, and the journal's opening line).
+- **Why the proposed substitute fails.** A ground-truth `clip.json` *is* buildable from SLS manifests,
+  as I said — but SLS gestures are **randomly sampled by construction**. A sequence model trained on
+  them has nothing predictable to learn: the next gesture is independent of the last. Model 2 would sit
+  at chance for every ε, so EQ-035's sweep would fire its kill criterion for a **degenerate** reason
+  and measure nothing about tolerance. Structure and labels are on opposite sides: expert play has
+  structure but no labels; SLS has labels but no structure.
+- **So the "~99% Model 1 before Model 2" gate is real**, not an artefact of `build_bc_clips.py`
+  requiring `--model`. Asher's 2026-07-19 instinct stands, and the stroke-recovery negative supports it
+  for the reason originally given.
+- **What survives, narrowed:** an SLS-based GT corpus would still be worth building as a **plumbing and
+  capacity check** — it would prove Model 2's architecture can fit gesture sequences and that the
+  training path runs end to end on real frames, which has never been demonstrated. That is a smoke
+  test, not a tolerance study, and it must not be sold as the latter.
+
+### The real blocker this tick did surface, and it sharpens EQ-020
+
+Even a 99% Model 1 may not label expert play usably, because **it would be 99% in the wrong park**.
+
+- EQ-020 measured the MVP corpus as **one park (`the_workshop`) across all 3,040 clips**.
+- The journal (2026-06) records that the expert clips are in **SLS-arena parks**, that
+  **expert transfer is a DOMAIN-GAP problem, not a data-quantity problem**, and that the SLS-arena
+  parks are **not installed** — store/download only. Multi-park collection (Glass House, Underpass)
+  was started then; the current MVP-2/MVP-3 corpora are single-park.
+- So the chain to Model 2 has **two** gates, and the project has been tracking only one: Model 1 must
+  be accurate enough **and** must transfer to the parks the expert corpus uses. EQ-020's "one park"
+  finding is not academic — it is exactly the axis on which expert transfer was already observed to
+  fail.
+- This also explains why EQ-020's park caveat matters more than its device caveat: park is the axis
+  that stands between Model 1 and the only corpus Model 2 can train on.
+- **Process note:** the retracted claim was reported to Asher as "the most consequential finding of the
+  whole loop" before this check was run. The check that killed it — does the expert corpus carry
+  manifests? — was one `find` command. Cheap disconfirming checks belong **before** the write-up, not
+  after.
