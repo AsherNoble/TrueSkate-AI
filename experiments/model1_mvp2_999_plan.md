@@ -180,14 +180,19 @@ weeks, **given healthy phones**.
 
 Blockers and prerequisites, in priority order:
 
-1. **Signing is the single biggest risk to this entire plan.** The rig reports **zero**
-   valid codesigning identities and zero provisioning profiles. Both WDA ports (8100/8103)
-   are currently UP only because a *running* WDA survives expiry — any restart of
-   `com.trueskate.services`, any phone reboot, any crash ends collection until an
-   interactive Apple ID sign-in happens at the rig. Betting a week of continuous
-   collection on that is not viable. **Move to a paid Apple Developer account ($99/yr,
-   1-year profiles) instead of the free 7-day team.** This is the highest-leverage
-   non-model action in the plan and it is not something I can do from here.
+1. **Signing — OWNER DECISION 2026-08-19: staying on the free 7-day team. Closed.**
+   Both WDA ports are UP only because a *running* WDA survives expiry; any restart of
+   `com.trueskate.services`, any phone reboot, or any crash ends collection until an
+   interactive Apple ID sign-in happens at the rig. This plan previously called a paid
+   account ($99/yr) the highest-leverage non-model action. **Asher has declined it, and the
+   premise it rested on no longer holds:** the original risk assessment assumed he was
+   remote from the rig for long stretches. He is now within reach of the rig for at least an
+   hour every day and re-signs on the 7-day cycle without difficulty, so an expiry costs
+   hours rather than days. Treat re-signing as routine scheduled maintenance, not as a
+   schedule risk to the collection plan. What remains true and worth keeping: do not restart
+   a healthy `com.trueskate.services` to test something (memory
+   `wda-signing-free-team-7day-expiry`), because that converts a working rig into one
+   needing a hands-on 2FA sign-in.
 2. **Verify the balanced-holdout corpus before trusting it.** `basic_linear_xctest_balanced_holdout`
    has 412 `meta.json` but only 304 distinct waypoint/duration commands and a 367/45
    XR1/XR2 split. Some of the gap is calibration taps, but run the strict loader and

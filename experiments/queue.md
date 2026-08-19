@@ -91,16 +91,34 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   never been measured. It could raise the bar or lower it — both are useful.
 
 ## EQ-006 — Owner actions that gate everything downstream
-- status: blocked
-- tier: FREE (to document) / owner decision (to execute)
-- blocked-by: owner
-- items: (a) paid Apple Developer account — the free 7-day team means any restart, reboot
-  or crash ends collection until an interactive sign-in at the rig; (b) the autooffload
-  `MIN_SPIN_FRAC=0.8` gate against the collectors' `--spin-frac 0.5`, which strands 295 GiB
-  locally and will never offload as configured; (c) confirm the target volume has room
-  before flipping (b) — `trueskate-corpus` was effectively full on both axes.
-- why: no amount of model work substitutes for these, and (a) is the single biggest
-  schedule risk to certification.
+- status: done: CONFIRMED — all three decided 2026-08-19. (a) Apple paid account DECLINED and settled;
+  free-tier re-signing is routine maintenance, not a schedule risk — plan §6 and memory amended, do
+  not re-propose. (b) `MIN_SPIN_FRAC` 0.8 -> 0.3 and collector `--spin-frac` 0.5 -> 0.2, given the
+  expert corpus is ~5% spin-active. (c) offload target -> `trueskate-corpus-v2` (v1 is full; the
+  migration was already underway). See the 2026-08-19 EQ-006 journal entry.
+- follow-up: EQ-014 applies (b) and (c) at the rig — NOT yet applied.
+
+## EQ-014 — Apply the offload fix at the rig (owner-executed)
+- status: todo
+- tier: FREE (config only) but the FIRST RUN MOVES AND DELETES 295 GiB
+- blocked-by: owner — the remote plist edit was blocked here, and the deletion warrants a human
+- hypothesis: with the gate below the collectors' actual spin fraction and the target pointed at a
+  volume with room, the stranded 295 GiB offloads and local disk recovers.
+- method: on the rig, with collectors stopped (verified 2026-08-19: 0 loaded, 0 running):
+    P=~/Library/LaunchAgents/com.trueskate.autooffload.plist
+    cp -n "$P" "$P.bak.20260819"
+    /usr/libexec/PlistBuddy -c "Set :EnvironmentVariables:MIN_SPIN_FRAC 0.3" "$P"
+    /usr/libexec/PlistBuddy -c "Set :EnvironmentVariables:MODAL_VOLUME trueskate-corpus-v2" "$P"
+    launchctl bootout gui/$(id -u)/com.trueskate.autooffload 2>/dev/null
+    launchctl bootstrap gui/$(id -u) "$P"     # env is read at LOAD; editing alone changes nothing
+  Then watch `logs/autooffload.log` for the first eligible session instead of the hourly SKIP.
+- expected: `iPhone_XR_20260814_042825` becomes eligible; ~295 GiB uploads to corpus-v2; local free
+  disk rises from 81 GiB.
+- kill: `trueskate-corpus-v2` lacks capacity — then the wall has only moved and a third volume or a
+  retention policy is needed BEFORE anything is deleted locally.
+- why: this is the dominant lever on local disk and it has been stranded since the session was
+  collected. **Verify corpus-v2 capacity first — the pipeline deletes locally after upload, and this
+  is post-anchor-fix corpus, the half whose timing is recoverable.**
 
 ## EQ-007 — Certification protocol for a >= 99% claim
 - status: blocked

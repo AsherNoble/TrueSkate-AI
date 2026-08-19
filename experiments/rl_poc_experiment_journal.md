@@ -775,3 +775,61 @@ nothing about — the diagnostic was weaker than the gate it explained.
   already handles 2K+1 vectors after EQ-012. Nothing indexes records positionally.
 - **Next:** EQ-013 closed. **The FREE queue is now empty.** Every remaining item is PAID (EQ-002,
   EQ-003, EQ-004, EQ-005, EQ-010) or blocked on owner action (EQ-006, EQ-007).
+
+## EQ-006 — Owner decisions taken; both halves of the offload strand identified (2026-08-19)
+
+Asher supplied the three EQ-006 decisions and a $10 Modal budget.
+
+**(a) Apple signing — SETTLED, staying free-tier. Closed, do not re-propose.**
+The MVP-2 plan called a paid Apple Developer account "the single biggest risk to this entire plan"
+and "the highest-leverage non-model action". That assessment was written on a premise that no longer
+holds: it assumed long stretches away from the rig. Asher is now within reach of the rig for at least
+an hour daily and re-signs on the 7-day cycle without difficulty, so an expiry costs hours, not days.
+`experiments/model1_mvp2_999_plan.md` §6 item 1 amended; memory
+`wda-signing-free-team-7day-expiry` updated to record the decision as settled. What survives
+unchanged: never restart a healthy `com.trueskate.services` to test something — a running WDA
+survives expiry, and a needless restart converts a working rig into one needing hands-on 2FA.
+
+**(b) Spin fraction — the gate was mis-set, and the expert prior is ~5%.**
+New information from Asher: across the ~3 hours of Model-2 expert demonstration video, spin is active
+roughly **5% of the time**, in bursts of no more than a few seconds. Two distinct consequences, which
+had been conflated:
+- **The offload gate can never pass.** `MIN_SPIN_FRAC=0.8` is checked against segment manifests
+  written by collectors running `--spin-frac 0.5`. Confirmed live in `logs/autooffload.log`, hourly:
+  `SKIP iPhone_XR_20260814_042825 (spin provenance: segment_00000.json: spin_frac=0.5 < 0.8; kept
+  local)`. **Decision: set `MIN_SPIN_FRAC=0.3`** — below the collector's actual 0.5 so real sessions
+  pass, above 0 so genuinely pre-spin sessions still fail the provenance check, which is what the gate
+  was for.
+- **Collection at `--spin-frac 0.5` over-represents spin ~10x versus deployment.** Some
+  over-representation is justified for Model 1: `spin_flick` is the main source of *simultaneous
+  multi-touch* supervision, which was measurably starved (63 multi-touch sequences / 146 frames).
+  Fifty percent is far more than that needs, and it consumes the disk that is already the binding
+  constraint. **Decision: `--spin-frac 0.2` on the next collection restart** — still 4x the deployment
+  prior, preserving scarce multi-touch coverage, without spending half of all future collection on 5%
+  of reality. Per memory `spin-frac-raises-corpus-wide-fraction` this steers the corpus-wide
+  aggregate, so it will settle the aggregate near ~20% rather than driving it toward 50%.
+- **Scoping note, since these were being conflated:** the 5% figure describes the Model-2 *expert*
+  corpus. SLS is Model-1 training data — a different corpus. So 5% sets the deployment prior Model 1
+  must be *good at*; it is not a target SLS collection must *match*.
+
+**(c) Target volume — this was my question to answer, not Asher's.**
+The plist sends offload to `MODAL_VOLUME=trueskate-corpus`, which the July handover recorded as
+effectively full on both axes (997.9/1024 GB, 2.37M files against a 500k inode limit).
+`trueskate-corpus-v2` was created 2026-08-06 and already holds at least eight sessions dating from
+June/July, so a migration was already underway and simply never reached this plist. **Decision: point
+the offload at `trueskate-corpus-v2`.** This is the second half of the strand — fixing
+`MIN_SPIN_FRAC` alone would have aimed 295 GiB at a full volume, exactly the "may just move the wall"
+risk flagged on 2026-08-19.
+
+**Rig state verified read-only before deciding:** collectors are stopped (0 loaded, 0 running), disk
+free 81 GiB, rig clock 2026-08-19T05:58 (skewed behind local — judged by the rig's own `date` per
+memory `rig-clock-skew-vs-local`). With collectors down there is no frozen-supervisor-loop risk in
+editing config now.
+
+**NOT APPLIED — needs Asher at the rig.** The sandbox classifier blocked the remote plist edit, and I
+did not work around it. Two further reasons to keep it manual: (1) arming this pipeline **uploads
+then deletes 295 GiB locally**, and that session is post-anchor-fix corpus with recoverable timing
+(memory `corpus-pre-post-anchor-fix-split`) — it is the valuable half; (2) **`trueskate-corpus-v2`
+capacity is unverified** — `modal_volume_space.py` hardcodes the v1 volume and walks every file, which
+was not a defensible use of a $10 budget while a real experiment was queued. Verify v2 has room
+before the first offload deletes anything locally.
