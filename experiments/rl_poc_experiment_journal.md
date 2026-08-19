@@ -676,3 +676,56 @@ owner approval, so this tick took the FREE defect sweep EQ-009 raised.
 - **Next:** EQ-011 closed. New EQ-012: make `audit_endpoint_residuals` and `autopsy_failures`
   knot-general (they currently refuse k>2 rather than handle it). EQ-002 still top of queue, PAID,
   awaiting owner approval.
+
+## EQ-012 — Endpoint decomposition generalised to k-knot vectors (2026-08-19)
+
+Loop tick 5 (`experiment-queue`; Asher asked for EQ-012 directly). EQ-011 stopped two evaluators
+lying about k=3 checkpoints; it did not make them usable, and MVP-3 is producing k=3 checkpoints now.
+
+- **Hypothesis:** `audit_endpoint_residuals` and `autopsy_failures` can read first/last knot and
+  duration from a 2K+1 vector rather than refusing k>2. **Expected:** identical output at k=2;
+  correct first/last decomposition at k=3. **Kill:** along/perpendicular is not meaningful for an
+  interior knot — then keep the refusal.
+- **Ran:** offline, no cloud spend. New library primitives `knot_columns`, `knot_component_labels`,
+  `decompose_endpoint_error` in `basic_linear_training.py` (the testable core, rather than logic
+  buried in Modal bodies). Both audits read knots by index; `autopsy_failures` now gates **every**
+  knot for `recovered` (matching `basic_linear_metrics`); `_require_two_knots` retained only on
+  `evaluate_refinement`, which hard-requires `[batch,5]` downstream. Suite **213 passed**.
+- **Kill criterion, partially triggered and handled explicitly:** the decomposition covers only the
+  first and last knot. The path bends through interior knots, so there is no single meaningful
+  "along" direction and reporting one would invent a number. Endpoints are decomposed; interior
+  knots are not, and the docstring says so.
+- **Verdict: CONFIRMED (narrow).** Recorded as "endpoint decomposition generalised to k-knot
+  vectors", **not** "audit/autopsy are k=3-correct" — the red team showed those are different claims.
+- **Red team: CONFIRMED (narrow), with three live K>2 problems.** It verified independently that every
+  edit landed, that no 5-wide read survives in either body, and that k=2 is bit-identical (500 random
+  batches for the audit; `knot_errors` reproducing the old norms to 1e-12; `errors.max() <= .03`
+  matching the old two-endpoint gate; `start_only_fail`/`end_only_fail` predicates textually
+  unchanged under the rename). Degenerate chords behave exactly as before. What it found:
+  1. **`start_score_peak_frame`/`end_score_peak_frame` were mislabelled for every k>2 checkpoint.**
+     `knots != 2` *requires* `line_fit` (`basic_linear_regressor.py:32`), and in the line-fit branch
+     the prediction is built entirely from `trajectory_scores`; the endpoint maps only feed
+     duration/onset. So those keys described heads that produce no coordinate — the same
+     "plausible, mislabelled artefact" class EQ-011 existed to block, reached by a different route
+     that the substring guard could not see. **Fixed:** the autopsy now detects `line_fit` and emits
+     `trajectory_score_peak_frame` from the map that actually decodes the knots.
+  2. **`recovered` got stricter while the diagnostics did not follow**, and the summary had no way to
+     say so. `recovery` is now computed under a strictly harder gate at k=3 than at k=2. **Fixed:**
+     `knots` and `line_fit` added to the summary, with a comment that recovery is not comparable
+     across K. Interior-knot failures still have no `trail_gap_*` evidence column — queued, not
+     silently accepted.
+  3. **`scripts/inspect/render_linear_failures.py` unpacked five names** from `record["commanded"]`
+     and broke on k=3 reports. **Fixed:** it now draws the whole polyline and labels first/last knot.
+  4. **The guard test was a spelling blacklist** — `target[item][2:4]` and friends would pass it.
+     **Fixed:** added the positive invariant (the layout must come from the shared helpers) plus
+     assertions covering the line-fit peak keys. The per-item `knot_errors` call was also hoisted out
+     of the loop as the red team noted.
+- **Process note, because it bears on trust in the diff:** I applied these edits with `str.replace`
+  and **one silently no-op'd** (an old string typed from memory that did not match). For a period
+  `audit_endpoint_residuals` had its `_require_two_knots` guard removed while its body was still
+  hardcoded — exactly the dangerous state EQ-011 created the guard to prevent. Caught by re-reading
+  the file, then every intended edit was grep-audited, and the red team was explicitly told to verify
+  the tree rather than my description. Subsequent edits assert each old string matches before writing.
+- **Next:** EQ-012 closed. New EQ-013: give interior-knot failures their own `trail_gap` evidence so a
+  k=3 autopsy can say *why* an interior knot missed. EQ-002 still top of queue, PAID, awaiting owner
+  approval — now stale by three ticks.

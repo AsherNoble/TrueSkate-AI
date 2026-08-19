@@ -1,6 +1,8 @@
 """Training and evaluation helpers for MVP 2 finite-slope linear drags."""
 from __future__ import annotations
 
+from typing import Sequence
+
 import numpy as np
 import torch
 from torch.nn import functional as F
@@ -17,6 +19,61 @@ def target_knots(width: int) -> int:
     if width < 5 or width % 2 == 0:
         raise ValueError(f"target width {width} is not 2K+1 for any K>=2")
     return (width - 1) // 2
+
+
+def knot_columns(width: int, knot: int) -> tuple[int, int]:
+    """Column indices of one knot in a ``[..., 2K+1]`` vector.
+
+    Evaluators used to hardcode ``[:2]``/``[2:4]``/``[4]`` as start/end/duration,
+    which silently reads the *interior* knot and a coordinate labelled "duration"
+    once K>2 (EQ-011).  Going through this makes the intent explicit and correct
+    at any K.
+    """
+    knots = target_knots(width)
+    index = range(knots)[knot]
+    return 2 * index, 2 * index + 1
+
+
+def knot_component_labels(width: int) -> list[str]:
+    """Names for every component of a ``[..., 2K+1]`` vector.
+
+    At K=2 this is exactly ``x0, y0, x1, y1, duration`` — the labels the K=2
+    audits already emit — so generalising changes no existing artefact.
+    """
+    return [name for index in range(target_knots(width))
+            for name in (f"x{index}", f"y{index}")] + ["duration"]
+
+
+def decompose_endpoint_error(commanded: Sequence[float],
+                             predicted: Sequence[float]) -> dict[str, float]:
+    """Split first- and last-knot error along and perpendicular to the chord.
+
+    A systematic along-path component is a bias (cheap to remove); perpendicular
+    scatter is variance (needs better localisation).  The two demand different
+    fixes and the aggregate error hides which one is present — this is the
+    decomposition that found the MVP-2 tail was a one-axis end bias.
+
+    Only the first and last knots are decomposed.  An interior knot's error has
+    no single meaningful "along" direction (the path bends through it), so
+    reporting one would invent a number rather than measure it.
+    """
+    commanded = np.asarray(commanded, dtype=float)
+    predicted = np.asarray(predicted, dtype=float)
+    if commanded.shape != predicted.shape:
+        raise ValueError("commanded and predicted must have the same shape")
+    first_x, first_y = knot_columns(len(commanded), 0)
+    last_x, last_y = knot_columns(len(commanded), -1)
+    chord = np.array([commanded[last_x] - commanded[first_x],
+                      commanded[last_y] - commanded[first_y]], dtype=float)
+    direction = chord / max(float(np.linalg.norm(chord)), 1e-9)
+    output: dict[str, float] = {}
+    for name, (column_x, column_y) in (("start", (first_x, first_y)), ("end", (last_x, last_y))):
+        offset = np.array([predicted[column_x] - commanded[column_x],
+                           predicted[column_y] - commanded[column_y]], dtype=float)
+        along = float(offset @ direction)
+        output[f"{name}_along"] = along
+        output[f"{name}_perp"] = float(np.linalg.norm(offset - along * direction))
+    return output
 
 
 def knot_errors(prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:

@@ -7,7 +7,9 @@ from trueskate_ai.vision.basic_linear_bias import (
     AlongPathBias, discordant_pairs, fit_along_path_bias, mcnemar_exact_p,
     along_path_fit_key, perpendicular_error, signed_along_path_error,
 )
-from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
+from trueskate_ai.vision.basic_linear_training import (
+    basic_linear_metrics, decompose_endpoint_error, knot_columns, knot_component_labels,
+)
 
 
 def _record(start, end, *, along=0.0, perpendicular=0.0, duration=0.5,
@@ -239,3 +241,58 @@ def test_the_provenance_key_is_derived_from_the_indices_not_asserted():
     # Order matters: a different split ordering is a different split.
     assert along_path_fit_key("validation", [1, 2, 3]) != along_path_fit_key("validation", [3, 2, 1])
     assert along_path_fit_key("test", [1, 2, 3]) != along_path_fit_key("validation", [1, 2, 3])
+
+
+def test_knot_component_labels_are_unchanged_at_k2_and_extend_at_k3():
+    assert knot_component_labels(5) == ["x0", "y0", "x1", "y1", "duration"]
+    assert knot_component_labels(7) == ["x0", "y0", "x1", "y1", "x2", "y2", "duration"]
+
+
+def test_knot_columns_resolve_first_and_last_not_the_first_two():
+    assert knot_columns(5, 0) == (0, 1) and knot_columns(5, -1) == (2, 3)
+    # The EQ-011 defect: at K=3 the old [:, 2:4] slice is the INTERIOR knot.
+    assert knot_columns(7, -1) == (4, 5)
+    assert knot_columns(7, 1) == (2, 3)
+
+
+def test_decomposition_is_identical_at_k2_to_the_hand_written_version():
+    rng = np.random.default_rng(11)
+    for _ in range(200):
+        commanded = [*rng.uniform(.2, .4, size=2), *rng.uniform(.5, .8, size=2), .5]
+        predicted = [value + rng.normal(0., .01) for value in commanded[:4]] + [.5]
+        x0, y0, x1, y1, _ = commanded
+        direction = np.array([x1 - x0, y1 - y0])
+        direction = direction / max(float(np.linalg.norm(direction)), 1e-9)
+        expected = {}
+        for name, centre, guess in (("start", np.array([x0, y0]), np.array(predicted[:2])),
+                                    ("end", np.array([x1, y1]), np.array(predicted[2:4]))):
+            offset = guess - centre
+            along = float(offset @ direction)
+            expected[f"{name}_along"] = along
+            expected[f"{name}_perp"] = float(np.linalg.norm(offset - along * direction))
+        assert decompose_endpoint_error(commanded, predicted) == pytest.approx(expected, abs=1e-12)
+
+
+def test_decomposition_uses_the_chord_not_the_interior_knot_at_k3():
+    # A Z-ish path: the interior knot is far off the chord.  "end" must decompose
+    # against the first->last chord, and no interior component is invented.
+    commanded = [0.2, 0.2, 0.5, 0.7, 0.8, 0.2, 0.6]
+    predicted = [0.2, 0.2, 0.5, 0.7, 0.79, 0.2, 0.6]
+    result = decompose_endpoint_error(commanded, predicted)
+    assert set(result) == {"start_along", "start_perp", "end_along", "end_perp"}
+    # Chord is horizontal (0.2,0.2)->(0.8,0.2), so a -0.01 x error is pure along.
+    assert result["end_along"] == pytest.approx(-0.01, abs=1e-9)
+    assert result["end_perp"] == pytest.approx(0., abs=1e-9)
+
+
+def test_decomposition_rejects_mismatched_widths():
+    with pytest.raises(ValueError):
+        decompose_endpoint_error([0.2, 0.2, 0.6, 0.2, 0.5], [0.2, 0.2, 0.6, 0.2, 0.5, 0.1, 0.1])
+
+
+def test_decomposition_handles_a_degenerate_chord_as_the_old_code_did():
+    # First knot == last knot: no direction exists.  The old code divided by
+    # max(norm, 1e-9), giving along=0 and perp=|offset|; that is preserved.
+    result = decompose_endpoint_error([0.3, 0.3, 0.3, 0.3, 0.5], [0.3, 0.3, 0.32, 0.34, 0.5])
+    assert result["end_along"] == pytest.approx(0., abs=1e-6)
+    assert result["end_perp"] == pytest.approx(float(np.hypot(0.02, 0.04)), abs=1e-6)

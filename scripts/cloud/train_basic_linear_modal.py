@@ -456,10 +456,11 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
     import torch
     from torch.utils.data import DataLoader, Subset
     from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+    from trueskate_ai.vision.basic_linear_training import knot_component_labels
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
-                                  **_require_two_knots(_payload_dataset_kwargs([payload]), "audit_endpoint_residuals"))
+                                  **_payload_dataset_kwargs([payload]))
     _train, _val, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
     model = _model_from_payload(payload, torch).to(device)
@@ -472,16 +473,23 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
             target = batch["target"].numpy()
             residuals.append(predicted - target)
     values = np.concatenate(residuals)
-    errors = np.linalg.norm(values[:, :4].reshape(-1, 2, 2), axis=2)
+    # Every knot, not the first two: at K>2 ``values[:, :4]`` is knot 0 and the
+    # INTERIOR knot, so "start_end" would silently compare the wrong pair.
+    labels = knot_component_labels(values.shape[1])
+    errors = np.linalg.norm(values[:, :len(labels) - 1].reshape(len(values), -1, 2), axis=2)
+    first, last = errors[:, 0], errors[:, -1]
     output = {
         "checkpoint": checkpoint_name,
         "test_samples": int(len(values)),
-        "mean_signed_residual": dict(zip(("x0", "y0", "x1", "y1", "duration"), values.mean(axis=0).tolist())),
-        "median_signed_residual": dict(zip(("x0", "y0", "x1", "y1", "duration"), np.median(values, axis=0).tolist())),
-        "start_end_error_correlation": float(np.corrcoef(errors[:, 0], errors[:, 1])[0, 1]),
-        "start_end_both_fail": float(np.mean((errors[:, 0] > .03) & (errors[:, 1] > .03))),
-        "start_only_fail": float(np.mean((errors[:, 0] > .03) & (errors[:, 1] <= .03))),
-        "end_only_fail": float(np.mean((errors[:, 0] <= .03) & (errors[:, 1] > .03))),
+        "knots": int(errors.shape[1]),
+        "mean_signed_residual": dict(zip(labels, values.mean(axis=0).tolist())),
+        "median_signed_residual": dict(zip(labels, np.median(values, axis=0).tolist())),
+        # "start"/"end" keep their MVP-2 meaning: the first and last knot.
+        "start_end_error_correlation": float(np.corrcoef(first, last)[0, 1]),
+        "start_end_both_fail": float(np.mean((first > .03) & (last > .03))),
+        "start_only_fail": float(np.mean((first > .03) & (last <= .03))),
+        "end_only_fail": float(np.mean((first <= .03) & (last > .03))),
+        "per_knot_fail": [float(np.mean(errors[:, index] > .03)) for index in range(errors.shape[1])],
     }
     stem = Path(checkpoint_name).stem
     (Path("/models") / f"{stem}_endpoint_residual_audit.json").write_text(json.dumps(output, indent=2))
@@ -843,10 +851,13 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
     import torch
     from torch.utils.data import DataLoader, Subset
     from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+    from trueskate_ai.vision.basic_linear_training import (
+        decompose_endpoint_error, knot_columns, knot_errors, target_knots,
+    )
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
-                                  **_require_two_knots(_payload_dataset_kwargs([payload]), "autopsy_failures"))
+                                  **_payload_dataset_kwargs([payload]))
     if fresh_holdout_source is None:
         _train, val_indices, evaluated_indices = split_by_command(data, seed=seed)
     else:
@@ -877,6 +888,12 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
         return ((red - green + .12).relu() * (green - blue + .12).relu()
                 * (red - .20).relu() * motion)
 
+    # A line-fit checkpoint builds its knots entirely from the trajectory map;
+    # start/end score maps only feed duration/onset there.  Reporting them as
+    # "where the endpoint attention peaked" would describe a head that produces
+    # no coordinate -- and knots>2 REQUIRES line_fit, so every k>2 checkpoint is
+    # on that path.  Report the map that actually produced the prediction.
+    line_fit = bool(payload.get("line_fit"))
     records: list[dict] = []
     loader = DataLoader(Subset(data, test_indices), batch_size=batch_size)
     cursor = 0
@@ -884,7 +901,14 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
         frames = batch["frames"].to(device)
         target = batch["target"].to(device)
         with torch.no_grad():
-            prediction, start_scores, end_scores = model.forward_with_scores(frames)
+            if line_fit:
+                prediction, _start_scores, _end_scores, decode_scores = (
+                    model.forward_with_track_scores(frames))
+                start_scores = end_scores = None
+            else:
+                prediction, start_scores, end_scores = model.forward_with_scores(frames)
+                decode_scores = None
+        all_errors = knot_errors(prediction, target)
         evidence = trail_evidence(frames)
         steps, height, width = evidence.shape[1:]
         xa = torch.linspace(0., 1., width, device=device)
@@ -896,10 +920,12 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
         for item in range(len(target)):
             index = test_indices[cursor + item]
             meta = data._meta(data.sample_paths[index])
-            start_error = float(torch.linalg.vector_norm(prediction[item, :2] - target[item, :2]))
-            end_error = float(torch.linalg.vector_norm(prediction[item, 2:4] - target[item, 2:4]))
-            duration_error = float(torch.abs(prediction[item, 4] - target[item, 4]))
-            recovered = start_error <= .03 and end_error <= .03 and duration_error <= .10
+            errors = all_errors[item]
+            start_error, end_error = float(errors[0]), float(errors[-1])
+            duration_error = float(torch.abs(prediction[item, -1] - target[item, -1]))
+            # Gate EVERY knot, as basic_linear_metrics does -- at K>2 a clip with
+            # both endpoints right and a bad interior knot is not recovered.
+            recovered = bool(errors.max() <= .03) and duration_error <= .10
             any_strong = strong[item].any(dim=1)
 
             def nearest(point: torch.Tensor) -> dict:
@@ -914,51 +940,49 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
                         best, best_step = distance, step
                 return {"distance": best, "frame": best_step}
 
-            commanded_start = nearest(target[item, :2])
-            commanded_end = nearest(target[item, 2:4])
+            first_x, first_y = knot_columns(target.shape[1], 0)
+            last_x, last_y = knot_columns(target.shape[1], -1)
+            commanded_start = nearest(target[item, first_x:first_y + 1])
+            commanded_end = nearest(target[item, last_x:last_y + 1])
             records.append({
                 "sample": str(data.sample_paths[index].relative_to(data.root)),
                 "device": str(meta.get("device", "unknown")),
                 "recovered": recovered,
                 "start_error": start_error, "end_error": end_error,
                 "duration_error": duration_error,
-                "commanded": [float(v) for v in target[item, :5].cpu()],
-                "predicted": [float(v) for v in prediction[item, :5].cpu()],
+                "commanded": [float(v) for v in target[item].cpu()],
+                "predicted": [float(v) for v in prediction[item].cpu()],
                 # The decisive discriminator, per endpoint.
                 "trail_gap_start": commanded_start["distance"],
                 "trail_gap_end": commanded_end["distance"],
                 "trail_frame_start": commanded_start["frame"],
                 "trail_frame_end": commanded_end["frame"],
                 "trail_frames_present": int(any_strong.sum()),
-                # Where the model's end attention actually peaked, to separate a
-                # misread from a collapse onto the other endpoint or the middle.
-                "end_score_peak_frame": int(end_scores[item].flatten(1).amax(dim=1).argmax()),
-                "start_score_peak_frame": int(start_scores[item].flatten(1).amax(dim=1).argmax()),
+                # Where the decoding map peaked, to separate a misread from a
+                # collapse onto the other endpoint or the middle.  Named for the
+                # map that actually produced the prediction.
+                **({"trajectory_score_peak_frame":
+                    int(decode_scores[item].flatten(1).amax(dim=1).argmax())} if line_fit else
+                   {"end_score_peak_frame": int(end_scores[item].flatten(1).amax(dim=1).argmax()),
+                    "start_score_peak_frame": int(start_scores[item].flatten(1).amax(dim=1).argmax())}),
             })
         cursor += len(target)
 
-    # Decompose every endpoint error along and perpendicular to the commanded
-    # path.  A systematic along-path component is a bias (cheap to remove); a
-    # perpendicular scatter is variance (needs better localisation).  The two
-    # demand different fixes, and the aggregate error hides which one this is.
+    # First- and last-knot error split along and perpendicular to the chord.
+    # Interior knots are deliberately not decomposed: the path bends through
+    # them, so there is no single meaningful "along" direction to report.
     for record in records:
-        x0, y0, x1, y1, _duration = record["commanded"]
-        direction = np.array([x1 - x0, y1 - y0], dtype=float)
-        direction = direction / max(float(np.linalg.norm(direction)), 1e-9)
-        for name, commanded, predicted in (
-            ("start", np.array([x0, y0]), np.array(record["predicted"][:2])),
-            ("end", np.array([x1, y1]), np.array(record["predicted"][2:4])),
-        ):
-            offset = predicted - commanded
-            along = float(offset @ direction)
-            record[f"{name}_along"] = along
-            record[f"{name}_perp"] = float(np.linalg.norm(offset - along * direction))
+        record.update(decompose_endpoint_error(record["commanded"], record["predicted"]))
 
     failures = [record for record in records if not record["recovered"]]
     gaps = [record["trail_gap_end"] for record in failures if record["end_error"] > .03]
     summary = {
         "checkpoint": checkpoint_name,
         "partition": partition,
+        # recovery gates EVERY knot, so it is NOT comparable across K: a k=3
+        # report is scored against a strictly harder criterion than a k=2 one.
+        "knots": int(target_knots(data[test_indices[0]]["target"].shape[0])),
+        "line_fit": line_fit,
         "test_samples": len(records),
         "failures": len(failures),
         "recovery": 1 - len(failures) / len(records),

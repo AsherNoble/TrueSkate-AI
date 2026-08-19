@@ -559,8 +559,33 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
     # Resolving the shape is not the same as decoding it.  Evaluators whose
     # bodies hardcode the 5-wide start/end/duration layout must refuse a k>2
     # checkpoint rather than emit a plausible, mislabelled artefact.
-    for evaluator in ("evaluate_refinement", "audit_endpoint_residuals", "autopsy_failures"):
-        assert f'_require_two_knots(_payload_dataset_kwargs([payload]), "{evaluator}")' in source
+    # evaluate_refinement still cannot: refine_linear_endpoints hard-requires a
+    # [batch,5] prediction, so it refuses rather than misreporting.
+    assert '_require_two_knots(_payload_dataset_kwargs([payload]), "evaluate_refinement")' in source
+    assert source.count("_require_two_knots(_payload_dataset_kwargs") == 1
+    # The other two were made knot-general (EQ-012) and must not reintroduce a
+    # hardcoded start/end/duration read.
+    for evaluator in ("audit_endpoint_residuals", "autopsy_failures"):
+        body = source[source.index(f"def {evaluator}("):]
+        body = body[:body.index("\n@app.") if "\n@app." in body else len(body)]
+        assert "_require_two_knots" not in body
+        for banned in ("[item, :2]", "[item, 2:4]", "[item, 4]", "[:, :4].reshape(-1, 2, 2)",
+                       '"x0", "y0", "x1", "y1", "duration"'):
+            assert banned not in body, f"{evaluator} still hardcodes the 5-wide layout: {banned}"
+        # A banned-substring list only encodes today's spellings.  The positive
+        # invariant is the stable one: the knot layout must come from the shared
+        # helpers, whatever the surrounding code looks like.
+        assert any(helper in body for helper in
+                   ("knot_columns", "knot_component_labels", "knot_errors")), \
+            f"{evaluator} does not resolve its knot layout through the shared helpers"
+
+    # A line-fit checkpoint decodes its knots from the trajectory map, so the
+    # endpoint score maps describe no coordinate -- and knots>2 REQUIRES
+    # line_fit, making this reachable for every k=3 autopsy.
+    autopsy = source[source.index("def autopsy_failures("):]
+    assert 'line_fit = bool(payload.get("line_fit"))' in autopsy
+    assert "trajectory_score_peak_frame" in autopsy
+    assert "forward_with_track_scores" in autopsy
     with pytest.raises(ValueError, match="knot-general"):
         module._require_two_knots({"knots": 3}, "audit_endpoint_residuals")
     assert module._require_two_knots({"knots": 2}, "x") == {"knots": 2}

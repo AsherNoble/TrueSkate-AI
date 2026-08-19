@@ -181,7 +181,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   a full corpus load before failing.
 
 ## EQ-012 — Make the two endpoint-decoding evaluators knot-general
-- status: todo
+- status: done: CONFIRMED (narrow) — endpoint decomposition generalised to k-knot vectors; k=2 output
+  bit-identical. NOT the same as "the audits are k=3-correct": red team found the score-peak keys were
+  mislabelled for every line-fit (hence every k>2) checkpoint, `recovered` silently got stricter, and
+  the failure renderer broke on k=3. All fixed. See the 2026-08-19 EQ-012 journal entry.
 - tier: FREE
 - hypothesis: `audit_endpoint_residuals` and `autopsy_failures` can read first/last knot and duration
   from a 2K+1 vector as `basic_linear_bias` and `knot_errors` already do, rather than refusing k>2.
@@ -193,3 +196,16 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   refusal and say so in the docstring.
 - why: EQ-011 stopped them lying; it did not make them usable, and MVP-3 is producing k=3 checkpoints
   now.
+
+## EQ-013 — Evidence columns for interior-knot failures
+- status: todo
+- tier: FREE
+- hypothesis: `autopsy_failures` can report a `trail_gap` per knot, not just for first and last, so a
+  k=3 clip that failed on its interior knot gets the same evidence-vs-misread verdict the endpoints do.
+- method: run `nearest()` for every knot; emit `trail_gap_knot{i}` / `trail_frame_knot{i}` alongside
+  the existing start/end keys (which stay, for k=2 artefact compatibility).
+- expected: identical keys and values at k=2 plus the new per-knot ones; at k=3 every failing knot has
+  an evidence column.
+- kill: `nearest()` cost scales badly enough per knot to dominate the autopsy — then sample frames.
+- why: EQ-012 made `recovered` gate every knot, so a clip can now fail on a knot the report offers no
+  evidence about. The diagnostic is weaker than the gate it explains.

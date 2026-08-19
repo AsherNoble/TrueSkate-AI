@@ -50,14 +50,25 @@ def _panel(sample: Path, record: dict) -> np.ndarray:
         cv2.putText(canvas, glyph, (point[0] + 6, point[1] - 6),
                     cv2.FONT_HERSHEY_SIMPLEX, .35, colour, 1, cv2.LINE_AA)
 
-    x0, y0, x1, y1, _duration = record["commanded"]
-    px0, py0, px1, py1, _predicted_duration = record["predicted"]
-    cv2.line(canvas, (int(x0 * width * _SCALE), int(y0 * height * _SCALE)),
-             (int(x1 * width * _SCALE), int(y1 * height * _SCALE)), (0, 255, 0), 1)
-    mark(x0, y0, (0, 255, 0), "S")
-    mark(x1, y1, (0, 255, 0), "E")
-    mark(px0, py0, (255, 255, 255), "s")
-    mark(px1, py1, (255, 255, 255), "e")
+    # A k-knot record is 2K+1 wide, so unpacking five names breaks on k=3
+    # autopsies.  Draw the whole polyline and label its first and last knot.
+    commanded = record["commanded"]
+    predicted = record["predicted"]
+    knots = (len(commanded) - 1) // 2
+    commanded_knots = [(commanded[2 * i], commanded[2 * i + 1]) for i in range(knots)]
+    predicted_knots = [(predicted[2 * i], predicted[2 * i + 1]) for i in range(knots)]
+    for (ax, ay), (bx, by) in zip(commanded_knots, commanded_knots[1:]):
+        cv2.line(canvas, (int(ax * width * _SCALE), int(ay * height * _SCALE)),
+                 (int(bx * width * _SCALE), int(by * height * _SCALE)), (0, 255, 0), 1)
+    for index, ((cx, cy), (px, py)) in enumerate(zip(commanded_knots, predicted_knots)):
+        if index == 0:
+            commanded_glyph, predicted_glyph = "S", "s"
+        elif index == knots - 1:
+            commanded_glyph, predicted_glyph = "E", "e"
+        else:
+            commanded_glyph, predicted_glyph = str(index), str(index)
+        mark(cx, cy, (0, 255, 0), commanded_glyph)
+        mark(px, py, (255, 255, 255), predicted_glyph)
     caption = (f"end_err={record['end_error']:.3f} gap_end={record['trail_gap_end']:.3f} "
                f"{record['device']}")
     cv2.putText(canvas, caption, (4, 14), cv2.FONT_HERSHEY_SIMPLEX, .38, (255, 255, 255), 1, cv2.LINE_AA)
