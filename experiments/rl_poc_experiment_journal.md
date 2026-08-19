@@ -1131,3 +1131,60 @@ corpus-wide off-by-one.**
   build-detector rather than a defect-detector.
 - **Next:** EQ-023 — validate on the rig that the margin actually yields 32 frames, using a surviving
   `.mov`. Until then the corpus keeps its documented 31/30 skew and any re-extract remains blocked.
+
+## EQ-020 — What the held-out numbers actually cover: one park, one day, 95% one device (2026-08-20)
+
+EQ-017's review said the binding gap is park/day/device, not session identity. This measures it.
+**Verdict: CONFIRMED**, with two corrections to earlier entries.
+
+- **Evaluated split** (306 clips, parsed from autopsy `sample` paths; device cross-checked against the
+  explicit `meta.json` field with **0/306 mismatches**):
+  - TEST 153: 100% `fresh`, 100% `the_workshop`, 100% `20260813`, session span 04:22-08:38,
+    **XR 146 / XR2 7**. XR recovery 139/146 = 0.952 [0.904, 0.981]; XR2 5/7 = 0.714 **[0.290, 0.963]**.
+  - VALIDATION 153: same park/date/window, XR 150 / XR2 3.
+- **Corpus-wide** (3,040 clips, metadata only): **one park** (`the_workshop`); two dates — legacy 2,022
+  on 08-12, fresh 1,018 on 08-13; devices near-balanced overall (XR 2,023 / XR2 1,017) but the **fresh
+  source is 969 XR / 49 XR2**. Test's 7/153 is proportional to that, not a selection effect
+  (binomial p = 1.00 against 49/1018; test+val 10/306 vs 14.7 expected, hypergeometric P = 0.085).
+- **Capture time is real, not a staging artefact** (the review's decisive check): from
+  `gesture_start_monotonic`, legacy runs 2026-08-12 14:42→19:47 (5.08 h) and fresh 2026-08-13
+  11:22→15:39 (4.28 h) — a **15.6-hour overnight gap**, with **0** disagreements against the session
+  directory names. So "next day" is a genuine separate capture block, which is a stronger notion of
+  held-out than "a few hours later". Same rig and same park throughout.
+
+### Corrections to earlier entries
+1. **RETRACT "XR2 already scores 71.4%"** (used in the EQ-017 entry as evidence of a device weakness).
+   Fisher exact 5/7 vs 139/146 gives **p = 0.056** two-sided (test+val 8/10 vs 280/296, **p = 0.111**),
+   and it is one of five post-hoc slices in `test_recovery_audit` (device ×2, geometry ×3), so an
+   unadjusted 0.056 is not evidence. **5/7 is indistinguishable from the XR rate.** The correct
+   statement is that the XR2 cell carries no information, not that XR2 performs worse.
+2. **`fresh_stratify_by_device: null` is a red herring** — I framed it as "the device-balanced option
+   that wasn't used". Enabling it allocates `round(len(keys) * 0.15)` per device, and with only 49
+   fresh XR2 clips it yields ~7 XR2 test clips either way. The real fix is more fresh XR2 collection,
+   or a device-stratified holdout over the whole corpus — which would forfeit the overnight property.
+
+### Scope limits worth keeping
+- **Park is self-reported, not observed.** The path segment is `_park_tag(ev["park"])`, from the same
+  collector field as the meta park, so "one park" is a claim by the collector rather than a
+  measurement. Date is likewise from the session dir name — though `gesture_start_monotonic` now
+  corroborates it independently.
+- **Park matters for the distractor distribution, not the trail.** The trail is a game-rendered overlay
+  whose colour and width are park-invariant, so the *target* signal does not change. But the model
+  works on a pre-touch difference image dominated by background motion as the camera follows the
+  board, on plain RGB with no hand-coded colour prior. The workshop is indoor, low-texture,
+  low-contrast; an outdoor or high-texture park raises the residual floor. "Orange-ish blob on grey
+  concrete" is a hypothesis this corpus **cannot falsify**.
+- **Legacy is 1,054 XR / 968 XR2 while fresh is 969 XR / 49 XR2** — day and device mix moved together,
+  so the two axes are confounded. What is demonstrated is "held-out commands, same rig, same park,
+  XR-dominant, one day later", which is two knobs under one label.
+- **Session-disjointness is still absent** (EQ-017: 153/153 test clips share a session with training).
+  The fresh-holdout language should not imply otherwise.
+- **Fixed while measuring:** `session_device` was keyed on session name without the source prefix, so a
+  session dir recurring under both sources would have collapsed. Harmless here (legacy 08-12, fresh
+  08-13 cannot collide) but wrong; now keyed `source/session`.
+
+### Consequence for EQ-007
+A ≥3,000-command certification holdout built this way inherits all three limits and would certify
+generalisation to unseen **commands** under one park, one device-dominant mix, one time of day. Those
+axes are cheap to widen at collection time and impossible to fix afterwards. EQ-007 should predeclare
+which of park / device / day it intends to certify — see EQ-024.

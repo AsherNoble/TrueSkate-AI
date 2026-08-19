@@ -1044,6 +1044,92 @@ def audit_clip_frame_counts(data_subdir: str, *, limit: int = 0) -> dict:
     return output
 
 
+@app.function(image=image, cpu=2.0, timeout=3600, memory=8192,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_corpus_coverage(data_subdir: str) -> dict:
+    """What conditions does the corpus actually span — park, day, device, source?
+
+    EQ-017 showed session identity is a weak nuisance (failures do not bunch by
+    session) while the evaluated split is one park, one date and a four-hour
+    window with 7 XR2 clips out of 153.  Coverage, not session-disjointness, is
+    what bounds the held-out claim — so this measures what is available to
+    evaluate against before EQ-007 predeclares its axes.
+
+    Metadata only; no frames are decoded.
+    """
+    import json as _json
+    import re
+    from collections import Counter
+
+    import datetime as _dt
+
+    root = Path("/corpus") / data_subdir
+    parks, devices, dates, sources, session_device = Counter(), Counter(), Counter(), Counter(), {}
+    pairs = Counter()
+    total = 0
+    # Capture time from the manifest, not from the directory name: the date axis
+    # is only meaningful if it reflects when the clip was recorded rather than
+    # when it was staged.
+    capture_times: dict[str, list[float]] = {}
+    dirname_disagreements = 0
+    for meta_path in sorted(root.rglob("meta.json")):
+        relative = meta_path.parent.relative_to(root).parts
+        if len(relative) < 3:
+            continue
+        source, session, park = relative[0], relative[1], relative[2]
+        match = re.search(r"(iPhone_\w+?)_(\d{8})_(\d{6})$", session)
+        device = match.group(1) if match else "unknown"
+        date = match.group(2) if match else "unknown"
+        total += 1
+        parks[park] += 1
+        devices[device] += 1
+        dates[date] += 1
+        sources[source] += 1
+        pairs[f"{device}|{park}|{date}"] += 1
+        session_device[f"{source}/{session}"] = device
+        try:
+            meta = _json.loads(meta_path.read_text())
+            stamp = meta.get("gesture_start_monotonic")
+            if stamp is not None:
+                capture_times.setdefault(source, []).append(float(stamp))
+                if match:
+                    named = _dt.datetime.strptime(f"{match.group(2)}{match.group(3)}", "%Y%m%d%H%M%S")
+                    observed = _dt.datetime.fromtimestamp(float(stamp))
+                    if abs((observed - named).total_seconds()) > 24 * 3600:
+                        dirname_disagreements += 1
+        except Exception:
+            pass
+
+    output = {
+        "data_subdir": data_subdir,
+        "clips": total,
+        "by_source": dict(sources.most_common()),
+        "by_park": dict(parks.most_common()),
+        "by_device": dict(devices.most_common()),
+        "by_date": dict(dates.most_common()),
+        "distinct_sessions": len(session_device),
+        "sessions_by_device": dict(Counter(session_device.values()).most_common()),
+        # The cell structure an evaluation could actually stratify over.
+        "capture_time_span_by_source": {
+            source: {
+                "clips": len(values),
+                "first": _dt.datetime.fromtimestamp(min(values)).isoformat(timespec="seconds"),
+                "last": _dt.datetime.fromtimestamp(max(values)).isoformat(timespec="seconds"),
+                "span_hours": round((max(values) - min(values)) / 3600, 2),
+            }
+            for source, values in sorted(capture_times.items())
+        },
+        "dirname_capture_time_disagreements": dirname_disagreements,
+        "device_park_date_cells": len(pairs),
+        "smallest_cells": dict(sorted(pairs.items(), key=lambda kv: kv[1])[:10]),
+        "largest_cells": dict(pairs.most_common(10)),
+    }
+    (Path("/models") / f"basic_linear_coverage_{data_subdir.replace('/', '_')}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,

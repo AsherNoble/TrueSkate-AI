@@ -321,7 +321,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   was withdrawn for lack of evidence.
 
 ## EQ-020 — Quantify the real generalisation gap: park, day, device
-- status: todo
+- status: done: CONFIRMED — one park corpus-wide, fresh is 95% XR (969/49), evaluated split is one
+  4h window on one day. Overnight gap to legacy confirmed real (15.6h) from capture timestamps.
+  Retracted "XR2 scores 71.4%" (Fisher p=0.056 across 5 post-hoc slices = not evidence). See the
+  2026-08-20 EQ-020 entry.
 - tier: FREE to measure
 - hypothesis: the evaluated split is one park (`the_workshop`), one four-hour window (2026-08-13), and
   146 XR / 7 XR2 clips — so park/day/device coverage, not session identity, bounds what the held-out
@@ -384,3 +387,20 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: EQ-021 could not validate this locally because this machine's ffmpeg exhibits a different
   pathology (container advertises frames that do not decode). The fix must not be believed until it is
   measured where it will run.
+
+## EQ-024 — Predeclare which axes EQ-007 certifies
+- status: todo
+- tier: FREE (a decision + a written protocol)
+- blocked-by: owner
+- hypothesis: n/a — this is a design decision that must be made before collection, not after.
+- method: choose explicitly, and write into the EQ-007 protocol, which of these the >=3,000-command
+  holdout is meant to certify: (a) unseen COMMANDS only, same park/device/day — cheapest, and what the
+  current corpus already supports; (b) unseen commands + device parity (needs ~10x more fresh XR2);
+  (c) unseen commands + a second park (needs collection in a park never trained on); (d) session- or
+  day-disjoint. Each costs collection time, and none can be added after the fact.
+- expected: a one-paragraph protocol naming the certified axes and explicitly listing what is NOT
+  certified.
+- kill: n/a.
+- why: EQ-020 showed the current holdout certifies (a) while its name ("fresh holdout") suggests more.
+  Inheriting that silently into a 3,000-clip certification would make the headline number sound
+  broader than it is.
