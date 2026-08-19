@@ -6,6 +6,7 @@ import torch
 from torch.nn import functional as F
 
 from trueskate_ai.data.gesture_sampling import BASIC_LINEAR_MAX_S, BASIC_LINEAR_MIN_S
+from trueskate_ai.vision.basic_linear_bias import AlongPathBias
 
 RECOVERY_ENDPOINT_TOLERANCE = 0.03
 RECOVERY_DURATION_TOLERANCE_S = 0.10
@@ -150,8 +151,14 @@ def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor, *,
 
 
 @torch.no_grad()
-def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device) -> dict[str, float]:
-    """Report independent endpoint geometry and duration errors."""
+def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device, *,
+                         correction: AlongPathBias | None = None) -> dict[str, float]:
+    """Report independent endpoint geometry and duration errors.
+
+    ``correction`` is an explicit opt-in: an along-path bias fit on a *different*
+    (validation) split.  It is never fit here, so scoring a split with a
+    correction cannot tune on that split.
+    """
     model.eval()
     start_errors: list[float] = []
     end_errors: list[float] = []
@@ -163,6 +170,8 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device) -
     per_knot: list[list[float]] = []
     for batch in loader:
         prediction = model(batch["frames"].to(device))
+        if correction is not None:
+            prediction = correction.apply(prediction)
         target = batch["target"].to(device)
         errors = knot_errors(prediction, target)
         per_knot.extend(errors.cpu().tolist())
@@ -207,7 +216,8 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device) -
 
 
 @torch.no_grad()
-def basic_linear_recovery_records(model: torch.nn.Module, loader, device: torch.device) -> list[dict[str, float]]:
+def basic_linear_recovery_records(model: torch.nn.Module, loader, device: torch.device, *,
+                                  correction: AlongPathBias | None = None) -> list[dict[str, float]]:
     """Return per-clip recovery evidence for post-hoc split audits.
 
     The training loader need only provide tensors; optional ``sample_index`` lets
@@ -218,6 +228,8 @@ def basic_linear_recovery_records(model: torch.nn.Module, loader, device: torch.
     records: list[dict[str, float]] = []
     for batch in loader:
         prediction = model(batch["frames"].to(device))
+        if correction is not None:
+            prediction = correction.apply(prediction)
         target = batch["target"].to(device)
         errors = knot_errors(prediction, target)
         start, end = errors[:, 0], errors[:, -1]

@@ -447,3 +447,61 @@ Two runs on the **unchanged** 2,022-command corpus, `split_seed=0`, fixed 1,416/
 - **Adding a knot costs accuracy on the existing knots too.** K=3's knot0 (88.78%) and last knot (78.55%) are both below their K=2 counterparts (93.07%, 87.13%), so the joint drop is not purely the extra gate. Observed K=3 joint 67.3% vs 62.6% predicted from independent knots — knots are near-independent, so the joint gate roughly multiplies and per-knot accuracy is what must rise.
 - **Confounds, stated rather than buried:** the line-fit runs use `trajectory_weight=0.02` (an untuned first guess), equal knot weighting instead of the baseline's 1.8x start weighting, and a freshly initialised onset head trained inside the same 40 epochs. So this is "the line fit as configured is worse", not "the line fit is fundamentally worse". A `trajectory_weight` sweep and a longer budget are the obvious next controls before abandoning it.
 - **Consequence for the 95% MVP-3 target:** 95% joint over 3 knots needs ~98.5% per knot. The best per-knot figure anywhere here is 94.4% (baseline, K=2). The gap is large and the current decoder direction is not closing it. The soft-argmax temporal mixer remains the model to beat, and the cheap validation-fit end-bias correction (worth ~2 points on the fresh holdout) is still unspent.
+
+## EQ-001 — End-bias correction implemented; the "free 2 points" claim does NOT survive red team (2026-08-19)
+
+First item run through the new `experiment-queue` skill (`experiments/queue.md`, one item per
+invocation, red-teamed before belief).
+
+- **Hypothesis:** the end-endpoint along-path undershoot is a reproducible scalar bias, so a shift
+  fit on validation and applied unchanged to test is a correction, not test tuning.
+  **Expected:** tests green, injected bias recovered within 10%. **Kill:** the correction cannot be
+  expressed without touching test-split statistics.
+- **Ran:** offline only, no cloud spend, no checkpoint access. New `vision/basic_linear_bias.py`
+  (`signed_along_path_error`, `fit_along_path_bias` -> frozen `AlongPathBias.apply`); opt-in
+  keyword-only `correction=` on `basic_linear_metrics` / `basic_linear_recovery_records`; 9 new
+  tests in `tests/test_basic_linear_bias.py`. Suite **196 passed**.
+- **Numbers:** injected bias -0.0071 recovered within 10%; held-out mean along-path error reduced
+  >5x; zero shift an exact no-op; perpendicular displacement contributes nothing to the fit.
+- **Verdict: INCONCLUSIVE.** The mechanics are right and independently verified, but the claim the
+  item was built to support — "~2 free points, EQ-002 unblocked" — is not supported.
+- **Red team: CONFOUNDED.** Verified sound: index arithmetic for K=2/3/4 and knot in {-1,K-1,-2,K-2}
+  (exactly two components mutate, duration untouched, no aliasing); `.apply()` is label-free;
+  direction-source second-order error is negligible (chords 0.16-0.52 by `BASIC_LINEAR_MIN_DX`,
+  induced perpendicular displacement median 1.5e-4, P99 1.4e-3, under 5% of tolerance). What it
+  broke:
+  1. **The design constants were read off the test split.** `statistic="mean"` is documented as
+     matching the autopsy counterfactual — which was computed on test (94.12 -> 96.08). The code
+     never sees the split; the author did. The kill criterion was written one level too low to
+     catch this.
+  2. **EQ-002 as written cannot fail.** Its expectation and its kill threshold both come from that
+     same journal line, so the run would reproduce a number already recorded.
+  3. **It is a different operator.** The autopsy decomposes along the **commanded** path
+     (`train_basic_linear_modal.py:762-770`, built from labels); `AlongPathBias.apply` uses the
+     **predicted** chord. The fit itself is label-directioned (`signed_along_path_error` projects
+     onto the target chord while apply projects onto the predicted one). "Expected 96.08%" is not a
+     prediction about this code.
+  4. **The tests are structurally blind to that.** `_record` builds the displacement with the same
+     unit-vector convention the module uses and always sets predicted start == target start; max
+     predicted-vs-commanded chord angle across the generator is 2.1e-8 rad. Every test would pass
+     identically if `.apply()` read its direction from the target. No test has a wrong first knot,
+     yet start recovery is 78.7-94.4% — a wrong first knot is the normal real case.
+  5. **"Not test tuning" is caller discipline only** — a docstring assertion the code cannot check;
+     `AlongPathBias` carries no provenance.
+  6. **mean vs median is below the noise floor**: simulating the reported moments gives net +1.7
+     clips at either statistic, ~0.1 clips apart. Neither is the right estimator for a threshold
+     metric.
+  7. **The effect is 3 clips out of 153.** ~2.6 gained, ~0.9 lost. McNemar on the implied discordant
+     pairs gives two-sided p=0.375 (best case 0.25). Clopper-Pearson on 147/153 is [91.66, 98.55],
+     overlapping the 144/153 interval and with a lower bound *below* the 0.95 acceptance gate.
+     **"~2 free points" is statistically indistinguishable from zero at n=153.**
+  8. **Nothing calls it** — no fit-on-validation -> apply-on-test entry point exists in
+     `train_basic_linear_modal.py`, so EQ-002 was not runnable as written.
+- **What this rules out:** the cheap-2-points framing carried through the 08-18 plan. It was never
+  2 points of evidence; it was 3 clips on a split too small to resolve them. This does not refute
+  the along-path bias itself (the autopsy's 85%-negative asymmetry stands) — it refutes the claim
+  that a 153-clip evaluation could demonstrate the correction works.
+- **Next:** EQ-001 closed. EQ-002 restated as an operator-agreement check with McNemar discordant
+  pairs predeclared instead of an accuracy delta (was: reproduce 96.08%). New EQ-008 (make fit and
+  apply share an axis; add a displaced-first-knot test) and EQ-009 (the missing entry point), both
+  FREE, both gating EQ-002.
