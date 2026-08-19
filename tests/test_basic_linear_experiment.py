@@ -24,7 +24,7 @@ from trueskate_ai.vision.basic_linear_dataset import (
 from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
 from trueskate_ai.vision.basic_linear_training import (
     basic_linear_endpoint_map_loss, basic_linear_trajectory_map_loss, basic_linear_loss, basic_linear_metrics,
-    passes_basic_linear_acceptance,
+    basic_linear_recovery_records, passes_basic_linear_acceptance, RECOVERY_ENDPOINT_TOLERANCE,
 )
 from scripts.train.train_basic_linear_regressor import _IndexedSubset, split_with_fresh_command_holdout
 
@@ -375,3 +375,159 @@ def test_modal_linear_cpu_fallback_is_separate_and_labelled():
     assert "cpu=8.0, timeout=12 * 3600, memory=16384" in source
     assert "temporal_mixer=temporal_mixer" in source
     assert "trajectory_track=trajectory_track" in source
+
+
+def test_line_fit_recovers_exact_endpoints_from_a_noise_free_track():
+    # The decoder's whole premise is that a constant-velocity command is
+    # over-determined by ~30 contact observations, so the noise-free solve must
+    # be exact up to the conditioning ridge.
+    fraction = torch.linspace(0., 1., 30)[None, :]
+    start, end = torch.tensor([[.2, .7]]), torch.tensor([[.8, .3]])
+    positions = start[:, None, :] + (end - start)[:, None, :] * fraction[:, :, None]
+    fitted_start, fitted_end = BasicLinearRegressor._fit_constant_velocity(
+        positions, fraction, torch.ones_like(fraction),
+    )
+    assert torch.allclose(fitted_start, start, atol=1e-3)
+    assert torch.allclose(fitted_end, end, atol=1e-3)
+
+
+def test_line_fit_irls_downweights_a_single_outlier_frame():
+    # This is the tail mechanism: one occluded or mis-detected frame must not
+    # be able to drag an endpoint outside the 0.03 recovery tolerance, which is
+    # exactly what an unweighted least-squares fit allows.
+    fraction = torch.linspace(0., 1., 30)[None, :]
+    start, end = torch.tensor([[.2, .7]]), torch.tensor([[.8, .3]])
+    positions = start[:, None, :] + (end - start)[:, None, :] * fraction[:, :, None]
+    positions[0, 7] = torch.tensor([.05, .05])
+    weights = torch.ones_like(fraction)
+
+    plain_start, _plain_end = BasicLinearRegressor._fit_constant_velocity(positions, fraction, weights)
+    assert torch.linalg.vector_norm(plain_start - start) > RECOVERY_ENDPOINT_TOLERANCE
+
+    for _ in range(3):
+        fitted_start, fitted_end = BasicLinearRegressor._fit_constant_velocity(positions, fraction, weights)
+        path = fitted_start[:, None, :] + (fitted_end - fitted_start)[:, None, :] * fraction[:, :, None]
+        residual = torch.linalg.vector_norm(positions - path, dim=2)
+        weights = weights * (.02 / residual.clamp_min(1e-6)).clamp(max=1.)
+    robust_start, robust_end = BasicLinearRegressor._fit_constant_velocity(positions, fraction, weights)
+    assert torch.linalg.vector_norm(robust_start - start) < 1e-2
+    assert torch.linalg.vector_norm(robust_end - end) < 1e-2
+
+
+def test_line_fit_ignores_zero_weighted_frames():
+    fraction = torch.linspace(0., 1., 12)[None, :]
+    start, end = torch.tensor([[.25, .6]]), torch.tensor([[.75, .35]])
+    positions = start[:, None, :] + (end - start)[:, None, :] * fraction[:, :, None]
+    weights = torch.ones_like(fraction)
+    weights[0, 3] = 0.
+    reference = BasicLinearRegressor._fit_constant_velocity(positions, fraction, weights)
+    # A zero-weighted frame must contribute nothing, so corrupting its position
+    # cannot move the solution by any amount.  (Comparing against a fit that
+    # keeps the frame would differ slightly and legitimately: the conditioning
+    # ridge is fixed while the total weight mass is not.)
+    positions[0, 3] = torch.tensor([.99, .01])
+    masked = BasicLinearRegressor._fit_constant_velocity(positions, fraction, weights)
+    assert torch.allclose(reference[0], masked[0], atol=1e-9)
+    assert torch.allclose(reference[1], masked[1], atol=1e-9)
+
+
+def test_line_fit_regressor_preserves_the_output_contract_and_drops_the_cold_gate():
+    model = BasicLinearRegressor(base_channels=4, line_fit=True, temporal_mixer=True)
+    # The fit needs the moving-contact map, so enabling it implies the track.
+    assert model.line_fit_enabled and model.trajectory_score is not None
+    assert model.onset_head is not None
+    # The cold sigmoid(-4) blend is what kept the earlier trajectory control
+    # from ever earning influence; the fit replaces it rather than blending past it.
+    assert model.trajectory_fusion is None
+    frames = torch.rand(2, 8, 3, 30, 18)
+    output = model(frames)
+    assert output.shape == (2, 5)
+    assert torch.isfinite(output).all()
+    assert torch.all((output[:, 4] >= BASIC_LINEAR_MIN_S) & (output[:, 4] <= BASIC_LINEAR_MAX_S))
+    gesture = model.predict_linear(frames)
+    assert torch.all((gesture["x0"] >= 0.) & (gesture["x1"] <= 1.))
+    output.sum().backward()
+    assert model.trajectory_score.weight.grad is not None
+    assert model.onset_head[0].weight.grad is not None
+
+
+def test_line_fit_rejects_invalid_robustness_settings():
+    with pytest.raises(ValueError, match="irls_iterations"):
+        BasicLinearRegressor(line_fit=True, irls_iterations=-1)
+    with pytest.raises(ValueError, match="huber_delta"):
+        BasicLinearRegressor(line_fit=True, huber_delta=0.)
+
+
+def test_zero_irls_iterations_is_plain_least_squares():
+    # A declared control: the same decoder without reweighting, so the robust
+    # gain can be attributed to IRLS rather than to the line fit alone.
+    model = BasicLinearRegressor(base_channels=4, line_fit=True, irls_iterations=0)
+    assert model.irls_iterations == 0
+    assert model(torch.rand(1, 8, 3, 30, 18)).shape == (1, 5)
+
+
+def test_linear_trainer_exposes_line_fit_and_resolution_controls():
+    result = subprocess.run(
+        [sys.executable, "scripts/train/train_basic_linear_regressor.py", "--help"],
+        capture_output=True, text=True, check=True,
+    )
+    for flag in ("--line-fit", "--irls-iterations", "--huber-delta", "--image-width", "--image-height"):
+        assert flag in result.stdout
+
+
+def test_line_fit_requires_supervised_trajectory_evidence():
+    # The fit reads endpoints off the contact map, so an unsupervised map would
+    # make the run silently meaningless rather than merely worse.
+    result = subprocess.run(
+        [sys.executable, "scripts/train/train_basic_linear_regressor.py",
+         "--data", "/nonexistent", "--line-fit"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode != 0
+    assert "--trajectory-weight" in result.stderr
+
+
+def test_recovery_records_carry_predicted_and_target_pairs():
+    class _Fixed(torch.nn.Module):
+        def forward(self, frames):
+            return torch.tensor([[.30, .40, .60, .55, .60]]).expand(len(frames), 5).clone()
+
+    target = torch.tensor([[.30, .40, .90, .55, .60]])
+    loader = [{"frames": torch.rand(1, 2, 3, 6, 6), "target": target}]
+    records = basic_linear_recovery_records(_Fixed(), loader, torch.device("cpu"))
+    assert len(records) == 1
+    assert records[0]["recovered"] == 0.0
+    assert records[0]["predicted"][2] == pytest.approx(.60)
+    assert records[0]["target"][2] == pytest.approx(.90)
+
+
+def _modal_linear_module():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_modal_linear", Path("scripts/cloud/train_basic_linear_modal.py"),
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_checkpoint_evaluation_honours_the_trained_decode_resolution():
+    # Evaluators used to build every dataset at the library default, so a
+    # checkpoint trained at another width would have been scored on inputs it
+    # never saw -- silently, and looking like a failed ablation.
+    module = _modal_linear_module()
+    assert module._payload_resolution([{"image_width": 256, "image_height": 576}]) == {
+        "image_width": 256, "image_height": 576,
+    }
+    assert module._payload_resolution([{}]) == {"image_width": 128, "image_height": 288}
+    with pytest.raises(ValueError, match="disagree on decode resolution"):
+        module._payload_resolution([{"image_width": 128, "image_height": 288},
+                                    {"image_width": 256, "image_height": 576}])
+    source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
+    assert source.count("_payload_resolution(") == 7
+
+
+def test_modal_linear_entry_points_expose_the_line_fit_decoder():
+    source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
+    assert source.count("line_fit=line_fit") == 3
+    assert 'line_fit=bool(payload.get("line_fit", False))' in source
