@@ -833,3 +833,83 @@ then deletes 295 GiB locally**, and that session is post-anchor-fix corpus with 
 capacity is unverified** — `modal_volume_space.py` hardcodes the v1 volume and walks every file, which
 was not a defensible use of a $10 budget while a real experiment was queued. Verify v2 has room
 before the first offload deletes anything locally.
+
+## EQ-002 / EQ-010 — End-bias correction measured on real records; operator validated, effect NOT significant (2026-08-19)
+
+First PAID item of the queue ($10 budget). One Modal **CPU** evaluation, no training, on the exact
+existing fresh split of `basic_linear_linear_mixed_fresh_holdout_20260813`. Cost was minutes of
+8-core CPU, a small fraction of the budget.
+
+```
+MODAL_CORPUS_VOLUME=trueskate-mvp-linear-mixed-fresh-v1 modal run \
+  scripts/cloud/train_basic_linear_modal.py::evaluate_bias_correction \
+  --data-subdir basic_linear_mixed_fresh_holdout \
+  --checkpoint-name basic_linear_linear_mixed_fresh_holdout_20260813.pth
+```
+
+- **Provenance guards all fired:** dataset fingerprint matched the checkpoint's recorded
+  `sha256:3040:eaefaf49…`, seed/holdout-source came from the payload, `fit_on` =
+  `validation[153]:725e80c9cf9bec1b` (a hash of the actual index set, not a caller's label).
+- **Predictions vs measurements** — every prior number landed:
+
+  | quantity | predicted | measured |
+  |---|---|---|
+  | validation-fit shift | −0.0071 (2026-08-18 autopsy) | **−0.0070735** |
+  | commanded-axis shift | −0.0071 | **−0.0071229** |
+  | axis disagreement | 3.7e−5 (EQ-008, simulated) | **4.9e−5** |
+  | recovery | 94.12 → 96.08 (autopsy counterfactual) | **94.12 → 96.08** |
+  | perpendicular sd | 0.0032 | **0.003165** (p99 0.0148, kill was 0.016) |
+  | McNemar | ~0.25–0.375, cannot resolve | **p = 0.25** (gained 3, lost 0) |
+
+- **Verdict: CONFIRMED for the operator; the effect is NOT demonstrated.** EQ-010 discharged.
+- **Red team: CONFIRMED**, having established the artefact is from this run (volume timestamp after
+  today's commit; contains fields only in today's code; `duration_mae` and `start_coordinate_median`
+  bit-identical between baseline and corrected, which only happens if both passes ran on the same
+  clips in order and the correction touched only the last knot). Its scope corrections, recorded
+  because the claim will otherwise grow:
+  1. **The commanded operator was never APPLIED** — it is fit, its shift reported, then discarded
+     (`apply()` refuses a commanded-axis fit by design). So "the operators agree" was inferred from a
+     scalar. Worse, `axis_disagreement` compares **magnitudes only** and omits the direction term,
+     which is larger: ≈√(Δshift² + shift²·θ²) with θ≈perp/|chord| ≈ 8.5e−5 at a 0.3 chord, about **2×
+     the reported number**. Still ~300× under the gate, but the headline understated the gap.
+     **RESOLVED by direct measurement, zero compute:** replaying both operators over the autopsy's
+     per-clip records (`basic_linear_autopsy_fresh_94_v2.json`) reproduces 144/153 → **147/153 for
+     both**, and the gained sets are **identical** (symmetric difference empty):
+     `iPhone_XR2_20260813_052855/…/sample_000003`, `…/sample_000007`,
+     `iPhone_XR_20260813_052531/…/sample_000011`. The two operators agree on the *mechanism*, not
+     merely the score — the one outcome that would have broken the claim while leaving every
+     aggregate intact.
+  2. **The agreement was ~97% likely a priori** and "four significant figures" is not precision: 153
+     clips quantise accuracy to 0.654%, so 94.12/96.08 is just "144" and "147". Report *bounded
+     disagreement*, not a striking replication. The genuinely strong corroboration is elsewhere:
+     `test_along_uncorrected` sd **0.017633** / median **−0.006249** on the *predicted* axis
+     reproduces the autopsy's commanded-axis 0.0176 / −0.0062 — two operators agreeing to four digits
+     on a whole distribution rather than one scalar.
+- **THE HEADLINE SHOULD BE THE CONTINUOUS EVIDENCE, NOT THE COUNT.** The threshold statistic is
+  exhausted at 3 clips; the distributional improvement is real and low-variance, all of it
+  out-of-sample from a validation-fit scalar:
+  - `end_coordinate_median` 0.00921 → **0.00728 (−20.9%)**
+  - `endpoint_coordinate_p90` 0.01721 → **0.01304 (−24.2%)**
+  - `end_recovery_accuracy` 95.43% → 97.39%
+  - `start_coordinate_median` and `duration_mae` **exactly unchanged** — the correction touched only
+    what it was designed to touch.
+- **THIS DOES NOT PASS MVP-2, and that sentence must survive quotation.** The gate is 0.95
+  (`passes_basic_linear_acceptance`). Clopper-Pearson on 147/153 is **[91.66%, 98.55%]** — the lower
+  bound is below the gate, and it overlaps 144/153's [89.13%, 97.28%] heavily. p = 0.25 (b=6 with c=0
+  would be needed for p<0.05). **3 clips at n=153 is indistinguishable from zero.**
+- **mean vs median, bounded without a rerun:** the median shift would be ≈ −0.00566 (80% of the mean).
+  A clip is gained iff its uncorrected end error lies in (0.03, 0.03+shift], so a smaller shift is a
+  strictly narrower window and cannot create an overshoot loss where 0.00707 created none ⇒ median
+  gives gained ∈ {0..3}, lost = 0 — weakly dominated. No selection effect: `mean` was predeclared and
+  is the only artefact on the volume. The fitted shift is itself imprecise: **−0.0071 ± 0.0016 (95%)**.
+- **The central bias transfers; the tail does not.** Validation along sd 0.0097 vs test 0.0176 — but
+  medians (−0.00566 vs −0.00625) and upper tails (p90 0.0023 vs 0.0020) nearly match, so the entire 2×
+  lives in the **left/undershoot tail, i.e. the failing clips**. The correction is fit to a mean on a
+  split whose failure tail is ~1.8× lighter than the split it is scored on, which is exactly why
+  −0.0071 undershoots the autopsy's test mean of −0.0095 (~1.5σ, not distinguishable, but
+  directionally systematic and mean-specific).
+- **Gaps to close next time (cheap):** emit the *validation* perpendicular distribution beside the
+  test one, and record which clips flipped, so the identity check above needs no external artefact.
+- **Next:** EQ-002 and EQ-010 closed. The correction is validated as an operator and is worth keeping
+  for its distributional effect, but it cannot be *shown* to lift recovery until EQ-007's ≥3,000-clip
+  holdout exists.

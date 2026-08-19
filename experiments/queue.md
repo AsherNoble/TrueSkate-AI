@@ -24,7 +24,9 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: gates EQ-002, which is the cheapest ~2 points available anywhere in this project.
 
 ## EQ-002 — Does the predicted-chord operator reproduce the commanded-chord counterfactual?
-- status: todo
+- status: done: CONFIRMED — operators agree (disagreement 4.9e-5) AND flip the identical 3 clips;
+  94.12 -> 96.08, end median -20.9%, p90 -24.2%. But gained 3 / lost 0, p=0.25: NOT significant, and
+  96.08% does NOT pass the 0.95 gate (CP lower bound 91.66%). See the 2026-08-19 EQ-002 journal entry.
 - tier: PAID
 - blocked-by: EQ-008, EQ-009
 - hypothesis: the shipped correction (direction from the *predicted* chord) behaves the same as the
@@ -167,7 +169,8 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: nothing currently calls the correction; EQ-002 was not runnable as written.
 
 ## EQ-010 — Verify perpendicular error sd on the EQ-002 split before trusting the axis transfer
-- status: todo
+- status: done: CONFIRMED — test perpendicular sd 0.003165 (p99 0.0148) against a 0.016 kill; the axis
+  transfer is safe on this split. Folded into EQ-002's single run as designed.
 - tier: PAID
 - blocked-by: EQ-009
 - hypothesis: the perpendicular error sd on the split EQ-002 runs is near the autopsy's 0.0032, so
