@@ -622,5 +622,172 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
         fresh_holdout_source=fresh_holdout_source,
         evaluate_test=evaluate_test,
         fresh_stratify_by_device=fresh_stratify_by_device,
+        line_fit=line_fit,
+        irls_iterations=irls_iterations,
+        huber_delta=huber_delta,
+        image_width=image_width,
+        image_height=image_height,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
+
+
+@app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
+                     batch_size: int = 8, fresh_holdout_source: str | None = None,
+                     fresh_stratify_by_device: bool = False, label: str = "autopsy",
+                     partition: str = "test") -> dict:
+    """Classify why individual held-out clips fail, not merely how often.
+
+    Recovery percentage cannot distinguish a model that missed visible evidence
+    from a label the pixels never supported, yet the two demand opposite fixes.
+    For every failing endpoint this measures the distance from the *commanded*
+    point to the nearest rendered trail pixel anywhere in the clip:
+
+    * small  -> the trail is where the label says; the model misread it.
+    * large  -> no rendered evidence there at all; robust decoding cannot help.
+
+    Positions come only from the command manifest and the model, so this adds
+    no label leakage; the colour mask is used to locate evidence, never to
+    define a target.
+    """
+    import json as _json
+    import numpy as np
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_resolution([payload]))
+    if fresh_holdout_source is None:
+        _train, val_indices, evaluated_indices = split_by_command(data, seed=seed)
+    else:
+        _train, val_indices, evaluated_indices = _trainer().split_with_fresh_command_holdout(
+            data, fresh_source=fresh_holdout_source, seed=seed,
+            stratify_by_device=fresh_stratify_by_device,
+        )
+    # Any correction derived from this report has to be fit on validation to be
+    # usable; measuring it on test and applying it there would be test-set
+    # tuning dressed up as a diagnostic.
+    if partition == "validation":
+        test_indices = val_indices
+    elif partition == "test":
+        test_indices = evaluated_indices
+    else:
+        raise ValueError("partition must be 'validation' or 'test'")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = _model_from_payload(payload, torch).to(device)
+    model.load_state_dict(payload["state_dict"])
+    model.eval()
+
+    def trail_evidence(frames: torch.Tensor) -> torch.Tensor:
+        """Per-frame orange-trail response, background-differenced."""
+        steps = frames.shape[1]
+        reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
+        red, green, blue = frames.unbind(dim=2)
+        motion = torch.abs(frames - reference).mean(dim=2)
+        return ((red - green + .12).relu() * (green - blue + .12).relu()
+                * (red - .20).relu() * motion)
+
+    records: list[dict] = []
+    loader = DataLoader(Subset(data, test_indices), batch_size=batch_size)
+    cursor = 0
+    for batch in loader:
+        frames = batch["frames"].to(device)
+        target = batch["target"].to(device)
+        with torch.no_grad():
+            prediction, start_scores, end_scores = model.forward_with_scores(frames)
+        evidence = trail_evidence(frames)
+        steps, height, width = evidence.shape[1:]
+        xa = torch.linspace(0., 1., width, device=device)
+        ya = torch.linspace(0., 1., height, device=device)
+        grid = torch.stack((xa[None, :].expand(height, width),
+                            ya[:, None].expand(height, width)), dim=2).reshape(-1, 2)
+        # A trail pixel is one clearly above this clip's own background response.
+        strong = evidence.flatten(2) > (evidence.flatten(2).amax(dim=2, keepdim=True) * .25).clamp_min(1e-6)
+        for item in range(len(target)):
+            index = test_indices[cursor + item]
+            meta = data._meta(data.sample_paths[index])
+            start_error = float(torch.linalg.vector_norm(prediction[item, :2] - target[item, :2]))
+            end_error = float(torch.linalg.vector_norm(prediction[item, 2:4] - target[item, 2:4]))
+            duration_error = float(torch.abs(prediction[item, 4] - target[item, 4]))
+            recovered = start_error <= .03 and end_error <= .03 and duration_error <= .10
+            any_strong = strong[item].any(dim=1)
+
+            def nearest(point: torch.Tensor) -> dict:
+                """Distance from a commanded point to the nearest trail pixel."""
+                best, best_step = float("inf"), -1
+                for step in range(steps):
+                    if not bool(any_strong[step]):
+                        continue
+                    candidates = grid[strong[item, step]]
+                    distance = float(torch.linalg.vector_norm(candidates - point[None, :], dim=1).min())
+                    if distance < best:
+                        best, best_step = distance, step
+                return {"distance": best, "frame": best_step}
+
+            commanded_start = nearest(target[item, :2])
+            commanded_end = nearest(target[item, 2:4])
+            records.append({
+                "sample": str(data.sample_paths[index].relative_to(data.root)),
+                "device": str(meta.get("device", "unknown")),
+                "recovered": recovered,
+                "start_error": start_error, "end_error": end_error,
+                "duration_error": duration_error,
+                "commanded": [float(v) for v in target[item, :5].cpu()],
+                "predicted": [float(v) for v in prediction[item, :5].cpu()],
+                # The decisive discriminator, per endpoint.
+                "trail_gap_start": commanded_start["distance"],
+                "trail_gap_end": commanded_end["distance"],
+                "trail_frame_start": commanded_start["frame"],
+                "trail_frame_end": commanded_end["frame"],
+                "trail_frames_present": int(any_strong.sum()),
+                # Where the model's end attention actually peaked, to separate a
+                # misread from a collapse onto the other endpoint or the middle.
+                "end_score_peak_frame": int(end_scores[item].flatten(1).amax(dim=1).argmax()),
+                "start_score_peak_frame": int(start_scores[item].flatten(1).amax(dim=1).argmax()),
+            })
+        cursor += len(target)
+
+    # Decompose every endpoint error along and perpendicular to the commanded
+    # path.  A systematic along-path component is a bias (cheap to remove); a
+    # perpendicular scatter is variance (needs better localisation).  The two
+    # demand different fixes, and the aggregate error hides which one this is.
+    for record in records:
+        x0, y0, x1, y1, _duration = record["commanded"]
+        direction = np.array([x1 - x0, y1 - y0], dtype=float)
+        direction = direction / max(float(np.linalg.norm(direction)), 1e-9)
+        for name, commanded, predicted in (
+            ("start", np.array([x0, y0]), np.array(record["predicted"][:2])),
+            ("end", np.array([x1, y1]), np.array(record["predicted"][2:4])),
+        ):
+            offset = predicted - commanded
+            along = float(offset @ direction)
+            record[f"{name}_along"] = along
+            record[f"{name}_perp"] = float(np.linalg.norm(offset - along * direction))
+
+    failures = [record for record in records if not record["recovered"]]
+    gaps = [record["trail_gap_end"] for record in failures if record["end_error"] > .03]
+    summary = {
+        "checkpoint": checkpoint_name,
+        "partition": partition,
+        "test_samples": len(records),
+        "failures": len(failures),
+        "recovery": 1 - len(failures) / len(records),
+        "median_trail_gap_all": float(np.median([r["trail_gap_end"] for r in records])),
+        "along_perp_all": {
+            f"{name}_{statistic}": float(function([r[f"{name}_{component}"] for r in records]))
+            for name in ("start", "end")
+            for component, statistic, function in (
+                ("along", "along_mean", np.mean), ("along", "along_median", np.median),
+                ("perp", "perp_median", np.median),
+            )
+        },
+        "all_records": records,
+        "failed_end_trail_gaps": sorted(gaps),
+        "failing_records": failures,
+    }
+    (Path("/models") / f"basic_linear_{label}.json").write_text(_json.dumps(summary, indent=2))
+    models.commit()
+    return {key: value for key, value in summary.items() if key != "failing_records"}
