@@ -559,7 +559,11 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   question for duration work.
 
 ## EQ-032 — Does capacity on the LEARNED evidence series close the remaining 3.3x?
-- status: todo
+- status: done: PARTIAL — a fresh head on the FROZEN learned series reaches 0.01703s (vs 0.06289s from
+  the hand-crafted series), so the map's temporal envelope already contains the duration signal. But
+  RETRACTED "exceeds the model" (checkpoint selection is lexicographic, duration only a tie-breaker)
+  and "joint training adds nothing" (map_weight=0, so the map was BUILT BY the duration loss). See the
+  2026-08-20 EQ-032 entry.
 - tier: PAID (cheap CPU)
 - hypothesis: EQ-031 showed capacity over the evidence series is the dominant decoder factor. The
   remaining 3.3x sits in the front end (learned map + temporal mixer + duration-supervised training).
@@ -572,3 +576,19 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   joint training adds nothing.
 - why: it is the last cheap decomposition; after it, duration work is an architecture decision rather
   than an attribution question.
+
+## EQ-033 — Is the map duration-legible WITHOUT duration supervision?
+- status: todo
+- tier: PAID (one full retrain)
+- hypothesis: EQ-032 froze a map that was itself built by the duration loss (`endpoint_map_weight=0`,
+  `trajectory_map_weight=0`, so duration is one of only two gradient sources shaping the score maps).
+  Detaching the duration path from the maps says whether the map is duration-legible on its own.
+- method: retrain with `series` built from `evidence.detach()` (`basic_linear_regressor.py:260`) so no
+  duration gradient reaches the encoder; freeze; fit the same fresh conv head; compare against 0.01703
+  (duration-supervised map) and 0.06289 (hand-crafted series).
+- expected: a number that decides whether "the front end is the map" or "the front end is duration
+  supervision shaping the map".
+- kill: n/a — attribution; both outcomes are informative.
+- why: EQ-032's headline rests on a map that duration supervision produced, so the attribution is
+  circular until this runs. It is the last question in the duration line and the only one needing a
+  retrain.

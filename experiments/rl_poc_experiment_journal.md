@@ -1662,3 +1662,53 @@ still blocked on collection. **Nothing in EQ-001..EQ-031 moved the headline accu
 delivered was diagnostic: one real corpus-wide data defect (EQ-018), the coverage limits of every
 number quoted so far (EQ-017/019/020), and an attribution of the duration gap that says where to
 spend next (EQ-029/031).
+
+## EQ-032 — The duration signal lives in the map's temporal envelope; two claims retracted (2026-08-20)
+
+Frozen the model's own evidence map (`torch.no_grad`, so no duration gradient reaches the encoder),
+reduced it exactly as `duration_head` does, and trained a fresh head on it.
+
+| arm | MAE (s) | gate | median |
+|---|---|---|---|
+| hand-crafted series + conv head (EQ-029) | 0.06289 | 0.824 | — |
+| hand-crafted series + mlp_6 (EQ-031) | 0.07295 | 0.752 | — |
+| **learned series (frozen) + fresh conv head** | **0.01703** | 0.9935 | 0.0137 |
+| learned series (frozen) + fresh MLP head | 0.02032 | 0.9935 | 0.0151 |
+| model, end-to-end | 0.01890 | 0.9869 | — |
+
+- **Verified clean:** `forward_with_scores` returns exactly the tensors lines 259-261 consume
+  (post-temporal-mixer) — no wrong-tensor bug. And no test leakage:
+  `split_with_fresh_command_holdout` reserves test/val commands exclusively from the fresh source and
+  fails closed on collision, so the map never saw a test command.
+- **RETRACTED: "a fresh head slightly EXCEEDS the model."** It is a selection artefact. Checkpoint
+  selection is lexicographic — `(-gesture_recovery_accuracy, start_med + end_med + duration_mae)`
+  (`train_basic_linear_regressor.py:281-285`) — so duration is only a **tie-breaker under an endpoint
+  gate**, and epoch 38 is not the model's duration optimum. My fresh head selected its epoch on
+  validation duration MAE alone. The 10% difference is exactly that asymmetry.
+- **RETRACTED: "end-to-end duration supervision contributes nothing."** The checkpoint has
+  `endpoint_map_weight = 0.0` and `trajectory_map_weight = 0.0` — there is **no direct map
+  supervision at all**. The only gradients shaping `start_score`/`end_score` are the endpoint
+  soft-argmax readout and **the duration loss itself**, which reaches the maps through `series`.
+  **The map I froze was built by duration supervision.** What was actually shown is far narrower:
+  the duration gradient is not needed *at head-fit time, given an already duration-shaped map*.
+- **The 3.7x vs EQ-029's 3.3x carries no information** — these are ratios along one chain
+  (0.163 → 0.0629 → 0.0189/0.0170) and compose by construction; the 0.4x delta is the same selection
+  asymmetry, not a factor interaction.
+- **The gate difference is one clip** (152/153 here vs the model's 151/153, `duration_recovery_accuracy`
+  0.9869). With 1 failure in 153 the upper bound on the true failure rate is ~3-4%; this sample cannot
+  distinguish 99.3% from 96%. Not a differentiator.
+- **What IS supported, stated narrowly:** *the per-frame spatial max and mean of
+  `max(start_scores, end_scores)` already contain the contact on/off temporal envelope, and reading
+  duration off it is easy* — a fresh head recovers 0.017-0.020 s from frozen features, versus 0.063 s
+  from the hand-crafted colour×motion series. **Not** supported: "duration accuracy is a function of
+  evidence-map quality" in general — there is exactly one map here, produced under duration
+  supervision, and no evidence that map quality measured any other way (e.g. endpoint recovery)
+  tracks duration.
+- **The attribution line is NOT closed.** The decisive experiment is a retrain with the duration path
+  **detached** from the maps (`evidence.detach()` at `basic_linear_regressor.py:260`), then freeze and
+  fit the same fresh head: ~0.017 ⇒ the map is duration-legible independently of duration supervision;
+  degrading toward 0.06 ⇒ duration supervision is precisely what makes it legible. That is a full
+  retrain and is queued, not run.
+- **Process note:** EQ-032's code was swept into the previous `docs:` consolidation commit by
+  `git add -u`, so a reviewer reading that commit sees a docs message over a code change. Stage by
+  path when a tick produces both.
