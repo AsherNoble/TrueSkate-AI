@@ -654,7 +654,9 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   almost certainly a prior smoke artefact. See the 2026-08-20 EQ-037 entry.
 
 ## EQ-038 — A diagnostic must not be able to clobber a model artefact
-- status: todo
+- status: done: CONFIRMED — smoke now resolves to tmp/, explicit --out still wins, test added. Sweep
+  found train_scene_classifier has no smoke mode and train_trace_extractor was already safe (I patched
+  it anyway, introduced a bug, reverted). See the 2026-08-20 EQ-038 entry.
 - tier: FREE
 - hypothesis: `train_sequence_model.py --smoke` defaults `--out` to
   `notebooks/models/sequence_model.pth`, so a throwaway diagnostic overwrites a production path. The
@@ -666,3 +668,15 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - kill: n/a — defect fix.
 - why: it already cost one checkpoint this session. Model artefacts are gitignored, so a clobber is
   unrecoverable and silent.
+
+## EQ-039 — `--epochs` is ignored by the Model 2 smoke path
+- status: todo
+- tier: FREE
+- hypothesis: `train_sequence_model.py:112` stops on `smoke and ep >= 2`, so `--epochs 1` still runs
+  three epochs and the flag misreports what happened.
+- method: honour `--epochs` under `--smoke` (or reject the combination explicitly), and assert it.
+- expected: `--epochs N` runs N epochs in both modes.
+- kill: n/a — cosmetic defect.
+- why: harmless today, but a flag that silently does something other than what it says is the same
+  class of problem as `trail_frames_present` and the synthesised `frame_times` — three of which have
+  already produced retracted conclusions in this queue.

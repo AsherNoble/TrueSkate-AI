@@ -117,3 +117,35 @@ def test_end_to_end_active_prefix_to_param_vector_preserves_delays():
     strokes[0, -1], strokes[1, -1] = 0.25, -0.1
     vec, n, pre = runner.to_param_vector(strokes)
     assert n == 2 and pre == pytest.approx(0.25) and vec[-1] == pytest.approx(-0.1)
+
+
+def test_smoke_never_defaults_to_a_durable_model_path():
+    """A diagnostic must not be able to clobber a model artefact.
+
+    On 2026-08-20 a `--smoke` run overwrote `notebooks/models/sequence_model.pth`
+    because that was the `--out` default in both modes.  Model artefacts are
+    gitignored, so the clobber was silent and unrecoverable.
+    """
+    import argparse
+    import importlib.util
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "scripts" / "train" / "train_sequence_model.py").read_text()
+    # The default must be resolved after parsing, not baked into add_argument.
+    assert 'ap.add_argument("--out", type=Path, default=None' in source
+    assert '"tmp" / "sequence_model_smoke.pth" if args.smoke' in source
+    assert 'notebooks" / "models" / "sequence_model.pth"' in source
+
+    # And the resolution itself must send smoke to tmp/ and a real run to models/.
+    def resolve(smoke, explicit=None):
+        args = argparse.Namespace(smoke=smoke, out=explicit)
+        if args.out is None:
+            args.out = (root / "tmp" / "sequence_model_smoke.pth" if args.smoke
+                        else root / "notebooks" / "models" / "sequence_model.pth")
+        return args.out
+
+    assert resolve(smoke=True).parent.name == "tmp"
+    assert resolve(smoke=False).parent.name == "models"
+    # An explicit --out still wins in either mode.
+    assert resolve(smoke=True, explicit=Path("/x/y.pth")) == Path("/x/y.pth")

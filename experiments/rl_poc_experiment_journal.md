@@ -1823,3 +1823,27 @@ demonstrated on anything.
   Worth a guard: default the smoke path to `tmp/` rather than `notebooks/models/`.
 - **Next:** EQ-038 — make `--smoke` write to `tmp/` by default so a diagnostic can never clobber a
   model artefact.
+
+## EQ-038 — A diagnostic can no longer clobber a model artefact (2026-08-20)
+
+Fixes the defect that cost a checkpoint in EQ-037.
+
+- **`train_sequence_model.py`**: `--out` now defaults to `None` and is resolved after parsing —
+  `tmp/sequence_model_smoke.pth` under `--smoke`, `notebooks/models/sequence_model.pth` for a real run.
+  An explicit `--out` still wins in either mode. Verified end to end: the smoke now writes to `tmp/`.
+- **Swept the other entry points.** Three scripts default `--out` into `notebooks/models/`:
+  `train_sequence_model.py` (fixed), `train_trace_extractor.py`, `train_scene_classifier.py`.
+  - `train_scene_classifier.py` has **no** smoke mode — not exposed.
+  - `train_trace_extractor.py` was **already safe**: its smoke branch passes
+    `out_path=tmp/trace_extractor_smoke.pth` explicitly and never reads `args.out`. **I patched it
+    anyway and thereby introduced a bug** (`args.out` would have been `None` on the real path);
+    caught immediately and reverted. Worth recording as its own small lesson: a sweep that "fixes"
+    code which was already correct is a net negative, and the check for "is this instance actually
+    affected?" belongs before the edit, not after.
+- **Test added** (`test_smoke_never_defaults_to_a_durable_model_path`): asserts the default is resolved
+  post-parse, that smoke resolves under `tmp/` and a real run under `models/`, and that an explicit
+  `--out` overrides both. Suite green.
+- **Incidental finding, not fixed:** the smoke path ignores `--epochs`. It hardcodes a stop at
+  `ep >= 2` (`train_sequence_model.py:112`), so `--epochs 1` still runs three epochs. Harmless for a
+  smoke test but the flag is a lie; queued as EQ-039 rather than silently patched, since it is
+  cosmetic and unrelated to the defect this item exists to fix.

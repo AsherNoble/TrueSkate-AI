@@ -134,8 +134,18 @@ def main() -> None:
     ap.add_argument("--img-h", type=int, default=208,
                     help="Frame height fed to the encoder (portrait; ~2.16:1 with --img-w). Raise to compress less.")
     ap.add_argument("--img-w", type=int, default=96, help="Frame width fed to the encoder.")
-    ap.add_argument("--out", type=Path, default=_REPO_ROOT / "notebooks" / "models" / "sequence_model.pth")
+    # Resolved after parsing: a --smoke run must never default to a durable model
+    # path.  A diagnostic invocation silently overwrote `sequence_model.pth` on
+    # 2026-08-20, and model artefacts are gitignored so the clobber was
+    # unrecoverable.  An explicit --out still wins in either mode.
+    ap.add_argument("--out", type=Path, default=None,
+                    help="Checkpoint path. Defaults to notebooks/models/ for a real run "
+                         "and tmp/ for --smoke.")
     args = ap.parse_args()
+    if args.out is None:
+        args.out = (_REPO_ROOT / "tmp" / "sequence_model_smoke.pth" if args.smoke
+                    else _REPO_ROOT / "notebooks" / "models" / "sequence_model.pth")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
 
     cfg = SequencePolicyConfig(
         n_frames=args.n_frames, m_past=args.m_past, m_out=args.m_out,
