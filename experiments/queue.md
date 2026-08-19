@@ -408,7 +408,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   broader than it is.
 
 ## EQ-025 — Measure the trailing edge, the only part that can carry duration
-- status: todo
+- status: done: CONFOUNDED then resolved — split by source falsified the red team's legacy-contamination
+  hypothesis: the bad mode is in FRESH (MAE 3.18 vs legacy 2.29). On fresh, evidence LOSES to the
+  pixel-free constant on MAE (3.18 vs 2.82) while winning on gate (48% vs 27%). The model is ~12x
+  better on the comparable population. See the 2026-08-20 EQ-025 entry.
 - tier: PAID (cheap CPU)
 - hypothesis: the contact interval's leading edge is constant by construction (frame 7 for every clip),
   so any duration signal lives entirely in the trailing edge; a detector scored only on that edge, and
@@ -424,3 +427,20 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   the model.
 - why: EQ-016 showed aggregate frame-classification is dominated by a structural constant. The edge is
   the only place duration can come from, and it has never been measured directly.
+
+## EQ-026 — Growth-based liftoff edge, the only untested member of the family
+- status: todo
+- tier: PAID (cheap CPU)
+- hypothesis: `peak` is a spatial MAX, so it tracks the newest bright trail segment and decays —
+  "last frame above threshold" is a fade timer, not a contact-end detector. An estimator based on trail
+  GROWTH (the last frame at which new trail pixels appear / the knee of spatial extent) is better
+  specified and may beat both the fade estimator and the constant baseline.
+- method: fresh-source clips only; estimate liftoff as the last frame where the count of above-threshold
+  pixels increases materially; PRE-COMMIT the threshold before looking at the result; report a PAIRED
+  test against the constant baseline, and the gate fraction alongside MAE.
+- expected: MAE below the constant's 2.816 frames on fresh, and a lighter tail than the fade
+  estimator's p90 of 9.0.
+- kill: growth-based edge is no better than fade-based on fresh — then presence/geometry edge decoding
+  is exhausted as a route and duration is limited by something the trail does not encode at 13.7fps.
+- why: EQ-025 ruled out the fade estimator but the family was not exhausted, and the practical claim
+  ("presence-edge decoding is not a route to duration") is the one that would cost money if wrong.

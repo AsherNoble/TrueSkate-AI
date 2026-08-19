@@ -1237,3 +1237,59 @@ about trail presence were wrong, mine included.
 - **Next:** EQ-025 — measure the trailing edge directly (leading edge is constant by construction, so
   it is the only part that can carry duration), and compare against the constant-window baseline
   restricted to frames ≥ 7 so neither side gets free credit for the suppressed lead-in.
+
+## EQ-025 — Liftoff edge: the population objection resolved, in the opposite direction (2026-08-20)
+
+Measures the trailing edge directly, since EQ-016 showed the leading edge is constant by construction
+and carries no information either detector had to earn.
+
+- **Setup:** `audit_liftoff_edge`, 300 stride-sampled clips. Estimated liftoff = last frame whose
+  per-clip-normalised trail evidence exceeds a swept threshold (frames 0-6 excluded); commanded
+  liftoff = last index the manifest calls contact; baseline = predict the corpus-mean edge for every
+  clip (no pixels). Frame quantum 0.0731 s.
+- **Aggregate (300 clips):** evidence at 0.60 gives MAE **2.592** frames, median **1.0**, p90 7.0,
+  within-gate **51.2%**; the constant baseline gives MAE 2.984, median 3.3, within-gate 25.3%.
+  Commanded edge mean 16.7, sd 3.46 — an invertible function of `meta["duration"]`, so the target is
+  the same quantity the model predicts.
+- **Red team CONFOUNDED the headline** ("the model is 5.5x past a presence-edge decoder"), on four
+  grounds: population mismatch (my sample spans legacy+fresh, the model's test split is fresh-only),
+  integer-vs-continuous output, the EQ-018 timebase defect biasing an *absolute*-index estimator that a
+  *difference*-based model never pays, and my using a fade-threshold rather than a growth-based edge
+  estimator. Its decisive check was to split by source.
+- **SPLIT BY SOURCE — and it falsifies the red team's own attribution:**
+
+  | source | n | evidence MAE | median | p90 | gate | constant MAE | constant gate |
+  |---|---|---|---|---|---|---|---|
+  | **fresh** | 102 | **3.176** | 2.0 | 9.0 | 48.0% | **2.816** | 27.5% |
+  | legacy | 198 | 2.289 | 1.0 | 6.0 | 52.8% | 3.071 | 24.2% |
+
+  The catastrophic mode is in **fresh**, not legacy — so it is *not* legacy lead-in contamination
+  (the hypothesis was that pre-anchor-fix clips have the trail already drawn during the lead-in,
+  poisoning the pre-touch reference). Measured, that population is the *better* one for edge reading.
+- **Consequences, both directions:**
+  - **The population objection is resolved and reverses the sign.** On fresh — the comparable
+    population — the edge read is MAE **3.176 frames** against the model's duration MAE of 0.0189 s =
+    **0.26 frames**. That is ~12x, not 5.5x, and it strengthens rather than kills the original reading.
+    Integer output cannot explain a 3.18-frame MAE (an integer estimator that is simply right achieves
+    ~0.25).
+  - **On fresh, evidence LOSES to the pixel-free constant on MAE** (3.176 vs 2.816) while winning on
+    gate fraction (48.0% vs 27.5%) — i.e. more clips near-perfect *and* a heavier tail. The estimator
+    is bimodal on exactly the population that matters.
+  - **Still untested, and still live:** the timebase bias (order 0.5-0.7 frames of the error is
+    label/pixel misalignment the model never pays, because a duration is a *difference* of two edges
+    while this estimator reads an *absolute* index), and the fade-vs-growth estimator choice. `peak` is
+    a spatial **max**, so it tracks the newest bright trail segment and decays — "last frame above
+    threshold" is a fade timer, the weakest member of the edge-estimator family.
+- **Threshold selection:** best-of-18 by MAE. Pre-committing to 0.5 gives 2.663 vs the baseline's
+  2.984 — the MAE margin is thin (~1.5-2 SE unpaired, and no paired test was run) and should not be
+  leaned on. The **gate** effect (25% → 48-56%) is large and reproduced by every threshold in
+  0.35-0.70; that is the claim worth keeping.
+- **Unit correction:** errors were converted to seconds with the *label* quantum (2.2667/31) when the
+  stretched pixel quantum is 2.1935/31 — a 3.3% overstatement (0.1895 → 0.183 s). Same EQ-018 root
+  cause.
+- **Where this leaves duration:** a *fade*-based presence-edge decoder is not a route — on fresh it
+  does not even beat a constant on MAE. Whether a *growth*-based one is remains genuinely open, and is
+  the only untested member of the family.
+- **Next:** EQ-026 — growth-based edge estimator (last frame at which NEW trail pixels appear, i.e. the
+  knee of spatial extent) on fresh only, with the threshold pre-committed and a paired test against the
+  constant baseline.

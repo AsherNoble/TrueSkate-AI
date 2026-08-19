@@ -1249,6 +1249,130 @@ def audit_trail_presence_threshold(data_subdir: str, checkpoint_name: str, *,
     return {key: value for key, value in output.items() if key != "sweep"}
 
 
+@app.function(image=image, cpu=8.0, timeout=2 * 3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_liftoff_edge(data_subdir: str, checkpoint_name: str, *, clips: int = 300,
+                       batch_size: int = 8) -> dict:
+    """Can trail evidence locate LIFTOFF better than knowing nothing?
+
+    EQ-016 showed frame-level presence loses to a constant window, because the
+    contact interval starts at frame 7 in every clip and a third of the negatives
+    are free.  Duration is decided entirely by the TRAILING edge, so that is what
+    this measures: the estimated liftoff index against the commanded one, in
+    frames, beside two baselines — predicting the corpus-mean liftoff index (no
+    pixels, no per-clip knowledge) and the commanded index itself (oracle, zero
+    by construction).
+
+    Errors are reported in frames and in seconds, so they can be read directly
+    against the 0.10 s duration gate and the 0.0731 s frame quantum.
+    """
+    import json as _json
+    import numpy as np
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset
+
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_dataset_kwargs([payload]))
+    indices = list(range(0, len(data), max(1, len(data) // max(clips, 1))))[:clips]
+
+    def trail_evidence(frames: torch.Tensor) -> torch.Tensor:
+        steps = frames.shape[1]
+        reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
+        red, green, blue = frames.unbind(dim=2)
+        motion = torch.abs(frames - reference).mean(dim=2)
+        return ((red - green + .12).relu() * (green - blue + .12).relu()
+                * (red - .20).relu() * motion)
+
+    fractions = [round(0.05 * step, 4) for step in range(1, 19)]
+    commanded_edges: list[float] = []
+    estimated: dict[float, list[float]] = {fraction: [] for fraction in fractions}
+    # Legacy and fresh are different corpora: legacy predates the anchor fix and
+    # its trail is frequently already drawn during the lead-in, which poisons the
+    # pre-touch reference.  The model's own test split is fresh-only, so an
+    # aggregate over both is not comparable to it.
+    sources = [data.sample_paths[index].relative_to(data.root).parts[0] for index in indices]
+    for batch in DataLoader(Subset(data, indices), batch_size=batch_size):
+        active = batch["trajectory_mask"].bool()
+        evidence = trail_evidence(batch["frames"])
+        peak = evidence.flatten(2).amax(dim=2)
+        normalised = peak / peak.amax(dim=1, keepdim=True).clamp_min(1e-6)
+        steps = active.shape[1]
+        grid = torch.arange(steps)
+        for item in range(len(active)):
+            # Commanded liftoff = the last frame the manifest calls contact.
+            commanded_edges.append(float(grid[active[item]].max()) if bool(active[item].any()) else float("nan"))
+            for fraction in fractions:
+                above = normalised[item] > fraction
+                # Search only at or after the lead-in: frames 0-6 are structurally
+                # suppressed by the reference, so including them would hand the
+                # estimator free credit (EQ-016).
+                above[:7] = False
+                estimated[fraction].append(float(grid[above].max()) if bool(above.any()) else float("nan"))
+
+    commanded = np.array(commanded_edges, dtype=float)
+    valid = ~np.isnan(commanded)
+    mean_edge = float(np.nanmean(commanded))
+    quantum_s = 2.2667 / 31
+
+    source_array = np.array(sources)
+
+    def summarise(estimate, mask=None):
+        error = estimate - commanded
+        keep = valid & ~np.isnan(error)
+        if mask is not None:
+            keep = keep & mask
+        error = error[keep]
+        absolute = np.abs(error)
+        if not keep.any():
+            return {"clips": 0}
+        return {
+            "clips": int(keep.sum()),
+            "bias_frames": round(float(error.mean()), 3),
+            "mae_frames": round(float(absolute.mean()), 3),
+            "median_abs_frames": round(float(np.median(absolute)), 3),
+            "p90_abs_frames": round(float(np.quantile(absolute, .9)), 3),
+            "mae_seconds": round(float(absolute.mean() * quantum_s), 4),
+            # A duration is recovered if the edge is within the 0.10s gate.
+            "within_duration_gate": round(float((absolute * quantum_s <= 0.10).mean()), 4),
+        }
+
+    sweep = {str(fraction): summarise(np.array(estimated[fraction], dtype=float))
+             for fraction in fractions}
+    best_fraction = min(sweep, key=lambda key: sweep[key]["mae_frames"])
+    baseline = summarise(np.full_like(commanded, mean_edge))
+    output = {
+        "data_subdir": data_subdir,
+        "checkpoint": checkpoint_name,
+        "clips_sampled": int(valid.sum()),
+        "frame_quantum_s": round(quantum_s, 5),
+        "commanded_edge": {"mean": round(mean_edge, 3),
+                           "min": float(np.nanmin(commanded)), "max": float(np.nanmax(commanded)),
+                           "sd": round(float(np.nanstd(commanded)), 3)},
+        "constant_mean_edge_baseline": baseline,
+        "best_evidence_threshold": best_fraction,
+        "best_evidence": sweep[best_fraction],
+        "evidence_beats_constant": sweep[best_fraction]["mae_frames"] < baseline["mae_frames"],
+        # The comparison that decides whether the model is really "past" this:
+        # only the fresh subset is the population the model's test split lives in.
+        "by_source": {
+            source: {
+                "clips": int((source_array == source).sum()),
+                "evidence": summarise(np.array(estimated[float(best_fraction)], dtype=float),
+                                      source_array == source),
+                "constant": summarise(np.full_like(commanded, mean_edge), source_array == source),
+            }
+            for source in sorted(set(sources))
+        },
+        "sweep": sweep,
+    }
+    (Path("/models") / f"basic_linear_liftoff_edge_{data_subdir.replace('/', '_')}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return {key: value for key, value in output.items() if key != "sweep"}
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
