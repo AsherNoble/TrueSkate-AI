@@ -505,3 +505,61 @@ invocation, red-teamed before belief).
   pairs predeclared instead of an accuracy delta (was: reproduce 96.08%). New EQ-008 (make fit and
   apply share an axis; add a displaced-first-knot test) and EQ-009 (the missing entry point), both
   FREE, both gating EQ-002.
+
+## EQ-008 — Estimator and corrector now share an axis; axis choice is worth ~4e-5 (2026-08-19)
+
+Loop tick 2 (`experiment-queue`, self-paced). Fixes the estimator/corrector mismatch the EQ-001
+red team found: the fit measured against the **commanded** chord while `apply` corrects along the
+**predicted** one.
+
+- **Hypothesis:** making them consistent changes the fitted shift by less than the noise floor.
+  **Expected:** shift moves < 0.001. **Kill:** it moves materially, so the autopsy's numbers do not
+  transfer at all.
+- **Ran:** offline, no cloud spend. `signed_along_path_error` / `fit_along_path_bias` gained
+  `axis="predicted"|"commanded"`, defaulting to predicted (matching `apply`); `AlongPathBias` gained
+  an `axis` field; test helper gained `start_error` to displace the predicted first knot.
+  **Deviation from the declared method:** the commanded-chord path was kept behind the parameter
+  rather than deleted, because EQ-002 must compare the two operators. Simulation at
+  `scratchpad/eq008_axis_shift.py`, drawing from the autopsy's reported moments — **simulated, not
+  measured on real records**, which live on Modal with nothing cached locally.
+- **Numbers** (40 seeds x 2,000 records): true injected -0.00950; predicted-axis fit -0.00942,
+  commanded-axis -0.00946 (sd across seeds 0.00045 each). |delta| median **3.7e-5**, max 4.2e-5 =
+  **0.14% of the 0.03 tolerance**. Predeclared gate < 0.001: PASS. Suite **201 passed** (was 196).
+- **Verdict: CONFIRMED, but only in the restated form below.** The axes agree far inside tolerance,
+  so the correction can use the predicted chord — the one available at inference.
+- **Red team: CONFOUNDED — the delta is real and inside the gate, but the stated reason was wrong
+  and the conclusion over-reached.** Its findings, and what changed as a result:
+  1. **The sensitivity sweep inflated the wrong variable.** delta ≈ E[perp²]·E[1/L]: it is driven by
+     *perpendicular* error and is first-order insensitive to first-knot error. Re-run over the right
+     variable and independently reproduced: first-knot **x0 (removed entirely) 3.6e-5**, baseline
+     3.8e-5, first-knot x8 1.2e-4 — but perp x2 1.5e-4, perp x3 3.2e-4, **perp x5 8.9e-4, at the
+     gate**. Analytic E[perp²]·E[1/L] = 3.4e-5, matching. So "robust to 8x first-knot error" was true
+     and nearly vacuous. **Restated claim: delta = E[perp²]/|chord| ≈ 4e-5 at the autopsy's measured
+     perpendicular sd of 0.0032, and transfers only while that sd holds.** It is a data-dependent
+     transfer, not an operator property.
+  2. **The perp²/|chord| leak is exact, not curve-fitted** — algebraically q²/√(L²+q²), verified to
+     4.4e-15 relative. It is also **strictly positive whatever the sign of q**, i.e. a systematic
+     estimator bias, not noise that averages out. Test tightened from rel=0.05 to abs=1e-12 against
+     the exact form, plus a sign-flip assertion.
+  3. **"EQ-002's operator-agreement question is answered in simulation" was unsupported** — EQ-008
+     varied the *scalar*, not the apply *direction*. The red team ran that itself (6,120 simulated
+     clips): per-clip displacement between the shipped and autopsy operators median 1.0e-4, P99
+     5.5e-4, **discordant pairs b=0, c=0**. Recorded as its run, not ours; EQ-002 still owes the
+     measurement on real records.
+  4. **The deviation was a live footgun, worse than the EQ-001 state**: a commanded-axis fit returned
+     an `AlongPathBias` whose `axis` field *looked* like a guarantee while `apply` silently ignored
+     it and used the predicted chord. **Fixed** — `apply` now raises unless `axis == "predicted"`,
+     with a test.
+  5. **Correlated errors are optimistic by at most ~2x** and in a knowable direction: rho=-1
+     (stroke rotation) doubles delta to 7.3e-5; rho=+1 (translation) gives exactly zero. Not enough
+     to flip the verdict.
+  6. Test docstring cited 78.7-94.4% first-knot recovery from unrelated baselines; the checkpoint
+     EQ-002 will actually run has **100.0% start recovery**, median 0.00635. Corrected.
+  7. **"New tests fail before and pass after" was not met in the intended sense** — at HEAD they
+     raise `TypeError` on an unknown kwarg rather than failing on behaviour, and no new test
+     exercised `apply`. The footgun test in (4) now does.
+- **Supersedes** the EQ-001 entry's line that "perpendicular displacement contributes nothing to the
+  fit": true on the commanded axis, false by default now — it contributes +perp²/|chord|.
+- **Next:** EQ-008 closed. EQ-002 unblocked once EQ-009 lands, with its expectation restated around
+  perpendicular sd rather than first-knot error. New EQ-010: verify perpendicular sd on the EQ-002
+  split before trusting the transfer, since delta scales with its square.

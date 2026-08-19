@@ -35,6 +35,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   the Clopper-Pearson interval alongside the point estimate. Evaluation only, on the split this
   checkpoint has already been scored on — consumes no new holdout.
 - expected: discordant pairs of roughly b=3-4 / c=1, i.e. the operators agree to within a clip.
+  EQ-008's red team simulated this operator difference over 6,120 clips and found b=0, c=0 with
+  per-clip displacement median 1.0e-4 / P99 5.5e-4 — so the prior is agreement; this run is the
+  real-record confirmation, and it is worth doing only because a simulation cannot see a real
+  perpendicular-error distribution wider than the autopsy's 0.0032 sd.
 - kill: the two operators disagree on more clips than the correction gains — then the predicted-chord
   direction is not a valid stand-in and the correction needs the commanded chord, which is not
   available at inference.
@@ -113,7 +117,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   one is optimising noise.
 
 ## EQ-008 — Make the fit and the apply share one axis, and test the case that matters
-- status: todo
+- status: done: CONFIRMED (restated) — axes agree to ~4e-5, 0.14% of tolerance. Red team CONFOUNDED
+  the stated reason: delta = E[perp^2]/|chord|, driven by PERPENDICULAR error and first-order
+  insensitive to first-knot error (x0 removed: 3.6e-5; perp x5: 8.9e-4, at the gate). Transfer is
+  data-dependent on perp sd 0.0032 holding. See the 2026-08-19 EQ-008 journal entry.
 - tier: FREE
 - hypothesis: the correction is currently measured on the commanded chord and applied on the
   predicted chord; making them consistent changes the fitted shift by less than the noise floor.
@@ -137,3 +144,17 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - expected: runnable, CPU smoke passes locally.
 - kill: n/a.
 - why: nothing currently calls the correction; EQ-002 was not runnable as written.
+
+## EQ-010 — Verify perpendicular error sd on the EQ-002 split before trusting the axis transfer
+- status: todo
+- tier: PAID
+- blocked-by: EQ-009
+- hypothesis: the perpendicular error sd on the split EQ-002 runs is near the autopsy's 0.0032, so
+  the predicted/commanded axis agreement measured in EQ-008 transfers.
+- method: fold into EQ-002's single evaluation — report the perpendicular error distribution
+  (sd, P90, P99) alongside the discordant-pair counts. No separate run.
+- expected: sd within ~2x of 0.0032, i.e. |delta| stays under ~1.5e-4.
+- kill: sd above ~0.016 (5x), where the axis disagreement reaches the 0.001 gate and the shipped
+  operator is no longer interchangeable with the one the autopsy measured.
+- why: EQ-008 established delta scales with the SQUARE of perpendicular error, so the whole
+  predicted-chord design rests on a number measured once, on one checkpoint, on one split.

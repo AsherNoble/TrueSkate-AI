@@ -15,7 +15,13 @@ scored on.
 Applying the shift needs a direction.  At fit time the commanded path is
 available, but at inference it is not, so ``AlongPathBias.apply`` takes the
 direction from the model's *own* predicted knots.  The correction is therefore
-legal wherever the model runs, not only where labels exist.
+legal wherever the model runs, not only where labels exist — and the fit uses
+that same predicted chord by default, so the scalar estimated is the quantity
+the correction removes.
+
+The commanded-chord decomposition (the 2026-08-18 autopsy's operator) remains
+available for comparison, but a bias fit that way must not be applied: see
+``AlongPathBias.apply``.
 """
 from __future__ import annotations
 
@@ -42,15 +48,31 @@ def _knot_pair(vector: Sequence[float], knot: int) -> tuple[np.ndarray, np.ndarr
     return knots[index], knots[index - 1]
 
 
-def signed_along_path_error(record: Mapping[str, Sequence[float]], *, knot: int = -1) -> float | None:
-    """Signed error of one knot projected onto its commanded path direction.
+AXES = ("predicted", "commanded")
+
+
+def signed_along_path_error(record: Mapping[str, Sequence[float]], *, knot: int = -1,
+                            axis: str = "predicted") -> float | None:
+    """Signed error of one knot projected onto its path direction.
 
     Negative means the prediction fell *short* along the path — the undershoot
     the autopsy measured.  Returns ``None`` for a degenerate (zero-length) path.
+
+    ``axis`` selects which chord defines "along":
+
+    - ``"predicted"`` (default) matches ``AlongPathBias.apply``, which has only
+      the prediction to work with.  Estimator and corrector then share an axis,
+      so the fitted scalar is the quantity the correction actually removes.
+    - ``"commanded"`` is the 2026-08-18 autopsy's operator, which decomposes
+      against the label.  Kept so the two can be compared on real records
+      (EQ-002); it is not usable at inference.
     """
-    predicted, _ = _knot_pair(record["predicted"], knot)
-    target, previous = _knot_pair(record["target"], knot)
-    direction = target - previous
+    if axis not in AXES:
+        raise ValueError(f"axis must be one of {AXES}")
+    predicted, predicted_previous = _knot_pair(record["predicted"], knot)
+    target, target_previous = _knot_pair(record["target"], knot)
+    direction = (predicted - predicted_previous if axis == "predicted"
+                 else target - target_previous)
     length = float(np.linalg.norm(direction))
     if length < MIN_PATH_LENGTH:
         return None
@@ -65,6 +87,7 @@ class AlongPathBias:
     samples: int
     knot: int = -1
     statistic: str = "mean"
+    axis: str = "predicted"
 
     def apply(self, prediction: torch.Tensor) -> torch.Tensor:
         """Shift the corrected knot forward along the *predicted* path.
@@ -72,6 +95,13 @@ class AlongPathBias:
         Uses only the prediction, so this is valid at inference time.  Returns a
         new tensor; the input is not modified.  A zero shift is an exact no-op.
         """
+        if self.axis != "predicted":
+            # apply() has only the prediction, so it can use no other chord.  A
+            # commanded-axis fit applied here silently reproduces the estimator/
+            # corrector mismatch this module exists to remove.
+            raise ValueError(
+                f"a bias fit on the {self.axis!r} axis cannot be applied: apply() corrects along "
+                "the predicted chord, so only a predicted-axis fit is consistent")
         if prediction.ndim != 2 or prediction.shape[1] < 5 or prediction.shape[1] % 2 == 0:
             raise ValueError("prediction must have shape [batch, 2K+1] with K>=2")
         if self.shift == 0.:
@@ -91,7 +121,7 @@ class AlongPathBias:
 
 
 def fit_along_path_bias(records: Iterable[Mapping[str, Sequence[float]]], *, knot: int = -1,
-                        statistic: str = "mean") -> AlongPathBias:
+                        statistic: str = "mean", axis: str = "predicted") -> AlongPathBias:
     """Fit the along-path shift from validation recovery records.
 
     ``statistic`` is ``"mean"`` (matches the autopsy's counterfactual) or
@@ -102,9 +132,9 @@ def fit_along_path_bias(records: Iterable[Mapping[str, Sequence[float]]], *, kno
     if statistic not in {"mean", "median"}:
         raise ValueError("statistic must be 'mean' or 'median'")
     errors = [error for error in
-              (signed_along_path_error(record, knot=knot) for record in records)
+              (signed_along_path_error(record, knot=knot, axis=axis) for record in records)
               if error is not None]
     if not errors:
-        return AlongPathBias(shift=0., samples=0, knot=knot, statistic=statistic)
+        return AlongPathBias(shift=0., samples=0, knot=knot, statistic=statistic, axis=axis)
     shift = float(np.mean(errors)) if statistic == "mean" else float(np.median(errors))
-    return AlongPathBias(shift=shift, samples=len(errors), knot=knot, statistic=statistic)
+    return AlongPathBias(shift=shift, samples=len(errors), knot=knot, statistic=statistic, axis=axis)

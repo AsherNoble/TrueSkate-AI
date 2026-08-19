@@ -9,14 +9,23 @@ from trueskate_ai.vision.basic_linear_bias import (
 from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
 
 
-def _record(start, end, *, along=0.0, perpendicular=0.0, duration=0.5):
-    """A synthetic record whose last knot is displaced by a known amount."""
+def _record(start, end, *, along=0.0, perpendicular=0.0, duration=0.5,
+            start_error=(0.0, 0.0)):
+    """A synthetic record whose last knot is displaced by a known amount.
+
+    ``start_error`` displaces the *predicted* first knot away from the commanded
+    one, so the predicted and commanded chords genuinely differ.  The checkpoint
+    EQ-002 will run (`basic_linear_linear_mixed_fresh_holdout_20260813`) has
+    100.0% start recovery at median 0.00635, so the displacement is small but
+    never exactly zero.
+    """
     start, end = np.asarray(start, dtype=float), np.asarray(end, dtype=float)
     unit = (end - start) / np.linalg.norm(end - start)
     normal = np.array([-unit[1], unit[0]])
     predicted_end = end + along * unit + perpendicular * normal
+    predicted_start = start + np.asarray(start_error, dtype=float)
     return {
-        "predicted": [*start, *predicted_end, duration],
+        "predicted": [*predicted_start, *predicted_end, duration],
         "target": [*start, *end, duration],
     }
 
@@ -26,9 +35,30 @@ def test_signed_error_is_negative_for_an_undershoot():
     assert signed_along_path_error(record) == pytest.approx(-0.012, abs=1e-9)
 
 
-def test_perpendicular_displacement_does_not_enter_the_along_fit():
+def test_perpendicular_displacement_does_not_enter_the_commanded_axis():
     record = _record((0.2, 0.3), (0.7, 0.8), along=0.0, perpendicular=0.02)
-    assert signed_along_path_error(record) == pytest.approx(0.0, abs=1e-9)
+    assert signed_along_path_error(record, axis="commanded") == pytest.approx(0.0, abs=1e-9)
+
+
+def test_perpendicular_displacement_leaks_into_the_predicted_axis_second_order():
+    """The predicted chord is itself rotated by the perpendicular error.
+
+    Exactly q**2 / sqrt(L**2 + q**2) for a perpendicular displacement q on a
+    chord of length L (q**2/L to leading order) — 3.7e-5 at the autopsy's
+    measured perpendicular sd (0.0032) over a typical 0.35 chord, i.e. ~0.1% of
+    the 0.03 tolerance.  Note it is **strictly positive whatever the sign of q**,
+    so it is a systematic bias of the estimator, not noise that averages out.
+    """
+    start, end, perpendicular = np.array([0.2, 0.3]), np.array([0.7, 0.8]), 0.02
+    record = _record(start, end, along=0.0, perpendicular=perpendicular)
+    chord = float(np.linalg.norm(end - start))
+    exact = perpendicular ** 2 / np.hypot(chord, perpendicular)
+    assert signed_along_path_error(record, axis="predicted") == pytest.approx(exact, abs=1e-12)
+    assert exact == pytest.approx(perpendicular ** 2 / chord, rel=0.001)
+    assert abs(exact) < 0.001
+    # Strictly positive either way: flipping the sign of q gives the same leak.
+    flipped = _record(start, end, along=0.0, perpendicular=-perpendicular)
+    assert signed_along_path_error(flipped, axis="predicted") == pytest.approx(exact, abs=1e-12)
 
 
 def test_fit_recovers_a_known_injected_bias_within_ten_percent():
@@ -111,3 +141,53 @@ def test_metrics_accept_the_correction_and_never_fit_it():
                                      correction=AlongPathBias(shift=-0.03, samples=100))
     assert uncorrected["end_coordinate_median"] == pytest.approx(0.03, abs=1e-6)
     assert corrected["end_coordinate_median"] == pytest.approx(0.0, abs=1e-6)
+
+
+def test_the_two_axes_diverge_once_the_first_knot_is_wrong():
+    """Every other test has predicted start == commanded start, where the axes
+    agree to ~1e-8 rad and the choice is unobservable."""
+    agreeing = _record((0.2, 0.3), (0.7, 0.8), along=-0.01)
+    assert (signed_along_path_error(agreeing, axis="predicted")
+            == pytest.approx(signed_along_path_error(agreeing, axis="commanded"), abs=1e-9))
+    displaced = _record((0.2, 0.3), (0.7, 0.8), along=-0.01, start_error=(0.012, -0.009))
+    predicted_axis = signed_along_path_error(displaced, axis="predicted")
+    commanded_axis = signed_along_path_error(displaced, axis="commanded")
+    assert predicted_axis != pytest.approx(commanded_axis, abs=1e-6)
+    # Both still recover the injected undershoot to well inside tolerance.
+    assert predicted_axis == pytest.approx(-0.01, abs=0.002)
+    assert commanded_axis == pytest.approx(-0.01, abs=0.002)
+
+
+def test_a_wrong_first_knot_does_not_break_the_fit():
+    rng = np.random.default_rng(7)
+    injected = -0.0095
+    records = [
+        _record(start := rng.uniform(0.2, 0.4, size=2),
+                start + rng.uniform(0.2, 0.4, size=2),
+                along=injected + rng.normal(0., 0.004),
+                perpendicular=rng.normal(0., 0.0036),
+                start_error=rng.normal(0., 0.0054, size=2))
+        for _ in range(600)
+    ]
+    predicted_axis = fit_along_path_bias(records, axis="predicted")
+    commanded_axis = fit_along_path_bias(records, axis="commanded")
+    assert predicted_axis.axis == "predicted"
+    assert predicted_axis.shift == pytest.approx(injected, rel=0.10)
+    assert commanded_axis.shift == pytest.approx(injected, rel=0.10)
+    assert abs(predicted_axis.shift - commanded_axis.shift) < 0.001
+
+
+def test_axis_is_validated():
+    with pytest.raises(ValueError):
+        signed_along_path_error(_record((0.2, 0.3), (0.7, 0.8)), axis="nonsense")
+
+
+def test_a_commanded_axis_fit_cannot_be_applied():
+    """apply() corrects along the predicted chord and reads no axis field, so a
+    commanded-axis fit would silently reintroduce the EQ-001 mismatch."""
+    records = [_record((0.2, 0.3), (0.7, 0.8), along=-0.01)]
+    commanded = fit_along_path_bias(records, axis="commanded")
+    assert commanded.axis == "commanded"
+    with pytest.raises(ValueError, match="cannot be applied"):
+        commanded.apply(torch.tensor([[0.2, 0.3, 0.7, 0.8, 0.5]]))
+    fit_along_path_bias(records).apply(torch.tensor([[0.2, 0.3, 0.7, 0.8, 0.5]]))
