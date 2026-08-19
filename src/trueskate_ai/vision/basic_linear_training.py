@@ -74,8 +74,11 @@ def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor, *,
     # Component audit of the best command-held-out checkpoint: duration passes
     # 98.7%, end 88.7%, but start only 78.7%.  Weight the start pair more
     # heavily so optimisation spends capacity on the actual recovery bottleneck.
-    start = F.smooth_l1_loss(prediction[:, :2], target[:, :2], beta=0.03)
-    end = F.smooth_l1_loss(prediction[:, 2:4], target[:, 2:4], beta=0.03)
+    # torch 2.12's smooth_l1_loss viewers reject a column slice of a [B,5]
+    # tensor ("spans across two contiguous subspaces"), so materialise the
+    # endpoint pairs.  Values are unchanged; this only fixes the stride.
+    start = F.smooth_l1_loss(prediction[:, :2].contiguous(), target[:, :2].contiguous(), beta=0.03)
+    end = F.smooth_l1_loss(prediction[:, 2:4].contiguous(), target[:, 2:4].contiguous(), beta=0.03)
     endpoints = 1.8 * start + end
     duration_scale = BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S
     duration = F.smooth_l1_loss(
