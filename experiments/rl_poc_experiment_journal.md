@@ -1100,3 +1100,34 @@ corpus-wide off-by-one.**
 - **Next:** EQ-021 (fix the extractor + assert frame count; requires a retrain to benefit), EQ-022
   (measure the `-ss` phase jitter on segments whose `.mov` survives — decides whether EQ-003's tail is
   calibration residual or aligner phase).
+
+## EQ-021 — Frame-count assertion shipped; the tail-margin fix is UNVALIDATED (2026-08-20)
+
+- **Verdict: PARTIAL.** The guard is in and tested. The margin is not demonstrated and must not be
+  reported as a fix.
+- **Shipped:** `_extract_sample_video` now requests `-t duration + 2/source_fps` of tail and, more
+  importantly, calls a new `_video_frame_count()` and **fails the sample** unless the produced clip
+  holds exactly `max_frames` decodable frames — deleting the file rather than letting the loader
+  stretch it. `_video_frame_count` decodes and counts rather than trusting `CAP_PROP_FRAME_COUNT`.
+  Four ffmpeg-driven tests; suite **221 passed**.
+- **Why the margin is unproven — a measurement discrepancy worth recording.** On this machine's ffmpeg,
+  the un-margined call produces **29-30** frames, not the corpus's uniform 31, and adding margin
+  (1, 2, 3, 4, 6 source frames), dropping `-t` entirely, setting `fps=...:start_time=0`, or switching
+  to output seek all plateau at **30**. Probing why: these files' containers advertise **32** frames
+  while only **30 decode** (`nb_frames=32` vs `nb_read_frames=30`; cv2's header agrees with the
+  container at 32, its decode with ffprobe at 30). So this build writes an index for frames that are
+  not decodable — a pathology the rig does not exhibit, since the corpus audit found header and decode
+  **agreeing at 31** on all 3,040 clips. **My local environment is not a faithful reproduction of the
+  rig's aligner, so the margin cannot be validated here.**
+- **What that does and does not mean:**
+  - EQ-018's corpus finding is **unaffected** — there header and decode agreed, so those containers
+    genuinely hold 31 frames.
+  - The margin may or may not be sufficient on the rig. **Validate there before believing it.**
+  - The assertion is the part that actually matters: it converts a silent, corpus-wide label/pixel
+    mismatch into a loud per-sample failure, whatever the underlying cause.
+- **Test design consequence:** the regression witness now asserts only that the un-margined call comes
+  up **short**, not by how much. The shortfall magnitude is source- and build-dependent (1 frame on the
+  rig's real captures, 2-3 here), and pinning a specific number would have made the test a
+  build-detector rather than a defect-detector.
+- **Next:** EQ-023 — validate on the rig that the margin actually yields 32 frames, using a surviving
+  `.mov`. Until then the corpus keeps its documented 31/30 skew and any re-extract remains blocked.

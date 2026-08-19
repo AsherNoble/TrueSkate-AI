@@ -259,7 +259,7 @@ def _encode_sample_video(sample_dir: Path, n_frames: int, fps: int, crf: int) ->
 
 def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, duration_s: float,
                           resize_width: int, output_fps: float, max_frames: int,
-                          crf: int) -> bool:
+                          crf: int, source_fps: float = 30.0) -> bool:
     """Slice, downsample, and encode a compact sample video in one ffmpeg pass.
 
     The former compact-video path first decoded every requested frame to PNG and
@@ -267,12 +267,25 @@ def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, durati
     that is needless disk I/O and roughly doubles the alignment wall time.  This
     direct path has exactly the same source window and resize contract while
     avoiding temporary files entirely.
+
+    **Tail margin and frame-count assertion (EQ-018).**  ``output_fps`` places
+    the final slot at ``duration_s - 1/source_fps``, which left only 0.4 output
+    slots of margin; ``-ss`` input-seek quantises to the source's frame grid and
+    ate it, so the ``fps`` filter flushed at EOF one frame short.  Every clip in
+    the 3,040-sample MVP corpus came out with 31 frames while its synthesised
+    ``frame_times`` asserted 32 — and nothing noticed, because the loader
+    stretches whatever frames exist across the requested count.  Two changes:
+    request a couple of source frames of extra tail (``-frames:v`` still bounds
+    the output at ``max_frames``), and verify the produced count, failing the
+    sample loudly rather than emitting a clip whose pixels and labels disagree.
     """
     sample_dir.mkdir(parents=True, exist_ok=True)
     out = sample_dir / "frames.mp4"
+    margin_s = 2.0 / max(source_fps, 1e-6)
     r = subprocess.run(
         ["ffmpeg", "-y", "-v", "error", "-ss", f"{start_s:.3f}", "-i", str(mov),
-         "-t", f"{duration_s:.3f}", "-vf", f"fps={output_fps:.8f},scale={resize_width}:-2",
+         "-t", f"{duration_s + margin_s:.3f}",
+         "-vf", f"fps={output_fps:.8f},scale={resize_width}:-2",
          "-frames:v", str(max_frames), "-c:v", "libx264", "-crf", str(crf),
          "-pix_fmt", "yuv420p", str(out)],
         capture_output=True, text=True,
@@ -281,7 +294,34 @@ def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, durati
         print(f"  {sample_dir.name}: direct video extract failed ({r.stderr[:120]})")
         out.unlink(missing_ok=True)
         return False
+    produced = _video_frame_count(out)
+    if produced != max_frames:
+        # A short clip is silently stretched by the loader, so it must never be
+        # written: the labels would assert content the pixels do not contain.
+        print(f"  {sample_dir.name}: extract produced {produced} frames, expected {max_frames}")
+        out.unlink(missing_ok=True)
+        return False
     return True
+
+
+def _video_frame_count(path: Path) -> int:
+    """Frames actually decodable from a clip.
+
+    ``CAP_PROP_FRAME_COUNT`` is frequently estimated from duration x fps rather
+    than counted, and the defect this guards against is exactly one frame — so
+    the header is not trustworthy at the precision required.  Decode and count.
+    """
+    capture = cv2.VideoCapture(str(path))
+    if not capture.isOpened():
+        return -1
+    frames = 0
+    while True:
+        ok, _frame = capture.read()
+        if not ok:
+            break
+        frames += 1
+    capture.release()
+    return frames
 
 
 def _even_indices(n: int, max_n: int) -> list[int]:
@@ -380,7 +420,7 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                 if not _extract_sample_video(
                     mov, sample_dir, start_s=start, duration_s=dur,
                     resize_width=resize_width, output_fps=output_fps,
-                    max_frames=max_frames, crf=video_crf,
+                    max_frames=max_frames, crf=video_crf, source_fps=fps,
                 ):
                     shutil.rmtree(sample_dir, ignore_errors=True)
                     continue

@@ -335,7 +335,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   identity is the wrong axis to worry about.
 
 ## EQ-021 — Fix the extractor: real tail margin plus a frame-count assertion
-- status: todo
+- status: done: PARTIAL — the frame-count assertion is shipped and tested (a short extract is now
+  rejected, not stretched). The tail margin is UNVALIDATED: this machine's ffmpeg writes containers
+  advertising 32 frames of which only 30 decode, so it cannot reproduce the rig's behaviour. See the
+  2026-08-20 EQ-021 entry.
 - tier: FREE to change, PAID to revalidate (requires a retrain)
 - hypothesis: extracting with `-t dur + 2/fps` (keeping `-frames:v 32`) and asserting the produced
   frame count equals `max_frames` yields clips whose pixels and labels share one timebase.
@@ -365,3 +368,19 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   and EQ-003's attribution stands.
 - why: EQ-003 attributed the whole low-headroom tail to tap-calibration residual. If a second,
   independent source of per-clip timing error exists, that attribution is wrong and the fix differs.
+
+## EQ-023 — Validate the tail margin on the rig
+- status: todo
+- tier: FREE (rig time only, no cloud spend)
+- blocked-by: a surviving segment `.mov` on the rig
+- hypothesis: with `-t duration + 2/source_fps`, the rig's ffmpeg produces exactly 32 decodable frames
+  where it previously produced 31.
+- method: on the rig, run the patched `_extract_sample_video` against a surviving `.mov` and count
+  decodable frames; compare against the same call without the margin. Confirm header and decode agree,
+  as they do corpus-wide.
+- expected: 31 -> 32 decodable frames, header matching decode.
+- kill: the margin does not move the count on the rig either — then the cause is not tail margin, and
+  the assertion alone (reject and re-extract with a wider window) is the whole fix.
+- why: EQ-021 could not validate this locally because this machine's ffmpeg exhibits a different
+  pathology (container advertises frames that do not decode). The fix must not be believed until it is
+  measured where it will run.
