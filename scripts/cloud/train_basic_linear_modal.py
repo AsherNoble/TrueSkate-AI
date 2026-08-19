@@ -793,6 +793,230 @@ def evaluate_bias_correction(data_subdir: str, checkpoint_name: str, *,
             if key not in {"baseline_metrics", "corrected_metrics"}}
 
 
+@app.function(image=image, cpu=2.0, timeout=3600, memory=8192,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_clip_headroom(data_subdir: str, *, sequence_length: int = 32) -> dict:
+    """How much clip remains after each gesture's commanded liftoff?
+
+    Metadata only — reads ``meta.json`` and never decodes a frame, so this is
+    cheap enough to run over the whole corpus.
+
+    EQ-003 found duration failures concentrate where the commanded liftoff sits
+    at or past the end of the sampled window (headroom < 2 frames: 2/6 failed,
+    versus 1/300 above it, Fisher p=9.6e-4).  ``frame_times`` are touch-start
+    relative, so "headroom" is simply ``frame_times[-1] - duration`` expressed in
+    sampled frames.  A model cannot read a liftoff that is not in its input, and
+    no amount of capacity fixes that — which is why this measurement decides
+    whether the fix is worth a retrain at all.
+    """
+    import json as _json
+    import numpy as np
+
+    root = Path("/corpus") / data_subdir
+    lead_in, tail_frames, durations, spacings = [], [], [], []
+    skipped = 0
+    samples = sorted(path for path in root.rglob("meta.json"))
+    for path in samples:
+        try:
+            meta = _json.loads(path.read_text())
+            times = np.asarray(meta["frame_times"], dtype=float)
+            duration = float(meta["duration"])
+        except Exception:
+            skipped += 1
+            continue
+        if times.ndim != 1 or len(times) < 2 or not np.isfinite(times).all():
+            skipped += 1
+            continue
+        # The loader subsamples `sequence_length` frames evenly across the clip,
+        # so the effective spacing is the clip span over the sampled intervals.
+        spacing = (times[-1] - times[0]) / max(sequence_length - 1, 1)
+        if spacing <= 0:
+            skipped += 1
+            continue
+        lead_in.append(-times[0] / spacing)
+        tail_frames.append((times[-1] - duration) / spacing)
+        durations.append(duration)
+        spacings.append(spacing)
+
+    tail = np.asarray(tail_frames)
+    lead = np.asarray(lead_in)
+    def describe(values):
+        return {"min": float(values.min()), "p01": float(np.quantile(values, .01)),
+                "median": float(np.median(values)), "p99": float(np.quantile(values, .99)),
+                "max": float(values.max())}
+    output = {
+        "data_subdir": data_subdir,
+        "sequence_length": sequence_length,
+        "clips": len(tail),
+        "skipped": skipped,
+        "frame_spacing_s": describe(np.asarray(spacings)),
+        "commanded_duration_s": describe(np.asarray(durations)),
+        # Frames of clip remaining AFTER commanded liftoff.  Negative means the
+        # liftoff is not in the clip at all.
+        "tail_frames_after_liftoff": describe(tail),
+        "lead_in_frames_before_touch": describe(lead),
+        "clips_tail_below_2_frames": int((tail < 2).sum()),
+        "clips_tail_below_2_fraction": float((tail < 2).mean()),
+        "clips_tail_negative": int((tail < 0).sum()),
+        "clips_tail_negative_fraction": float((tail < 0).mean()),
+    }
+    (Path("/models") / f"basic_linear_headroom_{data_subdir.replace('/', '_')}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
+@app.function(image=image, cpu=2.0, timeout=3600, memory=8192,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_split_session_overlap(data_subdir: str, checkpoint_name: str, *,
+                                seed: int | None = None,
+                                fresh_holdout_source: str | None = None,
+                                fresh_stratify_by_device: bool | None = None) -> dict:
+    """Do train / validation / test share recording sessions?
+
+    The holdout protocol is exact-COMMAND disjoint, which it enforces.  It says
+    nothing about sessions, so the same recording — same park, lighting, board
+    pose and camera state — can appear on both sides of the split.  That does
+    not violate the protocol, but it bounds how much generalisation a held-out
+    number demonstrates, and EQ-007's certification should choose this
+    deliberately rather than inherit it.
+
+    Metadata only: the dataset reads meta.json to build its keys and never
+    decodes a frame unless indexed.
+    """
+    import json as _json
+    import torch
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+
+    trainer = _trainer()
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    seed = payload.get("split_seed") if seed is None else seed
+    if fresh_holdout_source is None:
+        fresh_holdout_source = payload.get("fresh_holdout_source")
+    if fresh_stratify_by_device is None:
+        fresh_stratify_by_device = bool(payload.get("fresh_stratify_by_device"))
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=False,
+                                  **_payload_dataset_kwargs([payload]))
+    if fresh_holdout_source is None:
+        train_indices, val_indices, test_indices = split_by_command(data, seed=seed)
+    else:
+        train_indices, val_indices, test_indices = trainer.split_with_fresh_command_holdout(
+            data, fresh_source=fresh_holdout_source, seed=seed,
+            stratify_by_device=fresh_stratify_by_device,
+        )
+
+    def sessions(indices):
+        # segment_key is "<session>:segment_NNNNN" (or "legacy:<dir>").
+        return {data.segment_keys[index].rsplit(":", 1)[0] for index in indices}
+
+    train, validation, test = sessions(train_indices), sessions(val_indices), sessions(test_indices)
+    # How much of the evaluated data sits in a session the model also trained on?
+    train_sessions = train
+    test_in_train = sum(1 for index in test_indices
+                        if data.segment_keys[index].rsplit(":", 1)[0] in train_sessions)
+    val_in_train = sum(1 for index in val_indices
+                       if data.segment_keys[index].rsplit(":", 1)[0] in train_sessions)
+    output = {
+        "data_subdir": data_subdir,
+        "checkpoint": checkpoint_name,
+        "seed": seed,
+        "fresh_holdout_source": fresh_holdout_source,
+        "clips": {"train": len(train_indices), "validation": len(val_indices), "test": len(test_indices)},
+        "distinct_sessions": {"train": len(train), "validation": len(validation), "test": len(test)},
+        "session_overlap": {
+            "train_validation": len(train & validation),
+            "train_test": len(train & test),
+            "validation_test": len(validation & test),
+        },
+        "test_clips_in_a_training_session": test_in_train,
+        "test_clips_in_a_training_session_fraction": test_in_train / max(len(test_indices), 1),
+        "validation_clips_in_a_training_session": val_in_train,
+        "validation_clips_in_a_training_session_fraction": val_in_train / max(len(val_indices), 1),
+        "sessions_unique_to_test": sorted(test - train - validation),
+    }
+    (Path("/models") / f"basic_linear_session_overlap_{Path(checkpoint_name).stem}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
+@app.function(image=image, cpu=4.0, timeout=3600, memory=8192,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_clip_frame_counts(data_subdir: str) -> dict:
+    """Does each clip's video actually hold as many frames as its labels claim?
+
+    `frame_times` is SYNTHESISED by the aligner from constants
+    (`align_xctest_traces.py`: `[i/output_fps - pre_s for i in range(max_frames)]`),
+    so it asserts a schedule rather than measuring one.  Nothing verifies the
+    extracted mp4 against it, and `_decode_even_frames` stretches whatever frames
+    exist across the requested sequence length.  A short video therefore yields a
+    clip whose pixels are time-compressed relative to labels that still claim the
+    nominal schedule — silently, and invisibly to any metadata-only audit.
+
+    This reads only video headers, not pixels.
+    """
+    import json as _json
+    import cv2
+    import numpy as np
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    root = Path("/corpus") / data_subdir
+    rows, missing_video, unreadable = [], 0, 0
+
+    def inspect(meta_path):
+        """One clip: claimed frame count from metadata, actual from the container."""
+        sample = meta_path.parent
+        try:
+            meta = _json.loads(meta_path.read_text())
+            claimed = len(meta["frame_times"])
+        except Exception:
+            return ("unreadable", None)
+        video = sample / "frames.mp4"
+        if not video.exists():
+            return ("missing", None)
+        capture = cv2.VideoCapture(str(video))
+        actual = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        capture.release()
+        return ("ok", {"sample": str(sample.relative_to(root)), "claimed": claimed, "actual": actual})
+
+    # FUSE latency dominates and these are header reads, so fan out widely.
+    with ThreadPoolExecutor(max_workers=32) as pool:
+        for status, row in pool.map(inspect, sorted(root.rglob("meta.json"))):
+            if status == "ok":
+                rows.append(row)
+            elif status == "missing":
+                missing_video += 1
+            else:
+                unreadable += 1
+
+    claimed = np.array([r["claimed"] for r in rows])
+    actual = np.array([r["actual"] for r in rows])
+    short = actual < claimed
+    output = {
+        "data_subdir": data_subdir,
+        "clips_with_video": len(rows),
+        "missing_video": missing_video,
+        "unreadable_meta": unreadable,
+        "claimed_frames": {"min": int(claimed.min()), "max": int(claimed.max())} if len(rows) else {},
+        "actual_frames": {"min": int(actual.min()), "max": int(actual.max())} if len(rows) else {},
+        "clips_short": int(short.sum()),
+        "clips_short_fraction": float(short.mean()) if len(rows) else 0.0,
+        "shortfall_distribution": {
+            str(int(deficit)): int((claimed - actual == deficit).sum())
+            for deficit in sorted(set((claimed - actual).tolist()))
+        },
+        "worst_examples": sorted(
+            ({"sample": r["sample"], "claimed": r["claimed"], "actual": r["actual"]}
+             for r in rows if r["actual"] < r["claimed"]),
+            key=lambda r: r["actual"] - r["claimed"])[:12],
+    }
+    (Path("/models") / f"basic_linear_frame_counts_{data_subdir.replace('/', '_')}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,

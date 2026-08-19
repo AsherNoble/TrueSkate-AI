@@ -968,3 +968,82 @@ from the declared method: analysed those offline rather than paying for a new ru
 - **Next:** EQ-003 closed. New EQ-015 (headroom fix — extend the window or apply the Δ so late-onset
   clips contain their own liftoff), EQ-016 (the saturated `strong` trail mask), EQ-017 (confirm
   whether train shares sessions with val/test in a way that leaks).
+
+## EQ-015 — My headroom audit was CIRCULAR; the EQ-003 truncation mechanism SURVIVES, corrected (2026-08-20)
+
+- **Verdict: INVALID.** `audit_clip_headroom` cannot test the hypothesis it was built for.
+- **Why:** `align_xctest_traces.py:387` **synthesises** `frame_times` from constants —
+  `[round(i / output_fps - pre_s, 4) for i in range(max_frames)]`. It asserts a schedule; it never
+  measures one. So my "constant 0.5 s lead-in" and "constant 0.0731 s spacing" across 3,040 clips were
+  the aligner's own config divided by itself. Worse, the headline collapses algebraically:
+  `tail = (1.7667 − duration)/0.0731194`, an **exact affine function of commanded duration**. "0 clips
+  below 2 frames" merely restates `BASIC_LINEAR_MAX_S`. The audit was blind by construction to every
+  way rendered pixels can be misplaced — tap-calibration residual, the `start = max(0, gv − pre_s)`
+  clamp, and short mp4s (`_extract_sample_video` never verifies frame count, and `_decode_even_frames`
+  stretches whatever exists across 32).
+- **So the truncation mechanism was never falsified — I falsified a tautology.** Retracting the EQ-015
+  claim in full.
+- **`trail_frame_start` IS a real rendered-onset measurement.** Regressing
+  `trail_frame_end − trail_frame_start` on `duration/0.0731194`: **slope 1.008, intercept 0.09,
+  r = 0.915** (3/306 incoherent). The argmin pair spans the commanded duration in frames; no confound
+  does that.
+- **Corrected numbers, on RENDERED headroom** `31 − (trail_frame_start + duration/0.0731194)`:
+  min **−0.24**, **1 clip negative** (not 2 — the EQ-003 entry used 32/2.27 = 14.10 fr/s instead of the
+  actual 1/0.0731194 = 13.68), **6 clips below 2 frames (2.0%)**, with a monotone dose-response in mean
+  |duration error|: **0.094** (hr<2) / 0.070 (hr<4) / 0.053 (hr<6) / **0.016** (rest), all
+  underestimation. Decisively: among the **291 clips with headroom ≥ 6, corr(trail_frame_start,
+  |err|) = +0.039** — the +0.328 is carried entirely by the low-headroom tail, and is not a general
+  late-onset effect, not `end_error` (r = −0.048), not chord, not gesture index.
+- **There is NO unapplied 15-frame Δ in this corpus.** Median rendered onset is frame 8 vs nominal
+  6.84 → ~0.085 s residual; `basic_linear_dataset.py:33-35` rejects any sample lacking
+  `tap_calibration.accepted`, so every clip here was per-segment calibrated. 94% endpoint recovery is
+  consistent with a sub-frame residual.
+
+### Corrections to the 2026-08-19 EQ-003 entry — these sentences are FALSE
+1. "it is the expected residue of the known Δ ≈ +1.11s command→pixel offset that the aligner currently
+   applies as 0" — **false for this corpus**; it is per-segment calibrated, residual ~1 frame.
+2. "Two clips have **negative** headroom" — **arithmetic error**; recomputed at the true sampled rate it
+   is **one** clip, with six below 2 frames.
+3. "the **commanded** liftoff falls past the end of the clip" — **wrong word, and the word that misled
+   EQ-015**. Commanded liftoff is always inside the window; **rendered** liftoff is what leaves.
+4. "Cheapest fix is a window/offset change" — **false as a prescription**. The defect is per-clip
+   variance about a correct constant, so a constant shift fixes nothing. The fix is per-clip:
+   validate mp4 frame count against `frame_times`, or flag clips whose detected onset deviates from
+   nominal by more than N frames.
+- **Scope discipline:** the mechanism rests on **6 clips at headroom<2 and 3 failures**. With n=6 one
+  cannot distinguish "truncation causes all the excess" from "half of it". Do not let this become a
+  quantitative claim about what a fix buys.
+- **Next:** EQ-018 — corpus-wide mp4 frame-count vs `frame_times` audit (running). If videos are short,
+  this is a harness bug affecting label timing corpus-wide; if they are 32, the cause is
+  tap-calibration residual and the fix is an onset-deviation filter.
+
+## EQ-017 — The holdout is command-disjoint and 100% session-SHARED (2026-08-20)
+
+- **Verdict: CONFIRMED as a measurement**, with two of my four conclusion sentences withdrawn.
+- **Measured** (`audit_split_session_overlap`, metadata only, split re-derived from the payload):
+  train 2,734 / validation 153 / test 153 clips; **every** validation and test clip sits in a session
+  that also appears in training; **zero** sessions unique to test. Corroborated independently: the
+  audit's 90 test / 91 validation sessions exactly equal the distinct session directories in the
+  autopsy artefacts, produced by a different function.
+- **Red team CONFOUNDED two claims:**
+  1. **"Stronger than the hypothesis predicted" — withdrawn.** 100% is the design's *expected* value,
+     not a surprise: test commands are a ~5% random draw over fresh sessions holding tens of clips
+     each, so P(a session contributes both a train and a test clip) → 1. `sessions_unique_to_test = []`
+     is what a correct random command split *must* produce.
+  2. **"Every MVP-2 number inherits this caveat" — unmeasured, and partly unmeasurable.** 90.10% and
+     93.07% come from the 2,022-command corpus under `split_by_command`, which I did not audit; legacy
+     metas carry no `session` field, so this audit would collapse them all into one bucket and prove
+     nothing. Only 94.12% and EQ-002's 96.08% — the split I actually measured — provably inherit it.
+- **A defect in my own key:** `_segment_key` falls back to `legacy:<dir>`, so `rsplit(":", 1)[0]`
+  returns the literal `"legacy"` for every such sample. `distinct_sessions.train = 348` is therefore
+  ~347 fresh sessions plus one collapsed bucket. It deflates the train count and **cannot** inflate the
+  headline (test/val keys are true session ids), but the count should not be quoted until fixed.
+- **The more useful finding, from the artefacts:** session identity looks like a *weak* nuisance here.
+  The 9 test failures fall in 8 distinct sessions and the 9 validation failures in 9 — no bunching.
+  And every evaluated clip is `the_workshop`, all sessions dated 2026-08-13 within a four-hour window,
+  146 XR / 7 XR2. **The binding coverage gap is park / day / device, not session id** — XR2 has 7 test
+  clips and already scores 71.4%. Session-disjointness inside a four-hour single-park window would buy
+  almost nothing.
+- **Next:** EQ-019 (fix the legacy session key and extend the audit to the 2,022-command split before
+  any cross-corpus claim); EQ-020 (device/park/day coverage is the real generalisation gap — quantify
+  it for EQ-007's protocol).

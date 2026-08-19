@@ -238,7 +238,11 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   evidence about. The diagnostic is weaker than the gate it explains.
 
 ## EQ-015 — Give late-onset clips enough headroom to contain their own liftoff
-- status: todo
+- status: done: INVALID — my `audit_clip_headroom` was CIRCULAR (`frame_times` is synthesised from
+  aligner constants, so `tail` is an affine function of commanded duration and measures nothing). The
+  EQ-003 truncation mechanism SURVIVES on RENDERED headroom: 6 clips <2 frames (2.0%), 1 negative,
+  monotone dose-response, and corr collapses to +0.039 once low-headroom clips are excluded. No
+  unapplied Delta in this corpus. See the 2026-08-20 EQ-015 entry.
 - tier: FREE to analyse, PAID to retrain
 - hypothesis: duration failures are clips whose commanded liftoff falls at or past frame 31, caused by
   late `trail_frame_start` combined with an aligner Δ currently applied as 0. Restoring headroom
@@ -267,7 +271,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   not, and that assumption is load-bearing for the whole timing story.
 
 ## EQ-017 — Does train share recording sessions with validation and test?
-- status: todo
+- status: done: CONFIRMED — 100% of validation and test clips sit in a training session; zero sessions
+  unique to test. Expected under the design, not a defect. But session identity is a WEAK nuisance
+  here (failures do not bunch by session); the real coverage gap is park/day/device. See the
+  2026-08-20 EQ-017 entry.
 - tier: FREE
 - hypothesis: the exact-command holdout is command-disjoint but not session-disjoint (111 sessions are
   shared between val and test), so train may share sessions — and therefore park, lighting and board
@@ -279,3 +286,47 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: it does not invalidate the command-disjoint protocol, but it bounds how much generalisation the
   held-out numbers actually demonstrate, and EQ-007's certification protocol should decide this
   deliberately rather than inherit it.
+
+## EQ-018 — Do the clip videos hold as many frames as their labels claim?
+- status: running
+- tier: FREE (cheap CPU, header reads only)
+- hypothesis: `frame_times` is synthesised by the aligner and nothing verifies the extracted mp4
+  against it, while `_decode_even_frames` stretches whatever frames exist across the sequence length —
+  so a short video yields a clip whose pixels are time-compressed relative to labels claiming the
+  nominal schedule.
+- method: for every clip, compare `len(meta["frame_times"])` against the mp4's container frame count.
+- expected: either a clean corpus (all 32) or a shortfall population concentrated in the low-headroom
+  clips.
+- kill: all videos hold the claimed frame count — then the residual is tap-calibration jitter and the
+  fix is an onset-deviation filter, not a harness repair.
+- why: this single number decides which fix EQ-003's duration tail needs, and a shortfall would be a
+  label-timing bug affecting the whole corpus, not just duration.
+
+## EQ-019 — Fix the legacy session key, then audit the 2,022-command split
+- status: todo
+- tier: FREE
+- hypothesis: `_segment_key`'s `legacy:<dir>` fallback collapses every legacy sample into one bucket,
+  so session counts for the 2,022-command corpus are meaningless and the cross-corpus claim cannot be
+  made.
+- method: derive the session from the sample path (`relative_to(root).parts[1]`) instead of the meta
+  key; re-run the overlap audit on both corpora.
+- expected: a real train session count, and a defensible statement about whether 90.10%/93.07% share
+  sessions too.
+- kill: legacy paths carry no usable session structure either — then say so and stop claiming anything
+  about that corpus.
+- why: EQ-017's headline is sound but its train session count is wrong, and the cross-corpus sentence
+  was withdrawn for lack of evidence.
+
+## EQ-020 — Quantify the real generalisation gap: park, day, device
+- status: todo
+- tier: FREE to measure
+- hypothesis: the evaluated split is one park (`the_workshop`), one four-hour window (2026-08-13), and
+  146 XR / 7 XR2 clips — so park/day/device coverage, not session identity, bounds what the held-out
+  numbers demonstrate.
+- method: tabulate clips and recovery by park, session date and device across the corpus; report the
+  XR2 recovery interval given its tiny support.
+- expected: a coverage table showing the held-out set exercises one condition, with XR2 severely
+  under-supported (already 71.4% on 7 clips).
+- kill: the corpus already spans multiple parks/days in the evaluated split — then coverage is fine.
+- why: EQ-007's certification protocol should choose its axes deliberately; EQ-017 showed session
+  identity is the wrong axis to worry about.
