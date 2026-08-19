@@ -22,6 +22,9 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_ROOT / "src"))
 
+from trueskate_ai.vision.basic_hold_dataset import (  # noqa: E402
+    DEFAULT_IMAGE_HEIGHT, DEFAULT_IMAGE_WIDTH,
+)
 from trueskate_ai.vision.basic_linear_dataset import (  # noqa: E402
     BasicLinearClipDataset, split_by_command, split_by_segment,
 )
@@ -84,9 +87,40 @@ def _recovery_audit(model: torch.nn.Module, dataset: BasicLinearClipDataset,
         geometry = "low_slope" if slope < 0.8 else "mid_slope" if slope < 1.6 else "high_slope"
         for key in (f"device:{device_name}", f"geometry:{geometry}"):
             buckets.setdefault(key, []).append(record["recovered"])
+        record.update({
+            "sample": str(dataset.sample_paths[index].relative_to(dataset.root)),
+            "device": device_name,
+            "geometry": geometry,
+            "slope": float(slope),
+            "dx": float(x1) - float(x0),
+            "commanded_duration": float(meta["duration"]),
+        })
     return {
         key: {"samples": len(values), "gesture_recovery_accuracy": float(sum(values) / len(values))}
         for key, values in sorted(buckets.items())
+    }, records
+
+
+def _tail_report(records: list[dict]) -> dict:
+    """Summarise the failure tail, not just the mean recovery rate.
+
+    Recovery is a threshold statistic, so two checkpoints with the same
+    percentage can have very differently shaped tails.  The remaining MVP-2
+    error is a narrow endpoint tail well outside an otherwise tight core, so
+    upper quantiles and the failing-clip list are what distinguish a real
+    improvement from a reshuffle.
+    """
+    endpoint = [value for record in records for value in (record["start_error"], record["end_error"])]
+    return {
+        "endpoint_p99": float(np.quantile(endpoint, 0.99)),
+        "endpoint_max": float(np.max(endpoint)),
+        "failures": int(sum(1 for record in records if not record["recovered"])),
+        "failing_samples": [
+            {key: record[key] for key in
+             ("sample", "device", "geometry", "slope", "start_error", "end_error",
+              "duration_error", "predicted", "target")}
+            for record in records if not record["recovered"]
+        ],
     }
 
 
@@ -179,9 +213,17 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           start_sigma: float = .05, end_onset: float = .24,
           temporal_mixer: bool = False, trajectory_weight: float = 0.0,
           trajectory_track: bool = False, fresh_holdout_source: str | None = None,
-          evaluate_test: bool = True, fresh_stratify_by_device: bool = False) -> dict:
+          evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
+          line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
+          image_width: int = DEFAULT_IMAGE_WIDTH, image_height: int = DEFAULT_IMAGE_HEIGHT) -> dict:
     torch.manual_seed(seed)
-    dataset = BasicLinearClipDataset(data, cache_frames=cache_frames)
+    # The line fit reads endpoints off the moving-contact map, so that map is
+    # the primary evidence path and must be supervised, not left to learn only
+    # through the endpoint loss.
+    if line_fit:
+        trajectory_track = True
+    dataset = BasicLinearClipDataset(data, cache_frames=cache_frames,
+                                     image_width=image_width, image_height=image_height)
     splitters = {"segment": split_by_segment, "command": split_by_command}
     if split_strategy not in splitters:
         raise ValueError(f"unknown split strategy {split_strategy!r}; choose from {sorted(splitters)}")
@@ -202,7 +244,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     model = BasicLinearRegressor(base_channels=base_channels, start_onset=start_onset,
                                  start_sigma=start_sigma, end_onset=end_onset,
                                  temporal_mixer=temporal_mixer,
-                                 trajectory_track=trajectory_track).to(device)
+                                 trajectory_track=trajectory_track, line_fit=line_fit,
+                                 irls_iterations=irls_iterations, huber_delta=huber_delta).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     best: dict | None = None
     for epoch in range(1, epochs + 1):
@@ -251,8 +294,11 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     # per seed.  They train each candidate with validation-only selection, then
     # expose the test commands once through evaluate_checkpoint_ensemble.
     test = basic_linear_metrics(model, test_loader, device) if evaluate_test else None
+    audit, tail = (_recovery_audit(model, dataset, test_indices, device, batch_size)
+                   if evaluate_test else (None, None))
     payload = {
-        "model_type": "basic_linear_regressor_v3_separate_endpoint_heads_tight_start_prior",
+        "model_type": ("basic_linear_regressor_v4_robust_constant_velocity_line_fit" if line_fit
+                       else "basic_linear_regressor_v3_separate_endpoint_heads_tight_start_prior"),
         "gesture_contract": "two-point, constant-velocity, finite-slope linear drag",
         "target_schema": ["x0", "y0", "x1", "y1", "duration_s"],
         "uses_pre_touch_difference": True,
@@ -270,6 +316,9 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "end_onset": end_onset,
         "temporal_mixer": temporal_mixer,
         "trajectory_track": trajectory_track,
+        "line_fit": line_fit,
+        "irls_iterations": irls_iterations if line_fit else None,
+        "huber_delta": huber_delta if line_fit else None,
         "split_seed": split_seed,
         "split_strategy": split_strategy,
         "fresh_holdout_source": fresh_holdout_source,
@@ -280,10 +329,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "best_epoch": best["epoch"],
         "validation": best["validation"],
         "test": test,
-        "test_recovery_audit": (
-            _recovery_audit(model, dataset, test_indices, device, batch_size)
-            if evaluate_test else None
-        ),
+        "test_recovery_audit": audit,
+        "test_tail": _tail_report(tail) if tail is not None else None,
         "passes_acceptance": passes_basic_linear_acceptance(test) if test is not None else None,
         "state_dict": best["state_dict"],
     }
@@ -319,6 +366,18 @@ def main() -> None:
                         help="Optional low-weight per-frame manifest-trajectory score-map objective.")
     parser.add_argument("--trajectory-track", action="store_true",
                         help="Use a separate moving-contact score map for trajectory supervision.")
+    parser.add_argument("--line-fit", action="store_true",
+                        help="Read endpoints off a robust constant-velocity fit to the per-frame "
+                             "contact map instead of two independent soft-argmax reads. Implies "
+                             "--trajectory-track.")
+    parser.add_argument("--irls-iterations", type=int, default=3,
+                        help="Reweighting passes for the line fit; 0 gives plain least squares.")
+    parser.add_argument("--huber-delta", type=float, default=.02,
+                        help="Normalised residual beyond which a frame is down-weighted by the line fit.")
+    parser.add_argument("--image-width", type=int, default=DEFAULT_IMAGE_WIDTH,
+                        help="Clip decode width; the stride-two score map has half this many x cells.")
+    parser.add_argument("--image-height", type=int, default=DEFAULT_IMAGE_HEIGHT,
+                        help="Clip decode height; keep the 288:128 source aspect when changing width.")
     parser.add_argument("--split-strategy", choices=("segment", "command"), default="command",
                         help="command withholds exact {x0,y0,x1,y1,dur}; required generalisation protocol.")
     parser.add_argument("--fresh-holdout-source", default=None,
@@ -339,6 +398,13 @@ def main() -> None:
         parser.error("epochs, batch-size, lr, and start-sigma must be positive; map weights non-negative")
     if args.min_samples < 0:
         parser.error("min-samples must be non-negative")
+    if args.irls_iterations < 0 or args.huber_delta <= 0:
+        parser.error("irls-iterations must be non-negative and huber-delta positive")
+    if args.image_width < 1 or args.image_height < 1:
+        parser.error("image-width and image-height must be positive")
+    if args.line_fit and not args.trajectory_weight:
+        parser.error("--line-fit needs a positive --trajectory-weight: the contact map it fits "
+                     "is the primary evidence path and must be supervised")
     dataset_probe = BasicLinearClipDataset(args.data)
     if args.min_samples and len(dataset_probe) < args.min_samples:
         parser.error(f"need {args.min_samples} accepted basic-linear clips; found {len(dataset_probe)} "
@@ -353,7 +419,10 @@ def main() -> None:
                    trajectory_track=args.trajectory_track,
                    fresh_holdout_source=args.fresh_holdout_source,
                    evaluate_test=not args.skip_test,
-                   fresh_stratify_by_device=args.fresh_stratify_by_device)
+                   fresh_stratify_by_device=args.fresh_stratify_by_device,
+                   line_fit=args.line_fit, irls_iterations=args.irls_iterations,
+                   huber_delta=args.huber_delta, image_width=args.image_width,
+                   image_height=args.image_height)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 

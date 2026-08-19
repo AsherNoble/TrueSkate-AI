@@ -6,16 +6,34 @@ from torch import nn
 
 from trueskate_ai.data.gesture_sampling import BASIC_LINEAR_MAX_S, BASIC_LINEAR_MIN_S
 
+# Aligned MVP-2 clips span a fixed [-0.5, 1.77]s response window, so one second
+# of command time is 1/CLIP_WINDOW_S of normalised clip time.  This is a
+# property of the aligner, not a swept hyper-parameter.
+CLIP_WINDOW_S = 2.27
+
 
 class BasicLinearRegressor(nn.Module):
     """Predict ``[x0,y0,x1,y1,duration]`` while retaining spatial evidence."""
 
     def __init__(self, base_channels: int = 16, *, start_onset: float = .24,
                  start_sigma: float = .05, end_onset: float = .24,
-                 temporal_mixer: bool = False, trajectory_track: bool = False):
+                 temporal_mixer: bool = False, trajectory_track: bool = False,
+                 line_fit: bool = False, irls_iterations: int = 3,
+                 huber_delta: float = .02):
         super().__init__()
         if start_sigma <= 0:
             raise ValueError("start_sigma must be positive")
+        if irls_iterations < 0:
+            raise ValueError("irls_iterations must be non-negative")
+        if huber_delta <= 0:
+            raise ValueError("huber_delta must be positive")
+        # The line fit reads endpoints off a trajectory consensus, so it needs
+        # the per-frame contact map regardless of the standalone track flag.
+        if line_fit:
+            trajectory_track = True
+        self.line_fit_enabled = bool(line_fit)
+        self.irls_iterations = int(irls_iterations)
+        self.huber_delta = float(huber_delta)
         c = base_channels
         self.start_onset = float(start_onset)
         self.start_sigma = float(start_sigma)
@@ -52,15 +70,25 @@ class BasicLinearRegressor(nn.Module):
         # teaches the shared encoder where the moving contact is without
         # forcing either endpoint-specific head to score the entire trail.
         self.trajectory_score = nn.Conv2d(c * 4, 1, 1) if trajectory_track else None
-        # The path decoder starts as a near-zero correction to the established
-        # endpoint decoder.  It earns influence through endpoint loss after its
-        # own per-frame trajectory map has become useful; this avoids a cold
-        # untrained tracker destabilising command recovery.
-        self.trajectory_fusion = nn.Parameter(torch.tensor(-4.0)) if trajectory_track else None
+        # In the blended track decoder the path map starts as a near-zero
+        # correction to the endpoint decoder, earning influence only once its
+        # own per-frame map is useful.  That caution is also why it never
+        # overtook the baseline, so the line fit replaces the gate outright
+        # rather than blending past it.
+        self.trajectory_fusion = (nn.Parameter(torch.tensor(-4.0))
+                                  if trajectory_track and not line_fit else None)
         self.duration_head = nn.Sequential(
             nn.Conv1d(2, c, 3, padding=1), nn.SiLU(), nn.Conv1d(c, c, 3, padding=1), nn.SiLU(),
             nn.AdaptiveAvgPool1d(8), nn.Flatten(), nn.Linear(c * 8, c * 2), nn.SiLU(), nn.Linear(c * 2, 1),
         )
+        # The line fit needs to know *where on the path* each frame sits, which
+        # requires a touch onset.  Learn it per clip from the same evidence
+        # series rather than re-imposing the swept 0.24 constant: onset and
+        # duration together define the active window the fit regresses over.
+        self.onset_head = nn.Sequential(
+            nn.Conv1d(2, c, 3, padding=1), nn.SiLU(), nn.Conv1d(c, c, 3, padding=1), nn.SiLU(),
+            nn.AdaptiveAvgPool1d(8), nn.Flatten(), nn.Linear(c * 8, c * 2), nn.SiLU(), nn.Linear(c * 2, 1),
+        ) if line_fit else None
 
     @staticmethod
     def _read_xy(scores: torch.Tensor, time_prior: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -77,6 +105,87 @@ class BasicLinearRegressor(nn.Module):
                 (attention * ya.view(1, 1, height, 1)).sum((1, 2, 3)))
 
     @staticmethod
+    def _frame_positions(scores: torch.Tensor) -> torch.Tensor:
+        """Decode one contact position per frame from a trajectory score map.
+
+        One spatial softmax *per frame* (not one global space-time softmax),
+        matching the per-frame manifest supervision in
+        ``basic_linear_trajectory_map_loss``.
+        """
+        if scores.ndim != 4:
+            raise ValueError("scores must have shape [batch,time,height,width]")
+        _batch, _steps, height, width = scores.shape
+        spatial = torch.softmax(scores.flatten(2) / .15, dim=2).reshape_as(scores)
+        xa = torch.linspace(0., 1., width, dtype=scores.dtype, device=scores.device)
+        ya = torch.linspace(0., 1., height, dtype=scores.dtype, device=scores.device)
+        return torch.stack((
+            (spatial * xa.view(1, 1, 1, width)).sum((2, 3)),
+            (spatial * ya.view(1, 1, height, 1)).sum((2, 3)),
+        ), dim=2)
+
+    @staticmethod
+    def _fit_constant_velocity(positions: torch.Tensor, fraction: torch.Tensor,
+                               weights: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Weighted least-squares fit of ``p(s) = p0 + (p1 - p0) * s``.
+
+        Closed form, so it is a differentiable 2x2 solve rather than an inner
+        optimisation.  Endpoints become a consensus over every observed frame
+        instead of a read at one moment, which is the point: no single occluded
+        or mis-detected frame can carry an endpoint on its own.
+        """
+        if positions.ndim != 3 or positions.shape[2] != 2:
+            raise ValueError("positions must have shape [batch,time,2]")
+        if fraction.shape != positions.shape[:2] or weights.shape != positions.shape[:2]:
+            raise ValueError("fraction and weights must have shape [batch,time]")
+        basis0, basis1 = 1. - fraction, fraction
+        s00 = (weights * basis0 * basis0).sum(dim=1)
+        s01 = (weights * basis0 * basis1).sum(dim=1)
+        s11 = (weights * basis1 * basis1).sum(dim=1)
+        rhs0 = (weights[:, :, None] * basis0[:, :, None] * positions).sum(dim=1)
+        rhs1 = (weights[:, :, None] * basis1[:, :, None] * positions).sum(dim=1)
+        # A clip whose evidence is concentrated at one end of the path leaves the
+        # normal equations near-singular.  A small ridge keeps the solve finite
+        # and bounded there instead of letting it explode along the null
+        # direction; it biases the unsupported endpoint slightly toward the
+        # origin, which the endpoint loss then corrects.
+        ridge = 1e-3
+        s00, s11 = s00 + ridge, s11 + ridge
+        determinant = (s00 * s11 - s01 * s01).clamp_min(1e-8)
+        start = (s11[:, None] * rhs0 - s01[:, None] * rhs1) / determinant[:, None]
+        end = (s00[:, None] * rhs1 - s01[:, None] * rhs0) / determinant[:, None]
+        return start, end
+
+    def _line_fit_endpoints(self, scores: torch.Tensor, *, onset: torch.Tensor,
+                            duration_norm: torch.Tensor, active: torch.Tensor,
+                            ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Robustly fit the commanded straight path and read off its endpoints."""
+        steps = scores.shape[1]
+        positions = self._frame_positions(scores)
+        time = torch.linspace(0., 1., steps, dtype=scores.dtype, device=scores.device)
+        span = duration_norm.clamp_min(1e-3)[:, None]
+        fraction = ((time[None, :] - onset[:, None]) / span).clamp(0., 1.)
+        # Confidence: a frame showing a real contact has a sharply peaked map,
+        # while a pre-touch or post-liftoff frame is flat.  Peak-minus-mean is
+        # that sharpness, and the soft active window suppresses frames the
+        # predicted timing says hold no contact at all.
+        peak = scores.flatten(2).amax(dim=2)
+        mean = scores.flatten(2).mean(dim=2)
+        confidence = nn.functional.softplus(peak - mean)
+        edge = .02
+        window = (torch.sigmoid((time[None, :] - onset[:, None]) / edge)
+                  * torch.sigmoid((onset[:, None] + span - time[None, :]) / edge))
+        weights = confidence * window * active[None, :]
+        for _ in range(self.irls_iterations):
+            start, end = self._fit_constant_velocity(positions, fraction, weights)
+            fitted = start[:, None, :] + (end - start)[:, None, :] * fraction[:, :, None]
+            residual = torch.linalg.vector_norm(positions - fitted, dim=2)
+            # Standard IRLS: the reweighting is treated as a constant so
+            # gradients flow through the solve, not through the weight update.
+            huber = (self.huber_delta / residual.clamp_min(1e-6)).clamp(max=1.).detach()
+            weights = weights * huber
+        return self._fit_constant_velocity(positions, fraction, weights)
+
+    @staticmethod
     def _read_track_endpoints(scores: torch.Tensor, *, start_centre: torch.Tensor,
                               end_centre: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Decode path-map contact positions, then select start and liftoff.
@@ -87,14 +196,8 @@ class BasicLinearRegressor(nn.Module):
         endpoints without asking the endpoint heads to represent every point
         on the path.
         """
-        batch, steps, height, width = scores.shape
-        spatial = torch.softmax(scores.flatten(2) / .15, dim=2).reshape_as(scores)
-        xa = torch.linspace(0., 1., width, dtype=scores.dtype, device=scores.device)
-        ya = torch.linspace(0., 1., height, dtype=scores.dtype, device=scores.device)
-        positions = torch.stack((
-            (spatial * xa.view(1, 1, 1, width)).sum((2, 3)),
-            (spatial * ya.view(1, 1, height, 1)).sum((2, 3)),
-        ), dim=2)
+        batch, steps = scores.shape[:2]
+        positions = BasicLinearRegressor._frame_positions(scores)
         time = torch.linspace(0., 1., steps, dtype=scores.dtype, device=scores.device)
 
         def select(centre: torch.Tensor, sigma: float) -> torch.Tensor:
@@ -137,6 +240,21 @@ class BasicLinearRegressor(nn.Module):
         # ablation showed the start location is sharply concentrated at onset;
         # use that information during training instead of asking the head to
         # choose a start among the entire accumulated trace.
+        if self.line_fit_enabled:
+            assert self.onset_head is not None and trajectory_scores is not None
+            # Onset is learned per clip and bounded to the plausible first half
+            # of the window; duration is shared with the head above, so the two
+            # jointly define the interval the fit regresses over.
+            fitted_onset = torch.sigmoid(self.onset_head(series))[:, 0] * .5
+            start_xy, end_xy = self._line_fit_endpoints(
+                trajectory_scores, onset=fitted_onset,
+                duration_norm=duration[:, 0] / CLIP_WINDOW_S,
+                active=(time >= .18).to(dtype=frames.dtype),
+            )
+            # The least-squares solve leaves non-standard strides; downstream
+            # losses reshape the prediction, so hand back a contiguous tensor.
+            prediction = torch.cat((start_xy, end_xy, duration), dim=1).contiguous()
+            return prediction, start_scores, end_scores, trajectory_scores
         onset = time.new_full((batch,), self.start_onset)
         # Start and end timing use separate anchors.  A start-only held-out
         # sweep may select an early/broad prior; it must not shift the end map
@@ -176,4 +294,12 @@ class BasicLinearRegressor(nn.Module):
     @torch.no_grad()
     def predict_linear(self, frames: torch.Tensor) -> dict[str, torch.Tensor]:
         value = self(frames)
-        return {"x0": value[:, 0], "y0": value[:, 1], "x1": value[:, 2], "y1": value[:, 3], "dur": value[:, 4]}
+        # The line fit solves for endpoints and may extrapolate slightly past
+        # the screen when a clip's evidence covers only part of the path.  Clamp
+        # on the inference boundary only: projecting onto the feasible screen
+        # can only reduce error against an in-range command, while clamping
+        # inside ``forward`` would zero the gradient of a saturated endpoint
+        # during training.
+        coordinates = value[:, :4].clamp(0., 1.)
+        return {"x0": coordinates[:, 0], "y0": coordinates[:, 1],
+                "x1": coordinates[:, 2], "y1": coordinates[:, 3], "dur": value[:, 4]}

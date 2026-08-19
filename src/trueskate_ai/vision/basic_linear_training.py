@@ -187,6 +187,11 @@ def basic_linear_recovery_records(model: torch.nn.Module, loader, device: torch.
                 "end_error": float(end[index]),
                 "duration_error": float(duration[index]),
                 "recovered": float(recovered[index]),
+                # Keep the raw pair as well as the error: a tail audit needs to
+                # know *where* a missed endpoint landed (short of the trail, past
+                # it, or on the opposite end) to tell failure modes apart.
+                "predicted": [float(value) for value in prediction[index].cpu()],
+                "target": [float(value) for value in target[index].cpu()],
             })
     return records
 
