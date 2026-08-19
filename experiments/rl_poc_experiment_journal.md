@@ -1797,3 +1797,29 @@ Even a 99% Model 1 may not label expert play usably, because **it would be 99% i
   whole loop" before this check was run. The check that killed it — does the expert corpus carry
   manifests? — was one `find` command. Cheap disconfirming checks belong **before** the write-up, not
   after.
+
+## EQ-037 — Model 2's training path runs; and I clobbered a checkpoint doing it (2026-08-20)
+
+The cheapest unanswered question about Model 2: does its training path work at all? Never
+demonstrated on anything.
+
+- **Ran** `train_sequence_model.py --smoke --epochs 3` locally (MPS, free, no cloud): 64 synthetic
+  samples, `n_frames=6 m_past=4 m_out=1 d=256`, **3.62M params**, loss **1.41 → 0.063 → 0.032**,
+  `SMOKE OK`. So the architecture, dataset plumbing and training loop are sound, and the model can fit
+  a gesture-sequence objective.
+- **What this does and does not establish.** It proves the *path* runs and the objective is learnable
+  on synthetic data. It says nothing about real frames, and — per the EQ-034 retraction — the real-frame
+  question cannot be answered without labels on structured play, which is exactly the Model-1 gate.
+  Do not cite this as "Model 2 works".
+- **MISTAKE, disclosed: the smoke run overwrote `notebooks/models/sequence_model.pth`.** The trainer's
+  default `--out` is that path and I did not override it. `*.pth` is gitignored, so there is no version
+  history to restore from. Mitigating evidence that the loss is small: the EQ-005 investigation found
+  Model 2 has never been trained on real data (the 2026-07-19 entry records Model-1-assembled clips as
+  ~5% real strokes, "useless to train Model 2 on"), so the file was almost certainly a prior smoke
+  artefact — `tmp/model2_v2_smoke.pth` (2026-07-17) is its sibling. But "almost certainly" is not
+  "verified", and the file is gone either way.
+- **Lesson for the harness, not just this run:** a *diagnostic* invocation wrote to a *production*
+  artefact path by default. Any smoke or audit run should be given an explicit throwaway `--out`.
+  Worth a guard: default the smoke path to `tmp/` rather than `notebooks/models/`.
+- **Next:** EQ-038 — make `--smoke` write to `tmp/` by default so a diagnostic can never clobber a
+  model artefact.

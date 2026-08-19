@@ -646,3 +646,23 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: a 99% single-park Model 1 does not imply a usable labeller for expert play, so the current target
   can be met in full and still not unblock Model 2. Option (b) is likely cheapest and is entirely in
   Asher's hands.
+
+## EQ-037 — Model 2 plumbing check
+- status: done: CONFIRMED — `train_sequence_model.py --smoke` runs (3.62M params, loss 1.41 -> 0.032).
+  Architecture and training loop are sound on synthetic data; real-frame training remains gated on
+  labels. NOTE: the run overwrote `notebooks/models/sequence_model.pth` (gitignored, unrecoverable);
+  almost certainly a prior smoke artefact. See the 2026-08-20 EQ-037 entry.
+
+## EQ-038 — A diagnostic must not be able to clobber a model artefact
+- status: todo
+- tier: FREE
+- hypothesis: `train_sequence_model.py --smoke` defaults `--out` to
+  `notebooks/models/sequence_model.pth`, so a throwaway diagnostic overwrites a production path. The
+  same pattern may exist in other scripts.
+- method: default the smoke path to `tmp/`; sweep the other entry points for diagnostics that write to
+  `notebooks/models/` or another durable location by default; add a test asserting the smoke default is
+  under `tmp/`.
+- expected: one-line fix here, plus whatever the sweep turns up.
+- kill: n/a — defect fix.
+- why: it already cost one checkpoint this session. Model artefacts are gitignored, so a clobber is
+  unrecoverable and silent.
