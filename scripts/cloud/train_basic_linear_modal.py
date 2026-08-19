@@ -58,6 +58,21 @@ def _model_from_payload(payload, torch):
     )
 
 
+def _payload_resolution(payloads) -> dict:
+    """Resolve the decode resolution a set of checkpoints was trained at.
+
+    Evaluation used to build every dataset at the library default, which would
+    silently feed a checkpoint trained at another width the wrong input rather
+    than failing.  Checkpoints combined into one ensemble must agree.
+    """
+    sizes = {(int(payload.get("image_width") or 128), int(payload.get("image_height") or 288))
+             for payload in payloads}
+    if len(sizes) != 1:
+        raise ValueError(f"checkpoints disagree on decode resolution: {sorted(sizes)}")
+    width, height = sizes.pop()
+    return {"image_width": width, "image_height": height}
+
+
 # This compact clip regressor does not need A10G-class throughput.  The
 # dedicated 2k run spent hours queued without a container on A10G, while its
 # fixed 32 GiB memory headroom is what protects decoded-frame caching.  Accept
@@ -168,7 +183,8 @@ def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0
     from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
-    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_resolution([payload]))
     _train, _val, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
     model = _model_from_payload(payload, torch).to(device)
@@ -217,7 +233,8 @@ def evaluate_start_timing(data_subdir: str, checkpoint_name: str, *, seed: int =
     from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
-    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_resolution([payload]))
     _train, _val, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
     model = _model_from_payload(payload, torch).to(device)
@@ -266,7 +283,8 @@ def evaluate_start_timing_validation_selected(data_subdir: str, checkpoint_name:
     from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
-    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_resolution([payload]))
     _train, val_indices, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
     model = _model_from_payload(payload, torch).to(device)
@@ -392,7 +410,8 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
     from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
-    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_resolution([payload]))
     _train, _val, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
     model = _model_from_payload(payload, torch).to(device)
@@ -445,7 +464,8 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
         raise ValueError("need at least two checkpoints")
     payloads = [torch.load(Path("/models") / name, map_location="cpu", weights_only=False)
                 for name in checkpoint_names]
-    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_resolution(payloads))
     if fresh_holdout_source is None:
         _train, val_indices, test_indices = split_by_command(data, seed=seed)
     else:
