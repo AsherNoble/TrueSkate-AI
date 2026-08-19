@@ -429,7 +429,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   the only place duration can come from, and it has never been measured directly.
 
 ## EQ-026 — Growth-based liftoff edge, the only untested member of the family
-- status: todo
+- status: done: kill criterion does NOT fire — RETRACTED my "family exhausted" claim. The midpoint of
+  growth and fade is near-unbiased and beats the pixel-free constant (MAE 2.821 vs 3.041, paired sign
+  p=0.035); last_increase also wins (p=0.0032) and doubles the gate fraction. All remain ~11x worse
+  than the model. Red team's floor hypothesis falsified (0.34% pinned). See the 2026-08-20 entry.
 - tier: PAID (cheap CPU)
 - hypothesis: `peak` is a spatial MAX, so it tracks the newest bright trail segment and decays —
   "last frame above threshold" is a fade timer, not a contact-end detector. An estimator based on trail
@@ -444,3 +447,20 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   is exhausted as a route and duration is limited by something the trail does not encode at 13.7fps.
 - why: EQ-025 ruled out the fade estimator but the family was not exhausted, and the practical claim
   ("presence-edge decoding is not a route to duration") is the one that would cost money if wrong.
+
+## EQ-027 — A difference-based duration reader
+- status: todo
+- tier: PAID (cheap CPU)
+- hypothesis: every estimator so far reads an ABSOLUTE frame index against the label grid, so each pays
+  the EQ-018 timebase skew and the `-ss` phase jitter in full. A duration is a DIFFERENCE of two edges,
+  which cancels any clip-constant offset — the one structural advantage the trained model has that none
+  of these estimators were given.
+- method: estimate duration directly as (fade edge - growth edge) x quantum, and as (last_increase -
+  first_increase); compare against commanded DURATION rather than against an absolute edge index; paired
+  sign test against a constant-duration predictor (the corpus mean duration).
+- expected: a materially lower error than the absolute-index estimators, since the shared offset drops
+  out.
+- kill: the difference reader is no better than the absolute ones — then the per-clip noise is not a
+  shared offset and the timebase caveat, while real, is not what limits these estimators.
+- why: EQ-026 left this as the single structural asymmetry between the estimators and the model, and it
+  is the last cheap thing that could change the picture before duration work moves to the model itself.

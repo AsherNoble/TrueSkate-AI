@@ -1373,6 +1373,160 @@ def audit_liftoff_edge(data_subdir: str, checkpoint_name: str, *, clips: int = 3
     return {key: value for key, value in output.items() if key != "sweep"}
 
 
+@app.function(image=image, cpu=8.0, timeout=2 * 3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_liftoff_growth(data_subdir: str, checkpoint_name: str, *, clips: int = 300,
+                         batch_size: int = 8, threshold: float = 0.35,
+                         knee: float = 0.95) -> dict:
+    """Liftoff from trail GROWTH rather than trail fade.
+
+    EQ-025 estimated liftoff as the last frame whose peak evidence exceeded a
+    threshold.  But `peak` is a spatial max, so it tracks the newest bright trail
+    segment and then decays — that estimator is a fade timer, and on fresh clips
+    it lost to a pixel-free constant on MAE.  The trail is cumulative, so the
+    better-specified signal is EXTENT: it grows while the finger is down and
+    plateaus at liftoff.  Liftoff is therefore the knee, not the fade.
+
+    `threshold` and `knee` are PRE-COMMITTED (0.35 from EQ-016's balanced-accuracy
+    optimum, chosen under a different objective; 0.95 as the plateau point) and
+    the headline is a PAIRED sign test against the constant baseline — EQ-025's
+    best-of-18 threshold selection and unpaired margin are not repeated.
+
+    Fresh-source clips only: EQ-025 measured legacy and fresh to be different
+    populations, and the model's test split is fresh-only.
+    """
+    import json as _json
+    import math
+    import numpy as np
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset
+
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_dataset_kwargs([payload]))
+    fresh = [index for index in range(len(data))
+             if data.sample_paths[index].relative_to(data.root).parts[0] == "fresh"]
+    if not fresh:
+        raise ValueError("no fresh-source clips found; this audit is fresh-only by design")
+    indices = fresh[::max(1, len(fresh) // max(clips, 1))][:clips]
+
+    def trail_evidence(frames: torch.Tensor) -> torch.Tensor:
+        steps = frames.shape[1]
+        reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
+        red, green, blue = frames.unbind(dim=2)
+        motion = torch.abs(frames - reference).mean(dim=2)
+        return ((red - green + .12).relu() * (green - blue + .12).relu()
+                * (red - .20).relu() * motion)
+
+    commanded, growth_edge, fade_edge = [], [], []
+    argmax_edge, increase_edge = [], []
+    for batch in DataLoader(Subset(data, indices), batch_size=batch_size):
+        active = batch["trajectory_mask"].bool()
+        evidence = trail_evidence(batch["frames"]).flatten(2)          # [B, T, HW]
+        clip_max = evidence.amax(dim=(1, 2), keepdim=True).clamp_min(1e-6)
+        above = evidence > (clip_max * threshold)
+        extent = above.sum(dim=2).float()                              # [B, T] trail area
+        peak = (evidence / clip_max).amax(dim=2)                       # [B, T] fade signal
+        steps = active.shape[1]
+        grid = torch.arange(steps)
+        for item in range(len(active)):
+            commanded.append(float(grid[active[item]].max()) if bool(active[item].any())
+                             else float("nan"))
+            # GROWTH: first frame at which the trail has reached `knee` of its
+            # final extent -- the plateau, i.e. the finger stopped adding to it.
+            series = extent[item]
+            ceiling = float(series.max())
+            if ceiling <= 0:
+                growth_edge.append(float("nan"))
+                argmax_edge.append(float("nan"))
+                increase_edge.append(float("nan"))
+            else:
+                reached = (series >= knee * ceiling) & (grid >= 7)
+                growth_edge.append(float(grid[reached].min()) if bool(reached.any())
+                                   else float("nan"))
+                # argmax of extent: where the trail is largest, no floor, no knee.
+                argmax_edge.append(float(int(series.argmax())))
+                # The LITERAL spec: last frame at which extent still increases.
+                rising = (series[1:] > series[:-1]) & (grid[1:] >= 7)
+                increase_edge.append(float(grid[1:][rising].max()) if bool(rising.any())
+                                     else float("nan"))
+            # FADE: EQ-025's estimator, same clips, for a like-for-like contrast.
+            lit = (peak[item] > threshold) & (grid >= 7)
+            fade_edge.append(float(grid[lit].max()) if bool(lit.any()) else float("nan"))
+
+    commanded = np.array(commanded, dtype=float)
+    growth = np.array(growth_edge, dtype=float)
+    fade = np.array(fade_edge, dtype=float)
+    argmax_extent = np.array(argmax_edge, dtype=float)
+    last_increase = np.array(increase_edge, dtype=float)
+    # growth is early and fade is late by almost the same amount, so their
+    # midpoint is the obvious untested member -- and a DIFFERENCE-based reader
+    # cancels any clip-constant offset, which is the residual EQ-025 flagged.
+    midpoint = (growth + fade) / 2
+    # An INTEGER constant, so ties are possible and the sign test is like-for-like.
+    constant = np.full_like(commanded, round(float(np.nanmean(commanded))))
+    # Every arm scored on the SAME clips: a per-arm mask flatters whichever arm
+    # drops its own degenerate cases.
+    common = ~np.isnan(commanded)
+    for series in (growth, fade, argmax_extent, last_increase, midpoint):
+        common &= ~np.isnan(series)
+    quantum_s = 2.1935 / 31   # the PIXEL quantum: the video spans 2.1935s (EQ-018)
+
+    def summarise(estimate):
+        error = (estimate - commanded)[common]
+        absolute = np.abs(error)
+        bias = float(error.mean())
+        # A biased index reader loses to a mean-centred constant on MAE even when
+        # it is MORE informative, so report the de-biased MAE too: that is the
+        # resolution comparison, whereas raw MAE is a calibration comparison.
+        debiased = np.abs(error - bias)
+        return {"clips": int(common.sum()),
+                "bias_frames": round(bias, 3),
+                "mae_frames": round(float(absolute.mean()), 3),
+                "debiased_mae_frames": round(float(debiased.mean()), 3),
+                "median_abs_frames": round(float(np.median(absolute)), 3),
+                "p90_abs_frames": round(float(np.quantile(absolute, .9)), 3),
+                "within_duration_gate": round(float((absolute * quantum_s <= 0.10).mean()), 4)}
+
+    def sign_test(a, b):
+        """Two-sided paired sign test on |error|; ties dropped."""
+        left, right = np.abs(a - commanded)[common], np.abs(b - commanded)[common]
+        wins = int((left < right).sum())
+        losses = int((left > right).sum())
+        total = wins + losses
+        if total == 0:
+            return {"wins": 0, "losses": 0, "ties": int(common.sum()), "p": 1.0}
+        extreme = max(wins, losses)
+        tail = sum(math.comb(total, k) for k in range(extreme, total + 1)) / 2 ** total
+        return {"wins": wins, "losses": losses, "ties": int(common.sum()) - total,
+                "p": round(min(1.0, 2 * tail), 6)}
+
+    output = {
+        "data_subdir": data_subdir, "checkpoint": checkpoint_name,
+        "precommitted": {"threshold": threshold, "knee": knee, "source": "fresh", "test": "paired sign"},
+        "clips": len(indices), "frame_quantum_s": round(quantum_s, 5),
+        "growth": summarise(growth), "fade": summarise(fade),
+        "argmax_extent": summarise(argmax_extent), "last_increase": summarise(last_increase),
+        "midpoint": summarise(midpoint), "constant": summarise(constant),
+        # Is the growth estimator just pinned at its own floor?  memory
+        # `sls-window-anchored-to-call-end` says the trace is already fully drawn
+        # in frame_000 for ~half of samples; such a clip returns exactly 7.
+        "growth_pinned_at_floor": {
+            "count": int((growth[common] == 7).sum()),
+            "fraction": round(float((growth[common] == 7).mean()), 4),
+        },
+        "growth_vs_constant": sign_test(growth, constant),
+        "growth_vs_fade": sign_test(growth, fade),
+        "midpoint_vs_constant": sign_test(midpoint, constant),
+        "last_increase_vs_constant": sign_test(last_increase, constant),
+    }
+    (Path("/models") / f"basic_linear_liftoff_growth_{data_subdir.replace('/', '_')}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,

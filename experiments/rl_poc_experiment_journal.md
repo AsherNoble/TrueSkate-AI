@@ -1293,3 +1293,56 @@ and carries no information either detector had to earn.
 - **Next:** EQ-026 — growth-based edge estimator (last frame at which NEW trail pixels appear, i.e. the
   knee of spatial extent) on fresh only, with the threshold pre-committed and a paired test against the
   constant baseline.
+
+## EQ-026 — Kill criterion does NOT fire: two edge estimators beat the constant (2026-08-20)
+
+Pre-committed design (threshold 0.35, knee 0.95, fresh-only, paired sign test) — the discipline EQ-025
+lacked. **Verdict: my first conclusion was wrong and is retracted; the family is not exhausted.**
+
+- **First pass, and the red team's correction.** I reported growth (MAE 4.184) losing to a pixel-free
+  constant (3.061, paired sign p=0.0042) and concluded "presence/geometry edge decoding is exhausted".
+  Three defects, all real:
+  1. **I did not implement what I pre-committed to.** The spec was "last frame at which NEW trail
+     pixels appear"; I built "FIRST frame reaching 95% of max extent". A first-crossing statistic is
+     `<= argmax(extent)` **by construction**, so it can only ever read early — the −3.38 bias is what
+     the estimator was built to produce, not a fact about trails.
+  2. **Raw MAE against a mean-centred constant is a calibration test, not an information test.** A
+     biased index reader loses even when it is more informative.
+  3. **Per-arm masks and a non-integer constant** (ties structurally impossible, so the sign test was
+     not like-for-like).
+- **Its INVALID hypothesis was falsified by measurement.** It predicted the growth estimator was pinned
+  at its `grid >= 7` floor (memory `sls-window-anchored-to-call-end`: the trace is fully drawn in
+  frame_000 for ~half of SLS samples), which would have made p90 9.0 an anchoring artefact.
+  **Measured: 1 clip of 293 = 0.34%.** Not a floor effect.
+- **Re-run with the literal spec, the named untested members, a common mask, an integer constant, and
+  de-biased MAE alongside raw:**
+
+  | estimator | MAE | de-biased MAE | bias | median | p90 | gate | vs constant (paired sign) |
+  |---|---|---|---|---|---|---|---|
+  | growth (first-crossing) | 4.184 | 3.036 | −3.381 | 4.0 | 9.0 | 22.8% | **loses** p=0.0006 |
+  | **last_increase** (literal spec) | 3.561 | 3.964 | +1.643 | 1.0 | 10.7 | **51.4%** | **WINS** p=0.0032 |
+  | argmax_extent | 3.990 | 2.971 | −3.146 | 3.0 | 8.0 | 25.2% | — |
+  | fade (EQ-025) | 3.969 | 4.187 | +3.350 | 2.0 | 12.0 | 46.6% | — |
+  | **midpoint (growth+fade)/2** | **2.821** | **2.818** | **−0.015** | 2.0 | 6.5 | 34.7% | **WINS** p=0.035 |
+  | constant (integer) | 3.041 | 3.055 | −0.293 | 3.0 | 5.0 | 22.5% | — |
+
+- **The symmetric bracket was real and usable.** growth −3.38 / fade +3.35 average to a bias of
+  **−0.015**: the midpoint is essentially unbiased and is the best estimator tested (MAE 2.821 vs the
+  constant's 3.041), which is exactly the one-line member the red team said I had closed the line
+  without trying.
+- **`last_increase` beats the constant on the paired test and more than doubles the gate fraction
+  (51.4% vs 22.5%) while being WORSE on MAE** (3.561, p90 10.7). Same bimodal shape seen throughout:
+  excellent typically, catastrophic on a subset.
+- **CONCLUSION, corrected:** "presence/geometry edge decoding is exhausted" is **retracted**. Two
+  members beat a pixel-free constant on a pre-committed paired test. But the useful framing is
+  unchanged: the best of them (midpoint, 2.82 frames ≈ 0.20 s) is still **~11x worse than the trained
+  model's 0.26 frames**. So edge decoding carries genuine information yet is not a route to *improving*
+  duration — the model is already an order of magnitude past it.
+- **Caveats kept live:** all arms read an ABSOLUTE index against the label grid, so they pay the EQ-018
+  timebase skew and `-ss` phase jitter that a difference-based model does not; the clips sampled here
+  span train/val/test while the model's 0.26 frames is held-out only, so the ~11x is across different
+  clip sets; `within_duration_gate` here uses the pixel quantum (0.0708 s) and is not comparable to
+  EQ-025's label-quantum figures.
+- **Next:** EQ-027 — a difference-based reader (`fade - growth` as a duration estimate rather than two
+  absolute edges), which cancels any clip-constant offset and is the one structural advantage the model
+  has that none of these estimators were given.
