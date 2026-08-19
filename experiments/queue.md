@@ -491,7 +491,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   spatially (endpoints to 0.006 normalised units) while every reader tried so far throws position away.
 
 ## EQ-029 — Is the gap the evidence map or the decoder?
-- status: todo
+- status: done: CONFOUNDED on the clean split (three variables bundled) but the DECISIVE result stands:
+  decoder ~2.6x [2.1,3.2], front end ~3.3x, and per-clip errors are UNCORRELATED with disjoint failure
+  sets (0 both / 27 handcrafted-only / 2 model-only), so the residual is a genuine front-end advantage
+  and IS addressable — not the EQ-025 data defect. 153 distinct commands. See the 2026-08-20 entry.
 - tier: PAID (one short training run)
 - hypothesis: the model's duration advantage comes from either (a) a learned evidence map beating a
   hand-crafted colour x motion filter, or (b) a learned temporal decoder over the whole series beating
@@ -521,3 +524,20 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   quantisation-limited and the floor argument does not apply to it.
 - why: EQ-028's estimator has a known bug and a known contamination path, and the quantisation floor means
   no integer estimator can ever be compared fairly to the model.
+
+## EQ-031 — Decompose the three variables EQ-029 bundled
+- status: todo
+- tier: PAID (cheap CPU)
+- hypothesis: EQ-029's "decoder 2.6x" bundles decoder architecture, fitting budget and per-clip
+  normalisation; the front-end 3.3x bundles {learned filter, temporal mixer, duration-supervised
+  training}. Each is separable with the data already extracted.
+- method: (a) ridge over ~5 hand-picked scalars of the same normalised series (last_rising, head edge,
+  extent max, peak max, contact-fraction) on the same 2,734 train / 153 test split — isolates
+  MULTIVARIATE reading from SHAPE reading; (b) re-run `extract()` with no normalisation and with a
+  corpus-global scale — isolates the normalisation knob; (c) note that separating temporal_mixer from
+  the learned filter needs a retrain with `temporal_mixer=False` and is the one genuinely expensive arm.
+- expected: (a) lands between 0.163 and 0.0629 and says how much is shape; (b) moves the 0.0629 by less
+  than the 2.6x margin, or does not.
+- kill: n/a — attribution, every outcome informative.
+- why: EQ-029 showed the residual is addressable, so knowing WHICH half to attack is now the binding
+  question for duration work.

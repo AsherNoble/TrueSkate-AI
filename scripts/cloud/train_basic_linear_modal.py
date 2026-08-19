@@ -1830,6 +1830,168 @@ def audit_trail_head(data_subdir: str, checkpoint_name: str, *, clips: int = 400
     return output
 
 
+@app.function(image=image, cpu=8.0, timeout=3 * 3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_duration_head_attribution(data_subdir: str, checkpoint_name: str, *,
+                                    batch_size: int = 8, epochs: int = 300,
+                                    threshold: float = 0.35, seed: int = 0) -> dict:
+    """Is the model's duration advantage the EVIDENCE MAP or the DECODER?
+
+    EQ-028 established that `duration_head` consumes only a 2xT scalar series —
+    the spatial max and mean of a learned evidence map — so the model's duration
+    path is the same reader family as every hand-crafted estimator tried.  That
+    leaves two explanations for the ~10x gap, which no experiment so far
+    separates:
+
+      (a) the learned evidence map beats a hand-crafted colour x motion filter;
+      (b) the learned temporal decoder beats a single hand-picked event.
+
+    This holds the decoder fixed and swaps the front end: the hand-crafted
+    `trail_evidence` series is fed into a freshly initialised copy of the real
+    `duration_head`, trained on the same split.  Landing near the model's
+    0.0189 s implicates the DECODER; staying near the hand-picked reader's
+    0.163 s implicates the EVIDENCE MAP.
+
+    Protocol matches the checkpoint's: same split seed and fresh holdout source,
+    epoch chosen on validation, test scored once.
+    """
+    import json as _json
+    import numpy as np
+    import torch
+    from torch import nn
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.data.gesture_sampling import BASIC_LINEAR_MAX_S, BASIC_LINEAR_MIN_S
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+
+    trainer = _trainer()
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_dataset_kwargs([payload]))
+    split_seed = payload.get("split_seed", seed)
+    fresh_source = payload.get("fresh_holdout_source")
+    if fresh_source is None:
+        train_idx, val_idx, test_idx = split_by_command(data, seed=split_seed)
+    else:
+        train_idx, val_idx, test_idx = trainer.split_with_fresh_command_holdout(
+            data, fresh_source=fresh_source, seed=split_seed,
+            stratify_by_device=bool(payload.get("fresh_stratify_by_device")))
+
+    def trail_evidence(frames: torch.Tensor) -> torch.Tensor:
+        steps = frames.shape[1]
+        reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
+        red, green, blue = frames.unbind(dim=2)
+        motion = torch.abs(frames - reference).mean(dim=2)
+        return ((red - green + .12).relu() * (green - blue + .12).relu()
+                * (red - .20).relu() * motion)
+
+    def extract(indices):
+        """The same 2xT summary the real duration_head consumes."""
+        series, targets = [], []
+        for batch in DataLoader(Subset(data, indices), batch_size=batch_size):
+            evidence = trail_evidence(batch["frames"])
+            flat = evidence.flatten(2)
+            # Normalise per clip so the scale matches the learned map's dynamic
+            # range rather than raw filter output.
+            scale = flat.amax(dim=(1, 2), keepdim=True).clamp_min(1e-6)
+            normalised = (flat / scale)
+            series.append(torch.stack((normalised.amax(dim=2), normalised.mean(dim=2)), dim=1))
+            targets.append(batch["target"][:, -1])
+        return torch.cat(series), torch.cat(targets)
+
+    train_x, train_y = extract(train_idx)
+    val_x, val_y = extract(val_idx)
+    test_x, test_y = extract(test_idx)
+
+    channels = int(payload.get("base_channels") or 16)
+    torch.manual_seed(seed)
+    head = nn.Sequential(
+        nn.Conv1d(2, channels, 3, padding=1), nn.SiLU(),
+        nn.Conv1d(channels, channels, 3, padding=1), nn.SiLU(),
+        nn.AdaptiveAvgPool1d(8), nn.Flatten(),
+        nn.Linear(channels * 8, channels * 2), nn.SiLU(), nn.Linear(channels * 2, 1),
+    )
+    optimiser = torch.optim.Adam(head.parameters(), lr=2e-3)
+    span = BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S
+
+    def predict(inputs):
+        return BASIC_LINEAR_MIN_S + torch.sigmoid(head(inputs))[:, 0] * span
+
+    best = {"val_mae": float("inf"), "epoch": -1, "state": None}
+    history = []
+    for epoch in range(epochs):
+        head.train()
+        permutation = torch.randperm(len(train_x))
+        for start in range(0, len(train_x), 64):
+            chunk = permutation[start:start + 64]
+            optimiser.zero_grad()
+            loss = nn.functional.smooth_l1_loss(predict(train_x[chunk]), train_y[chunk], beta=0.05)
+            loss.backward()
+            optimiser.step()
+        head.eval()
+        with torch.no_grad():
+            val_mae = float((predict(val_x) - val_y).abs().mean())
+        history.append(round(val_mae, 5))
+        if val_mae < best["val_mae"]:
+            best = {"val_mae": val_mae, "epoch": epoch,
+                    "state": {k: v.clone() for k, v in head.state_dict().items()}}
+
+    head.load_state_dict(best["state"])
+    head.eval()
+    with torch.no_grad():
+        error = (predict(test_x) - test_y).abs()
+
+    # THE CHECK THAT DECIDES WHAT THE RESIDUAL GAP IS.  Run the real checkpoint on
+    # the SAME 153 test clips: if the two arms fail on the same clips, the residual
+    # is a shared data defect (low rendered headroom / late onset per EQ-025) and is
+    # not addressable by front-end work; if the failures are disjoint, it is a
+    # genuine front-end advantage on exactly the hard mode.
+    model = _model_from_payload(payload, torch)
+    model.load_state_dict(payload["state_dict"])
+    model.eval()
+    model_errors = []
+    with torch.no_grad():
+        for batch in DataLoader(Subset(data, test_idx), batch_size=batch_size):
+            prediction = model(batch["frames"])
+            model_errors.append((prediction[:, -1] - batch["target"][:, -1]).abs())
+    model_error = torch.cat(model_errors)
+    ours, theirs = error.numpy(), model_error.numpy()
+    gate = 0.10
+    both = int(((ours > gate) & (theirs > gate)).sum())
+    ours_only = int(((ours > gate) & (theirs <= gate)).sum())
+    theirs_only = int(((ours <= gate) & (theirs > gate)).sum())
+    neither = int(((ours <= gate) & (theirs <= gate)).sum())
+    distinct_commands = len({data.command_keys[index] for index in test_idx})
+    output = {
+        "data_subdir": data_subdir, "checkpoint": checkpoint_name,
+        "split": {"train": len(train_idx), "validation": len(val_idx), "test": len(test_idx),
+                  "seed": split_seed, "fresh_holdout_source": fresh_source},
+        "selected_epoch": best["epoch"], "validation_mae_s": round(best["val_mae"], 5),
+        "test_mae_s": round(float(error.mean()), 5),
+        "test_median_abs_s": round(float(error.median()), 5),
+        "test_p90_abs_s": round(float(np.quantile(error.numpy(), .9)), 5),
+        "test_within_gate": round(float((error <= 0.10).float().mean()), 4),
+        # The two anchors this number is interpreted against.
+        "handcrafted_event_reader_mae_s": 0.163,
+        "model_duration_mae_s": float((payload.get("test") or {}).get("duration_mae", float("nan"))),
+        "validation_history_tail": history[-20:],
+        "test_distinct_commands": distinct_commands,
+        # Recomputed here rather than quoted, so both arms are the same 153 clips.
+        "model_test_mae_s_recomputed": round(float(model_error.mean()), 5),
+        "per_clip_error_agreement": {
+            "pearson": round(float(np.corrcoef(ours, theirs)[0, 1]), 4),
+            "spearman": round(float(np.corrcoef(
+                np.argsort(np.argsort(ours)).astype(float),
+                np.argsort(np.argsort(theirs)).astype(float))[0, 1]), 4),
+            "both_out_of_gate": both, "handcrafted_only": ours_only,
+            "model_only": theirs_only, "neither": neither,
+        },
+    }
+    (Path("/models") / f"basic_linear_duration_attribution_{data_subdir.replace('/', '_')}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,

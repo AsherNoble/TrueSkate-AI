@@ -1470,3 +1470,60 @@ max projection per frame (the trail head), read liftoff as the last frame where 
   Beats 0.163 s ⇒ the gap was the decoder; stays ⇒ the gap was the evidence map. EQ-030 — the estimator
   bug fix (cummax + clip to [0,1]) and a sub-frame liftoff read, the only way any reader goes below the
   0.021 s quantisation floor.
+
+## EQ-029 — Attribution: the duration gap is decoder AND front end, and the residual IS addressable (2026-08-20)
+
+The experiment EQ-028's review named. Holds the decoder fixed and swaps the front end: the hand-crafted
+`trail_evidence` 2xT series (per-frame spatial max + mean) into a freshly initialised copy of the real
+`duration_head`, same split, epoch chosen on validation, test scored once.
+
+| arm | test MAE (s) | step |
+|---|---|---|
+| hand-crafted evidence + hand-picked event (EQ-028) | 0.163 | — |
+| **hand-crafted evidence + learned decoder** | **0.0629** | decoder ≈ **2.6x**, 95% CI [2.1, 3.2] |
+| learned evidence + learned decoder (the model) | 0.0189 | front end ≈ **3.3x** |
+
+Within-gate rises 36.8% → **82.4%** from the decoder swap alone. Median 0.0376, p90 0.150.
+
+- **THE DECISIVE RESULT — the residual is a real front-end advantage, not a data defect.** Running the
+  checkpoint on the *same* 153 test clips: per-clip |error| correlation **pearson −0.008, spearman
+  −0.024**, and the failure sets are **disjoint** — **0** clips out of gate for both, **27**
+  hand-crafted only, **2** model only, 124 neither. The residual 3.3x is therefore **addressable by
+  front-end work**: the model is not merely winning on easy clips, it succeeds on precisely the clips
+  the fixed colour×motion filter fails. This kills the live worry that part of the gap was EQ-025's
+  low-headroom/late-onset damage.
+- **Independence confirmed:** **153 distinct commands in 153 test clips**, so effective n is the full
+  153 and the intervals above stand. Model MAE recomputed here as 0.01890, matching the checkpoint's
+  recorded figure exactly.
+- **Red team CONFOUNDED the clean two-factor story, and it is right:**
+  1. **Three variables changed, not one.** Decoder architecture, fitting budget (2 affine parameters
+     cross-fit on 389 clips vs ~2.4k parameters on 2,734), and my per-clip normalisation which the
+     0.35-threshold reader never had. The credit is not yet assignable to the *convolution*. Honest
+     phrasing: "a learned temporal read of the same evidence, fit on 2.7k clips, is 2.6x better than
+     one hand-picked event affinely calibrated".
+  2. **"Evidence map worth 3.3x" mis-describes the cut.** `temporal_mixer` is **True** in this
+     checkpoint and runs *before* the score maps (`basic_linear_regressor.py:246-248`), trained
+     end-to-end with the duration loss flowing into the encoder. There is decoder-like machinery on
+     **both** sides of my supposed boundary. Correct description: "learned, duration-supervised front
+     end (including a temporal mixer)" versus "fixed colour×motion filter".
+  3. **Stop quoting validation 0.05659.** It is the argmin of 300 noisy epochs (val SE ≈ 0.006) sitting
+     ~1.3 SE below the honest plateau of ~0.063-0.064 — which is exactly why test came in at 0.06289.
+     The val/test gap is selection noise, not overfitting. Quote test only.
+  4. **The normalisation is a second knob with unknown sign.** `scale = flat.amax(dim=(1,2))` forces the
+     amax channel to touch 1.0 in every clip, destroying cross-clip intensity/headroom information —
+     which plausibly helps by removing a nuisance, but also removes the very signal EQ-025 says marks
+     the bad mode. Either way it is charged to the decoder's ledger.
+- **Protocol verified independently:** the audit's head is byte-for-byte the real `duration_head`
+  (same architecture, c=16, same sigmoid scaling); the split is re-derived from the checkpoint's own
+  `split_seed`/`fresh_holdout_source` and matches its recorded sizes; test is scored once after loading
+  the validation-selected state. Gap: this audit does not *assert* the split-size equality the way
+  `evaluate_bias_correction` does — it happened to match. Worth adding.
+- **What this means for duration work.** Both halves are real and roughly comparable in size, and the
+  residual is reachable. The decoder half is available to any reader essentially for free (swap one
+  hand-picked event for a learned temporal read). The front-end half is an undifferentiated bundle of
+  {learned filter, temporal mixer, duration-supervised training} and needs decomposing before it is a
+  target.
+- **Next:** EQ-031 — separate the three bundled variables: a ridge over ~5 hand-picked scalars of the
+  same series (same 2,734 train / 153 test budget) isolates multivariate reading from shape reading,
+  and re-running `extract()` without normalisation and with a corpus-global scale isolates the
+  normalisation knob.
