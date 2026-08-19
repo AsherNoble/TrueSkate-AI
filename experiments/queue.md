@@ -134,7 +134,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: without this, EQ-002 measures a different estimator than the one that will ship.
 
 ## EQ-009 — The missing fit-on-validation -> apply-on-test entry point
-- status: todo
+- status: done: CONFIRMED after correction — `evaluate_bias_correction()` exists and takes its split
+  identity from the checkpoint. Red team CONFOUNDED the first version: the disjointness assertion was
+  vacuous and a re-derived split on a grown corpus would have put trained-on commands in "test".
+  See the 2026-08-19 EQ-009 journal entry.
 - tier: FREE
 - hypothesis: n/a — implementation.
 - method: add a Modal entry point that fits `AlongPathBias` on the validation split and evaluates
@@ -158,3 +161,17 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   operator is no longer interchangeable with the one the autopsy measured.
 - why: EQ-008 established delta scales with the SQUARE of perpendicular error, so the whole
   predicted-chord design rests on a number measured once, on one checkpoint, on one split.
+
+## EQ-011 — Sweep the Modal evaluators that ignore the checkpoint's knot count
+- status: todo
+- tier: FREE
+- hypothesis: six evaluators build `BasicLinearClipDataset` without passing `knots` from the payload,
+  so any k>2 checkpoint is scored against a 2-knot target and throws a shape error after loading the
+  whole corpus (or, worse, silently compares the wrong components if a future change makes the
+  shapes compatible).
+- method: pass `knots` from the payload at every call site, as EQ-009 now does; extend the existing
+  `_payload_resolution` call-site guard to cover the knot count too.
+- expected: no behaviour change for k=2 checkpoints; k=3 checkpoints become evaluable.
+- kill: n/a — this is a defect sweep.
+- why: MVP-3 introduced k=3 checkpoints, so this is now live rather than hypothetical, and it wastes
+  a full corpus load before failing.

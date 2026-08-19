@@ -563,3 +563,60 @@ red team found: the fit measured against the **commanded** chord while `apply` c
 - **Next:** EQ-008 closed. EQ-002 unblocked once EQ-009 lands, with its expectation restated around
   perpendicular sd rather than first-knot error. New EQ-010: verify perpendicular sd on the EQ-002
   split before trusting the transfer, since delta scales with its square.
+
+## EQ-009 — Bias-correction evaluator built; red team found a split-leak path that would have inflated EQ-002 (2026-08-19)
+
+Loop tick 3 (`experiment-queue`, self-paced). EQ-002 was not runnable: nothing in the codebase
+called the correction.
+
+- **Hypothesis:** n/a, implementation. **Expected:** runnable, CPU smoke passes locally.
+- **Ran:** offline, no cloud spend. New `evaluate_bias_correction()` in
+  `scripts/cloud/train_basic_linear_modal.py`; supporting pure helpers in `basic_linear_bias.py`
+  (`discordant_pairs`, `mcnemar_exact_p`, `perpendicular_error`, `along_path_fit_key`, and a
+  `fit_on` provenance field). Suite **207 passed**.
+- **Deviation, stated rather than buried: "CPU smoke passes locally" was NOT met.** A Modal function
+  body cannot run without volumes, corpus and checkpoint. Verified `py_compile` plus unit tests of
+  the extracted helpers only. The red team was asked to enumerate what that gap leaves exposed and
+  did (below).
+- **Verdict: CONFIRMED after correction** — EQ-002 is runnable, but only because the red team's
+  findings were fixed first. As originally written the evaluator would have produced inflated,
+  uninterpretable numbers.
+- **Red team: CONFOUNDED.** Static soundness verified independently (pyflakes clean; every kwarg and
+  dict key checked against source; McNemar matched `scipy.stats.binomtest` to 1e-9 across ten cases).
+  Findings and fixes:
+  1. **THE IMPORTANT ONE — the split-disjointness assertion was vacuous and the real leak path was
+     unguarded.** `set(val_indices) & set(test_indices)` is empty *by construction* (`_split_by_key`
+     carves both from disjoint slices of one permutation) so it could never fire. Meanwhile the
+     evaluator re-derived the split from its own `seed` argument and ignored the six split fields the
+     checkpoint records. Since the corpus is still being collected, a corpus that has gained samples
+     since training changes `sorted(set(keys))`, changes the permutation, and silently fills "test"
+     with commands the checkpoint trained on — **inflating baseline and corrected numbers together,
+     correlated, in a way the paired test cannot reveal.** Fixed: `seed`, `fresh_holdout_source`,
+     `fresh_stratify_by_device` and `knots` now default from the payload; the corpus is
+     fingerprint-matched against the one the checkpoint was split on; re-derived split sizes are
+     checked against the recorded ones. All three fail loudly. Guard test added.
+  2. **`knots` was left at the dataset default of 2** while the model was rebuilt from
+     `payload["knots"]` — a k=3 checkpoint (which HEAD~ just added) would have thrown a shape error
+     after loading the whole corpus. Pre-existing pattern at six other call sites; EQ-009 inherited
+     it. Fixed here; the other six remain and are worth a sweep.
+  3. **The evaluator cannot resolve EQ-002 and must not be recorded as if it could.** Exact
+     two-sided McNemar needs b>=6 with c=0 to clear p<0.05; the journal's own estimate is ~2.6
+     gained / ~0.9 lost, so the run is pre-determined to land near p=0.375. Significance needs
+     EQ-007's >=3,000-command holdout. This is now stated in the docstring and emitted in the JSON
+     as `mcnemar_note`.
+  4. **`fit_on` was decorative** — a caller-written f-string that could claim a provenance the
+     artefact did not have while the suite stayed green. Now derived from a hash of the actual index
+     set (`along_path_fit_key`), so it can be re-derived and checked.
+  5. **Pairing is genuinely safe** (dataset deterministic, `shuffle=False`, `Subset` preserves order,
+     model in `.eval()`), so the discordant counts are real — but the test loader was walked three
+     times where two suffice. Fixed.
+  6. Reproducibility gaps: the JSON recorded neither seed, `data_subdir`, fingerprint nor the
+     tolerances, and the output path had no seed or statistic in it, so a `median` rerun would have
+     silently overwritten the `mean` run. All now recorded; path is
+     `basic_linear_bias_correction_{stem}_{statistic}_seed{seed}.json`.
+  7. `signed_perpendicular_error` returned a nonnegative magnitude — renamed `perpendicular_error`,
+     with the folded-quantity caveat in the docstring and the JSON key.
+  8. The `7 -> 8` `_payload_resolution` call-site bump was judged correct and concealing nothing.
+- **Next:** EQ-009 closed. EQ-002 is now unblocked and is the top todo — tier PAID, so it stops for
+  owner approval. New EQ-011: sweep the six other Modal evaluators that build datasets without
+  passing `knots` from the payload.

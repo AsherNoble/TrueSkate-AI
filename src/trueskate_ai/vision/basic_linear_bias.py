@@ -25,6 +25,8 @@ available for comparison, but a bias fit that way must not be applied: see
 """
 from __future__ import annotations
 
+import hashlib
+import math
 from dataclasses import dataclass
 from typing import Iterable, Mapping, Sequence
 
@@ -88,6 +90,10 @@ class AlongPathBias:
     knot: int = -1
     statistic: str = "mean"
     axis: str = "predicted"
+    # Which split the shift was fit on.  The "this is not test tuning" claim is
+    # only checkable if the artefact says where it came from, so callers record
+    # it here and evaluators report it alongside the number.
+    fit_on: str = "unspecified"
 
     def apply(self, prediction: torch.Tensor) -> torch.Tensor:
         """Shift the corrected knot forward along the *predicted* path.
@@ -121,7 +127,8 @@ class AlongPathBias:
 
 
 def fit_along_path_bias(records: Iterable[Mapping[str, Sequence[float]]], *, knot: int = -1,
-                        statistic: str = "mean", axis: str = "predicted") -> AlongPathBias:
+                        statistic: str = "mean", axis: str = "predicted",
+                        fit_on: str = "unspecified") -> AlongPathBias:
     """Fit the along-path shift from validation recovery records.
 
     ``statistic`` is ``"mean"`` (matches the autopsy's counterfactual) or
@@ -135,6 +142,77 @@ def fit_along_path_bias(records: Iterable[Mapping[str, Sequence[float]]], *, kno
               (signed_along_path_error(record, knot=knot, axis=axis) for record in records)
               if error is not None]
     if not errors:
-        return AlongPathBias(shift=0., samples=0, knot=knot, statistic=statistic, axis=axis)
+        return AlongPathBias(shift=0., samples=0, knot=knot, statistic=statistic, axis=axis,
+                             fit_on=fit_on)
     shift = float(np.mean(errors)) if statistic == "mean" else float(np.median(errors))
-    return AlongPathBias(shift=shift, samples=len(errors), knot=knot, statistic=statistic, axis=axis)
+    return AlongPathBias(shift=shift, samples=len(errors), knot=knot, statistic=statistic, axis=axis,
+                         fit_on=fit_on)
+
+
+def perpendicular_error(record: Mapping[str, Sequence[float]], *, knot: int = -1,
+                        axis: str = "commanded") -> float | None:
+    """Magnitude of one knot's error across its path.
+
+    Nonnegative by construction — a folded quantity, so its sd is not comparable
+    to the signed along-path sd without saying so.
+
+    EQ-008 established that the disagreement between the predicted-chord and
+    commanded-chord operators scales as ``perp**2 / |chord|``.  The whole
+    predicted-chord design therefore rests on the perpendicular error staying
+    near the 0.0032 sd the autopsy measured once, on one split — so an evaluator
+    that applies the correction should report this distribution beside it.
+    """
+    if axis not in AXES:
+        raise ValueError(f"axis must be one of {AXES}")
+    predicted, predicted_previous = _knot_pair(record["predicted"], knot)
+    target, target_previous = _knot_pair(record["target"], knot)
+    direction = (predicted - predicted_previous if axis == "predicted"
+                 else target - target_previous)
+    length = float(np.linalg.norm(direction))
+    if length < MIN_PATH_LENGTH:
+        return None
+    unit = direction / length
+    offset = predicted - target
+    return float(np.linalg.norm(offset - float(np.dot(offset, unit)) * unit))
+
+
+def discordant_pairs(before: Sequence[float], after: Sequence[float]) -> tuple[int, int]:
+    """Count clips a correction flipped: ``(gained, lost)``.
+
+    A correction is judged on which clips it moves, not on the accuracy delta:
+    at n=153 a 3-clip net change is invisible inside its own confidence
+    interval, while the discordant counts are exactly what a paired test needs.
+    """
+    if len(before) != len(after):
+        raise ValueError("paired comparison needs equal-length outcome vectors")
+    gained = sum(1 for old, new in zip(before, after) if not old and new)
+    lost = sum(1 for old, new in zip(before, after) if old and not new)
+    return gained, lost
+
+
+def mcnemar_exact_p(gained: int, lost: int) -> float:
+    """Two-sided exact McNemar p for the discordant pairs.
+
+    Under the null the correction flips clips either way with equal
+    probability, so the discordant pairs are Binomial(n, 0.5).  Exact rather
+    than chi-squared because the counts here are single digits.
+    """
+    if gained < 0 or lost < 0:
+        raise ValueError("discordant counts cannot be negative")
+    total = gained + lost
+    if total == 0:
+        return 1.
+    extreme = max(gained, lost)
+    tail = sum(math.comb(total, k) for k in range(extreme, total + 1)) / 2 ** total
+    return min(1., 2 * tail)
+
+
+def along_path_fit_key(split: str, indices: Sequence[int]) -> str:
+    """Provenance string derived from the index set actually fitted on.
+
+    A caller-written label can claim a provenance the artefact does not have.
+    Hashing the indices makes the claim checkable: re-derive the split, re-hash,
+    and a mismatch means the shift came from somewhere else.
+    """
+    digest = hashlib.sha256(",".join(str(int(index)) for index in indices).encode())
+    return f"{split}[{len(indices)}]:{digest.hexdigest()[:16]}"

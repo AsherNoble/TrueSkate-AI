@@ -4,7 +4,8 @@ import pytest
 import torch
 
 from trueskate_ai.vision.basic_linear_bias import (
-    AlongPathBias, fit_along_path_bias, signed_along_path_error,
+    AlongPathBias, discordant_pairs, fit_along_path_bias, mcnemar_exact_p,
+    along_path_fit_key, perpendicular_error, signed_along_path_error,
 )
 from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
 
@@ -191,3 +192,50 @@ def test_a_commanded_axis_fit_cannot_be_applied():
     with pytest.raises(ValueError, match="cannot be applied"):
         commanded.apply(torch.tensor([[0.2, 0.3, 0.7, 0.8, 0.5]]))
     fit_along_path_bias(records).apply(torch.tensor([[0.2, 0.3, 0.7, 0.8, 0.5]]))
+
+
+def test_discordant_pairs_counts_direction_not_totals():
+    assert discordant_pairs([0., 0., 1., 1.], [1., 0., 1., 0.]) == (1, 1)
+    assert discordant_pairs([0.] * 5, [0.] * 5) == (0, 0)
+    with pytest.raises(ValueError):
+        discordant_pairs([0., 1.], [1.])
+
+
+def test_mcnemar_exact_matches_the_hand_computed_cases():
+    # The EQ-001 red team's figures for the end-bias correction's own counts.
+    assert mcnemar_exact_p(4, 1) == pytest.approx(0.375)
+    assert mcnemar_exact_p(3, 0) == pytest.approx(0.25)
+    assert mcnemar_exact_p(0, 0) == 1.0
+    assert mcnemar_exact_p(1, 1) == 1.0
+    # Symmetric in its arguments: gaining 6 is as surprising as losing 6.
+    assert mcnemar_exact_p(6, 0) == pytest.approx(mcnemar_exact_p(0, 6))
+    # Only a much larger, one-sided imbalance clears the usual bar.
+    assert mcnemar_exact_p(10, 0) < 0.05
+
+
+def test_perpendicular_error_is_the_across_path_component():
+    record = _record((0.2, 0.3), (0.7, 0.8), along=-0.02, perpendicular=0.004)
+    assert perpendicular_error(record, axis="commanded") == pytest.approx(0.004, abs=1e-9)
+    # Pure along-path error has no perpendicular component on either axis.
+    pure = _record((0.2, 0.3), (0.7, 0.8), along=-0.02)
+    assert perpendicular_error(pure, axis="commanded") == pytest.approx(0., abs=1e-9)
+    assert perpendicular_error(pure, axis="predicted") == pytest.approx(0., abs=1e-9)
+
+
+def test_the_fit_records_where_it_came_from():
+    records = [_record((0.2, 0.3), (0.7, 0.8), along=-0.01)]
+    key = along_path_fit_key("validation", [3, 1, 4])
+    bias = fit_along_path_bias(records, fit_on=key)
+    assert bias.fit_on == key
+    assert fit_along_path_bias([]).fit_on == "unspecified"
+
+
+def test_the_provenance_key_is_derived_from_the_indices_not_asserted():
+    """A caller-written label can claim a provenance the artefact lacks; a hash
+    of the index set can be re-derived and checked."""
+    assert along_path_fit_key("validation", [1, 2, 3]).startswith("validation[3]:")
+    assert along_path_fit_key("validation", [1, 2, 3]) == along_path_fit_key("validation", [1, 2, 3])
+    assert along_path_fit_key("validation", [1, 2, 3]) != along_path_fit_key("validation", [1, 2, 4])
+    # Order matters: a different split ordering is a different split.
+    assert along_path_fit_key("validation", [1, 2, 3]) != along_path_fit_key("validation", [3, 2, 1])
+    assert along_path_fit_key("test", [1, 2, 3]) != along_path_fit_key("validation", [1, 2, 3])

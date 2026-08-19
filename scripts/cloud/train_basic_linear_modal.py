@@ -602,6 +602,162 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
     return output
 
 
+@app.function(image=image, cpu=8.0, timeout=3 * 3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def evaluate_bias_correction(data_subdir: str, checkpoint_name: str, *,
+                             batch_size: int = 8, statistic: str = "mean",
+                             seed: int | None = None,
+                             fresh_holdout_source: str | None = None,
+                             fresh_stratify_by_device: bool | None = None) -> dict:
+    """Fit the along-path end bias on validation, apply it to test, once.
+
+    The correction is a scalar, so the headline is deliberately NOT the accuracy
+    delta: at n~153 a 3-clip change sits inside its own confidence interval
+    (EQ-001 red team).  What this reports instead is the paired evidence — which
+    clips flipped, in which direction, and the exact McNemar p — plus the
+    perpendicular error distribution, because EQ-008 showed the predicted-chord
+    operator only stands in for the autopsy's commanded-chord one while that
+    distribution stays near the sd it was measured at.
+
+    **Read this before believing the output.** Exact two-sided McNemar needs
+    b>=6 with c=0 to clear p<0.05.  The journal's own estimate for this
+    correction is ~2.6 gained / ~0.9 lost, so this run is expected to land near
+    p=0.375 and *cannot* resolve whether the correction helps on a 153-clip
+    split.  It establishes the operator's behaviour and the direction of the
+    flips; significance needs EQ-007's >=3,000-command holdout.
+
+    Every split parameter defaults from the checkpoint payload rather than from
+    an argument, and the corpus is fingerprint-matched against the one the
+    checkpoint trained on.  Without that, a corpus that has gained samples since
+    training silently reshuffles the split, and "test" quietly fills with
+    commands the checkpoint was fit on — inflating baseline and corrected
+    numbers together, in a way the paired test cannot reveal.
+    """
+    import numpy as np
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_bias import (
+        along_path_fit_key, discordant_pairs, fit_along_path_bias, mcnemar_exact_p,
+        perpendicular_error, signed_along_path_error,
+    )
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+    from trueskate_ai.vision.basic_linear_training import (
+        RECOVERY_DURATION_TOLERANCE_S, RECOVERY_ENDPOINT_TOLERANCE,
+        basic_linear_metrics, basic_linear_recovery_records,
+    )
+
+    trainer = _trainer()
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    # Split identity belongs to the checkpoint, not to this call.  Arguments may
+    # only override where the payload is silent.
+    seed = payload.get("split_seed") if seed is None else seed
+    if seed is None:
+        raise ValueError("checkpoint records no split_seed and none was supplied")
+    if fresh_holdout_source is None:
+        fresh_holdout_source = payload.get("fresh_holdout_source")
+    if fresh_stratify_by_device is None:
+        fresh_stratify_by_device = bool(payload.get("fresh_stratify_by_device"))
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  knots=int(payload.get("knots") or 2),
+                                  **_payload_resolution([payload]))
+    fingerprint = trainer._fingerprint(data.sample_paths)
+    trained_on = payload.get("dataset_fingerprint")
+    if trained_on and trained_on != fingerprint:
+        raise ValueError(
+            "corpus does not match the one this checkpoint was split on "
+            f"({fingerprint} vs {trained_on}); the split would silently differ and 'test' could "
+            "contain trained-on commands")
+    if fresh_holdout_source is None:
+        _train, val_indices, test_indices = split_by_command(data, seed=seed)
+    else:
+        _train, val_indices, test_indices = trainer.split_with_fresh_command_holdout(
+            data, fresh_source=fresh_holdout_source, seed=seed,
+            stratify_by_device=fresh_stratify_by_device,
+        )
+    recorded_sizes = payload.get("split_sizes") or {}
+    for name, indices in (("validation", val_indices), ("test", test_indices)):
+        if name in recorded_sizes and recorded_sizes[name] != len(indices):
+            raise ValueError(
+                f"re-derived {name} split has {len(indices)} clips but the checkpoint recorded "
+                f"{recorded_sizes[name]}; the split is not the one that was trained against")
+    device = torch.device("cpu")
+    model = _model_from_payload(payload, torch).to(device)
+    model.load_state_dict(payload["state_dict"])
+    model.eval()
+
+    def loader(indices):
+        return DataLoader(Subset(data, indices), batch_size=batch_size)
+
+    validation_records = basic_linear_recovery_records(model, loader(val_indices), device)
+    # fit_on is derived from the actual index set, so an artefact cannot claim a
+    # provenance it does not have.
+    correction = fit_along_path_bias(validation_records, statistic=statistic, axis="predicted",
+                                     fit_on=along_path_fit_key("validation", val_indices))
+    # The autopsy's operator, for comparison only.  apply() refuses a
+    # commanded-axis fit, so this exists purely to answer EQ-002's question of
+    # whether the two estimators agree on real records.
+    commanded = fit_along_path_bias(validation_records, statistic=statistic, axis="commanded",
+                                    fit_on=along_path_fit_key("validation", val_indices))
+
+    # The dataset is deterministic, shuffle is off and Subset preserves order, so
+    # these two passes are element-wise the same clips: the pairing is real.
+    uncorrected_records = basic_linear_recovery_records(model, loader(test_indices), device)
+    corrected_records = basic_linear_recovery_records(model, loader(test_indices), device,
+                                                      correction=correction)
+    before = [record["recovered"] for record in uncorrected_records]
+    after = [record["recovered"] for record in corrected_records]
+    gained, lost = discordant_pairs(before, after)
+    baseline = basic_linear_metrics(model, loader(test_indices), device)
+    corrected = basic_linear_metrics(model, loader(test_indices), device, correction=correction)
+
+    def distribution(values):
+        values = [value for value in values if value is not None]
+        if not values:
+            return {"samples": 0}
+        return {"samples": len(values), "sd": float(np.std(values)),
+                "median": float(np.median(values)), "p90": float(np.quantile(values, .90)),
+                "p99": float(np.quantile(values, .99))}
+
+    output = {
+        "checkpoint": checkpoint_name,
+        "data_subdir": data_subdir,
+        "seed": seed,
+        "statistic": statistic,
+        "fresh_holdout_source": fresh_holdout_source,
+        "fresh_stratify_by_device": fresh_stratify_by_device,
+        "dataset_fingerprint": fingerprint,
+        "endpoint_tolerance": RECOVERY_ENDPOINT_TOLERANCE,
+        "duration_tolerance_s": RECOVERY_DURATION_TOLERANCE_S,
+        "correction": {"shift": correction.shift, "samples": correction.samples,
+                       "axis": correction.axis, "fit_on": correction.fit_on},
+        "commanded_axis_shift": commanded.shift,
+        "axis_disagreement": abs(correction.shift - commanded.shift),
+        "baseline_recovery": baseline["gesture_recovery_accuracy"],
+        "corrected_recovery": corrected["gesture_recovery_accuracy"],
+        "test_samples": len(before),
+        # The headline pair.  A net gain with a large p is a coin flip, not a win.
+        "gained": gained, "lost": lost, "mcnemar_p": mcnemar_exact_p(gained, lost),
+        "mcnemar_note": "b>=6 with c=0 is required for p<0.05; this split cannot show significance",
+        # EQ-010: the axis transfer scales with the SQUARE of this.  It is a
+        # folded (nonnegative) magnitude, so its sd is not a signed sd.
+        "test_perpendicular_magnitude": distribution(
+            [perpendicular_error(record) for record in uncorrected_records]),
+        "validation_along": distribution(
+            [signed_along_path_error(record) for record in validation_records]),
+        "test_along_uncorrected": distribution(
+            [signed_along_path_error(record) for record in uncorrected_records]),
+        "baseline_metrics": baseline,
+        "corrected_metrics": corrected,
+    }
+    label = f"{Path(checkpoint_name).stem}_{statistic}_seed{seed}"
+    (Path("/models") / f"basic_linear_bias_correction_{label}.json").write_text(
+        json.dumps(output, indent=2),
+    )
+    models.commit()
+    return {key: value for key, value in output.items()
+            if key not in {"baseline_metrics", "corrected_metrics"}}
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,

@@ -524,10 +524,31 @@ def test_checkpoint_evaluation_honours_the_trained_decode_resolution():
         module._payload_resolution([{"image_width": 128, "image_height": 288},
                                     {"image_width": 256, "image_height": 576}])
     source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
-    assert source.count("_payload_resolution(") == 7
+    # 8 = the helper itself plus every evaluator, including EQ-009's
+    # evaluate_bias_correction.  Bumping this is the point: a new evaluator
+    # that skips the helper cannot land without failing here first.
+    assert source.count("_payload_resolution(") == 8
 
 
 def test_modal_linear_entry_points_expose_the_line_fit_decoder():
     source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
     assert source.count("line_fit=line_fit") == 3
     assert 'line_fit=bool(payload.get("line_fit", False))' in source
+
+
+def test_bias_correction_evaluator_takes_its_split_from_the_checkpoint():
+    # A corpus that has gained samples since training reshuffles the split, so a
+    # re-derived "test" set can quietly contain trained-on commands -- inflating
+    # baseline and corrected numbers together, which the paired test cannot
+    # reveal.  Split identity must come from the payload, not from arguments.
+    source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
+    body = source[source.index("def evaluate_bias_correction("):]
+    body = body[:body.index("@app.local_entrypoint()")]
+    assert 'payload.get("split_seed")' in body
+    assert 'payload.get("dataset_fingerprint")' in body
+    assert 'payload.get("split_sizes")' in body
+    assert 'knots=int(payload.get("knots") or 2)' in body
+    assert "_payload_resolution([payload])" in body
+    # The fit must never be handed test records.
+    assert "fit_along_path_bias(validation_records" in body
+    assert "fit_along_path_bias(corrected_records" not in body
