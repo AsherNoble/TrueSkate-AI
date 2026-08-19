@@ -1684,6 +1684,152 @@ def audit_duration_difference(data_subdir: str, checkpoint_name: str, *, clips: 
     return output
 
 
+@app.function(image=image, cpu=8.0, timeout=2 * 3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_trail_head(data_subdir: str, checkpoint_name: str, *, clips: int = 400,
+                     batch_size: int = 8, threshold: float = 0.35,
+                     advance: float = 0.02) -> dict:
+    """Track the trail HEAD along the commanded chord.
+
+    Every reader through EQ-027 collapsed each frame to a scalar — a thresholded
+    pixel count or a spatial max brightness — and used none of the trail's
+    POSITION.  The model localises endpoints to ~0.006 normalised units, so it
+    plainly reads geometry spatially.  For a constant-velocity linear drag the
+    head's advance along the chord stops at contact end, which is a kinematic
+    read of liftoff and is immune to fade: the head stops moving whether or not
+    the trail is still bright.
+
+    **This is an ORACLE-ASSISTED upper bound.** It projects onto the *commanded*
+    chord, i.e. it is handed the true endpoint direction that the model must
+    infer.  A reader given that advantage which still cannot match the model is
+    strong evidence; one that beats the model would prove nothing about
+    inference-time feasibility.
+
+    `threshold` (0.35) and `advance` (0.02 of the chord) are pre-committed.
+    """
+    import json as _json
+    import math
+    import numpy as np
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset
+
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_dataset_kwargs([payload]))
+    fresh = [index for index in range(len(data))
+             if data.sample_paths[index].relative_to(data.root).parts[0] == "fresh"]
+    # Spread across the whole fresh set rather than taking a contiguous block:
+    # EQ-027's stride collapsed to 1 and sampled the first N in path order.
+    step = max(1, len(fresh) // max(clips, 1))
+    indices = fresh[::step][:clips] if step > 1 else fresh[:clips]
+
+    def trail_evidence(frames: torch.Tensor) -> torch.Tensor:
+        steps = frames.shape[1]
+        reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
+        red, green, blue = frames.unbind(dim=2)
+        motion = torch.abs(frames - reference).mean(dim=2)
+        return ((red - green + .12).relu() * (green - blue + .12).relu()
+                * (red - .20).relu() * motion)
+
+    durations, head_edge, head_reach = [], [], []
+    for batch in DataLoader(Subset(data, indices), batch_size=batch_size):
+        frames = batch["frames"]
+        target = batch["target"]
+        evidence = trail_evidence(frames)
+        height, width = evidence.shape[2], evidence.shape[3]
+        flat = evidence.flatten(2)
+        clip_max = flat.amax(dim=(1, 2), keepdim=True).clamp_min(1e-6)
+        above = flat > (clip_max * threshold)
+        ys = torch.linspace(0., 1., height)[:, None].expand(height, width).reshape(-1)
+        xs = torch.linspace(0., 1., width)[None, :].expand(height, width).reshape(-1)
+        steps = evidence.shape[1]
+        grid = torch.arange(steps)
+        for item in range(len(target)):
+            durations.append(float(target[item, -1]))
+            start = target[item, :2]
+            end = target[item, 2:4]
+            chord = end - start
+            length = float(torch.linalg.vector_norm(chord))
+            if length < 1e-6:
+                head_edge.append(float("nan")); head_reach.append(float("nan")); continue
+            unit = chord / length
+            # Fraction along the commanded chord for every pixel.
+            projection = ((xs - start[0]) * unit[0] + (ys - start[1]) * unit[1]) / length
+            masked = torch.where(above[item], projection[None, :].expand(steps, -1),
+                                 torch.full_like(projection[None, :].expand(steps, -1), -1e9))
+            head = masked.amax(dim=1)                       # [T] furthest point drawn so far
+            head = torch.where(head < -1e8, torch.full_like(head, float("nan")), head)
+            head_reach.append(float(np.nanmax(head.numpy())))
+            # Liftoff = the last frame at which the head still advanced materially.
+            series = head.numpy()
+            advancing = [t for t in range(1, steps)
+                         if np.isfinite(series[t]) and np.isfinite(series[t - 1])
+                         and series[t] - series[t - 1] > advance]
+            head_edge.append(float(advancing[-1]) if advancing else float("nan"))
+
+    durations = np.array(durations, dtype=float)
+    head_edge = np.array(head_edge, dtype=float)
+    head_reach = np.array(head_reach, dtype=float)
+    quantum_s = 2.1935 / 31
+    common = ~np.isnan(durations) & ~np.isnan(head_edge)
+    order = np.arange(len(durations))
+    half_a, half_b = common & (order % 2 == 0), common & (order % 2 == 1)
+
+    def cross_fitted(series):
+        predicted = np.full_like(durations, np.nan)
+        for fit, score in ((half_a, half_b), (half_b, half_a)):
+            if fit.sum() < 3:
+                continue
+            slope, intercept = np.polyfit(series[fit], durations[fit], 1)
+            predicted[score] = slope * series[score] + intercept
+        return predicted
+
+    def summarise(estimate):
+        error = (estimate - durations)[common]
+        absolute = np.abs(error)
+        return {"clips": int(common.sum()), "bias_s": round(float(error.mean()), 4),
+                "mae_s": round(float(absolute.mean()), 4),
+                "median_abs_s": round(float(np.median(absolute)), 4),
+                "p90_abs_s": round(float(np.quantile(absolute, .9)), 4),
+                "mae_frames": round(float(absolute.mean() / quantum_s), 3),
+                "within_duration_gate": round(float((absolute <= 0.10).mean()), 4)}
+
+    def sign_test(a, b):
+        left, right = np.abs(a - durations)[common], np.abs(b - durations)[common]
+        wins, losses = int((left < right).sum()), int((left > right).sum())
+        total = wins + losses
+        if total == 0:
+            return {"wins": 0, "losses": 0, "p": 1.0}
+        tail = sum(math.comb(total, k) for k in range(max(wins, losses), total + 1)) / 2 ** total
+        return {"wins": wins, "losses": losses, "p": round(min(1.0, 2 * tail), 6)}
+
+    constant = np.full_like(durations, np.nan)
+    for fit, score in ((half_a, half_b), (half_b, half_a)):
+        constant[score] = durations[fit].mean()
+    estimate = cross_fitted(head_edge)
+    correlation = float(np.corrcoef(head_edge[common], durations[common])[0, 1])
+    output = {
+        "data_subdir": data_subdir, "checkpoint": checkpoint_name,
+        "oracle_assisted": "projects onto the COMMANDED chord; upper bound, not inference-feasible",
+        "precommitted": {"threshold": threshold, "advance": advance, "source": "fresh"},
+        "clips": int(common.sum()), "clips_dropped": int((~common).sum()),
+        "correlation_with_duration": round(correlation, 4),
+        "r_squared": round(correlation ** 2, 4),
+        "head_reach": {"median": round(float(np.nanmedian(head_reach)), 4),
+                       "p10": round(float(np.nanquantile(head_reach, .1)), 4),
+                       "p90": round(float(np.nanquantile(head_reach, .9)), 4)},
+        "head_tracking": summarise(estimate), "constant_duration": summarise(constant),
+        "head_vs_constant": sign_test(estimate, constant),
+        "best_scalar_reader_r": 0.4511,
+        "model_duration_mae_s": float((payload.get("test") or {}).get("duration_mae", float("nan"))),
+    }
+    (Path("/models") / f"basic_linear_trail_head_{data_subdir.replace('/', '_')}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,

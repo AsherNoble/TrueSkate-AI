@@ -469,7 +469,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   is the last cheap thing that could change the picture before duration work moves to the model itself.
 
 ## EQ-028 — Track the trail HEAD, not a per-frame scalar
-- status: todo
+- status: done: kill does NOT fire — head tracking is the best reader (r 0.582 vs 0.451, MAE 0.163s vs
+  0.189s). But RETRACTED the headline: the model's `duration_head` takes only a 2xT scalar series
+  (spatial max + mean), so it sees NO position and the gap is not about geometry. Much of the ratio is
+  the 0.021s integer-frame quantisation floor. See the 2026-08-20 EQ-028 entry.
 - tier: PAID (cheap CPU)
 - hypothesis: every reader so far collapses each frame to a scalar (pixel count or max brightness) and
   uses none of the trail's POSITION. Projecting above-threshold pixels onto the commanded start->end
@@ -486,3 +489,35 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   for real.
 - why: this is the one structurally different family left, and the model demonstrably reads geometry
   spatially (endpoints to 0.006 normalised units) while every reader tried so far throws position away.
+
+## EQ-029 — Is the gap the evidence map or the decoder?
+- status: todo
+- tier: PAID (one short training run)
+- hypothesis: the model's duration advantage comes from either (a) a learned evidence map beating a
+  hand-crafted colour x motion filter, or (b) a learned temporal decoder over the whole series beating
+  a single hand-picked event. EQ-028 separates neither.
+- method: feed the hand-crafted `trail_evidence` scalar series (per-frame spatial max and mean, the same
+  2xT shape `duration_head` consumes) into a freshly-initialised copy of `duration_head`, trained on the
+  same split with the same schedule. Compare against 0.163s (hand-crafted front end + hand-picked event)
+  and 0.0189s (learned front end + learned decoder).
+- expected: a number between the two that attributes the gap.
+- kill: n/a — this is an attribution experiment; every outcome is informative.
+- why: EQ-028 proved the model's duration path is the SAME reader family as the hand-crafted ones, so
+  the remaining question is which half of the pipeline carries the advantage. It is the last cheap thing
+  that changes what duration work should target.
+
+## EQ-030 — Fix the head estimator, then go sub-frame
+- status: todo
+- tier: PAID (cheap CPU)
+- hypothesis: (a) the per-frame max should be a cumulative max — the code contradicts its own comment and
+  one flicker latches the estimate to the clip end; (b) clipping the head to [0,1] removes post-liftoff
+  board-motion contamination (p90 reach 1.22); (c) interpolating the head-advance profile instead of
+  emitting an integer index is the ONLY way any reader beats the 0.021s quantisation floor.
+- method: re-run EQ-028 with `head.cummax(dim=0)` and a [0,1] clip as a bug-fix arm; then add a sub-frame
+  arm that fits the advance profile and reads liftoff by interpolation.
+- expected: the bug fix lowers p90 materially; the sub-frame arm is the only one that can approach the
+  model's 0.024s residual sd.
+- kill: sub-frame interpolation does not beat the integer read — then the reader's noise is not
+  quantisation-limited and the floor argument does not apply to it.
+- why: EQ-028's estimator has a known bug and a known contamination path, and the quantisation floor means
+  no integer estimator can ever be compared fairly to the model.

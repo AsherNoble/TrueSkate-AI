@@ -1405,3 +1405,68 @@ lacked. **Verdict: my first conclusion was wrong and is retracted; the family is
   axis, take the max projection per frame, and read liftoff as the frame where that projection stops
   advancing. For a constant-velocity linear drag that is a direct kinematic read of contact end, immune
   to fade. A different family, not another threshold sweep.
+
+## EQ-028 — Head tracking is the best reader yet; but the model's duration head sees NO position (2026-08-20)
+
+The reader the EQ-027 review named: project above-threshold pixels onto the commanded chord, take the
+max projection per frame (the trail head), read liftoff as the last frame where it still advances.
+**Verdict: kill criterion does NOT fire — position helps. But my headline was false.**
+
+- **Results** (389 fresh clips, 11 dropped, pre-committed threshold 0.35 / advance 0.02):
+
+  | reader | MAE (s) | frames | gate | r | R² |
+  |---|---|---|---|---|---|
+  | **head tracking** | **0.163** | 2.30 | 36.8% | **0.582** | **0.339** |
+  | best scalar (increase_span) | 0.189 | 2.67 | 30.2% | 0.451 | 0.204 |
+  | constant duration | 0.2167 | 3.06 | 23.1% | — | — |
+  | trained model | 0.0189 | 0.26 | — | — | ~0.99 |
+
+  Head vs constant: 297 wins / 92 losses. Median head reach 0.953 of the chord — it is genuinely
+  tracking the drag. Constant MAE 0.2167 = 0.866·sd, the uniform-distribution value, so the arithmetic
+  is coherent.
+- **RETRACTED before it was written: "the model is extracting far more trail geometry than any
+  hand-crafted reader."** Verified in `basic_linear_regressor.py:259-261`:
+  `series = torch.stack((evidence.amax((2,3)), evidence.mean((2,3))), dim=1)` and `duration_head` is
+  `Conv1d(2, c, 3) → … → Linear`. **Its entire input is a 2×T scalar series — spatial max and spatial
+  mean per frame.** Position is collapsed before the duration head sees anything. The model's duration
+  path is the **same reader family** as EQ-016/025/026/027. The 8.6× gap cannot be attributed to
+  geometry, and that sentence must not appear anywhere.
+- **Two live explanations for the gap, and EQ-028 separates neither:**
+  1. a **learned evidence map** (`max(start_scores, end_scores)`) beats a hand-crafted colour×motion
+     filter — better front end, same family;
+  2. a **learned temporal decoder** over the whole series beats one hand-picked event — same front end,
+     better back end.
+- **Much of the "8.6×" is output type, not information.** An integer frame index carries irreducible
+  quantisation noise of `quantum/√12 ≈ 0.021 s`; the model's residual sd is **≈0.024 s**. **No
+  integer-event reader can structurally reach it.** The honest comparison is variance explained:
+  **reader R² = 0.34 vs model ≈ 0.99**, not a ratio of MAEs.
+- **The oracle advantage is negligible — I over-credited it.** Endpoint median error is 0.0074 (p90
+  0.0172) against chords of 0.16–0.48, so predicted endpoints give a chord off by ≲3° and ~5% in
+  length; the length scale is absorbed by the affine slope and a 3° rotation moves the max-projection
+  well under the 0.02 advance threshold. "Even with the oracle chord handed to it" is rhetoric and is
+  struck. Silver lining: **this reader is essentially inference-feasible**, not merely an upper bound.
+- **Defects in my own estimator, to fix before it is quoted again:**
+  - **The code contradicts its own comment.** The comment says "furthest point drawn so far" — a
+    *cumulative* max — but it computes a *per-frame* max, which can drop and re-rise; `advancing[-1]`
+    then latches onto that spurious late rise, so one flicker sends the estimate to the clip end.
+    `head.cummax(dim=0)` before diffing is a **bug fix**, not a new arm.
+  - **p90 reach 1.22 is contamination that biases LATE.** Not the +0.12 colour offsets (a neutral grey
+    pixel scores ~0.0115 vs a trail pixel's ~0.222 and cannot pass 0.35×max) but the `motion` factor:
+    anything orange-ish that moves after onset enters — in True Skate that is the board/skater, which
+    moves *after* liftoff, creating late advances at high projection.
+  - **p10 reach 0.82 is not EQ-018 truncation** (every drag fits the window with ≥0.6 s spare). It is
+    the reference window: the model asserts onset at 0.24 while `trail_evidence` builds its reference
+    from the first 0.22 — under one frame apart, against a Δ that varies ~0.12 s by call path. When Δ
+    jitters early the first trail frames are subtracted into the background.
+  - The 11 drops are all "no frame advanced >0.02", which is *anti*-correlated with short duration
+    (short drags advance more per frame); 2.75%, optimistic in direction, immaterial in size.
+  - `quantum_s = 2.1935/31` is stale against `CLIP_WINDOW_S = 2.27` → `mae_frames` is 2.23 not 2.30.
+    Cosmetic; `mae_s` and `r` are unaffected because the affine fit maps index→seconds directly.
+- **Comparability is sound:** the model's test split is fresh-only (same population), `duration_mae` is
+  raw seconds on the same target, and the window is fixed regardless of gesture duration so there is no
+  clip-length leak. Every residual asymmetry favours the reader.
+- **Next:** EQ-029 — the experiment that actually answers what the gap is: feed the hand-crafted
+  `trail_evidence` scalar series into a freshly-trained copy of `duration_head` on the same split.
+  Beats 0.163 s ⇒ the gap was the decoder; stays ⇒ the gap was the evidence map. EQ-030 — the estimator
+  bug fix (cummax + clip to [0,1]) and a sub-frame liftoff read, the only way any reader goes below the
+  0.021 s quantisation floor.
