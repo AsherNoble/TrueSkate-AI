@@ -1527,3 +1527,64 @@ Within-gate rises 36.8% → **82.4%** from the decoder swap alone. Median 0.0376
   same series (same 2,734 train / 153 test budget) isolates multivariate reading from shape reading,
   and re-running `extract()` without normalisation and with a corpus-global scale isolates the
   normalisation knob.
+
+## EQ-031 — It is CAPACITY, not temporal shape: 6 scalars + an MLP get within 16% of the decoder (2026-08-20)
+
+Control arms the EQ-031 review demanded, all matching the conv decoder's loss (`smooth_l1 beta=0.05`)
+and its sigmoid range constraint, so only functional class and input width vary. Same split, epoch
+chosen on validation, test scored once.
+
+| arm | test MAE (s) | gate | isolates |
+|---|---|---|---|
+| ridge_6 (squared loss, unbounded) | 0.14554 | 0.392 | — |
+| **linear_6** (matched loss + range) | **0.12057** | 0.556 | loss/range: **1.21x** |
+| **mlp_6** (nonlinear, same 6 scalars) | **0.07295** | 0.752 | capacity: **1.65x** |
+| linear_64 (linear, full 2x32 series) | 0.12097 | 0.588 | information at fixed class: **1.00x** |
+| mlp_64 (nonlinear, full series) | 0.06296 | 0.804 | information given capacity: 1.16x |
+| conv_32 (temporal convolution) | 0.06289 | 0.824 | conv structure: **~0** |
+| model (learned front end) | 0.01890 | — | — |
+
+- **RETRACTED: "temporal shape dominates."** It does not. `linear_64` (the whole 32-frame series, linear)
+  scores **0.12097** against `linear_6`'s **0.12057** — full temporal information buys **nothing** at
+  fixed functional class. And `conv_32` (0.06289) is indistinguishable from `mlp_64` (0.06296), so the
+  convolution's temporal structure adds **essentially zero** over a plain MLP on the flattened series.
+- **The dominant term is CAPACITY.** Nonlinearity over the same six hand-picked scalars takes
+  0.12057 → **0.07295** (1.65x), which is **within 16% of the full conv decoder**. Ordering of the
+  three real factors: capacity 1.65x > information-given-capacity 1.16x ≈ loss/range 1.21x >> conv
+  structure ~1.00x.
+- **RETRACTED: "hand-picked feature approaches are a dead end."** Refuted by direct measurement — six
+  scalars plus a small MLP reach 0.0730 s at gate 0.752, versus the decoder's 0.0629 s at 0.824. The
+  review was right that one feature set at one alpha could not support that claim.
+- **Also retracted from the first pass:** the 1.12x "multivariate" step (its 0.163 anchor was
+  oracle-assisted — handed the commanded chord — and scored on 389 clips spanning train/val/test
+  against 153 test clips here, so it is not a comparison), and the 1.11x normalisation claim (n_seeds=1,
+  with an epoch picked as argmin over 300 noisy validation evaluations whose tail already swings 0.0058
+  against a 0.0072 total spread). Both deleted rather than softened. My stated "0.1455 → 0.0701 at
+  matched normalisation" was also mis-stated: that paired a per-clip ridge against a no-normalisation
+  conv; the matched pair is 0.1455 vs 0.0629.
+- **Feature-set caveat:** the six scalars are only valid under per-clip normalisation — `lit_count` and
+  `last_lit` use an absolute 0.35 threshold, and the corpus scale is 0.0933, so under `none` the series
+  never reaches it and both features would be identically zero.
+- **Actionable consequence.** Duration work should target **model capacity over the evidence series**,
+  not temporal-structure design and not richer hand-picked features. A cheap deployable reader already
+  exists: six summary scalars + a small MLP, no convolution, no positional information, 75% within the
+  0.10 s gate.
+
+## EQ-019 — Session key fixed; the 2,022-command corpus is ALSO 100% session-shared (2026-08-20)
+
+- **A layout bug caught before it was journaled.** My first path-derived key took `parts[1]`, which is
+  the session in the mixed corpus (`<source>/<session>/<park>/sample`) but the **park** in the 2k corpus
+  (`<session>/<park>/sample`). It reported "1 distinct session" for the whole 2,022-command corpus —
+  a bug, not a finding. The key now matches the session directory by **pattern**
+  (`iPhone_\w+_\d{8}_\d{6}`) anywhere in the path, and falls back to the full relative parent so a miss
+  can never silently collapse distinct recordings.
+- **Measured on the 2,022-command corpus** (`split_by_command`, checkpoint
+  `basic_linear_linear_2k_verified_temporal_gpuany_20260813`): 1,416 / 303 / 303 clips over **233 train,
+  172 validation and 171 test sessions**; train∩test = 171; **303/303 = 100% of test clips sit in a
+  training session; zero sessions unique to test.**
+- **This restores the claim EQ-017 had to withdraw.** The 90.10% and 93.07% figures come from the 2k
+  corpus, which EQ-017 could not audit because legacy metas carry no `session` field. Now measured
+  directly: **that corpus is 100% session-shared too**, so every MVP-2 number — 90.10%, 93.07%, 94.12%
+  and EQ-002's 96.08% — demonstrates generalisation to unseen **commands**, not to unseen recording
+  conditions. Consistent with EQ-020: the binding axes are park/day/device, and session-disjointness
+  was never tested anywhere.

@@ -308,7 +308,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   label-timing bug affecting the whole corpus, not just duration.
 
 ## EQ-019 — Fix the legacy session key, then audit the 2,022-command split
-- status: todo
+- status: done: CONFIRMED — session key now pattern-matched (a fixed path index gave the PARK on the 2k
+  layout; caught before journaling). The 2,022-command corpus is 100% session-shared (233 train / 171
+  test sessions, 0 unique to test), restoring EQ-017's withdrawn cross-corpus claim. See the 2026-08-20
+  EQ-019 entry.
 - tier: FREE
 - hypothesis: `_segment_key`'s `legacy:<dir>` fallback collapses every legacy sample into one bucket,
   so session counts for the 2,022-command corpus are meaningless and the cross-corpus claim cannot be
@@ -526,7 +529,9 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   no integer estimator can ever be compared fairly to the model.
 
 ## EQ-031 — Decompose the three variables EQ-029 bundled
-- status: todo
+- status: done: RETRACTED "temporal shape dominates" — it is CAPACITY. linear_64 (full series) equals
+  linear_6, and conv_32 equals mlp_64, so temporal information and conv structure each buy ~nothing;
+  nonlinearity over 6 scalars buys 1.65x and lands within 16% of the decoder. See the 2026-08-20 entry.
 - tier: PAID (cheap CPU)
 - hypothesis: EQ-029's "decoder 2.6x" bundles decoder architecture, fitting budget and per-clip
   normalisation; the front-end 3.3x bundles {learned filter, temporal mixer, duration-supervised
@@ -541,3 +546,18 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - kill: n/a — attribution, every outcome informative.
 - why: EQ-029 showed the residual is addressable, so knowing WHICH half to attack is now the binding
   question for duration work.
+
+## EQ-032 — Does capacity on the LEARNED evidence series close the remaining 3.3x?
+- status: todo
+- tier: PAID (cheap CPU)
+- hypothesis: EQ-031 showed capacity over the evidence series is the dominant decoder factor. The
+  remaining 3.3x sits in the front end (learned map + temporal mixer + duration-supervised training).
+  Extracting the MODEL's own `max(start_scores, end_scores)` series and feeding it to the same mlp_6 /
+  mlp_64 arms says how much of that 3.3x is the map itself versus end-to-end training.
+- method: run the checkpoint to dump `evidence.amax((2,3))` and `evidence.mean((2,3))` per clip, then
+  train the same arms on it; compare against 0.0629 (hand-crafted series) and 0.0189 (the model).
+- expected: a number that splits the front-end factor into "better series" versus "trained jointly".
+- kill: the learned series with a fresh head matches 0.0189 — then the front end is entirely the map and
+  joint training adds nothing.
+- why: it is the last cheap decomposition; after it, duration work is an architecture decision rather
+  than an attribution question.

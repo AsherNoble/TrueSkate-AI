@@ -905,17 +905,35 @@ def audit_split_session_overlap(data_subdir: str, checkpoint_name: str, *,
             stratify_by_device=fresh_stratify_by_device,
         )
 
+    import re as _re
+    _SESSION = _re.compile(r"^iPhone_\w+?_\d{8}_\d{6}$")
+
+    def session_of(index):
+        """Session identity from the PATH, matched by PATTERN not by position.
+
+        `_segment_key` falls back to `legacy:<dir>` when meta carries no
+        `session`, collapsing a whole corpus into one bucket — but a fixed path
+        index is no better, because the layouts differ: the 2k corpus is
+        `<session>/<park>/sample` while the mixed corpus is
+        `<source>/<session>/<park>/sample`, so "parts[1]" is the session in one
+        and the PARK in the other.  Match the session directory's shape instead,
+        and fall back to the full relative parent so a miss can never silently
+        collapse distinct recordings into one.
+        """
+        parts = data.sample_paths[index].relative_to(data.root).parts
+        for part in parts:
+            if _SESSION.match(part):
+                return part
+        return "/".join(parts[:-1]) or parts[0]
+
     def sessions(indices):
-        # segment_key is "<session>:segment_NNNNN" (or "legacy:<dir>").
-        return {data.segment_keys[index].rsplit(":", 1)[0] for index in indices}
+        return {session_of(index) for index in indices}
 
     train, validation, test = sessions(train_indices), sessions(val_indices), sessions(test_indices)
     # How much of the evaluated data sits in a session the model also trained on?
     train_sessions = train
-    test_in_train = sum(1 for index in test_indices
-                        if data.segment_keys[index].rsplit(":", 1)[0] in train_sessions)
-    val_in_train = sum(1 for index in val_indices
-                       if data.segment_keys[index].rsplit(":", 1)[0] in train_sessions)
+    test_in_train = sum(1 for index in test_indices if session_of(index) in train_sessions)
+    val_in_train = sum(1 for index in val_indices if session_of(index) in train_sessions)
     output = {
         "data_subdir": data_subdir,
         "checkpoint": checkpoint_name,
@@ -1987,6 +2005,245 @@ def audit_duration_head_attribution(data_subdir: str, checkpoint_name: str, *,
         },
     }
     (Path("/models") / f"basic_linear_duration_attribution_{data_subdir.replace('/', '_')}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
+@app.function(image=image, cpu=8.0, timeout=3 * 3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_duration_decomposition(data_subdir: str, checkpoint_name: str, *,
+                                 batch_size: int = 8, epochs: int = 300, seed: int = 0) -> dict:
+    """Separate the three variables EQ-029 bundled into "the decoder is worth 2.6x".
+
+    EQ-029 changed decoder architecture, fitting budget and evidence
+    normalisation at once.  Two of the three separate cheaply on data already
+    extracted:
+
+    * **shape vs multivariate** — a ridge over a handful of hand-picked scalars
+      of the same series, on the same train/test budget.  If it reaches the conv
+      decoder's 0.0629 s, the decoder's win is reading SEVERAL scalars rather
+      than reading temporal SHAPE; if it stalls near the single-event reader's
+      0.163 s, shape is what matters.
+    * **normalisation** — the same conv decoder on raw, per-clip-normalised and
+      corpus-scaled series.  EQ-029 imposed a per-clip scale the hand-picked
+      reader never had, and charged the difference to the decoder.
+
+    The corpus scale is computed from TRAIN ONLY, so no variant leaks test
+    statistics.  (Separating `temporal_mixer` from the learned filter needs a
+    retrain and is deliberately out of scope.)
+    """
+    import json as _json
+    import numpy as np
+    import torch
+    from torch import nn
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.data.gesture_sampling import BASIC_LINEAR_MAX_S, BASIC_LINEAR_MIN_S
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+
+    trainer = _trainer()
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_dataset_kwargs([payload]))
+    split_seed = payload.get("split_seed", seed)
+    fresh_source = payload.get("fresh_holdout_source")
+    if fresh_source is None:
+        train_idx, val_idx, test_idx = split_by_command(data, seed=split_seed)
+    else:
+        train_idx, val_idx, test_idx = trainer.split_with_fresh_command_holdout(
+            data, fresh_source=fresh_source, seed=split_seed,
+            stratify_by_device=bool(payload.get("fresh_stratify_by_device")))
+    recorded = payload.get("split_sizes") or {}
+    for name, indices in (("train", train_idx), ("validation", val_idx), ("test", test_idx)):
+        if name in recorded and recorded[name] != len(indices):
+            raise ValueError(f"re-derived {name} split disagrees with the checkpoint")
+
+    def trail_evidence(frames: torch.Tensor) -> torch.Tensor:
+        steps = frames.shape[1]
+        reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
+        red, green, blue = frames.unbind(dim=2)
+        motion = torch.abs(frames - reference).mean(dim=2)
+        return ((red - green + .12).relu() * (green - blue + .12).relu()
+                * (red - .20).relu() * motion)
+
+    def extract_raw(indices):
+        peaks, means, scales, targets = [], [], [], []
+        for batch in DataLoader(Subset(data, indices), batch_size=batch_size):
+            flat = trail_evidence(batch["frames"]).flatten(2)
+            peaks.append(flat.amax(dim=2))
+            means.append(flat.mean(dim=2))
+            scales.append(flat.amax(dim=(1, 2)))
+            targets.append(batch["target"][:, -1])
+        return (torch.cat(peaks), torch.cat(means), torch.cat(scales), torch.cat(targets))
+
+    raw = {name: extract_raw(indices) for name, indices in
+           (("train", train_idx), ("validation", val_idx), ("test", test_idx))}
+    corpus_scale = float(raw["train"][2].max())   # TRAIN ONLY
+
+    def build(name, mode):
+        peaks, means, scales, targets = raw[name]
+        if mode == "per_clip":
+            denominator = scales[:, None].clamp_min(1e-6)
+        elif mode == "corpus":
+            denominator = torch.full_like(scales[:, None], corpus_scale)
+        else:
+            denominator = torch.ones_like(scales[:, None])
+        return torch.stack((peaks / denominator, means / denominator), dim=1), targets
+
+    channels = int(payload.get("base_channels") or 16)
+    span = BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S
+
+    def train_head(mode):
+        torch.manual_seed(seed)
+        head = nn.Sequential(
+            nn.Conv1d(2, channels, 3, padding=1), nn.SiLU(),
+            nn.Conv1d(channels, channels, 3, padding=1), nn.SiLU(),
+            nn.AdaptiveAvgPool1d(8), nn.Flatten(),
+            nn.Linear(channels * 8, channels * 2), nn.SiLU(), nn.Linear(channels * 2, 1))
+        optimiser = torch.optim.Adam(head.parameters(), lr=2e-3)
+        train_x, train_y = build("train", mode)
+        val_x, val_y = build("validation", mode)
+        test_x, test_y = build("test", mode)
+
+        def predict(inputs):
+            return BASIC_LINEAR_MIN_S + torch.sigmoid(head(inputs))[:, 0] * span
+
+        best = {"val": float("inf"), "state": None}
+        for _epoch in range(epochs):
+            head.train()
+            order = torch.randperm(len(train_x))
+            for start in range(0, len(train_x), 64):
+                chunk = order[start:start + 64]
+                optimiser.zero_grad()
+                nn.functional.smooth_l1_loss(predict(train_x[chunk]), train_y[chunk],
+                                             beta=0.05).backward()
+                optimiser.step()
+            head.eval()
+            with torch.no_grad():
+                score = float((predict(val_x) - val_y).abs().mean())
+            if score < best["val"]:
+                best = {"val": score, "state": {k: v.clone() for k, v in head.state_dict().items()}}
+        head.load_state_dict(best["state"])
+        head.eval()
+        with torch.no_grad():
+            error = (predict(test_x) - test_y).abs()
+        return {"test_mae_s": round(float(error.mean()), 5),
+                "test_within_gate": round(float((error <= 0.10).float().mean()), 4)}
+
+    def features(mode, name):
+        """Hand-picked scalars of the same series -- no temporal shape modelling."""
+        series, targets = build(name, mode)
+        peaks, means = series[:, 0], series[:, 1]
+        steps = peaks.shape[1]
+        grid = torch.arange(steps).float()
+        rows = []
+        for item in range(len(peaks)):
+            a = peaks[item]
+            rising = (a[1:] > a[:-1]).nonzero().flatten()
+            lit = (a > 0.35).nonzero().flatten()
+            rows.append([
+                float(a.argmax()),
+                float(grid[1:][rising].max()) if len(rising) else 0.0,
+                float(a.sum()),
+                float(len(lit)),
+                float(lit.max()) if len(lit) else 0.0,
+                float(means[item].max()),
+            ])
+        return np.array(rows, dtype=float), targets.numpy()
+
+    def ridge(mode, alpha=1.0):
+        train_f, train_y = features(mode, "train")
+        test_f, test_y = features(mode, "test")
+        centre, scale = train_f.mean(0), train_f.std(0) + 1e-9
+        design = np.hstack([(train_f - centre) / scale, np.ones((len(train_f), 1))])
+        target_design = np.hstack([(test_f - centre) / scale, np.ones((len(test_f), 1))])
+        penalty = alpha * np.eye(design.shape[1])
+        penalty[-1, -1] = 0.0
+        weights = np.linalg.solve(design.T @ design + penalty, design.T @ train_y)
+        error = np.abs(target_design @ weights - test_y)
+        return {"test_mae_s": round(float(error.mean()), 5),
+                "test_within_gate": round(float((error <= 0.10).mean()), 4),
+                "features": ["argmax_peak", "last_rising", "peak_sum", "lit_count",
+                             "last_lit", "mean_max"]}
+
+    def train_tabular(inputs_by_split, hidden):
+        """Same loss and same [MIN,MAX] range constraint as the conv decoder.
+
+        The ridge minimised SQUARED error and could emit impossible durations,
+        while the conv minimised smooth_l1 inside a sigmoid range — so part of
+        the gap was loss and range handling, not model class.  These arms match
+        both, leaving only functional class and input width to vary.
+        """
+        torch.manual_seed(seed)
+        width = inputs_by_split["train"][0].shape[1]
+        layers = ([nn.Linear(width, 1)] if hidden == 0 else
+                  [nn.Linear(width, hidden), nn.SiLU(), nn.Linear(hidden, hidden), nn.SiLU(),
+                   nn.Linear(hidden, 1)])
+        net = nn.Sequential(*layers)
+        optimiser = torch.optim.Adam(net.parameters(), lr=2e-3)
+
+        def predict(inputs):
+            return BASIC_LINEAR_MIN_S + torch.sigmoid(net(inputs))[:, 0] * span
+
+        train_x, train_y = inputs_by_split["train"]
+        val_x, val_y = inputs_by_split["validation"]
+        test_x, test_y = inputs_by_split["test"]
+        best = {"val": float("inf"), "state": None}
+        for _epoch in range(epochs):
+            net.train()
+            order = torch.randperm(len(train_x))
+            for start in range(0, len(train_x), 64):
+                chunk = order[start:start + 64]
+                optimiser.zero_grad()
+                nn.functional.smooth_l1_loss(predict(train_x[chunk]), train_y[chunk],
+                                             beta=0.05).backward()
+                optimiser.step()
+            net.eval()
+            with torch.no_grad():
+                score = float((predict(val_x) - val_y).abs().mean())
+            if score < best["val"]:
+                best = {"val": score, "state": {k: v.clone() for k, v in net.state_dict().items()}}
+        net.load_state_dict(best["state"])
+        net.eval()
+        with torch.no_grad():
+            error = (predict(test_x) - test_y).abs()
+        return {"test_mae_s": round(float(error.mean()), 5),
+                "test_within_gate": round(float((error <= 0.10).float().mean()), 4)}
+
+    def tabular_inputs(kind):
+        """`scalars` = the 6 hand-picked summaries; `raw` = the flattened 2x32 series."""
+        prepared, statistics = {}, None
+        for name in ("train", "validation", "test"):
+            if kind == "scalars":
+                values, targets = features("per_clip", name)
+                values = torch.tensor(values, dtype=torch.float32)
+                targets = torch.tensor(targets, dtype=torch.float32)
+            else:
+                series, targets = build(name, "per_clip")
+                values = series.flatten(1)
+            if statistics is None:
+                statistics = (values.mean(0), values.std(0) + 1e-6)
+            prepared[name] = ((values - statistics[0]) / statistics[1], targets)
+        return prepared
+
+    scalars, raws = tabular_inputs("scalars"), tabular_inputs("raw")
+    output = {
+        "data_subdir": data_subdir, "checkpoint": checkpoint_name,
+        "split": {"train": len(train_idx), "validation": len(val_idx), "test": len(test_idx)},
+        "corpus_scale_from_train": round(corpus_scale, 6),
+        "conv_decoder_by_normalisation": {mode: train_head(mode)
+                                          for mode in ("per_clip", "corpus", "none")},
+        "ridge_over_handpicked_scalars": ridge("per_clip"),
+        # Matched loss + range, so only functional class and input width vary.
+        "linear_6_scalars": train_tabular(scalars, hidden=0),
+        "mlp_6_scalars": train_tabular(scalars, hidden=32),
+        "linear_raw_64": train_tabular(raws, hidden=0),
+        "mlp_raw_64": train_tabular(raws, hidden=32),
+        "anchors": {"single_event_reader": 0.163,
+                    "conv_decoder_eq029": 0.06289,
+                    "model": float((payload.get("test") or {}).get("duration_mae", float("nan")))},
+    }
+    (Path("/models") / f"basic_linear_duration_decomposition_{data_subdir.replace('/', '_')}.json").write_text(
         _json.dumps(output, indent=2))
     models.commit()
     return output
