@@ -119,3 +119,29 @@ def test_polyline_fit_rejects_too_few_knots():
     positions, fraction = _track(torch.tensor([[[.2, .7], [.8, .3]]]))
     with pytest.raises(ValueError, match="knots"):
         BasicLinearRegressor._fit_polyline(positions, fraction, torch.ones_like(fraction), knots=1)
+
+
+@pytest.mark.parametrize("knots", (2, 3, 5, 9))
+def test_regressor_emits_two_k_plus_one_targets(knots):
+    model = BasicLinearRegressor(base_channels=4, line_fit=True, temporal_mixer=True, knots=knots)
+    frames = torch.rand(2, 16, 3, 60, 32)
+    prediction = model(frames)
+    assert prediction.shape == (2, 2 * knots + 1)
+    assert torch.isfinite(prediction).all()
+    prediction.sum().backward()
+    assert model.trajectory_score.weight.grad is not None
+
+
+def test_two_knots_stays_byte_compatible_with_mvp2():
+    # The MVP-2 contract is [x0,y0,x1,y1,duration]; MVP-3 must not silently
+    # change the meaning of existing checkpoints.
+    model = BasicLinearRegressor(base_channels=4, knots=2)
+    assert model.knots == 2
+    assert model(torch.rand(1, 8, 3, 30, 18)).shape == (1, 5)
+
+
+def test_extra_knots_require_the_line_fit_decoder():
+    with pytest.raises(ValueError, match="line-fit"):
+        BasicLinearRegressor(base_channels=4, knots=3)
+    with pytest.raises(ValueError, match="knots"):
+        BasicLinearRegressor(base_channels=4, line_fit=True, knots=1)

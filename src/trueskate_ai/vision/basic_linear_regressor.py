@@ -19,7 +19,7 @@ class BasicLinearRegressor(nn.Module):
                  start_sigma: float = .05, end_onset: float = .24,
                  temporal_mixer: bool = False, trajectory_track: bool = False,
                  line_fit: bool = False, irls_iterations: int = 3,
-                 huber_delta: float = .02):
+                 huber_delta: float = .02, knots: int = 2):
         super().__init__()
         if start_sigma <= 0:
             raise ValueError("start_sigma must be positive")
@@ -27,6 +27,14 @@ class BasicLinearRegressor(nn.Module):
             raise ValueError("irls_iterations must be non-negative")
         if huber_delta <= 0:
             raise ValueError("huber_delta must be positive")
+        if knots < 2:
+            raise ValueError("knots must be at least 2")
+        if knots != 2 and not line_fit:
+            raise ValueError("more than two knots requires the line-fit decoder")
+        # MVP-3 predicts positions at `knots` fixed, evenly-spaced times.  At
+        # knots=2 the output is byte-identical to MVP-2's [x0,y0,x1,y1,duration],
+        # so existing checkpoints and metrics keep working unchanged.
+        self.knots = int(knots)
         # The line fit reads endpoints off a trajectory consensus, so it needs
         # the per-frame contact map regardless of the standalone track flag.
         if line_fit:
@@ -175,8 +183,8 @@ class BasicLinearRegressor(nn.Module):
 
     def _line_fit_endpoints(self, scores: torch.Tensor, *, onset: torch.Tensor,
                             duration_norm: torch.Tensor, active: torch.Tensor,
-                            ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Robustly fit the commanded straight path and read off its endpoints."""
+                            ) -> torch.Tensor:
+        """Robustly fit the commanded path; returns knot positions [batch,K,2]."""
         steps = scores.shape[1]
         positions = self._frame_positions(scores)
         time = torch.linspace(0., 1., steps, dtype=scores.dtype, device=scores.device)
@@ -193,15 +201,16 @@ class BasicLinearRegressor(nn.Module):
         window = (torch.sigmoid((time[None, :] - onset[:, None]) / edge)
                   * torch.sigmoid((onset[:, None] + span - time[None, :]) / edge))
         weights = confidence * window * active[None, :]
+        basis = self._hat_basis(fraction, self.knots)
         for _ in range(self.irls_iterations):
-            start, end = self._fit_constant_velocity(positions, fraction, weights)
-            fitted = start[:, None, :] + (end - start)[:, None, :] * fraction[:, :, None]
-            residual = torch.linalg.vector_norm(positions - fitted, dim=2)
+            fitted = self._fit_polyline(positions, fraction, weights, knots=self.knots)
+            path = torch.einsum("btk,bkc->btc", basis, fitted)
+            residual = torch.linalg.vector_norm(positions - path, dim=2)
             # Standard IRLS: the reweighting is treated as a constant so
             # gradients flow through the solve, not through the weight update.
             huber = (self.huber_delta / residual.clamp_min(1e-6)).clamp(max=1.).detach()
             weights = weights * huber
-        return self._fit_constant_velocity(positions, fraction, weights)
+        return self._fit_polyline(positions, fraction, weights, knots=self.knots)
 
     @staticmethod
     def _read_track_endpoints(scores: torch.Tensor, *, start_centre: torch.Tensor,
@@ -264,14 +273,14 @@ class BasicLinearRegressor(nn.Module):
             # of the window; duration is shared with the head above, so the two
             # jointly define the interval the fit regresses over.
             fitted_onset = torch.sigmoid(self.onset_head(series))[:, 0] * .5
-            start_xy, end_xy = self._line_fit_endpoints(
+            fitted = self._line_fit_endpoints(
                 trajectory_scores, onset=fitted_onset,
                 duration_norm=duration[:, 0] / CLIP_WINDOW_S,
                 active=(time >= .18).to(dtype=frames.dtype),
             )
             # The least-squares solve leaves non-standard strides; downstream
             # losses reshape the prediction, so hand back a contiguous tensor.
-            prediction = torch.cat((start_xy, end_xy, duration), dim=1).contiguous()
+            prediction = torch.cat((fitted.flatten(1), duration), dim=1).contiguous()
             return prediction, start_scores, end_scores, trajectory_scores
         onset = time.new_full((batch,), self.start_onset)
         # Start and end timing use separate anchors.  A start-only held-out
