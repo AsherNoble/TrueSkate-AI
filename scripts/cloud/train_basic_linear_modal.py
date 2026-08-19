@@ -55,6 +55,9 @@ def _model_from_payload(payload, torch):
         end_onset=float(payload.get("end_onset", .24)),
         temporal_mixer=bool(payload.get("temporal_mixer", False)),
         trajectory_track=bool(payload.get("trajectory_track", False)),
+        line_fit=bool(payload.get("line_fit", False)),
+        irls_iterations=int(payload.get("irls_iterations") or 3),
+        huber_delta=float(payload.get("huber_delta") or .02),
     )
 
 
@@ -88,7 +91,9 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  start_sigma: float = .05, end_onset: float = .24,
                  temporal_mixer: bool = False, trajectory_weight: float = 0.0,
                  trajectory_track: bool = False, fresh_holdout_source: str | None = None,
-                 evaluate_test: bool = True, fresh_stratify_by_device: bool = False) -> dict:
+                 evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
+                 line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
+                 image_width: int = 128, image_height: int = 288) -> dict:
     trainer = _trainer()
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
     payload = trainer.train(
@@ -109,6 +114,11 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         fresh_holdout_source=fresh_holdout_source,
         evaluate_test=evaluate_test,
         fresh_stratify_by_device=fresh_stratify_by_device,
+        line_fit=line_fit,
+        irls_iterations=irls_iterations,
+        huber_delta=huber_delta,
+        image_width=image_width,
+        image_height=image_height,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
@@ -131,7 +141,9 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
                      start_sigma: float = .05, end_onset: float = .24,
                      temporal_mixer: bool = False, trajectory_weight: float = 0.0,
                      trajectory_track: bool = False, fresh_holdout_source: str | None = None,
-                     evaluate_test: bool = True, fresh_stratify_by_device: bool = False) -> dict:
+                     evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
+                     line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
+                     image_width: int = 128, image_height: int = 288) -> dict:
     """Scheduler-independent execution fallback for the same compact protocol.
 
     This is intentionally a separate function rather than silently removing a
@@ -158,6 +170,11 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
         fresh_holdout_source=fresh_holdout_source,
         evaluate_test=evaluate_test,
         fresh_stratify_by_device=fresh_stratify_by_device,
+        line_fit=line_fit,
+        irls_iterations=irls_iterations,
+        huber_delta=huber_delta,
+        image_width=image_width,
+        image_height=image_height,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
@@ -591,7 +608,9 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          start_sigma: float = .05, end_onset: float = .24,
          temporal_mixer: bool = False, trajectory_weight: float = 0.0,
          trajectory_track: bool = False, fresh_holdout_source: str | None = None,
-         evaluate_test: bool = True, fresh_stratify_by_device: bool = False) -> None:
+         evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
+         line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
+         image_width: int = 128, image_height: int = 288) -> None:
     result = train_remote.remote(
         data_subdir, run_label, epochs=epochs, batch_size=batch_size, lr=lr,
         seed=seed, base_channels=base_channels, split_strategy=split_strategy,
