@@ -124,36 +124,54 @@ class BasicLinearRegressor(nn.Module):
         ), dim=2)
 
     @staticmethod
-    def _fit_constant_velocity(positions: torch.Tensor, fraction: torch.Tensor,
-                               weights: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """Weighted least-squares fit of ``p(s) = p0 + (p1 - p0) * s``.
+    def _hat_basis(fraction: torch.Tensor, knots: int) -> torch.Tensor:
+        """Piecewise-linear basis over ``knots`` evenly-spaced fixed knot times.
 
-        Closed form, so it is a differentiable 2x2 solve rather than an inner
-        optimisation.  Endpoints become a consensus over every observed frame
-        instead of a read at one moment, which is the point: no single occluded
-        or mis-detected frame can carry an endpoint on its own.
+        Returns ``[batch,time,knots]``.  The knot *times* are fixed, so there are
+        no free breakpoints to estimate: the fit only ever answers "where was the
+        finger at time k/(K-1)", which is well posed even for a perfectly
+        straight gesture.  At ``knots=2`` this reduces exactly to ``(1-s, s)``,
+        the MVP-2 constant-velocity line.
+        """
+        if knots < 2:
+            raise ValueError("knots must be at least 2")
+        index = torch.arange(knots, dtype=fraction.dtype, device=fraction.device)
+        scaled = fraction[..., None] * (knots - 1)
+        return (1. - (scaled - index).abs()).clamp_min(0.)
+
+    @classmethod
+    def _fit_polyline(cls, positions: torch.Tensor, fraction: torch.Tensor,
+                      weights: torch.Tensor, *, knots: int) -> torch.Tensor:
+        """Weighted least-squares fit of a fixed-time-knot polyline.
+
+        Closed form, so it stays a differentiable ``knots x knots`` solve rather
+        than an inner optimisation.  Each knot becomes a consensus over every
+        observed frame instead of a read at one moment, which is the point: no
+        single occluded or mis-detected frame can carry a knot on its own.
+        Returns ``[batch,knots,2]``.
         """
         if positions.ndim != 3 or positions.shape[2] != 2:
             raise ValueError("positions must have shape [batch,time,2]")
         if fraction.shape != positions.shape[:2] or weights.shape != positions.shape[:2]:
             raise ValueError("fraction and weights must have shape [batch,time]")
-        basis0, basis1 = 1. - fraction, fraction
-        s00 = (weights * basis0 * basis0).sum(dim=1)
-        s01 = (weights * basis0 * basis1).sum(dim=1)
-        s11 = (weights * basis1 * basis1).sum(dim=1)
-        rhs0 = (weights[:, :, None] * basis0[:, :, None] * positions).sum(dim=1)
-        rhs1 = (weights[:, :, None] * basis1[:, :, None] * positions).sum(dim=1)
-        # A clip whose evidence is concentrated at one end of the path leaves the
-        # normal equations near-singular.  A small ridge keeps the solve finite
-        # and bounded there instead of letting it explode along the null
-        # direction; it biases the unsupported endpoint slightly toward the
-        # origin, which the endpoint loss then corrects.
-        ridge = 1e-3
-        s00, s11 = s00 + ridge, s11 + ridge
-        determinant = (s00 * s11 - s01 * s01).clamp_min(1e-8)
-        start = (s11[:, None] * rhs0 - s01[:, None] * rhs1) / determinant[:, None]
-        end = (s00[:, None] * rhs1 - s01[:, None] * rhs0) / determinant[:, None]
-        return start, end
+        basis = cls._hat_basis(fraction, knots)
+        weighted = basis * weights[..., None]
+        normal = torch.einsum("bti,btj->bij", weighted, basis)
+        rhs = torch.einsum("bti,btc->bic", weighted, positions)
+        # A clip whose evidence never covers one knot's neighbourhood leaves the
+        # normal equations near-singular there.  A small ridge keeps the solve
+        # finite and bounded instead of letting it explode along the null
+        # direction; it biases an unsupported knot slightly toward the origin,
+        # which the position loss then corrects.
+        eye = torch.eye(knots, dtype=positions.dtype, device=positions.device)
+        return torch.linalg.solve(normal + 1e-3 * eye, rhs)
+
+    @classmethod
+    def _fit_constant_velocity(cls, positions: torch.Tensor, fraction: torch.Tensor,
+                               weights: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """MVP-2 two-point special case of :meth:`_fit_polyline`."""
+        fitted = cls._fit_polyline(positions, fraction, weights, knots=2)
+        return fitted[:, 0], fitted[:, 1]
 
     def _line_fit_endpoints(self, scores: torch.Tensor, *, onset: torch.Tensor,
                             duration_norm: torch.Tensor, active: torch.Tensor,
