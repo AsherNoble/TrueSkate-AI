@@ -852,7 +852,7 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
     from torch.utils.data import DataLoader, Subset
     from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
     from trueskate_ai.vision.basic_linear_training import (
-        decompose_endpoint_error, knot_columns, knot_errors, target_knots,
+        decompose_endpoint_error, knot_columns, knot_errors, nearest_trail_gaps, target_knots,
     )
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
@@ -928,28 +928,29 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
             recovered = bool(errors.max() <= .03) and duration_error <= .10
             any_strong = strong[item].any(dim=1)
 
-            def nearest(point: torch.Tensor) -> dict:
-                """Distance from a commanded point to the nearest trail pixel."""
-                best, best_step = float("inf"), -1
-                for step in range(steps):
-                    if not bool(any_strong[step]):
-                        continue
-                    candidates = grid[strong[item, step]]
-                    distance = float(torch.linalg.vector_norm(candidates - point[None, :], dim=1).min())
-                    if distance < best:
-                        best, best_step = distance, step
-                return {"distance": best, "frame": best_step}
-
             first_x, first_y = knot_columns(target.shape[1], 0)
             last_x, last_y = knot_columns(target.shape[1], -1)
-            commanded_start = nearest(target[item, first_x:first_y + 1])
-            commanded_end = nearest(target[item, last_x:last_y + 1])
+            # Every knot gets an evidence column, not just the endpoints:
+            # `recovered` gates every knot (EQ-012), so a clip can fail on a knot
+            # the report would otherwise say nothing about.  start/end keys below
+            # are retained unchanged for k=2 artefact compatibility.
+            # Loop bound from the TARGET width, not from len(errors): knot_errors
+            # derives K from the prediction and truncates silently if the two ever
+            # disagree, which would make per_knot_trail[-1] an interior knot and
+            # change what trail_gap_end means.
+            knot_points = torch.stack([
+                target[item, knot_columns(target.shape[1], knot)[0]:
+                             knot_columns(target.shape[1], knot)[1] + 1]
+                for knot in range(target_knots(target.shape[1]))])
+            per_knot_trail = nearest_trail_gaps(grid, strong[item], knot_points)
+            commanded_start, commanded_end = per_knot_trail[0], per_knot_trail[-1]
             records.append({
                 "sample": str(data.sample_paths[index].relative_to(data.root)),
                 "device": str(meta.get("device", "unknown")),
                 "recovered": recovered,
                 "start_error": start_error, "end_error": end_error,
                 "duration_error": duration_error,
+                "knot_errors": [float(value) for value in errors.cpu()],
                 "commanded": [float(v) for v in target[item].cpu()],
                 "predicted": [float(v) for v in prediction[item].cpu()],
                 # The decisive discriminator, per endpoint.
@@ -958,6 +959,10 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
                 "trail_frame_start": commanded_start["frame"],
                 "trail_frame_end": commanded_end["frame"],
                 "trail_frames_present": int(any_strong.sum()),
+                **{f"trail_gap_knot{knot}": entry["distance"]
+                   for knot, entry in enumerate(per_knot_trail)},
+                **{f"trail_frame_knot{knot}": entry["frame"]
+                   for knot, entry in enumerate(per_knot_trail)},
                 # Where the decoding map peaked, to separate a misread from a
                 # collapse onto the other endpoint or the middle.  Named for the
                 # map that actually produced the prediction.
@@ -976,6 +981,15 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
 
     failures = [record for record in records if not record["recovered"]]
     gaps = [record["trail_gap_end"] for record in failures if record["end_error"] > .03]
+    # Per-knot, so a clip that failed only on an interior knot contributes to the
+    # evidence-vs-misread split instead of vanishing from it.  `failed_end_trail_gaps`
+    # is retained unchanged for comparability with the k=2 reports already quoted.
+    knot_count = len(records[0]["commanded"]) // 2 if records else 0
+    failed_knot_gaps = {
+        f"knot{knot}": sorted(record[f"trail_gap_knot{knot}"] for record in failures
+                              if record["knot_errors"][knot] > .03)
+        for knot in range(knot_count)
+    }
     summary = {
         "checkpoint": checkpoint_name,
         "partition": partition,
@@ -997,6 +1011,11 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
         },
         "all_records": records,
         "failed_end_trail_gaps": sorted(gaps),
+        "failed_knot_trail_gaps": failed_knot_gaps,
+        "median_trail_gap_by_knot": [
+            float(np.median([r[f"trail_gap_knot{knot}"] for r in records]))
+            for knot in range(knot_count)
+        ],
         "failing_records": failures,
     }
     (Path("/models") / f"basic_linear_{label}.json").write_text(_json.dumps(summary, indent=2))

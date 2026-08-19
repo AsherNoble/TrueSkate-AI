@@ -320,3 +320,40 @@ def passes_basic_linear_acceptance(metrics: dict[str, float]) -> bool:
         and metrics["duration_mae"] <= 0.10
         and metrics["gesture_recovery_accuracy"] >= 0.95
     )
+
+
+@torch.no_grad()
+def nearest_trail_gaps(grid: torch.Tensor, strong: torch.Tensor,
+                       points: torch.Tensor) -> list[dict[str, float]]:
+    """Distance from each commanded point to the nearest trail pixel, per point.
+
+    ``grid`` is ``[pixels, 2]`` normalised pixel centres, ``strong`` is
+    ``[steps, pixels]`` marking trail pixels per frame, and ``points`` is
+    ``[K, 2]``.  Returns, for every point, the smallest distance over all frames
+    and the frame that achieved it (ties resolved to the earliest frame).
+
+    All K points are measured against one gather per frame, so the cost is flat
+    in K rather than K independent passes — and on an accelerator this is one
+    host sync per frame instead of one per frame per knot.  Extracted from
+    ``autopsy_failures`` so the arithmetic is unit-testable rather than only
+    assertable as a source substring.
+    """
+    if grid.ndim != 2 or grid.shape[1] != 2:
+        raise ValueError("grid must be [pixels, 2]")
+    if points.ndim != 2 or points.shape[1] != 2:
+        raise ValueError("points must be [K, 2]")
+    if strong.ndim != 2 or strong.shape[1] != grid.shape[0]:
+        raise ValueError("strong must be [steps, pixels] matching the grid")
+    best = torch.full((len(points),), float("inf"), dtype=grid.dtype, device=grid.device)
+    best_step = torch.full((len(points),), -1, dtype=torch.long, device=grid.device)
+    for step in range(len(strong)):
+        mask = strong[step]
+        if not bool(mask.any()):
+            continue
+        candidates = grid[mask]
+        distance = torch.cdist(points, candidates).min(dim=1).values
+        improved = distance < best
+        best = torch.where(improved, distance, best)
+        best_step = torch.where(improved, torch.full_like(best_step, step), best_step)
+    return [{"distance": float(value), "frame": int(frame)}
+            for value, frame in zip(best.cpu(), best_step.cpu())]

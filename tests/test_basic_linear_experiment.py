@@ -586,6 +586,24 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
     assert 'line_fit = bool(payload.get("line_fit"))' in autopsy
     assert "trajectory_score_peak_frame" in autopsy
     assert "forward_with_track_scores" in autopsy
+    # recovered gates every knot, so every knot needs its own trail evidence --
+    # otherwise a clip can fail on a knot the report says nothing about.
+    assert 'f"trail_gap_knot{knot}"' in autopsy
+    assert 'f"trail_frame_knot{knot}"' in autopsy
+    # The k=2 keys stay, so existing artefacts and render_linear_failures keep working.
+    for retained in ("trail_gap_start", "trail_gap_end", "trail_frame_start", "trail_frame_end"):
+        assert f'"{retained}"' in autopsy
+    assert "commanded_start, commanded_end = per_knot_trail[0], per_knot_trail[-1]" in autopsy
+    # The trail arithmetic lives in a unit-tested helper, not inline in a Modal
+    # body where only its source text can be asserted.
+    assert "nearest_trail_gaps(grid, strong[item], knot_points)" in autopsy
+    assert "def nearest(" not in autopsy
+    # The loop bound comes from the target width, so trail_gap_end cannot quietly
+    # become an interior knot if prediction and target widths ever disagree.
+    assert "target_knots(target.shape[1])" in autopsy
+    # Summary-level evidence covers every knot, not just the endpoints.
+    assert "failed_knot_trail_gaps" in autopsy
+    assert "median_trail_gap_by_knot" in autopsy
     with pytest.raises(ValueError, match="knot-general"):
         module._require_two_knots({"knots": 3}, "audit_endpoint_residuals")
     assert module._require_two_knots({"knots": 2}, "x") == {"knots": 2}

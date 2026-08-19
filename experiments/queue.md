@@ -198,7 +198,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   now.
 
 ## EQ-013 — Evidence columns for interior-knot failures
-- status: todo
+- status: done: CONFIRMED — per-knot trail evidence in both records and summary; trail arithmetic
+  extracted to the unit-tested `nearest_trail_gaps`, now flat in K. Red team CONFIRMED (narrowly):
+  the summary was still endpoint-only until fixed, and the cost benchmark was withdrawn as not
+  measuring this code. See the 2026-08-19 EQ-013 journal entry.
 - tier: FREE
 - hypothesis: `autopsy_failures` can report a `trail_gap` per knot, not just for first and last, so a
   k=3 clip that failed on its interior knot gets the same evidence-vs-misread verdict the endpoints do.

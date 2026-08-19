@@ -9,6 +9,7 @@ from trueskate_ai.vision.basic_linear_bias import (
 )
 from trueskate_ai.vision.basic_linear_training import (
     basic_linear_metrics, decompose_endpoint_error, knot_columns, knot_component_labels,
+    nearest_trail_gaps,
 )
 
 
@@ -296,3 +297,58 @@ def test_decomposition_handles_a_degenerate_chord_as_the_old_code_did():
     result = decompose_endpoint_error([0.3, 0.3, 0.3, 0.3, 0.5], [0.3, 0.3, 0.32, 0.34, 0.5])
     assert result["end_along"] == pytest.approx(0., abs=1e-6)
     assert result["end_perp"] == pytest.approx(float(np.hypot(0.02, 0.04)), abs=1e-6)
+
+
+def _grid(height, width):
+    xa, ya = torch.linspace(0., 1., width), torch.linspace(0., 1., height)
+    return torch.stack((xa[None, :].expand(height, width),
+                        ya[:, None].expand(height, width)), dim=2).reshape(-1, 2)
+
+
+def test_nearest_trail_gaps_finds_the_closest_pixel_and_its_frame():
+    grid = _grid(4, 4)
+    strong = torch.zeros(3, 16, dtype=torch.bool)
+    strong[1, 5] = True   # grid index 5 -> (x=1/3, y=1/3)
+    strong[2, 0] = True   # (0, 0)
+    gaps = nearest_trail_gaps(grid, strong, torch.tensor([[1 / 3, 1 / 3], [0., 0.]]))
+    assert gaps[0]["distance"] == pytest.approx(0., abs=1e-6)
+    assert gaps[0]["frame"] == 1
+    assert gaps[1]["distance"] == pytest.approx(0., abs=1e-6)
+    assert gaps[1]["frame"] == 2
+
+
+def test_nearest_trail_gaps_matches_a_per_point_reference_loop():
+    """The batched implementation must equal K independent passes, including
+    the earliest-frame tie-break."""
+    torch.manual_seed(3)
+    grid = _grid(12, 10)
+    strong = torch.rand(6, 120) < 0.08
+    points = torch.rand(4, 2)
+    batched = nearest_trail_gaps(grid, strong, points)
+    for index in range(len(points)):
+        best, best_step = float("inf"), -1
+        for step in range(len(strong)):
+            if not bool(strong[step].any()):
+                continue
+            candidates = grid[strong[step]]
+            distance = float(torch.linalg.vector_norm(
+                candidates - points[index][None, :], dim=1).min())
+            if distance < best:
+                best, best_step = distance, step
+        assert batched[index]["distance"] == pytest.approx(best, abs=1e-6)
+        assert batched[index]["frame"] == best_step
+
+
+def test_nearest_trail_gaps_handles_frames_with_no_trail():
+    grid = _grid(4, 4)
+    strong = torch.zeros(3, 16, dtype=torch.bool)
+    gaps = nearest_trail_gaps(grid, strong, torch.tensor([[0.5, 0.5]]))
+    assert gaps[0]["frame"] == -1 and gaps[0]["distance"] == float("inf")
+
+
+def test_nearest_trail_gaps_validates_shapes():
+    grid = _grid(4, 4)
+    with pytest.raises(ValueError):
+        nearest_trail_gaps(grid, torch.zeros(2, 9, dtype=torch.bool), torch.zeros(1, 2))
+    with pytest.raises(ValueError):
+        nearest_trail_gaps(grid, torch.zeros(2, 16, dtype=torch.bool), torch.zeros(1, 3))

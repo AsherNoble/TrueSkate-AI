@@ -729,3 +729,49 @@ lying about k=3 checkpoints; it did not make them usable, and MVP-3 is producing
 - **Next:** EQ-012 closed. New EQ-013: give interior-knot failures their own `trail_gap` evidence so a
   k=3 autopsy can say *why* an interior knot missed. EQ-002 still top of queue, PAID, awaiting owner
   approval — now stale by three ticks.
+
+## EQ-013 — Per-knot trail evidence, in the records AND the summary (2026-08-19)
+
+Loop tick 6. EQ-012 made `recovered` gate every knot, so a clip could fail on a knot the report said
+nothing about — the diagnostic was weaker than the gate it explained.
+
+- **Hypothesis:** `autopsy_failures` can report a `trail_gap` per knot, not just first and last.
+  **Expected:** identical keys/values at k=2 plus the new per-knot ones. **Kill:** `nearest()` cost per
+  knot dominates the autopsy — then sample frames.
+- **Ran:** offline, no cloud spend. Per-knot `trail_gap_knot{i}` / `trail_frame_knot{i}`; the trail
+  arithmetic extracted to `nearest_trail_gaps()` in `basic_linear_training.py`; summary gained
+  `failed_knot_trail_gaps` and `median_trail_gap_by_knot`. Suite **217 passed**.
+- **Verdict: CONFIRMED.** Kill criterion did not fire.
+- **Red team: CONFIRMED (narrowly)**, having verified k=2 equivalence exactly — `knot_columns(5,-1)`
+  is `(2,3)`, so `per_knot_trail[0]/[-1]` are the same two calls on the same slices as the old
+  explicit code, and `nearest` is deterministic with ties resolved to the earliest frame. Its
+  objections, all acted on:
+  1. **The hypothesis was only half delivered and I was about to overclaim it.** Every knot got a
+     column in `all_records`, but the quoted summary statistics were still endpoint-only:
+     `failed_end_trail_gaps` filters on `end_error`, `median_trail_gap_all` reads `trail_gap_end`. At
+     k=3 a clip failing *only* on its interior knot contributed nothing to the evidence-vs-misread
+     split. **Fixed** — per-knot summary keys added, `failed_end_trail_gaps` retained unchanged for
+     comparability with the k=2 reports already quoted. Records now carry `knot_errors` so the
+     per-knot filter is possible at all.
+  2. **My benchmark did not measure this code.** Real strong-mask stats over 25 local clips: mean
+     strong fraction 0.0108 (so ~2% was fine as a fraction) but the benchmark used a 64x144 grid
+     (9,216 points) against the real 36,864 — the `grid[mask]` gather is O(pixels) per frame per knot
+     regardless of candidates, ~4x the benchmarked constant. Every frame has trail (`any_strong`
+     fraction 1.000), so the skip never fires. And the real run is on **cuda**, where each
+     `float(...min())` is a host sync: 32xK syncs per clip, latency-bound and invisible to a local CPU
+     benchmark. **The quoted 2.16/3.00/5.05/9.36 ms figures are withdrawn** — they measured a
+     synthetic stand-in, not this evaluator.
+  3. **The K-linearity was self-inflicted.** `nearest_trail_gaps` now gathers once per frame and
+     measures all K points against it with `cdist`, so gathers and host syncs are flat in K rather
+     than K independent passes. Verified equal to K independent reference passes, tie-break included.
+  4. **`len(errors)` was the wrong loop bound** (latent): `knot_errors` derives K from the
+     *prediction* and truncates silently, so a prediction/target width disagreement would have made
+     `per_knot_trail[-1]` an interior knot and silently changed what `trail_gap_end` means. Now bound
+     by `target_knots(target.shape[1])`, making the guarantee local.
+  5. **"213 passed" proved nothing about values** — the guard asserts *source substrings* of a Modal
+     body that never executes in tests. This is why the arithmetic was extracted: `nearest_trail_gaps`
+     now has four real unit tests, including equivalence against a per-point reference loop.
+- **Downstream checked clean:** only `render_linear_failures.py` consumes the JSON, by name, and it
+  already handles 2K+1 vectors after EQ-012. Nothing indexes records positionally.
+- **Next:** EQ-013 closed. **The FREE queue is now empty.** Every remaining item is PAID (EQ-002,
+  EQ-003, EQ-004, EQ-005, EQ-010) or blocked on owner action (EQ-006, EQ-007).
