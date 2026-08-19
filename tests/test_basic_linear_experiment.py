@@ -553,10 +553,10 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
             else:
                 assert "_payload_dataset_kwargs" in call, f"{name} builds a dataset without the helper"
             cursor = found + 1
-    # 16 = 15 checkpoint-backed evaluators plus the one orange-cue exception above.
+    # 17 = 16 checkpoint-backed evaluators plus the one orange-cue exception above.
     # Bumping this deliberately is the point: a new evaluator cannot land without
     # being seen here.
-    assert constructions == 16, f"expected 16 dataset constructions, found {constructions}"
+    assert constructions == 17, f"expected 17 dataset constructions, found {constructions}"
 
     # Resolving the shape is not the same as decoding it.  Evaluators whose
     # bodies hardcode the 5-wide start/end/duration layout must refuse a k>2

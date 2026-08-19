@@ -1588,3 +1588,77 @@ chosen on validation, test scored once.
   and EQ-002's 96.08% — demonstrates generalisation to unseen **commands**, not to unseen recording
   conditions. Consistent with EQ-020: the binding axes are park/day/device, and session-disjointness
   was never tested anywhere.
+
+## CONSOLIDATION — what is actually true after EQ-001..EQ-031 (2026-08-20)
+
+Eighteen queue items ran, with heavy retraction traffic: several entries assert things that later
+entries overturn. Reading them in order is now a poor way to learn the state, so this entry is the
+single source of truth. **Where this contradicts an earlier entry, this wins.**
+
+### Established, and I would defend these
+
+1. **The end-bias correction works as an operator, and is not significant.** Predicted-chord and
+   commanded-chord operators agree to 4.9e-5 and flip the **identical three clips**. 94.12% → 96.08%,
+   end-error median −20.9%, p90 −24.2%. But 3 clips at n=153 gives McNemar **p = 0.25**, and 96.08%
+   **does not pass** the 0.95 gate (Clopper-Pearson lower bound 91.66%). (EQ-002, EQ-008, EQ-010)
+2. **Every clip is one frame short of the window its labels assert.** 3,040/3,040, decode-verified,
+   header agreeing. Root cause `align_xctest_traces.py:375` leaves 1/30 s of tail margin and the frame
+   count was never checked. Pixels sit on a 31/30-stretched timebase; labels do not. **Fixing it
+   requires a retrain, not a re-eval.** A frame-count assertion now rejects short extracts; the tail
+   margin remains unvalidated on the rig. (EQ-018, EQ-021)
+3. **Every held-out number in MVP-2 is command-disjoint but 100% session-shared** — on BOTH corpora
+   (2k: 233 train / 171 test sessions, 0 unique to test; mixed-fresh: same). 90.10%, 93.07%, 94.12%
+   and 96.08% demonstrate generalisation to unseen **commands**, not unseen recording conditions.
+   (EQ-017, EQ-019)
+4. **Coverage is one park, one day per source, 95% one device.** The fresh source is 969 XR / 49 XR2,
+   so a device-balanced holdout is impossible from it; `fresh_stratify_by_device` cannot fix that.
+   Park generalisation is untestable — one park in 3,040 clips. (EQ-020)
+5. **Duration failures are ~1% and concentrate at low rendered headroom** (2/6 below 2 frames vs
+   1/300 above, Fisher p=9.6e-4). Typical duration error is **sub-frame** (0.19 frames median).
+   (EQ-003)
+6. **The duration gap decomposes**: decoder ≈2.6x, front end ≈3.3x, and the two arms' per-clip errors
+   are **uncorrelated with disjoint failure sets** — so the residual is a genuine front-end advantage,
+   **addressable**, not a data defect. (EQ-029)
+7. **The decoder half is CAPACITY, not temporal structure.** Full series ≈ 6 scalars at fixed
+   functional class; conv ≈ MLP on the flattened series. Nonlinearity over six hand-picked scalars
+   reaches 0.0730 s / 75% within gate, **within 16% of the full decoder**. (EQ-031)
+
+### Retracted — do not cite these from earlier entries
+
+- "~2 free points from the end-bias correction" — it is 3 clips, p=0.25. (EQ-001)
+- "Duration is unstructured scatter / a precision limit needing capacity." (EQ-003)
+- "Commanded liftoff falls outside the clip" and "Δ ≈ +1.11 s residue" — this corpus is per-segment
+  calibrated, residual ~1 frame; the **rendered** edge is what leaves. (EQ-015)
+- "The trail persists after liftoff so duration is unreadable from presence" — `trail_frames_present`
+  is a tautology (per-frame max). (EQ-016)
+- "Trail presence carries contact information" — it loses to a pixel-free constant window. (EQ-016)
+- "XR2 already scores 71.4%" — Fisher p=0.056 across five post-hoc slices; the cell carries no
+  information. (EQ-020)
+- "Presence/geometry edge decoding is exhausted." (EQ-026)
+- "The per-clip noise is not a shared clip-constant offset" — the design could not test it. (EQ-027)
+- "The model extracts far more trail geometry" — its `duration_head` sees a 2xT scalar series and
+  **no position at all**. (EQ-028)
+- "Temporal shape dominates" and "hand-picked features are a dead end." (EQ-031)
+
+### Method notes worth keeping
+
+- **Three fields did not measure what their names implied**: `trail_frames_present` (constant by
+  construction), `trail_frame_start` (an argmin, not an onset), and the synthesised `frame_times`
+  (asserts a schedule rather than measuring one). Two of those produced published-then-retracted
+  conclusions. Treat any timing field in this pipeline as guilty until measured.
+- **Baselines decided almost every question.** A pixel-free constant window beat three successive
+  detectors; matched-loss/range controls overturned "shape". Where a reader was compared to a fitted
+  constant, the comparison was calibration, not information.
+- **Two audits I wrote were circular or layout-dependent** (`audit_clip_headroom` divided aligner
+  constants by themselves; the session key read the park on one of two corpus layouts). Both were
+  caught, one by review and one by me, before their numbers were acted on.
+
+### The honest state of the goal
+
+Model 1's MVP-2 accuracy is **94.12% joint** on a command-disjoint, session-shared, single-park,
+single-day, XR-dominant holdout of 153 clips. The 99%/99.9% target remains **unmeasurable** at this
+n (rule of three: 0 failures in 153 certifies only 98.0%), and EQ-007's ≥3,000-command protocol is
+still blocked on collection. **Nothing in EQ-001..EQ-031 moved the headline accuracy** — the value
+delivered was diagnostic: one real corpus-wide data defect (EQ-018), the coverage limits of every
+number quoted so far (EQ-017/019/020), and an attribution of the duration gap that says where to
+spend next (EQ-029/031).

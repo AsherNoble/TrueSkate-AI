@@ -2249,6 +2249,132 @@ def audit_duration_decomposition(data_subdir: str, checkpoint_name: str, *,
     return output
 
 
+@app.function(image=image, cpu=8.0, timeout=3 * 3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_learned_series_capacity(data_subdir: str, checkpoint_name: str, *,
+                                  batch_size: int = 8, epochs: int = 300, seed: int = 0) -> dict:
+    """Split the front-end factor: is it the MAP, or is it joint training?
+
+    EQ-029 put ~3.3x in the front end; EQ-031 showed the decoder half is
+    capacity, not temporal structure.  This takes the model's OWN evidence
+    series — `max(start_scores, end_scores)` reduced exactly as `duration_head`
+    reduces it — and trains a fresh head on it.
+
+    * lands near the model's 0.0189 s ⇒ the front end IS the learned map, and a
+      frozen map plus a fresh head recovers the model's duration accuracy;
+    * stays near the hand-crafted 0.0629 s ⇒ the map alone is not the advantage
+      and the credit belongs to end-to-end, duration-supervised training.
+
+    The map is frozen (no gradients reach it), so nothing here can leak the
+    duration loss back into the encoder.
+    """
+    import json as _json
+    import numpy as np
+    import torch
+    from torch import nn
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.data.gesture_sampling import BASIC_LINEAR_MAX_S, BASIC_LINEAR_MIN_S
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+
+    trainer = _trainer()
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_dataset_kwargs([payload]))
+    split_seed = payload.get("split_seed", seed)
+    fresh_source = payload.get("fresh_holdout_source")
+    if fresh_source is None:
+        train_idx, val_idx, test_idx = split_by_command(data, seed=split_seed)
+    else:
+        train_idx, val_idx, test_idx = trainer.split_with_fresh_command_holdout(
+            data, fresh_source=fresh_source, seed=split_seed,
+            stratify_by_device=bool(payload.get("fresh_stratify_by_device")))
+    recorded = payload.get("split_sizes") or {}
+    for name, indices in (("train", train_idx), ("validation", val_idx), ("test", test_idx)):
+        if name in recorded and recorded[name] != len(indices):
+            raise ValueError(f"re-derived {name} split disagrees with the checkpoint")
+
+    model = _model_from_payload(payload, torch)
+    model.load_state_dict(payload["state_dict"])
+    model.eval()
+
+    def extract(indices):
+        """The model's own 2xT reduction — the exact input `duration_head` sees."""
+        series, targets = [], []
+        with torch.no_grad():
+            for batch in DataLoader(Subset(data, indices), batch_size=batch_size):
+                _prediction, start_scores, end_scores = model.forward_with_scores(batch["frames"])
+                evidence = torch.maximum(start_scores, end_scores)
+                series.append(torch.stack((evidence.amax(dim=(2, 3)),
+                                           evidence.mean(dim=(2, 3))), dim=1))
+                targets.append(batch["target"][:, -1])
+        return torch.cat(series), torch.cat(targets)
+
+    prepared = {name: extract(indices) for name, indices in
+                (("train", train_idx), ("validation", val_idx), ("test", test_idx))}
+    channels = int(payload.get("base_channels") or 16)
+    span = BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S
+
+    def run(kind):
+        torch.manual_seed(seed)
+        if kind == "conv":
+            net = nn.Sequential(
+                nn.Conv1d(2, channels, 3, padding=1), nn.SiLU(),
+                nn.Conv1d(channels, channels, 3, padding=1), nn.SiLU(),
+                nn.AdaptiveAvgPool1d(8), nn.Flatten(),
+                nn.Linear(channels * 8, channels * 2), nn.SiLU(), nn.Linear(channels * 2, 1))
+            shape = lambda tensor: tensor
+        else:
+            width = prepared["train"][0].shape[1] * prepared["train"][0].shape[2]
+            net = nn.Sequential(nn.Linear(width, 32), nn.SiLU(), nn.Linear(32, 32), nn.SiLU(),
+                                nn.Linear(32, 1))
+            shape = lambda tensor: tensor.flatten(1)
+        optimiser = torch.optim.Adam(net.parameters(), lr=2e-3)
+
+        def predict(inputs):
+            return BASIC_LINEAR_MIN_S + torch.sigmoid(net(shape(inputs)))[:, 0] * span
+
+        train_x, train_y = prepared["train"]
+        val_x, val_y = prepared["validation"]
+        test_x, test_y = prepared["test"]
+        best = {"val": float("inf"), "state": None}
+        for _epoch in range(epochs):
+            net.train()
+            order = torch.randperm(len(train_x))
+            for start in range(0, len(train_x), 64):
+                chunk = order[start:start + 64]
+                optimiser.zero_grad()
+                nn.functional.smooth_l1_loss(predict(train_x[chunk]), train_y[chunk],
+                                             beta=0.05).backward()
+                optimiser.step()
+            net.eval()
+            with torch.no_grad():
+                score = float((predict(val_x) - val_y).abs().mean())
+            if score < best["val"]:
+                best = {"val": score, "state": {k: v.clone() for k, v in net.state_dict().items()}}
+        net.load_state_dict(best["state"])
+        net.eval()
+        with torch.no_grad():
+            error = (predict(test_x) - test_y).abs()
+        return {"test_mae_s": round(float(error.mean()), 5),
+                "test_within_gate": round(float((error <= 0.10).float().mean()), 4),
+                "test_median_abs_s": round(float(error.median()), 5)}
+
+    output = {
+        "data_subdir": data_subdir, "checkpoint": checkpoint_name,
+        "split": {"train": len(train_idx), "validation": len(val_idx), "test": len(test_idx)},
+        "frozen_map_plus_fresh_head": {"conv": run("conv"), "mlp": run("mlp")},
+        "anchors": {
+            "handcrafted_series_conv_head": 0.06289,
+            "handcrafted_series_mlp6": 0.07295,
+            "model_end_to_end": float((payload.get("test") or {}).get("duration_mae", float("nan"))),
+        },
+    }
+    (Path("/models") / f"basic_linear_learned_series_{data_subdir.replace('/', '_')}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,

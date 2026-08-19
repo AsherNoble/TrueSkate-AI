@@ -1,5 +1,16 @@
 # Experiment queue — Model 1 (behavioural cloning)
 
+> **Read `CONSOLIDATION — what is actually true after EQ-001..EQ-031` (2026-08-20) in the journal
+> before this queue.** Many earlier entries were later retracted; that entry is the single source of
+> truth and supersedes them.
+>
+> **Re-prioritisation for the owner (2026-08-20).** EQ-016..EQ-032 went deep into duration diagnostics
+> and produced a clean attribution, but **no item since EQ-002 has moved the headline accuracy**, and
+> the two highest-leverage items in this queue have never run: **EQ-005** (derive Model 1's target from
+> Model 2's tolerance, instead of asserting 99%) and **EQ-004** (resolve or bury the line-fit decoder).
+> Both are PAID. EQ-007 certification stays blocked on collection, which is blocked on EQ-024's axis
+> decision. Suggest running EQ-005 next rather than continuing the duration line.
+
 journal: experiments/rl_poc_experiment_journal.md
 plans: experiments/model1_mvp2_999_plan.md, experiments/model1_mvp3_plan.md
 run with: the `experiment-queue` skill — one item per invocation, verdict journaled, stop.
