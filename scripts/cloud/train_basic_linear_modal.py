@@ -58,6 +58,7 @@ def _model_from_payload(payload, torch):
         line_fit=bool(payload.get("line_fit", False)),
         irls_iterations=int(payload.get("irls_iterations") or 3),
         huber_delta=float(payload.get("huber_delta") or .02),
+        knots=int(payload.get("knots") or 2),
     )
 
 
@@ -93,7 +94,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  trajectory_track: bool = False, fresh_holdout_source: str | None = None,
                  evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
                  line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
-                 image_width: int = 128, image_height: int = 288) -> dict:
+                 image_width: int = 128, image_height: int = 288, knots: int = 2) -> dict:
     trainer = _trainer()
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
     payload = trainer.train(
@@ -119,6 +120,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         huber_delta=huber_delta,
         image_width=image_width,
         image_height=image_height,
+        knots=knots,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
@@ -143,7 +145,7 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
                      trajectory_track: bool = False, fresh_holdout_source: str | None = None,
                      evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
                      line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
-                     image_width: int = 128, image_height: int = 288) -> dict:
+                     image_width: int = 128, image_height: int = 288, knots: int = 2) -> dict:
     """Scheduler-independent execution fallback for the same compact protocol.
 
     This is intentionally a separate function rather than silently removing a
@@ -175,6 +177,7 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
         huber_delta=huber_delta,
         image_width=image_width,
         image_height=image_height,
+        knots=knots,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
@@ -610,7 +613,7 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          trajectory_track: bool = False, fresh_holdout_source: str | None = None,
          evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
          line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
-         image_width: int = 128, image_height: int = 288) -> None:
+         image_width: int = 128, image_height: int = 288, knots: int = 2) -> None:
     result = train_remote.remote(
         data_subdir, run_label, epochs=epochs, batch_size=batch_size, lr=lr,
         seed=seed, base_channels=base_channels, split_strategy=split_strategy,
@@ -627,6 +630,7 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
         huber_delta=huber_delta,
         image_width=image_width,
         image_height=image_height,
+        knots=knots,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
 

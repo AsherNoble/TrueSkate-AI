@@ -215,7 +215,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           trajectory_track: bool = False, fresh_holdout_source: str | None = None,
           evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
           line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
-          image_width: int = DEFAULT_IMAGE_WIDTH, image_height: int = DEFAULT_IMAGE_HEIGHT) -> dict:
+          image_width: int = DEFAULT_IMAGE_WIDTH, image_height: int = DEFAULT_IMAGE_HEIGHT,
+          knots: int = 2) -> dict:
     torch.manual_seed(seed)
     # The line fit reads endpoints off the moving-contact map, so that map is
     # the primary evidence path and must be supervised, not left to learn only
@@ -223,7 +224,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     if line_fit:
         trajectory_track = True
     dataset = BasicLinearClipDataset(data, cache_frames=cache_frames,
-                                     image_width=image_width, image_height=image_height)
+                                     image_width=image_width, image_height=image_height,
+                                     knots=knots)
     splitters = {"segment": split_by_segment, "command": split_by_command}
     if split_strategy not in splitters:
         raise ValueError(f"unknown split strategy {split_strategy!r}; choose from {sorted(splitters)}")
@@ -245,7 +247,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
                                  start_sigma=start_sigma, end_onset=end_onset,
                                  temporal_mixer=temporal_mixer,
                                  trajectory_track=trajectory_track, line_fit=line_fit,
-                                 irls_iterations=irls_iterations, huber_delta=huber_delta).to(device)
+                                 irls_iterations=irls_iterations, huber_delta=huber_delta,
+                                 knots=knots).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     best: dict | None = None
     for epoch in range(1, epochs + 1):
@@ -317,6 +320,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "temporal_mixer": temporal_mixer,
         "trajectory_track": trajectory_track,
         "line_fit": line_fit,
+        "knots": knots,
         "irls_iterations": irls_iterations if line_fit else None,
         "huber_delta": huber_delta if line_fit else None,
         "split_seed": split_seed,
@@ -374,6 +378,9 @@ def main() -> None:
                         help="Reweighting passes for the line fit; 0 gives plain least squares.")
     parser.add_argument("--huber-delta", type=float, default=.02,
                         help="Normalised residual beyond which a frame is down-weighted by the line fit.")
+    parser.add_argument("--knots", type=int, default=2,
+                        help="MVP-3 trajectory knots: predict positions at K evenly spaced times. "
+                             "K=2 is the MVP-2 endpoint pair.")
     parser.add_argument("--image-width", type=int, default=DEFAULT_IMAGE_WIDTH,
                         help="Clip decode width; the stride-two score map has half this many x cells.")
     parser.add_argument("--image-height", type=int, default=DEFAULT_IMAGE_HEIGHT,
@@ -402,6 +409,10 @@ def main() -> None:
         parser.error("irls-iterations must be non-negative and huber-delta positive")
     if args.image_width < 1 or args.image_height < 1:
         parser.error("image-width and image-height must be positive")
+    if args.knots < 2:
+        parser.error("knots must be at least 2")
+    if args.knots > 2 and not args.line_fit:
+        parser.error("--knots > 2 requires --line-fit")
     if args.line_fit and not args.trajectory_weight:
         parser.error("--line-fit needs a positive --trajectory-weight: the contact map it fits "
                      "is the primary evidence path and must be supervised")
@@ -422,7 +433,7 @@ def main() -> None:
                    fresh_stratify_by_device=args.fresh_stratify_by_device,
                    line_fit=args.line_fit, irls_iterations=args.irls_iterations,
                    huber_delta=args.huber_delta, image_width=args.image_width,
-                   image_height=args.image_height)
+                   image_height=args.image_height, knots=args.knots)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 

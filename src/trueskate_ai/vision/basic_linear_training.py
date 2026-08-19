@@ -11,6 +11,20 @@ RECOVERY_ENDPOINT_TOLERANCE = 0.03
 RECOVERY_DURATION_TOLERANCE_S = 0.10
 
 
+def target_knots(width: int) -> int:
+    """Number of trajectory knots encoded in a ``[..., 2K+1]`` target vector."""
+    if width < 5 or width % 2 == 0:
+        raise ValueError(f"target width {width} is not 2K+1 for any K>=2")
+    return (width - 1) // 2
+
+
+def knot_errors(prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """Per-knot Euclidean error, shape ``[batch, K]``."""
+    knots = target_knots(prediction.shape[1])
+    difference = (prediction[:, :2 * knots] - target[:, :2 * knots]).reshape(-1, knots, 2)
+    return torch.linalg.vector_norm(difference, dim=2)
+
+
 def basic_linear_endpoint_map_loss(scores: torch.Tensor, xy: torch.Tensor,
                                    centre_time: torch.Tensor) -> torch.Tensor:
     """A gentle spatial-temporal score-map target for endpoint attention.
@@ -69,8 +83,27 @@ def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor, *,
                       trajectory_weight: float = 0.0,
                       trajectory_scores: torch.Tensor | None = None) -> torch.Tensor:
     """Robust endpoint error plus duration error in matched native scales."""
-    if prediction.shape != target.shape or prediction.ndim != 2 or prediction.shape[1] != 5:
-        raise ValueError("prediction and target must both have shape [batch,5]")
+    if prediction.shape != target.shape or prediction.ndim != 2:
+        raise ValueError("prediction and target must both have shape [batch,2K+1]")
+    knots = target_knots(prediction.shape[1])
+    if knots != 2:
+        # MVP-3 gates every knot equally, so the loss weights them equally too;
+        # there is no "start is the bottleneck" asymmetry to encode here.
+        positions = F.smooth_l1_loss(
+            prediction[:, :2 * knots].contiguous(), target[:, :2 * knots].contiguous(), beta=0.03,
+        )
+        duration_scale = BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S
+        duration = F.smooth_l1_loss(
+            prediction[:, -1] / duration_scale, target[:, -1] / duration_scale, beta=0.05,
+        )
+        loss = positions + duration
+        if trajectory_weight and trajectory_scores is not None:
+            if trajectory_xy is None or trajectory_mask is None:
+                raise ValueError("trajectory targets are required when trajectory_weight is positive")
+            loss = loss + trajectory_weight * basic_linear_trajectory_map_loss(
+                trajectory_scores, trajectory_xy, trajectory_mask,
+            )
+        return loss
     # Component audit of the best command-held-out checkpoint: duration passes
     # 98.7%, end 88.7%, but start only 78.7%.  Weight the start pair more
     # heavily so optimisation spends capacity on the actual recovery bottleneck.
@@ -127,20 +160,23 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device) -
     start_recovered: list[float] = []
     end_recovered: list[float] = []
     duration_recovered: list[float] = []
+    per_knot: list[list[float]] = []
     for batch in loader:
         prediction = model(batch["frames"].to(device))
         target = batch["target"].to(device)
-        start_errors.extend(torch.linalg.vector_norm(prediction[:, :2] - target[:, :2], dim=1).cpu().tolist())
-        end_errors.extend(torch.linalg.vector_norm(prediction[:, 2:4] - target[:, 2:4], dim=1).cpu().tolist())
-        duration_errors.extend(torch.abs(prediction[:, 4] - target[:, 4]).cpu().tolist())
-        start = torch.linalg.vector_norm(prediction[:, :2] - target[:, :2], dim=1)
-        end = torch.linalg.vector_norm(prediction[:, 2:4] - target[:, 2:4], dim=1)
-        duration = torch.abs(prediction[:, 4] - target[:, 4])
+        errors = knot_errors(prediction, target)
+        per_knot.extend(errors.cpu().tolist())
+        # "start" and "end" keep their MVP-2 meaning: the first and last knot.
+        start = errors[:, 0]
+        end = errors[:, -1]
+        duration = torch.abs(prediction[:, -1] - target[:, -1])
+        start_errors.extend(start.cpu().tolist())
+        end_errors.extend(end.cpu().tolist())
+        duration_errors.extend(duration.cpu().tolist())
         start_recovered.extend((start <= RECOVERY_ENDPOINT_TOLERANCE).float().cpu().tolist())
         end_recovered.extend((end <= RECOVERY_ENDPOINT_TOLERANCE).float().cpu().tolist())
         duration_recovered.extend((duration <= RECOVERY_DURATION_TOLERANCE_S).float().cpu().tolist())
-        recovered.extend(((start <= RECOVERY_ENDPOINT_TOLERANCE)
-                          & (end <= RECOVERY_ENDPOINT_TOLERANCE)
+        recovered.extend(((errors <= RECOVERY_ENDPOINT_TOLERANCE).all(dim=1)
                           & (duration <= RECOVERY_DURATION_TOLERANCE_S)).float().cpu().tolist())
     if not start_errors:
         raise ValueError("cannot evaluate an empty loader")
@@ -159,6 +195,14 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device) -
         "duration_recovery_accuracy": float(np.mean(duration_recovered)),
         "recovery_endpoint_tolerance": RECOVERY_ENDPOINT_TOLERANCE,
         "recovery_duration_tolerance_s": RECOVERY_DURATION_TOLERANCE_S,
+        "knots": float(len(per_knot[0])),
+        # Per-knot recovery keeps progress visible while the joint gate, which
+        # requires every knot at once, is still failing.
+        **{f"knot{index}_recovery_accuracy":
+           float(np.mean([row[index] <= RECOVERY_ENDPOINT_TOLERANCE for row in per_knot]))
+           for index in range(len(per_knot[0]))},
+        **{f"knot{index}_coordinate_median": float(np.median([row[index] for row in per_knot]))
+           for index in range(len(per_knot[0]))},
     }
 
 
@@ -175,11 +219,10 @@ def basic_linear_recovery_records(model: torch.nn.Module, loader, device: torch.
     for batch in loader:
         prediction = model(batch["frames"].to(device))
         target = batch["target"].to(device)
-        start = torch.linalg.vector_norm(prediction[:, :2] - target[:, :2], dim=1)
-        end = torch.linalg.vector_norm(prediction[:, 2:4] - target[:, 2:4], dim=1)
-        duration = torch.abs(prediction[:, 4] - target[:, 4])
-        recovered = ((start <= RECOVERY_ENDPOINT_TOLERANCE)
-                     & (end <= RECOVERY_ENDPOINT_TOLERANCE)
+        errors = knot_errors(prediction, target)
+        start, end = errors[:, 0], errors[:, -1]
+        duration = torch.abs(prediction[:, -1] - target[:, -1])
+        recovered = ((errors <= RECOVERY_ENDPOINT_TOLERANCE).all(dim=1)
                      & (duration <= RECOVERY_DURATION_TOLERANCE_S))
         for index in range(len(start)):
             records.append({
@@ -187,6 +230,7 @@ def basic_linear_recovery_records(model: torch.nn.Module, loader, device: torch.
                 "end_error": float(end[index]),
                 "duration_error": float(duration[index]),
                 "recovered": float(recovered[index]),
+                "knot_errors": [float(v) for v in errors[index].cpu()],
                 # Keep the raw pair as well as the error: a tail audit needs to
                 # know *where* a missed endpoint landed (short of the trail, past
                 # it, or on the opposite end) to tell failure modes apart.
@@ -199,8 +243,11 @@ def basic_linear_recovery_records(model: torch.nn.Module, loader, device: torch.
 def passes_basic_linear_acceptance(metrics: dict[str, float]) -> bool:
     """MVP 2 gate: both endpoints must be localised, not merely their midpoint."""
     return (
-        metrics["start_coordinate_median"] <= 0.03
-        and metrics["end_coordinate_median"] <= 0.03
+        # Gate every knot when the metrics carry them; fall back to the MVP-2
+        # endpoint pair for legacy two-knot reports that predate per-knot keys.
+        max([value for key, value in metrics.items()
+             if key.startswith("knot") and key.endswith("_coordinate_median")]
+            or [metrics["start_coordinate_median"], metrics["end_coordinate_median"]]) <= 0.03
         and metrics["duration_mae"] <= 0.10
         and metrics["gesture_recovery_accuracy"] >= 0.95
     )

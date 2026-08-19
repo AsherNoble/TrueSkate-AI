@@ -14,6 +14,7 @@ from trueskate_ai.data.gesture_sampling import (
     BASIC_LINEAR_MAX_ABS_SLOPE, BASIC_LINEAR_MAX_S, BASIC_LINEAR_MIN_DX,
     BASIC_LINEAR_MIN_S,
 )
+from trueskate_ai.data.trajectory_resample import resample_command_at_times
 from trueskate_ai.vision.basic_hold_dataset import (
     DEFAULT_IMAGE_HEIGHT, DEFAULT_IMAGE_WIDTH, DEFAULT_SEQUENCE_LENGTH,
     _decode_even_frames, _has_frames, _split_by_key,
@@ -83,9 +84,16 @@ class BasicLinearClipDataset(Dataset):
 
     def __init__(self, root: str | Path, *, sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
                  image_height: int = DEFAULT_IMAGE_HEIGHT, image_width: int = DEFAULT_IMAGE_WIDTH,
-                 cache_frames: bool = False):
+                 cache_frames: bool = False, knots: int = 2):
         if sequence_length < 1 or image_height < 1 or image_width < 1:
             raise ValueError("sequence/image dimensions must be positive")
+        if knots < 2:
+            raise ValueError("knots must be at least 2")
+        # MVP-3 targets are positions at `knots` evenly-spaced times.  At
+        # knots=2 this reproduces the MVP-2 endpoint pair exactly, so the same
+        # strict corpus can serve both — a straight constant-velocity drag is
+        # simply the degenerate case whose interior knot is the midpoint.
+        self.knots = int(knots)
         self.root = Path(root)
         self.sequence_length = sequence_length
         self.image_height = image_height
@@ -137,7 +145,14 @@ class BasicLinearClipDataset(Dataset):
             cached = torch.from_numpy(array).permute(0, 3, 1, 2)
             if self.cache_frames:
                 self._frame_cache[sample] = cached
-        target = [value for point in meta["waypoints"] for value in point] + [meta["duration"]]
+        if self.knots == 2:
+            target = [value for point in meta["waypoints"] for value in point] + [meta["duration"]]
+        else:
+            sampled = resample_command_at_times(
+                meta["waypoints"], float(meta["duration"]), knots=self.knots,
+                easing_power=float(meta.get("easing_power", 1.0)),
+            )
+            target = [float(v) for v in sampled.reshape(-1)] + [float(meta["duration"])]
         # The manifest times are touch-start-relative and the command is a
         # constant-velocity two-point drag.  Preserve its exact per-frame
         # trajectory as optional training supervision for score-map ablations;
