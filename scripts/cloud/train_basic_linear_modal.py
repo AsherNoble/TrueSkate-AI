@@ -1130,6 +1130,125 @@ def audit_corpus_coverage(data_subdir: str) -> dict:
     return output
 
 
+@app.function(image=image, cpu=8.0, timeout=2 * 3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_trail_presence_threshold(data_subdir: str, checkpoint_name: str, *,
+                                   clips: int = 200, batch_size: int = 8) -> dict:
+    """Can trail PRESENCE recover the contact interval at any threshold?
+
+    `trail_frames_present` is 32/32 on every one of 306 audited clips, so at the
+    autopsy's threshold (0.25 x the clip's own max) the rendered trail is visible
+    before touchdown and after liftoff.  If that is a threshold artefact, some
+    stricter setting should make presence track the commanded contact window and
+    duration becomes directly readable.  If no threshold separates them, the
+    trail genuinely persists, duration is only recoverable from trail GEOMETRY
+    rather than presence, and `trail_frames_present` should be renamed.
+
+    Ground truth is the dataset's own `trajectory_mask` — `(t >= 0) & (t <=
+    duration)` from the manifest — so this compares rendered evidence against the
+    commanded contact interval without a model in the loop.
+    """
+    import json as _json
+    import numpy as np
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset
+
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_dataset_kwargs([payload]))
+    indices = list(range(0, len(data), max(1, len(data) // max(clips, 1))))[:clips]
+
+    def trail_evidence(frames: torch.Tensor) -> torch.Tensor:
+        """Identical to the autopsy's per-frame orange-trail response."""
+        steps = frames.shape[1]
+        reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
+        red, green, blue = frames.unbind(dim=2)
+        motion = torch.abs(frames - reference).mean(dim=2)
+        return ((red - green + .12).relu() * (green - blue + .12).relu()
+                * (red - .20).relu() * motion)
+
+    fractions = [round(0.05 * step, 4) for step in range(1, 19)]  # 0.05 .. 0.90
+    stats = {fraction: {"tp": 0, "fp": 0, "fn": 0, "tn": 0, "frames_flagged": 0}
+             for fraction in fractions}
+    total_frames = contact_frames = 0
+    for batch in DataLoader(Subset(data, indices), batch_size=batch_size):
+        evidence = trail_evidence(batch["frames"])
+        active = batch["trajectory_mask"].bool()
+        peak = evidence.flatten(2).amax(dim=2)                       # [B, T]
+        clip_max = peak.amax(dim=1, keepdim=True).clamp_min(1e-6)    # [B, 1]
+        total_frames += active.numel()
+        contact_frames += int(active.sum())
+        for fraction in fractions:
+            present = peak > (clip_max * fraction)
+            entry_stats = stats[fraction]
+            entry_stats["tp"] += int((present & active).sum())
+            entry_stats["fp"] += int((present & ~active).sum())
+            entry_stats["fn"] += int((~present & active).sum())
+            entry_stats["tn"] += int((~present & ~active).sum())
+            entry_stats["frames_flagged"] += int(present.sum())
+
+    # THE BASELINE THAT DECIDES THIS. `frame_times` is a uniform synthesised grid
+    # with a fixed 0.5s pre-roll, so the contact interval STARTS at frame 7 for
+    # every clip and only its trailing edge varies.  A constant [7, E] mask uses
+    # no pixels and no per-clip knowledge whatsoever.  If pixel evidence cannot
+    # beat it, "trail presence carries contact information" is unsupported.
+    constant_rows = []
+    for end in range(8, 32):
+        tp = fp = fn = tn = 0
+        for batch in DataLoader(Subset(data, indices), batch_size=batch_size):
+            active = batch["trajectory_mask"].bool()
+            window = torch.zeros_like(active)
+            window[:, 7:end + 1] = True
+            tp += int((window & active).sum())
+            fp += int((window & ~active).sum())
+            fn += int((~window & active).sum())
+            tn += int((~window & ~active).sum())
+        recall = tp / max(tp + fn, 1)
+        constant_rows.append({
+            "window": [7, end],
+            "precision_contact": round(tp / max(tp + fp, 1), 4),
+            "recall_contact": round(recall, 4),
+            "balanced_accuracy": round(0.5 * (recall + tn / max(tn + fp, 1)), 4),
+        })
+    best_constant = max(constant_rows, key=lambda row: row["balanced_accuracy"])
+
+    rows = []
+    for fraction in fractions:
+        entry_stats = stats[fraction]
+        tp, fp, fn, tn = (entry_stats[key] for key in ("tp", "fp", "fn", "tn"))
+        precision = tp / max(tp + fp, 1)
+        recall = tp / max(tp + fn, 1)
+        rows.append({
+            "threshold_fraction_of_clip_max": fraction,
+            "frames_flagged_fraction": entry_stats["frames_flagged"] / max(total_frames, 1),
+            "precision_contact": round(precision, 4),
+            "recall_contact": round(recall, 4),
+            "f1": round(2 * precision * recall / max(precision + recall, 1e-9), 4),
+            "balanced_accuracy": round(
+                0.5 * (recall + tn / max(tn + fp, 1)), 4),
+        })
+    best = max(rows, key=lambda row: row["balanced_accuracy"])
+    output = {
+        "data_subdir": data_subdir,
+        "checkpoint": checkpoint_name,
+        "clips_sampled": len(indices),
+        "frames": total_frames,
+        "contact_frame_fraction": round(contact_frames / max(total_frames, 1), 4),
+        "autopsy_threshold_fraction": 0.25,
+        "sweep": rows,
+        "best_by_balanced_accuracy": best,
+        "constant_window_baseline": constant_rows,
+        "best_constant_window": best_constant,
+        # The only comparison that matters: does pixel evidence beat no pixels?
+        "evidence_beats_constant_window": best["balanced_accuracy"] > best_constant["balanced_accuracy"],
+    }
+    (Path("/models") / f"basic_linear_trail_threshold_{data_subdir.replace('/', '_')}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return {key: value for key, value in output.items() if key != "sweep"}
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,

@@ -1188,3 +1188,52 @@ A ≥3,000-command certification holdout built this way inherits all three limit
 generalisation to unseen **commands** under one park, one device-dominant mix, one time of day. Those
 axes are cheap to widen at collection time and impossible to fix afterwards. EQ-007 should predeclare
 which of park / device / day it intends to certify — see EQ-024.
+
+## EQ-016 — Trail presence loses to a constant window; BOTH prior claims retracted (2026-08-20)
+
+**Verdict: kill criterion FIRES — for a different reason than hypothesised.** Two successive claims
+about trail presence were wrong, mine included.
+
+- **Retraction 1 (EQ-015's claim).** "The rendered trail does not vanish at liftoff — it persists
+  before touchdown and after — so duration cannot be read off trail presence at all." **Never
+  measured.** The autopsy's mask is
+  `evidence.flatten(2) > evidence.flatten(2).amax(dim=2, keepdim=True) * .25`; on a `[B,T,H,W]` tensor
+  `amax(dim=2)` is the **per-frame** max, so `strong` always contains that frame's argmax pixel and
+  `trail_frames_present` counts frames. **32/32 on 306/306 clips is a tautology, not an observation.**
+- **Retraction 2 (my replacement claim).** Re-normalising against the **per-clip** max gave balanced
+  accuracy **0.846** at threshold 0.35 (precision 0.789, recall 0.799) against the manifest contact
+  interval, and I was about to report that presence does carry timing information. It does not:
+  **a constant window using no pixels at all beats it.**
+
+| detector | balanced acc | precision | recall |
+|---|---|---|---|
+| pixel evidence, best threshold (0.35 × clip max) | 0.8458 | 0.789 | 0.799 |
+| **constant `[7, 19]` window — zero image input** | **0.8997** | 0.772 | 0.938 |
+
+  Measured on the same 200 clips / 6,400 frames, not simulated. `evidence_beats_constant_window: False`.
+- **Why a constant wins, and it is structural.** `frame_times` on the direct-video path is a *uniform
+  synthesised grid* (`align_xctest_traces.py`: `i/output_fps - pre_s`, `pre_s=0.5`), so **the contact
+  interval starts at frame 7 for every clip** and only its trailing edge varies with duration.
+  Meanwhile `trail_evidence` builds its reference from `frames[:, :round(32*0.22)]` = frames 0-6 — the
+  same 0.5 s lead-in — so its `motion` term is ≈0 on exactly the frames the mask labels non-contact.
+  **Roughly a third of all negatives are scored correct by construction**, for both detectors, and the
+  leading edge is free information that neither had to earn.
+- **So the entire error budget sits at the trailing edge**, which is precisely where duration is
+  decided: ~2.15 FN + ~2.3 FP per clip ⇒ the liftoff boundary is off by **~2 frames ≈ 0.15 s**, against
+  a duration gate of **0.10 s** and a frame quantum of 0.073 s. A perfect edge read would satisfy the
+  gate on quantisation alone; a 2-frame read does not.
+- **Timebase caveat, and why it does not rescue the result.** The ground truth rides the labels'
+  timebase, which EQ-018 showed is 31/30-stretched relative to pixels, deflating the achievable score.
+  But the constant-window baseline is measured against the *same* mis-timed mask and is largely
+  invariant to a clip-constant offset, whereas the evidence detector is not — so correcting the
+  timebase likely **narrows** the gap rather than reversing it. It would have to move evidence by
+  >0.06 balanced accuracy to matter.
+- **Net effect on the duration question: unchanged in either direction.** Presence-based reading is
+  ruled out as a lever (it loses to a constant), and the earlier "trail persists" explanation for why
+  duration is hard was never evidence. Duration remains open, and the only part of the signal that
+  could carry it is the trailing edge.
+- **Method note:** `trail_frames_present` should be renamed or removed — it is a constant by
+  construction and has now caused two false conclusions.
+- **Next:** EQ-025 — measure the trailing edge directly (leading edge is constant by construction, so
+  it is the only part that can carry duration), and compare against the constant-window baseline
+  restricted to frames ≥ 7 so neither side gets free credit for the suppressed lead-in.

@@ -257,7 +257,9 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: EQ-003 showed capacity cannot fix these clips; the evidence is outside the window.
 
 ## EQ-016 — The `strong` trail mask is saturated
-- status: todo
+- status: done: kill criterion FIRES — pixel evidence (balacc 0.846) LOSES to a constant [7,19] window
+  using no pixels (0.900). `trail_frames_present` is a tautology (per-frame amax), so EQ-015's "trail
+  persists" claim is retracted; my replacement claim is retracted too. See the 2026-08-20 EQ-016 entry.
 - tier: FREE
 - hypothesis: `trail_frames_present` is 32/32 on every one of 306 clips because the "strong" threshold
   (0.25 x per-clip max) admits the persistent rendered trail before touchdown and after liftoff.
@@ -404,3 +406,21 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: EQ-020 showed the current holdout certifies (a) while its name ("fresh holdout") suggests more.
   Inheriting that silently into a 3,000-clip certification would make the headline number sound
   broader than it is.
+
+## EQ-025 — Measure the trailing edge, the only part that can carry duration
+- status: todo
+- tier: PAID (cheap CPU)
+- hypothesis: the contact interval's leading edge is constant by construction (frame 7 for every clip),
+  so any duration signal lives entirely in the trailing edge; a detector scored only on that edge, and
+  only over frames >= 7, is the honest test of whether pixels beat the nominal schedule.
+- method: for each clip, estimate the liftoff frame from trail evidence and compare against the
+  commanded liftoff index; report the distribution of |estimated - commanded| in frames, beside a
+  baseline that predicts the MEAN liftoff index (no pixels) and one that predicts from commanded
+  duration (an oracle upper bound).
+- expected: a per-clip edge error in frames, directly comparable to the 0.073s quantum and the 0.10s
+  gate.
+- kill: the evidence-based edge is no better than predicting the mean liftoff index — then pixels carry
+  no duration information at this resolution and duration is capped by the trail's rendering, not by
+  the model.
+- why: EQ-016 showed aggregate frame-classification is dominated by a structural constant. The edge is
+  the only place duration can come from, and it has never been measured directly.
