@@ -913,3 +913,58 @@ MODAL_CORPUS_VOLUME=trueskate-mvp-linear-mixed-fresh-v1 modal run \
 - **Next:** EQ-002 and EQ-010 closed. The correction is validated as an operator and is worth keeping
   for its distributional effect, but it cannot be *shown* to lift recovery until EQ-007's ≥3,000-clip
   holdout exists.
+
+## EQ-003 — Duration: kill criterion RETRACTED; failures are an onset/headroom effect, not scatter (2026-08-19)
+
+Loop tick (30m cron). **Cost: $0** — the per-clip dump EQ-003 asked for already existed in two
+autopsy artefacts on the volume (`basic_linear_autopsy_fresh_94_v2.json` test +
+`basic_linear_autopsy_fresh_94_val.json` validation, verified disjoint, 306 unique clips). Deviation
+from the declared method: analysed those offline rather than paying for a new run.
+
+- **Hypothesis:** duration failures are a distinct, characterisable population, as the endpoint
+  failures were. **Kill:** unstructured across every covariate ⇒ a precision limit needing capacity.
+- **What I found first (and got wrong):** no structure in commanded duration (corr +0.004 signed),
+  chord (−0.063), slope (+0.028), or device; compression falsified (predicted-on-commanded slope
+  **1.0004 ± 0.0119**, predicted sd 0.2524 vs commanded 0.2510, and inverting the trend fixes
+  nothing); 3/306 = 0.98% failures, all long-duration undershoots of 12–19% with fine endpoints. I
+  concluded the kill criterion had fired.
+- **Verdict: the kill criterion did NOT fire. Duration error IS structured** — on a covariate that was
+  in the artefact and I never tested.
+- **Red team: CONFOUNDED, and correct.** Independently reproduced here:
+  - `corr(trail_frame_start, |err|) = +0.328` — **2.7× the largest correlation I reported**, on an axis
+    near-orthogonal to duration (`corr(trail_frame_start, commanded) = +0.045`).
+  - Define **headroom = 31 − (trail_frame_start + commanded·32/2.27)**, the frames of clip remaining
+    after commanded liftoff. **headroom < 2: 2/6 fail (mean signed −0.0812). headroom ≥ 2: 1/300 fail
+    (mean −0.0043). Fisher exact two-sided p = 9.56e−04.** Two clips have **negative** headroom — the
+    commanded liftoff falls past the end of the clip.
+  - **My "not a window-truncation artefact" reasoning was wrong.** I argued 0.30–1.20s fits inside
+    `CLIP_WINDOW_S = 2.27`. True, but *the gesture does not start at t=0*: `trail_frame_start` ranges
+    0→23, so a late onset puts liftoff at or beyond frame 31 and the evidence is simply not in the
+    clip. Undershoot is exactly what a model does when the liftoff frame is off the end. **2 of the 3
+    failures are explained by this**; the third (headroom 7.6) is not, and may be genuine scatter.
+  - **"Scatter not bias" was wrong as worded.** The global mean IS significantly non-zero (t = −3.93
+    iid, −3.18 session-clustered). It is −0.00578s = **−0.081 frames** — a real but negligible bias.
+    `|mean|/sd = 0.225` measures effect size, not existence; it cannot support "no bias".
+  - **`trail_frames_present` is misnamed, and its saturation is itself a finding.** It is
+    `int(any_strong.sum())` = frames containing *any* strong trail pixel, and it is **32/32 in all 306
+    clips**. The rendered trail does not vanish at liftoff — it persists before touchdown and after —
+    so duration cannot be read off trail presence at all. That is precisely *why* duration is the
+    residual constraint.
+  - **Independence caveat:** the split is command-disjoint by protocol, not session-disjoint — 111
+    recording sessions appear in both halves. Session-clustered SE is 0.00182 vs 0.00147 iid. No sign
+    changes here, but "306 clips" overstates the effective units.
+- **The failures, with headroom:** cmd 0.918s err −0.175 (start frame 17, headroom **+1.1**); cmd
+  1.086s err −0.132 (start frame 15, headroom **+0.7**); cmd 1.091s err −0.148 (start frame 8,
+  headroom +7.6 — unexplained).
+- **What survives from the first pass:** median duration error is **0.19 frames**, p90 **0.50 frames**
+  — genuinely sub-frame on the 98% of clips with adequate headroom. Compression and sigmoid
+  saturation of the duration head are both ruled out. The endpoint bias playbook still does not
+  transfer. And 3/306 cannot distinguish 99% from 97%.
+- **Consequence — the implied next step changes completely.** "Capacity or more frames" is wrong:
+  clips whose commanded liftoff falls outside the 32-frame window cannot be fixed by a bigger model.
+  This is an **aligner/window** problem, and it is the expected residue of the known Δ ≈ +1.11s
+  command→pixel offset that the aligner currently applies as 0 (memory `xctest-command-to-pixel-delta`).
+  Cheapest fix is a window/offset change.
+- **Next:** EQ-003 closed. New EQ-015 (headroom fix — extend the window or apply the Δ so late-onset
+  clips contain their own liftoff), EQ-016 (the saturated `strong` trail mask), EQ-017 (confirm
+  whether train shares sessions with val/test in a way that leaks).

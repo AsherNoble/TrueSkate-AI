@@ -50,7 +50,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   it can only be demonstrated as significant on the >=3,000-clip holdout of EQ-007.
 
 ## EQ-003 — Duration: the binding constraint above 98.7%
-- status: todo
+- status: done: CONFOUNDED then resolved — kill criterion RETRACTED. Duration failures are an
+  ONSET/HEADROOM effect: headroom<2 frames fails 2/6 vs 1/300 above (Fisher p=9.6e-4), two clips have
+  commanded liftoff past the clip end. Typical error is sub-frame (0.19 frames median). Next step is
+  the aligner/window, NOT capacity. Cost $0 (existing artefacts). See the 2026-08-19 EQ-003 entry.
 - tier: PAID
 - hypothesis: duration failures are a distinct, characterisable population (not scatter),
   as the endpoint failures turned out to be.
@@ -233,3 +236,46 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - kill: `nearest()` cost scales badly enough per knot to dominate the autopsy — then sample frames.
 - why: EQ-012 made `recovered` gate every knot, so a clip can now fail on a knot the report offers no
   evidence about. The diagnostic is weaker than the gate it explains.
+
+## EQ-015 — Give late-onset clips enough headroom to contain their own liftoff
+- status: todo
+- tier: FREE to analyse, PAID to retrain
+- hypothesis: duration failures are clips whose commanded liftoff falls at or past frame 31, caused by
+  late `trail_frame_start` combined with an aligner Δ currently applied as 0. Restoring headroom
+  removes 2 of the 3 known failures without touching the model.
+- method: (1) FREE — measure the headroom distribution across the whole corpus, not just these 306
+  clips, and count how many clips have headroom < 2; (2) decide between applying the measured Δ ≈
+  +1.11s in the aligner versus lengthening `CLIP_WINDOW_S` / the 32-frame sampling; (3) PAID — retrain
+  only if (1) shows a material fraction affected.
+- expected: a single-digit percent of clips affected; those clips' duration undershoot disappears.
+- kill: headroom < 2 is vanishingly rare corpus-wide — then the 3 failures are a curiosity, not a
+  lever, and duration is genuinely at its precision floor.
+- why: EQ-003 showed capacity cannot fix these clips; the evidence is outside the window.
+
+## EQ-016 — The `strong` trail mask is saturated
+- status: todo
+- tier: FREE
+- hypothesis: `trail_frames_present` is 32/32 on every one of 306 clips because the "strong" threshold
+  (0.25 x per-clip max) admits the persistent rendered trail before touchdown and after liftoff.
+- method: sweep the threshold on cached clips; report the fraction of frames flagged versus threshold,
+  and whether any threshold makes trail presence track the commanded contact interval.
+- expected: either a threshold that recovers a real onset/liftoff signal, or a demonstration that the
+  trail genuinely never vanishes.
+- kill: no threshold separates contact from non-contact — then trail presence carries no timing
+  information and the field should be renamed to say what it measures.
+- why: if trail presence tracked contact, duration would be readable directly; EQ-003 suggests it does
+  not, and that assumption is load-bearing for the whole timing story.
+
+## EQ-017 — Does train share recording sessions with validation and test?
+- status: todo
+- tier: FREE
+- hypothesis: the exact-command holdout is command-disjoint but not session-disjoint (111 sessions are
+  shared between val and test), so train may share sessions — and therefore park, lighting and board
+  pose — with the evaluated splits.
+- method: recompute the split locally from the corpus listing and report session overlap between
+  train / validation / test; quantify how many test commands have a train clip from the same session.
+- expected: substantial session sharing, since commands are assigned randomly within sessions.
+- kill: sessions are already disjoint — then there is nothing to fix.
+- why: it does not invalidate the command-disjoint protocol, but it bounds how much generalisation the
+  held-out numbers actually demonstrate, and EQ-007's certification protocol should decide this
+  deliberately rather than inherit it.
