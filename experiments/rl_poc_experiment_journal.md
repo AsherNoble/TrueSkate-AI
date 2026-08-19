@@ -430,3 +430,20 @@
 - Result: **20,344 samples remain** (21,786 − 1,442, exact), zero `.editor`/`.menu` markers left, `data/sls_xctest` **316 GiB → 295 GiB**, free disk **60 GiB → 81 GiB**.
 - **Verification gotcha worth remembering:** the post-delete check reported "remaining samples: 0", which looked like catastrophic loss. It was `ls -d $PARK/sample_*/` hitting ARG_MAX on 20k+ matches and failing silently under `2>/dev/null`. A `find`-based recount gave the correct 20,344. Never count large directory sets with a shell glob; use `find`.
 - This recovers 6.6% of the session. The remaining 295 GiB is still stranded locally by the autooffload `MIN_SPIN_FRAC=0.8` gate against the collector's `--spin-frac 0.5`; that remains the dominant lever and is untouched.
+
+## MVP 3 Representation Validated, Line-Fit Decoder Regresses (2026-08-19)
+
+Two runs on the **unchanged** 2,022-command corpus, `split_seed=0`, fixed 1,416/303/303 exact-command split, 40 epochs — directly comparable to the 90.1% temporal-mixer baseline.
+
+| run | joint | knot0 | mid | last | duration |
+|---|---|---|---|---|---|
+| MVP-2 temporal mixer (soft-argmax, baseline) | **90.10%** | 94.4% | — | 95.7% | 99.0% |
+| K=2 line fit (control) | 83.17% | 93.07% (med .00891) | — | 87.13% (med .01306) | 97.69% |
+| K=3 line fit | 67.33% | 88.78% (.01304) | **89.77%** (.01308) | 78.55% (.01885) | 99.67% |
+
+- **The MVP-3 fixed-time representation is validated.** The interior knot — "where was the finger at half time" — recovers at **89.77%**, the *best* of the three knots, above knot0 (88.78%) and far above the last knot (78.55%). Predicting an interior trajectory position is not harder than predicting an endpoint, which was the open question. The straight-drag degenerate case gives the cleanest possible test of this and it passes.
+- **The line-fit decoder is a regression, not an improvement.** At K=2, on an identical corpus/split/epoch budget, it scores **83.17% against the baseline's 90.10%**, with the end knot at 87.13% versus the baseline's 95.7%. My primary architectural bet from the MVP-2 tail plan does not pay off as configured. This must not be reported as progress.
+- **The line fit did not fix the end-endpoint undershoot, contradicting the stated hypothesis.** The 2026-08-18 autopsy showed the last endpoint suffers a systematic along-path undershoot from the cumulative trail, and predicted a consensus fit would remove it. The last knot remains the worst component in both line-fit runs (87.13% at K=2, 78.55% at K=3). The mechanism was demonstrated on synthetic outliers but does not transfer to the real failure mode.
+- **Adding a knot costs accuracy on the existing knots too.** K=3's knot0 (88.78%) and last knot (78.55%) are both below their K=2 counterparts (93.07%, 87.13%), so the joint drop is not purely the extra gate. Observed K=3 joint 67.3% vs 62.6% predicted from independent knots — knots are near-independent, so the joint gate roughly multiplies and per-knot accuracy is what must rise.
+- **Confounds, stated rather than buried:** the line-fit runs use `trajectory_weight=0.02` (an untuned first guess), equal knot weighting instead of the baseline's 1.8x start weighting, and a freshly initialised onset head trained inside the same 40 epochs. So this is "the line fit as configured is worse", not "the line fit is fundamentally worse". A `trajectory_weight` sweep and a longer budget are the obvious next controls before abandoning it.
+- **Consequence for the 95% MVP-3 target:** 95% joint over 3 knots needs ~98.5% per knot. The best per-knot figure anywhere here is 94.4% (baseline, K=2). The gap is large and the current decoder direction is not closing it. The soft-argmax temporal mixer remains the model to beat, and the cheap validation-fit end-bias correction (worth ~2 points on the fresh holdout) is still unspent.
