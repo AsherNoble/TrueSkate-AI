@@ -449,7 +449,10 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   ("presence-edge decoding is not a route to duration") is the one that would cost money if wrong.
 
 ## EQ-027 — A difference-based duration reader
-- status: todo
+- status: done: INVALID for its hypothesis — the leading edge is constant by construction and is erased
+  by the reference subtraction, so no cancellation was available and a "difference" is an absolute index
+  up to a fixed affine map. Differencing HURT (r 0.451 single-edge vs 0.415 differenced). The ~0.19s
+  plateau vs the model's 0.0189s survives and the 10x is now a LOWER bound. See the 2026-08-20 entry.
 - tier: PAID (cheap CPU)
 - hypothesis: every estimator so far reads an ABSOLUTE frame index against the label grid, so each pays
   the EQ-018 timebase skew and the `-ss` phase jitter in full. A duration is a DIFFERENCE of two edges,
@@ -464,3 +467,22 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   shared offset and the timebase caveat, while real, is not what limits these estimators.
 - why: EQ-026 left this as the single structural asymmetry between the estimators and the model, and it
   is the last cheap thing that could change the picture before duration work moves to the model itself.
+
+## EQ-028 — Track the trail HEAD, not a per-frame scalar
+- status: todo
+- tier: PAID (cheap CPU)
+- hypothesis: every reader so far collapses each frame to a scalar (pixel count or max brightness) and
+  uses none of the trail's POSITION. Projecting above-threshold pixels onto the commanded start->end
+  axis and taking the max projection per frame gives the trail HEAD, whose advance stops at contact
+  end — a direct kinematic read, immune to fade.
+- method: per frame, project above-threshold pixel coordinates onto the unit chord; take the max
+  projection; estimate liftoff as the frame after which the projection stops advancing (last frame with
+  a material increase). Fresh-only, threshold pre-committed at 0.35, paired sign test against both the
+  constant and against EQ-026's midpoint, reported as effect size (r, R^2) not p-value.
+- expected: r with duration materially above 0.451 (the best single scalar reader) if position carries
+  what the scalars miss.
+- kill: head-projection is no better than the scalar readers — then the gap to the model is not about
+  trail geometry at all, and duration work moves to the model/architecture with the trail line closed
+  for real.
+- why: this is the one structurally different family left, and the model demonstrably reads geometry
+  spatially (endpoints to 0.006 normalised units) while every reader tried so far throws position away.

@@ -1346,3 +1346,62 @@ lacked. **Verdict: my first conclusion was wrong and is retracted; the family is
 - **Next:** EQ-027 — a difference-based reader (`fade - growth` as a duration estimate rather than two
   absolute edges), which cancels any clip-constant offset and is the one structural advantage the model
   has that none of these estimators were given.
+
+## EQ-027 — INVALID as a difference test; the plateau claim survives and strengthens (2026-08-20)
+
+- **Verdict: INVALID for the hypothesis it was built to test.** The kill criterion does not fire on
+  anything, because the design cannot exercise the difference/offset-cancellation question.
+- **The structural defect.** EQ-025 established the contact **leading edge is constant by
+  construction** (frame 7 for every clip); both readers gate on `grid >= 7`. So
+  `duration = liftoff − 7·quantum`, i.e. duration and liftoff index are related by a **fixed affine
+  map** — precisely the map the cross-fitted affine calibration then absorbs. `increase_span` is
+  EQ-026's `last_increase` family re-expressed in seconds; nothing was differenced away. Confirmed
+  arithmetically: EQ-026's constant measured 3.041 frames on liftoff *index* and EQ-027's measured
+  3.047 frames on *duration* — **the same baseline twice**.
+- **And the preprocessing erases the edge that would have to cancel.** `reference =
+  frames[:, :7].mean(...)` subtracts a mean of frames 0-6 — the pre-contact and touchdown frames — so
+  `motion` is ~0 exactly there. Only liftoff is observed in pixels, so any per-clip offset is carried
+  in full. The result looks like "no benefit" because **no cancellation was available**, not because
+  offsets are absent.
+- **`fade_minus_growth` should never have been counted.** growth (bias −3.38) and fade (bias +3.35) are
+  both estimators of the **same event** — liftoff — biased in opposite directions. Their difference has
+  expectation ~6.7 frames with no mechanical dependence on duration at all; r = 0.182 is a reader with
+  essentially no signal. The pre-registered method in the queue said "(fade edge − growth edge)", which
+  was already wrong in EQ-026's own terms, and the error propagated unexamined.
+- **The decisive check, run:** `sd(first_rising) = 2.451` (mean 9.05, r = 0.137 with duration) versus
+  `sd(last_rising) = 6.395` (mean 18.45, **r = 0.451**). So `increase_span` is *not* a pure single-edge
+  reader — but the duration information is overwhelmingly in the trailing edge, and **the single edge
+  alone (r = 0.451) is MORE informative than the difference (r = 0.415)**. Differencing removed signal
+  rather than cancelling offset — weak evidence that a shared per-clip offset is not dominant here,
+  though the question remains properly untested.
+- **What IS supported, and it strengthened:** scalar trail-summary readers — thresholded pixel count,
+  spatial max brightness, and every knee/threshold variant across EQ-016/025/026/027 — plateau at
+  **~0.19 s MAE** on fresh clips against the model's **0.0189 s**. The reader is at its linear ceiling:
+  r = 0.415 predicts an optimal-affine MAE of 0.181 s against the observed 0.189, so there is no hidden
+  non-linear structure left to recover by re-thresholding.
+- **The model comparison is now a LOWER bound, not an inflated one.** The checkpoint's
+  `fresh_holdout_source` is `"fresh"`, so its test split is fresh-only too; the population mismatch is
+  train-vs-test, worth ~10% from the val/test gap (0.0171 → 0.0189), and my clips are train-heavy where
+  the model scores at or below 0.0189. The earlier "different clip sets" caveat is withdrawn. The
+  affine calibration also flatters the readers (the model gets no per-corpus calibration at inference),
+  so 10x is conservative on both axes.
+- **Honest headline is the effect size, not the p-value.** 261/381 = 68.5% win rate is a large
+  *directional* effect; the magnitude is small and uniform (median 0.173 vs 0.208, p90 0.347 vs 0.392).
+  **r = 0.415, R² = 0.17** — the reader explains 17% of duration variance. Also: do not compare
+  EQ-027's p-values to EQ-026's — EQ-026 had 16-27 ties while affine-calibrated predictions never tie,
+  so the apparent p=0.035 → p≈0 jump is partly a tie-elimination artefact.
+- **Retracted from my conclusion:** "the per-clip noise is NOT a shared clip-constant offset". The
+  design cannot support it; the EQ-018 timebase caveat stays open.
+- **"Closes trail-geometry decoding" is overreach** — it closes **scalar trail-summary** decoding.
+  Every reader so far collapses each frame to a scalar and uses none of the trail's *position*. The
+  model localises endpoints to 0.006 normalised units, so it plainly reads geometry spatially.
+- **Fixed:** `model_duration_mae_s` was hardcoded at 0.0189; it now reads
+  `payload["test"]["duration_mae"]` (0.0189032…), so a run against another checkpoint cannot silently
+  report the wrong reference.
+- **Sampling caveat:** `fresh[::max(1, len(fresh)//400)]` gives stride 1 when `len(fresh) < 800`, so
+  these are the **first 400 fresh clips in path order** — a contiguous, likely session-clustered block.
+  That bounds the generality of the plateau, not its validity.
+- **Next:** EQ-028 — track the trail HEAD: project above-threshold pixels onto the commanded start→end
+  axis, take the max projection per frame, and read liftoff as the frame where that projection stops
+  advancing. For a constant-velocity linear drag that is a direct kinematic read of contact end, immune
+  to fade. A different family, not another threshold sweep.

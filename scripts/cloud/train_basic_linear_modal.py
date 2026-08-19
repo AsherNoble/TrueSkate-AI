@@ -1527,6 +1527,163 @@ def audit_liftoff_growth(data_subdir: str, checkpoint_name: str, *, clips: int =
     return output
 
 
+@app.function(image=image, cpu=8.0, timeout=2 * 3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def audit_duration_difference(data_subdir: str, checkpoint_name: str, *, clips: int = 400,
+                              batch_size: int = 8, threshold: float = 0.35) -> dict:
+    """Read DURATION as a difference of edges, not two absolute indices.
+
+    Every estimator through EQ-026 compared a pixel-derived ABSOLUTE frame index
+    against the label grid, so each paid the EQ-018 timebase skew and the `-ss`
+    phase jitter in full.  A duration is a DIFFERENCE, and any clip-constant
+    offset cancels in a difference — that is the one structural advantage the
+    trained model has that none of these estimators were given.
+
+    Both difference readers need a scale/offset (growth reads early, fade late),
+    so the affine calibration is **cross-fitted**: fit on one half, score the
+    other, and vice versa.  Fitting and scoring on the same clips would be the
+    same in-sample error the constant baseline was criticised for in EQ-026.
+    """
+    import json as _json
+    import math
+    import numpy as np
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset
+
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_dataset_kwargs([payload]))
+    fresh = [index for index in range(len(data))
+             if data.sample_paths[index].relative_to(data.root).parts[0] == "fresh"]
+    indices = fresh[::max(1, len(fresh) // max(clips, 1))][:clips]
+
+    def trail_evidence(frames: torch.Tensor) -> torch.Tensor:
+        steps = frames.shape[1]
+        reference = frames[:, :max(1, round(steps * .22))].mean(dim=1, keepdim=True)
+        red, green, blue = frames.unbind(dim=2)
+        motion = torch.abs(frames - reference).mean(dim=2)
+        return ((red - green + .12).relu() * (green - blue + .12).relu()
+                * (red - .20).relu() * motion)
+
+    durations, span_fade_growth, span_increase = [], [], []
+    first_rising, last_rising = [], []
+    for batch in DataLoader(Subset(data, indices), batch_size=batch_size):
+        evidence = trail_evidence(batch["frames"]).flatten(2)
+        clip_max = evidence.amax(dim=(1, 2), keepdim=True).clamp_min(1e-6)
+        extent = (evidence > (clip_max * threshold)).sum(dim=2).float()
+        peak = (evidence / clip_max).amax(dim=2)
+        steps = extent.shape[1]
+        grid = torch.arange(steps)
+        for item in range(len(extent)):
+            durations.append(float(batch["target"][item, -1]))
+            series = extent[item]
+            ceiling = float(series.max())
+            reached = (series >= 0.95 * ceiling) & (grid >= 7) if ceiling > 0 else None
+            growth = float(grid[reached].min()) if reached is not None and bool(reached.any()) else float("nan")
+            lit = (peak[item] > threshold) & (grid >= 7)
+            fade = float(grid[lit].max()) if bool(lit.any()) else float("nan")
+            span_fade_growth.append(fade - growth)
+            rising = series[1:] > series[:-1]
+            rising_idx = grid[1:][rising]
+            if len(rising_idx) > 1:
+                span_increase.append(float(rising_idx.max() - rising_idx.min()))
+                # If sd(first) is ~0 this "span" is a single-edge reader wearing a
+                # difference's clothes: the reference subtraction over frames 0-6
+                # zeroes extent there, pinning the first rising frame.
+                first_rising.append(float(rising_idx.min()))
+                last_rising.append(float(rising_idx.max()))
+            else:
+                span_increase.append(float("nan"))
+                first_rising.append(float("nan"))
+                last_rising.append(float("nan"))
+
+    durations = np.array(durations, dtype=float)
+    readers = {"fade_minus_growth": np.array(span_fade_growth, dtype=float),
+               "increase_span": np.array(span_increase, dtype=float)}
+    quantum_s = 2.1935 / 31
+    common = ~np.isnan(durations)
+    for series in readers.values():
+        common &= ~np.isnan(series)
+    order = np.arange(len(durations))
+    half_a = common & (order % 2 == 0)
+    half_b = common & (order % 2 == 1)
+
+    def cross_fitted(series):
+        """Affine calibration fitted on the opposite half, applied out of sample."""
+        predicted = np.full_like(durations, np.nan)
+        for fit, score in ((half_a, half_b), (half_b, half_a)):
+            if fit.sum() < 3:
+                continue
+            slope, intercept = np.polyfit(series[fit], durations[fit], 1)
+            predicted[score] = slope * series[score] + intercept
+        return predicted
+
+    def constant_cross_fitted():
+        predicted = np.full_like(durations, np.nan)
+        for fit, score in ((half_a, half_b), (half_b, half_a)):
+            predicted[score] = durations[fit].mean()
+        return predicted
+
+    def summarise(estimate):
+        error = (estimate - durations)[common]
+        absolute = np.abs(error)
+        return {"clips": int(common.sum()),
+                "bias_s": round(float(error.mean()), 4),
+                "mae_s": round(float(absolute.mean()), 4),
+                "median_abs_s": round(float(np.median(absolute)), 4),
+                "p90_abs_s": round(float(np.quantile(absolute, .9)), 4),
+                "mae_frames": round(float(absolute.mean() / quantum_s), 3),
+                "within_duration_gate": round(float((absolute <= 0.10).mean()), 4)}
+
+    def sign_test(a, b):
+        left, right = np.abs(a - durations)[common], np.abs(b - durations)[common]
+        wins, losses = int((left < right).sum()), int((left > right).sum())
+        total = wins + losses
+        if total == 0:
+            return {"wins": 0, "losses": 0, "p": 1.0}
+        extreme = max(wins, losses)
+        tail = sum(math.comb(total, k) for k in range(extreme, total + 1)) / 2 ** total
+        return {"wins": wins, "losses": losses, "ties": int(common.sum()) - total,
+                "p": round(min(1.0, 2 * tail), 6)}
+
+    constant = constant_cross_fitted()
+    results, tests, correlations = {}, {}, {}
+    for name, series in readers.items():
+        estimate = cross_fitted(series)
+        results[name] = summarise(estimate)
+        tests[f"{name}_vs_constant"] = sign_test(estimate, constant)
+        correlations[name] = round(float(np.corrcoef(series[common], durations[common])[0, 1]), 4)
+    results["constant_duration"] = summarise(constant)
+    output = {
+        "data_subdir": data_subdir, "checkpoint": checkpoint_name,
+        "clips": int(common.sum()), "frame_quantum_s": round(quantum_s, 5),
+        "calibration": "affine, cross-fitted on alternating halves",
+        "commanded_duration": {"mean": round(float(durations[common].mean()), 4),
+                               "sd": round(float(durations[common].std()), 4)},
+        "correlation_with_duration": correlations,
+        # THE CHECK THAT DECIDES WHETHER THIS WAS A DIFFERENCE AT ALL.
+        "rising_edges": {
+            name: {
+                "sd": round(float(np.nanstd(np.array(values, dtype=float)[common])), 3),
+                "mean": round(float(np.nanmean(np.array(values, dtype=float)[common])), 3),
+                "corr_with_duration": round(float(np.corrcoef(
+                    np.array(values, dtype=float)[common], durations[common])[0, 1]), 4),
+            }
+            for name, values in (("first_rising", first_rising), ("last_rising", last_rising))
+        },
+        "results": results, "paired_sign_tests": tests,
+        # The reference that decides whether any of this matters.
+        # Read from the checkpoint, never hardcoded: a future run against another
+        # checkpoint would otherwise silently report the wrong reference.
+        "model_duration_mae_s": float((payload.get("test") or {}).get("duration_mae", float("nan"))),
+    }
+    (Path("/models") / f"basic_linear_duration_difference_{data_subdir.replace('/', '_')}.json").write_text(
+        _json.dumps(output, indent=2))
+    models.commit()
+    return output
+
+
 @app.local_entrypoint()
 def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
