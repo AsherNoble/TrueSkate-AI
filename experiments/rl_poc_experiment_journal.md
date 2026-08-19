@@ -620,3 +620,59 @@ called the correction.
 - **Next:** EQ-009 closed. EQ-002 is now unblocked and is the top todo — tier PAID, so it stops for
   owner approval. New EQ-011: sweep the six other Modal evaluators that build datasets without
   passing `knots` from the payload.
+
+## EQ-011 — Knots sweep; the fix first converted two loud failures into silent misreports (2026-08-19)
+
+Loop tick 4 (`experiment-queue`, self-paced). EQ-002 remained top of the queue but is PAID and awaits
+owner approval, so this tick took the FREE defect sweep EQ-009 raised.
+
+- **Hypothesis:** six evaluators build `BasicLinearClipDataset` without passing `knots` from the
+  payload, so a k>2 checkpoint is scored against a 2-knot target and throws a shape error after the
+  whole corpus has loaded — **or silently compares the wrong components if a future change makes the
+  shapes compatible.** **Expected:** no behaviour change at k=2; k=3 checkpoints become evaluable.
+- **Ran:** offline, no cloud spend. `_payload_resolution` -> `_payload_dataset_kwargs` (it now
+  resolves knot count as well as resolution, so the old name was a misnomer); all seven
+  checkpoint-backed call sites take both from the payload; ensemble members that disagree on either
+  now raise. Suite **207 passed**.
+- **Verdict: CONFIRMED for the k=2 half, FALSIFIED for the k=3 half** — and the sweep as first
+  written was a net regression.
+- **Red team: CONFOUNDED.** Confirmed clean: `knots` defaults to 2 in `BasicLinearClipDataset` with
+  no "was it supplied" sentinel, so passing it explicitly is byte-identical at k=2;
+  `audit_orange_endpoint_cue` is correctly left alone (no checkpoint, self-consistent at any corpus);
+  `payloads = list(payloads)` fixed a latent generator bug. What it broke:
+  1. **THE IMPORTANT ONE — the sweep triggered the second branch of its own hypothesis.** Making k=3
+     datasets *constructible* is not making evaluators k=3-*correct*. Three of seven decode a
+     hardcoded 5-wide layout. `evaluate_refinement` still rejects loudly (`refine_linear_endpoints`
+     requires `[batch,5]`). But `audit_endpoint_residuals` and `autopsy_failures` slice `[:, :2]`,
+     `[:, 2:4]`, `[:, 4]` as start/end/duration — under k=3 those are knot 0, the **interior** knot,
+     and knot 2's **x** relabelled "duration". Before the sweep a 7-vs-5 broadcast error crashed
+     them; after it they emit a complete, plausible, **mislabelled** JSON artefact, and
+     `autopsy_failures` computes `recovered` and measures trail evidence at the wrong point. **The
+     diff was itself the "future change that makes the shapes compatible".** Fixed: added
+     `_require_two_knots()`, which those three now call so they refuse a k>2 checkpoint with a clear
+     message instead of misreporting. Genuinely knot-general: `evaluate_start_timing`, its
+     validation-selected variant, `evaluate_checkpoint_ensemble`, `evaluate_bias_correction`,
+     `basic_linear_metrics`/`knot_errors`.
+  2. **The call-site guard was inverted** — it asserted a literal count of 8, so an evaluator that
+     *skips* the helper leaves the count at 8 and passes; it only tripped when a new evaluator *used*
+     it. The comment claimed the opposite. Replaced with a structural property check: every
+     `BasicLinearClipDataset(` construction inside an `@app.function` must take its shape from the
+     helper, with `audit_orange_endpoint_cue` named as the one deliberate exception. **Verified by
+     mutation** (in memory, repo untouched): appending a new evaluator that skips the helper leaves
+     the old count guard at 8 and **passing**, while the new guard reports
+     `CAUGHT (evaluate_something_new)`.
+  3. Nothing in the suite asserted any evaluator *body* is knot-general — which is why three broken
+     evaluators passed 207 tests. The `_require_two_knots` assertions now cover the three.
+  4. Stale `_payload_resolution` references in `experiments/queue.md` (live spec — updated) and in
+     the EQ-009 journal entry (historical record — left as written).
+  5. No unstated EQ-009 behaviour change: the helper computes the identical value the inline
+     expression did.
+  6. Minor, queued not fixed: `audit_orange_endpoint_cue` silently pins 128x288, so its "cue
+     observability ceiling" is not measured at the resolution a 256x576 checkpoint sees. Do not quote
+     it against such a checkpoint.
+- **Process note:** a command in this tick paired the mutation test with `git checkout` on a file
+  holding uncommitted work; the sandbox classifier blocked it. It would have discarded the tick. The
+  mutation check was redone against an in-memory copy instead — the repo file is never written.
+- **Next:** EQ-011 closed. New EQ-012: make `audit_endpoint_residuals` and `autopsy_failures`
+  knot-general (they currently refuse k>2 rather than handle it). EQ-002 still top of queue, PAID,
+  awaiting owner approval.

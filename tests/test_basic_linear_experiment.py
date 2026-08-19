@@ -511,24 +511,59 @@ def _modal_linear_module():
     return module
 
 
-def test_checkpoint_evaluation_honours_the_trained_decode_resolution():
+def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
     # Evaluators used to build every dataset at the library default, so a
-    # checkpoint trained at another width would have been scored on inputs it
-    # never saw -- silently, and looking like a failed ablation.
+    # checkpoint trained at another width -- or with another knot count -- would
+    # have been scored on inputs it never saw, silently for resolution and with a
+    # post-corpus-load shape error for knots.
     module = _modal_linear_module()
-    assert module._payload_resolution([{"image_width": 256, "image_height": 576}]) == {
-        "image_width": 256, "image_height": 576,
+    assert module._payload_dataset_kwargs([{"image_width": 256, "image_height": 576}]) == {
+        "image_width": 256, "image_height": 576, "knots": 2,
     }
-    assert module._payload_resolution([{}]) == {"image_width": 128, "image_height": 288}
+    assert module._payload_dataset_kwargs([{"knots": 3}]) == {
+        "image_width": 128, "image_height": 288, "knots": 3,
+    }
+    assert module._payload_dataset_kwargs([{}]) == {
+        "image_width": 128, "image_height": 288, "knots": 2,
+    }
     with pytest.raises(ValueError, match="disagree on decode resolution"):
-        module._payload_resolution([{"image_width": 128, "image_height": 288},
-                                    {"image_width": 256, "image_height": 576}])
+        module._payload_dataset_kwargs([{"image_width": 128, "image_height": 288},
+                                        {"image_width": 256, "image_height": 576}])
+    with pytest.raises(ValueError, match="disagree on knot count"):
+        module._payload_dataset_kwargs([{"knots": 2}, {"knots": 3}])
+    # A generator argument must not be consumed by the first check.
+    assert module._payload_dataset_kwargs(iter([{"knots": 3}, {"knots": 3}]))["knots"] == 3
+    # A literal call-site COUNT is the wrong guard and was inverted: an evaluator
+    # that skips the helper leaves the count unchanged and passes.  Check the
+    # property instead -- every dataset construction inside a Modal function must
+    # take its shape from the helper.
     source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
-    # 8 = the helper itself plus every evaluator, including EQ-009's
-    # evaluate_bias_correction.  Bumping this is the point: a new evaluator
-    # that skips the helper cannot land without failing here first.
-    assert source.count("_payload_resolution(") == 8
+    blocks = source.split("@app.function")[1:]
+    constructions = 0
+    for block in blocks:
+        name = block.split("def ", 1)[1].split("(", 1)[0]
+        cursor = 0
+        while (found := block.find("BasicLinearClipDataset(", cursor)) != -1:
+            constructions += 1
+            call = block[found:found + 400]
+            if name == "audit_orange_endpoint_cue":
+                # The one deliberate exception: it scores no checkpoint, so there
+                # is no payload to take a shape from.
+                assert "_payload_dataset_kwargs" not in call
+            else:
+                assert "_payload_dataset_kwargs" in call, f"{name} builds a dataset without the helper"
+            cursor = found + 1
+    # 8 = 7 checkpoint-backed evaluators plus the one orange-cue exception above.
+    assert constructions == 8, f"expected 8 dataset constructions, found {constructions}"
 
+    # Resolving the shape is not the same as decoding it.  Evaluators whose
+    # bodies hardcode the 5-wide start/end/duration layout must refuse a k>2
+    # checkpoint rather than emit a plausible, mislabelled artefact.
+    for evaluator in ("evaluate_refinement", "audit_endpoint_residuals", "autopsy_failures"):
+        assert f'_require_two_knots(_payload_dataset_kwargs([payload]), "{evaluator}")' in source
+    with pytest.raises(ValueError, match="knot-general"):
+        module._require_two_knots({"knots": 3}, "audit_endpoint_residuals")
+    assert module._require_two_knots({"knots": 2}, "x") == {"knots": 2}
 
 def test_modal_linear_entry_points_expose_the_line_fit_decoder():
     source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
@@ -547,8 +582,8 @@ def test_bias_correction_evaluator_takes_its_split_from_the_checkpoint():
     assert 'payload.get("split_seed")' in body
     assert 'payload.get("dataset_fingerprint")' in body
     assert 'payload.get("split_sizes")' in body
-    assert 'knots=int(payload.get("knots") or 2)' in body
-    assert "_payload_resolution([payload])" in body
+    # Dataset shape -- resolution AND knot count -- comes from the one helper.
+    assert "_payload_dataset_kwargs([payload])" in body
     # The fit must never be handed test records.
     assert "fit_along_path_bias(validation_records" in body
     assert "fit_along_path_bias(corrected_records" not in body

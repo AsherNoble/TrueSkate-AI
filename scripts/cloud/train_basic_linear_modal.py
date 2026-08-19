@@ -62,19 +62,47 @@ def _model_from_payload(payload, torch):
     )
 
 
-def _payload_resolution(payloads) -> dict:
-    """Resolve the decode resolution a set of checkpoints was trained at.
+def _payload_dataset_kwargs(payloads) -> dict:
+    """Resolve the dataset shape a set of checkpoints was trained against.
 
     Evaluation used to build every dataset at the library default, which would
     silently feed a checkpoint trained at another width the wrong input rather
     than failing.  Checkpoints combined into one ensemble must agree.
+
+    ``knots`` is resolved here for the same reason and in the same place: the
+    model is rebuilt from ``payload["knots"]`` while the dataset used to default
+    to 2, so a k=3 checkpoint was scored against a 2-knot target and threw a
+    shape error only after the whole corpus had loaded.  One helper for both
+    means a new evaluator cannot pick up half the contract.
     """
+    payloads = list(payloads)
     sizes = {(int(payload.get("image_width") or 128), int(payload.get("image_height") or 288))
              for payload in payloads}
     if len(sizes) != 1:
         raise ValueError(f"checkpoints disagree on decode resolution: {sorted(sizes)}")
+    knots = {int(payload.get("knots") or 2) for payload in payloads}
+    if len(knots) != 1:
+        raise ValueError(f"checkpoints disagree on knot count: {sorted(knots)}")
     width, height = sizes.pop()
-    return {"image_width": width, "image_height": height}
+    return {"image_width": width, "image_height": height, "knots": knots.pop()}
+
+
+def _require_two_knots(kwargs: dict, evaluator: str) -> dict:
+    """Fail loudly in evaluators whose bodies hardcode the 5-wide layout.
+
+    Resolving ``knots`` from the payload made k=3 datasets *constructible*, which
+    is not the same as making every evaluator k=3-correct.  Bodies that slice
+    ``[:, :2]`` / ``[:, 2:4]`` / ``[:, 4]`` as start/end/duration read the
+    interior knot and a coordinate as "duration" under k=3 — previously a shape
+    error, and after the sweep a complete, plausible, mislabelled artefact.  A
+    silent misreport is far worse than the crash it replaced, so these raise
+    until they are made knot-general.
+    """
+    if kwargs["knots"] != 2:
+        raise ValueError(
+            f"{evaluator} decodes a fixed start/end/duration layout and cannot score a "
+            f"{kwargs['knots']}-knot checkpoint; make it knot-general before using it here")
+    return kwargs
 
 
 # This compact clip regressor does not need A10G-class throughput.  The
@@ -204,7 +232,7 @@ def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
-                                  **_payload_resolution([payload]))
+                                  **_require_two_knots(_payload_dataset_kwargs([payload]), "evaluate_refinement"))
     _train, _val, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
     model = _model_from_payload(payload, torch).to(device)
@@ -254,7 +282,7 @@ def evaluate_start_timing(data_subdir: str, checkpoint_name: str, *, seed: int =
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
-                                  **_payload_resolution([payload]))
+                                  **_payload_dataset_kwargs([payload]))
     _train, _val, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
     model = _model_from_payload(payload, torch).to(device)
@@ -304,7 +332,7 @@ def evaluate_start_timing_validation_selected(data_subdir: str, checkpoint_name:
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
-                                  **_payload_resolution([payload]))
+                                  **_payload_dataset_kwargs([payload]))
     _train, val_indices, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
     model = _model_from_payload(payload, torch).to(device)
@@ -431,7 +459,7 @@ def audit_endpoint_residuals(data_subdir: str, checkpoint_name: str, *, seed: in
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
-                                  **_payload_resolution([payload]))
+                                  **_require_two_knots(_payload_dataset_kwargs([payload]), "audit_endpoint_residuals"))
     _train, _val, test_indices = split_by_command(data, seed=seed)
     device = torch.device("cuda")
     model = _model_from_payload(payload, torch).to(device)
@@ -485,7 +513,7 @@ def evaluate_checkpoint_ensemble(data_subdir: str, checkpoint_names: str, *, see
     payloads = [torch.load(Path("/models") / name, map_location="cpu", weights_only=False)
                 for name in checkpoint_names]
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
-                                  **_payload_resolution(payloads))
+                                  **_payload_dataset_kwargs(payloads))
     if fresh_holdout_source is None:
         _train, val_indices, test_indices = split_by_command(data, seed=seed)
     else:
@@ -658,8 +686,7 @@ def evaluate_bias_correction(data_subdir: str, checkpoint_name: str, *,
     if fresh_stratify_by_device is None:
         fresh_stratify_by_device = bool(payload.get("fresh_stratify_by_device"))
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
-                                  knots=int(payload.get("knots") or 2),
-                                  **_payload_resolution([payload]))
+                                  **_payload_dataset_kwargs([payload]))
     fingerprint = trainer._fingerprint(data.sample_paths)
     trained_on = payload.get("dataset_fingerprint")
     if trained_on and trained_on != fingerprint:
@@ -819,7 +846,7 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
 
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
-                                  **_payload_resolution([payload]))
+                                  **_require_two_knots(_payload_dataset_kwargs([payload]), "autopsy_failures"))
     if fresh_holdout_source is None:
         _train, val_indices, evaluated_indices = split_by_command(data, seed=seed)
     else:

@@ -163,15 +163,33 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   predicted-chord design rests on a number measured once, on one checkpoint, on one split.
 
 ## EQ-011 — Sweep the Modal evaluators that ignore the checkpoint's knot count
-- status: todo
+- status: done: CONFIRMED at k=2, FALSIFIED at k=3 — resolving knots made k=3 datasets constructible
+  but three evaluators decode a hardcoded 5-wide layout, so the sweep turned two crashes into silent
+  mislabelled artefacts until `_require_two_knots` was added. Red team CONFOUNDED; the call-site
+  guard was also inverted and is now a structural check. See the 2026-08-19 EQ-011 journal entry.
 - tier: FREE
 - hypothesis: six evaluators build `BasicLinearClipDataset` without passing `knots` from the payload,
   so any k>2 checkpoint is scored against a 2-knot target and throws a shape error after loading the
   whole corpus (or, worse, silently compares the wrong components if a future change makes the
   shapes compatible).
 - method: pass `knots` from the payload at every call site, as EQ-009 now does; extend the existing
-  `_payload_resolution` call-site guard to cover the knot count too.
+  `_payload_resolution` call-site guard to cover the knot count too. (The helper was renamed
+  `_payload_dataset_kwargs` in the course of this item.)
 - expected: no behaviour change for k=2 checkpoints; k=3 checkpoints become evaluable.
 - kill: n/a — this is a defect sweep.
 - why: MVP-3 introduced k=3 checkpoints, so this is now live rather than hypothetical, and it wastes
   a full corpus load before failing.
+
+## EQ-012 — Make the two endpoint-decoding evaluators knot-general
+- status: todo
+- tier: FREE
+- hypothesis: `audit_endpoint_residuals` and `autopsy_failures` can read first/last knot and duration
+  from a 2K+1 vector as `basic_linear_bias` and `knot_errors` already do, rather than refusing k>2.
+- method: replace the hardcoded `[:, :2]` / `[:, 2:4]` / `[:, 4]` slices with knot-indexed reads;
+  drop their `_require_two_knots` guard once the bodies are general; add a k=3 synthetic test.
+- expected: identical output at k=2 (regression-checked against a stored k=2 artefact), and correct
+  first/last-knot decomposition at k=3.
+- kill: the along/perpendicular decomposition is not meaningful for an interior knot — then keep the
+  refusal and say so in the docstring.
+- why: EQ-011 stopped them lying; it did not make them usable, and MVP-3 is producing k=3 checkpoints
+  now.
