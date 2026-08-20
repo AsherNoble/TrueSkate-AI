@@ -88,6 +88,13 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - expected: >= 90.10% at some weight if the artefact explanation holds.
 - kill: no setting reaches the baseline — then the line fit is closed in the journal as a
   falsified architectural bet so it cannot be re-proposed.
+- cost (asked for 2026-08-20, NOT measured): `gpu="any"` bills roughly $0.60-$1.10/hr (T4/L4/A10G).
+  6 `trajectory_weight` settings x 40 epochs on the 2,022-command split. At ~30 min/run that is
+  ~$2-4; at ~90 min/run it is ~$6-11 — a range that straddles the $10 budget, so it is not good
+  enough to authorise on. No completed run in `logs/` or `modal app list` records wall-clock, so
+  the figure cannot be derived from what exists.
+- PROPOSED PRECURSOR: one 2-epoch calibration run (~$0.05) to measure seconds-per-epoch, then
+  re-quote the sweep exactly. Cheaper than guessing wrong in either direction.
 - why: it was the primary bet of the MVP-2 plan and is currently a regression; leaving it
   ambiguous invites re-litigating it every session.
 
@@ -118,7 +125,13 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - follow-up: EQ-014 applies (b) and (c) at the rig — NOT yet applied.
 
 ## EQ-014 — Apply the offload fix at the rig (owner-executed)
-- status: todo
+- status: done: CONFIRMED — the config change was necessary but NOT sufficient. A latent ARG_MAX
+  bug in `offload_corpus_to_modal.sh:216` made every park above ~13k sample dirs enumerate as
+  EMPTY (stderr discarded), so the session retried forever at 0 batches. Fixed with `find`;
+  20344 dirs -> 227 batches, uploading. Red team CONFIRMED, no deletion hazard. Capacity
+  resolved: corpus-v2 is a Modal **v2-format** volume (trueskate-corpus holds >550k entries,
+  above v1's 500k hard cap), so the only cap that applies is 262,144 files PER DIRECTORY and
+  the layout peaks at 20,344. See the 2026-08-20 EQ-014 journal entry.
 - tier: FREE (config only) but the FIRST RUN MOVES AND DELETES 295 GiB
 - blocked-by: owner — the remote plist edit was blocked here, and the deletion warrants a human
 - hypothesis: with the gate below the collectors' actual spin fraction and the target pointed at a
@@ -420,6 +433,15 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - expected: a one-paragraph protocol naming the certified axes and explicitly listing what is NOT
   certified.
 - kill: n/a.
+- plain-language version (asked for 2026-08-20): you will spend collection time building a test
+  set, look at it exactly ONCE, and announce a number. This decides what that number is allowed
+  to claim. Today Model 1 trains and tests on one park, one day, one phone — so a good score
+  means only "it handles swipes it hasn't seen", not "a new park", "the other phone", or
+  "a different day". Those axes cannot be added after collection.
+- RECOMMENDATION (mine, pending owner sign-off): take all four. As of 2026-08-20 XR1 is on SLS
+  2015 Super Crown and XR2 on SLS 2013 Kansas City, so the second-park and device-parity axes
+  now cost almost nothing — they fall out of collecting from both phones as they currently sit.
+  Day-disjointness costs only a calendar gap. Declining them is the expensive choice.
 - why: EQ-020 showed the current holdout certifies (a) while its name ("fresh holdout") suggests more.
   Inheriting that silently into a 3,000-clip certification would make the headline number sound
   broader than it is.
@@ -633,7 +655,14 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   the current 94.12% may already suffice and the milestone is closer than assumed.
 
 ## EQ-036 — Two gates to Model 2, and the project tracks only one
-- status: todo (owner decision)
+- status: done: RESOLVED (2026-08-20) — the gate was mostly already closed and nobody knew.
+  (i) The SLS arenas were INSTALLED on 2026-06-14 (`vision_sequence_leap_journal.md:75`), so
+  option (a) was executed two months ago. (ii) The 295 GiB stranded session
+  `iPhone_XR_20260814_042825` is entirely in `sls_2015_super_crown` — 20,344 domain-matched
+  samples that existed all along, stuck behind the EQ-014 offload bug. EQ-014 and EQ-036 were
+  the SAME blocker. (iii) Owner has since put XR1 on SLS 2015 Super Crown and XR2 on SLS 2013
+  Kansas City, giving option (a) + option (c) simultaneously. Residual: no collector is
+  running (see EQ-044), so the park change records nothing yet.
 - tier: FREE to decide, collection to execute
 - finding: Model 1 must be accurate enough AND must transfer to the parks the expert corpus uses. EQ-020
   measured the MVP corpus as ONE park (`the_workshop`, 3,040/3,040 clips); the journal (2026-06) records
@@ -718,3 +747,57 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: this is the same shape as EQ-018 (a schedule asserted rather than checked) and is the mismatch on
   the register most likely to produce a future wrong number. It is also the riskiest to change blind,
   which is why it wants sign-off rather than a loop tick.
+
+## EQ-042 — Spot-check sample integrity before the offloader deletes 295 GiB
+- status: todo
+- tier: FREE (read-only, on the rig)
+- blocked-by: none, but must run BEFORE the 227th batch completes
+- hypothesis: every uploaded sample dir is byte-complete, so the `REMOTE == LOCAL` guard — which
+  counts `meta.json` ONLY and checks nothing about the 32 frames beside it — is a sufficient
+  precondition for the irreversible local delete.
+- method: sample ~50 `sample_*` dirs spread across the batch index range; for each, compare the local
+  file count against `modal volume ls trueskate-corpus-v2 /<sess>/<park>/<sample>`. Two dirs were
+  already checked by the red team (33 local vs 33 remote, both clean).
+- expected: 50/50 exact file-count matches.
+- kill: any mismatch — then the guard is insufficient and the delete must be blocked (bootout the job)
+  until the offloader verifies frame counts, not just `meta.json` presence.
+- why: the red team raised this as the one integrity gap it could not close: 2 of 20,344 certifies
+  essentially nothing, and the delete is irreversible post-anchor-fix corpus.
+
+## EQ-043 — Kill the 9-day Modal retry zombie (owner-executed)
+- status: todo (owner — my `kill` was blocked by the sandbox classifier)
+- tier: FREE (stops spend)
+- finding: `modal run scripts/cloud/train_basic_hold_modal.py --run-label hold_1008_baseline_20260811`
+  (rig PID 57026, started 2026-08-11 06:31, app `ap-kLhkNVbdx6NuxjBghvIGz2`, still `ephemeral`) has
+  retried a DETERMINISTIC import-time crash — `IndexError` on `Path(__file__).resolve().parents[2]`
+  — **1,298 times** over 9 days. It cannot succeed.
+- method: `kill 57026` on the rig. Then fix `_ROOT = Path(__file__).resolve().parents[2]` in the
+  remote module (the container's `__file__` is shallower than the repo's) before any relaunch.
+- why: it is charging a $10 budget for an outcome that is impossible, and it obscures real runs in
+  `modal app list`.
+
+## EQ-044 — Collection is stopped on both phones
+- status: todo (owner)
+- tier: FREE to restart; collection time to execute
+- finding: no `com.trueskate.collect.*` job is loaded. `logs/collect_xr1.log` ends 2026-08-17 with
+  `WDA is not responding at 127.0.0.1:8100`; `logs/collect_xr2.log` ends 2026-08-06. The watchdogs
+  log `fleet state checked` every 2 min and do NOT flag that collection is down — because the
+  collectors are intentionally unloaded, the watchdog has nothing to complain about.
+- method: let the 227-batch offload finish first (it frees ~295 GiB and owns the uplink), then
+  `launchctl kickstart` both collectors. XR1 will need `scripts/launch_services.py` for WDA.
+- open question: should the watchdog distinguish "collectors deliberately unloaded" from "collectors
+  should be running and are not"? As built it is silent in both cases — the exact blindness that
+  `unattended-jobs-self-heal-not-blind` warns about.
+- why: XR1/XR2 are now on SLS 2015 Super Crown / SLS 2013 Kansas City (EQ-036), which records nothing
+  while no collector runs.
+
+## EQ-045 — The rig's copy of the ARG_MAX fix is uncommitted and revertible
+- status: todo (owner)
+- tier: FREE
+- finding: the rig is on `feature/dashboard-sls-preview` at `463316d` with
+  `scripts/ops/offload_corpus_to_modal.sh` modified in the working tree (backup at
+  `.bak.20260820`). Any `git checkout`/`git pull --rebase` there silently restores the ARG_MAX glob
+  and reproduces the exact silent-zero-batches failure. The same fix IS committed on
+  `feature/behavourial-cloning` locally.
+- method: owner's call — commit it on the rig's branch, or merge/cherry-pick the local commit.
+- why: this is a bug whose whole signature is that it looks like success.

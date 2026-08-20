@@ -213,7 +213,10 @@ offload_session(){
   while IFS= read -r parkpath; do
     [ -z "$parkpath" ] && continue
     PARK=$(basename "$parkpath")
-    SAMPLE_FILE=$(mktemp); ls -d "${parkpath}"sample_*/ 2>/dev/null > "$SAMPLE_FILE"
+    # find, not a glob: a park with more than ~13k sample dirs overflows ARG_MAX,
+    # and with stderr discarded the glob failure looked like an EMPTY park -> 0
+    # batches -> remote 0 vs local N -> session retried forever (EQ-014, 2026-08-20).
+    SAMPLE_FILE=$(mktemp); find "${parkpath%/}" -maxdepth 1 -type d -name 'sample_*' 2>/dev/null | sort > "$SAMPLE_FILE"
     local NSAMP; NSAMP=$(grep -c . "$SAMPLE_FILE")
     NBATCH=$(( (NSAMP + CHUNK_DIRS - 1) / CHUNK_DIRS ))
     log "  PARK $PARK: $NSAMP sample dirs -> $NBATCH batches of $CHUNK_DIRS"

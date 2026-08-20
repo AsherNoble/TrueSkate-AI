@@ -1913,3 +1913,70 @@ renaming any individual field:
 
 Both are queued (EQ-041) rather than done here: they touch the label semantics of every corpus on
 disk, which is exactly the kind of change that should not be made inside a loop tick.
+
+## EQ-014 — the offload was blocked TWICE; the second block was an ARG_MAX bug that looked like an empty park (2026-08-20)
+
+- **Hypothesis:** with `MIN_SPIN_FRAC` below the collectors' actual spin fraction and `MODAL_VOLUME`
+  pointed at a volume with room, the stranded 295 GiB offloads. **Expected:** session becomes eligible,
+  ~295 GiB uploads, local free disk rises from 81 GiB. **Kill:** `trueskate-corpus-v2` lacks capacity.
+- **Ran:** owner applied the predeclared plist change on the rig (`MIN_SPIN_FRAC 0.8 -> 0.3`,
+  `MODAL_VOLUME -> trueskate-corpus-v2`) with bootout/bootstrap. Verified loaded. **Deviation from the
+  plan:** the item assumed config was the whole fix. It was not, and diagnosing the remainder became
+  this iteration.
+- **Numbers:** the session became eligible and then made zero progress, every round:
+  `SESSION iPhone_XR_20260814_042825: 20344 samples across 1 park(s)` /
+  `PARK sls_2015_super_crown: 0 sample dirs -> 0 batches of 90` /
+  `KEEP: remote 0 vs local 20344, manifests_ok=1, provenance_ok=1`.
+  Root cause `scripts/ops/offload_corpus_to_modal.sh:216`:
+  `ls -d "${parkpath}"sample_*/ 2>/dev/null`. `$parkpath` is absolute (113 bytes/entry measured);
+  113 x 20,344 = **2.30 MB** against `getconf ARG_MAX` = **1,048,576**. The shell fails with
+  `argument list too long`, `2>/dev/null` eats it, and a full park reads as an empty one. Reproduced
+  both directions on the rig: the same glob with a short RELATIVE prefix (~44 B, ~0.90 MB) succeeds.
+  Fixed to `find "${parkpath%/}" -maxdepth 1 -type d -name 'sample_*' | sort` (`sort` because glob
+  output was ordered and `find` is not). Post-fix: `20344 sample dirs -> 227 batches of 90`,
+  `batch 0/227 ok`, `batch 1/227 ok`.
+- **Verdict:** CONFIRMED. The config change was necessary but not sufficient; any park above roughly
+  13k sample dirs was silently unofloadable. **Kill criterion resolved, contrary to the item's fear:**
+  `trueskate-corpus` currently holds **>550,000 entries**, above Modal v1's documented 500,000-inode
+  hard cap, which proves these are **v2-format** volumes. The applicable v2 limit is 262,144 files
+  *per directory*; the deepest directory here holds 20,344 entries. Size lands at ~303/1024 GB. The
+  journal's earlier "2.37M files against a 500k inode limit" line (2026-08-19) is self-refuting and
+  should not be reasoned from again.
+- **Red team:** CONFIRMED, and it closed the confound I most wanted closed — the failing 06:26 round
+  had ALREADY printed `minimum spin_frac=0.5`, which is only reachable under `MIN_SPIN_FRAC=0.3`, so
+  the config change and the bootout sit on *both* sides of the comparison and cannot explain the
+  change. It verified `find` enumerates the identical set (0 symlinks; `NSAMP == LOCAL == 20344`),
+  that batch indices are claimed by `mkdir` so ordering cannot drop work, and that every failure path
+  drives `REMOTE < LOCAL` -> KEEP. **Residual risks it named:** (1) file count is 671,352 not ~400k
+  (my error — since resolved as harmless by the v2 finding); (2) `com.trueskate.storageguard` still
+  watched `trueskate-corpus` while the offloader writes to v2, so its 950 GB alarm was blind — **fixed
+  this iteration**, plist repointed and reloaded; (3) the rig's copy of the fix is uncommitted on a
+  different branch and a `git pull` would silently restore the bug (EQ-045); (4) the `REMOTE == LOCAL`
+  guard counts `meta.json` only and verifies presence, not integrity — 2 spot-checked dirs of 20,344
+  certifies nothing (EQ-042, must run before the delete fires).
+- **Next:** EQ-042 (integrity spot-check before delete), EQ-045 (commit the rig's fix). EQ-036 closed
+  as a side effect — see below.
+
+## EQ-036 — the park gate was already closed in June, and the evidence was inside the stranded session (2026-08-20)
+
+- **Ran:** no experiment. Re-read `vision_sequence_leap_journal.md` and inspected the stranded corpus
+  while diagnosing EQ-014.
+- **Numbers / findings:** (i) the 2026-06-14 entry records Asher re-signing the App Store into the
+  Apple ID owning the SLS DLC and **installing** SLS 2016 Super Crown / Newark / Munich and SLS 2015
+  Super Crown — "the exact domain of the expert clips". Option (a) was executed two months ago; the
+  EQ-036 write-up asserted the parks were "NOT INSTALLED (store/download only)" by quoting the
+  *earlier* 2026-06-14 entry ("Park-Switching Works") and missing the *later* same-day entry
+  ("SLS Arena … Installed + Collected") six lines below it, which reverses exactly that clause. (ii) The 295 GiB stranded session
+  `iPhone_XR_20260814_042825` is **entirely** `sls_2015_super_crown`: 20,344 domain-matched samples
+  that have existed since 2026-08-14 and were invisible only because of the EQ-014 bug. (iii) Owner
+  has since set XR1 to SLS 2015 Super Crown and XR2 to SLS 2013 Kansas City.
+- **Verdict:** RESOLVED, and the framing was wrong. EQ-036 was never a separate decision — it was the
+  same blocker as EQ-014 wearing a different name. Domain-matched Model-1 training data already
+  exists; it was stranded, not missing. XR1/XR2 now deliver option (a) and option (c) at once.
+- **Red team:** not spawned — this is a documentation correction from primary sources, with no number
+  to attack. The correction itself came from checking a claim I had written from a partial read.
+- **Lesson, and it is the seventh of its kind:** I stated "SLS-arena parks are NOT installed" as
+  settled fact from a journal line that a later journal line reversed. This is the same failure shape
+  as the six name-vs-behaviour mismatches in EQ-040 — a plausible reading treated as verified. The
+  register stands at seven, five of which caused retractions.
+- **Next:** EQ-044 — no collector is running on either phone, so the park change records nothing yet.
