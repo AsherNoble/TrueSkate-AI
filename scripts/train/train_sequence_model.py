@@ -109,8 +109,6 @@ def train(dataset: Dataset, cfg: SequencePolicyConfig, *, epochs: int, batch_siz
                 break
         last = running / max(1, (1 if smoke else len(loader)))
         print(f"  epoch {ep + 1}/{epochs}  loss={last:.5f}")
-        if smoke and ep >= 2:
-            break
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"model_state": model.state_dict(), "config": config_to_dict(cfg),
@@ -124,7 +122,8 @@ def main() -> None:
     mode = ap.add_mutually_exclusive_group(required=True)
     mode.add_argument("--smoke", action="store_true", help="Synthetic pipeline smoke test.")
     mode.add_argument("--data", type=Path, help="Real assembled-sequence dataset dir.")
-    ap.add_argument("--epochs", type=int, default=10)
+    ap.add_argument("--epochs", type=int, default=10,
+                    help="Training epochs. Honoured in both --smoke and real modes.")
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--n-frames", type=int, default=6)
@@ -154,7 +153,11 @@ def main() -> None:
 
     if args.smoke:
         ds: Dataset = SyntheticSequenceDataset(n=64, cfg=cfg)
-        final = train(ds, cfg, epochs=max(3, args.epochs), batch_size=args.batch_size,
+        # `--epochs` is honoured here.  It used to be floored at 3 AND capped by an
+        # `ep >= 2` break inside train(), so the flag silently did nothing and the
+        # run reported "epoch 3/3" whatever was asked for.  Smoke epochs are one
+        # batch each, so respecting the flag costs nothing.
+        final = train(ds, cfg, epochs=args.epochs, batch_size=args.batch_size,
                       lr=args.lr, out_path=args.out, smoke=True)
         assert np.isfinite(final), "smoke loss is not finite"
         print(f"SMOKE OK — final loss {final:.5f}")

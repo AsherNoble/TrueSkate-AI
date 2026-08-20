@@ -1847,3 +1847,20 @@ Fixes the defect that cost a checkpoint in EQ-037.
   `ep >= 2` (`train_sequence_model.py:112`), so `--epochs 1` still runs three epochs. Harmless for a
   smoke test but the flag is a lie; queued as EQ-039 rather than silently patched, since it is
   cosmetic and unrelated to the defect this item exists to fix.
+
+## EQ-039 — `--epochs` now means what it says (2026-08-20)
+
+- **Two independent caps** made the flag inert under `--smoke`: `epochs=max(3, args.epochs)` in the
+  smoke branch, and `if smoke and ep >= 2: break` inside `train()`. Every smoke run printed
+  "epoch 3/3" whatever was requested. Both removed; verified `--epochs 1` runs 1, `--epochs 4` runs 4.
+  Smoke epochs are one batch each, so honouring the flag costs nothing.
+- **Caught a self-inflicted side effect mid-fix:** I also changed the parser default from 10 to 3,
+  which would have silently altered **real** training runs. Reverted; the test now asserts the real-run
+  default is still 10, so the next person fixing a smoke path cannot quietly re-scope it.
+- Test added; suite **223 passed**.
+- **Why a cosmetic defect was worth a tick.** This is the fourth name-versus-behaviour mismatch found
+  in this queue — after `trail_frames_present` (constant by construction), `trail_frame_start` (an
+  argmin, not an onset), and `frame_times` (synthesised, asserting a schedule rather than measuring
+  one). The first three each produced a published-then-retracted conclusion. The pattern is now
+  frequent enough to treat as a project-level hazard rather than a run of coincidences: **in this
+  codebase, a field or flag's name is a hypothesis about its behaviour, not a description of it.**

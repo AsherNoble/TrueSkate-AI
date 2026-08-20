@@ -149,3 +149,22 @@ def test_smoke_never_defaults_to_a_durable_model_path():
     assert resolve(smoke=False).parent.name == "models"
     # An explicit --out still wins in either mode.
     assert resolve(smoke=True, explicit=Path("/x/y.pth")) == Path("/x/y.pth")
+
+
+def test_smoke_honours_the_epochs_flag():
+    """`--epochs` used to be ignored under --smoke.
+
+    It was floored at 3 (`max(3, args.epochs)`) and independently capped by an
+    `ep >= 2` break inside train(), so every smoke run printed "epoch 3/3"
+    whatever was asked for.  A flag that reports something other than what it did
+    is the same hazard as `trail_frames_present` and the synthesised
+    `frame_times`, both of which produced retracted conclusions.
+    """
+    from pathlib import Path
+    source = (Path(__file__).resolve().parents[1]
+              / "scripts" / "train" / "train_sequence_model.py").read_text()
+    assert "max(3, args.epochs)" not in source
+    assert "if smoke and ep >= 2" not in source
+    assert "epochs=args.epochs, batch_size=args.batch_size" in source
+    # The real-run default must not have been altered while fixing the smoke path.
+    assert 'ap.add_argument("--epochs", type=int, default=10' in source

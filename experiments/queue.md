@@ -670,7 +670,9 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   unrecoverable and silent.
 
 ## EQ-039 — `--epochs` is ignored by the Model 2 smoke path
-- status: todo
+- status: done: CONFIRMED — two independent caps removed, flag verified for 1/2/4 epochs, real-run
+  default preserved (I briefly changed it and reverted). Fourth name-vs-behaviour mismatch in this
+  queue. See the 2026-08-20 EQ-039 entry.
 - tier: FREE
 - hypothesis: `train_sequence_model.py:112` stops on `smoke and ep >= 2`, so `--epochs 1` still runs
   three epochs and the flag misreports what happened.
@@ -680,3 +682,21 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: harmless today, but a flag that silently does something other than what it says is the same
   class of problem as `trail_frames_present` and the synthesised `frame_times` — three of which have
   already produced retracted conclusions in this queue.
+
+## EQ-040 — Audit the codebase for name-vs-behaviour mismatches
+- status: todo
+- tier: FREE
+- hypothesis: four fields/flags in this pipeline have been found to not do what their names say —
+  `trail_frames_present` (constant by construction), `trail_frame_start` (an argmin, not an onset),
+  `frame_times` (synthesised, not measured), `--epochs` (ignored under --smoke). Three produced
+  retracted conclusions. There are likely more, and they are cheap to find but expensive to discover
+  by being misled.
+- method: enumerate the fields emitted by the diagnostic/audit paths and the flags on the entry points;
+  for each, state what the name implies and what the code does; flag every divergence. Prioritise
+  anything a conclusion has been or could be drawn from (timing fields especially).
+- expected: a short table of divergences, each either renamed or documented at the definition site.
+- kill: no further divergences found — then the four were the whole of it, which is itself worth
+  knowing.
+- why: this queue's dominant failure mode has not been bad experiments, it has been trusting a name.
+  The cost of one such mistake (EQ-015's circular audit, EQ-016's two retractions) far exceeds the cost
+  of the sweep.
