@@ -684,7 +684,9 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   already produced retracted conclusions in this queue.
 
 ## EQ-040 — Audit the codebase for name-vs-behaviour mismatches
-- status: todo
+- status: done: CONFIRMED — two more found. `gesture_start_monotonic` holds EPOCH seconds, and its mere
+  PRESENCE is a mode switch selecting the start-relative label branch. Six total, four of which cost
+  retractions. See the 2026-08-20 EQ-040 entry.
 - tier: FREE
 - hypothesis: four fields/flags in this pipeline have been found to not do what their names say —
   `trail_frames_present` (constant by construction), `trail_frame_start` (an argmin, not an onset),
@@ -700,3 +702,19 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - why: this queue's dominant failure mode has not been bad experiments, it has been trusting a name.
   The cost of one such mistake (EQ-015's circular audit, EQ-016's two retractions) far exceeds the cost
   of the sweep.
+
+## EQ-041 — State the label convention instead of inferring it from key presence
+- status: todo (owner sign-off — touches every corpus on disk)
+- tier: FREE to implement, but it is a DATA-FORMAT change
+- hypothesis: `_is_end_relative()` decides whether touches are placed start- or end-relative purely from
+  WHICH KEYS EXIST in a meta dict (`temporal_trace_dataset.py:586-593`). A corpus written by a different
+  aligner version silently gets a different label convention, with no version field and no error.
+- method: (a) write an explicit `label_time_base: "start" | "end"` into new metas and read it first,
+  keeping `_is_end_relative` as a legacy fallback; (b) rename `gesture_start_monotonic` ->
+  `gesture_start_epoch_s` (it holds `t_call_start_epoch_s`, not a monotonic clock), still reading the
+  old key for existing corpora; (c) assert the convention at dataset load so a mismatch fails loudly.
+- expected: no behaviour change on existing corpora; new ones self-describe.
+- kill: n/a — defect fix.
+- why: this is the same shape as EQ-018 (a schedule asserted rather than checked) and is the mismatch on
+  the register most likely to produce a future wrong number. It is also the riskiest to change blind,
+  which is why it wants sign-off rather than a loop tick.

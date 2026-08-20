@@ -1864,3 +1864,52 @@ Fixes the defect that cost a checkpoint in EQ-037.
   one). The first three each produced a published-then-retracted conclusion. The pattern is now
   frequent enough to treat as a project-level hazard rather than a run of coincidences: **in this
   codebase, a field or flag's name is a hypothesis about its behaviour, not a description of it.**
+
+## EQ-040 — Name-vs-behaviour sweep: two more found, and one is a value doubling as a mode switch (2026-08-20)
+
+Prompted by four such mismatches already having produced retracted conclusions. Swept the timing
+fields first, since those are what conclusions get drawn from.
+
+### The register so far
+
+| name | implies | actually | cost |
+|---|---|---|---|
+| `trail_frames_present` | frames containing trail | **constant by construction** (per-frame max threshold) | 2 retractions (EQ-015, EQ-016) |
+| `trail_frame_start` / `_end` | touch onset / liftoff | **argmin over frames** of distance to nearest trail pixel | 1 retraction (EQ-015) |
+| `frame_times` | measured frame timings | **synthesised** from aligner constants; asserts a schedule | 1 retraction (EQ-015, circular audit) |
+| `--epochs` (smoke) | epochs to run | ignored; capped twice at 3 | cosmetic (EQ-039) |
+| **`gesture_start_monotonic`** | a **monotonic** clock reading | **epoch seconds** — assigned `float(ev["t_call_start_epoch_s"])` (`align_xctest_traces.py:483`) | none yet |
+| **same field, second issue** | a value | **also a MODE SWITCH** — its mere *presence* flips `_is_end_relative()` to False (`temporal_trace_dataset.py:586-588`), selecting the start-relative label branch | none yet |
+
+### Why the two new ones matter
+
+- **`gesture_start_monotonic` is epoch, not monotonic.** The distinction is not pedantic: a monotonic
+  clock is not comparable across processes or reboots, while epoch is. Anyone trusting the name would
+  *avoid* exactly the cross-session comparison the field is good for — or, worse, feed it to something
+  expecting seconds-since-boot. EQ-020's capture-time analysis used `datetime.fromtimestamp()` on it
+  and got wall-clock dates matching the session directory names, which is what validated the epoch
+  reading; that check is the only reason the conclusion there was sound.
+- **A field whose presence changes semantics is not a field, it is a flag.** `_is_end_relative()`
+  returns False if `gesture_start_monotonic` is present, and otherwise looks for
+  `gesture_end_monotonic` / `gesture_video_time_s` / `t_call_end_epoch_s`. So label scheduling — whether
+  touches are placed start-relative or end-relative — is decided by **which keys happen to exist in a
+  meta dict**. A corpus written by a slightly different aligner version silently gets a different label
+  convention, with no version field and no error. This is the same shape as the EQ-018 defect (a
+  schedule asserted rather than checked) and it is the one on this list most likely to produce a future
+  wrong number.
+
+### Assessment
+
+Six mismatches, four of which already cost retractions. The dominant failure mode in this queue has not
+been bad experiments — it has been **trusting a name**. Two structural fixes are worth more than
+renaming any individual field:
+
+1. **An explicit label-convention field in every meta** (e.g. `label_time_base: "start" | "end"`), so
+   the convention is stated rather than inferred from key presence. `_is_end_relative` becomes a
+   fallback for legacy corpora only.
+2. **Rename `gesture_start_monotonic` → `gesture_start_epoch_s`**, keeping the old key readable for
+   legacy corpora. This is a data-format change and must not be done casually — every existing corpus
+   carries the old key, and `_is_end_relative` keys off it.
+
+Both are queued (EQ-041) rather than done here: they touch the label semantics of every corpus on
+disk, which is exactly the kind of change that should not be made inside a loop tick.
