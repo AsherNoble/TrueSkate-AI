@@ -2114,3 +2114,61 @@ disk, which is exactly the kind of change that should not be made inside a loop 
   against the 3 baseline seeds already on the volume. ~9 runs ~ $7, which exceeds the remaining budget, so
   it is queued rather than run. Until then the honest position is: the line fit is neither a regression nor
   an improvement, and nothing distinguishes it from the baseline at n=1 per cell.
+
+## EQ-046 — the line fit is not settled, and the reason is that our measuring instrument has ~6 points of noise (2026-08-22)
+
+- **Hypothesis:** the line fit and the temporal-mixer baseline are indistinguishable; apparent differences
+  are seed noise. **Kill:** distributions overlap -> close the line fit as "no effect".
+- **Ran:** 9 runs = 3 arms x 3 seeds (1,2,3), all pinned L4 (`device=cuda name=NVIDIA L4` in all nine
+  logs), all 40 epochs, all `--no-evaluate-test` (`"test": null` on all nine), rc=0. Common config:
+  `trueskate-mvp-linear-2k` / `basic_linear_xctest`, batch 8, lr 1e-3, split_seed 0, base_channels 16,
+  command split, temporal mixer, K=2. Arms: `base` (no line fit, trajectory_weight 0),
+  `lf001` (`--line-fit --trajectory-weight 0.01`), `lf002` (`--line-fit --trajectory-weight 0.02`).
+  **Deviation, deliberate:** the queued method said to reuse the three existing baseline seed
+  checkpoints; those ran under `gpu="any"` while this arm is pinned L4, so the baseline arm was
+  retrained on matched hardware instead. All nine payloads share one `dataset_fingerprint` and one
+  1416/303/303 split.
+- **Numbers (validation joint, best-of-40 as reported by the trainer):**
+  base 84.49 / 94.06 / 92.08 (mean 90.21), lf001 92.74 / 87.13 / 90.43 (mean 90.10),
+  lf002 91.75 / 88.78 / 90.43 (mean 90.32). Welch t(4): lf001-base **-0.17, 95% CI [-9.5, +9.1]**;
+  lf002-base **+0.07, 95% CI [-8.4, +8.5]**. Minimum detectable effect at 80% power: **~9 points.**
+- **Verdict: INCONCLUSIVE, and the kill criterion as written is unfalsifiable.** "The distributions
+  overlap" fires for any true effect below ~9 points, which is every effect anyone has proposed on this
+  project. Firing it records that the instrument has no resolution, not that the architectures are equal.
+  I had intended to write "settled as no effect". That would have been wrong.
+- **Red team: CONFOUNDED, with three findings that matter beyond this item.**
+  1. **The seeds are not matched across arms, so the paired analysis was meaningless.**
+     `basic_linear_regressor.py:80` inserts `trajectory_score` only when `trajectory_track` is on, BEFORE
+     `duration_head` (:88) and `onset_head` (:96). The red team built both arms at seed 1: encoder,
+     temporal mixer and the two score heads are bit-identical, but **all 8 `duration_head` tensors differ**
+     and the global RNG state diverges. `train_loader` (`train_basic_linear_regressor.py:245`) uses
+     `shuffle=True` with no explicit generator, so **all 40 epochs of minibatch order differ between arms
+     at the same `--seed`**. The +8.3 / -6.9 / -1.7 "paired" differences are three unpaired draws.
+  2. **The headline is a best-of-40 order statistic, and within-run epoch noise is BIGGER than the
+     between-seed band.** Independently reproduced here from the nine epoch curves: mean within-run
+     validation sd over epochs 21-40 is **6.31 points**, against the ~3.7-point "seed noise" EQ-004
+     measured and a binomial floor of only 1.7 at n=303. Selection is a strict argmax over 40 draws on
+     the same 303 validation commands (`train_basic_linear_regressor.py:295`). Plateau means (epochs
+     21-40, 20x more data per run) tell the same non-story with the ordering reversed:
+     base 73.61 / 86.77 / 85.42 (mean 81.93), lf001 84.77 / 81.83 / 82.75 (83.12),
+     lf002 83.83 / 80.48 / 85.05 (83.12).
+     **So EQ-004's "seed noise" was mostly CHECKPOINT-SELECTION noise, and every headline Model-1 number
+     in this journal is ~7-8 points above the typical quality of the model that produced it.**
+  3. **`--line-fit` bundles three changes** — the line-fit decoder, the `trajectory_track`/`onset_head`
+     pair, and trajectory map supervision at weight w — against a base arm with all three off. "The line
+     fit has no effect" is not separated from "the supervision helps and the decoder hurts, cancelling".
+  Also corrected: `best_epoch` 40/40/36 in the base arm is argmax-of-noise, not undertraining (base_s2
+  scored 77.9 at epoch 35 and 94.1 at 39); `base_s1` is a genuinely depressed run but seed 1 is not a bad
+  seed (it is the BEST seed in both line-fit arms); the sd trend 0.0505 -> 0.0282 -> 0.0149 is not
+  variance reduction (F(2,2) admits an sd ratio of [0.16, 6.2], and dropping base_s1 puts base below
+  lf002); and the earlier `gpu="any"` seed-1 baseline is the SAME trajectory measured twice, not an
+  independent sample.
+- **What is supported:** at n=3 and 40 epochs on this corpus, **no arm difference larger than ~9 points
+  exists**, and the line fit is not the ~7-point regression the original claim asserted. Nothing finer.
+- **No test look was spent.** Correct, but not the binding constraint — a test look carries the same
+  +-9-point interval. The item is unsettled for want of a measurement protocol, not a holdout.
+- **Cost:** 9 runs x ~52 min on L4 ~ 7.8 container-hours ~ **$7.2**; ~$12.4 total against a $10 budget
+  the owner extended for this run.
+- **Next:** EQ-048 (make seeds genuinely matched), EQ-049 (replace argmax-of-40 selection and re-baseline
+  every headline number), EQ-050 (unbundle the three changes `--line-fit` carries). **EQ-049 comes first:
+  until selection noise is below the effect size, no further spend on this corpus can resolve anything.**

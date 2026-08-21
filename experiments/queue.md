@@ -858,7 +858,14 @@ corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entr
 - why: this is a bug whose whole signature is that it looks like success.
 
 ## EQ-046 — Settle the line fit by comparing distributions, not points
-- status: todo
+- status: done: INCONCLUSIVE (2026-08-22) — 9 runs, 3 arms x 3 seeds, matched L4. Arm means within
+  0.2 points (90.21 / 90.10 / 90.32) but the 95% CI on the difference is **[-9.5, +9.1]**, so the
+  kill criterion "the distributions overlap" is unfalsifiable at n=3. Red team CONFOUNDED: seeds
+  are NOT matched across arms (the trajectory_track head shifts the global RNG, so minibatch order
+  differs for all 40 epochs), and within-run epoch sd is **6.31 points** — larger than the
+  between-seed band it was being tested against. Supported: no arm difference above ~9 points; the
+  line fit is not the ~7-point regression originally claimed. See the 2026-08-22 journal entry.
+  Follow-ups: EQ-048, EQ-049, EQ-050.
 - tier: PAID (~$7 at L4, EXCEEDS the ~$4.8 left of the $10 budget — needs a new budget or a narrower grid)
 - blocked-by: owner (budget)
 - hypothesis: the line fit and the baseline are indistinguishable on this corpus; the apparent
@@ -890,3 +897,58 @@ corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entr
 - why: EQ-004 measured the noise floor for the first time (four baseline seeds, test 83.83-91.75, sd 3.7).
   Every earlier point comparison on this corpus was made without knowing it, including the 90.10 vs 83.17
   contrast this queue was built around.
+
+## EQ-049 — The reported accuracy is a best-of-40 order statistic; fix selection before spending anything more
+- status: todo
+- tier: FREE to implement and re-analyse (existing epoch curves); PAID only if arms are re-run
+- hypothesis: replacing strict argmax-over-epochs with a plateau/averaged estimator cuts the run-to-run
+  spread from ~6 points to near the binomial floor (~1.7 at n=303), making effects under 5 points
+  measurable on this corpus for the first time.
+- method: (1) re-analyse the 9 EQ-046 runs' saved epoch curves under candidate estimators — mean of the
+  last K epochs, EMA of validation, and best-of-40 — and report the between-seed sd of each; (2) adopt
+  the lowest-variance estimator in `train_basic_linear_regressor.py`, keeping the argmax checkpoint for
+  inference but reporting the estimator; (3) restate the headline MVP-2/MVP-3 numbers under it.
+- expected: between-seed sd falls from ~4-7 points to under ~2.5.
+- kill: no estimator beats argmax on between-seed sd — then the corpus itself is the limit and the only
+  route to resolution is more validation commands, not better statistics.
+- why: measured 2026-08-22 — mean within-run validation sd over epochs 21-40 is **6.31 points**, against
+  a binomial floor of 1.7. Every headline Model-1 number in the journal is a best-of-40 draw and sits
+  roughly 7-8 points above the typical quality of the model that produced it (EQ-046 plateau means run
+  81.9-83.1 where the reported figures run 90.1-90.3). **This is the single highest-leverage item in the
+  queue: until selection noise is below the effect size, no further paid comparison can resolve anything,
+  and the 99% target may be measuring the order statistic rather than the model.**
+
+## EQ-048 — Make `--seed` mean the same thing across arms
+- status: todo
+- tier: FREE
+- blocked-by: none
+- hypothesis: matching initialisation and data order across arms removes a large share of the paired
+  difference, making n=3 paired comparisons meaningfully tighter than n=3 unpaired ones.
+- method: pass an explicit `torch.Generator` to the training `DataLoader`
+  (`train_basic_linear_regressor.py:245`) so minibatch order depends only on `--seed`; and construct
+  optional heads so that enabling `trajectory_track` does not shift the RNG stream consumed by
+  `duration_head`/`onset_head` (build them from per-head generators, or build all heads before any
+  optional module). Add a test that two arms differing only in `--line-fit` produce bit-identical
+  `encoder`/`duration_head`/`onset_head` initial weights at the same seed.
+- expected: the test passes; re-running one seed of `base` and `lf001` gives per-epoch curves that track
+  each other far more closely than the current +-8-point swings.
+- kill: the arms cannot share an RNG stream without contorting the model code — then drop pairing from
+  the protocol entirely and size experiments as unpaired.
+- why: EQ-046's paired per-seed differences (+8.3 / -6.9 / -1.7) were reported as paired and were not.
+  `basic_linear_regressor.py:80` inserts `trajectory_score` before the duration and onset heads, so all
+  8 `duration_head` tensors differ between arms at the same seed and every epoch's shuffle diverges.
+
+## EQ-050 — Unbundle the three changes hiding behind `--line-fit`
+- status: todo
+- tier: PAID (3 seeds x 1 new arm ~ $2.4)
+- blocked-by: EQ-049 (pointless until selection noise is under control)
+- hypothesis: the line-fit decoder and the trajectory supervision have effects of opposite sign that
+  cancel, which would explain why the bundle measures as zero.
+- method: add the missing cell — `--trajectory-track --trajectory-weight 0.01` WITHOUT `--line-fit` —
+  at 3 seeds, and compare against both `base` and `lf001` under the EQ-049 estimator.
+- expected: if the effects genuinely cancel, this arm separates from both.
+- kill: the new arm sits on top of both others — then the bundle really is inert and the line fit is
+  closed for good.
+- why: `--line-fit` turns on three things at once (the line-fit decoder, the `trajectory_track`/onset
+  head pair, and trajectory map supervision at weight w). EQ-046's "no effect" cannot distinguish an
+  inert bundle from two effects that cancel.
