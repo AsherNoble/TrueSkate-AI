@@ -2052,3 +2052,65 @@ disk, which is exactly the kind of change that should not be made inside a loop 
   overrun caused by my estimation method failing, not by the runs.
 - **Next:** EQ-004 is now priced and runnable, but only with `MODAL_TRAIN_GPU` pinned. Awaiting owner
   authorisation to spend ~$5.
+
+## EQ-004 — the trajectory_weight sweep resolves the COLLAPSE and retracts the regression, but cannot resolve the knob (2026-08-21)
+
+- **Hypothesis:** the line fit's 83.17% test joint (vs the 90.10% baseline) is a configuration artefact —
+  `trajectory_weight=0.02` untuned. **Expected:** >= 90.10% at some weight. **Kill:** no setting reaches
+  the baseline, closing the line fit as a falsified architectural bet.
+- **Ran:** six runs, `trajectory_weight` in {0.005, 0.01, 0.02, 0.05, 0.10, 0.20}, everything else
+  identical to the recorded K=2 control (`trueskate-mvp-linear-2k`, `basic_linear_xctest`, 40 epochs,
+  seed 0, split_seed 0, base_channels 16, command split, temporal mixer, line fit, K=2). All six passed
+  `--no-evaluate-test` (`"test": null` on every payload). GPU pinned to L4 via the new `MODAL_TRAIN_GPU`;
+  all six logged `device=cuda name=NVIDIA L4`. Validation-selected winner scored once on test via a new
+  `evaluate_test_once` Modal function (no grid, no variants — the existing evaluators either sweep a knob
+  on test or blend candidates, so neither can serve as a final look).
+  **Deviations:** (i) a local DNS failure killed the client during wave 1; the containers had already
+  finished and written their payloads, verified by `best_epoch` and full validation blocks in the JSONs,
+  so nothing was lost and wave 2 was relaunched with `--detach`. (ii) the first `evaluate_test_once` call
+  printed nothing — `modal run module::function` does not surface a remote return value — so the function
+  was given a print + volume write and re-run on the same frozen checkpoint.
+- **Numbers.** Validation joint (n=303): 0.005 -> 90.76, **0.01 -> 92.41**, 0.02 -> 91.09, 0.05 -> 84.82,
+  0.10 -> 70.30, 0.20 -> 46.86. Last-knot recovery over the same range: 94.06 / 96.37 / 95.38 / 90.43 /
+  76.57 / 51.82, while duration stays 98.3-99.7 throughout. Test, tw=0.01: **90.10% (273/303)**,
+  CP95 [86.17, 93.22]. Test, tw=0.02 (replication of the control): **86.80% (263/303)**.
+- **Verdict:** SPLIT.
+  **CONFIRMED and large:** `trajectory_weight` >= 0.05 destroys the line fit monotonically, and it does so
+  through the ENDPOINTS (last knot 96.37 -> 51.82) while duration is untouched. That is a 20-45 point
+  effect, far above the noise floor, and it is the real result of this item.
+  **INCONCLUSIVE below 0.05:** the 0.005/0.01/0.02 cells span 1.65 validation points, which is noise.
+  **The kill criterion cannot be applied as written**, because it compares against a baseline that is
+  itself a single draw.
+- **Red team: CONFOUNDED, and it did the decisive work.** It pulled four baseline checkpoints that differ
+  only by `--seed` on this exact corpus/split: test 83.83 / 91.42 / 91.75 / 90.10 (sd 3.7, range 8.9).
+  Consequences:
+  1. **RETRACTION — "the line-fit decoder is a regression" (2026-08-19) is withdrawn.** 83.17% sits inside
+     the baseline's own seed spread (seed1 = 83.83%). That claim was a single draw compared against
+     another single draw, and it was reported as an architectural finding.
+  2. **The intended conclusion "tuning one hyperparameter moved 83.17 -> 90.10" is NOT supported.** The
+     exact re-run of the control (tw=0.02, every recorded setting identical, both best_epoch 39) scores
+     86.80% test / 91.09% validation against the control's 83.17% / 86.47%. Re-running alone is worth
+     ~3.6 test points; the 0.02 -> 0.01 step is worth ~3.3 more. Both are inside a +-3.7-point noise band.
+  3. **Two knobs changed, not one:** the 2026-08-19 control ran `gpu="any"`; the sweep is pinned L4, and
+     this journal's own calibration entry established the draw moves the metric.
+  4. **Selection is a max-of-40 then a max-of-6.** Epoch selection is the argmax of the reported statistic
+     itself (`train_basic_linear_regressor.py:285-288`), and tw=0.01's last eight epochs read 88.1, 89.8,
+     86.8, 87.8, 92.4, 91.4, 75.6, 87.8. The winner was chosen essentially at random among the top three.
+     This does not contaminate the test look — the checkpoint was frozen first — but it means the test
+     look was spent on an arbitrary member of a tie.
+  5. **`end_recovery_accuracy` IS `knot1_recovery_accuracy` at K=2** by construction
+     (`basic_linear_training.py:236-237`), so the "three identical numbers" I flagged are two. The
+     knot0/knot1 equality at 283/303 is a coincidence of counts, not a collapse: the joint's 30 failures
+     against 20+20 component failures force the failure sets to be mostly disjoint.
+  6. The exact 90.10% tie with the baseline is genuine, verified from the baseline payload rather than the
+     journal (test, n=303, same fingerprint, same split) — and meaningless, since CP95 is [86.17, 93.22].
+- **Holdout accounting, stated plainly:** the test split was looked at three times — tw=0.01 twice (the
+  second a plumbing retry on a frozen checkpoint, no selection in between) and tw=0.02 once as a
+  replication the red team asked for. None of the six selection runs touched it. No candidate was ever
+  chosen using a test number.
+- **Cost:** six 40-epoch runs at a steady 73.5 s/epoch on pinned L4 (~52 min each) ~ 5.2 container-hours,
+  plus calibration and three cheap evaluations: **~$5.2 of the $10 budget.**
+- **Next:** EQ-046 — the item can only be settled by comparing DISTRIBUTIONS. 3 seeds x {0.005, 0.01, 0.02}
+  against the 3 baseline seeds already on the volume. ~9 runs ~ $7, which exceeds the remaining budget, so
+  it is queued rather than run. Until then the honest position is: the line fit is neither a regression nor
+  an improvement, and nothing distinguishes it from the baseline at n=1 per cell.

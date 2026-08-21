@@ -225,6 +225,50 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
     return result
 
 
+@app.function(image=image, gpu=TRAIN_GPU, timeout=3600, memory=16384,
+              volumes={"/corpus": corpus, "/models": models})
+def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
+                       batch_size: int = 8) -> dict:
+    """Score ONE validation-selected checkpoint on the test split, once.
+
+    Deliberately has no grid, no variants and no selection of any kind: a sweep
+    is selected on validation and then exactly one candidate is brought here.
+    Every other evaluator in this file either sweeps a knob on test
+    (``evaluate_refinement``) or blends candidates (``evaluate_checkpoint_ensemble``),
+    which makes them unusable as the final look at a held-out set.
+    """
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset, split_by_command
+    from trueskate_ai.vision.basic_linear_training import basic_linear_metrics
+
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                  **_payload_dataset_kwargs([payload]))
+    train_indices, val_indices, test_indices = split_by_command(data, seed=seed)
+    device = torch.device("cuda")
+    model = _model_from_payload(payload, torch).to(device)
+    model.load_state_dict(payload["state_dict"])
+    model.eval()
+    test = basic_linear_metrics(model, DataLoader(Subset(data, test_indices),
+                                                  batch_size=batch_size), device)
+    output = {"checkpoint": checkpoint_name,
+              "split_sizes": [len(train_indices), len(val_indices), len(test_indices)],
+              "split_seed": seed,
+              "knots": payload.get("knots"),
+              "line_fit": payload.get("line_fit"),
+              "trajectory_weight": payload.get("trajectory_map_weight"),
+              "validation_reported_at_train_time": payload.get("validation"),
+              "test": test}
+    # Persist AND print: `modal run module::function` does not surface a remote
+    # return value, so a result that only lives in the return is simply lost.
+    (Path("/models") / f"{Path(checkpoint_name).stem}_test_once.json").write_text(
+        json.dumps(output, indent=2, sort_keys=True))
+    models.commit()
+    print(json.dumps(output, indent=2, sort_keys=True))
+    return output
+
+
 @app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0,

@@ -78,7 +78,13 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   residual, and it has had zero attention.
 
 ## EQ-004 — Resolve or bury the line-fit decoder
-- status: todo
+- status: done: SPLIT (2026-08-21) — CONFIRMED that `trajectory_weight` >= 0.05 destroys the line
+  fit monotonically through the ENDPOINTS (last knot 96.37 -> 51.82 validation) while duration is
+  untouched; INCONCLUSIVE below 0.05, where the three cells span 1.65 points against a measured
+  seed noise band of +-3.7. Red team CONFOUNDED the headline: the exact re-run of the 83.17%
+  control scores 86.80% test, so most of the delta is re-running, not tuning. **The 2026-08-19
+  claim that the line fit is a regression is RETRACTED** — 83.17% sits inside the baseline's own
+  seed spread. See the 2026-08-21 EQ-004 journal entry. Follow-up: EQ-046.
 - tier: PAID
 - hypothesis: the line fit's 83.17% (vs baseline 90.10%) is a configuration artefact —
   `trajectory_weight=0.02` untuned, equal knot weighting instead of the baseline's 1.8x
@@ -850,3 +856,37 @@ corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entr
   `feature/behavourial-cloning` locally.
 - method: owner's call — commit it on the rig's branch, or merge/cherry-pick the local commit.
 - why: this is a bug whose whole signature is that it looks like success.
+
+## EQ-046 — Settle the line fit by comparing distributions, not points
+- status: todo
+- tier: PAID (~$7 at L4, EXCEEDS the ~$4.8 left of the $10 budget — needs a new budget or a narrower grid)
+- blocked-by: owner (budget)
+- hypothesis: the line fit and the baseline are indistinguishable on this corpus; the apparent
+  differences between them are seed noise.
+- method: 3 seeds x `trajectory_weight` {0.005, 0.01, 0.02} at 40 epochs, L4 pinned, `--no-evaluate-test`,
+  compared against the 3 baseline seed checkpoints ALREADY on `trueskate-models`
+  (`linear_2k_temporal_seed{1,2,3}_split0_20260813`, test 83.83 / 91.42 / 91.75). Report mean and sd per
+  arm, not a winner. One test look for the better ARM if the validation distributions separate.
+- expected: if the line fit helps, its 3-seed mean clears the baseline's 3-seed mean by more than the
+  pooled sd (~3.7 points), i.e. > ~93%.
+- kill: the distributions overlap — then the line fit is closed as neither better nor worse, and the
+  MVP-2 architectural bet is settled as "no effect" rather than left ambiguous.
+- narrower option if the budget stays at ~$4.8: drop to 3 seeds at tw=0.01 only (3 runs, ~$2.4) and
+  compare that arm against the existing 3 baseline seeds. Answers the decision question, loses the curve.
+- why: EQ-004 established that n=1 per cell cannot resolve a ~3-point effect against a ~3.7-point noise
+  band. Every future comparison on this corpus has the same problem, so this also calibrates how many
+  seeds any MVP-2/MVP-3 claim needs.
+
+## EQ-047 — Seed variance is ~3.7 points and no prior claim accounted for it
+- status: todo
+- tier: FREE
+- hypothesis: several journal claims compare single checkpoints and would not survive being restated as
+  distributions.
+- method: re-read every accuracy comparison in the journal since the MVP-2 baseline and mark each as
+  (a) larger than ~3.7 points and therefore still standing, (b) inside the noise band and needing
+  retraction or restatement, or (c) already reported with an interval. Do NOT re-run anything.
+- expected: a short list of claims to retract, appended to the CONSOLIDATION entry.
+- kill: n/a — this is a bookkeeping sweep.
+- why: EQ-004 measured the noise floor for the first time (four baseline seeds, test 83.83-91.75, sd 3.7).
+  Every earlier point comparison on this corpus was made without knowing it, including the 90.10 vs 83.17
+  contrast this queue was built around.
