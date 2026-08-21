@@ -705,8 +705,14 @@ corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entr
   House, Underpass) so the domains match from the other side — cheapest if Asher is willing to replay;
   (c) multi-park collection for domain robustness, which was started in 2026-06 and never finished.
 - why: a 99% single-park Model 1 does not imply a usable labeller for expert play, so the current target
-  can be met in full and still not unblock Model 2. Option (b) is likely cheapest and is entirely in
-  Asher's hands.
+  can be met in full and still not unblock Model 2.
+- **CORRECTION (owner, 2026-08-21) — option (b) was never on the table and should not have been listed.**
+  Model 2 v1 trains on expert gameplay from ONE park, **SLS 2015 Super Crown**, on purpose: the expert
+  corpus is only ~3 hours, and holding the park fixed spends that data on sequence structure instead of
+  park-invariance. So there is nothing to re-record. What Model 1 must do is transfer to SLS 2015 Super
+  Crown specifically — which the 20,344-sample `iPhone_XR_20260814_042825` session (now on
+  `trueskate-corpus-v2`) is exactly the data for. Multi-park collection serves Model 1 robustness and
+  the EQ-007 park-disjointness axis (EQ-044), NOT Model 2.
 
 ## EQ-037 — Model 2 plumbing check
 - status: done: CONFIRMED — `train_sequence_model.py --smoke` runs (3.62M params, loss 1.41 -> 0.032).
@@ -822,6 +828,12 @@ corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entr
   one), keep them on DIFFERENT parks, name the held-out park before collection ends, and let the
   run span at least two calendar days. Collecting from one phone in one park for one day would
   silently reduce the certification back to axis (a).
+- **scope, set by the owner (2026-08-21): ~FOUR parks is sufficient.** Not an open-ended multi-park
+  programme. `--per-park-hours` rotation across four parks on two phones satisfies park-disjointness
+  with one park held out, and the day-disjointness axis falls out of the rotation taking >1 day.
+- **this is a MODEL 1 requirement and has nothing to do with Model 2.** Model 2 v1 trains on expert
+  gameplay from a SINGLE park (SLS 2015 Super Crown) by deliberate choice — see the note on EQ-036.
+  Do not let "multi-park" leak across the two models.
 - open question: should the watchdog distinguish "collectors deliberately unloaded" from "collectors
   should be running and are not"? As built it is silent in both cases — the exact blindness that
   `unattended-jobs-self-heal-not-blind` warns about.
