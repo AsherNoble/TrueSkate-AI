@@ -153,13 +153,33 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   is post-anchor-fix corpus, the half whose timing is recoverable.**
 
 ## EQ-007 — Certification protocol for a >= 99% claim
-- status: blocked
+- status: blocked on collection only — the axis decision is SETTLED (EQ-024, owner, 2026-08-21)
 - tier: HOLDOUT
-- blocked-by: EQ-006, collection
+- blocked-by: collection
 - hypothesis: n/a — this is a measurement protocol, predeclared before any data is spent.
-- method: >= 3,000 untouched unique commands, device-balanced; headline is the
+
+### Certified axes (owner decision, 2026-08-21 — ALL FOUR)
+
+The holdout certifies a Model-1 recovery rate that is simultaneously:
+  (a) **command-disjoint** — no exact gesture command in the holdout appears in train or validation,
+      enforced by `split_with_fresh_command_holdout` and failing closed on any overlap;
+  (b) **device-balanced** — both XR1 and XR2 present, each contributing at least 40% of clips, so the
+      headline is not an XR1 number with XR2 decoration (the current corpus is 95% one device);
+  (c) **park-disjoint** — the holdout contains clips from at least one park that contributed ZERO
+      training clips. As of 2026-08-20 XR1 is on SLS 2015 Super Crown and XR2 on SLS 2013 Kansas City,
+      so this falls out of collecting from both phones; the park held out must be named BEFORE
+      collection ends, not chosen afterwards from whichever park scored best;
+  (d) **day-disjoint** — no collection session (`iPhone_XR*_YYYYMMDD_HHMMSS`) contributes clips to both
+      the holdout and the training set, and the holdout spans >= 2 calendar days.
+
+Explicitly NOT certified: any device other than iPhone XR/XR2; any park outside the SLS-arena family
+plus The Workshop; True Skate versions other than the one collected under; expert human gestures (the
+corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entry).
+
+- method: >= 3,000 untouched unique commands satisfying (a)-(d) above; headline is the
   Clopper-Pearson 95% lower bound, not the point estimate; staged in tranches of 1,000;
-  test evaluated exactly once; no post-hoc tolerance changes.
+  test evaluated exactly once; no post-hoc tolerance changes. If a tranche fails to satisfy (b)-(d),
+  it is discarded and recollected — it is NOT evaluated and then explained.
 - expected: n/a.
 - kill: n/a.
 - why: by the rule of three, zero failures in the current 303-command slice certifies only
@@ -421,7 +441,9 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   measured where it will run.
 
 ## EQ-024 — Predeclare which axes EQ-007 certifies
-- status: todo
+- status: done: RESOLVED (2026-08-21) — owner chose ALL FOUR axes (command-disjoint,
+  device-balanced, park-disjoint, day-disjoint). The protocol is written into EQ-007 above,
+  including the explicit list of what is NOT certified. Nothing more to run.
 - tier: FREE (a decision + a written protocol)
 - blocked-by: owner
 - hypothesis: n/a — this is a design decision that must be made before collection, not after.
@@ -785,6 +807,11 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
   collectors are intentionally unloaded, the watchdog has nothing to complain about.
 - method: let the 227-batch offload finish first (it frees ~295 GiB and owns the uplink), then
   `launchctl kickstart` both collectors. XR1 will need `scripts/launch_services.py` for WDA.
+- **constraint added by EQ-024 (2026-08-21):** this collection now feeds the EQ-007 holdout, which
+  must be device-balanced, park-disjoint and day-disjoint. So: keep BOTH phones collecting (not
+  one), keep them on DIFFERENT parks, name the held-out park before collection ends, and let the
+  run span at least two calendar days. Collecting from one phone in one park for one day would
+  silently reduce the certification back to axis (a).
 - open question: should the watchdog distinguish "collectors deliberately unloaded" from "collectors
   should be running and are not"? As built it is silent in both cases — the exact blindness that
   `unattended-jobs-self-heal-not-blind` warns about.

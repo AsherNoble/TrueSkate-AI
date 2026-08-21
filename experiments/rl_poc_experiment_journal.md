@@ -1954,6 +1954,15 @@ disk, which is exactly the kind of change that should not be made inside a loop 
   different branch and a `git pull` would silently restore the bug (EQ-045); (4) the `REMOTE == LOCAL`
   guard counts `meta.json` only and verifies presence, not integrity — 2 spot-checked dirs of 20,344
   certifies nothing (EQ-042, must run before the delete fires).
+- **The lesson that should have been swept, and was not.** The 2026-08-19 prune entry diagnosed this
+  EXACT bug one day earlier — "the post-delete check reported 'remaining samples: 0'... it was
+  `ls -d $PARK/sample_*/` hitting ARG_MAX... Never count large directory sets with a shell glob;
+  use `find`" — in a throwaway verification command, on the SAME park. The identical construct
+  sat in the production offloader and nobody grepped for it. A lesson recorded as a lesson but
+  not swept for as a defect class is worth very little; the sweep is the deliverable.
+  **Sweep now done:** `grep -rn 'sample_\*' scripts src` finds one shell-glob site (the one
+  fixed) and eight Python `glob`/`rglob` sites, which build lists in-process and are not
+  subject to ARG_MAX. No other instance of this defect exists in the repo.
 - **Next:** EQ-042 (integrity spot-check before delete), EQ-045 (commit the rig's fix). EQ-036 closed
   as a side effect — see below.
 
@@ -1980,3 +1989,25 @@ disk, which is exactly the kind of change that should not be made inside a loop 
   as the six name-vs-behaviour mismatches in EQ-040 — a plausible reading treated as verified. The
   register stands at seven, five of which caused retractions.
 - **Next:** EQ-044 — no collector is running on either phone, so the park change records nothing yet.
+
+## EQ-024 — certification axes settled: all four (2026-08-21)
+
+- **Ran:** no experiment. A design decision that had to be made before collection, put to the owner in
+  plain language and answered "do all four axes".
+- **Decision:** the EQ-007 holdout will certify a Model-1 recovery rate that is simultaneously
+  command-disjoint, device-balanced (both XRs, each >= 40% of clips), park-disjoint (>= 1 park with
+  zero training clips, **named before collection ends**), and day-disjoint (no session in both sides,
+  holdout spans >= 2 calendar days). Written into EQ-007, together with an explicit list of what is
+  NOT certified: other devices, parks outside the SLS-arena family plus The Workshop, other True Skate
+  versions, and expert human gestures.
+- **Why this was affordable now and was not before:** as of 2026-08-20 XR1 sits on SLS 2015 Super Crown
+  and XR2 on SLS 2013 Kansas City, so device parity and park-disjointness fall out of collecting from
+  both phones as they currently stand. Day-disjointness costs only a calendar gap. The axes that were
+  expensive when EQ-024 was written are now nearly free, which is the whole reason to re-ask a costing
+  question after the rig configuration changes.
+- **Verdict:** RESOLVED. EQ-007 is no longer blocked on a decision, only on collection (EQ-044).
+- **Red team:** not spawned — an owner decision with no measurement to attack. The protocol itself will
+  be red-teamed when EQ-007 runs, which is the point at which it can be checked against real tranches.
+- **Consequence for EQ-044:** restarting collection is no longer "turn the collectors back on". Both
+  phones must run, on different parks, spanning two days, or the certification silently degrades back
+  to command-disjoint-only. Recorded in the EQ-044 item.
