@@ -88,13 +88,23 @@ Ordered by the owner. Cheap/offline first, paid work gated, holdout work gated t
 - expected: >= 90.10% at some weight if the artefact explanation holds.
 - kill: no setting reaches the baseline — then the line fit is closed in the journal as a
   falsified architectural bet so it cannot be re-proposed.
-- cost (asked for 2026-08-20, NOT measured): `gpu="any"` bills roughly $0.60-$1.10/hr (T4/L4/A10G).
-  6 `trajectory_weight` settings x 40 epochs on the 2,022-command split. At ~30 min/run that is
-  ~$2-4; at ~90 min/run it is ~$6-11 — a range that straddles the $10 budget, so it is not good
-  enough to authorise on. No completed run in `logs/` or `modal app list` records wall-clock, so
-  the figure cannot be derived from what exists.
-- PROPOSED PRECURSOR: one 2-epoch calibration run (~$0.05) to measure seconds-per-epoch, then
-  re-quote the sweep exactly. Cheaper than guessing wrong in either direction.
+- cost: MEASURED 2026-08-21 (three short calibration runs, `--no-evaluate-test`, ~$0.20-0.30 total).
+  Per-epoch steady state is **29 s on one container and 78 s on another** — `gpu="any"` draws from
+  {T4, L4, A10} and the draw is worth 2.7x. Epoch 1 carries a stable ~163 s decode/cache premium,
+  paid once per RUN (the frame cache is an in-process dict, so each of the 6 runs re-pays it).
+  Per run: 22 min (fast draw) to 55 min (slow draw). Six runs plus `memory=16384` billing
+  ($0.128/hr, omitted from the first estimate) and the ~60-90 s test-evaluation tail the
+  calibration did not measure: **~$2.5 best case, ~$5.1 realistic worst (L4), well inside $10.**
+- **PREREQUISITE, and it is about the science not the budget: pin the GPU.** Six runs on `gpu="any"`
+  are six independent hardware draws, and the calibration showed identical-seed epoch-1 validation
+  differing across draws (start_med 0.0296 / 0.0262 / 0.0296) — i.e. cuDNN algorithm choice moves
+  the number the sweep is trying to compare. Set `MODAL_TRAIN_GPU=L4` (or T4) for every run of the
+  sweep; the plumbing was added 2026-08-21 and defaults to `any` for one-off runs. `_device()` now
+  prints `device=cuda name=...` so the draw is always attributable.
+- **stale premise, corrected:** this item says the line-fit runs used "equal knot weighting instead of
+  the baseline's 1.8x start weighting". At K=2 `basic_linear_training.py:173` ALREADY applies
+  `1.8*start + end`, so there is nothing to restore and no code change is needed. One of the three
+  confounds this item was built on does not exist.
 - why: it was the primary bet of the MVP-2 plan and is currently a regression; leaving it
   ambiguous invites re-litigating it every session.
 

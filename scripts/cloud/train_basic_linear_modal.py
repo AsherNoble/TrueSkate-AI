@@ -16,6 +16,12 @@ import modal
 _SCRIPT_PATH = Path(__file__).resolve()
 _ROOT = _SCRIPT_PATH.parents[2] if len(_SCRIPT_PATH.parents) > 2 else _SCRIPT_PATH.parent
 CORPUS_VOLUME = os.environ.get("MODAL_CORPUS_VOLUME", "trueskate-corpus")
+# `gpu="any"` draws from {T4, L4, A10} and the draw is ~2.7x in epoch time (29 s vs 78 s
+# measured on the same 2k config, 2026-08-21) AND changes the cuDNN algorithm choice, so
+# identical-seed runs stop being bit-comparable.  For a SWEEP, pin this to one type so the
+# settings are compared on one piece of hardware; leave it "any" for one-off runs, where
+# a scarce named type can queue for hours without a container.
+TRAIN_GPU = os.environ.get("MODAL_TRAIN_GPU", "any")
 MODELS_VOLUME = "trueskate-models"
 
 app = modal.App("trueskate-basic-linear")
@@ -110,7 +116,7 @@ def _require_two_knots(kwargs: dict, evaluator: str) -> dict:
 # fixed 32 GiB memory headroom is what protects decoded-frame caching.  Accept
 # any compatible accelerator from Modal's pool so a scarce named type cannot
 # indefinitely block the deterministic protocol.
-@app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
+@app.function(image=image, gpu=TRAIN_GPU, timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  batch_size: int = 8, lr: float = 1e-3, seed: int = 0,

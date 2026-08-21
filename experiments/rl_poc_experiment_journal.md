@@ -2011,3 +2011,44 @@ disk, which is exactly the kind of change that should not be made inside a loop 
 - **Consequence for EQ-044:** restarting collection is no longer "turn the collectors back on". Both
   phones must run, on different parks, spanning two days, or the certification silently degrades back
   to command-disjoint-only. Recorded in the EQ-044 item.
+
+## EQ-004 calibration — the sweep costs ~$2.5-5.1, but `gpu="any"` contaminates it (2026-08-21)
+
+- **Hypothesis:** a short calibration run yields seconds-per-epoch, from which the 6-setting
+  `trajectory_weight` sweep can be priced exactly. **Expected:** one number. **Kill:** n/a.
+- **Ran:** three runs on `trueskate-mvp-linear-2k` / `basic_linear_xctest`, K=2, line-fit,
+  `--trajectory-weight 0.02 --temporal-mixer --split-seed 0`, at 1, 2 and 3 epochs, all with
+  `--no-evaluate-test`. Deviation from plan: the first two were useless — local wall clock gave
+  N=2 -> 255 s but N=1 -> **373 s**, i.e. one epoch took longer than two, because wall clock measures
+  container scheduling, not training. So `time.monotonic()` per-epoch instrumentation was added to
+  `train_basic_linear_regressor.py` and the 3-epoch run repeated.
+- **Numbers:** epoch1 239.9 s, epoch2 77.8 s, epoch3 78.0 s. Red team then pulled
+  `modal app logs --timestamps` for all three apps and found the 2-epoch run's second epoch took
+  **29 s** — 2.7x faster than the 78 s I called steady state.
+- **Verdict:** INCONCLUSIVE as a single number, CONFIRMED as a bound. `gpu="any"` draws from
+  {T4, L4, A10} and the draw is worth 2.7x in epoch time. Per run: 22 min (fast) to 55 min (slow),
+  each paying a ~163 s epoch-1 decode premium that is stable and per-container. With `memory=16384`
+  billed at $0.128/hr (which I had omitted) and a ~60-90 s test-evaluation tail the calibration never
+  measured, the sweep lands at **~$2.5 best case, ~$5.1 realistic worst** — inside the $10 budget, but
+  for different reasons than my first arithmetic gave.
+- **Red team:** CONFOUNDED. Three findings that changed the conclusion: (1) my "n=2 steady-state
+  samples" were two epochs of the SAME container, i.e. n=1 for the quantity that actually varies;
+  (2) I had the risk story backwards — the 163 s premium is the STABLE part (CPU/IO decode) and the
+  per-epoch figure is the VOLATILE part (GPU-bound); (3) time and price are ANTI-correlated, since the
+  cheapest GPU is the slowest, so the worst realistic corner is L4 rather than A10. It also found that
+  one of EQ-004's three stated confounds is stale: `basic_linear_training.py:173` already applies the
+  1.8x start weighting at K=2, so there is nothing to restore.
+- **The finding that matters more than the cost.** Identical-seed epoch-1 validation differed across
+  draws (start_med 0.0296 / 0.0262 / 0.0296 — the two runs that agreed are the two that plausibly drew
+  the same hardware). cuDNN algorithm selection moves the number the sweep exists to compare. Six runs
+  on `gpu="any"` would have been six hardware conditions, and a small `trajectory_weight` effect would
+  have been indistinguishable from the draw. **Fixed:** `MODAL_TRAIN_GPU` now parameterises
+  `train_remote`'s accelerator (default `any`, so one-off runs still avoid queueing on a scarce named
+  type), and `_device()` prints `device=cuda name=...` so a run's hardware is always attributable —
+  it never was before, which is why 29 vs 78 could not be explained from the artefacts.
+- **Holdout discipline:** all three runs returned `"test": null`; no holdout was consumed. Artefacts
+  are under distinct `eq004_calib_{1,2,3}ep_20260821` labels and no aggregator globs them.
+- **Cost disclosure:** I quoted ~$0.05 for one 2-epoch run and spent ~$0.20-0.30 across three, a 6x
+  overrun caused by my estimation method failing, not by the runs.
+- **Next:** EQ-004 is now priced and runnable, but only with `MODAL_TRAIN_GPU` pinned. Awaiting owner
+  authorisation to spend ~$5.

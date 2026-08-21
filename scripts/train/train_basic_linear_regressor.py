@@ -37,6 +37,9 @@ from trueskate_ai.vision.basic_linear_training import (  # noqa: E402
 
 def _device() -> torch.device:
     if torch.cuda.is_available():
+        # Record which accelerator this run actually drew.  Nothing used to log it, so a
+        # 2.7x spread in epoch time across `gpu="any"` runs could not be attributed.
+        print(f"device=cuda name={torch.cuda.get_device_name(0)}")
         return torch.device("cuda")
     if torch.backends.mps.is_available():
         return torch.device("mps")
@@ -252,6 +255,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     best: dict | None = None
     for epoch in range(1, epochs + 1):
+        epoch_started = time.monotonic()
         model.train()
         for batch in train_loader:
             optimizer.zero_grad(set_to_none=True)
@@ -286,7 +290,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         print(f"epoch={epoch} val_start_med={validation['start_coordinate_median']:.4f} "
               f"val_end_med={validation['end_coordinate_median']:.4f} "
               f"val_duration_mae={validation['duration_mae']:.4f} "
-              f"val_recovery={validation['gesture_recovery_accuracy']:.1%}")
+              f"val_recovery={validation['gesture_recovery_accuracy']:.1%} "
+              f"secs={time.monotonic() - epoch_started:.1f}")
         if best is None or score < best["score"]:
             best = {"score": score, "epoch": epoch,
                     "state_dict": {key: value.cpu() for key, value in model.state_dict().items()},
