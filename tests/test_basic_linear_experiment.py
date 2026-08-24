@@ -632,3 +632,99 @@ def test_bias_correction_evaluator_takes_its_split_from_the_checkpoint():
     # The fit must never be handed test records.
     assert "fit_along_path_bias(validation_records" in body
     assert "fit_along_path_bias(corrected_records" not in body
+
+
+def test_training_payload_records_the_whole_validation_curve_not_just_its_argmax():
+    """The reported figure is a best-of-N order statistic (EQ-049).
+
+    Within-run validation sd across late epochs is ~6.3 points, so the argmax is
+    biased upward by selection.  The payload must therefore carry the curve and a
+    plateau mean beside the headline, and must say how many epochs the headline
+    was maximised over -- otherwise a reader cannot tell selection bias from model
+    quality, and re-analysis needs the runs repeated.
+    """
+    import ast
+
+    source = Path("scripts/train/train_basic_linear_regressor.py").read_text()
+    tree = ast.parse(source)
+    train_fn = next(node for node in ast.walk(tree)
+                    if isinstance(node, ast.FunctionDef) and node.name == "train")
+
+    epoch_loops = [node for node in ast.walk(train_fn)
+                   if isinstance(node, ast.For) and getattr(node.target, "id", None) == "epoch"]
+    assert len(epoch_loops) == 1, "expected exactly one epoch loop"
+    appended_in_loop = any(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "append"
+        and getattr(node.func.value, "id", None) == "validation_curve"
+        for node in ast.walk(epoch_loops[0]))
+    assert appended_in_loop, "validation_curve must be appended once per epoch, inside the loop"
+
+    payload = next(node.value for node in ast.walk(train_fn)
+                   if isinstance(node, ast.Assign)
+                   and getattr(node.targets[0], "id", None) == "payload")
+    keys = {key.value for key in payload.keys if isinstance(key, ast.Constant)}
+    for required in ("validation_curve", "validation_plateau_mean_last10",
+                     "validation_is_best_of_n_epochs"):
+        assert required in keys, f"payload must record {required}"
+
+
+@pytest.mark.parametrize("optional", [
+    {"trajectory_track": True},
+    {"line_fit": True},
+    {"temporal_mixer": False},
+    {"trajectory_track": True, "temporal_mixer": False},
+    {"line_fit": True, "knots": 3},
+])
+def test_seed_matches_shared_weights_across_arms_that_differ_only_in_optional_modules(optional):
+    """`--seed` must mean the same initialisation in every arm (EQ-048).
+
+    Module construction draws from the global RNG, so an optional module built
+    before another module shifts the stream for everything after it.  That made
+    `duration_head` differ between arms at the same seed -- and, because the
+    training DataLoader took its shuffle from the same global stream, changed the
+    minibatch order for every epoch too.  A paired per-seed comparison across arms
+    is meaningless while that is true.
+
+    Ordering alone is insufficient: whichever optional is built first still shifts
+    the stream for the later optionals.  So optionals draw one seed each,
+    unconditionally, and build inside a forked RNG -- which pins three things at
+    once: unconditional weights, optional weights where both arms have them, and
+    the global stream position after construction.
+    """
+    shared = dict(base_channels=4, temporal_mixer=True)
+
+    def build(**overrides):
+        torch.manual_seed(11)
+        model = BasicLinearRegressor(**{**shared, **overrides})
+        return model, torch.randn(3)          # global RNG position after construction
+
+    baseline, baseline_rng = build()
+    variant, variant_rng = build(**optional)
+
+    baseline_state = dict(baseline.named_parameters())
+    variant_state = dict(variant.named_parameters())
+    for name in ("encoder", "start_score", "end_score", "duration_head"):
+        for key, value in baseline_state.items():
+            if key.startswith(name + "."):
+                assert torch.equal(value, variant_state[key]), (
+                    f"{key} differs between arms at the same seed; an optional module "
+                    "is consuming RNG that an unconditional one depends on")
+
+    # Optional modules present in BOTH arms must also match: whether some other
+    # optional is enabled must not perturb them.
+    for key, value in baseline_state.items():
+        if key in variant_state and not key.split(".")[0] in ("encoder", "start_score",
+                                                              "end_score", "duration_head"):
+            assert torch.equal(value, variant_state[key]), (
+                f"optional weight {key} differs although both arms build it")
+
+    # And the global stream must be left in the same place, so anything drawn
+    # after construction -- the DataLoader shuffle above all -- is arm-independent.
+    assert torch.equal(baseline_rng, variant_rng), (
+        "optional modules must not advance the global RNG differently between arms")
+
+    source = Path("scripts/train/train_basic_linear_regressor.py").read_text()
+    assert "generator=shuffle_generator" in source, (
+        "the training DataLoader must take an explicit seed-derived generator")

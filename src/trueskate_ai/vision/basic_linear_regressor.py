@@ -58,16 +58,7 @@ class BasicLinearRegressor(nn.Module):
             nn.Conv2d(c, c * 2, 3, stride=2, padding=1), nn.GroupNorm(2, c * 2), nn.SiLU(),
             nn.Conv2d(c * 2, c * 4, 3, padding=1), nn.GroupNorm(4, c * 4), nn.SiLU(),
         )
-        # The baseline scores each frame independently.  A finite linear drag
-        # is a trajectory, so this optional residual 3-D mixer lets an endpoint
-        # score use adjacent trace positions without discarding spatial detail.
-        # It is intentionally small (depthwise temporal filtering + pointwise
-        # mixing) so the controlled ablation changes temporal context only.
         channels = c * 4
-        self.temporal_mixer = nn.Sequential(
-            nn.Conv3d(channels, channels, (3, 1, 1), padding=(1, 0, 0), groups=channels),
-            nn.GroupNorm(4, channels), nn.SiLU(), nn.Conv3d(channels, channels, 1),
-        ) if temporal_mixer else None
         # Start and end are not interchangeable visual concepts.  A shared map
         # plus an externally imposed time prior can collapse to the trace's
         # midpoint; give each endpoint its own learned spatial evidence.
@@ -77,26 +68,57 @@ class BasicLinearRegressor(nn.Module):
         # A separate path map, supervised at every manifest-active frame,
         # teaches the shared encoder where the moving contact is without
         # forcing either endpoint-specific head to score the entire trail.
-        self.trajectory_score = nn.Conv2d(c * 4, 1, 1) if trajectory_track else None
         # In the blended track decoder the path map starts as a near-zero
         # correction to the endpoint decoder, earning influence only once its
         # own per-frame map is useful.  That caution is also why it never
         # overtook the baseline, so the line fit replaces the gate outright
         # rather than blending past it.
-        self.trajectory_fusion = (nn.Parameter(torch.tensor(-4.0))
-                                  if trajectory_track and not line_fit else None)
         self.duration_head = nn.Sequential(
             nn.Conv1d(2, c, 3, padding=1), nn.SiLU(), nn.Conv1d(c, c, 3, padding=1), nn.SiLU(),
             nn.AdaptiveAvgPool1d(8), nn.Flatten(), nn.Linear(c * 8, c * 2), nn.SiLU(), nn.Linear(c * 2, 1),
         )
+        # EVERY OPTIONAL MODULE IS BUILT BELOW THIS LINE, AND NOTHING UNCONDITIONAL
+        # BELONGS AFTER IT.  Module construction draws from the global RNG, so an
+        # optional module built earlier shifts the stream for everything after it:
+        # enabling `trajectory_track` used to change all 8 `duration_head` tensors
+        # and, through the shared stream, every epoch's shuffle -- which silently
+        # destroyed seed-matched A/B comparisons (EQ-048).
+        # One seed per optional module, drawn UNCONDITIONALLY so the global stream
+        # advances by the same amount whichever optionals are enabled, and each
+        # module is then built inside a forked RNG from its own seed.  Ordering
+        # alone is not enough: the first-built optional would still shift the
+        # stream for the rest, so arms differing in `temporal_mixer` would get
+        # different `onset_head` weights at the same `--seed`.
+        optional_seeds = torch.randint(0, 2 ** 31 - 1, (4,)).tolist()
+
+        def optional(index: int, enabled: bool, factory):
+            if not enabled:
+                return None
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(optional_seeds[index])
+                return factory()
+
+        channels = c * 4
+        # The baseline scores each frame independently.  A finite linear drag
+        # is a trajectory, so this optional residual 3-D mixer lets an endpoint
+        # score use adjacent trace positions without discarding spatial detail.
+        # It is intentionally small (depthwise temporal filtering + pointwise
+        # mixing) so the controlled ablation changes temporal context only.
+        self.temporal_mixer = optional(0, temporal_mixer, lambda: nn.Sequential(
+            nn.Conv3d(channels, channels, (3, 1, 1), padding=(1, 0, 0), groups=channels),
+            nn.GroupNorm(4, channels), nn.SiLU(), nn.Conv3d(channels, channels, 1),
+        ))
+        self.trajectory_score = optional(1, trajectory_track, lambda: nn.Conv2d(c * 4, 1, 1))
+        self.trajectory_fusion = optional(2, trajectory_track and not line_fit,
+                                          lambda: nn.Parameter(torch.tensor(-4.0)))
         # The line fit needs to know *where on the path* each frame sits, which
         # requires a touch onset.  Learn it per clip from the same evidence
         # series rather than re-imposing the swept 0.24 constant: onset and
         # duration together define the active window the fit regresses over.
-        self.onset_head = nn.Sequential(
+        self.onset_head = optional(3, line_fit, lambda: nn.Sequential(
             nn.Conv1d(2, c, 3, padding=1), nn.SiLU(), nn.Conv1d(c, c, 3, padding=1), nn.SiLU(),
             nn.AdaptiveAvgPool1d(8), nn.Flatten(), nn.Linear(c * 8, c * 2), nn.SiLU(), nn.Linear(c * 2, 1),
-        ) if line_fit else None
+        ))
 
     @staticmethod
     def _read_xy(scores: torch.Tensor, time_prior: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:

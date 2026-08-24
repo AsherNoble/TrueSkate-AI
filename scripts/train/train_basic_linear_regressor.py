@@ -242,7 +242,13 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         )
     else:
         train_indices, val_indices, test_indices = splitters[split_strategy](dataset, seed=split_seed)
-    train_loader = DataLoader(Subset(dataset, train_indices), batch_size=batch_size, shuffle=True)
+    # Explicit generator: with the default, shuffle order is drawn from the GLOBAL
+    # RNG, whose position depends on how much randomness model construction happened
+    # to consume.  Two arms at the same `--seed` therefore saw different minibatch
+    # orders for every epoch, which is not what `--seed` is supposed to mean (EQ-048).
+    shuffle_generator = torch.Generator().manual_seed(seed)
+    train_loader = DataLoader(Subset(dataset, train_indices), batch_size=batch_size,
+                              shuffle=True, generator=shuffle_generator)
     val_loader = DataLoader(Subset(dataset, val_indices), batch_size=batch_size)
     test_loader = DataLoader(Subset(dataset, test_indices), batch_size=batch_size)
     device = _device()
@@ -254,6 +260,11 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
                                  knots=knots).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     best: dict | None = None
+    # Whole-curve record.  The reported figure is the ARGMAX of a statistic whose
+    # within-run epoch sd is ~6.3 points (EQ-049), so it is biased upward by
+    # selection; keeping the curve lets any later analysis re-estimate without
+    # re-running, and lets the plateau mean be reported beside the headline.
+    validation_curve: list[float] = []
     for epoch in range(1, epochs + 1):
         epoch_started = time.monotonic()
         model.train()
@@ -292,6 +303,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
               f"val_duration_mae={validation['duration_mae']:.4f} "
               f"val_recovery={validation['gesture_recovery_accuracy']:.1%} "
               f"secs={time.monotonic() - epoch_started:.1f}")
+        validation_curve.append(validation["gesture_recovery_accuracy"])
         if best is None or score < best["score"]:
             best = {"score": score, "epoch": epoch,
                     "state_dict": {key: value.cpu() for key, value in model.state_dict().items()},
@@ -326,6 +338,10 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "trajectory_track": trajectory_track,
         "line_fit": line_fit,
         "knots": knots,
+        "validation_curve": validation_curve,
+        "validation_plateau_mean_last10": (sum(validation_curve[-10:])
+                                          / len(validation_curve[-10:])),
+        "validation_is_best_of_n_epochs": len(validation_curve),
         "irls_iterations": irls_iterations if line_fit else None,
         "huber_delta": huber_delta if line_fit else None,
         "split_seed": split_seed,

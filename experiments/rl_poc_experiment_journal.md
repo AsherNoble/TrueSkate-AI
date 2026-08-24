@@ -2172,3 +2172,63 @@ disk, which is exactly the kind of change that should not be made inside a loop 
 - **Next:** EQ-048 (make seeds genuinely matched), EQ-049 (replace argmax-of-40 selection and re-baseline
   every headline number), EQ-050 (unbundle the three changes `--line-fit` carries). **EQ-049 comes first:
   until selection noise is below the effect size, no further spend on this corpus can resolve anything.**
+
+## EQ-049 — INVALID as concluded: the "no estimator wins" result was one collapsing run, and the bias claim was wrong (2026-08-24)
+
+- **Hypothesis:** a plateau/averaged estimator cuts between-seed sd from ~6 points toward the binomial
+  floor, making sub-5-point effects measurable. **Kill:** no estimator beats argmax -> the corpus is the
+  limit and only more validation commands can help.
+- **Ran:** free re-analysis of the nine saved EQ-046 epoch curves under nine estimators. No GPU.
+- **What I first concluded, and it was wrong:** pooled between-seed sd came out 3.13-5.74 with argmax at
+  3.45, so I fired the kill criterion and reported "no estimator beats argmax; the variance is real
+  run-to-run variation, not selection noise".
+- **Red team: INVALID.** It reproduced every number and then broke the inference twice.
+  1. **The pooled sd is one run.** `base_s1` is not noisy, it is **non-convergent**: within-run sd over
+     the last 20 epochs is **13.41** against 3.85-6.07 for the other eight, with a minimum of **25.1%**
+     at epoch 28. Pooling averages arm variances, so that single run supplies most of every pooled
+     figure. Per-arm, on the two arms containing no collapsed run, **mean-last-10 cuts between-seed sd
+     from 2.24 to 0.85 — a 2.6x reduction.** Reproduced independently here.
+  2. **The design could never have detected that anyway.** Pooled sd has 6 df; the 95% CI on argmax's
+     3.45 is [2.22, 7.59], and the F(6,6) critical sd-ratio is 2.41 against an observed spread of 1.83.
+     "No estimator beats argmax" was not a finding; it was the design's resolution.
+  3. **RETRACTION — the selection-bias claim.** I told the owner the headline "sits ~7-8 points above
+     the model's typical quality", implying reported numbers overstate deployed quality. Five runs carry
+     both validation and test at the argmax checkpoint: val-test = +1.98 / -0.66 / -0.33 / -1.32 / +3.30,
+     **mean +0.59 points (sd 1.96)**. Selection optimism on held-out data is about half a point. The
+     6-8 point argmax-vs-plateau gap is real but it measures **training instability**, not reporting bias.
+     Those two must not be merged, and I merged them.
+- **Verdict:** the item's kill criterion did NOT legitimately fire. Supported: *on converged runs a
+  plateau estimator cuts between-seed sd ~2.6x, and N=3 cannot resolve whether that generalises.*
+- **The finding that actually matters, and it is not about estimators.** Roughly **1 run in 9 fails to
+  converge** in 40 epochs of AdamW at lr 1e-3 on this corpus, and every within-run curve oscillates
+  +-4-13 points to the end. That is why between-seed spread is large, and no reporting statistic can fix
+  it. Queued as EQ-051, which now outranks every other measurement item.
+- **Kept regardless:** the payload records `validation_curve`, `validation_plateau_mean_last10` and
+  `validation_is_best_of_n_epochs`, pinned by a test. Whatever the estimator debate resolves to, no
+  future re-analysis should need re-runs.
+- **Next:** EQ-051 (training stability) before any further paid comparison.
+
+## EQ-048 — `--seed` now means the same initialisation in every arm (2026-08-24)
+
+- **Defect:** optional modules were built interleaved with unconditional ones, so enabling
+  `trajectory_track` shifted the global RNG and changed all 8 `duration_head` tensors; the training
+  DataLoader then inherited the shifted stream via `shuffle=True` with no generator, changing minibatch
+  order for all 40 epochs. Paired per-seed comparisons across arms were meaningless.
+- **Fix:** every optional module now draws one seed UNCONDITIONALLY and is built inside
+  `torch.random.fork_rng(devices=[])` from that seed; the training DataLoader takes an explicit
+  `torch.Generator().manual_seed(seed)`. Reordering alone was insufficient — the red team showed the
+  first-built optional still shifted the stream for the rest, so arms differing in `temporal_mixer`
+  still got different `onset_head` weights.
+- **Verified across all 15 pairs of six arm configurations, pre-fix vs post-fix:**
+  mismatched unconditional tensors **140 -> 0**; mismatched shared optional tensors **16 -> 0**;
+  arm-pairs whose global RNG position diverged **15/15 -> 0/15**.
+- **Verdict:** CONFIRMED. Test `test_seed_matches_shared_weights_across_arms_that_differ_only_in_optional_modules`
+  covers five arm variations and asserts all three invariants; it fails on the pre-fix module.
+- **Red team:** CONFIRMED with a scope limit I then closed — it found the reorder still left
+  `temporal_mixer`-differing arms divergent, which the forked-RNG version fixes. It also confirmed
+  nothing else draws from the global stream per epoch (no dropout, no augmentation, `num_workers=0`,
+  unshuffled val/test loaders).
+- **Consequence that must not be lost:** at `temporal_mixer=True`, **16 of 30 tensors differ pre-fix vs
+  post-fix at the same seed**. A post-fix seed-1 run is a different run from EQ-046's seed-1, so
+  **every arm must be retrained post-fix; the existing baseline seeds cannot serve as the control.**
+  Checkpoint loading is unaffected (every call site is key-based `load_state_dict`, no shapes changed).

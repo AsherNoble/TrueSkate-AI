@@ -899,7 +899,13 @@ corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entr
   contrast this queue was built around.
 
 ## EQ-049 — The reported accuracy is a best-of-40 order statistic; fix selection before spending anything more
-- status: todo
+- status: done: INVALID as concluded (2026-08-24) — the kill criterion appeared to fire but the pooled
+  sd was dominated by ONE non-convergent run (`base_s1`, within-run sd 13.41, min 25.1%). On the two
+  clean arms mean-last-10 cuts between-seed sd 2.24 -> 0.85 (2.6x). The design (6 df) could not resolve
+  a 2x sd difference anyway. **Also retracted: the selection-bias claim** — val-test optimism at the
+  argmax checkpoint is **+0.59 pts** over 5 runs, not 6-8; the plateau gap measures training
+  INSTABILITY, not reporting bias. Payload now records the curve + plateau mean regardless.
+  See the 2026-08-24 journal entry. Supersedes: EQ-051.
 - tier: FREE to implement and re-analyse (existing epoch curves); PAID only if arms are re-run
 - hypothesis: replacing strict argmax-over-epochs with a plateau/averaged estimator cuts the run-to-run
   spread from ~6 points to near the binomial floor (~1.7 at n=303), making effects under 5 points
@@ -919,7 +925,11 @@ corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entr
   and the 99% target may be measuring the order statistic rather than the model.**
 
 ## EQ-048 — Make `--seed` mean the same thing across arms
-- status: todo
+- status: done: CONFIRMED (2026-08-24) — optional modules now draw one seed each unconditionally and
+  build inside `fork_rng`; the train DataLoader takes an explicit seed-derived generator. Across all
+  15 arm pairs: mismatched unconditional tensors 140 -> 0, shared optional tensors 16 -> 0, diverged
+  global RNG 15/15 -> 0/15. **Consequence: 16 of 30 tensors differ pre-fix vs post-fix at the same
+  seed, so every arm must be RETRAINED; existing baseline seeds cannot serve as the control.**
 - tier: FREE
 - blocked-by: none
 - hypothesis: matching initialisation and data order across arms removes a large share of the paired
@@ -940,8 +950,8 @@ corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entr
 
 ## EQ-050 — Unbundle the three changes hiding behind `--line-fit`
 - status: todo
-- tier: PAID (3 seeds x 1 new arm ~ $2.4)
-- blocked-by: EQ-049 (pointless until selection noise is under control)
+- tier: PAID — and note EQ-048 means ALL arms must be retrained, so this is 4 arms x N seeds, not 1
+- blocked-by: EQ-051 (pointless while ~1 run in 9 does not converge)
 - hypothesis: the line-fit decoder and the trajectory supervision have effects of opposite sign that
   cancel, which would explain why the bundle measures as zero.
 - method: add the missing cell — `--trajectory-track --trajectory-weight 0.01` WITHOUT `--line-fit` —
@@ -952,3 +962,26 @@ corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entr
 - why: `--line-fit` turns on three things at once (the line-fit decoder, the `trajectory_track`/onset
   head pair, and trajectory map supervision at weight w). EQ-046's "no effect" cannot distinguish an
   inert bundle from two effects that cancel.
+
+## EQ-051 — Roughly 1 run in 9 does not converge, and that is the whole measurement problem
+- status: todo
+- tier: FREE to diagnose from saved curves; PAID to verify a fix
+- hypothesis: the between-seed spread that has blocked every A/B on this corpus is not measurement
+  noise but training instability — a fixed 40 epochs of AdamW at lr 1e-3 with no schedule, no warmup
+  and no gradient clipping leaves runs oscillating to the end, and occasionally collapsing outright.
+- evidence (2026-08-24, EQ-049 re-analysis): across 9 runs, within-run validation sd over the last 20
+  epochs is 3.85-6.07 for eight of them and **13.41** for `base_s1`, which drops to **25.1%** at epoch
+  28 and never fully recovers. No run is flat at epoch 40. Excluding that one run, a plateau estimator
+  reaches a between-seed sd of **0.85 points** — near the binomial floor — which says the instrument is
+  fine and the training is not.
+- method: (1) FREE — plot/tabulate all saved curves, characterise the collapse (single-epoch spike vs
+  sustained), and check whether duration/knot components fail together or separately at the collapse
+  epoch; (2) then ONE cheap intervention at a time, 3 seeds each: cosine decay with warmup; gradient
+  clipping; lower lr. Adopt the first that removes collapses AND lowers plateau sd.
+- expected: a schedule or clip that takes the worst-run within-run sd under ~5 and eliminates the
+  collapse, dropping between-seed sd to ~1 point.
+- kill: instability persists under every intervention — then the corpus/architecture is genuinely
+  bimodal and arm comparisons must be sized for it (~20 runs/arm) or abandoned on this corpus.
+- why: **this reorders the whole queue.** At sd 3.45 a 3-point effect needs ~21 runs/arm (~$38); at
+  sd 0.85 it needs ~2. Fixing convergence is worth more than any amount of extra compute, and it is
+  the precondition for EQ-050 and for any credible 99% claim.
