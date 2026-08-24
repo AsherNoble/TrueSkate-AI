@@ -964,7 +964,12 @@ corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entr
   inert bundle from two effects that cancel.
 
 ## EQ-051 — Roughly 1 run in 9 does not converge, and that is the whole measurement problem
-- status: todo
+- status: phase 1 done: CONFIRMED (2026-08-24) — 57 collapses across 9 runs, 24 spikes / 24
+  sustained. The END ENDPOINT worsens in 56/57 against a 33% base rate on ordinary epochs (3.0x
+  lift); duration worsens 56% vs 31% (1.8x) and there are ZERO duration-only collapses. Magnitude
+  scales with collapse size, so it is global endpoint degradation rather than a soft-argmax mode
+  flip. Trainer confirmed to have no clipping, no schedule, no warmup. Mechanism NOT established
+  (gradient norms are not logged). Phase 2 below is PAID and gated.
 - tier: FREE to diagnose from saved curves; PAID to verify a fix
 - hypothesis: the between-seed spread that has blocked every A/B on this corpus is not measurement
   noise but training instability — a fixed 40 epochs of AdamW at lr 1e-3 with no schedule, no warmup
@@ -985,3 +990,27 @@ corpus is agent-generated random SLS-mix gestures — see the CONSOLIDATION entr
 - why: **this reorders the whole queue.** At sd 3.45 a 3-point effect needs ~21 runs/arm (~$38); at
   sd 0.85 it needs ~2. Fixing convergence is worth more than any amount of extra compute, and it is
   the precondition for EQ-050 and for any credible 99% claim.
+
+## EQ-052 — EQ-051 phase 2: does gradient clipping remove the collapses?
+- status: todo
+- tier: PAID (~$2.4: 3 seeds x 1 arm x 40 epochs on pinned L4, ~52 min each)
+- blocked-by: owner (budget)
+- hypothesis: the collapses are sporadic oversized optimizer updates, so clipping the global gradient
+  norm removes them without touching ordinary updates.
+- method: add `torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)` before `optimizer.step()`,
+  behind a `--grad-clip` flag defaulting to OFF so existing behaviour is unchanged. ALSO log the
+  pre-clip gradient norm per step (min/median/max per epoch) — without it the mechanism stays a guess
+  whatever the outcome. Run the `base` arm at 3 seeds, `--no-evaluate-test`, L4 pinned, and compare
+  collapse counts and epochs-21-40 sd against the existing 3 base runs using
+  `experiments/analysis/analyze_eq051.py`.
+- expected: collapse count per run falls from 4-8 to ~0-1, and between-seed sd of the plateau estimator
+  drops toward the ~0.85 seen on already-converged arms.
+- kill: collapses persist at the same rate with clipping active AND the logged gradient norms show no
+  outliers — then the mechanism is not update magnitude, and the next candidates are the soft-argmax
+  temperature (`logits / .15`) and the loss's endpoint weighting, not the optimizer.
+- why: EQ-051 phase 1 established the collapses are endpoint-centred and present in every run. At the
+  current sd a 3-point effect needs ~21 runs/arm (~$38); on converged runs it needs ~2. This is the
+  cheapest thing that could collapse the cost of every future comparison on this corpus.
+- NOTE (EQ-048): pre-fix checkpoints are not seed-comparable with post-fix ones, so the 3 existing base
+  runs are a valid comparison ONLY for collapse SHAPE, not for a paired per-seed delta. If a paired
+  comparison is wanted, the control must be retrained too (6 runs, ~$4.8).

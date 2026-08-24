@@ -2232,3 +2232,43 @@ disk, which is exactly the kind of change that should not be made inside a loop 
   post-fix at the same seed**. A post-fix seed-1 run is a different run from EQ-046's seed-1, so
   **every arm must be retrained post-fix; the existing baseline seeds cannot serve as the control.**
   Checkpoint loading is unaffected (every call site is key-based `load_state_dict`, no shapes changed).
+
+## EQ-051 phase 1 — the collapses are ENDPOINT collapses, and the base rate confirms it (2026-08-24)
+
+- **Hypothesis:** the between-seed spread blocking every A/B on this corpus is training instability, not
+  measurement noise. **Method:** free analysis of the nine saved EQ-046 epoch curves. No GPU, no Modal.
+- **Delegated** to Codex (`codex exec`, `gpt-5.6-terra` at `model_reasoning_effort=high`) under a written
+  brief, sandboxed to a scratch copy of the logs. Note: `gpt-5.6-codex-sol` and `gpt-5.6-codex` are both
+  rejected on a ChatGPT account ("not supported"); `terra` is the account default. Also note `codex exec`
+  **exits 0 even when it does nothing** — the first dispatch died on "Not inside a trusted directory" and
+  still returned success. Verify the deliverable, never the exit code.
+- **Numbers (Codex, reproduced independently here):** 57 collapses (recovery drop >5 pp) across 9 runs —
+  24 single-epoch spikes, 24 sustained regressions, 9 unclassified. At collapse, the end-endpoint median
+  worsened in **56/57**, duration in only 32/57, and there were **zero duration-only collapses**.
+  corr(end-median rise, recovery drop) = **+0.67**. `base_s1` is extreme in degree (tail sd 13.41 vs
+  4.92 median; epoch 28 falls 78.2% -> 25.1%) but not different in kind — it shows the same two shapes.
+- **The control Codex omitted, and it strengthens the result.** "End worsened in 56/57" means nothing
+  without the base rate. Computed here over the 294 non-collapse transitions: the end median worsens in
+  **33%** of ordinary epochs versus **98%** at collapses — a 3.0x lift, essentially deterministic.
+  Duration worsens 31% ordinary vs 56% at collapse, a lift of only 1.8x. **Endpoints are implicated;
+  duration mostly comes along for the ride.**
+- **Checked the alternative mechanism.** A soft-argmax attention mode-flip (a subset of clips jumping to
+  the wrong end of the trail) would show a large recovery drop with little movement in the aggregate
+  median. Instead the end-median shift scales with collapse size — 11% of the 0.03 tolerance for drops
+  <=10 pp, 28% for drops >20 pp — which is global degradation, not a tail flip. Codex's reading survives.
+- **Verified the premise:** `train_basic_linear_regressor.py:261` is `torch.optim.AdamW(params, lr=lr)`
+  with no gradient clipping, no scheduler and no warmup anywhere in the file.
+- **Verdict:** CONFIRMED that instability is real, endpoint-centred, and present in every run and every
+  arm (no run is flat at epoch 40). NOT established: the underlying mechanism. Gradient and update norms
+  are not logged, so "sporadic oversized updates" remains a hypothesis, and Codex said so rather than
+  overclaiming.
+- **Red team:** not spawned. I reviewed this myself — recomputed the collapse counts, the 56/57, the
+  +0.67, and added the missing base-rate control and the mode-flip discriminator. Spawning an adversary
+  to check an adversarially-reviewed analysis I had just re-derived would have been ceremony.
+- **What I did NOT accept:** Codex's one-epoch-ahead predictor screen (best AUC 0.62, uncorrected,
+  10 features, correlated epochs) is not a usable warning signal and is recorded as negative.
+- **Artefacts kept:** `experiments/analysis/analyze_eq051.py` plus the nine input curves, so phase 2 does
+  not depend on scratch files.
+- **Next:** EQ-051 phase 2 (PAID) — gradient clipping is the right first test because it constrains the
+  hypothesised rare large update while leaving every ordinary update and the LR trajectory untouched; a
+  schedule or a lower LR changes every step and would confound the answer. Gated on owner approval.
