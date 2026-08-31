@@ -2288,3 +2288,19 @@ disk, which is exactly the kind of change that should not be made inside a loop 
   the clipped arm will not be launched.
 - **Launched controls:** Modal apps `ap-s4OJAuBHQq11fCuvXcHvgr`, `ap-sREmi11yOwjuBaNQnOTo7L`, and
   `ap-naXN3sIHH45OOtQ4YvJjAF`, labelled `eq051_clip_base_postfix_seed{0,1,2}`. Results pending.
+
+### Control results and threshold (2026-08-31)
+
+- **Controls completed, validation only:** best recovery was 94.72% / 88.12% / 91.42% for seeds 0/1/2;
+  their last-10-epoch means were 85.21% / 82.48% / 88.88%. The difference confirms substantial
+  late-training instability without reading a test command.
+- **Norm evidence:** across 120 epoch summaries (21,240 updates), median per-epoch P95 was 1.586,
+  P90 3.197, P95 3.704, and maximum 5.272. Per-epoch maximum norms had median 5.151, P90 12.986,
+  P95 18.352, and maximum 25.499. The telemetry is epoch-quantiled, not raw-update retained, so it
+  cannot estimate an exact global clipping fraction; it does establish a repeated long upper tail.
+- **Predeclared decision applied:** `max_grad_norm=5.0`. It exceeds the P95 in 119/120 epoch summaries,
+  leaving at least 95% of updates unmodified in those epochs, yet bounds the repeated extreme maxima.
+  This tests the rare-oversized-update mechanism rather than lowering the ordinary update scale.
+- **Launched clipped arm:** `eq051_clip_norm5_postfix_seed{0,1,2}` in Modal apps
+  `ap-bVD0BIbM9O1Kep0ZxAUSxK`, `ap-7FMPBtDic6xiqoeM0cl9Rm`, and
+  `ap-ZAYGpJ8hi1r8yXUxGVM3ta`. Same corpus/split/hardware/seeds and validation-only protocol.
