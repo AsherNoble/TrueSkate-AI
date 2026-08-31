@@ -135,6 +135,20 @@ def _sample_device(dataset: BasicLinearClipDataset, index: int) -> str:
     return device
 
 
+def _global_gradient_norm(parameters) -> float:
+    """Return the global L2 norm without mutating the gradients.
+
+    The no-clipping control needs the same telemetry as the intervention arm;
+    using ``clip_grad_norm_`` with an artificial threshold would make that
+    promise harder to audit.  This is intentionally a read-only reduction.
+    """
+    norms = [parameter.grad.detach().norm(2) for parameter in parameters
+             if parameter.grad is not None]
+    if not norms:
+        return 0.0
+    return float(torch.linalg.vector_norm(torch.stack(norms), ord=2))
+
+
 def split_with_fresh_command_holdout(dataset: BasicLinearClipDataset, *, fresh_source: str,
                                     val_fraction: float = .15, test_fraction: float = .15,
                                     seed: int = 0,
@@ -219,7 +233,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
           line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
           image_width: int = DEFAULT_IMAGE_WIDTH, image_height: int = DEFAULT_IMAGE_HEIGHT,
-          knots: int = 2) -> dict:
+          knots: int = 2, max_grad_norm: float | None = None) -> dict:
     torch.manual_seed(seed)
     # The line fit reads endpoints off the moving-contact map, so that map is
     # the primary evidence path and must be supervised, not left to learn only
@@ -265,9 +279,11 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     # selection; keeping the curve lets any later analysis re-estimate without
     # re-running, and lets the plateau mean be reported beside the headline.
     validation_curve: list[float] = []
+    gradient_norm_history: list[dict[str, float | int]] = []
     for epoch in range(1, epochs + 1):
         epoch_started = time.monotonic()
         model.train()
+        gradient_norms: list[float] = []
         for batch in train_loader:
             optimizer.zero_grad(set_to_none=True)
             frames = batch["frames"].to(device)
@@ -287,6 +303,15 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
             else:
                 loss = basic_linear_loss(model(frames), target)
             loss.backward()
+            if max_grad_norm is None:
+                gradient_norms.append(_global_gradient_norm(model.parameters()))
+            else:
+                # ``clip_grad_norm_`` returns the norm *before* clipping.  Keeping
+                # that value lets the experiment distinguish a harmless no-op from
+                # a real intervention on the rare large updates implicated by EQ-051.
+                gradient_norms.append(float(torch.nn.utils.clip_grad_norm_(
+                    model.parameters(), max_norm=max_grad_norm,
+                )))
             optimizer.step()
         validation = basic_linear_metrics(model, val_loader, device)
         # The requested outcome is complete gesture recovery.  Median-only model
@@ -304,6 +329,16 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
               f"val_recovery={validation['gesture_recovery_accuracy']:.1%} "
               f"secs={time.monotonic() - epoch_started:.1f}")
         validation_curve.append(validation["gesture_recovery_accuracy"])
+        if gradient_norms:
+            norms = torch.tensor(gradient_norms)
+            gradient_norm_history.append({
+                "mean": float(norms.mean()),
+                "p95": float(torch.quantile(norms, .95)),
+                "max": float(norms.max()),
+                "clipped_steps": (int((norms > max_grad_norm).sum())
+                                  if max_grad_norm is not None else 0),
+                "steps": len(gradient_norms),
+            })
         if best is None or score < best["score"]:
             best = {"score": score, "epoch": epoch,
                     "state_dict": {key: value.cpu() for key, value in model.state_dict().items()},
@@ -338,6 +373,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "trajectory_track": trajectory_track,
         "line_fit": line_fit,
         "knots": knots,
+        "max_grad_norm": max_grad_norm,
+        "gradient_norm_history": gradient_norm_history,
         "validation_curve": validation_curve,
         "validation_plateau_mean_last10": (sum(validation_curve[-10:])
                                           / len(validation_curve[-10:])),
@@ -402,6 +439,8 @@ def main() -> None:
     parser.add_argument("--knots", type=int, default=2,
                         help="MVP-3 trajectory knots: predict positions at K evenly spaced times. "
                              "K=2 is the MVP-2 endpoint pair.")
+    parser.add_argument("--max-grad-norm", type=float, default=None,
+                        help="Optional global-norm gradient clipping threshold. Disabled by default.")
     parser.add_argument("--image-width", type=int, default=DEFAULT_IMAGE_WIDTH,
                         help="Clip decode width; the stride-two score map has half this many x cells.")
     parser.add_argument("--image-height", type=int, default=DEFAULT_IMAGE_HEIGHT,
@@ -432,6 +471,8 @@ def main() -> None:
         parser.error("image-width and image-height must be positive")
     if args.knots < 2:
         parser.error("knots must be at least 2")
+    if args.max_grad_norm is not None and args.max_grad_norm <= 0:
+        parser.error("max-grad-norm must be positive when provided")
     if args.knots > 2 and not args.line_fit:
         parser.error("--knots > 2 requires --line-fit")
     if args.line_fit and not args.trajectory_weight:
@@ -454,7 +495,8 @@ def main() -> None:
                    fresh_stratify_by_device=args.fresh_stratify_by_device,
                    line_fit=args.line_fit, irls_iterations=args.irls_iterations,
                    huber_delta=args.huber_delta, image_width=args.image_width,
-                   image_height=args.image_height, knots=args.knots)
+                   image_height=args.image_height, knots=args.knots,
+                   max_grad_norm=args.max_grad_norm)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 

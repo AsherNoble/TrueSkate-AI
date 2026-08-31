@@ -161,6 +161,30 @@ def test_linear_regressor_returns_native_bounded_quintuplets():
     assert gesture["dur"].shape == (2,)
 
 
+def test_train_records_preclip_gradient_norms_only_when_clipping_is_enabled(tmp_path, monkeypatch):
+    """Gradient clipping must be measurable, while the control remains unchanged."""
+    import scripts.train.train_basic_linear_regressor as trainer
+
+    for index in range(12):
+        _write_sample(tmp_path, f"segment_{index}", f"sample_{index}",
+                      points=[[.20 + index * .01, .35], [.58 + index * .01, .55]])
+    monkeypatch.setattr(trainer, "_device", lambda: torch.device("cpu"))
+    kwargs = dict(data=tmp_path, epochs=1, batch_size=2, lr=1e-3, seed=7,
+                  base_channels=2, image_width=16, image_height=36, evaluate_test=False)
+    control = trainer.train(out=tmp_path / "control.pth", **kwargs)
+    clipped = trainer.train(out=tmp_path / "clipped.pth", max_grad_norm=.01, **kwargs)
+
+    assert control["max_grad_norm"] is None
+    assert len(control["gradient_norm_history"]) == 1
+    assert control["gradient_norm_history"][0]["steps"] > 0
+    assert clipped["max_grad_norm"] == pytest.approx(.01)
+    assert len(clipped["gradient_norm_history"]) == 1
+    gradient = clipped["gradient_norm_history"][0]
+    assert gradient["steps"] > 0
+    assert gradient["max"] >= gradient["p95"] >= gradient["mean"] > 0
+    assert 0 <= gradient["clipped_steps"] <= gradient["steps"]
+
+
 def test_linear_regressor_accepts_explicit_start_time_prior():
     model = BasicLinearRegressor(start_onset=-.24, start_sigma=.08, end_onset=.24)
     assert model.start_onset == pytest.approx(-.24)
