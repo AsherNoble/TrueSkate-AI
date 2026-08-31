@@ -2272,3 +2272,19 @@ disk, which is exactly the kind of change that should not be made inside a loop 
 - **Next:** EQ-051 phase 2 (PAID) — gradient clipping is the right first test because it constrains the
   hypothesised rare large update while leaving every ordinary update and the LR trajectory untouched; a
   schedule or a lower LR changes every step and would confound the answer. Gated on owner approval.
+
+## EQ-051 phase 2 — matched gradient-clipping experiment launched (2026-08-31)
+
+- **Owner approval:** explicit (“okay continue”) after the $4.80 estimate for the full six-run A/B.
+- **Implementation:** added optional `--max-grad-norm` to the local and Modal trainers. Every update now
+  records its pre-clip global L2 gradient norm; the no-clipping control uses a read-only reduction, while
+  the intervention uses `clip_grad_norm_` and additionally records the number of affected steps. The
+  default remains no clipping. Focused regression suite: 42 passed. Commit `89da581`.
+- **Protocol, predeclared:** three postfix controls (seeds 0/1/2), then the same three seeds with one
+  threshold selected solely from the controls' recorded norm distribution. All runs use the same
+  `trueskate-mvp-linear-2k/basic_linear_xctest` corpus, fixed command split seed 0, 40 epochs, batch 8,
+  lr 1e-3, temporal mixer, pinned NVIDIA L4, and `--no-evaluate-test`. No test command is read. The
+  threshold will target the upper tail of observed norms; if the controls show no material upper tail,
+  the clipped arm will not be launched.
+- **Launched controls:** Modal apps `ap-s4OJAuBHQq11fCuvXcHvgr`, `ap-sREmi11yOwjuBaNQnOTo7L`, and
+  `ap-naXN3sIHH45OOtQ4YvJjAF`, labelled `eq051_clip_base_postfix_seed{0,1,2}`. Results pending.
