@@ -58,6 +58,22 @@ def test_sessions_span_sibling_corpora_newest_first(corpus: Path):
     assert [p.name for p in found] == [f"{DEVICE}_20260813_064455", f"{DEVICE}_20260806_010000"]
 
 
+def test_sessions_span_device_bucketed_staged_corpora(tmp_path: Path):
+    """Stage collections use <corpus>/<device bucket>/<session>, one level
+    deeper than the historical corpus layout."""
+    now = time.time()
+    staged = tmp_path / "basic_linear_sls_stage1" / "iPhone_XR_sls_park"
+    _write_session(staged, "placeholder", f"{DEVICE}_20260901_010000", _gestures(2, now))
+    # _write_session adds a corpus level; make the actual staged shape instead.
+    nested = staged / "placeholder" / f"{DEVICE}_20260901_010000"
+    target = staged / f"{DEVICE}_20260901_010000"
+    nested.rename(target)
+    (staged / "placeholder").rmdir()
+
+    found = dash._sessions(tmp_path, DEVICE)
+    assert found == [target]
+
+
 def test_sessions_also_works_when_root_is_one_corpus(corpus: Path):
     found = dash._sessions(corpus / "sls_xctest", DEVICE)
     assert [p.name for p in found] == [f"{DEVICE}_20260806_010000"]

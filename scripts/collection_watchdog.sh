@@ -60,7 +60,10 @@ notify(sys.argv[1], title="TrueSkate rig", tags=[sys.argv[2]],
 }
 
 newest_mtime() {  # $1=device tag
-  find "$DATA" -maxdepth 2 -name 'segment_*.json' -path "*${1}_*" -type f -print0 2>/dev/null \
+  # Stage collections are nested as <corpus>/<device bucket>/<session>.
+  # Restrict by the session/device name rather than directory depth so the
+  # watchdog continues to see the active run after a corpus layout change.
+  find "$DATA" -name 'segment_*.json' -path "*${1}_*" -type f -print0 2>/dev/null \
     | xargs -0 stat -f '%m' 2>/dev/null | sort -rn | head -1 || true
 }
 

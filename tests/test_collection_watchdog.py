@@ -63,3 +63,15 @@ def test_fleet_watchdog_notifies_only_on_persistent_state_transitions(tmp_path):
     assert len(messages) == 3
     assert "Rig recovered" in messages[-1]
     assert _run_watchdog(tmp_path, push_log, "iPhone_XR", "8100", "XR1") == messages
+
+
+def test_watchdog_finds_segments_in_device_bucketed_stage_layout(tmp_path):
+    push_log = tmp_path / "notifications.log"
+    root = tmp_path / "data" / "sls_xctest"
+    for device in ("iPhone_XR", "iPhone_XR2"):
+        segment = root / "basic_linear_sls_stage1" / f"{device}_sls_park" / f"{device}_session" / "segment_00000.json"
+        segment.parent.mkdir(parents=True, exist_ok=True)
+        segment.write_text("{}")
+        os.utime(segment, (time.time(), time.time()))
+
+    assert _run_watchdog(tmp_path, push_log, "iPhone_XR", "8100", "XR1") == []

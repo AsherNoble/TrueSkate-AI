@@ -63,8 +63,20 @@ def _sessions(corpus_root: Path, device: str) -> list[Path]:
     healthy. Session dirs are named `<device>_YYYYMMDD_HHMMSS`, so sorting by
     name is sorting by time, and it stays correct across sibling corpora.
     """
+    candidates = itertools.chain(
+            corpus_root.glob(f"{device}_*"),
+            corpus_root.glob(f"*/{device}_*"),
+            # A device-provenanced staged corpus adds one directory between the
+            # corpus root and its session: <corpus>/<device_bucket>/<session>.
+            # Without this level, the dashboard falls back to an old sibling
+            # corpus and reports it stale while a current staged run is healthy.
+            corpus_root.glob(f"*/*/{device}_*"),
+    )
+    # Device buckets such as ``iPhone_XR_sls_park`` share the device prefix but
+    # are not sessions. Collector sessions have the timestamped suffix below.
+    session_name = re.compile(rf"^{re.escape(device)}_\d{{8}}_\d{{6}}$")
     return sorted(
-        itertools.chain(corpus_root.glob(f"{device}_*"), corpus_root.glob(f"*/{device}_*")),
+        (path for path in candidates if path.is_dir() and session_name.match(path.name)),
         key=lambda p: p.name, reverse=True,
     )
 
