@@ -349,6 +349,7 @@ def test_linear_collector_uses_a_device_specific_seed_file():
     assert '--calibration-taps-per-segment "$CALIBRATION_TAPS_PER_SEGMENT"' in source
     assert 'BASIC_LINEAR_CALIBRATION_TAP_HOLD_S' in source
     assert '--calibration-tap-hold-s "$CALIBRATION_TAP_HOLD_S"' in source
+    assert 'CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0.05}"' in source
     assert '--reset-before-segment' in source
     assert 'BASIC_LINEAR_NO_MENU_GUARD' in source
     assert 'MENU_GUARD_ARGS=(--no-menu-guard)' in source

@@ -24,7 +24,10 @@ PARK="${BASIC_LINEAR_PARK:-The Workshop}"
 # recorder can render the first leading clapperboards before its useful window,
 # so callers may increase redundant controls without weakening that gate.
 CALIBRATION_TAPS_PER_SEGMENT="${BASIC_LINEAR_CALIBRATION_TAPS_PER_SEGMENT:-3}"
-CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0}"
+# A 50ms ActionChains press still has ``tap`` provenance (and strict loaders
+# exclude it), but is much more consistently visible to the XCTest timing
+# calibrator than Appium's instantaneous mobile:tap on XR2.
+CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0.05}"
 MENU_GUARD_ARGS=()
 if [ "${BASIC_LINEAR_NO_MENU_GUARD:-0}" = "1" ]; then
   # SLS parks can render a persistent five-cell bottom strip that the generic
