@@ -731,7 +731,8 @@ def main() -> None:
                 # 1.5s clear interval keeps it out of the NEXT labeled clip.
                 # It is never included in ``events``, so the reset itself cannot
                 # become a trainable command.
-                if (args.reset_every_samples
+                if (segment_payload_samples
+                        and args.reset_every_samples
                         and segment_payload_samples % args.reset_every_samples == 0):
                     try:
                         _write_heartbeat(args.heartbeat_path, device=device,

@@ -337,10 +337,11 @@ def test_linear_collector_supports_clean_segment_boundary_resets():
     source = Path("scripts/data/collect_sls_xctest.py").read_text()
     assert "--segment-reset-settle-s must be >= 1.5" in source
     assert source.index("if args.reset_before_segment:") < source.index("rec.start()")
-    reset_after_sample = source.index("if (args.reset_every_samples")
+    reset_after_sample = source.index("if (segment_payload_samples")
     assert source.index("time.sleep(args.tail_s)") < reset_after_sample
     assert "normalized (0.50, 0.0558)" in source
     assert "segment_payload_samples += 1" in source
+    assert "segment_payload_samples\n                        and args.reset_every_samples" in source
     assert source.index("if not args.no_gameplay_guard:", source.index("post-gesture foreground")) < \
         source.index("if not args.no_menu_guard:", source.index("post-gesture menu/editor"))
 
