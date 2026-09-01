@@ -332,6 +332,7 @@ def test_linear_collector_supports_clean_segment_boundary_resets():
     assert "--segment-reset-settle-s" in result.stdout
     assert "--no-menu-guard" in result.stdout
     assert "--no-run-notifications" in result.stdout
+    assert "--heartbeat-path" in result.stdout
     source = Path("scripts/data/collect_sls_xctest.py").read_text()
     assert "--segment-reset-settle-s must be >= 1.5" in source
     assert source.index("if args.reset_before_segment:") < source.index("rec.start()")
@@ -352,6 +353,8 @@ def test_linear_collector_uses_a_device_specific_seed_file():
     assert 'BASIC_LINEAR_NO_MENU_GUARD' in source
     assert 'MENU_GUARD_ARGS=(--no-menu-guard)' in source
     assert '--no-run-notifications' in source
+    assert 'HEARTBEAT_FILE=' in source
+    assert '--heartbeat-path "$HEARTBEAT_FILE"' in source
 
 
 def test_linear_finalizer_can_target_a_fresh_modal_volume():

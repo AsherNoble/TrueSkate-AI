@@ -90,6 +90,30 @@ def _park_tag(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
 
 
+def _write_heartbeat(path: Path | None, *, device: str, state: str,
+                     segment: int | None = None) -> None:
+    """Atomically publish collector progress for local supervisors/dashboard.
+
+    A bounded XCTest segment can legitimately take several minutes once video
+    retrieval and foreground alignment are included.  This heartbeat makes
+    that distinction observable: a live collector refreshes it at every phase
+    and gesture, while a wedged Appium/XCTest call leaves it stale.
+    """
+    if path is None:
+        return
+    payload = {"device": device, "state": state, "updated_at_epoch_s": time.time()}
+    if segment is not None:
+        payload["segment"] = segment
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(f".{path.name}.tmp")
+        tmp.write_text(json.dumps(payload))
+        tmp.replace(path)
+    except OSError as exc:
+        # Status reporting must never interrupt an otherwise healthy recorder.
+        print(f"[collect_xctest] heartbeat write failed: {exc!r}", flush=True)
+
+
 def _start_caffeinate():
     try:
         p = subprocess.Popen(["caffeinate", "-dimsu", "-w", str(os.getpid())])
@@ -301,6 +325,9 @@ def main() -> None:
                     help="Suppress this process's routine start/stop ntfy messages. "
                          "Use for a supervisor that launches one bounded process per segment; "
                          "safety and park-switch alerts remain enabled.")
+    ap.add_argument("--heartbeat-path", type=Path, default=None,
+                    help="Optional local JSON heartbeat, refreshed during every collection phase. "
+                         "A bounded-run supervisor uses it to distinguish a slow segment from a wedged call.")
     ap.add_argument("--no-rotate", action="store_true")
     ap.add_argument("--confirm-poll-s", type=float, default=10.0)
     ap.add_argument("--no-gameplay-guard", action="store_true",
@@ -412,7 +439,8 @@ def main() -> None:
 
     worker = DeviceWorker(cfg)
     device = cfg["name"]
-    print(f"Connecting to {device} (needs WDA+Appium up; run launch_services.py)...")
+    _write_heartbeat(args.heartbeat_path, device=device, state="connecting")
+    print(f"Connecting to {device} (needs WDA+Appium up; run launch_services.py)...", flush=True)
     worker.connect()
     dw, dh = worker.device_w, worker.device_h
     udid = os.environ.get(cfg.get("env_key", ""), "") or cfg.get("udid", "")
@@ -421,15 +449,16 @@ def main() -> None:
     session = time.strftime("%Y%m%d_%H%M%S")
     out_root = args.out_dir / f"{device}_{session}"
     out_root.mkdir(parents=True, exist_ok=True)
-    print(f"Saving segments to {out_root}; park cycle starts at: {cycle[0]}")
+    _write_heartbeat(args.heartbeat_path, device=device, state="connected")
+    print(f"Saving segments to {out_root}; park cycle starts at: {cycle[0]}", flush=True)
 
     rng = np.random.default_rng(args.seed)
     recipe_vectors = load_recipe_vectors(args.recipe_dir)
-    print(f"Loaded {len(recipe_vectors)} packable recipes.")
+    print(f"Loaded {len(recipe_vectors)} packable recipes.", flush=True)
     fracs = (args.flick_frac, args.nslot_frac, args.recipe_frac)
     print(f"Gesture mix: base weights flick={args.flick_frac} nslot={args.nslot_frac} "
           f"recipe={args.recipe_frac}; spin share={args.spin_frac} (guaranteed-hold slice); "
-          f"static share={args.static_frac} (stationary hold/tap).")
+          f"static share={args.static_frac} (stationary hold/tap).", flush=True)
 
     if not args.no_run_notifications:
         notify(f"[{device}] XCTest SLS collection starting in {cycle[0]} "
@@ -491,8 +520,10 @@ def main() -> None:
                 # while bounding how long a no-reset collection can remain in a
                 # bad board location (e.g. a gap that normally needs reset).
                 try:
+                    _write_heartbeat(args.heartbeat_path, device=device,
+                                     state="resetting", segment=segment_idx)
                     print(f"[seg {segment_idx}] resetting board before recording; "
-                          f"settling {args.segment_reset_settle_s:.1f}s")
+                          f"settling {args.segment_reset_settle_s:.1f}s", flush=True)
                     reset_position(worker.driver, dw, dh)
                     time.sleep(args.segment_reset_settle_s)
                 except Exception as exc:  # noqa: BLE001 — do not begin an unsafe segment
@@ -504,6 +535,8 @@ def main() -> None:
                     time.sleep(3.0)
                     continue
             try:
+                _write_heartbeat(args.heartbeat_path, device=device,
+                                 state="starting_recording", segment=segment_idx)
                 rec.start()
             except Exception as exc:  # noqa: BLE001
                 # XCTest recording can transiently fail (XCTDaemon "Failed to write
@@ -537,6 +570,8 @@ def main() -> None:
                 time.sleep(3.0)
                 continue
             start_fail_streak = 0  # rec.start() succeeded
+            _write_heartbeat(args.heartbeat_path, device=device,
+                             state="recording", segment=segment_idx)
             seg_deadline = time.monotonic() + args.segment_min * 60.0
             events: list[dict] = []
             park_switched = False
@@ -677,6 +712,8 @@ def main() -> None:
                     events[-1]["calibration_tap_hold_s"] = calibration_hold_s
                 segment_events += 1
                 total_gestures += 1
+                _write_heartbeat(args.heartbeat_path, device=device,
+                                 state="recording", segment=segment_idx)
                 time.sleep(args.tail_s)  # trick plays out into the recording (response window)
 
                 # --- park rotation (same ntfy mechanism as the DAL collector) ---
@@ -719,6 +756,8 @@ def main() -> None:
                 continue
             mov_path = out_root / f"segment_{segment_idx:05d}.mov"
             try:
+                _write_heartbeat(args.heartbeat_path, device=device,
+                                 state="saving", segment=segment_idx)
                 res = rec.stop_and_save(mov_path)
             except Exception as exc:  # noqa: BLE001
                 # stop/retrieve failed (oversized payload → RemoteDisconnected, or an
@@ -754,15 +793,21 @@ def main() -> None:
             }
             manifest_path.write_text(json.dumps(manifest, indent=2))
             free_gb = _device_free_gb(udid) if udid else None
+            _write_heartbeat(args.heartbeat_path, device=device,
+                             state="aligning", segment=segment_idx)
             print(f"[seg {segment_idx}] saved {res.summary()['mb']}MB, {len(events)} gestures, "
                   f"park={cur_park}, device_free={free_gb}GB"
-                  f"{' (PARK SWITCH)' if park_switched else ''}")
+                  f"{' (PARK SWITCH)' if park_switched else ''}", flush=True)
             if free_gb is not None and free_gb < args.min_free_gb:
                 notify(f"[{device}] device free storage low: {free_gb}GB (< {args.min_free_gb}).",
                        title="TrueSkate SLS collect", priority="high", tags=["warning"])
             _device_aligner_spawn(manifest_path)
+            _write_heartbeat(args.heartbeat_path, device=device,
+                             state="segment_complete", segment=segment_idx)
             segment_idx += 1
     finally:
+        _write_heartbeat(args.heartbeat_path, device=device, state="stopped",
+                         segment=segment_idx)
         try:
             rec.abort()  # ensure no recording leaks on the device
         except Exception:  # noqa: BLE001

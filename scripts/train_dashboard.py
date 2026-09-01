@@ -156,6 +156,24 @@ _COLLECT_MAX_SESSIONS = 40
 _MANIFEST_RE = re.compile(r"^segment_\d+\.json$")
 
 
+def _collector_heartbeat(corpus_root: Path, device: str) -> dict | None:
+    """Newest bounded-collector heartbeat for a device, if a supervisor uses one."""
+    candidates = itertools.chain(
+        corpus_root.glob(f"*/.collector_heartbeat_{device}.json"),
+        corpus_root.glob(f"*/*/.collector_heartbeat_{device}.json"),
+    )
+    newest: tuple[float, dict] | None = None
+    for path in candidates:
+        try:
+            data = json.loads(path.read_text())
+            updated = float(data["updated_at_epoch_s"])
+        except (OSError, ValueError, KeyError, json.JSONDecodeError):
+            continue
+        if newest is None or updated > newest[0]:
+            newest = (updated, data)
+    return newest[1] if newest else None
+
+
 def _collection_status(corpus_root: Path, device: str) -> dict:
     """Mode B throughput for `device`, read from the collector's own manifests.
 
@@ -203,6 +221,7 @@ def _collection_status(corpus_root: Path, device: str) -> dict:
     if not current:
         return {"device": device, "mode": "collect", "trick": "—", "evals": 0,
                 "note": "no collection corpus found"}
+    heartbeat = _collector_heartbeat(corpus_root, device)
     return {
         "device": device,
         "mode": "collect",
@@ -211,6 +230,9 @@ def _collection_status(corpus_root: Path, device: str) -> dict:
         "session_samples": session_samples,
         "last_sample_ts": time.strftime("%H:%M:%S", time.localtime(latest)) if latest else "—",
         "last_sample_age_s": round(now - latest) if latest else None,
+        "collector_state": heartbeat.get("state") if heartbeat else None,
+        "collector_heartbeat_age_s": round(now - heartbeat["updated_at_epoch_s"])
+        if heartbeat else None,
     }
 
 
@@ -395,6 +417,8 @@ function collectBlock(s){
         <div class="stat">session <b>${s.session||'—'}</b> (<b>${s.session_samples??0}</b> samples) ·
           last hour <b>${s.samples_1h??0}</b> ·
           last sample <b>${s.last_sample_ts}</b> (${fmtAge(s.last_sample_age_s)} ago)</div>
+        ${s.collector_state ? `<div class="stat">collector <b>${s.collector_state}</b> ·
+          heartbeat ${fmtAge(s.collector_heartbeat_age_s)} ago</div>` : ''}
       </div>`;
 }
 async function tick(){

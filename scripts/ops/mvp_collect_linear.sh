@@ -35,6 +35,7 @@ fi
 # streams independent; otherwise they read the same state before either writes
 # it and emit identical commands, defeating command-held-out generalisation.
 SEED_FILE="${BASIC_LINEAR_SEED_FILE:-$OUT/.basic_linear_next_seed_${DEVICE}}"
+HEARTBEAT_FILE="${BASIC_LINEAR_HEARTBEAT_FILE:-$OUT/.collector_heartbeat_${DEVICE}.json}"
 
 cd "$REPO" || exit 1
 mkdir -p logs "$OUT"
@@ -58,7 +59,10 @@ while :; do
   printf '%s\n' "$next_seed" > "$SEED_FILE"
   rejections_before=$(find "$OUT" -type f -path "*/${DEVICE}_*/*.calibration_rejected.json" | wc -l | tr -d ' ')
   echo "[mvp_collect_linear] $(date '+%H:%M:%S') segment $i on $DEVICE"
-  PYTHONPATH=src .venv/bin/python scripts/data/collect_sls_xctest.py \
+  # ``-u`` makes every phase visible immediately in the nohup log.  Without it
+  # Python's redirected stdout only flushed when the segment ended, mimicking a
+  # frozen collector for the entire record/retrieve/align cycle.
+  PYTHONPATH=src .venv/bin/python -u scripts/data/collect_sls_xctest.py \
     --devices "$DEVICE" \
     --basic-linears \
     --tap-calibrate \
@@ -75,6 +79,7 @@ while :; do
     --max-segments 1 \
     --seed "$seed" \
     --out-dir "$OUT" \
+    --heartbeat-path "$HEARTBEAT_FILE" \
     --no-run-notifications \
     --no-caffeinate
   rc=$?

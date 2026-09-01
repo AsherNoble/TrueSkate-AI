@@ -131,6 +131,22 @@ def test_collection_status_reports_the_newest_session_with_a_manifest(corpus: Pa
     assert s["session_samples"] == 4
 
 
+def test_collection_status_includes_nested_staged_heartbeat(tmp_path: Path):
+    now = time.time()
+    bucket = tmp_path / "basic_linear_sls_stage1" / "iPhone_XR_sls_park"
+    bucket.mkdir(parents=True)
+    (bucket / f".collector_heartbeat_{DEVICE}.json").write_text(json.dumps({
+        "device": DEVICE, "state": "recording", "updated_at_epoch_s": now,
+    }))
+    _write_session(bucket, "placeholder", f"{DEVICE}_20260901_010000", _gestures(2, now))
+    nested = bucket / "placeholder" / f"{DEVICE}_20260901_010000"
+    nested.rename(bucket / f"{DEVICE}_20260901_010000")
+    (bucket / "placeholder").rmdir()
+    s = dash._collection_status(tmp_path, DEVICE)
+    assert s["collector_state"] == "recording"
+    assert s["collector_heartbeat_age_s"] < 2
+
+
 def test_collection_status_ignores_calibration_sidecars(corpus: Path):
     """segment_00000.calibration_rejected.json matches a naive segment_*.json
     glob and sorts ahead of the real manifest — it has no park or gestures."""
