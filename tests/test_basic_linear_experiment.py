@@ -323,6 +323,22 @@ def test_linear_collector_exposes_native_resolution_option():
     assert "--align-resize-width" in result.stdout
 
 
+def test_linear_collector_supports_clean_segment_boundary_resets():
+    result = subprocess.run(
+        [sys.executable, "scripts/data/collect_sls_xctest.py", "--help"],
+        capture_output=True, text=True, check=True,
+    )
+    assert "--reset-before-segment" in result.stdout
+    assert "--segment-reset-settle-s" in result.stdout
+    assert "--no-menu-guard" in result.stdout
+    assert "--no-run-notifications" in result.stdout
+    source = Path("scripts/data/collect_sls_xctest.py").read_text()
+    assert "--segment-reset-settle-s must be >= 1.5" in source
+    assert source.index("if args.reset_before_segment:") < source.index("rec.start()")
+    assert source.index("if not args.no_gameplay_guard:", source.index("post-gesture foreground")) < \
+        source.index("if not args.no_menu_guard:", source.index("post-gesture menu/editor"))
+
+
 def test_linear_collector_uses_a_device_specific_seed_file():
     source = Path("scripts/ops/mvp_collect_linear.sh").read_text()
     assert ".basic_linear_next_seed_${DEVICE}" in source
@@ -332,6 +348,10 @@ def test_linear_collector_uses_a_device_specific_seed_file():
     assert '--calibration-taps-per-segment "$CALIBRATION_TAPS_PER_SEGMENT"' in source
     assert 'BASIC_LINEAR_CALIBRATION_TAP_HOLD_S' in source
     assert '--calibration-tap-hold-s "$CALIBRATION_TAP_HOLD_S"' in source
+    assert '--reset-before-segment' in source
+    assert 'BASIC_LINEAR_NO_MENU_GUARD' in source
+    assert 'MENU_GUARD_ARGS=(--no-menu-guard)' in source
+    assert '--no-run-notifications' in source
 
 
 def test_linear_finalizer_can_target_a_fresh_modal_volume():

@@ -6,18 +6,31 @@
 # Taps are timing controls only; the strict linear loader rejects them.
 #
 # Usage: scripts/ops/mvp_collect_linear.sh iPhone_XR [out_dir] [max_loops]
+# For the device-balanced Stage 1 tranche, give every phone its own out_dir
+# (e.g. data/basic_linear_stage1_20260831/iPhone_XR).  This makes provenance,
+# seed state, target guards, and later audits independent by construction.
 set -u
 
 DEVICE="${1:?usage: mvp_collect_linear.sh DEVICE [out_dir] [max_loops]}"
 OUT="${2:-data/basic_linear_xctest}"
 MAX_LOOPS="${3:-1}"
 REPO=/Users/training-server/trueskate-ai
-PARK="The Workshop"
+# ``--park-label`` is provenance, not navigation: the phone must already be
+# loaded in this park. Keep domain-specific collections in separate output
+# roots and set BASIC_LINEAR_PARK explicitly rather than mislabelling them as
+# The Workshop.
+PARK="${BASIC_LINEAR_PARK:-The Workshop}"
 # The calibration gate itself remains two consistent observed taps.  A delayed
 # recorder can render the first leading clapperboards before its useful window,
 # so callers may increase redundant controls without weakening that gate.
 CALIBRATION_TAPS_PER_SEGMENT="${BASIC_LINEAR_CALIBRATION_TAPS_PER_SEGMENT:-3}"
 CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0}"
+MENU_GUARD_ARGS=()
+if [ "${BASIC_LINEAR_NO_MENU_GUARD:-0}" = "1" ]; then
+  # SLS parks can render a persistent five-cell bottom strip that the generic
+  # app-hub detector mistakes for a menu. The OS foreground guard stays ON.
+  MENU_GUARD_ARGS=(--no-menu-guard)
+fi
 # A shared output directory can be collected by both XRs.  Keep their seed
 # streams independent; otherwise they read the same state before either writes
 # it and emit identical commands, defeating command-held-out generalisation.
@@ -53,6 +66,8 @@ while :; do
     --calibration-tap-hold-s "$CALIBRATION_TAP_HOLD_S" \
     --wait-for-align \
     --no-reset \
+    --reset-before-segment \
+    "${MENU_GUARD_ARGS[@]}" \
     --park-label "$PARK" \
     --align-video \
     --align-resize-width 128 \
@@ -60,6 +75,7 @@ while :; do
     --max-segments 1 \
     --seed "$seed" \
     --out-dir "$OUT" \
+    --no-run-notifications \
     --no-caffeinate
   rc=$?
   rejections_after=$(find "$OUT" -type f -path "*/${DEVICE}_*/*.calibration_rejected.json" | wc -l | tr -d ' ')

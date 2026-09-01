@@ -226,6 +226,14 @@ def main() -> None:
                     help="Skip reset_position between gestures. Required for stationary "
                          "runs: reset is a tap, and its own rendered mark would land in "
                          "the next sample's window as an unlabelled touch.")
+    ap.add_argument("--reset-before-segment", action="store_true",
+                    help="Tap True Skate's reset control once BEFORE each recording segment, "
+                         "then wait for its rendered trace to clear. This is safe with "
+                         "--no-reset because the recovery touch is outside every clip; use it "
+                         "to escape an accumulated bad board position between bounded segments.")
+    ap.add_argument("--segment-reset-settle-s", type=float, default=1.5,
+                    help="Seconds to wait after --reset-before-segment before recording. Must "
+                         "be >= 1.5 so the reset tap's rendered mark cannot contaminate clips.")
     ap.add_argument("--park-label", default=None,
                     help="Pin collection to a single named park (e.g. 'The Workshop') "
                          "instead of the SLS rotation. Sets the sample-dir park tag, so "
@@ -289,12 +297,20 @@ def main() -> None:
                     help="Run the post-segment aligner in the foreground instead of async. "
                          "Use for a bounded calibration pilot so its go/no-go result is visible.")
     ap.add_argument("--no-caffeinate", action="store_true")
+    ap.add_argument("--no-run-notifications", action="store_true",
+                    help="Suppress this process's routine start/stop ntfy messages. "
+                         "Use for a supervisor that launches one bounded process per segment; "
+                         "safety and park-switch alerts remain enabled.")
     ap.add_argument("--no-rotate", action="store_true")
     ap.add_argument("--confirm-poll-s", type=float, default=10.0)
     ap.add_argument("--no-gameplay-guard", action="store_true",
                     help="Disable the in-loop replay/menu guard (by default, gestures fired "
                          "while True Skate is in replay/menu are NOT logged, and the app is "
                          "relaunched to return to live gameplay).")
+    ap.add_argument("--no-menu-guard", action="store_true",
+                    help="Disable only the screenshot replay/editor heuristic while keeping the "
+                         "OS-level True Skate foreground guard. Use only for a human-confirmed "
+                         "park whose persistent bottom UI is a known heuristic false positive.")
     ap.add_argument("--gameplay-check-every", type=int, default=1,
                     help="Screenshot-check the gameplay state every N gestures (1 = every gesture).")
     ap.add_argument("--menu-recover-after", type=int, default=2,
@@ -334,6 +350,8 @@ def main() -> None:
         raise SystemExit("--calibration-taps-per-segment must be >= 2: tap calibration needs two detections")
     if args.calibration_tap_hold_s < 0.0 or args.calibration_tap_hold_s > 0.5:
         raise SystemExit("--calibration-tap-hold-s must be in [0, 0.5]")
+    if args.segment_reset_settle_s < 1.5:
+        raise SystemExit("--segment-reset-settle-s must be >= 1.5 to clear the reset trace")
     if args.align_resize_width < 8:
         raise SystemExit("--align-resize-width must be >= 8")
     if args.basic_holds:
@@ -413,9 +431,10 @@ def main() -> None:
           f"recipe={args.recipe_frac}; spin share={args.spin_frac} (guaranteed-hold slice); "
           f"static share={args.static_frac} (stationary hold/tap).")
 
-    notify(f"[{device}] XCTest SLS collection starting in {cycle[0]} "
-           f"({args.segment_min:.0f}-min segments, {args.per_park_hours}h/park).",
-           title="TrueSkate SLS collect", tags=["camera"])
+    if not args.no_run_notifications:
+        notify(f"[{device}] XCTest SLS collection starting in {cycle[0]} "
+               f"({args.segment_min:.0f}-min segments, {args.per_park_hours}h/park).",
+               title="TrueSkate SLS collect", tags=["camera"])
 
     park_idx = 0
     park_deadline = time.monotonic() + args.per_park_hours * 3600.0
@@ -464,6 +483,26 @@ def main() -> None:
                 break
 
             cur_park = cycle[park_idx]
+            if args.reset_before_segment:
+                # The reset button is at normalized (0.50, 0.0558).  It is a
+                # real tap, so firing it between gestures would corrupt the
+                # following response window.  Do it before rec.start() instead:
+                # the mandatory 1.5s clear window keeps it out of every clip
+                # while bounding how long a no-reset collection can remain in a
+                # bad board location (e.g. a gap that normally needs reset).
+                try:
+                    print(f"[seg {segment_idx}] resetting board before recording; "
+                          f"settling {args.segment_reset_settle_s:.1f}s")
+                    reset_position(worker.driver, dw, dh)
+                    time.sleep(args.segment_reset_settle_s)
+                except Exception as exc:  # noqa: BLE001 — do not begin an unsafe segment
+                    print(f"[seg {segment_idx}] pre-segment reset failed: {exc!r} — skip + recover")
+                    if not _recover_session(worker):
+                        print("[collect_xctest] session unrecoverable — exit for supervisor restart.")
+                        recovery_exit = True
+                        break
+                    time.sleep(3.0)
+                    continue
             try:
                 rec.start()
             except Exception as exc:  # noqa: BLE001
@@ -543,7 +582,7 @@ def main() -> None:
                 time.sleep(0.3)  # board settle into the reset state
 
                 # --- gameplay guard: never log a gesture fired into the replay/menu ---
-                if not args.no_gameplay_guard and seg_iter % max(1, args.gameplay_check_every) == 0:
+                if not args.no_menu_guard and seg_iter % max(1, args.gameplay_check_every) == 0:
                     try:
                         _guard_png = worker.driver.get_screenshot_as_png()
                         _in_editor = is_editor_frame(_guard_png)
@@ -611,7 +650,7 @@ def main() -> None:
                 # --- post-gesture menu/editor check ---
                 # A gesture can open non-gameplay UI after the pre-gesture guard.  The NEXT
                 # reset may close it, so check before logging and drop the contaminated window.
-                if not args.no_gameplay_guard:
+                if not args.no_menu_guard:
                     try:
                         time.sleep(0.35)  # let any newly-opened UI render before scoring
                         _post_png = worker.driver.get_screenshot_as_png()
@@ -731,9 +770,10 @@ def main() -> None:
         worker.disconnect()
         if caffeinate and caffeinate.poll() is None:
             caffeinate.terminate()
-        notify(f"[{device}] XCTest SLS collection stopped: {segment_idx} segments, "
-               f"{total_gestures} gestures, {total_menu_skips} menu-skipped → {out_root.name}",
-               title="TrueSkate SLS collect", tags=["checkered_flag"])
+        if not args.no_run_notifications:
+            notify(f"[{device}] XCTest SLS collection stopped: {segment_idx} segments, "
+                   f"{total_gestures} gestures, {total_menu_skips} menu-skipped → {out_root.name}",
+                   title="TrueSkate SLS collect", tags=["checkered_flag"])
         print(f"\nDone: {segment_idx} segments, {total_gestures} gestures, "
               f"{total_menu_skips} skipped (replay/menu) → {out_root}")
     if recovery_exit:
