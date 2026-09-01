@@ -28,6 +28,9 @@ CALIBRATION_TAPS_PER_SEGMENT="${BASIC_LINEAR_CALIBRATION_TAPS_PER_SEGMENT:-3}"
 # exclude it), but is much more consistently visible to the XCTest timing
 # calibrator than Appium's instantaneous mobile:tap on XR2.
 CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0.05}"
+# Reset after five trainable drags (calibration taps do not count).  This keeps
+# the board out of walls/gaps while the collector still labels only linear drags.
+RESET_EVERY_SAMPLES="${BASIC_LINEAR_RESET_EVERY_SAMPLES:-5}"
 MENU_GUARD_ARGS=()
 if [ "${BASIC_LINEAR_NO_MENU_GUARD:-0}" = "1" ]; then
   # SLS parks can render a persistent five-cell bottom strip that the generic
@@ -74,6 +77,7 @@ while :; do
     --wait-for-align \
     --no-reset \
     --reset-before-segment \
+    --reset-every-samples "$RESET_EVERY_SAMPLES" \
     "${MENU_GUARD_ARGS[@]}" \
     --park-label "$PARK" \
     --align-video \

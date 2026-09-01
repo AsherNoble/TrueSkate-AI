@@ -330,12 +330,17 @@ def test_linear_collector_supports_clean_segment_boundary_resets():
     )
     assert "--reset-before-segment" in result.stdout
     assert "--segment-reset-settle-s" in result.stdout
+    assert "--reset-every-samples" in result.stdout
     assert "--no-menu-guard" in result.stdout
     assert "--no-run-notifications" in result.stdout
     assert "--heartbeat-path" in result.stdout
     source = Path("scripts/data/collect_sls_xctest.py").read_text()
     assert "--segment-reset-settle-s must be >= 1.5" in source
     assert source.index("if args.reset_before_segment:") < source.index("rec.start()")
+    reset_after_sample = source.index("if (args.reset_every_samples")
+    assert source.index("time.sleep(args.tail_s)") < reset_after_sample
+    assert "normalized (0.50, 0.0558)" in source
+    assert "segment_payload_samples += 1" in source
     assert source.index("if not args.no_gameplay_guard:", source.index("post-gesture foreground")) < \
         source.index("if not args.no_menu_guard:", source.index("post-gesture menu/editor"))
 
@@ -350,7 +355,9 @@ def test_linear_collector_uses_a_device_specific_seed_file():
     assert 'BASIC_LINEAR_CALIBRATION_TAP_HOLD_S' in source
     assert '--calibration-tap-hold-s "$CALIBRATION_TAP_HOLD_S"' in source
     assert 'CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0.05}"' in source
+    assert 'RESET_EVERY_SAMPLES="${BASIC_LINEAR_RESET_EVERY_SAMPLES:-5}"' in source
     assert '--reset-before-segment' in source
+    assert '--reset-every-samples "$RESET_EVERY_SAMPLES"' in source
     assert 'BASIC_LINEAR_NO_MENU_GUARD' in source
     assert 'MENU_GUARD_ARGS=(--no-menu-guard)' in source
     assert '--no-run-notifications' in source

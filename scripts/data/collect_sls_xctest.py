@@ -258,6 +258,10 @@ def main() -> None:
     ap.add_argument("--segment-reset-settle-s", type=float, default=1.5,
                     help="Seconds to wait after --reset-before-segment before recording. Must "
                          "be >= 1.5 so the reset tap's rendered mark cannot contaminate clips.")
+    ap.add_argument("--reset-every-samples", type=int, default=0,
+                    help="After this many logged non-tap samples, tap the location-reset control "
+                         "and wait --segment-reset-settle-s before the next sample. 0 disables "
+                         "in-segment resets (default).")
     ap.add_argument("--park-label", default=None,
                     help="Pin collection to a single named park (e.g. 'The Workshop') "
                          "instead of the SLS rotation. Sets the sample-dir park tag, so "
@@ -379,6 +383,8 @@ def main() -> None:
         raise SystemExit("--calibration-tap-hold-s must be in [0, 0.5]")
     if args.segment_reset_settle_s < 1.5:
         raise SystemExit("--segment-reset-settle-s must be >= 1.5 to clear the reset trace")
+    if args.reset_every_samples < 0:
+        raise SystemExit("--reset-every-samples must be >= 0")
     if args.align_resize_width < 8:
         raise SystemExit("--align-resize-width must be >= 8")
     if args.basic_holds:
@@ -578,6 +584,7 @@ def main() -> None:
             seg_aborted = False
             seg_iter = 0
             segment_events = 0
+            segment_payload_samples = 0
             non_gameplay_streak = 0
 
             while not _STOP and time.monotonic() < seg_deadline:
@@ -712,9 +719,32 @@ def main() -> None:
                     events[-1]["calibration_tap_hold_s"] = calibration_hold_s
                 segment_events += 1
                 total_gestures += 1
+                if g.kind != "tap":
+                    segment_payload_samples += 1
                 _write_heartbeat(args.heartbeat_path, device=device,
                                  state="recording", segment=segment_idx)
                 time.sleep(args.tail_s)  # trick plays out into the recording (response window)
+
+                # Keep the board in an open, repeatable area during linear data
+                # collection.  This is deliberately after the response tail: the
+                # reset's rendered touch arrives about a second later, and the
+                # 1.5s clear interval keeps it out of the NEXT labeled clip.
+                # It is never included in ``events``, so the reset itself cannot
+                # become a trainable command.
+                if (args.reset_every_samples
+                        and segment_payload_samples % args.reset_every_samples == 0):
+                    try:
+                        _write_heartbeat(args.heartbeat_path, device=device,
+                                         state="periodic_reset", segment=segment_idx)
+                        print(f"[seg {segment_idx}] resetting location after "
+                              f"{segment_payload_samples} payload samples; settling "
+                              f"{args.segment_reset_settle_s:.1f}s", flush=True)
+                        reset_position(worker.driver, dw, dh)  # normalized (0.50, 0.0558)
+                        time.sleep(args.segment_reset_settle_s)
+                    except Exception as exc:  # noqa: BLE001 — do not risk unlabeled follow-on clips
+                        print(f"[seg {segment_idx}] periodic reset failed: {exc!r} — close segment")
+                        seg_aborted = True
+                        break
 
                 # --- park rotation (same ntfy mechanism as the DAL collector) ---
                 if args.no_rotate:
