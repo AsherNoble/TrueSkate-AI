@@ -2304,3 +2304,29 @@ disk, which is exactly the kind of change that should not be made inside a loop 
 - **Launched clipped arm:** `eq051_clip_norm5_postfix_seed{0,1,2}` in Modal apps
   `ap-bVD0BIbM9O1Kep0ZxAUSxK`, `ap-7FMPBtDic6xiqoeM0cl9Rm`, and
   `ap-ZAYGpJ8hi1r8yXUxGVM3ta`. Same corpus/split/hardware/seeds and validation-only protocol.
+
+## No-Modal Model 1 Stage 1: offline audit + balanced collection (2026-08-31)
+
+- **No Modal calls:** no jobs, uploads, downloads, artifact retrieval, or evaluations were made in this stage.
+- **Offline audit added:** `scripts/data/audit_basic_linear_corpus.py` reuses the strict linear loader and reports admissions/rejections, explicit device and park provenance, exact command duplicates (including cross-device), start/end grids, duration/slope/displacement histograms, sparse cells, and nearest distinct-command spacing. Its gates can require each device/park minimum and unique commands before training use.
+- **Existing evidence rechecked locally:** the saved nine-run EQ-051 analysis reproduces 57 >5pp collapse events; end error worsens in 56/57 (vs 33% of ordinary transitions), while no event is duration-only. The instability remains endpoint-centred; no paid follow-up was run.
+- **Rig preflight:** WDA `:8100` (XR1) and `:8103` (XR2) both returned healthy. No collector service restart, phone reboot, or WDA rebuild was done. Strict local inventory on the rig confirms the 1,018-clip fresh baseline (`basic_linear_xctest`).
+- **Stage 1 launched:** independent `iPhone_XR` and `iPhone_XR2` collectors write to `data/basic_linear_stage1_20260831/<device>/`, using the calibrated no-reset, fixed-The-Workshop, one-minute, 128px linear mode. Each has its own persisted seed file, PID, and strict per-device 1,100-clip target watcher. This tranche remains training-only; after both watchers stop, run the menu flagger then the audit command with `--require-device` twice, `--require-park 'The Workshop'`, `--min-per-device 1000`, and `--require-unique-commands`.
+
+## Stage 1 gap recovery + unattended closeout (2026-08-31)
+
+- **Failure found:** no-reset linear collection let XR1 drift into a board position that needs the game's reset control; XR2 was trapped in replay/menu and correctly admitted zero clips rather than silently collecting contamination. XR1 had 136 strict clips before both phones were manually rebooted.
+- **Fix:** added `--reset-before-segment` to the XCTest collector and enabled it for `mvp_collect_linear.sh`. It taps the known reset control at normalised `(0.50, 0.0558)` **before** `rec.start()`, then waits a mandatory 1.5 s for the reset tap's rendered trace to clear. Resets still never occur between gestures, so every trainable clip remains free of unlabelled reset-touch contamination. This limits bad-position exposure to one bounded segment.
+- **Unattended closeout:** a rig-side finalizer now waits for both strict 1,100-clip targets, waits for collector exit, flags menu samples non-destructively, writes a strict device/park/duplicate gate report, and emits one notification. A restart supervisor waits for both WDA endpoints after the reboots before launching the collectors with the new recovery flag; it emits one 15-minute WDA/USB incident alert and one recovery alert, never a restart loop.
+- **Verification:** focused collector/audit/menu/calibration suite: 58 passed. No Modal call, training run, artifact retrieval, or service rebuild was made.
+
+## Stage 1 provenance change: intentional SLS parks (2026-09-01)
+
+- **Owner direction supersedes the Workshop-only tranche:** XR1 is intentionally in **SLS 2015 Super Crown** (the initial Model-2 expert-demo domain); XR2 is intentionally in **SLS 2013 Kansas City**. The old Workshop-labelled collectors were stopped before their first segment could complete, avoiding false metadata.
+- **Collection is now segregated, not pooled:** `data/basic_linear_sls_stage1_20260901/iPhone_XR_sls_2015_super_crown/` and `.../iPhone_XR2_sls_2013_kansas_city/`. `mvp_collect_linear.sh` now accepts `BASIC_LINEAR_PARK`, passed through to provenance-only `--park-label`; it never changes the actual in-game park. The original Workshop corpus remains separate and untouched.
+- **Acceptance updated for this deliberate domain split:** each device must retain >=1,000 strict, menu-clean, explicitly device-provenanced and exact-command-unique clips, with XR1 exclusively Super Crown and XR2 exclusively Kansas City. A matching no-Modal finalizer was armed to flag menus, write that gate report, and notify on completion.
+
+## SLS Stage 1 completed at target (2026-09-01)
+
+- **Expected stop, not a rig failure:** both bounded collector wrappers and their target watchers exited after closeout; WDA remained healthy on both `:8100` and `:8103` endpoints.
+- **Gate result:** 2,226 accepted strict linear clips total — 1,121 from `iPhone_XR` / SLS 2015 Super Crown and 1,105 from `iPhone_XR2` / SLS 2013 Kansas City. The finalizer found no exact-command duplicate groups. Menu flagging completed with zero `.menu` files in the XR1 root; the stage gate records both expected park counts. This corpus remains training-only.
