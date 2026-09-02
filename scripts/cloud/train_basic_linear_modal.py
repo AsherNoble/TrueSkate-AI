@@ -116,7 +116,10 @@ def _require_two_knots(kwargs: dict, evaluator: str) -> dict:
 # fixed 32 GiB memory headroom is what protects decoded-frame caching.  Accept
 # any compatible accelerator from Modal's pool so a scarce named type cannot
 # indefinitely block the deterministic protocol.
-@app.function(image=image, gpu=TRAIN_GPU, timeout=3 * 3600, memory=16384,
+# A full 13k-clip Model 1 corpus caches roughly 46 GiB of decoded RGB frames.
+# Keep headroom for the model, batches, and Python runtime so the one-time cache
+# avoids re-decoding every video on every epoch.
+@app.function(image=image, gpu=TRAIN_GPU, timeout=8 * 3600, memory=65536,
               volumes={"/corpus": corpus, "/models": models})
 def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
