@@ -2330,3 +2330,10 @@ disk, which is exactly the kind of change that should not be made inside a loop 
 
 - **Expected stop, not a rig failure:** both bounded collector wrappers and their target watchers exited after closeout; WDA remained healthy on both `:8100` and `:8103` endpoints.
 - **Gate result:** 2,226 accepted strict linear clips total — 1,121 from `iPhone_XR` / SLS 2015 Super Crown and 1,105 from `iPhone_XR2` / SLS 2013 Kansas City. The finalizer found no exact-command duplicate groups. Menu flagging completed with zero `.menu` files in the XR1 root; the stage gate records both expected park counts. This corpus remains training-only.
+
+## Model 1 full-corpus timeout hardening (2026-09-03)
+
+- **Failure:** the first 13,100-clip L4 seed reached epoch 38/40 then hit its 8-hour Modal function timeout. The old trainer saved only after the complete loop, so it produced no checkpoint; the logged validation curve remains diagnostic-only.
+- **Hardening:** each completed epoch now writes an atomic resume snapshot containing model, optimizer, best-model state, validation/gradient histories, DataLoader and framework RNG state. Modal commits that snapshot to `trueskate-models` after every epoch. Resume refuses any changed corpus/split/hyperparameter configuration; successful final completion atomically writes the final checkpoint then removes the resume snapshot.
+- **Timeout policy:** full-corpus function timeout increased to 12 hours (50% observed-runtime margin). A provider timeout can now lose at most the in-flight epoch, not all completed work.
+- **Verification:** focused Model-1 suite 45 passed, including a simulated interruption, strict changed-config rejection, exact next-epoch resume, and final snapshot cleanup test.

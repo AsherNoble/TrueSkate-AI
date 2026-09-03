@@ -185,6 +185,52 @@ def test_train_records_preclip_gradient_norms_only_when_clipping_is_enabled(tmp_
     assert 0 <= gradient["clipped_steps"] <= gradient["steps"]
 
 
+def test_train_resumes_from_an_atomic_epoch_checkpoint(tmp_path, monkeypatch):
+    """A timeout after epoch N must resume at N+1, not discard the run."""
+    import scripts.train.train_basic_linear_regressor as trainer
+
+    for index in range(12):
+        _write_sample(tmp_path, f"segment_{index}", f"sample_{index}",
+                      points=[[.20 + index * .01, .35], [.58 + index * .01, .55]])
+    monkeypatch.setattr(trainer, "_device", lambda: torch.device("cpu"))
+    resume_path = tmp_path / "resume.pth"
+    kwargs = dict(data=tmp_path, epochs=2, batch_size=2, lr=1e-3, seed=7,
+                  base_channels=2, image_width=16, image_height=36, evaluate_test=False,
+                  resume_path=resume_path)
+    commits = []
+
+    def interrupt_after_first_commit():
+        commits.append(True)
+        if len(commits) == 1:
+            raise RuntimeError("simulated provider timeout")
+
+    with pytest.raises(RuntimeError, match="simulated provider timeout"):
+        trainer.train(out=tmp_path / "interrupted.pth",
+                      checkpoint_callback=interrupt_after_first_commit, **kwargs)
+    snapshot = torch.load(resume_path, map_location="cpu", weights_only=False)
+    assert snapshot["completed_epoch"] == 1
+    assert len(snapshot["validation_curve"]) == 1
+
+    with pytest.raises(RuntimeError, match="configuration does not match"):
+        trainer.train(out=tmp_path / "wrong_config.pth", lr=2e-3,
+                      checkpoint_callback=lambda: None,
+                      **{key: value for key, value in kwargs.items() if key != "lr"})
+
+    resumed = trainer.train(out=tmp_path / "resumed.pth", checkpoint_callback=lambda: commits.append(True),
+                            **kwargs)
+    assert resumed["validation_is_best_of_n_epochs"] == 2
+    assert len(resumed["validation_curve"]) == 2
+    assert not resume_path.exists(), "successful completion must clear the stale resume snapshot"
+
+
+def test_modal_training_persists_each_epoch_and_has_timeout_margin():
+    source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
+    train_body = source[source.index("def train_remote("):source.index("def train_remote_cpu(")]
+    assert "timeout=12 * 3600" in source
+    assert "resume_path=resume_checkpoint" in train_body
+    assert "checkpoint_callback=models.commit" in train_body
+
+
 def test_linear_regressor_accepts_explicit_start_time_prior():
     model = BasicLinearRegressor(start_onset=-.24, start_sigma=.08, end_onset=.24)
     assert model.start_onset == pytest.approx(-.24)

@@ -118,8 +118,11 @@ def _require_two_knots(kwargs: dict, evaluator: str) -> dict:
 # indefinitely block the deterministic protocol.
 # A full 13k-clip Model 1 corpus caches roughly 46 GiB of decoded RGB frames.
 # Keep headroom for the model, batches, and Python runtime so the one-time cache
-# avoids re-decoding every video on every epoch.
-@app.function(image=image, gpu=TRAIN_GPU, timeout=8 * 3600, memory=65536,
+# avoids re-decoding every video on every epoch.  The observed full-corpus run
+# takes just over eight hours, so leave a 50% timeout margin.  An atomic resume
+# checkpoint is also committed after every completed epoch; a provider timeout
+# can therefore cost at most the current epoch, never the entire run.
+@app.function(image=image, gpu=TRAIN_GPU, timeout=12 * 3600, memory=65536,
               volumes={"/corpus": corpus, "/models": models})
 def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
@@ -135,6 +138,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  max_grad_norm: float | None = None) -> dict:
     trainer = _trainer()
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
+    resume_checkpoint = Path("/models") / f"basic_linear_{run_label}.resume.pth"
     payload = trainer.train(
         data=Path("/corpus") / data_subdir,
         out=checkpoint,
@@ -163,6 +167,8 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
+        resume_path=resume_checkpoint,
+        checkpoint_callback=models.commit,
     )
     result = {key: value for key, value in payload.items() if key != "state_dict"}
     result["checkpoint"] = checkpoint.name
@@ -194,6 +200,7 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
     """
     trainer = _trainer()
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
+    resume_checkpoint = Path("/models") / f"basic_linear_{run_label}.resume.pth"
     payload = trainer.train(
         data=Path("/corpus") / data_subdir,
         out=checkpoint,
@@ -222,6 +229,8 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
+        resume_path=resume_checkpoint,
+        checkpoint_callback=models.commit,
     )
     result = {key: value for key, value in payload.items() if key != "state_dict"}
     result["checkpoint"] = checkpoint.name

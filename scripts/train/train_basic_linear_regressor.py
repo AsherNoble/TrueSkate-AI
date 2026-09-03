@@ -13,6 +13,7 @@ import re
 import sys
 import time
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import torch
@@ -52,6 +53,59 @@ def _fingerprint(paths: tuple[Path, ...]) -> str:
         digest.update(str(path).encode())
         digest.update(b"\n")
     return f"sha256:{len(paths)}:{digest.hexdigest()}"
+
+
+_RESUME_CHECKPOINT_VERSION = 1
+
+
+def _atomic_torch_save(payload: dict, path: Path) -> None:
+    """Write a torch payload atomically so an interruption cannot corrupt it."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    torch.save(payload, temporary)
+    temporary.replace(path)
+
+
+def _resume_config(*, dataset_fingerprint: str, split_sizes: dict[str, int], epochs: int,
+                   batch_size: int, lr: float, seed: int, split_seed: int,
+                   base_channels: int, split_strategy: str, map_weight: float,
+                   start_onset: float, start_sigma: float, end_onset: float,
+                   temporal_mixer: bool, trajectory_weight: float,
+                   trajectory_track: bool, fresh_holdout_source: str | None,
+                   fresh_stratify_by_device: bool, line_fit: bool,
+                   irls_iterations: int, huber_delta: float, image_width: int,
+                   image_height: int, knots: int, max_grad_norm: float | None,
+                   cache_frames: bool, evaluate_test: bool) -> dict:
+    """Everything which must match before an interrupted run may resume."""
+    return {
+        "dataset_fingerprint": dataset_fingerprint,
+        "split_sizes": split_sizes,
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "lr": lr,
+        "seed": seed,
+        "split_seed": split_seed,
+        "base_channels": base_channels,
+        "split_strategy": split_strategy,
+        "map_weight": map_weight,
+        "start_onset": start_onset,
+        "start_sigma": start_sigma,
+        "end_onset": end_onset,
+        "temporal_mixer": temporal_mixer,
+        "trajectory_weight": trajectory_weight,
+        "trajectory_track": trajectory_track,
+        "fresh_holdout_source": fresh_holdout_source,
+        "fresh_stratify_by_device": fresh_stratify_by_device,
+        "line_fit": line_fit,
+        "irls_iterations": irls_iterations,
+        "huber_delta": huber_delta,
+        "image_width": image_width,
+        "image_height": image_height,
+        "knots": knots,
+        "max_grad_norm": max_grad_norm,
+        "cache_frames": cache_frames,
+        "evaluate_test": evaluate_test,
+    }
 
 
 class _IndexedSubset(Dataset):
@@ -233,7 +287,9 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
           line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
           image_width: int = DEFAULT_IMAGE_WIDTH, image_height: int = DEFAULT_IMAGE_HEIGHT,
-          knots: int = 2, max_grad_norm: float | None = None) -> dict:
+          knots: int = 2, max_grad_norm: float | None = None,
+          resume_path: Path | None = None,
+          checkpoint_callback: Callable[[], None] | None = None) -> dict:
     torch.manual_seed(seed)
     # The line fit reads endpoints off the moving-contact map, so that map is
     # the primary evidence path and must be supervised, not left to learn only
@@ -256,6 +312,21 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         )
     else:
         train_indices, val_indices, test_indices = splitters[split_strategy](dataset, seed=split_seed)
+    dataset_fingerprint = _fingerprint(dataset.sample_paths)
+    split_sizes = {"train": len(train_indices), "validation": len(val_indices), "test": len(test_indices)}
+    resume_config = _resume_config(
+        dataset_fingerprint=dataset_fingerprint, split_sizes=split_sizes,
+        epochs=epochs, batch_size=batch_size, lr=lr, seed=seed, split_seed=split_seed,
+        base_channels=base_channels, split_strategy=split_strategy, map_weight=map_weight,
+        start_onset=start_onset, start_sigma=start_sigma, end_onset=end_onset,
+        temporal_mixer=temporal_mixer, trajectory_weight=trajectory_weight,
+        trajectory_track=trajectory_track, fresh_holdout_source=fresh_holdout_source,
+        fresh_stratify_by_device=fresh_stratify_by_device, line_fit=line_fit,
+        irls_iterations=irls_iterations, huber_delta=huber_delta,
+        image_width=image_width, image_height=image_height, knots=knots,
+        max_grad_norm=max_grad_norm, cache_frames=cache_frames,
+        evaluate_test=evaluate_test,
+    )
     # Explicit generator: with the default, shuffle order is drawn from the GLOBAL
     # RNG, whose position depends on how much randomness model construction happened
     # to consume.  Two arms at the same `--seed` therefore saw different minibatch
@@ -280,7 +351,33 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     # re-running, and lets the plateau mean be reported beside the headline.
     validation_curve: list[float] = []
     gradient_norm_history: list[dict[str, float | int]] = []
-    for epoch in range(1, epochs + 1):
+    start_epoch = 1
+    if resume_path is not None and resume_path.exists():
+        resume = torch.load(resume_path, map_location="cpu", weights_only=False)
+        if resume.get("resume_checkpoint_version") != _RESUME_CHECKPOINT_VERSION:
+            raise RuntimeError(f"unsupported resume checkpoint at {resume_path}")
+        if resume.get("resume_config") != resume_config:
+            raise RuntimeError(
+                f"resume checkpoint configuration does not match this run: {resume_path}"
+            )
+        completed_epoch = int(resume["completed_epoch"])
+        if not 0 < completed_epoch < epochs:
+            raise RuntimeError(
+                f"resume checkpoint completed_epoch={completed_epoch} is invalid for epochs={epochs}"
+            )
+        model.load_state_dict(resume["model_state_dict"])
+        optimizer.load_state_dict(resume["optimizer_state_dict"])
+        best = resume["best"]
+        validation_curve = resume["validation_curve"]
+        gradient_norm_history = resume["gradient_norm_history"]
+        shuffle_generator.set_state(resume["shuffle_generator_state"])
+        torch.set_rng_state(resume["torch_rng_state"])
+        np.random.set_state(resume["numpy_rng_state"])
+        if device.type == "cuda" and resume.get("cuda_rng_state_all") is not None:
+            torch.cuda.set_rng_state_all(resume["cuda_rng_state_all"])
+        start_epoch = completed_epoch + 1
+        print(f"resuming_from_epoch={completed_epoch}")
+    for epoch in range(start_epoch, epochs + 1):
         epoch_started = time.monotonic()
         model.train()
         gradient_norms: list[float] = []
@@ -343,6 +440,24 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
             best = {"score": score, "epoch": epoch,
                     "state_dict": {key: value.cpu() for key, value in model.state_dict().items()},
                     "validation": validation}
+        if resume_path is not None:
+            _atomic_torch_save({
+                "resume_checkpoint_version": _RESUME_CHECKPOINT_VERSION,
+                "completed_epoch": epoch,
+                "resume_config": resume_config,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "best": best,
+                "validation_curve": validation_curve,
+                "gradient_norm_history": gradient_norm_history,
+                "shuffle_generator_state": shuffle_generator.get_state(),
+                "torch_rng_state": torch.get_rng_state(),
+                "numpy_rng_state": np.random.get_state(),
+                "cuda_rng_state_all": (torch.cuda.get_rng_state_all()
+                                       if device.type == "cuda" else None),
+            }, resume_path)
+            if checkpoint_callback is not None:
+                checkpoint_callback()
     assert best is not None
     model.load_state_dict(best["state_dict"])
     # Multi-seed/ensemble protocols must not inspect a prospective test split
@@ -385,9 +500,9 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "split_strategy": split_strategy,
         "fresh_holdout_source": fresh_holdout_source,
         "fresh_stratify_by_device": fresh_stratify_by_device,
-        "dataset_fingerprint": _fingerprint(dataset.sample_paths),
+        "dataset_fingerprint": dataset_fingerprint,
         "dataset_stats": dataset.stats,
-        "split_sizes": {"train": len(train_indices), "validation": len(val_indices), "test": len(test_indices)},
+        "split_sizes": split_sizes,
         "best_epoch": best["epoch"],
         "validation": best["validation"],
         "test": test,
@@ -396,10 +511,11 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "passes_acceptance": passes_basic_linear_acceptance(test) if test is not None else None,
         "state_dict": best["state_dict"],
     }
-    out.parent.mkdir(parents=True, exist_ok=True)
-    temporary = out.with_suffix(out.suffix + ".tmp")
-    torch.save(payload, temporary)
-    temporary.replace(out)
+    _atomic_torch_save(payload, out)
+    if resume_path is not None and resume_path.exists():
+        resume_path.unlink()
+        if checkpoint_callback is not None:
+            checkpoint_callback()
     return payload
 
 
@@ -459,6 +575,8 @@ def main() -> None:
     parser.add_argument("--skip-test", action="store_true",
                         help="Save a validation-selected checkpoint without evaluating its test split; "
                              "use only when a later validation-selected ensemble will test once.")
+    parser.add_argument("--resume-path", type=Path, default=None,
+                        help="Resume exactly from this durable per-epoch checkpoint if it exists.")
     args = parser.parse_args()
     if (args.epochs < 1 or args.batch_size < 1 or args.lr <= 0 or args.map_weight < 0
             or args.trajectory_weight < 0 or args.start_sigma <= 0):
@@ -496,7 +614,7 @@ def main() -> None:
                    line_fit=args.line_fit, irls_iterations=args.irls_iterations,
                    huber_delta=args.huber_delta, image_width=args.image_width,
                    image_height=args.image_height, knots=args.knots,
-                   max_grad_norm=args.max_grad_norm)
+                   max_grad_norm=args.max_grad_norm, resume_path=args.resume_path)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 
