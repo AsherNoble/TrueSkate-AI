@@ -247,6 +247,9 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device, *
     if not start_errors:
         raise ValueError("cannot evaluate an empty loader")
     endpoint_errors = start_errors + end_errors
+    from trueskate_ai.vision.model1_certification import one_sided_binomial_lower_bound
+
+    recovery_successes = int(sum(recovered))
     return {
         "samples": float(len(start_errors)),
         "start_coordinate_median": float(np.median(start_errors)),
@@ -256,6 +259,10 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device, *
         "duration_mae": float(np.mean(duration_errors)),
         "duration_p90": float(np.quantile(duration_errors, 0.90)),
         "gesture_recovery_accuracy": float(np.mean(recovered)),
+        "gesture_recovery_successes": float(recovery_successes),
+        "gesture_recovery_one_sided_95_lower": one_sided_binomial_lower_bound(
+            recovery_successes, len(recovered), confidence=.95,
+        ),
         "start_recovery_accuracy": float(np.mean(start_recovered)),
         "end_recovery_accuracy": float(np.mean(end_recovered)),
         "duration_recovery_accuracy": float(np.mean(duration_recovered)),

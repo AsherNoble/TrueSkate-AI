@@ -226,7 +226,7 @@ def test_train_resumes_from_an_atomic_epoch_checkpoint(tmp_path, monkeypatch):
 def test_modal_training_persists_each_epoch_and_has_timeout_margin():
     source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
     train_body = source[source.index("def train_remote("):source.index("def train_remote_cpu(")]
-    assert "timeout=12 * 3600" in source
+    assert "timeout=24 * 3600" in source
     assert "resume_path=resume_checkpoint" in train_body
     assert "checkpoint_callback=models.commit" in train_body
 
@@ -474,7 +474,7 @@ def test_modal_linear_cpu_fallback_is_separate_and_labelled():
     assert "def train_remote_cpu(" in source
     assert 'execution_hardware"] = "cpu"' in source
     assert "cpu=8.0" in source
-    assert "cpu=8.0, timeout=12 * 3600, memory=16384" in source
+    assert "cpu=8.0, timeout=24 * 3600, memory=16384" in source
     assert "temporal_mixer=temporal_mixer" in source
     assert "trajectory_track=trajectory_track" in source
 

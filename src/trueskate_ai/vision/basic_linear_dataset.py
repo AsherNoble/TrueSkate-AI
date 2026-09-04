@@ -10,6 +10,9 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+from trueskate_ai.data.cohort_manifest import (
+    manifest_entries, read_manifest, resolve_sample_paths, sample_content_fingerprint,
+)
 from trueskate_ai.data.gesture_sampling import (
     BASIC_LINEAR_MAX_ABS_SLOPE, BASIC_LINEAR_MAX_S, BASIC_LINEAR_MIN_DX,
     BASIC_LINEAR_MIN_S,
@@ -79,12 +82,47 @@ def discover_basic_linear_samples(root: Path) -> tuple[tuple[Path, ...], dict[st
     return tuple(kept), dict(sorted(stats.items()))
 
 
+def _manifest_basic_linear_samples(
+    root: Path,
+    manifest: str | Path,
+    *,
+    partition: str | None,
+    verify_content: bool,
+) -> tuple[tuple[Path, ...], dict[str, int], str]:
+    """Load exactly the samples named by a sealed manifest, failing closed."""
+    payload = read_manifest(manifest)
+    entries = manifest_entries(payload, partition=partition)
+    paths = resolve_sample_paths(root, payload, partition=partition)
+    for path, entry in zip(paths, entries):
+        try:
+            meta = json.loads((path / "meta.json").read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"manifest sample has unreadable metadata: {path}") from exc
+        reason = _valid_meta(path, meta)
+        if reason is not None:
+            raise ValueError(f"manifest sample is no longer a strict linear admission: {path} ({reason})")
+        command = ":".join(f"{float(v):.9f}" for point in meta["waypoints"] for v in point) + \
+            f":{float(meta['duration']):.9f}"
+        if command != entry["command_key"]:
+            raise ValueError(f"manifest command changed for {path}")
+        if verify_content:
+            actual = sample_content_fingerprint(path)
+            if actual != entry["content_sha256"]:
+                raise ValueError(
+                    f"manifest sample content changed for {path}: "
+                    f"stored={entry['content_sha256']}, actual={actual}"
+                )
+    return paths, {"accepted": len(paths), "manifest_selected": len(paths)}, str(payload["fingerprint"])
+
+
 class BasicLinearClipDataset(Dataset):
     """One calibrated straight drag clip, target ``[x0,y0,x1,y1,duration]``."""
 
     def __init__(self, root: str | Path, *, sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
                  image_height: int = DEFAULT_IMAGE_HEIGHT, image_width: int = DEFAULT_IMAGE_WIDTH,
-                 cache_frames: bool = False, knots: int = 2):
+                 cache_frames: bool = False, knots: int = 2,
+                 manifest: str | Path | None = None, manifest_partition: str | None = None,
+                 verify_manifest_content: bool = True):
         if sequence_length < 1 or image_height < 1 or image_width < 1:
             raise ValueError("sequence/image dimensions must be positive")
         if knots < 2:
@@ -94,7 +132,7 @@ class BasicLinearClipDataset(Dataset):
         # strict corpus can serve both — a straight constant-velocity drag is
         # simply the degenerate case whose interior knot is the midpoint.
         self.knots = int(knots)
-        self.root = Path(root)
+        self.root = Path(root).resolve()
         self.sequence_length = sequence_length
         self.image_height = image_height
         self.image_width = image_width
@@ -104,7 +142,16 @@ class BasicLinearClipDataset(Dataset):
         # batch exists. Store decoded RGB uint8 frames (~3.5 GiB for 1,000) and
         # normalize only the selected sample returned to the trainer.
         self._frame_cache: dict[Path, torch.Tensor] = {}
-        self.sample_paths, self.stats = discover_basic_linear_samples(self.root)
+        self.manifest_fingerprint: str | None = None
+        if manifest is None:
+            if manifest_partition is not None:
+                raise ValueError("manifest_partition requires manifest")
+            self.sample_paths, self.stats = discover_basic_linear_samples(self.root)
+        else:
+            self.sample_paths, self.stats, self.manifest_fingerprint = _manifest_basic_linear_samples(
+                self.root, manifest, partition=manifest_partition,
+                verify_content=verify_manifest_content,
+            )
         self.segment_keys = tuple(self._segment_key(path) for path in self.sample_paths)
         self.command_keys = tuple(self._command_key(path) for path in self.sample_paths)
 

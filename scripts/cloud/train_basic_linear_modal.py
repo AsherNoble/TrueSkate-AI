@@ -31,7 +31,7 @@ image = (
     # gesture_sampling imports the shared CMA-ES bounds, which transitively
     # imports the device gesture module.  The trainer never opens a WebDriver
     # session, but that module declares Selenium classes at import time.
-    .pip_install("torch", "opencv-python-headless", "numpy", "selenium")
+    .pip_install("torch", "opencv-python-headless", "numpy", "scipy", "selenium")
     .env({"PYTHONPATH": "/root/src"})
     .add_local_dir(str(_ROOT / "src" / "trueskate_ai"), remote_path="/root/src/trueskate_ai")
     .add_local_file(str(_ROOT / "scripts" / "train" / "train_basic_linear_regressor.py"),
@@ -66,6 +66,25 @@ def _model_from_payload(payload, torch):
         huber_delta=float(payload.get("huber_delta") or .02),
         knots=int(payload.get("knots") or 2),
     )
+
+
+def _training_inputs(data_subdir: str, experiment_manifest_name: str | None,
+                     shard_manifest_name: str | None) -> tuple[Path, Path | None]:
+    """Resolve directory or sequential-shard backed inputs for one run."""
+    volume_root = Path("/corpus") / data_subdir
+    if shard_manifest_name is None:
+        return volume_root, (volume_root / experiment_manifest_name
+                             if experiment_manifest_name else None)
+    if experiment_manifest_name is not None:
+        raise ValueError("shard_manifest_name already binds its experiment manifest")
+    from trueskate_ai.data.sequential_shards import (
+        materialize_sequential_shards, read_shard_manifest,
+    )
+    shard_path = volume_root / shard_manifest_name
+    shard_payload = read_shard_manifest(shard_path)
+    destination = Path("/tmp") / f"model1_shards_{shard_payload['fingerprint'][-16:]}"
+    materialize_sequential_shards(shard_path, destination, verify_samples=False)
+    return destination, shard_path.parent / shard_payload["experiment_manifest"]
 
 
 def _payload_dataset_kwargs(payloads) -> dict:
@@ -122,7 +141,7 @@ def _require_two_knots(kwargs: dict, evaluator: str) -> dict:
 # takes just over eight hours, so leave a 50% timeout margin.  An atomic resume
 # checkpoint is also committed after every completed epoch; a provider timeout
 # can therefore cost at most the current epoch, never the entire run.
-@app.function(image=image, gpu=TRAIN_GPU, timeout=12 * 3600, memory=65536,
+@app.function(image=image, gpu=TRAIN_GPU, timeout=24 * 3600, memory=65536,
               volumes={"/corpus": corpus, "/models": models})
 def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
@@ -135,12 +154,21 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
                  line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
                  image_width: int = 128, image_height: int = 288, knots: int = 2,
-                 max_grad_norm: float | None = None) -> dict:
+                 max_grad_norm: float | None = None,
+                 experiment_manifest_name: str | None = None,
+                 shard_manifest_name: str | None = None,
+                 record_train_metrics: bool = False) -> dict:
+    if shard_manifest_name is not None and cache_frames:
+        raise ValueError("sequential shards require cache_frames=False; decode from staged local SSD "
+                         "instead of retaining a >64 GiB large-rung corpus in RAM")
     trainer = _trainer()
+    training_root, experiment_path = _training_inputs(
+        data_subdir, experiment_manifest_name, shard_manifest_name,
+    )
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
     resume_checkpoint = Path("/models") / f"basic_linear_{run_label}.resume.pth"
     payload = trainer.train(
-        data=Path("/corpus") / data_subdir,
+        data=training_root,
         out=checkpoint,
         epochs=epochs,
         batch_size=batch_size,
@@ -167,6 +195,8 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
+        experiment_manifest=experiment_path,
+        record_train_metrics=record_train_metrics,
         resume_path=resume_checkpoint,
         checkpoint_callback=models.commit,
     )
@@ -178,7 +208,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
     return result
 
 
-@app.function(image=image, cpu=8.0, timeout=12 * 3600, memory=16384,
+@app.function(image=image, cpu=8.0, timeout=24 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
                      batch_size: int = 8, lr: float = 1e-3, seed: int = 0,
@@ -191,18 +221,26 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
                      evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
                      line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
                      image_width: int = 128, image_height: int = 288, knots: int = 2,
-                     max_grad_norm: float | None = None) -> dict:
+                     max_grad_norm: float | None = None,
+                     experiment_manifest_name: str | None = None,
+                     shard_manifest_name: str | None = None,
+                     record_train_metrics: bool = False) -> dict:
     """Scheduler-independent execution fallback for the same compact protocol.
 
     This is intentionally a separate function rather than silently removing a
     GPU request.  The data split, model, optimiser and acceptance metric remain
     identical; only the hardware differs, and the result is separately labelled.
     """
+    if shard_manifest_name is not None and cache_frames:
+        raise ValueError("sequential shards require cache_frames=False")
     trainer = _trainer()
+    training_root, experiment_path = _training_inputs(
+        data_subdir, experiment_manifest_name, shard_manifest_name,
+    )
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
     resume_checkpoint = Path("/models") / f"basic_linear_{run_label}.resume.pth"
     payload = trainer.train(
-        data=Path("/corpus") / data_subdir,
+        data=training_root,
         out=checkpoint,
         epochs=epochs,
         batch_size=batch_size,
@@ -229,6 +267,8 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
         base_channels=base_channels,
         split_strategy=split_strategy,
         cache_frames=cache_frames,
+        experiment_manifest=experiment_path,
+        record_train_metrics=record_train_metrics,
         resume_path=resume_checkpoint,
         checkpoint_callback=models.commit,
     )
@@ -2452,25 +2492,36 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          trajectory_track: bool = False, fresh_holdout_source: str | None = None,
          evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
          line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
-         image_width: int = 128, image_height: int = 288, knots: int = 2) -> None:
-    result = train_remote.remote(
-        data_subdir, run_label, epochs=epochs, batch_size=batch_size, lr=lr,
-        seed=seed, base_channels=base_channels, split_strategy=split_strategy,
+         image_width: int = 128, image_height: int = 288, knots: int = 2,
+         max_grad_norm: float | None = None,
+         experiment_manifest_name: str | None = None,
+         shard_manifest_name: str | None = None,
+         record_train_metrics: bool = False,
+         provider_timeout_retries: int = 6) -> None:
+    if provider_timeout_retries < 0:
+        raise ValueError("provider_timeout_retries must be non-negative")
+    kwargs = dict(
+        epochs=epochs, batch_size=batch_size, lr=lr, seed=seed,
+        base_channels=base_channels, split_strategy=split_strategy,
         cache_frames=cache_frames, split_seed=split_seed, map_weight=map_weight,
         start_onset=start_onset, start_sigma=start_sigma, end_onset=end_onset,
-        temporal_mixer=temporal_mixer,
-        trajectory_weight=trajectory_weight,
-        trajectory_track=trajectory_track,
-        fresh_holdout_source=fresh_holdout_source,
-        evaluate_test=evaluate_test,
-        fresh_stratify_by_device=fresh_stratify_by_device,
-        line_fit=line_fit,
-        irls_iterations=irls_iterations,
-        huber_delta=huber_delta,
-        image_width=image_width,
-        image_height=image_height,
-        knots=knots,
+        temporal_mixer=temporal_mixer, trajectory_weight=trajectory_weight,
+        trajectory_track=trajectory_track, fresh_holdout_source=fresh_holdout_source,
+        evaluate_test=evaluate_test, fresh_stratify_by_device=fresh_stratify_by_device,
+        line_fit=line_fit, irls_iterations=irls_iterations, huber_delta=huber_delta,
+        image_width=image_width, image_height=image_height, knots=knots,
+        max_grad_norm=max_grad_norm, experiment_manifest_name=experiment_manifest_name,
+        shard_manifest_name=shard_manifest_name, record_train_metrics=record_train_metrics,
     )
+    for attempt in range(provider_timeout_retries + 1):
+        try:
+            result = train_remote.remote(data_subdir, run_label, **kwargs)
+            break
+        except (modal.exception.FunctionTimeoutError, modal.exception.InternalFailure):
+            if attempt == provider_timeout_retries:
+                raise
+            print(f"provider interruption; retrying durable run ({attempt + 1}/"
+                  f"{provider_timeout_retries})")
     print(json.dumps(result, indent=2, sort_keys=True))
 
 

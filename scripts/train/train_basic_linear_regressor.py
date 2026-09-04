@@ -34,6 +34,7 @@ from trueskate_ai.vision.basic_linear_training import (  # noqa: E402
     basic_linear_loss, basic_linear_metrics, passes_basic_linear_acceptance,
     basic_linear_recovery_records,
 )
+from trueskate_ai.data.cohort_manifest import read_manifest  # noqa: E402
 
 
 def _device() -> torch.device:
@@ -45,6 +46,18 @@ def _device() -> torch.device:
     if torch.backends.mps.is_available():
         return torch.device("mps")
     return torch.device("cpu")
+
+
+def _accelerator_identity(device: torch.device) -> dict[str, str | int | None]:
+    if device.type == "cuda":
+        properties = torch.cuda.get_device_properties(device)
+        return {
+            "type": "cuda", "name": properties.name,
+            "total_memory_bytes": int(properties.total_memory),
+            "cuda_version": torch.version.cuda,
+        }
+    return {"type": device.type, "name": device.type, "total_memory_bytes": None,
+            "cuda_version": None}
 
 
 def _fingerprint(paths: tuple[Path, ...]) -> str:
@@ -75,7 +88,9 @@ def _resume_config(*, dataset_fingerprint: str, split_sizes: dict[str, int], epo
                    fresh_stratify_by_device: bool, line_fit: bool,
                    irls_iterations: int, huber_delta: float, image_width: int,
                    image_height: int, knots: int, max_grad_norm: float | None,
-                   cache_frames: bool, evaluate_test: bool) -> dict:
+                   cache_frames: bool, evaluate_test: bool,
+                   experiment_manifest_fingerprint: str | None,
+                   record_train_metrics: bool) -> dict:
     """Everything which must match before an interrupted run may resume."""
     return {
         "dataset_fingerprint": dataset_fingerprint,
@@ -105,6 +120,8 @@ def _resume_config(*, dataset_fingerprint: str, split_sizes: dict[str, int], epo
         "max_grad_norm": max_grad_norm,
         "cache_frames": cache_frames,
         "evaluate_test": evaluate_test,
+        "experiment_manifest_fingerprint": experiment_manifest_fingerprint,
+        "record_train_metrics": record_train_metrics,
     }
 
 
@@ -288,6 +305,9 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
           image_width: int = DEFAULT_IMAGE_WIDTH, image_height: int = DEFAULT_IMAGE_HEIGHT,
           knots: int = 2, max_grad_norm: float | None = None,
+          experiment_manifest: Path | None = None,
+          verify_manifest_content: bool = True,
+          record_train_metrics: bool = False,
           resume_path: Path | None = None,
           checkpoint_callback: Callable[[], None] | None = None) -> dict:
     torch.manual_seed(seed)
@@ -296,23 +316,55 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     # through the endpoint loss.
     if line_fit:
         trajectory_track = True
-    dataset = BasicLinearClipDataset(data, cache_frames=cache_frames,
-                                     image_width=image_width, image_height=image_height,
-                                     knots=knots)
+    dataset_kwargs = dict(
+        cache_frames=cache_frames, image_width=image_width,
+        image_height=image_height, knots=knots,
+    )
     splitters = {"segment": split_by_segment, "command": split_by_command}
     if split_strategy not in splitters:
         raise ValueError(f"unknown split strategy {split_strategy!r}; choose from {sorted(splitters)}")
     split_seed = seed if split_seed is None else split_seed
-    if fresh_holdout_source is not None:
+    experiment_fingerprint = None
+    if experiment_manifest is not None:
+        if fresh_holdout_source is not None:
+            raise ValueError("experiment_manifest and fresh_holdout_source are mutually exclusive")
+        experiment_payload = read_manifest(experiment_manifest)
+        if experiment_payload.get("kind") != "model1_experiment":
+            raise ValueError("experiment_manifest must have kind=model1_experiment")
+        experiment_fingerprint = str(experiment_payload["fingerprint"])
+        train_dataset = BasicLinearClipDataset(
+            data, manifest=experiment_manifest, manifest_partition="train",
+            verify_manifest_content=verify_manifest_content, **dataset_kwargs,
+        )
+        val_dataset = BasicLinearClipDataset(
+            data, manifest=experiment_manifest, manifest_partition="validation",
+            verify_manifest_content=verify_manifest_content, **dataset_kwargs,
+        )
+        test_dataset = BasicLinearClipDataset(
+            data, manifest=experiment_manifest, manifest_partition="test",
+            verify_manifest_content=verify_manifest_content, **dataset_kwargs,
+        )
+        if len(train_dataset) < 1 or len(val_dataset) < 1:
+            raise ValueError("experiment manifest requires non-empty train and validation partitions")
+        if evaluate_test and len(test_dataset) < 1:
+            raise ValueError("evaluate_test requires a non-empty experiment test partition")
+        dataset = train_dataset
+        train_indices = list(range(len(train_dataset)))
+        val_indices = list(range(len(val_dataset)))
+        test_indices = list(range(len(test_dataset)))
+    else:
+        dataset = BasicLinearClipDataset(data, **dataset_kwargs)
+        train_dataset = val_dataset = test_dataset = dataset
+    if experiment_manifest is None and fresh_holdout_source is not None:
         if split_strategy != "command":
             raise ValueError("fresh_holdout_source requires command splitting")
         train_indices, val_indices, test_indices = split_with_fresh_command_holdout(
             dataset, fresh_source=fresh_holdout_source, seed=split_seed,
             stratify_by_device=fresh_stratify_by_device,
         )
-    else:
+    elif experiment_manifest is None:
         train_indices, val_indices, test_indices = splitters[split_strategy](dataset, seed=split_seed)
-    dataset_fingerprint = _fingerprint(dataset.sample_paths)
+    dataset_fingerprint = experiment_fingerprint or _fingerprint(dataset.sample_paths)
     split_sizes = {"train": len(train_indices), "validation": len(val_indices), "test": len(test_indices)}
     resume_config = _resume_config(
         dataset_fingerprint=dataset_fingerprint, split_sizes=split_sizes,
@@ -326,16 +378,19 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         image_width=image_width, image_height=image_height, knots=knots,
         max_grad_norm=max_grad_norm, cache_frames=cache_frames,
         evaluate_test=evaluate_test,
+        experiment_manifest_fingerprint=experiment_fingerprint,
+        record_train_metrics=record_train_metrics,
     )
     # Explicit generator: with the default, shuffle order is drawn from the GLOBAL
     # RNG, whose position depends on how much randomness model construction happened
     # to consume.  Two arms at the same `--seed` therefore saw different minibatch
     # orders for every epoch, which is not what `--seed` is supposed to mean (EQ-048).
     shuffle_generator = torch.Generator().manual_seed(seed)
-    train_loader = DataLoader(Subset(dataset, train_indices), batch_size=batch_size,
+    train_loader = DataLoader(Subset(train_dataset, train_indices), batch_size=batch_size,
                               shuffle=True, generator=shuffle_generator)
-    val_loader = DataLoader(Subset(dataset, val_indices), batch_size=batch_size)
-    test_loader = DataLoader(Subset(dataset, test_indices), batch_size=batch_size)
+    train_eval_loader = DataLoader(Subset(train_dataset, train_indices), batch_size=batch_size)
+    val_loader = DataLoader(Subset(val_dataset, val_indices), batch_size=batch_size)
+    test_loader = DataLoader(Subset(test_dataset, test_indices), batch_size=batch_size)
     device = _device()
     model = BasicLinearRegressor(base_channels=base_channels, start_onset=start_onset,
                                  start_sigma=start_sigma, end_onset=end_onset,
@@ -350,6 +405,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     # selection; keeping the curve lets any later analysis re-estimate without
     # re-running, and lets the plateau mean be reported beside the headline.
     validation_curve: list[float] = []
+    training_curve: list[float] = []
+    epoch_history: list[dict] = []
     gradient_norm_history: list[dict[str, float | int]] = []
     start_epoch = 1
     if resume_path is not None and resume_path.exists():
@@ -369,6 +426,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         optimizer.load_state_dict(resume["optimizer_state_dict"])
         best = resume["best"]
         validation_curve = resume["validation_curve"]
+        training_curve = resume.get("training_curve", [])
+        epoch_history = resume.get("epoch_history", [])
         gradient_norm_history = resume["gradient_norm_history"]
         shuffle_generator.set_state(resume["shuffle_generator_state"])
         torch.set_rng_state(resume["torch_rng_state"])
@@ -410,6 +469,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
                     model.parameters(), max_norm=max_grad_norm,
                 )))
             optimizer.step()
+        training_metrics = (basic_linear_metrics(model, train_eval_loader, device)
+                            if record_train_metrics else None)
         validation = basic_linear_metrics(model, val_loader, device)
         # The requested outcome is complete gesture recovery.  Median-only model
         # selection can prefer a checkpoint that is excellent on the easy half
@@ -426,6 +487,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
               f"val_recovery={validation['gesture_recovery_accuracy']:.1%} "
               f"secs={time.monotonic() - epoch_started:.1f}")
         validation_curve.append(validation["gesture_recovery_accuracy"])
+        if training_metrics is not None:
+            training_curve.append(training_metrics["gesture_recovery_accuracy"])
         if gradient_norms:
             norms = torch.tensor(gradient_norms)
             gradient_norm_history.append({
@@ -436,6 +499,14 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
                                   if max_grad_norm is not None else 0),
                 "steps": len(gradient_norms),
             })
+        epoch_seconds = time.monotonic() - epoch_started
+        epoch_history.append({
+            "epoch": epoch,
+            "training": training_metrics,
+            "validation": validation,
+            "seconds": epoch_seconds,
+            "training_samples_per_second": len(train_indices) / max(epoch_seconds, 1e-9),
+        })
         if best is None or score < best["score"]:
             best = {"score": score, "epoch": epoch,
                     "state_dict": {key: value.cpu() for key, value in model.state_dict().items()},
@@ -449,6 +520,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
                 "optimizer_state_dict": optimizer.state_dict(),
                 "best": best,
                 "validation_curve": validation_curve,
+                "training_curve": training_curve,
+                "epoch_history": epoch_history,
                 "gradient_norm_history": gradient_norm_history,
                 "shuffle_generator_state": shuffle_generator.get_state(),
                 "torch_rng_state": torch.get_rng_state(),
@@ -464,7 +537,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
     # per seed.  They train each candidate with validation-only selection, then
     # expose the test commands once through evaluate_checkpoint_ensemble.
     test = basic_linear_metrics(model, test_loader, device) if evaluate_test else None
-    audit, tail = (_recovery_audit(model, dataset, test_indices, device, batch_size)
+    audit, tail = (_recovery_audit(model, test_dataset, test_indices, device, batch_size)
                    if evaluate_test else (None, None))
     payload = {
         "model_type": ("basic_linear_regressor_v4_robust_constant_velocity_line_fit" if line_fit
@@ -479,6 +552,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "image_height": dataset.image_height,
         "image_width": dataset.image_width,
         "cache_frames": cache_frames,
+        "accelerator": _accelerator_identity(device),
         "endpoint_map_weight": map_weight,
         "trajectory_map_weight": trajectory_weight,
         "start_onset": start_onset,
@@ -491,6 +565,9 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "max_grad_norm": max_grad_norm,
         "gradient_norm_history": gradient_norm_history,
         "validation_curve": validation_curve,
+        "training_curve": training_curve,
+        "epoch_history": epoch_history,
+        "record_train_metrics": record_train_metrics,
         "validation_plateau_mean_last10": (sum(validation_curve[-10:])
                                           / len(validation_curve[-10:])),
         "validation_is_best_of_n_epochs": len(validation_curve),
@@ -502,6 +579,13 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "fresh_stratify_by_device": fresh_stratify_by_device,
         "dataset_fingerprint": dataset_fingerprint,
         "dataset_stats": dataset.stats,
+        "partition_dataset_stats": {
+            "train": train_dataset.stats,
+            "validation": val_dataset.stats,
+            "test": test_dataset.stats,
+        },
+        "experiment_manifest": str(experiment_manifest) if experiment_manifest else None,
+        "experiment_manifest_fingerprint": experiment_fingerprint,
         "split_sizes": split_sizes,
         "best_epoch": best["epoch"],
         "validation": best["validation"],
@@ -568,6 +652,14 @@ def main() -> None:
                              "all other commands remain train-only.")
     parser.add_argument("--fresh-stratify-by-device", action="store_true",
                         help="Balance validation/test fresh commands by explicit capture device.")
+    parser.add_argument("--experiment-manifest", type=Path,
+                        help="Sealed model1_experiment manifest with explicit train/validation/test "
+                             "partitions. Disables directory-derived splitting.")
+    parser.add_argument("--skip-manifest-content-verification", action="store_true",
+                        help="Trust stored content hashes without rereading clip bytes. Faster, but "
+                             "not valid for a frozen scaling/certification run.")
+    parser.add_argument("--record-train-metrics", action="store_true",
+                        help="Evaluate recovery over the training partition after every epoch.")
     parser.add_argument("--min-samples", type=int, default=1000,
                         help="Require this many accepted calibrated linear clips (0 disables the milestone gate).")
     parser.add_argument("--cache-frames", action="store_true",
@@ -596,7 +688,12 @@ def main() -> None:
     if args.line_fit and not args.trajectory_weight:
         parser.error("--line-fit needs a positive --trajectory-weight: the contact map it fits "
                      "is the primary evidence path and must be supervised")
-    dataset_probe = BasicLinearClipDataset(args.data)
+    dataset_probe = BasicLinearClipDataset(
+        args.data,
+        manifest=args.experiment_manifest,
+        manifest_partition="train" if args.experiment_manifest else None,
+        verify_manifest_content=not args.skip_manifest_content_verification,
+    )
     if args.min_samples and len(dataset_probe) < args.min_samples:
         parser.error(f"need {args.min_samples} accepted basic-linear clips; found {len(dataset_probe)} "
                      f"({dataset_probe.stats})")
@@ -614,7 +711,11 @@ def main() -> None:
                    line_fit=args.line_fit, irls_iterations=args.irls_iterations,
                    huber_delta=args.huber_delta, image_width=args.image_width,
                    image_height=args.image_height, knots=args.knots,
-                   max_grad_norm=args.max_grad_norm, resume_path=args.resume_path)
+                   max_grad_norm=args.max_grad_norm,
+                   experiment_manifest=args.experiment_manifest,
+                   verify_manifest_content=not args.skip_manifest_content_verification,
+                   record_train_metrics=args.record_train_metrics,
+                   resume_path=args.resume_path)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 
