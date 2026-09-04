@@ -2337,3 +2337,9 @@ disk, which is exactly the kind of change that should not be made inside a loop 
 - **Hardening:** each completed epoch now writes an atomic resume snapshot containing model, optimizer, best-model state, validation/gradient histories, DataLoader and framework RNG state. Modal commits that snapshot to `trueskate-models` after every epoch. Resume refuses any changed corpus/split/hyperparameter configuration; successful final completion atomically writes the final checkpoint then removes the resume snapshot.
 - **Timeout policy:** full-corpus function timeout increased to 12 hours (50% observed-runtime margin). A provider timeout can now lose at most the in-flight epoch, not all completed work.
 - **Verification:** focused Model-1 suite 45 passed, including a simulated interruption, strict changed-config rejection, exact next-epoch resume, and final snapshot cleanup test.
+
+## Model 1 13,100-clip MVP evaluation (2026-09-04)
+
+- **Selection protocol:** three 40-epoch L4 seeds used the fixed command split (9,170 train / 1,965 validation / 1,965 test) with `split_seed=0`, validation-only checkpoint selection, and no per-seed test reads. Seed 0 won validation: 80.00% complete-gesture recovery at epoch 37 (seed 1: 78.42%; seed 2: 75.83%).
+- **One final test exposure:** `basic_linear_model1_recovered_20260903_seed0.pth` was scored once on the untouched 1,965 test commands. Persisted artifact: `trueskate-models/basic_linear_model1_recovered_20260903_seed0_test_once.json`.
+- **Result:** 80.05% complete-gesture recovery; start/end median coordinate error 0.00750 / 0.00968; endpoint P90 0.03256; duration MAE/P90 0.03788 s / 0.07182 s. Start/end/duration recovery: 92.57% / 86.26% / 93.13%. Test agreement with validation is close (+0.05 pp recovery), so there is no observed generalisation drop on this command-held-out split.
