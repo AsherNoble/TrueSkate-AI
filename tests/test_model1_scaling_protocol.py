@@ -173,6 +173,9 @@ def test_modal_cost_estimate_uses_measured_base_and_additive_resources():
     assert estimate["rungs"][1]["estimated_cost_usd"] == pytest.approx(
         2 * estimate["rungs"][0]["estimated_cost_usd"]
     )
+    assert estimate["total_gpu_only_cost_usd"] == pytest.approx(
+        sum(row["gpu_only_cost_usd"] for row in estimate["rungs"])
+    )
 
 
 def _drag(points, start=0.0, end=1.0, easing=1.0):

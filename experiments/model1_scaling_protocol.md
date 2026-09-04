@@ -71,7 +71,7 @@ ceiling of **$299.31** (1.5x) because shard staging and per-epoch training
 evaluation have not yet been benchmarked at 26.2k. Stop at 52.4k if both
 relative error reductions are below 20%; otherwise approve only the next rung.
 
-Running through 209.6k without an earlier plateau is $645.62 GPU-only / $997.71
+Running through 209.6k without an earlier plateau is $605.63 GPU-only / $997.71
 additional billed compute beyond the completed 13.1k rung. This is not a single
 approval request: each rung gets a fresh estimate and explicit approval.
 

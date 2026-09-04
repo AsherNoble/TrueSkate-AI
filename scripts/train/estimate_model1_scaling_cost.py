@@ -50,6 +50,12 @@ def main() -> None:
     estimate["minimum_additional_two_doublings_gpu_only_usd"] = sum(
         row["gpu_only_cost_usd"] for row in future[:2]
     )
+    estimate["all_additional_rungs_usd"] = sum(
+        row["estimated_cost_usd"] for row in future
+    )
+    estimate["all_additional_rungs_gpu_only_usd"] = sum(
+        row["gpu_only_cost_usd"] for row in future
+    )
     if args.approval_contingency < 1.0:
         parser.error("approval-contingency must be at least 1.0")
     estimate["approval_contingency"] = args.approval_contingency

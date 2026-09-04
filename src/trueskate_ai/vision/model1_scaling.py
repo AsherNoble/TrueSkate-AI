@@ -381,11 +381,13 @@ def estimate_modal_rungs(
     gpu_hourly = MODAL_RESOURCE_RATES_PER_SECOND[gpu] * 3600.0
     rungs = []
     cumulative = 0.0
+    cumulative_gpu = 0.0
     for size in sizes:
         per_seed_hours = base_run_hours * size / base_size
         cost = per_seed_hours * seeds * hourly
         gpu_cost = per_seed_hours * seeds * gpu_hourly
         cumulative += cost
+        cumulative_gpu += gpu_cost
         rungs.append({
             "training_samples": size,
             "per_seed_hours": per_seed_hours,
@@ -393,6 +395,7 @@ def estimate_modal_rungs(
             "estimated_cost_usd": cost,
             "gpu_only_cost_usd": gpu_cost,
             "cumulative_cost_usd": cumulative,
+            "cumulative_gpu_only_cost_usd": cumulative_gpu,
         })
     return {
         "gpu": gpu,
@@ -406,4 +409,5 @@ def estimate_modal_rungs(
         "price_source": MODAL_PRICE_SOURCE,
         "rungs": rungs,
         "total_cost_usd": cumulative,
+        "total_gpu_only_cost_usd": cumulative_gpu,
     }
