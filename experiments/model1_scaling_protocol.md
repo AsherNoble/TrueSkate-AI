@@ -65,11 +65,17 @@ count and three seeds.
 | 104,800 | 67.36 | $161.50 | $266.06 |
 | 209,600 | 134.72 | $323.00 | $532.11 |
 
-The earliest defensible answer needs the next two doublings (26.2k and 52.4k):
+The earliest plateau decision needs the next two doublings (26.2k and 52.4k):
 **$121.12 GPU-only / $199.54 estimated billed compute**. Request an approval
 ceiling of **$299.31** (1.5x) because shard staging and per-epoch training
 evaluation have not yet been benchmarked at 26.2k. Stop at 52.4k if both
 relative error reductions are below 20%; otherwise approve only the next rung.
+
+Actually testing the three-parameter scaling law needs at least four total
+rungs (one residual degree of freedom), so continuing through 104.8k is
+**$282.63 GPU-only / $465.60 billed compute** beyond the completed baseline.
+The fitter combines between-seed and validation-binomial standard errors and
+bootstraps confidence intervals for `e_floor`, `a`, and `alpha`.
 
 Running through 209.6k without an earlier plateau is $605.63 GPU-only / $997.71
 additional billed compute beyond the completed 13.1k rung. This is not a single

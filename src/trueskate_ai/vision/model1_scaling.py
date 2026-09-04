@@ -6,6 +6,7 @@ and estimates spend; launching a paid tranche remains an explicit owner action.
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 from collections import Counter, defaultdict, deque
 from datetime import datetime, timezone
@@ -303,6 +304,127 @@ def scaling_status(observations: Iterable[Mapping[str, Any]], *, plateau_fractio
         "criterion": f"last two relative error reductions < {plateau_fraction:.0%}",
         "rungs": rows,
     }
+
+
+def fit_error_scaling_law(
+    observations: Iterable[Mapping[str, Any]],
+    *,
+    bootstrap_samples: int = 500,
+    seed: int = 0,
+) -> dict[str, Any]:
+    """Fit ``e(N)=e_floor+a*N^-alpha`` with seed and binomial uncertainty.
+
+    Each row supplies ``training_samples``, ``late_validation_recovery``, and
+    optionally ``validation_samples``. Four distinct sizes are the minimum: a
+    three-parameter curve through three points has no residual degree of freedom
+    and cannot establish that the law describes the observations.
+    """
+    from scipy.optimize import curve_fit
+
+    if bootstrap_samples < 0:
+        raise ValueError("bootstrap_samples must be non-negative")
+    grouped: dict[int, list[tuple[float, int | None]]] = defaultdict(list)
+    for row in observations:
+        size = int(row["training_samples"])
+        recovery = float(row["late_validation_recovery"])
+        validation_samples = (int(row["validation_samples"])
+                              if row.get("validation_samples") is not None else None)
+        if size < 1 or not 0.0 <= recovery <= 1.0:
+            raise ValueError("scaling observations contain invalid size/recovery")
+        if validation_samples is not None and validation_samples < 1:
+            raise ValueError("validation_samples must be positive")
+        grouped[size].append((recovery, validation_samples))
+    if len(grouped) < 4:
+        raise ValueError("an identifiable three-parameter scaling fit needs at least four sizes")
+
+    sizes = np.asarray(sorted(grouped), dtype=float)
+    errors, sigmas = [], []
+    for size in sizes.astype(int):
+        recoveries = np.asarray([value for value, _n in grouped[size]], dtype=float)
+        error = 1.0 - float(recoveries.mean())
+        seed_sem = (float(recoveries.std(ddof=1)) / math.sqrt(len(recoveries))
+                    if len(recoveries) > 1 else 0.0)
+        sample_counts = [count for _value, count in grouped[size] if count is not None]
+        binomial_sem = (math.sqrt(max(0.0, (1.0 - error) * error) / min(sample_counts))
+                        if sample_counts else 0.0)
+        errors.append(error)
+        sigmas.append(max(math.sqrt(seed_sem**2 + binomial_sem**2), 1e-6))
+    errors_array = np.asarray(errors)
+    sigmas_array = np.asarray(sigmas)
+
+    def law(n, error_floor, amplitude, alpha):
+        return error_floor + amplitude * np.power(n, -alpha)
+
+    floor_guess = max(0.0, float(errors_array.min()) * .5)
+    alpha_guess = .5
+    amplitude_guess = max(1e-9, (errors_array[0] - floor_guess) * sizes[0]**alpha_guess)
+    params, covariance = curve_fit(
+        law, sizes, errors_array,
+        p0=(floor_guess, amplitude_guess, alpha_guess),
+        sigma=sigmas_array, absolute_sigma=True, maxfev=100_000,
+        bounds=((0.0, 0.0, .001), (float(errors_array.min()), np.inf, 5.0)),
+    )
+    predicted = law(sizes, *params)
+    residuals = errors_array - predicted
+    dof = len(sizes) - 3
+    result: dict[str, Any] = {
+        "model": "e(N) = e_floor + a*N^-alpha",
+        "distinct_sizes": len(sizes),
+        "degrees_of_freedom": dof,
+        "parameters": {
+            "e_floor": float(params[0]), "a": float(params[1]), "alpha": float(params[2]),
+        },
+        "parameter_standard_errors": {
+            name: float(value) for name, value in zip(
+                ("e_floor", "a", "alpha"), np.sqrt(np.diag(covariance)),
+            )
+        },
+        "weighted_chi_square": float(np.sum((residuals / sigmas_array) ** 2)),
+        "reduced_chi_square": float(np.sum((residuals / sigmas_array) ** 2) / dof),
+        "rmse": float(np.sqrt(np.mean(residuals**2))),
+        "rungs": [
+            {"training_samples": int(n), "mean_error": float(error),
+             "combined_standard_error": float(sigma), "fitted_error": float(fitted)}
+            for n, error, sigma, fitted in zip(sizes, errors_array, sigmas_array, predicted)
+        ],
+    }
+
+    rng = np.random.default_rng(seed)
+    bootstrap_params = []
+    for _ in range(bootstrap_samples):
+        sampled_errors = []
+        for size in sizes.astype(int):
+            rows = grouped[size]
+            chosen = [rows[index] for index in rng.integers(0, len(rows), len(rows))]
+            recoveries = []
+            for recovery, count in chosen:
+                recoveries.append(
+                    rng.binomial(count, recovery) / count if count is not None else recovery
+                )
+            sampled_errors.append(1.0 - float(np.mean(recoveries)))
+        try:
+            fitted, _ = curve_fit(
+                law, sizes, np.asarray(sampled_errors), p0=params,
+                maxfev=20_000,
+                bounds=((0.0, 0.0, .001), (max(sampled_errors), np.inf, 5.0)),
+            )
+            bootstrap_params.append(fitted)
+        except (RuntimeError, ValueError):
+            continue
+    if bootstrap_params:
+        samples = np.asarray(bootstrap_params)
+        result["bootstrap_successes"] = len(samples)
+        result["bootstrap_95_interval"] = {
+            name: [float(low), float(high)]
+            for name, low, high in zip(
+                ("e_floor", "a", "alpha"),
+                np.quantile(samples, .025, axis=0), np.quantile(samples, .975, axis=0),
+            )
+        }
+    else:
+        result["bootstrap_successes"] = 0
+        result["bootstrap_95_interval"] = None
+    return result
 
 
 def gradient_clipping_decision(

@@ -12,7 +12,7 @@ if str(_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_ROOT / "src"))
 
 from trueskate_ai.vision.model1_scaling import (  # noqa: E402
-    DEFAULT_LINEAR_RUNGS, estimate_modal_rungs, scaling_status,
+    DEFAULT_LINEAR_RUNGS, estimate_modal_rungs, fit_error_scaling_law, scaling_status,
 )
 
 
@@ -56,6 +56,12 @@ def main() -> None:
     estimate["all_additional_rungs_gpu_only_usd"] = sum(
         row["gpu_only_cost_usd"] for row in future
     )
+    estimate["minimum_identifiable_fit_gpu_only_usd"] = sum(
+        row["gpu_only_cost_usd"] for row in future[:3]
+    )
+    estimate["minimum_identifiable_fit_usd"] = sum(
+        row["estimated_cost_usd"] for row in future[:3]
+    )
     if args.approval_contingency < 1.0:
         parser.error("approval-contingency must be at least 1.0")
     estimate["approval_contingency"] = args.approval_contingency
@@ -67,6 +73,8 @@ def main() -> None:
         if not isinstance(observations, list):
             parser.error("observations JSON must contain a list")
         estimate["scaling_status"] = scaling_status(observations)
+        if len({int(row["training_samples"]) for row in observations}) >= 4:
+            estimate["scaling_law_fit"] = fit_error_scaling_law(observations)
     print(json.dumps(estimate, indent=2, sort_keys=True))
 
 

@@ -19,7 +19,8 @@ from trueskate_ai.vision.model1_certification import (
 from trueskate_ai.vision.model1_scaling import (
     assert_deterministic_nesting, build_experiment_manifest,
     build_linear_cohort_manifest, build_nested_subset_manifests,
-    estimate_modal_rungs, gradient_clipping_decision, scaling_status,
+    estimate_modal_rungs, fit_error_scaling_law, gradient_clipping_decision,
+    scaling_status,
 )
 
 
@@ -164,6 +165,26 @@ def test_scaling_and_clipping_decisions_apply_predeclared_rules():
     assert selected["selected"] is True
     rejected = gradient_clipping_decision([.75, .85, .80], [.77, .78, .76])
     assert rejected["selected"] is False
+
+
+def test_scaling_law_fit_needs_residual_freedom_and_retains_uncertainty():
+    observations = []
+    for size in (100, 200, 400, 800):
+        expected_error = .02 + 4.0 * size ** -.7
+        for offset in (-.001, 0.0, .001):
+            observations.append({
+                "training_samples": size,
+                "late_validation_recovery": 1.0 - expected_error + offset,
+                "validation_samples": 12_000,
+            })
+    fit = fit_error_scaling_law(observations, bootstrap_samples=20, seed=4)
+    assert fit["degrees_of_freedom"] == 1
+    assert fit["parameters"]["e_floor"] == pytest.approx(.02, abs=.002)
+    assert fit["parameters"]["alpha"] == pytest.approx(.7, abs=.03)
+    assert fit["bootstrap_successes"] > 0
+    assert set(fit["bootstrap_95_interval"]) == {"e_floor", "a", "alpha"}
+    with pytest.raises(ValueError, match="at least four sizes"):
+        fit_error_scaling_law(observations[:9], bootstrap_samples=0)
 
 
 def test_modal_cost_estimate_uses_measured_base_and_additive_resources():
