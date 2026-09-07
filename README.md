@@ -1,75 +1,55 @@
 # TrueSkate-AI
 
-Training an AI agent to play the mobile game [True Skate](https://apps.apple.com/app/true-skate/id549105915) at an expert level.
+Behavioural cloning for the iOS game True Skate. Model 1 learns to recover
+touch gestures from gameplay clips; Model 2 learns a gameplay policy from
+expert recordings labelled by Model 1. Collection runs on physical iPhones
+through Appium/WebDriverAgent and bounded XCTest screen recordings.
 
-## Approach
+**Current work:** Model 1 linear gesture recovery and scaling. Hold, heatmap
+and temporal variants remain runnable experiments. Model 2 is implemented
+but unfinished; this repository does not claim an expert gameplay policy.
+CMA-ES and PPO are retired; their history and useful results remain accessible.
 
-The project started as behavioral cloning (supervised learning from gameplay recordings) but pivoted to **reinforcement learning** — the agent generates its own touch gestures via Appium on a physical iPhone, so there's no labeling bottleneck.
+## Start here
 
-The current baseline method uses **CMA-ES** (Covariance Matrix Adaptation Evolution Strategy) to optimize a 17-dimensional continuous parameter vector that encodes two curved multi-touch gestures. The agent attempts tricks, reads the result via OCR, and receives a shaped reward.
-
-An experimental path now also exists for **trick-conditioned PPO** with a neural policy that outputs a 42-parameter action plan (4 gated gesture slots, inter-slot delays, and spin timing controls).
-
-## Results So Far
-
-The agent has landed **pop shove-its, varial flips, 360 flips, nightmare flips, and others** — confirming the pipeline works end-to-end. CMA-ES tends to converge on reliably landable medium-reward tricks rather than volatile high-reward ones, which is an active area of work.
-
-## How It Works
-
-1. **Gesture parameterization** — Two gesture slots (3 normalised waypoints + duration + easing each) plus inter-slot delay → 17 params total. See [GESTURES.md](GESTURES.md) for the full coordinate and schema reference.
-2. **Touch execution** — Gestures fire as sequential calls to a custom WDA endpoint on a physical iPhone; push uses Appium ActionChains
-3. **Trick detection** — Screenshot → Apple Vision OCR → fuzzy match against known tricks
-4. **Reward** — Tiered scoring based on detected trick name
-5. **Optimization** — CMA-ES samples gesture parameter vectors, evaluates them on-device, updates the search distribution
-
-## Key Constraint
-
-True Skate runs at **1× real-time** — no way to speed up the simulator. A GPU can't accelerate the live interaction loop. This makes data throughput (~15K steps/hour) the binding constraint, not compute.
-
-## Project Structure
-src/trueskate_ai/
-├── nn/             # Trick-conditioned neural policy
-├── rl/             # Action parameterization, reward, collectors, PPO and CMA-ES
-├── sim/            # Device control (touch_actions, trick_info_reader, known_tricks)
-├── labeling/       # Legacy CV pipeline (pre-RL pivot)
-├── vision/         # Legacy PyTorch datasets
-└── utils/          # Trajectory splines, data loading
-scripts/            # Entry points (train_cmaes, train_ppo, launch_services, build_trick_library, etc.)
-experiments/        # Experiment journals and standalone experiments
-
-## Requirements
-
-- Python 3.11+ with venv
-- Appium + WebDriverAgent (Xcode)
-- Physical iPhone with True Skate installed
+- [Current research status](research/STATUS.md) and [recent journal](research/JOURNAL.md)
+- [Workflow commands](docs/WORKFLOWS.md)
+- [Gesture and coordinate contract](GESTURES.md)
+- [Rig deployment and rollback](DEPLOYMENT.md)
+- [Research archive and recovery](research/ARCHIVE.md)
+- [Rig reconciliation](research/RIG_RECONCILIATION.md)
 
 ## Setup
 
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install numpy opencv-python torch torchvision scipy pillow appium-python-client matplotlib requests cma python-dotenv pyobjc
-```
-
-Copy `.env.example` to `.env` and set your device UDID.
-
-## Training Entrypoints
+Python 3.11+, with `.venv` as the sole virtual environment:
 
 ```bash
-# CMA-ES baseline
-python scripts/train/train_cmaes.py
-
-# Trick-conditioned PPO experiment
-python scripts/train/train_ppo.py --updates 100 --steps-per-update 24
-
-# Spin button coordinate calibration helper
-python scripts/inspect/calibrate_spin_button.py --x 25 --y 362 --repeat 2
-
-# Optional global spin override during PPO runs
-python scripts/train/train_ppo.py --spin-x 25 --spin-y 362
-
-# Disable hindsight relabeling (enabled by default)
-python scripts/train/train_ppo.py --no-hindsight-relabel
-
-# Resume a new run from a prior checkpoint
-python scripts/train/train_ppo.py --resume-from /absolute/path/to/policy_update_0010.pt
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m pytest -q
 ```
+
+For offline training/tests only: `python -m pip install -e '.[training,test]'`.
+The `device` extra adds macOS Apple Vision bindings; `cloud` adds Modal.
+Physical collection also needs Appium, WebDriverAgent, ffmpeg and
+libimobiledevice. Copy `.env.example` to `.env` and configure device UDIDs;
+never commit credentials. XR phones normally live on `training-server`.
+
+## Layout
+
+| Package | Responsibility |
+|---|---|
+| `collection` | XCTest capture, calibration, contamination guards and colour capture |
+| `data` | Sampling, clip decoding, labels, corpus audits/manifests and shards |
+| `model1` | Hold, heatmap, temporal and linear variants; scaling and certification |
+| `model2` | Gesture tokens, stroke assembly, sequence policy and inference |
+| `sim` | Device sessions, normalised gestures and touch execution |
+| `vision` | Shared scene, board and OCR utilities |
+| `monitoring`, `utils` | Monitoring and shared utilities |
+
+Canonical entrypoints are in `scripts/collection`, `scripts/model1`,
+`scripts/model2`, `scripts/data`, `scripts/inspect`, and `scripts/ops`.
+Old training/cloud/collection script paths are compatibility launchers for
+existing deployment callers. Datasets and checkpoints are external artifacts;
+the archive index explains what Git preserves and what it does not.

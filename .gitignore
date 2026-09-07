@@ -84,3 +84,13 @@ htmlcov/
 logs/overnight/
 logs/smoke_es/
 logs/smoke_queue/
+
+# Historical tracked runs are recoverable through research/ARCHIVE.md.
+/logs/
+*.bak
+*.bak.*
+*.orig
+*.rig_wip
+/notebooks/artefacts/
+/notebooks/outputs/
+/notebooks/demo_data/
