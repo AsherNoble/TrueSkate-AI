@@ -51,19 +51,14 @@ if str(_REPO_ROOT / "src") not in sys.path:
 # import below. CMA-ES training never sets it, so its execution is unaffected.
 os.environ.setdefault("TRUESKATE_MIN_FINGER_STAGGER_S", "0.12")
 
-from trueskate_ai.data.gesture_sampling import (  # noqa: E402
-    BASIC_HOLD_CALIBRATION_TAP_SHARE, load_recipe_vectors,
-    BASIC_LINEAR_CALIBRATION_TAP_SHARE, clamp_in_bounds, sample_basic_hold_mixture,
-    sample_basic_linear_mixture, sample_mixture, sample_tap,
-)
+from trueskate_ai.data.gesture_sampling import load_recipe_vectors, sample_mixture  # noqa: E402
 from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E402
 from trueskate_ai.rl.device_worker import (  # noqa: E402
     BUNDLE_ID, DeviceWorker, add_device_selection_args, resolve_devices,
 )
 from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import (  # noqa: E402
-    curved_drag, curved_drag_with_spin_hold, long_press, reset_position,
-    skip_loading_screen, tap,
+    curved_drag, curved_drag_with_spin_hold, reset_position, skip_loading_screen,
 )
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
 from trueskate_ai.vision.gameplay_filter import is_editor_frame, is_menu_frame  # noqa: E402
@@ -90,30 +85,6 @@ def _park_tag(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
 
 
-def _write_heartbeat(path: Path | None, *, device: str, state: str,
-                     segment: int | None = None) -> None:
-    """Atomically publish collector progress for local supervisors/dashboard.
-
-    A bounded XCTest segment can legitimately take several minutes once video
-    retrieval and foreground alignment are included.  This heartbeat makes
-    that distinction observable: a live collector refreshes it at every phase
-    and gesture, while a wedged Appium/XCTest call leaves it stale.
-    """
-    if path is None:
-        return
-    payload = {"device": device, "state": state, "updated_at_epoch_s": time.time()}
-    if segment is not None:
-        payload["segment"] = segment
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_name(f".{path.name}.tmp")
-        tmp.write_text(json.dumps(payload))
-        tmp.replace(path)
-    except OSError as exc:
-        # Status reporting must never interrupt an otherwise healthy recorder.
-        print(f"[collect_xctest] heartbeat write failed: {exc!r}", flush=True)
-
-
 def _start_caffeinate():
     try:
         p = subprocess.Popen(["caffeinate", "-dimsu", "-w", str(os.getpid())])
@@ -124,26 +95,10 @@ def _start_caffeinate():
         return None
 
 
-def _execute(worker: DeviceWorker, g, *, calibration_tap_hold_s: float = 0.0) -> None:
-    """Fire one sampled gesture; explicit MVP-2 linear drags are an exception."""
+def _execute(worker: DeviceWorker, g) -> None:
+    """Fire one sampled gesture (curved flicks required — straight swipes don't play)."""
     dw, dh = worker.device_w, worker.device_h
-    if g.kind in ("hold", "tap"):
-        # Stationary touch (Model 1 MVP): no path, so nothing to curve. A tap is
-        # just a hold of zero length — both render the normal orange mark at the
-        # commanded point (measured Stage 0, 2026-07-21).
-        x, y = scale_to_device(g.point[0], g.point[1], dw, dh)
-        if g.kind == "tap":
-            # XCTest/Appium can dispatch an instantaneous mobile:tap too quickly
-            # for XR2 to render it reliably.  A short ActionChains hold remains
-            # a calibration-only `tap` in the manifest (and is therefore never a
-            # trainable linear sample), but produces a visible clapperboard.
-            if calibration_tap_hold_s:
-                long_press(worker.driver, x, y, duration=calibration_tap_hold_s)
-            else:
-                tap(worker.driver, x, y)
-        else:
-            long_press(worker.driver, x, y, duration=g.hold_duration_s)
-    elif g.kind in ("flick", "linear"):
+    if g.kind == "flick":
         pts = [scale_to_device(x, y, dw, dh) for x, y in g.waypoints]
         easing = None if g.easing_power == 1.0 else (lambda t, p=g.easing_power: t ** p)
         curved_drag(worker.driver, pts, total_duration=g.duration, easing=easing)
@@ -242,69 +197,6 @@ def main() -> None:
                          "button HELD); the flick/nslot/recipe mix keeps its ratios in the "
                          "remaining share. 0.2 = ~20%% of fires hold the spin button — the "
                          "knob to grow the spin-family corpus.")
-    ap.add_argument("--max-segments", type=int, default=None,
-                    help="Stop after N recorded segments. Useful for bounded pilot runs "
-                         "and for a supervisor that intentionally starts a fresh collector "
-                         "process per segment; it does not by itself calibrate timing.")
-    ap.add_argument("--no-reset", action="store_true",
-                    help="Skip reset_position between gestures. Required for stationary "
-                         "runs: reset is a tap, and its own rendered mark would land in "
-                         "the next sample's window as an unlabelled touch.")
-    ap.add_argument("--reset-before-segment", action="store_true",
-                    help="Tap True Skate's reset control once BEFORE each recording segment, "
-                         "then wait for its rendered trace to clear. This is safe with "
-                         "--no-reset because the recovery touch is outside every clip; use it "
-                         "to escape an accumulated bad board position between bounded segments.")
-    ap.add_argument("--segment-reset-settle-s", type=float, default=1.5,
-                    help="Seconds to wait after --reset-before-segment before recording. Must "
-                         "be >= 1.5 so the reset tap's rendered mark cannot contaminate clips.")
-    ap.add_argument("--reset-every-samples", type=int, default=0,
-                    help="After this many logged non-tap samples, tap the location-reset control "
-                         "and wait --segment-reset-settle-s before the next sample. 0 disables "
-                         "in-segment resets (default).")
-    ap.add_argument("--park-label", default=None,
-                    help="Pin collection to a single named park (e.g. 'The Workshop') "
-                         "instead of the SLS rotation. Sets the sample-dir park tag, so "
-                         "training can select it with --data-match. Implies --no-rotate.")
-    ap.add_argument("--align-video", action="store_true",
-                    help="Pass --video to the aligner: one h264 clip per sample instead "
-                         "of N PNGs (~150x smaller on static scenes, 1 inode not N).")
-    ap.add_argument("--align-resize-width", type=int, default=512,
-                    help="Output width for aligned clips (default 512). Basic MVP clip regressors "
-                         "consume 128px-wide frames, so their runners set this to 128 to avoid "
-                         "storing and repeatedly decoding unused resolution.")
-    ap.add_argument("--static-frac", type=float, default=0.0,
-                    help="TRUE share [0,1] of fires that are STATIONARY touches — holds "
-                         "(long_press, 0.1-1.5s) and taps, split ~80/20. These have an "
-                         "unambiguous (x,y) plus a known onset and liftoff, with no "
-                         "direction/speed ambiguity: the Model 1 MVP arm. 1.0 = a pure "
-                         "hold/tap run.")
-    ap.add_argument("--basic-holds", action="store_true",
-                    help="Collect the additive basic Model-1 experiment: one-finger "
-                         "holds uniformly 0.30-1.50s plus deterministic calibration taps. "
-                         "No drags, multi-touch, or spin holds are emitted. Use with "
-                         "--tap-calibrate and --no-reset.")
-    ap.add_argument("--basic-hold-tap-frac", type=float, default=BASIC_HOLD_CALIBRATION_TAP_SHARE,
-                    help="Deprecated compatibility option for --basic-holds. Dedicated per-segment "
-                         "calibration taps are used instead; taps never enter the strict hold loader.")
-    ap.add_argument("--basic-linears", action="store_true",
-                    help="Collect MVP-2 only: calibrated single-finger, two-point, "
-                         "constant-velocity finite-slope drags plus deterministic calibration taps. "
-                         "No holds, curved paths, multi-touch, or spin holds are emitted.")
-    ap.add_argument("--basic-linear-tap-frac", type=float, default=BASIC_LINEAR_CALIBRATION_TAP_SHARE,
-                    help="Deprecated compatibility option for --basic-linears. Dedicated per-segment "
-                         "calibration taps are used instead.")
-    ap.add_argument("--calibration-taps-per-segment", type=int, default=3,
-                    help="For --basic-holds/--basic-linears, reserve this many deterministic "
-                         "tap clapperboards at the start of every segment (default 3). "
-                         "They replace random calibration-arm draws and are never trainable clips.")
-    ap.add_argument("--calibration-tap-hold-s", type=float, default=0.0,
-                    help="Optional short ActionChains dwell for calibration-only tap controls. "
-                         "The manifest still labels these controls as taps, so strict MVP loaders exclude them.")
-    ap.add_argument("--tap-calibrate", action="store_true",
-                    help="Ask the offline aligner to require per-segment timing calibration "
-                         "from the known-position tap arm. Intended for --static-frac MVP "
-                         "collection; a rejected calibration preserves the source .mov.")
     ap.add_argument("--num-gestures", type=int, default=2)
     ap.add_argument("--use-spin", action="store_true",
                     help="Legacy: make the plain nslot branch spin-capable (~half gate-off). "
@@ -321,27 +213,13 @@ def main() -> None:
                     help="ntfy-alert if device free storage drops below this.")
     ap.add_argument("--no-align", action="store_true",
                     help="Do NOT auto-spawn the aligner after each segment (save .mov+manifest only).")
-    ap.add_argument("--wait-for-align", action="store_true",
-                    help="Run the post-segment aligner in the foreground instead of async. "
-                         "Use for a bounded calibration pilot so its go/no-go result is visible.")
     ap.add_argument("--no-caffeinate", action="store_true")
-    ap.add_argument("--no-run-notifications", action="store_true",
-                    help="Suppress this process's routine start/stop ntfy messages. "
-                         "Use for a supervisor that launches one bounded process per segment; "
-                         "safety and park-switch alerts remain enabled.")
-    ap.add_argument("--heartbeat-path", type=Path, default=None,
-                    help="Optional local JSON heartbeat, refreshed during every collection phase. "
-                         "A bounded-run supervisor uses it to distinguish a slow segment from a wedged call.")
     ap.add_argument("--no-rotate", action="store_true")
     ap.add_argument("--confirm-poll-s", type=float, default=10.0)
     ap.add_argument("--no-gameplay-guard", action="store_true",
                     help="Disable the in-loop replay/menu guard (by default, gestures fired "
                          "while True Skate is in replay/menu are NOT logged, and the app is "
                          "relaunched to return to live gameplay).")
-    ap.add_argument("--no-menu-guard", action="store_true",
-                    help="Disable only the screenshot replay/editor heuristic while keeping the "
-                         "OS-level True Skate foreground guard. Use only for a human-confirmed "
-                         "park whose persistent bottom UI is a known heuristic false positive.")
     ap.add_argument("--gameplay-check-every", type=int, default=1,
                     help="Screenshot-check the gameplay state every N gestures (1 = every gesture).")
     ap.add_argument("--menu-recover-after", type=int, default=2,
@@ -352,9 +230,6 @@ def main() -> None:
     add_device_selection_args(ap)
     args = ap.parse_args()
 
-    if args.no_align and (args.tap_calibrate or args.wait_for_align):
-        ap.error("--no-align cannot be combined with --tap-calibrate or --wait-for-align")
-
     # Validate the gesture mix BEFORE any device contact: a bad value would
     # otherwise surface as a per-gesture ValueError mid-run and crash-loop the
     # launchd job (wedge-adjacent churn on the XCTest recorder).
@@ -362,57 +237,11 @@ def main() -> None:
     if spin_frac != args.spin_frac:
         print(f"WARNING: --spin-frac {args.spin_frac} outside [0, 1]; clamped to {spin_frac}.")
         args.spin_frac = spin_frac
-    static_frac = min(1.0, max(0.0, args.static_frac))
-    if static_frac != args.static_frac:
-        print(f"WARNING: --static-frac {args.static_frac} outside [0, 1]; clamped to {static_frac}.")
-        args.static_frac = static_frac
-    if args.spin_frac + args.static_frac > 1.0:
-        raise SystemExit(f"--spin-frac ({args.spin_frac}) + --static-frac ({args.static_frac}) "
-                         "exceeds 1.0 — they are true shares of all fires.")
-    if (args.flick_frac + args.nslot_frac + args.recipe_frac <= 0
-            and args.spin_frac <= 0 and args.static_frac <= 0):
+    if args.flick_frac + args.nslot_frac + args.recipe_frac <= 0 and args.spin_frac <= 0:
         raise SystemExit("All gesture mixture weights are zero — nothing to sample "
-                         "(--flick-frac/--nslot-frac/--recipe-frac/--spin-frac/--static-frac).")
+                         "(--flick-frac/--nslot-frac/--recipe-frac/--spin-frac).")
     if args.num_gestures < 1:
         raise SystemExit(f"--num-gestures must be >= 1, got {args.num_gestures}")
-    if args.basic_holds and args.basic_linears:
-        raise SystemExit("--basic-holds and --basic-linears are mutually exclusive")
-    if args.calibration_taps_per_segment < 2:
-        raise SystemExit("--calibration-taps-per-segment must be >= 2: tap calibration needs two detections")
-    if args.calibration_tap_hold_s < 0.0 or args.calibration_tap_hold_s > 0.5:
-        raise SystemExit("--calibration-tap-hold-s must be in [0, 0.5]")
-    if args.segment_reset_settle_s < 1.5:
-        raise SystemExit("--segment-reset-settle-s must be >= 1.5 to clear the reset trace")
-    if args.reset_every_samples < 0:
-        raise SystemExit("--reset-every-samples must be >= 0")
-    if args.align_resize_width < 8:
-        raise SystemExit("--align-resize-width must be >= 8")
-    if args.basic_holds:
-        if args.spin_frac != 0.0 or args.static_frac != 0.0 or args.use_spin:
-            raise SystemExit("--basic-holds cannot be combined with --static-frac, --spin-frac, or --use-spin")
-        if any(value != default for value, default in (
-            (args.flick_frac, 0.6), (args.nslot_frac, 0.25), (args.recipe_frac, 0.15),
-        )):
-            raise SystemExit("--basic-holds cannot be combined with gesture-mixture fraction overrides")
-        if not args.tap_calibrate:
-            raise SystemExit("--basic-holds requires --tap-calibrate; uncalibrated hold clips are not admissible")
-        if not args.no_reset:
-            raise SystemExit("--basic-holds requires --no-reset; reset taps contaminate the next hold clip")
-        if not 0.0 <= args.basic_hold_tap_frac < 1.0:
-            raise SystemExit("--basic-hold-tap-frac must be in [0, 1) with --basic-holds")
-    if args.basic_linears:
-        if args.spin_frac != 0.0 or args.static_frac != 0.0 or args.use_spin:
-            raise SystemExit("--basic-linears cannot be combined with --static-frac, --spin-frac, or --use-spin")
-        if any(value != default for value, default in (
-            (args.flick_frac, 0.6), (args.nslot_frac, 0.25), (args.recipe_frac, 0.15),
-        )):
-            raise SystemExit("--basic-linears cannot be combined with gesture-mixture fraction overrides")
-        if not args.tap_calibrate:
-            raise SystemExit("--basic-linears requires --tap-calibrate; uncalibrated linear clips are not admissible")
-        if not args.no_reset:
-            raise SystemExit("--basic-linears requires --no-reset; reset taps contaminate the next linear clip")
-        if not 0.0 <= args.basic_linear_tap_frac < 1.0:
-            raise SystemExit("--basic-linear-tap-frac must be in [0, 1) with --basic-linears")
 
     try:
         devices = resolve_devices(devices_arg=args.devices, personal=args.personal,
@@ -426,13 +255,7 @@ def main() -> None:
     cfg = devices[0]
 
     cycle = list(DEFAULT_SLS_PARKS)
-    if args.park_label:
-        # Single fixed park: the label only tags the sample dirs, so the park must
-        # already be loaded on the device (the SLS rotation is prompt-driven and
-        # would be meaningless here).
-        cycle = [args.park_label]
-        args.no_rotate = True
-    elif args.start_park is not None:
+    if args.start_park is not None:
         if args.start_park.isdigit():
             start = int(args.start_park) % len(cycle)
         else:
@@ -445,8 +268,7 @@ def main() -> None:
 
     worker = DeviceWorker(cfg)
     device = cfg["name"]
-    _write_heartbeat(args.heartbeat_path, device=device, state="connecting")
-    print(f"Connecting to {device} (needs WDA+Appium up; run launch_services.py)...", flush=True)
+    print(f"Connecting to {device} (needs WDA+Appium up; run launch_services.py)...")
     worker.connect()
     dw, dh = worker.device_w, worker.device_h
     udid = os.environ.get(cfg.get("env_key", ""), "") or cfg.get("udid", "")
@@ -455,21 +277,18 @@ def main() -> None:
     session = time.strftime("%Y%m%d_%H%M%S")
     out_root = args.out_dir / f"{device}_{session}"
     out_root.mkdir(parents=True, exist_ok=True)
-    _write_heartbeat(args.heartbeat_path, device=device, state="connected")
-    print(f"Saving segments to {out_root}; park cycle starts at: {cycle[0]}", flush=True)
+    print(f"Saving segments to {out_root}; park cycle starts at: {cycle[0]}")
 
     rng = np.random.default_rng(args.seed)
     recipe_vectors = load_recipe_vectors(args.recipe_dir)
-    print(f"Loaded {len(recipe_vectors)} packable recipes.", flush=True)
+    print(f"Loaded {len(recipe_vectors)} packable recipes.")
     fracs = (args.flick_frac, args.nslot_frac, args.recipe_frac)
     print(f"Gesture mix: base weights flick={args.flick_frac} nslot={args.nslot_frac} "
-          f"recipe={args.recipe_frac}; spin share={args.spin_frac} (guaranteed-hold slice); "
-          f"static share={args.static_frac} (stationary hold/tap).", flush=True)
+          f"recipe={args.recipe_frac}; spin share={args.spin_frac} (guaranteed-hold slice).")
 
-    if not args.no_run_notifications:
-        notify(f"[{device}] XCTest SLS collection starting in {cycle[0]} "
-               f"({args.segment_min:.0f}-min segments, {args.per_park_hours}h/park).",
-               title="TrueSkate SLS collect", tags=["camera"])
+    notify(f"[{device}] XCTest SLS collection starting in {cycle[0]} "
+           f"({args.segment_min:.0f}-min segments, {args.per_park_hours}h/park).",
+           title="TrueSkate SLS collect", tags=["camera"])
 
     park_idx = 0
     park_deadline = time.monotonic() + args.per_park_hours * 3600.0
@@ -485,64 +304,20 @@ def main() -> None:
     def _device_aligner_spawn(manifest_path: Path):
         if args.no_align:
             return
-        cmd = [sys.executable, str(_HERE / "align_xctest_traces.py"),
-               "--segment", str(manifest_path), "--delete-mov",
-               "--resize-width", str(args.align_resize_width)]
-        if args.align_video:
-            cmd.append("--video")
-            # Compact MVP clips are ultimately consumed as MP4.  Do the slice
-            # and H.264 encode once rather than materialising temporary PNGs.
-            if args.basic_holds or args.basic_linears:
-                cmd.append("--direct-video")
-        if args.tap_calibrate:
-            cmd.append("--tap-calibrate")
-        if args.wait_for_align:
-            # The stationary-touch MVP's calibration is an explicit go/no-go gate.
-            # Keep it foregrounded so the operator sees accepted/rejected rather
-            # than discovering an unaligned .mov after an async child exits.
-            result = subprocess.run(cmd)
-            if result.returncode != 0:
-                raise RuntimeError(f"aligner rejected/failed {manifest_path.name} "
-                                   f"(exit {result.returncode})")
-            return
-        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen(
+            [sys.executable, str(_HERE / "align_xctest_traces.py"),
+             "--segment", str(manifest_path), "--delete-mov"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
 
-    recovery_exit = False
     try:
         while not _STOP:
             if global_deadline and time.monotonic() > global_deadline:
                 print("[collect_xctest] global --max-hours reached.")
                 break
-            if args.max_segments is not None and segment_idx >= args.max_segments:
-                print(f"[collect_xctest] --max-segments {args.max_segments} reached.")
-                break
 
             cur_park = cycle[park_idx]
-            if args.reset_before_segment:
-                # The reset button is at normalized (0.50, 0.0558).  It is a
-                # real tap, so firing it between gestures would corrupt the
-                # following response window.  Do it before rec.start() instead:
-                # the mandatory 1.5s clear window keeps it out of every clip
-                # while bounding how long a no-reset collection can remain in a
-                # bad board location (e.g. a gap that normally needs reset).
-                try:
-                    _write_heartbeat(args.heartbeat_path, device=device,
-                                     state="resetting", segment=segment_idx)
-                    print(f"[seg {segment_idx}] resetting board before recording; "
-                          f"settling {args.segment_reset_settle_s:.1f}s", flush=True)
-                    reset_position(worker.driver, dw, dh)
-                    time.sleep(args.segment_reset_settle_s)
-                except Exception as exc:  # noqa: BLE001 — do not begin an unsafe segment
-                    print(f"[seg {segment_idx}] pre-segment reset failed: {exc!r} — skip + recover")
-                    if not _recover_session(worker):
-                        print("[collect_xctest] session unrecoverable — exit for supervisor restart.")
-                        recovery_exit = True
-                        break
-                    time.sleep(3.0)
-                    continue
             try:
-                _write_heartbeat(args.heartbeat_path, device=device,
-                                 state="starting_recording", segment=segment_idx)
                 rec.start()
             except Exception as exc:  # noqa: BLE001
                 # XCTest recording can transiently fail (XCTDaemon "Failed to write
@@ -567,56 +342,25 @@ def main() -> None:
                            f"a device reboot may be needed).",
                            title="TrueSkate SLS collect", priority="high", tags=["warning"])
                     print(f"[collect_xctest] {start_fail_streak} start-fails — exit for supervisor restart.")
-                    recovery_exit = True
                     break
                 if not _recover_session(worker):
                     print("[collect_xctest] session unrecoverable — exit for supervisor restart.")
-                    recovery_exit = True
                     break
                 time.sleep(3.0)
                 continue
             start_fail_streak = 0  # rec.start() succeeded
-            _write_heartbeat(args.heartbeat_path, device=device,
-                             state="recording", segment=segment_idx)
             seg_deadline = time.monotonic() + args.segment_min * 60.0
             events: list[dict] = []
             park_switched = False
             seg_aborted = False
             seg_iter = 0
-            segment_events = 0
-            segment_payload_samples = 0
             non_gameplay_streak = 0
 
             while not _STOP and time.monotonic() < seg_deadline:
                 if global_deadline and time.monotonic() > global_deadline:
                     break
-
-                # --- foreground guard: catches True Skate being fully backgrounded
-                # (e.g. a stray gesture opened iOS's share sheet and a later blind tap
-                # landed on Files/Home). The pixel-based menu/editor guard below only
-                # recognizes True Skate's OWN UI signatures, so it is structurally blind
-                # to "a different app is on screen" — this is a cheap OS-level check
-                # (no screenshot) that catches it directly. Reuses the same
-                # ensure_foreground() the CMA-ES/PPO loops already rely on.
-                if not args.no_gameplay_guard:
-                    try:
-                        if worker.ensure_foreground():
-                            print(f"[seg {segment_idx}] True Skate was backgrounded — "
-                                  f"relaunched (not logged)")
-                            total_menu_skips += 1
-                            seg_iter += 1
-                            continue
-                    except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
-                        print(f"[seg {segment_idx}] foreground check failed: {exc!r} — proceeding")
-
                 try:
-                    # reset_position is itself a TAP, and a tap renders its own mark
-                    # ~1.06s later — which lands inside the next sample's window and
-                    # would train the model on an unlabelled touch at (0.5, 0.056).
-                    # Stationary gestures never move the board, so --no-reset both
-                    # removes that contaminant and speeds the loop up.
-                    if not args.no_reset:
-                        reset_position(worker.driver, dw, dh)
+                    reset_position(worker.driver, dw, dh)
                 except Exception as exc:  # noqa: BLE001 — WDA session dropped mid-segment
                     print(f"[seg {segment_idx}] reset failed mid-segment: {exc!r} — close segment")
                     seg_aborted = True
@@ -624,7 +368,7 @@ def main() -> None:
                 time.sleep(0.3)  # board settle into the reset state
 
                 # --- gameplay guard: never log a gesture fired into the replay/menu ---
-                if not args.no_menu_guard and seg_iter % max(1, args.gameplay_check_every) == 0:
+                if not args.no_gameplay_guard and seg_iter % max(1, args.gameplay_check_every) == 0:
                     try:
                         _guard_png = worker.driver.get_screenshot_as_png()
                         _in_editor = is_editor_frame(_guard_png)
@@ -645,54 +389,23 @@ def main() -> None:
                         print(f"[seg {segment_idx}] gameplay check failed: {exc!r} — proceeding")
                 seg_iter += 1
 
-                if (args.basic_holds or args.basic_linears) and segment_events < args.calibration_taps_per_segment:
-                    # Bernoulli sampling can yield fewer than two taps in a short
-                    # segment (as the first MVP-2 smoke did), making a clean segment
-                    # fail a timing gate before a trainable drag is examined.  Reserve
-                    # deterministic clapperboards, then sample only trainable events.
-                    g = clamp_in_bounds(sample_tap(rng))
-                elif args.basic_holds:
-                    g = sample_basic_hold_mixture(rng, tap_fraction=0.0)
-                elif args.basic_linears:
-                    g = sample_basic_linear_mixture(rng, tap_fraction=0.0)
-                else:
-                    g = sample_mixture(rng, fracs=fracs, spin_frac=args.spin_frac,
-                                       static_frac=args.static_frac,
-                                       num_gestures=args.num_gestures,
-                                       use_spin=args.use_spin, recipe_vectors=recipe_vectors)
+                g = sample_mixture(rng, fracs=fracs, spin_frac=args.spin_frac,
+                                   num_gestures=args.num_gestures,
+                                   use_spin=args.use_spin, recipe_vectors=recipe_vectors)
                 if g.kind == "spin_flick" or g.use_spin:
                     # stamp before meta() so the logged coord is the one that fires
                     g.spin_button_xy = worker.spin_button_xy
                 t0 = time.time()
                 try:
-                    calibration_hold_s = (
-                        args.calibration_tap_hold_s
-                        if (args.basic_holds or args.basic_linears)
-                        and segment_events < args.calibration_taps_per_segment
-                        else 0.0
-                    )
-                    _execute(worker, g, calibration_tap_hold_s=calibration_hold_s)
+                    _execute(worker, g)
                 except Exception as exc:  # noqa: BLE001
                     print(f"  gesture {total_gestures} failed: {exc}")
                     continue
                 t1 = time.time()
-                # --- post-gesture foreground check: a gesture that itself backgrounds
-                # True Skate (e.g. lands on a share-sheet destination) must not be logged
-                # as a clean gameplay sample. Recover immediately rather than waiting for
-                # the next loop iteration's guard to notice.
-                if not args.no_gameplay_guard:
-                    try:
-                        if worker.ensure_foreground():
-                            total_menu_skips += 1
-                            print(f"[seg {segment_idx}] gesture backgrounded True Skate "
-                                  f"— relaunched, dropping sample (not logged)")
-                            continue
-                    except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
-                        print(f"[seg {segment_idx}] post-gesture foreground check failed: {exc!r} — proceeding")
                 # --- post-gesture menu/editor check ---
                 # A gesture can open non-gameplay UI after the pre-gesture guard.  The NEXT
                 # reset may close it, so check before logging and drop the contaminated window.
-                if not args.no_menu_guard:
+                if not args.no_gameplay_guard:
                     try:
                         time.sleep(0.35)  # let any newly-opened UI render before scoring
                         _post_png = worker.driver.get_screenshot_as_png()
@@ -714,38 +427,8 @@ def main() -> None:
                     "park_change_index": park_idx,
                     **g.meta(),
                 })
-                if calibration_hold_s:
-                    events[-1]["calibration_execution"] = "short_hold"
-                    events[-1]["calibration_tap_hold_s"] = calibration_hold_s
-                segment_events += 1
                 total_gestures += 1
-                if g.kind != "tap":
-                    segment_payload_samples += 1
-                _write_heartbeat(args.heartbeat_path, device=device,
-                                 state="recording", segment=segment_idx)
                 time.sleep(args.tail_s)  # trick plays out into the recording (response window)
-
-                # Keep the board in an open, repeatable area during linear data
-                # collection.  This is deliberately after the response tail: the
-                # reset's rendered touch arrives about a second later, and the
-                # 1.5s clear interval keeps it out of the NEXT labeled clip.
-                # It is never included in ``events``, so the reset itself cannot
-                # become a trainable command.
-                if (segment_payload_samples
-                        and args.reset_every_samples
-                        and segment_payload_samples % args.reset_every_samples == 0):
-                    try:
-                        _write_heartbeat(args.heartbeat_path, device=device,
-                                         state="periodic_reset", segment=segment_idx)
-                        print(f"[seg {segment_idx}] resetting location after "
-                              f"{segment_payload_samples} payload samples; settling "
-                              f"{args.segment_reset_settle_s:.1f}s", flush=True)
-                        reset_position(worker.driver, dw, dh)  # normalized (0.50, 0.0558)
-                        time.sleep(args.segment_reset_settle_s)
-                    except Exception as exc:  # noqa: BLE001 — do not risk unlabeled follow-on clips
-                        print(f"[seg {segment_idx}] periodic reset failed: {exc!r} — close segment")
-                        seg_aborted = True
-                        break
 
                 # --- park rotation (same ntfy mechanism as the DAL collector) ---
                 if args.no_rotate:
@@ -787,8 +470,6 @@ def main() -> None:
                 continue
             mov_path = out_root / f"segment_{segment_idx:05d}.mov"
             try:
-                _write_heartbeat(args.heartbeat_path, device=device,
-                                 state="saving", segment=segment_idx)
                 res = rec.stop_and_save(mov_path)
             except Exception as exc:  # noqa: BLE001
                 # stop/retrieve failed (oversized payload → RemoteDisconnected, or an
@@ -817,28 +498,21 @@ def main() -> None:
                 # Sampler config, so a corpus session is reconstructable without
                 # console logs (mirrors the DAL collector's session_meta.json).
                 "mix": {"flick": args.flick_frac, "nslot": args.nslot_frac,
-                        "recipe": args.recipe_frac, "spin_frac": args.spin_frac,
-                        "static_frac": args.static_frac},
+                        "recipe": args.recipe_frac, "spin_frac": args.spin_frac},
                 "num_gestures": args.num_gestures, "use_spin": args.use_spin,
                 "mov": mov_path.name, "n_gestures": len(events), "gestures": events,
             }
             manifest_path.write_text(json.dumps(manifest, indent=2))
             free_gb = _device_free_gb(udid) if udid else None
-            _write_heartbeat(args.heartbeat_path, device=device,
-                             state="aligning", segment=segment_idx)
             print(f"[seg {segment_idx}] saved {res.summary()['mb']}MB, {len(events)} gestures, "
                   f"park={cur_park}, device_free={free_gb}GB"
-                  f"{' (PARK SWITCH)' if park_switched else ''}", flush=True)
+                  f"{' (PARK SWITCH)' if park_switched else ''}")
             if free_gb is not None and free_gb < args.min_free_gb:
                 notify(f"[{device}] device free storage low: {free_gb}GB (< {args.min_free_gb}).",
                        title="TrueSkate SLS collect", priority="high", tags=["warning"])
             _device_aligner_spawn(manifest_path)
-            _write_heartbeat(args.heartbeat_path, device=device,
-                             state="segment_complete", segment=segment_idx)
             segment_idx += 1
     finally:
-        _write_heartbeat(args.heartbeat_path, device=device, state="stopped",
-                         segment=segment_idx)
         try:
             rec.abort()  # ensure no recording leaks on the device
         except Exception:  # noqa: BLE001
@@ -846,14 +520,11 @@ def main() -> None:
         worker.disconnect()
         if caffeinate and caffeinate.poll() is None:
             caffeinate.terminate()
-        if not args.no_run_notifications:
-            notify(f"[{device}] XCTest SLS collection stopped: {segment_idx} segments, "
-                   f"{total_gestures} gestures, {total_menu_skips} menu-skipped → {out_root.name}",
-                   title="TrueSkate SLS collect", tags=["checkered_flag"])
+        notify(f"[{device}] XCTest SLS collection stopped: {segment_idx} segments, "
+               f"{total_gestures} gestures, {total_menu_skips} menu-skipped → {out_root.name}",
+               title="TrueSkate SLS collect", tags=["checkered_flag"])
         print(f"\nDone: {segment_idx} segments, {total_gestures} gestures, "
               f"{total_menu_skips} skipped (replay/menu) → {out_root}")
-    if recovery_exit:
-        raise SystemExit(2)
 
 
 if __name__ == "__main__":

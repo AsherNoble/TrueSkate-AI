@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>MIN_SPIN_FRAC</key>
+		<string>0.3</string>
+		<key>MODAL_VOLUME</key>
+		<string>trueskate-corpus-v2</string>
+		<key>PATH</key>
+		<string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<key>QUIESCENT_MIN</key>
+		<string>45</string>
+		<key>WORKERS</key>
+		<string>2</string>
+	</dict>
+	<key>Label</key>
+	<string>com.trueskate.autooffload</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/training-server/trueskate-ai/scripts/ops/offload_corpus_to_modal.sh</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/Users/training-server/trueskate-ai/logs/autooffload.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/training-server/trueskate-ai/logs/autooffload.log</string>
+	<key>StartInterval</key>
+	<integer>3600</integer>
+</dict>
+</plist>

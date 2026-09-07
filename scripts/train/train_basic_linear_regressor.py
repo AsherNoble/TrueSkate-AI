@@ -90,9 +90,18 @@ def _recovery_audit(model: torch.nn.Module, dataset: BasicLinearClipDataset,
     }
 
 
+def _sample_device(dataset: BasicLinearClipDataset, index: int) -> str:
+    """Return explicit capture-device provenance, failing closed when absent."""
+    device = dataset._meta(dataset.sample_paths[index]).get("device")
+    if not isinstance(device, str) or not device:
+        raise ValueError("device-stratified fresh holdout requires explicit sample device provenance")
+    return device
+
+
 def split_with_fresh_command_holdout(dataset: BasicLinearClipDataset, *, fresh_source: str,
                                     val_fraction: float = .15, test_fraction: float = .15,
-                                    seed: int = 0) -> tuple[list[int], list[int], list[int]]:
+                                    seed: int = 0,
+                                    stratify_by_device: bool = False) -> tuple[list[int], list[int], list[int]]:
     """Train on all legacy commands while reserving fresh commands for evaluation.
 
     This makes a data-scale experiment honest without throwing away an already
@@ -120,14 +129,43 @@ def split_with_fresh_command_holdout(dataset: BasicLinearClipDataset, *, fresh_s
         raise ValueError(f"fresh/legacy command overlap ({len(overlap)} exact commands); refusing leakage")
     if len(fresh_keys) < 3:
         raise ValueError("need at least three fresh commands for train/validation/test")
-    rng = np.random.default_rng(seed)
-    shuffled = list(rng.permutation(sorted(fresh_keys)))
-    n_test = max(1, round(len(shuffled) * test_fraction))
-    n_val = max(1, round(len(shuffled) * val_fraction))
-    if n_test + n_val >= len(shuffled):
-        n_test = n_val = 1
-    test_keys = set(shuffled[:n_test])
-    val_keys = set(shuffled[n_test:n_test + n_val])
+    if stratify_by_device:
+        keys_by_device: dict[str, set[str]] = {}
+        command_devices: dict[str, str] = {}
+        for index in fresh_indices:
+            device = _sample_device(dataset, index)
+            command = dataset.command_keys[index]
+            previous_device = command_devices.setdefault(command, device)
+            if previous_device != device:
+                raise ValueError(
+                    f"fresh command {command!r} has ambiguous device provenance "
+                    f"({previous_device!r}, {device!r})"
+                )
+            keys_by_device.setdefault(device, set()).add(command)
+        if len(keys_by_device) < 2:
+            raise ValueError("device-stratified fresh holdout requires at least two capture devices")
+        test_keys, val_keys = set(), set()
+        for device, keys in sorted(keys_by_device.items()):
+            if len(keys) < 3:
+                raise ValueError(f"device {device!r} has fewer than three fresh commands")
+            device_seed = int.from_bytes(hashlib.blake2s(device.encode(), digest_size=4).digest(), "little")
+            rng = np.random.default_rng(seed + device_seed)
+            shuffled = list(rng.permutation(sorted(keys)))
+            n_test = max(1, round(len(shuffled) * test_fraction))
+            n_val = max(1, round(len(shuffled) * val_fraction))
+            if n_test + n_val >= len(shuffled):
+                n_test = n_val = 1
+            test_keys.update(shuffled[:n_test])
+            val_keys.update(shuffled[n_test:n_test + n_val])
+    else:
+        rng = np.random.default_rng(seed)
+        shuffled = list(rng.permutation(sorted(fresh_keys)))
+        n_test = max(1, round(len(shuffled) * test_fraction))
+        n_val = max(1, round(len(shuffled) * val_fraction))
+        if n_test + n_val >= len(shuffled):
+            n_test = n_val = 1
+        test_keys = set(shuffled[:n_test])
+        val_keys = set(shuffled[n_test:n_test + n_val])
     test = [index for index, key in enumerate(dataset.command_keys) if key in test_keys]
     val = [index for index, key in enumerate(dataset.command_keys) if key in val_keys]
     train = [index for index, key in enumerate(dataset.command_keys)
@@ -140,7 +178,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           cache_frames: bool = False, map_weight: float = 0.0, start_onset: float = .24,
           start_sigma: float = .05, end_onset: float = .24,
           temporal_mixer: bool = False, trajectory_weight: float = 0.0,
-          trajectory_track: bool = False, fresh_holdout_source: str | None = None) -> dict:
+          trajectory_track: bool = False, fresh_holdout_source: str | None = None,
+          evaluate_test: bool = True, fresh_stratify_by_device: bool = False) -> dict:
     torch.manual_seed(seed)
     dataset = BasicLinearClipDataset(data, cache_frames=cache_frames)
     splitters = {"segment": split_by_segment, "command": split_by_command}
@@ -152,6 +191,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
             raise ValueError("fresh_holdout_source requires command splitting")
         train_indices, val_indices, test_indices = split_with_fresh_command_holdout(
             dataset, fresh_source=fresh_holdout_source, seed=split_seed,
+            stratify_by_device=fresh_stratify_by_device,
         )
     else:
         train_indices, val_indices, test_indices = splitters[split_strategy](dataset, seed=split_seed)
@@ -207,7 +247,10 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
                     "validation": validation}
     assert best is not None
     model.load_state_dict(best["state_dict"])
-    test = basic_linear_metrics(model, test_loader, device)
+    # Multi-seed/ensemble protocols must not inspect a prospective test split
+    # per seed.  They train each candidate with validation-only selection, then
+    # expose the test commands once through evaluate_checkpoint_ensemble.
+    test = basic_linear_metrics(model, test_loader, device) if evaluate_test else None
     payload = {
         "model_type": "basic_linear_regressor_v3_separate_endpoint_heads_tight_start_prior",
         "gesture_contract": "two-point, constant-velocity, finite-slope linear drag",
@@ -230,14 +273,18 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "split_seed": split_seed,
         "split_strategy": split_strategy,
         "fresh_holdout_source": fresh_holdout_source,
+        "fresh_stratify_by_device": fresh_stratify_by_device,
         "dataset_fingerprint": _fingerprint(dataset.sample_paths),
         "dataset_stats": dataset.stats,
         "split_sizes": {"train": len(train_indices), "validation": len(val_indices), "test": len(test_indices)},
         "best_epoch": best["epoch"],
         "validation": best["validation"],
         "test": test,
-        "test_recovery_audit": _recovery_audit(model, dataset, test_indices, device, batch_size),
-        "passes_acceptance": passes_basic_linear_acceptance(test),
+        "test_recovery_audit": (
+            _recovery_audit(model, dataset, test_indices, device, batch_size)
+            if evaluate_test else None
+        ),
+        "passes_acceptance": passes_basic_linear_acceptance(test) if test is not None else None,
         "state_dict": best["state_dict"],
     }
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -277,10 +324,15 @@ def main() -> None:
     parser.add_argument("--fresh-holdout-source", default=None,
                         help="Direct corpus child whose commands exclusively supply validation/test; "
                              "all other commands remain train-only.")
+    parser.add_argument("--fresh-stratify-by-device", action="store_true",
+                        help="Balance validation/test fresh commands by explicit capture device.")
     parser.add_argument("--min-samples", type=int, default=1000,
                         help="Require this many accepted calibrated linear clips (0 disables the milestone gate).")
     parser.add_argument("--cache-frames", action="store_true",
                         help="Decode each accepted clip at most once; recommended for fixed, repeated epochs.")
+    parser.add_argument("--skip-test", action="store_true",
+                        help="Save a validation-selected checkpoint without evaluating its test split; "
+                             "use only when a later validation-selected ensemble will test once.")
     args = parser.parse_args()
     if (args.epochs < 1 or args.batch_size < 1 or args.lr <= 0 or args.map_weight < 0
             or args.trajectory_weight < 0 or args.start_sigma <= 0):
@@ -299,7 +351,9 @@ def main() -> None:
                    start_sigma=args.start_sigma, end_onset=args.end_onset,
                    temporal_mixer=args.temporal_mixer, trajectory_weight=args.trajectory_weight,
                    trajectory_track=args.trajectory_track,
-                   fresh_holdout_source=args.fresh_holdout_source)
+                   fresh_holdout_source=args.fresh_holdout_source,
+                   evaluate_test=not args.skip_test,
+                   fresh_stratify_by_device=args.fresh_stratify_by_device)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 

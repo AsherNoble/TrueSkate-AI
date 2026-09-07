@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>LOCAL_MIN_GB</key>
+		<string>25</string>
+		<key>MODAL_MAX_GB</key>
+		<string>950</string>
+		<key>MODAL_VOLUME</key>
+		<string>trueskate-corpus-v2</string>
+		<key>PATH</key>
+		<string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+	</dict>
+	<key>Label</key>
+	<string>com.trueskate.storageguard</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/training-server/trueskate-ai/scripts/ops/storage_guard.sh</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/Users/training-server/trueskate-ai/logs/storage_guard.out.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/training-server/trueskate-ai/logs/storage_guard.out.log</string>
+	<key>StartInterval</key>
+	<integer>300</integer>
+</dict>
+</plist>

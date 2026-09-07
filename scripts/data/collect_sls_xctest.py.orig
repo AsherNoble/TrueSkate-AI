@@ -90,30 +90,6 @@ def _park_tag(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
 
 
-def _write_heartbeat(path: Path | None, *, device: str, state: str,
-                     segment: int | None = None) -> None:
-    """Atomically publish collector progress for local supervisors/dashboard.
-
-    A bounded XCTest segment can legitimately take several minutes once video
-    retrieval and foreground alignment are included.  This heartbeat makes
-    that distinction observable: a live collector refreshes it at every phase
-    and gesture, while a wedged Appium/XCTest call leaves it stale.
-    """
-    if path is None:
-        return
-    payload = {"device": device, "state": state, "updated_at_epoch_s": time.time()}
-    if segment is not None:
-        payload["segment"] = segment
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_name(f".{path.name}.tmp")
-        tmp.write_text(json.dumps(payload))
-        tmp.replace(path)
-    except OSError as exc:
-        # Status reporting must never interrupt an otherwise healthy recorder.
-        print(f"[collect_xctest] heartbeat write failed: {exc!r}", flush=True)
-
-
 def _start_caffeinate():
     try:
         p = subprocess.Popen(["caffeinate", "-dimsu", "-w", str(os.getpid())])
@@ -258,10 +234,6 @@ def main() -> None:
     ap.add_argument("--segment-reset-settle-s", type=float, default=1.5,
                     help="Seconds to wait after --reset-before-segment before recording. Must "
                          "be >= 1.5 so the reset tap's rendered mark cannot contaminate clips.")
-    ap.add_argument("--reset-every-samples", type=int, default=0,
-                    help="After this many logged non-tap samples, tap the location-reset control "
-                         "and wait --segment-reset-settle-s before the next sample. 0 disables "
-                         "in-segment resets (default).")
     ap.add_argument("--park-label", default=None,
                     help="Pin collection to a single named park (e.g. 'The Workshop') "
                          "instead of the SLS rotation. Sets the sample-dir park tag, so "
@@ -325,23 +297,12 @@ def main() -> None:
                     help="Run the post-segment aligner in the foreground instead of async. "
                          "Use for a bounded calibration pilot so its go/no-go result is visible.")
     ap.add_argument("--no-caffeinate", action="store_true")
-    ap.add_argument("--no-run-notifications", action="store_true",
-                    help="Suppress this process's routine start/stop ntfy messages. "
-                         "Use for a supervisor that launches one bounded process per segment; "
-                         "safety and park-switch alerts remain enabled.")
-    ap.add_argument("--heartbeat-path", type=Path, default=None,
-                    help="Optional local JSON heartbeat, refreshed during every collection phase. "
-                         "A bounded-run supervisor uses it to distinguish a slow segment from a wedged call.")
     ap.add_argument("--no-rotate", action="store_true")
     ap.add_argument("--confirm-poll-s", type=float, default=10.0)
     ap.add_argument("--no-gameplay-guard", action="store_true",
                     help="Disable the in-loop replay/menu guard (by default, gestures fired "
                          "while True Skate is in replay/menu are NOT logged, and the app is "
                          "relaunched to return to live gameplay).")
-    ap.add_argument("--no-menu-guard", action="store_true",
-                    help="Disable only the screenshot replay/editor heuristic while keeping the "
-                         "OS-level True Skate foreground guard. Use only for a human-confirmed "
-                         "park whose persistent bottom UI is a known heuristic false positive.")
     ap.add_argument("--gameplay-check-every", type=int, default=1,
                     help="Screenshot-check the gameplay state every N gestures (1 = every gesture).")
     ap.add_argument("--menu-recover-after", type=int, default=2,
@@ -383,8 +344,6 @@ def main() -> None:
         raise SystemExit("--calibration-tap-hold-s must be in [0, 0.5]")
     if args.segment_reset_settle_s < 1.5:
         raise SystemExit("--segment-reset-settle-s must be >= 1.5 to clear the reset trace")
-    if args.reset_every_samples < 0:
-        raise SystemExit("--reset-every-samples must be >= 0")
     if args.align_resize_width < 8:
         raise SystemExit("--align-resize-width must be >= 8")
     if args.basic_holds:
@@ -445,8 +404,7 @@ def main() -> None:
 
     worker = DeviceWorker(cfg)
     device = cfg["name"]
-    _write_heartbeat(args.heartbeat_path, device=device, state="connecting")
-    print(f"Connecting to {device} (needs WDA+Appium up; run launch_services.py)...", flush=True)
+    print(f"Connecting to {device} (needs WDA+Appium up; run launch_services.py)...")
     worker.connect()
     dw, dh = worker.device_w, worker.device_h
     udid = os.environ.get(cfg.get("env_key", ""), "") or cfg.get("udid", "")
@@ -455,21 +413,19 @@ def main() -> None:
     session = time.strftime("%Y%m%d_%H%M%S")
     out_root = args.out_dir / f"{device}_{session}"
     out_root.mkdir(parents=True, exist_ok=True)
-    _write_heartbeat(args.heartbeat_path, device=device, state="connected")
-    print(f"Saving segments to {out_root}; park cycle starts at: {cycle[0]}", flush=True)
+    print(f"Saving segments to {out_root}; park cycle starts at: {cycle[0]}")
 
     rng = np.random.default_rng(args.seed)
     recipe_vectors = load_recipe_vectors(args.recipe_dir)
-    print(f"Loaded {len(recipe_vectors)} packable recipes.", flush=True)
+    print(f"Loaded {len(recipe_vectors)} packable recipes.")
     fracs = (args.flick_frac, args.nslot_frac, args.recipe_frac)
     print(f"Gesture mix: base weights flick={args.flick_frac} nslot={args.nslot_frac} "
           f"recipe={args.recipe_frac}; spin share={args.spin_frac} (guaranteed-hold slice); "
-          f"static share={args.static_frac} (stationary hold/tap).", flush=True)
+          f"static share={args.static_frac} (stationary hold/tap).")
 
-    if not args.no_run_notifications:
-        notify(f"[{device}] XCTest SLS collection starting in {cycle[0]} "
-               f"({args.segment_min:.0f}-min segments, {args.per_park_hours}h/park).",
-               title="TrueSkate SLS collect", tags=["camera"])
+    notify(f"[{device}] XCTest SLS collection starting in {cycle[0]} "
+           f"({args.segment_min:.0f}-min segments, {args.per_park_hours}h/park).",
+           title="TrueSkate SLS collect", tags=["camera"])
 
     park_idx = 0
     park_deadline = time.monotonic() + args.per_park_hours * 3600.0
@@ -526,10 +482,8 @@ def main() -> None:
                 # while bounding how long a no-reset collection can remain in a
                 # bad board location (e.g. a gap that normally needs reset).
                 try:
-                    _write_heartbeat(args.heartbeat_path, device=device,
-                                     state="resetting", segment=segment_idx)
                     print(f"[seg {segment_idx}] resetting board before recording; "
-                          f"settling {args.segment_reset_settle_s:.1f}s", flush=True)
+                          f"settling {args.segment_reset_settle_s:.1f}s")
                     reset_position(worker.driver, dw, dh)
                     time.sleep(args.segment_reset_settle_s)
                 except Exception as exc:  # noqa: BLE001 — do not begin an unsafe segment
@@ -541,8 +495,6 @@ def main() -> None:
                     time.sleep(3.0)
                     continue
             try:
-                _write_heartbeat(args.heartbeat_path, device=device,
-                                 state="starting_recording", segment=segment_idx)
                 rec.start()
             except Exception as exc:  # noqa: BLE001
                 # XCTest recording can transiently fail (XCTDaemon "Failed to write
@@ -576,15 +528,12 @@ def main() -> None:
                 time.sleep(3.0)
                 continue
             start_fail_streak = 0  # rec.start() succeeded
-            _write_heartbeat(args.heartbeat_path, device=device,
-                             state="recording", segment=segment_idx)
             seg_deadline = time.monotonic() + args.segment_min * 60.0
             events: list[dict] = []
             park_switched = False
             seg_aborted = False
             seg_iter = 0
             segment_events = 0
-            segment_payload_samples = 0
             non_gameplay_streak = 0
 
             while not _STOP and time.monotonic() < seg_deadline:
@@ -624,7 +573,7 @@ def main() -> None:
                 time.sleep(0.3)  # board settle into the reset state
 
                 # --- gameplay guard: never log a gesture fired into the replay/menu ---
-                if not args.no_menu_guard and seg_iter % max(1, args.gameplay_check_every) == 0:
+                if not args.no_gameplay_guard and seg_iter % max(1, args.gameplay_check_every) == 0:
                     try:
                         _guard_png = worker.driver.get_screenshot_as_png()
                         _in_editor = is_editor_frame(_guard_png)
@@ -692,7 +641,7 @@ def main() -> None:
                 # --- post-gesture menu/editor check ---
                 # A gesture can open non-gameplay UI after the pre-gesture guard.  The NEXT
                 # reset may close it, so check before logging and drop the contaminated window.
-                if not args.no_menu_guard:
+                if not args.no_gameplay_guard:
                     try:
                         time.sleep(0.35)  # let any newly-opened UI render before scoring
                         _post_png = worker.driver.get_screenshot_as_png()
@@ -719,33 +668,7 @@ def main() -> None:
                     events[-1]["calibration_tap_hold_s"] = calibration_hold_s
                 segment_events += 1
                 total_gestures += 1
-                if g.kind != "tap":
-                    segment_payload_samples += 1
-                _write_heartbeat(args.heartbeat_path, device=device,
-                                 state="recording", segment=segment_idx)
                 time.sleep(args.tail_s)  # trick plays out into the recording (response window)
-
-                # Keep the board in an open, repeatable area during linear data
-                # collection.  This is deliberately after the response tail: the
-                # reset's rendered touch arrives about a second later, and the
-                # 1.5s clear interval keeps it out of the NEXT labeled clip.
-                # It is never included in ``events``, so the reset itself cannot
-                # become a trainable command.
-                if (segment_payload_samples
-                        and args.reset_every_samples
-                        and segment_payload_samples % args.reset_every_samples == 0):
-                    try:
-                        _write_heartbeat(args.heartbeat_path, device=device,
-                                         state="periodic_reset", segment=segment_idx)
-                        print(f"[seg {segment_idx}] resetting location after "
-                              f"{segment_payload_samples} payload samples; settling "
-                              f"{args.segment_reset_settle_s:.1f}s", flush=True)
-                        reset_position(worker.driver, dw, dh)  # normalized (0.50, 0.0558)
-                        time.sleep(args.segment_reset_settle_s)
-                    except Exception as exc:  # noqa: BLE001 — do not risk unlabeled follow-on clips
-                        print(f"[seg {segment_idx}] periodic reset failed: {exc!r} — close segment")
-                        seg_aborted = True
-                        break
 
                 # --- park rotation (same ntfy mechanism as the DAL collector) ---
                 if args.no_rotate:
@@ -787,8 +710,6 @@ def main() -> None:
                 continue
             mov_path = out_root / f"segment_{segment_idx:05d}.mov"
             try:
-                _write_heartbeat(args.heartbeat_path, device=device,
-                                 state="saving", segment=segment_idx)
                 res = rec.stop_and_save(mov_path)
             except Exception as exc:  # noqa: BLE001
                 # stop/retrieve failed (oversized payload → RemoteDisconnected, or an
@@ -824,21 +745,15 @@ def main() -> None:
             }
             manifest_path.write_text(json.dumps(manifest, indent=2))
             free_gb = _device_free_gb(udid) if udid else None
-            _write_heartbeat(args.heartbeat_path, device=device,
-                             state="aligning", segment=segment_idx)
             print(f"[seg {segment_idx}] saved {res.summary()['mb']}MB, {len(events)} gestures, "
                   f"park={cur_park}, device_free={free_gb}GB"
-                  f"{' (PARK SWITCH)' if park_switched else ''}", flush=True)
+                  f"{' (PARK SWITCH)' if park_switched else ''}")
             if free_gb is not None and free_gb < args.min_free_gb:
                 notify(f"[{device}] device free storage low: {free_gb}GB (< {args.min_free_gb}).",
                        title="TrueSkate SLS collect", priority="high", tags=["warning"])
             _device_aligner_spawn(manifest_path)
-            _write_heartbeat(args.heartbeat_path, device=device,
-                             state="segment_complete", segment=segment_idx)
             segment_idx += 1
     finally:
-        _write_heartbeat(args.heartbeat_path, device=device, state="stopped",
-                         segment=segment_idx)
         try:
             rec.abort()  # ensure no recording leaks on the device
         except Exception:  # noqa: BLE001
@@ -846,10 +761,9 @@ def main() -> None:
         worker.disconnect()
         if caffeinate and caffeinate.poll() is None:
             caffeinate.terminate()
-        if not args.no_run_notifications:
-            notify(f"[{device}] XCTest SLS collection stopped: {segment_idx} segments, "
-                   f"{total_gestures} gestures, {total_menu_skips} menu-skipped → {out_root.name}",
-                   title="TrueSkate SLS collect", tags=["checkered_flag"])
+        notify(f"[{device}] XCTest SLS collection stopped: {segment_idx} segments, "
+               f"{total_gestures} gestures, {total_menu_skips} menu-skipped → {out_root.name}",
+               title="TrueSkate SLS collect", tags=["checkered_flag"])
         print(f"\nDone: {segment_idx} segments, {total_gestures} gestures, "
               f"{total_menu_skips} skipped (replay/menu) → {out_root}")
     if recovery_exit:
