@@ -126,7 +126,7 @@ def _decode_calibration_window(
         result = subprocess.run(
             ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.3f}", "-i", str(mov),
              "-t", f"{duration:.3f}", "-vf", f"fps={fps},scale={resize_width}:-2",
-             "-vsync", "0", str(raw / "f_%04d.png")],
+             "-fps_mode", "passthrough", str(raw / "f_%04d.png")],
             capture_output=True, text=True,
         )
         paths = sorted(raw.glob("f_*.png"))
@@ -436,7 +436,7 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                 r = subprocess.run(
                     ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.3f}", "-i", str(mov),
                      "-t", f"{dur:.3f}", "-vf", f"fps={fps},scale={resize_width}:-2",
-                     "-vsync", "0", str(raw / "f_%04d.png")],
+                     "-fps_mode", "passthrough", str(raw / "f_%04d.png")],
                     capture_output=True, text=True,
                 )
                 frames = sorted(raw.glob("f_*.png"))
