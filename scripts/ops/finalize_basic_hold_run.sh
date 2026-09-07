@@ -14,7 +14,7 @@ accepted_count() {
   PYTHONPATH=src .venv/bin/python - "$OUT" <<'PY'
 import sys
 from pathlib import Path
-from trueskate_ai.vision.basic_hold_dataset import discover_basic_hold_samples
+from trueskate_ai.model1.hold.dataset import discover_basic_hold_samples
 print(len(discover_basic_hold_samples(Path(sys.argv[1]))[0]))
 PY
 }
@@ -42,8 +42,8 @@ PYTHONPATH=src .venv/bin/python - "$OUT" <<'PY'
 import sys
 from pathlib import Path
 import cv2
-from trueskate_ai.vision.gameplay_filter import is_menu_frame
-from trueskate_ai.vision.basic_hold_dataset import discover_basic_hold_samples
+from trueskate_ai.collection.gameplay_filter import is_menu_frame
+from trueskate_ai.model1.hold.dataset import discover_basic_hold_samples
 
 root = Path(sys.argv[1])
 paths, _ = discover_basic_hold_samples(root)
@@ -70,6 +70,6 @@ PY
 PYTHONPATH=src .venv/bin/python scripts/cloud/upload_basic_hold_corpus.py \
   --source "$OUT" --volume trueskate-mvp --remote-subdir basic_hold_diverse_xctest \
   --min-samples "$TARGET"
-env MODAL_CORPUS_VOLUME=trueskate-mvp .venv/bin/modal run scripts/cloud/train_basic_hold_modal.py \
+env MODAL_CORPUS_VOLUME=trueskate-mvp .venv/bin/modal run scripts/model1/train_basic_hold_modal.py \
   --data-subdir basic_hold_diverse_xctest --run-label "$RUN_LABEL" \
   --epochs 40 --batch-size 8 --lr 1e-3 --seed 0 --base-channels 16 --split-strategy command

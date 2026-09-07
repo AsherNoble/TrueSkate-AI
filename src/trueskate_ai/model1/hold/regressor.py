@@ -11,7 +11,7 @@ from __future__ import annotations
 import torch
 from torch import nn
 
-from trueskate_ai.vision.basic_hold_dataset import HOLD_DURATION_MAX_S, HOLD_DURATION_MIN_S
+from trueskate_ai.model1.hold.dataset import HOLD_DURATION_MAX_S, HOLD_DURATION_MIN_S
 
 
 class BasicHoldRegressor(nn.Module):

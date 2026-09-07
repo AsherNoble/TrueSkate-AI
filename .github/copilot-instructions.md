@@ -26,7 +26,7 @@ Tests & linting
 - scripts/: entrypoints (train, build library, launch services). Experiments journal in experiments/.
 
 Key runtime constraints:
-- Requires physical iPhones, one Appium instance per device (localhost:4723–4725) and one WDA instance per device (localhost:8100–8102). See DEVICES in src/trueskate_ai/rl/device_worker.py for the full per-device port mapping.
+- Requires physical iPhones, one Appium instance per device (localhost:4723–4725) and one WDA instance per device (localhost:8100–8102). See DEVICES in src/trueskate_ai/sim/device.py for the full per-device port mapping.
 - Device UDIDs are read from .env (copy .env.example).
 
 ## Key conventions and patterns

@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 import pytest
 
-from trueskate_ai.vision.tap_timing_calibration import (
+from trueskate_ai.collection.tap_timing_calibration import (
     detect_tap_onset,
     fit_tap_offsets,
 )
@@ -30,7 +30,7 @@ def _tap_window(*, onset_s: float | None, command_s: float = 0.4):
 
 
 def _aligner_module():
-    path = Path(__file__).parents[1] / "scripts" / "data" / "align_xctest_traces.py"
+    path = Path(__file__).parents[1] / "scripts" / "collection" / "align_xctest_traces.py"
     spec = importlib.util.spec_from_file_location("test_align_xctest_traces", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

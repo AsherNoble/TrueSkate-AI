@@ -4,11 +4,11 @@ from pathlib import Path
 import pytest
 import torch
 
-from trueskate_ai.vision.temporal_trace_predictor import TemporalTracePredictor
+from trueskate_ai.model1.temporal.predictor import TemporalTracePredictor
 
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-_TRAINER_PATH = _REPO_ROOT / "scripts" / "train" / "train_temporal_trace_extractor.py"
+_TRAINER_PATH = _REPO_ROOT / "scripts" / "model1" / "train_temporal_trace_extractor.py"
 _SPEC = importlib.util.spec_from_file_location("temporal_trace_trainer_test", _TRAINER_PATH)
 assert _SPEC is not None and _SPEC.loader is not None
 trainer = importlib.util.module_from_spec(_SPEC)

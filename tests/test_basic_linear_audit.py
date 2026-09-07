@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from trueskate_ai.vision.basic_linear_audit import audit_basic_linear_corpus
+from trueskate_ai.model1.linear.audit import audit_basic_linear_corpus
 
 
 def _sample(root: Path, name: str, *, device: str | None, points: list[list[float]],

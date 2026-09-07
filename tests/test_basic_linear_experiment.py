@@ -16,17 +16,17 @@ from trueskate_ai.data.gesture_sampling import (
     BASIC_LINEAR_MIN_S,
     sample_basic_linear_mixture,
 )
-from trueskate_ai.vision.basic_linear_dataset import (
+from trueskate_ai.model1.linear.dataset import (
     BasicLinearClipDataset,
     split_by_command,
     split_by_segment,
 )
-from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
-from trueskate_ai.vision.basic_linear_training import (
+from trueskate_ai.model1.linear.regressor import BasicLinearRegressor
+from trueskate_ai.model1.linear.training import (
     basic_linear_endpoint_map_loss, basic_linear_trajectory_map_loss, basic_linear_loss, basic_linear_metrics,
     basic_linear_recovery_records, passes_basic_linear_acceptance, RECOVERY_ENDPOINT_TOLERANCE,
 )
-from scripts.train.train_basic_linear_regressor import _IndexedSubset, split_with_fresh_command_holdout
+from scripts.model1.train_basic_linear_regressor import _IndexedSubset, split_with_fresh_command_holdout
 
 
 def _write_sample(root: Path, segment: str, name: str, *, kind: str = "linear",
@@ -163,7 +163,7 @@ def test_linear_regressor_returns_native_bounded_quintuplets():
 
 def test_train_records_preclip_gradient_norms_only_when_clipping_is_enabled(tmp_path, monkeypatch):
     """Gradient clipping must be measurable, while the control remains unchanged."""
-    import scripts.train.train_basic_linear_regressor as trainer
+    import scripts.model1.train_basic_linear_regressor as trainer
 
     for index in range(12):
         _write_sample(tmp_path, f"segment_{index}", f"sample_{index}",
@@ -187,7 +187,7 @@ def test_train_records_preclip_gradient_norms_only_when_clipping_is_enabled(tmp_
 
 def test_train_resumes_from_an_atomic_epoch_checkpoint(tmp_path, monkeypatch):
     """A timeout after epoch N must resume at N+1, not discard the run."""
-    import scripts.train.train_basic_linear_regressor as trainer
+    import scripts.model1.train_basic_linear_regressor as trainer
 
     for index in range(12):
         _write_sample(tmp_path, f"segment_{index}", f"sample_{index}",
@@ -224,7 +224,7 @@ def test_train_resumes_from_an_atomic_epoch_checkpoint(tmp_path, monkeypatch):
 
 
 def test_modal_training_persists_each_epoch_and_has_timeout_margin():
-    source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
     train_body = source[source.index("def train_remote("):source.index("def train_remote_cpu(")]
     assert "timeout=24 * 3600" in source
     assert "resume_path=resume_checkpoint" in train_body
@@ -363,7 +363,7 @@ def test_linear_sample_meta_carries_device_provenance(tmp_path):
 
 def test_linear_collector_exposes_native_resolution_option():
     result = subprocess.run(
-        [sys.executable, "scripts/data/collect_sls_xctest.py", "--help"],
+        [sys.executable, "scripts/collection/collect_sls_xctest.py", "--help"],
         capture_output=True, text=True, check=True,
     )
     assert "--align-resize-width" in result.stdout
@@ -371,7 +371,7 @@ def test_linear_collector_exposes_native_resolution_option():
 
 def test_linear_collector_supports_clean_segment_boundary_resets():
     result = subprocess.run(
-        [sys.executable, "scripts/data/collect_sls_xctest.py", "--help"],
+        [sys.executable, "scripts/collection/collect_sls_xctest.py", "--help"],
         capture_output=True, text=True, check=True,
     )
     assert "--reset-before-segment" in result.stdout
@@ -380,7 +380,7 @@ def test_linear_collector_supports_clean_segment_boundary_resets():
     assert "--no-menu-guard" in result.stdout
     assert "--no-run-notifications" in result.stdout
     assert "--heartbeat-path" in result.stdout
-    source = Path("scripts/data/collect_sls_xctest.py").read_text()
+    source = Path("scripts/collection/collect_sls_xctest.py").read_text()
     assert "--segment-reset-settle-s must be >= 1.5" in source
     assert source.index("if args.reset_before_segment:") < source.index("rec.start()")
     reset_after_sample = source.index("if (segment_payload_samples")
@@ -432,14 +432,14 @@ def test_linear_dataset_decodes_only_selected_video_frames(monkeypatch, tmp_path
         calls.append(count)
         return [np.full((20, 12, 3), index, np.uint8) for index in range(count)]
 
-    monkeypatch.setattr("trueskate_ai.vision.basic_linear_dataset._decode_even_frames", fake_decode)
+    monkeypatch.setattr("trueskate_ai.model1.linear.dataset._decode_even_frames", fake_decode)
     dataset = BasicLinearClipDataset(tmp_path, sequence_length=4, image_height=20, image_width=12)
     assert dataset[0]["frames"].shape == (4, 3, 20, 12)
     assert calls == [4]
 
 
 def test_selected_video_decode_falls_back_when_random_seek_is_unreliable(monkeypatch, tmp_path):
-    import trueskate_ai.vision.basic_hold_dataset as holds
+    import trueskate_ai.model1.hold.dataset as holds
 
     sample = tmp_path / "sample"
     sample.mkdir()
@@ -465,12 +465,12 @@ def test_selected_video_decode_falls_back_when_random_seek_is_unreliable(monkeyp
 
 
 def test_modal_linear_training_reserves_cache_headroom():
-    source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
     assert 'gpu="any", timeout=3 * 3600, memory=16384' in source
 
 
 def test_modal_linear_cpu_fallback_is_separate_and_labelled():
-    source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
     assert "def train_remote_cpu(" in source
     assert 'execution_hardware"] = "cpu"' in source
     assert "cpu=8.0" in source
@@ -570,7 +570,7 @@ def test_zero_irls_iterations_is_plain_least_squares():
 
 def test_linear_trainer_exposes_line_fit_and_resolution_controls():
     result = subprocess.run(
-        [sys.executable, "scripts/train/train_basic_linear_regressor.py", "--help"],
+        [sys.executable, "scripts/model1/train_basic_linear_regressor.py", "--help"],
         capture_output=True, text=True, check=True,
     )
     for flag in ("--line-fit", "--irls-iterations", "--huber-delta", "--image-width", "--image-height"):
@@ -581,7 +581,7 @@ def test_line_fit_requires_supervised_trajectory_evidence():
     # The fit reads endpoints off the contact map, so an unsupervised map would
     # make the run silently meaningless rather than merely worse.
     result = subprocess.run(
-        [sys.executable, "scripts/train/train_basic_linear_regressor.py",
+        [sys.executable, "scripts/model1/train_basic_linear_regressor.py",
          "--data", "/nonexistent", "--line-fit"],
         capture_output=True, text=True,
     )
@@ -606,7 +606,7 @@ def test_recovery_records_carry_predicted_and_target_pairs():
 def _modal_linear_module():
     import importlib.util
     spec = importlib.util.spec_from_file_location(
-        "_modal_linear", Path("scripts/cloud/train_basic_linear_modal.py"),
+        "_modal_linear", Path("scripts/model1/train_basic_linear_modal.py"),
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -639,7 +639,7 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
     # that skips the helper leaves the count unchanged and passes.  Check the
     # property instead -- every dataset construction inside a Modal function must
     # take its shape from the helper.
-    source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
     blocks = source.split("@app.function")[1:]
     constructions = 0
     for block in blocks:
@@ -713,7 +713,7 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
     assert module._require_two_knots({"knots": 2}, "x") == {"knots": 2}
 
 def test_modal_linear_entry_points_expose_the_line_fit_decoder():
-    source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
     assert source.count("line_fit=line_fit") == 3
     assert 'line_fit=bool(payload.get("line_fit", False))' in source
 
@@ -723,7 +723,7 @@ def test_bias_correction_evaluator_takes_its_split_from_the_checkpoint():
     # re-derived "test" set can quietly contain trained-on commands -- inflating
     # baseline and corrected numbers together, which the paired test cannot
     # reveal.  Split identity must come from the payload, not from arguments.
-    source = Path("scripts/cloud/train_basic_linear_modal.py").read_text()
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
     body = source[source.index("def evaluate_bias_correction("):]
     body = body[:body.index("@app.local_entrypoint()")]
     assert 'payload.get("split_seed")' in body
@@ -747,7 +747,7 @@ def test_training_payload_records_the_whole_validation_curve_not_just_its_argmax
     """
     import ast
 
-    source = Path("scripts/train/train_basic_linear_regressor.py").read_text()
+    source = Path("scripts/model1/train_basic_linear_regressor.py").read_text()
     tree = ast.parse(source)
     train_fn = next(node for node in ast.walk(tree)
                     if isinstance(node, ast.FunctionDef) and node.name == "train")
@@ -827,6 +827,6 @@ def test_seed_matches_shared_weights_across_arms_that_differ_only_in_optional_mo
     assert torch.equal(baseline_rng, variant_rng), (
         "optional modules must not advance the global RNG differently between arms")
 
-    source = Path("scripts/train/train_basic_linear_regressor.py").read_text()
+    source = Path("scripts/model1/train_basic_linear_regressor.py").read_text()
     assert "generator=shuffle_generator" in source, (
         "the training DataLoader must take an explicit seed-derived generator")

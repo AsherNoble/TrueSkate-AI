@@ -3,16 +3,16 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from scripts.data.build_bc_clips import (
+from scripts.model2.build_bc_clips import (
     TouchPeak,
     extract_touch_peaks,
     heatmaps_to_touch_tracks,
     touch_tracks_to_strokes,
 )
-from trueskate_ai.bc.gesture_tokens import strokes_to_param_vector
-from trueskate_ai.bc.sequence_dataset import group_overlapping_strokes
-from trueskate_ai.rl.cmaes.action_param import unpack_gesture_params
-from trueskate_ai.vision.touch_peaks import (
+from trueskate_ai.model2.tokens import strokes_to_param_vector
+from trueskate_ai.model2.dataset import group_overlapping_strokes
+from trueskate_ai.sim.gesture_params import unpack_gesture_params
+from trueskate_ai.model1.heatmap.peaks import (
     TouchPeak as CanonicalTouchPeak,
     extract_touch_peaks as canonical_extract_touch_peaks,
 )

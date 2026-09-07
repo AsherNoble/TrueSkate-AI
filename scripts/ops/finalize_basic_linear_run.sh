@@ -25,7 +25,7 @@ accepted_count() {
   PYTHONPATH=src .venv/bin/python - "$OUT" <<'PY'
 import sys
 from pathlib import Path
-from trueskate_ai.vision.basic_linear_dataset import discover_basic_linear_samples
+from trueskate_ai.model1.linear.dataset import discover_basic_linear_samples
 print(len(discover_basic_linear_samples(Path(sys.argv[1]))[0]))
 PY
 }
@@ -60,7 +60,7 @@ PYTHONPATH=src .venv/bin/python scripts/cloud/upload_basic_linear_corpus.py \
   --min-samples "$TARGET"
 TRAIN_ARGS=()
 if [ "$TEMPORAL_MIXER" = "1" ]; then TRAIN_ARGS+=(--temporal-mixer); fi
-env MODAL_CORPUS_VOLUME="$VOLUME" .venv/bin/modal run scripts/cloud/train_basic_linear_modal.py \
+env MODAL_CORPUS_VOLUME="$VOLUME" .venv/bin/modal run scripts/model1/train_basic_linear_modal.py \
   --data-subdir basic_linear_xctest --run-label "$RUN_LABEL" \
   --epochs 40 --batch-size 8 --lr 1e-3 --seed 0 --base-channels 16 --split-strategy command \
   "${TRAIN_ARGS[@]}"

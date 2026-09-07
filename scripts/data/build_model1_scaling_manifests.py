@@ -14,7 +14,7 @@ if str(_ROOT / "src") not in sys.path:
 from trueskate_ai.data.cohort_manifest import (  # noqa: E402
     assert_zero_cohort_leakage, read_manifest, write_manifest,
 )
-from trueskate_ai.vision.model1_scaling import (  # noqa: E402
+from trueskate_ai.model1.scaling import (  # noqa: E402
     DEFAULT_LINEAR_RUNGS, assert_deterministic_nesting,
     build_experiment_manifest, build_linear_cohort_manifest,
     build_nested_subset_manifests,

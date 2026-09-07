@@ -60,7 +60,7 @@ from dotenv import load_dotenv
 
 load_dotenv(_REPO_ROOT / ".env")
 
-from trueskate_ai.rl.device_worker import select_devices
+from trueskate_ai.sim.device import select_devices
 from trueskate_ai.utils.notify import notify
 
 _PY = sys.executable

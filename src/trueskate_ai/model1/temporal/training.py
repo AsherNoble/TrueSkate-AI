@@ -536,7 +536,7 @@ def extract_touch_peaks(
 ) -> list[DetectedTouchPeak]:
     """Decode one map with the same plateau/NMS semantics as deployment."""
 
-    from trueskate_ai.vision.touch_peaks import (
+    from trueskate_ai.model1.heatmap.peaks import (
         extract_touch_peaks as extract_canonical_touch_peaks,
     )
 

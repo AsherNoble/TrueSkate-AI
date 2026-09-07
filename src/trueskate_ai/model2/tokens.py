@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from trueskate_ai.rl.cmaes.action_param import PARAMS_PER_SLOT, build_param_bounds
+from trueskate_ai.sim.gesture_params import PARAMS_PER_SLOT, build_param_bounds
 
 # One stroke = the 8 per-slot params + 1 inter-stroke delay.
 STROKE_DIM = PARAMS_PER_SLOT + 1  # 9

@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-from trueskate_ai.vision.basic_hold_dataset import HOLD_DURATION_MAX_S, HOLD_DURATION_MIN_S
+from trueskate_ai.model1.hold.dataset import HOLD_DURATION_MAX_S, HOLD_DURATION_MIN_S
 
 
 def basic_hold_loss(prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:

@@ -19,7 +19,7 @@ from dataclasses import dataclass, asdict
 import torch
 import torch.nn as nn
 
-from trueskate_ai.bc.gesture_tokens import STROKE_DIM
+from trueskate_ai.model2.tokens import STROKE_DIM
 
 
 @dataclass

@@ -50,14 +50,14 @@ if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from trueskate_ai.data.gesture_sampling import load_recipe_vectors, sample_mixture  # noqa: E402
-from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E402
-from trueskate_ai.rl.device_worker import (  # noqa: E402
-    DeviceWorker, add_device_selection_args, resolve_devices,
+from trueskate_ai.sim.gesture_params import execute_gesture_params  # noqa: E402
+from trueskate_ai.sim.device import (  # noqa: E402
+    DeviceSession, add_device_selection_args, resolve_devices,
 )
 from trueskate_ai.sim.gestures import execute_static_push, scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import curved_drag, reset_position  # noqa: E402
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
-from trueskate_ai.vision.clapperboard import RollingCaptureOffset  # noqa: E402
+from trueskate_ai.collection.clapperboard import RollingCaptureOffset  # noqa: E402
 from trueskate_ai.vision.dal_capture import DalFrameRecorder, resolve_device_name  # noqa: E402
 
 # The 11 installed SLS arenas, in cycle order. Switching is MANUAL (you load the
@@ -130,7 +130,7 @@ def _downsample(items: list, max_n: int) -> list[int]:
     return [int(round(i * (n - 1) / (max_n - 1))) for i in range(max_n)]
 
 
-def _execute(worker: DeviceWorker, g) -> None:
+def _execute(worker: DeviceSession, g) -> None:
     dw, dh = worker.device_w, worker.device_h
     if g.kind == "flick":
         pts = [scale_to_device(x, y, dw, dh) for x, y in g.waypoints]
@@ -243,7 +243,7 @@ def main() -> None:
     signal.signal(signal.SIGINT, _on_sigint)
     caffeinate = None if args.no_caffeinate else _start_caffeinate()
 
-    worker = DeviceWorker(cfg)
+    worker = DeviceSession(cfg)
     print(f"Connecting to {cfg['name']} (needs WDA+Appium up; "
           f"run launch_services.py --devices {cfg['name']})...")
     worker.connect()

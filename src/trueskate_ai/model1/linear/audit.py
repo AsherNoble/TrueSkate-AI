@@ -18,7 +18,7 @@ from trueskate_ai.data.gesture_sampling import (
     BASIC_LINEAR_MAX_S,
     BASIC_LINEAR_MIN_S,
 )
-from trueskate_ai.vision.basic_linear_dataset import discover_basic_linear_samples
+from trueskate_ai.model1.linear.dataset import discover_basic_linear_samples
 
 
 def command_key(meta: dict[str, Any]) -> str:

@@ -2,7 +2,7 @@
 
 Connects to devices via Appium and runs the parallel CMA-ES loop from
 trueskate_ai.rl.cmaes.cmaes_optimizer. Device connections are managed
-internally by run() via DeviceWorker instances.
+internally by run() via DeviceSession instances.
 
 Usage:
     python scripts/train/train_cmaes.py --curriculum curricula/kickflip.json [options]
@@ -37,7 +37,7 @@ if str(_REPO_ROOT / "src") not in sys.path:
 
 from trueskate_ai.rl.cmaes.cmaes_optimizer import run
 from trueskate_ai.rl.cmaes.curriculum import Curriculum
-from trueskate_ai.rl.device_worker import add_device_selection_args, resolve_devices
+from trueskate_ai.sim.device import add_device_selection_args, resolve_devices
 
 
 def main() -> None:

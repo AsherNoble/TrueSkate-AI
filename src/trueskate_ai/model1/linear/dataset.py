@@ -18,7 +18,7 @@ from trueskate_ai.data.gesture_sampling import (
     BASIC_LINEAR_MIN_S,
 )
 from trueskate_ai.data.trajectory_resample import resample_command_at_times
-from trueskate_ai.vision.basic_hold_dataset import (
+from trueskate_ai.model1.hold.dataset import (
     DEFAULT_IMAGE_HEIGHT, DEFAULT_IMAGE_WIDTH, DEFAULT_SEQUENCE_LENGTH,
     _decode_even_frames, _has_frames, _split_by_key,
 )

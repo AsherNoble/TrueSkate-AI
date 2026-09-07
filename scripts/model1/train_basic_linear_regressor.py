@@ -1,0 +1,724 @@
+"""Train MVP 2 to infer a finite-slope, constant-velocity linear drag.
+
+Targets are ``[x0, y0, x1, y1, duration]``.  This is the execution-safe form
+of ``y = mx + c``: ``m=(y1-y0)/(x1-x0)`` and ``c=y0-m*x0`` are defined because
+the strict collector excludes near-vertical gestures.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import sys
+import time
+from pathlib import Path
+from typing import Callable
+
+import numpy as np
+import torch
+from torch.utils.data import DataLoader, Dataset, Subset
+
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(_ROOT / "src"))
+
+from trueskate_ai.model1.hold.dataset import (  # noqa: E402
+    DEFAULT_IMAGE_HEIGHT, DEFAULT_IMAGE_WIDTH,
+)
+from trueskate_ai.model1.linear.dataset import (  # noqa: E402
+    BasicLinearClipDataset, split_by_command, split_by_segment,
+)
+from trueskate_ai.model1.linear.regressor import BasicLinearRegressor  # noqa: E402
+from trueskate_ai.model1.linear.training import (  # noqa: E402
+    basic_linear_loss, basic_linear_metrics, passes_basic_linear_acceptance,
+    basic_linear_recovery_records,
+)
+from trueskate_ai.data.cohort_manifest import read_manifest  # noqa: E402
+
+
+def _device() -> torch.device:
+    if torch.cuda.is_available():
+        # Record which accelerator this run actually drew.  Nothing used to log it, so a
+        # 2.7x spread in epoch time across `gpu="any"` runs could not be attributed.
+        print(f"device=cuda name={torch.cuda.get_device_name(0)}")
+        return torch.device("cuda")
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+    return torch.device("cpu")
+
+
+def _accelerator_identity(device: torch.device) -> dict[str, str | int | None]:
+    if device.type == "cuda":
+        properties = torch.cuda.get_device_properties(device)
+        return {
+            "type": "cuda", "name": properties.name,
+            "total_memory_bytes": int(properties.total_memory),
+            "cuda_version": torch.version.cuda,
+        }
+    return {"type": device.type, "name": device.type, "total_memory_bytes": None,
+            "cuda_version": None}
+
+
+def _fingerprint(paths: tuple[Path, ...]) -> str:
+    digest = hashlib.sha256()
+    for path in paths:
+        digest.update(str(path).encode())
+        digest.update(b"\n")
+    return f"sha256:{len(paths)}:{digest.hexdigest()}"
+
+
+_RESUME_CHECKPOINT_VERSION = 1
+
+
+def _atomic_torch_save(payload: dict, path: Path) -> None:
+    """Write a torch payload atomically so an interruption cannot corrupt it."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    torch.save(payload, temporary)
+    temporary.replace(path)
+
+
+def _resume_config(*, dataset_fingerprint: str, split_sizes: dict[str, int], epochs: int,
+                   batch_size: int, lr: float, seed: int, split_seed: int,
+                   base_channels: int, split_strategy: str, map_weight: float,
+                   start_onset: float, start_sigma: float, end_onset: float,
+                   temporal_mixer: bool, trajectory_weight: float,
+                   trajectory_track: bool, fresh_holdout_source: str | None,
+                   fresh_stratify_by_device: bool, line_fit: bool,
+                   irls_iterations: int, huber_delta: float, image_width: int,
+                   image_height: int, knots: int, max_grad_norm: float | None,
+                   cache_frames: bool, evaluate_test: bool,
+                   experiment_manifest_fingerprint: str | None,
+                   record_train_metrics: bool) -> dict:
+    """Everything which must match before an interrupted run may resume."""
+    return {
+        "dataset_fingerprint": dataset_fingerprint,
+        "split_sizes": split_sizes,
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "lr": lr,
+        "seed": seed,
+        "split_seed": split_seed,
+        "base_channels": base_channels,
+        "split_strategy": split_strategy,
+        "map_weight": map_weight,
+        "start_onset": start_onset,
+        "start_sigma": start_sigma,
+        "end_onset": end_onset,
+        "temporal_mixer": temporal_mixer,
+        "trajectory_weight": trajectory_weight,
+        "trajectory_track": trajectory_track,
+        "fresh_holdout_source": fresh_holdout_source,
+        "fresh_stratify_by_device": fresh_stratify_by_device,
+        "line_fit": line_fit,
+        "irls_iterations": irls_iterations,
+        "huber_delta": huber_delta,
+        "image_width": image_width,
+        "image_height": image_height,
+        "knots": knots,
+        "max_grad_norm": max_grad_norm,
+        "cache_frames": cache_frames,
+        "evaluate_test": evaluate_test,
+        "experiment_manifest_fingerprint": experiment_manifest_fingerprint,
+        "record_train_metrics": record_train_metrics,
+    }
+
+
+class _IndexedSubset(Dataset):
+    """Subset which retains the source-dataset index for audit joins."""
+    def __init__(self, dataset, indices: list[int]):
+        self.dataset, self.indices = dataset, indices
+
+    def __len__(self) -> int:
+        return len(self.indices)
+
+    def __getitem__(self, index: int):
+        item = dict(self.dataset[self.indices[index]])
+        item["sample_index"] = self.indices[index]
+        return item
+
+
+def _recovery_audit(model: torch.nn.Module, dataset: BasicLinearClipDataset,
+                    indices: list[int], device: torch.device, batch_size: int) -> dict:
+    records = basic_linear_recovery_records(
+        model, DataLoader(_IndexedSubset(dataset, indices), batch_size=batch_size), device,
+    )
+    buckets: dict[str, list[float]] = {}
+    for record, index in zip(records, indices):
+        meta = dataset._meta(dataset.sample_paths[index])
+        # New alignments stamp the manifest device explicitly.  Early MVP-2
+        # samples predate that provenance field, but their session name is
+        # canonical (e.g. iPhone_XR2_YYYY...) so use it as a backward-compatible
+        # audit-only fallback rather than silently collapsing them to unknown.
+        device_name = meta.get("device")
+        if not device_name:
+            match = re.match(r"(iPhone_[^_]+(?:\d+)?)_", str(meta.get("session", "")))
+            device_name = match.group(1) if match else "unknown"
+        device_name = str(device_name)
+        (x0, y0), (x1, y1) = meta["waypoints"]
+        slope = abs((float(y1) - float(y0)) / (float(x1) - float(x0)))
+        geometry = "low_slope" if slope < 0.8 else "mid_slope" if slope < 1.6 else "high_slope"
+        for key in (f"device:{device_name}", f"geometry:{geometry}"):
+            buckets.setdefault(key, []).append(record["recovered"])
+        record.update({
+            "sample": str(dataset.sample_paths[index].relative_to(dataset.root)),
+            "device": device_name,
+            "geometry": geometry,
+            "slope": float(slope),
+            "dx": float(x1) - float(x0),
+            "commanded_duration": float(meta["duration"]),
+        })
+    return {
+        key: {"samples": len(values), "gesture_recovery_accuracy": float(sum(values) / len(values))}
+        for key, values in sorted(buckets.items())
+    }, records
+
+
+def _tail_report(records: list[dict]) -> dict:
+    """Summarise the failure tail, not just the mean recovery rate.
+
+    Recovery is a threshold statistic, so two checkpoints with the same
+    percentage can have very differently shaped tails.  The remaining MVP-2
+    error is a narrow endpoint tail well outside an otherwise tight core, so
+    upper quantiles and the failing-clip list are what distinguish a real
+    improvement from a reshuffle.
+    """
+    endpoint = [value for record in records for value in (record["start_error"], record["end_error"])]
+    return {
+        "endpoint_p99": float(np.quantile(endpoint, 0.99)),
+        "endpoint_max": float(np.max(endpoint)),
+        "failures": int(sum(1 for record in records if not record["recovered"])),
+        "failing_samples": [
+            {key: record[key] for key in
+             ("sample", "device", "geometry", "slope", "start_error", "end_error",
+              "duration_error", "predicted", "target")}
+            for record in records if not record["recovered"]
+        ],
+    }
+
+
+def _sample_device(dataset: BasicLinearClipDataset, index: int) -> str:
+    """Return explicit capture-device provenance, failing closed when absent."""
+    device = dataset._meta(dataset.sample_paths[index]).get("device")
+    if not isinstance(device, str) or not device:
+        raise ValueError("device-stratified fresh holdout requires explicit sample device provenance")
+    return device
+
+
+def _global_gradient_norm(parameters) -> float:
+    """Return the global L2 norm without mutating the gradients.
+
+    The no-clipping control needs the same telemetry as the intervention arm;
+    using ``clip_grad_norm_`` with an artificial threshold would make that
+    promise harder to audit.  This is intentionally a read-only reduction.
+    """
+    norms = [parameter.grad.detach().norm(2) for parameter in parameters
+             if parameter.grad is not None]
+    if not norms:
+        return 0.0
+    return float(torch.linalg.vector_norm(torch.stack(norms), ord=2))
+
+
+def split_with_fresh_command_holdout(dataset: BasicLinearClipDataset, *, fresh_source: str,
+                                    val_fraction: float = .15, test_fraction: float = .15,
+                                    seed: int = 0,
+                                    stratify_by_device: bool = False) -> tuple[list[int], list[int], list[int]]:
+    """Train on all legacy commands while reserving fresh commands for evaluation.
+
+    This makes a data-scale experiment honest without throwing away an already
+    collected training corpus: test commands come exclusively from the new
+    source, neither validation nor test commands occur in training, and an
+    exact command collision between legacy and fresh sources fails closed.
+    """
+    marker = fresh_source.strip("/")
+    if not marker or "/" in marker or marker in {".", ".."}:
+        raise ValueError("fresh_source must name one direct child under the dataset root")
+    fresh_indices = [
+        index for index, path in enumerate(dataset.sample_paths)
+        if path.relative_to(dataset.root).parts[0] == marker
+    ]
+    if not fresh_indices:
+        raise ValueError(f"no samples found below fresh source {marker!r}")
+    fresh_keys = {dataset.command_keys[index] for index in fresh_indices}
+    fresh_index_set = set(fresh_indices)
+    legacy_keys = {
+        key for index, key in enumerate(dataset.command_keys)
+        if index not in fresh_index_set
+    }
+    overlap = fresh_keys & legacy_keys
+    if overlap:
+        raise ValueError(f"fresh/legacy command overlap ({len(overlap)} exact commands); refusing leakage")
+    if len(fresh_keys) < 3:
+        raise ValueError("need at least three fresh commands for train/validation/test")
+    if stratify_by_device:
+        keys_by_device: dict[str, set[str]] = {}
+        command_devices: dict[str, str] = {}
+        for index in fresh_indices:
+            device = _sample_device(dataset, index)
+            command = dataset.command_keys[index]
+            previous_device = command_devices.setdefault(command, device)
+            if previous_device != device:
+                raise ValueError(
+                    f"fresh command {command!r} has ambiguous device provenance "
+                    f"({previous_device!r}, {device!r})"
+                )
+            keys_by_device.setdefault(device, set()).add(command)
+        if len(keys_by_device) < 2:
+            raise ValueError("device-stratified fresh holdout requires at least two capture devices")
+        test_keys, val_keys = set(), set()
+        for device, keys in sorted(keys_by_device.items()):
+            if len(keys) < 3:
+                raise ValueError(f"device {device!r} has fewer than three fresh commands")
+            device_seed = int.from_bytes(hashlib.blake2s(device.encode(), digest_size=4).digest(), "little")
+            rng = np.random.default_rng(seed + device_seed)
+            shuffled = list(rng.permutation(sorted(keys)))
+            n_test = max(1, round(len(shuffled) * test_fraction))
+            n_val = max(1, round(len(shuffled) * val_fraction))
+            if n_test + n_val >= len(shuffled):
+                n_test = n_val = 1
+            test_keys.update(shuffled[:n_test])
+            val_keys.update(shuffled[n_test:n_test + n_val])
+    else:
+        rng = np.random.default_rng(seed)
+        shuffled = list(rng.permutation(sorted(fresh_keys)))
+        n_test = max(1, round(len(shuffled) * test_fraction))
+        n_val = max(1, round(len(shuffled) * val_fraction))
+        if n_test + n_val >= len(shuffled):
+            n_test = n_val = 1
+        test_keys = set(shuffled[:n_test])
+        val_keys = set(shuffled[n_test:n_test + n_val])
+    test = [index for index, key in enumerate(dataset.command_keys) if key in test_keys]
+    val = [index for index, key in enumerate(dataset.command_keys) if key in val_keys]
+    train = [index for index, key in enumerate(dataset.command_keys)
+             if key not in val_keys | test_keys]
+    return train, val, test
+
+
+def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
+          seed: int, base_channels: int, split_seed: int | None = None, split_strategy: str = "command",
+          cache_frames: bool = False, map_weight: float = 0.0, start_onset: float = .24,
+          start_sigma: float = .05, end_onset: float = .24,
+          temporal_mixer: bool = False, trajectory_weight: float = 0.0,
+          trajectory_track: bool = False, fresh_holdout_source: str | None = None,
+          evaluate_test: bool = True, fresh_stratify_by_device: bool = False,
+          line_fit: bool = False, irls_iterations: int = 3, huber_delta: float = .02,
+          image_width: int = DEFAULT_IMAGE_WIDTH, image_height: int = DEFAULT_IMAGE_HEIGHT,
+          knots: int = 2, max_grad_norm: float | None = None,
+          experiment_manifest: Path | None = None,
+          verify_manifest_content: bool = True,
+          record_train_metrics: bool = False,
+          resume_path: Path | None = None,
+          checkpoint_callback: Callable[[], None] | None = None) -> dict:
+    torch.manual_seed(seed)
+    # The line fit reads endpoints off the moving-contact map, so that map is
+    # the primary evidence path and must be supervised, not left to learn only
+    # through the endpoint loss.
+    if line_fit:
+        trajectory_track = True
+    dataset_kwargs = dict(
+        cache_frames=cache_frames, image_width=image_width,
+        image_height=image_height, knots=knots,
+    )
+    splitters = {"segment": split_by_segment, "command": split_by_command}
+    if split_strategy not in splitters:
+        raise ValueError(f"unknown split strategy {split_strategy!r}; choose from {sorted(splitters)}")
+    split_seed = seed if split_seed is None else split_seed
+    experiment_fingerprint = None
+    if experiment_manifest is not None:
+        if fresh_holdout_source is not None:
+            raise ValueError("experiment_manifest and fresh_holdout_source are mutually exclusive")
+        experiment_payload = read_manifest(experiment_manifest)
+        if experiment_payload.get("kind") != "model1_experiment":
+            raise ValueError("experiment_manifest must have kind=model1_experiment")
+        experiment_fingerprint = str(experiment_payload["fingerprint"])
+        train_dataset = BasicLinearClipDataset(
+            data, manifest=experiment_manifest, manifest_partition="train",
+            verify_manifest_content=verify_manifest_content, **dataset_kwargs,
+        )
+        val_dataset = BasicLinearClipDataset(
+            data, manifest=experiment_manifest, manifest_partition="validation",
+            verify_manifest_content=verify_manifest_content, **dataset_kwargs,
+        )
+        test_dataset = BasicLinearClipDataset(
+            data, manifest=experiment_manifest, manifest_partition="test",
+            verify_manifest_content=verify_manifest_content, **dataset_kwargs,
+        )
+        if len(train_dataset) < 1 or len(val_dataset) < 1:
+            raise ValueError("experiment manifest requires non-empty train and validation partitions")
+        if evaluate_test and len(test_dataset) < 1:
+            raise ValueError("evaluate_test requires a non-empty experiment test partition")
+        dataset = train_dataset
+        train_indices = list(range(len(train_dataset)))
+        val_indices = list(range(len(val_dataset)))
+        test_indices = list(range(len(test_dataset)))
+    else:
+        dataset = BasicLinearClipDataset(data, **dataset_kwargs)
+        train_dataset = val_dataset = test_dataset = dataset
+    if experiment_manifest is None and fresh_holdout_source is not None:
+        if split_strategy != "command":
+            raise ValueError("fresh_holdout_source requires command splitting")
+        train_indices, val_indices, test_indices = split_with_fresh_command_holdout(
+            dataset, fresh_source=fresh_holdout_source, seed=split_seed,
+            stratify_by_device=fresh_stratify_by_device,
+        )
+    elif experiment_manifest is None:
+        train_indices, val_indices, test_indices = splitters[split_strategy](dataset, seed=split_seed)
+    dataset_fingerprint = experiment_fingerprint or _fingerprint(dataset.sample_paths)
+    split_sizes = {"train": len(train_indices), "validation": len(val_indices), "test": len(test_indices)}
+    resume_config = _resume_config(
+        dataset_fingerprint=dataset_fingerprint, split_sizes=split_sizes,
+        epochs=epochs, batch_size=batch_size, lr=lr, seed=seed, split_seed=split_seed,
+        base_channels=base_channels, split_strategy=split_strategy, map_weight=map_weight,
+        start_onset=start_onset, start_sigma=start_sigma, end_onset=end_onset,
+        temporal_mixer=temporal_mixer, trajectory_weight=trajectory_weight,
+        trajectory_track=trajectory_track, fresh_holdout_source=fresh_holdout_source,
+        fresh_stratify_by_device=fresh_stratify_by_device, line_fit=line_fit,
+        irls_iterations=irls_iterations, huber_delta=huber_delta,
+        image_width=image_width, image_height=image_height, knots=knots,
+        max_grad_norm=max_grad_norm, cache_frames=cache_frames,
+        evaluate_test=evaluate_test,
+        experiment_manifest_fingerprint=experiment_fingerprint,
+        record_train_metrics=record_train_metrics,
+    )
+    # Explicit generator: with the default, shuffle order is drawn from the GLOBAL
+    # RNG, whose position depends on how much randomness model construction happened
+    # to consume.  Two arms at the same `--seed` therefore saw different minibatch
+    # orders for every epoch, which is not what `--seed` is supposed to mean (EQ-048).
+    shuffle_generator = torch.Generator().manual_seed(seed)
+    train_loader = DataLoader(Subset(train_dataset, train_indices), batch_size=batch_size,
+                              shuffle=True, generator=shuffle_generator)
+    train_eval_loader = DataLoader(Subset(train_dataset, train_indices), batch_size=batch_size)
+    val_loader = DataLoader(Subset(val_dataset, val_indices), batch_size=batch_size)
+    test_loader = DataLoader(Subset(test_dataset, test_indices), batch_size=batch_size)
+    device = _device()
+    model = BasicLinearRegressor(base_channels=base_channels, start_onset=start_onset,
+                                 start_sigma=start_sigma, end_onset=end_onset,
+                                 temporal_mixer=temporal_mixer,
+                                 trajectory_track=trajectory_track, line_fit=line_fit,
+                                 irls_iterations=irls_iterations, huber_delta=huber_delta,
+                                 knots=knots).to(device)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+    best: dict | None = None
+    # Whole-curve record.  The reported figure is the ARGMAX of a statistic whose
+    # within-run epoch sd is ~6.3 points (EQ-049), so it is biased upward by
+    # selection; keeping the curve lets any later analysis re-estimate without
+    # re-running, and lets the plateau mean be reported beside the headline.
+    validation_curve: list[float] = []
+    training_curve: list[float] = []
+    epoch_history: list[dict] = []
+    gradient_norm_history: list[dict[str, float | int]] = []
+    start_epoch = 1
+    if resume_path is not None and resume_path.exists():
+        resume = torch.load(resume_path, map_location="cpu", weights_only=False)
+        if resume.get("resume_checkpoint_version") != _RESUME_CHECKPOINT_VERSION:
+            raise RuntimeError(f"unsupported resume checkpoint at {resume_path}")
+        if resume.get("resume_config") != resume_config:
+            raise RuntimeError(
+                f"resume checkpoint configuration does not match this run: {resume_path}"
+            )
+        completed_epoch = int(resume["completed_epoch"])
+        if not 0 < completed_epoch < epochs:
+            raise RuntimeError(
+                f"resume checkpoint completed_epoch={completed_epoch} is invalid for epochs={epochs}"
+            )
+        model.load_state_dict(resume["model_state_dict"])
+        optimizer.load_state_dict(resume["optimizer_state_dict"])
+        best = resume["best"]
+        validation_curve = resume["validation_curve"]
+        training_curve = resume.get("training_curve", [])
+        epoch_history = resume.get("epoch_history", [])
+        gradient_norm_history = resume["gradient_norm_history"]
+        shuffle_generator.set_state(resume["shuffle_generator_state"])
+        torch.set_rng_state(resume["torch_rng_state"])
+        np.random.set_state(resume["numpy_rng_state"])
+        if device.type == "cuda" and resume.get("cuda_rng_state_all") is not None:
+            torch.cuda.set_rng_state_all(resume["cuda_rng_state_all"])
+        start_epoch = completed_epoch + 1
+        print(f"resuming_from_epoch={completed_epoch}")
+    for epoch in range(start_epoch, epochs + 1):
+        epoch_started = time.monotonic()
+        model.train()
+        gradient_norms: list[float] = []
+        for batch in train_loader:
+            optimizer.zero_grad(set_to_none=True)
+            frames = batch["frames"].to(device)
+            target = batch["target"].to(device)
+            if map_weight or trajectory_weight:
+                if trajectory_track:
+                    prediction, start_scores, end_scores, trajectory_scores = model.forward_with_track_scores(frames)
+                else:
+                    prediction, start_scores, end_scores = model.forward_with_scores(frames)
+                    trajectory_scores = None
+                loss = basic_linear_loss(prediction, target, start_scores=start_scores,
+                                         end_scores=end_scores, map_weight=map_weight,
+                                         trajectory_xy=batch["trajectory_xy"].to(device),
+                                         trajectory_mask=batch["trajectory_mask"].to(device),
+                                         trajectory_weight=trajectory_weight,
+                                         trajectory_scores=trajectory_scores)
+            else:
+                loss = basic_linear_loss(model(frames), target)
+            loss.backward()
+            if max_grad_norm is None:
+                gradient_norms.append(_global_gradient_norm(model.parameters()))
+            else:
+                # ``clip_grad_norm_`` returns the norm *before* clipping.  Keeping
+                # that value lets the experiment distinguish a harmless no-op from
+                # a real intervention on the rare large updates implicated by EQ-051.
+                gradient_norms.append(float(torch.nn.utils.clip_grad_norm_(
+                    model.parameters(), max_norm=max_grad_norm,
+                )))
+            optimizer.step()
+        training_metrics = (basic_linear_metrics(model, train_eval_loader, device)
+                            if record_train_metrics else None)
+        validation = basic_linear_metrics(model, val_loader, device)
+        # The requested outcome is complete gesture recovery.  Median-only model
+        # selection can prefer a checkpoint that is excellent on the easy half
+        # while failing too many endpoint pairs, so rank recovery first and use
+        # the native errors only as a stable tie-breaker.
+        score = (
+            -validation["gesture_recovery_accuracy"],
+            validation["start_coordinate_median"] + validation["end_coordinate_median"]
+            + validation["duration_mae"],
+        )
+        print(f"epoch={epoch} val_start_med={validation['start_coordinate_median']:.4f} "
+              f"val_end_med={validation['end_coordinate_median']:.4f} "
+              f"val_duration_mae={validation['duration_mae']:.4f} "
+              f"val_recovery={validation['gesture_recovery_accuracy']:.1%} "
+              f"secs={time.monotonic() - epoch_started:.1f}")
+        validation_curve.append(validation["gesture_recovery_accuracy"])
+        if training_metrics is not None:
+            training_curve.append(training_metrics["gesture_recovery_accuracy"])
+        if gradient_norms:
+            norms = torch.tensor(gradient_norms)
+            gradient_norm_history.append({
+                "mean": float(norms.mean()),
+                "p95": float(torch.quantile(norms, .95)),
+                "max": float(norms.max()),
+                "clipped_steps": (int((norms > max_grad_norm).sum())
+                                  if max_grad_norm is not None else 0),
+                "steps": len(gradient_norms),
+            })
+        epoch_seconds = time.monotonic() - epoch_started
+        epoch_history.append({
+            "epoch": epoch,
+            "training": training_metrics,
+            "validation": validation,
+            "seconds": epoch_seconds,
+            "training_samples_per_second": len(train_indices) / max(epoch_seconds, 1e-9),
+        })
+        if best is None or score < best["score"]:
+            best = {"score": score, "epoch": epoch,
+                    "state_dict": {key: value.cpu() for key, value in model.state_dict().items()},
+                    "validation": validation}
+        if resume_path is not None:
+            _atomic_torch_save({
+                "resume_checkpoint_version": _RESUME_CHECKPOINT_VERSION,
+                "completed_epoch": epoch,
+                "resume_config": resume_config,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "best": best,
+                "validation_curve": validation_curve,
+                "training_curve": training_curve,
+                "epoch_history": epoch_history,
+                "gradient_norm_history": gradient_norm_history,
+                "shuffle_generator_state": shuffle_generator.get_state(),
+                "torch_rng_state": torch.get_rng_state(),
+                "numpy_rng_state": np.random.get_state(),
+                "cuda_rng_state_all": (torch.cuda.get_rng_state_all()
+                                       if device.type == "cuda" else None),
+            }, resume_path)
+            if checkpoint_callback is not None:
+                checkpoint_callback()
+    assert best is not None
+    model.load_state_dict(best["state_dict"])
+    # Multi-seed/ensemble protocols must not inspect a prospective test split
+    # per seed.  They train each candidate with validation-only selection, then
+    # expose the test commands once through evaluate_checkpoint_ensemble.
+    test = basic_linear_metrics(model, test_loader, device) if evaluate_test else None
+    audit, tail = (_recovery_audit(model, test_dataset, test_indices, device, batch_size)
+                   if evaluate_test else (None, None))
+    payload = {
+        "model_type": ("basic_linear_regressor_v4_robust_constant_velocity_line_fit" if line_fit
+                       else "basic_linear_regressor_v3_separate_endpoint_heads_tight_start_prior"),
+        "gesture_contract": "two-point, constant-velocity, finite-slope linear drag",
+        "target_schema": ["x0", "y0", "x1", "y1", "duration_s"],
+        "uses_pre_touch_difference": True,
+        "spatial_map_stride": 2,
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        "base_channels": base_channels,
+        "sequence_length": dataset.sequence_length,
+        "image_height": dataset.image_height,
+        "image_width": dataset.image_width,
+        "cache_frames": cache_frames,
+        "accelerator": _accelerator_identity(device),
+        "endpoint_map_weight": map_weight,
+        "trajectory_map_weight": trajectory_weight,
+        "start_onset": start_onset,
+        "start_sigma": start_sigma,
+        "end_onset": end_onset,
+        "temporal_mixer": temporal_mixer,
+        "trajectory_track": trajectory_track,
+        "line_fit": line_fit,
+        "knots": knots,
+        "max_grad_norm": max_grad_norm,
+        "gradient_norm_history": gradient_norm_history,
+        "validation_curve": validation_curve,
+        "training_curve": training_curve,
+        "epoch_history": epoch_history,
+        "record_train_metrics": record_train_metrics,
+        "validation_plateau_mean_last10": (sum(validation_curve[-10:])
+                                          / len(validation_curve[-10:])),
+        "validation_is_best_of_n_epochs": len(validation_curve),
+        "irls_iterations": irls_iterations if line_fit else None,
+        "huber_delta": huber_delta if line_fit else None,
+        "split_seed": split_seed,
+        "split_strategy": split_strategy,
+        "fresh_holdout_source": fresh_holdout_source,
+        "fresh_stratify_by_device": fresh_stratify_by_device,
+        "dataset_fingerprint": dataset_fingerprint,
+        "dataset_stats": dataset.stats,
+        "partition_dataset_stats": {
+            "train": train_dataset.stats,
+            "validation": val_dataset.stats,
+            "test": test_dataset.stats,
+        },
+        "experiment_manifest": str(experiment_manifest) if experiment_manifest else None,
+        "experiment_manifest_fingerprint": experiment_fingerprint,
+        "split_sizes": split_sizes,
+        "best_epoch": best["epoch"],
+        "validation": best["validation"],
+        "test": test,
+        "test_recovery_audit": audit,
+        "test_tail": _tail_report(tail) if tail is not None else None,
+        "passes_acceptance": passes_basic_linear_acceptance(test) if test is not None else None,
+        "state_dict": best["state_dict"],
+    }
+    _atomic_torch_save(payload, out)
+    if resume_path is not None and resume_path.exists():
+        resume_path.unlink()
+        if checkpoint_callback is not None:
+            checkpoint_callback()
+    return payload
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--data", type=Path, required=True)
+    parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("--epochs", type=int, default=40)
+    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--split-seed", type=int, default=None,
+                        help="Optional independent deterministic split seed; use to vary initialization without moving holdout.")
+    parser.add_argument("--base-channels", type=int, default=16)
+    parser.add_argument("--map-weight", type=float, default=0.0,
+                        help="Optional low-weight endpoint score-map auxiliary objective.")
+    parser.add_argument("--start-onset", type=float, default=.24,
+                        help="Aligned-clip time prior centre for the start endpoint.")
+    parser.add_argument("--start-sigma", type=float, default=.05,
+                        help="Positive aligned-clip time-prior width for the start endpoint.")
+    parser.add_argument("--end-onset", type=float, default=.24,
+                        help="Aligned-clip anchor before duration-derived end timing.")
+    parser.add_argument("--temporal-mixer", action="store_true",
+                        help="Enable residual temporal mixing before endpoint score maps.")
+    parser.add_argument("--trajectory-weight", type=float, default=0.0,
+                        help="Optional low-weight per-frame manifest-trajectory score-map objective.")
+    parser.add_argument("--trajectory-track", action="store_true",
+                        help="Use a separate moving-contact score map for trajectory supervision.")
+    parser.add_argument("--line-fit", action="store_true",
+                        help="Read endpoints off a robust constant-velocity fit to the per-frame "
+                             "contact map instead of two independent soft-argmax reads. Implies "
+                             "--trajectory-track.")
+    parser.add_argument("--irls-iterations", type=int, default=3,
+                        help="Reweighting passes for the line fit; 0 gives plain least squares.")
+    parser.add_argument("--huber-delta", type=float, default=.02,
+                        help="Normalised residual beyond which a frame is down-weighted by the line fit.")
+    parser.add_argument("--knots", type=int, default=2,
+                        help="MVP-3 trajectory knots: predict positions at K evenly spaced times. "
+                             "K=2 is the MVP-2 endpoint pair.")
+    parser.add_argument("--max-grad-norm", type=float, default=None,
+                        help="Optional global-norm gradient clipping threshold. Disabled by default.")
+    parser.add_argument("--image-width", type=int, default=DEFAULT_IMAGE_WIDTH,
+                        help="Clip decode width; the stride-two score map has half this many x cells.")
+    parser.add_argument("--image-height", type=int, default=DEFAULT_IMAGE_HEIGHT,
+                        help="Clip decode height; keep the 288:128 source aspect when changing width.")
+    parser.add_argument("--split-strategy", choices=("segment", "command"), default="command",
+                        help="command withholds exact {x0,y0,x1,y1,dur}; required generalisation protocol.")
+    parser.add_argument("--fresh-holdout-source", default=None,
+                        help="Direct corpus child whose commands exclusively supply validation/test; "
+                             "all other commands remain train-only.")
+    parser.add_argument("--fresh-stratify-by-device", action="store_true",
+                        help="Balance validation/test fresh commands by explicit capture device.")
+    parser.add_argument("--experiment-manifest", type=Path,
+                        help="Sealed model1_experiment manifest with explicit train/validation/test "
+                             "partitions. Disables directory-derived splitting.")
+    parser.add_argument("--skip-manifest-content-verification", action="store_true",
+                        help="Trust stored content hashes without rereading clip bytes. Faster, but "
+                             "not valid for a frozen scaling/certification run.")
+    parser.add_argument("--record-train-metrics", action="store_true",
+                        help="Evaluate recovery over the training partition after every epoch.")
+    parser.add_argument("--min-samples", type=int, default=1000,
+                        help="Require this many accepted calibrated linear clips (0 disables the milestone gate).")
+    parser.add_argument("--cache-frames", action="store_true",
+                        help="Decode each accepted clip at most once; recommended for fixed, repeated epochs.")
+    parser.add_argument("--skip-test", action="store_true",
+                        help="Save a validation-selected checkpoint without evaluating its test split; "
+                             "use only when a later validation-selected ensemble will test once.")
+    parser.add_argument("--resume-path", type=Path, default=None,
+                        help="Resume exactly from this durable per-epoch checkpoint if it exists.")
+    args = parser.parse_args()
+    if (args.epochs < 1 or args.batch_size < 1 or args.lr <= 0 or args.map_weight < 0
+            or args.trajectory_weight < 0 or args.start_sigma <= 0):
+        parser.error("epochs, batch-size, lr, and start-sigma must be positive; map weights non-negative")
+    if args.min_samples < 0:
+        parser.error("min-samples must be non-negative")
+    if args.irls_iterations < 0 or args.huber_delta <= 0:
+        parser.error("irls-iterations must be non-negative and huber-delta positive")
+    if args.image_width < 1 or args.image_height < 1:
+        parser.error("image-width and image-height must be positive")
+    if args.knots < 2:
+        parser.error("knots must be at least 2")
+    if args.max_grad_norm is not None and args.max_grad_norm <= 0:
+        parser.error("max-grad-norm must be positive when provided")
+    if args.knots > 2 and not args.line_fit:
+        parser.error("--knots > 2 requires --line-fit")
+    if args.line_fit and not args.trajectory_weight:
+        parser.error("--line-fit needs a positive --trajectory-weight: the contact map it fits "
+                     "is the primary evidence path and must be supervised")
+    dataset_probe = BasicLinearClipDataset(
+        args.data,
+        manifest=args.experiment_manifest,
+        manifest_partition="train" if args.experiment_manifest else None,
+        verify_manifest_content=not args.skip_manifest_content_verification,
+    )
+    if args.min_samples and len(dataset_probe) < args.min_samples:
+        parser.error(f"need {args.min_samples} accepted basic-linear clips; found {len(dataset_probe)} "
+                     f"({dataset_probe.stats})")
+    out = args.out or _ROOT / "notebooks" / "models" / f"basic_linear_regressor_{time.strftime('%Y%m%d_%H%M%S')}.pth"
+    result = train(data=args.data, out=out, epochs=args.epochs, batch_size=args.batch_size,
+                   lr=args.lr, seed=args.seed, split_seed=args.split_seed, base_channels=args.base_channels,
+                   split_strategy=args.split_strategy, cache_frames=args.cache_frames,
+                   map_weight=args.map_weight, start_onset=args.start_onset,
+                   start_sigma=args.start_sigma, end_onset=args.end_onset,
+                   temporal_mixer=args.temporal_mixer, trajectory_weight=args.trajectory_weight,
+                   trajectory_track=args.trajectory_track,
+                   fresh_holdout_source=args.fresh_holdout_source,
+                   evaluate_test=not args.skip_test,
+                   fresh_stratify_by_device=args.fresh_stratify_by_device,
+                   line_fit=args.line_fit, irls_iterations=args.irls_iterations,
+                   huber_delta=args.huber_delta, image_width=args.image_width,
+                   image_height=args.image_height, knots=args.knots,
+                   max_grad_norm=args.max_grad_norm,
+                   experiment_manifest=args.experiment_manifest,
+                   verify_manifest_content=not args.skip_manifest_content_verification,
+                   record_train_metrics=args.record_train_metrics,
+                   resume_path=args.resume_path)
+    print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
+    print(f"checkpoint={out}")
+
+
+if __name__ == "__main__":
+    main()

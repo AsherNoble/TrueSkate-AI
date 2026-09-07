@@ -1,4 +1,4 @@
-"""Lifecycle management for a fleet of DeviceWorkers.
+"""Lifecycle management for a fleet of DeviceSessions.
 
 A ``WorkerPool`` owns the set of per-device workers and the connection
 lifecycle around them — construction, connect/disconnect, scheduled revival
@@ -7,7 +7,7 @@ inlined separately in the CMA-ES optimizer, the PPO trainer, and the rollout
 collector; centralizing it keeps those orchestrators focused on strategy.
 
 The pool is iterable and indexable, so dispatch loops can treat it like the
-plain ``list[DeviceWorker]`` it replaces.
+plain ``list[DeviceSession]`` it replaces.
 
 Public API:
     WorkerPool          — owns workers + connect/disconnect/revive/abort.
@@ -16,7 +16,7 @@ Public API:
 import logging
 import time
 
-from trueskate_ai.rl.device_worker import ALL_DEAD_TIMEOUT, DeviceWorker
+from trueskate_ai.sim.device import ALL_DEAD_TIMEOUT, DeviceSession
 
 
 class AllWorkersDeadError(RuntimeError):
@@ -24,14 +24,14 @@ class AllWorkersDeadError(RuntimeError):
 
 
 class WorkerPool:
-    """Owns a fleet of DeviceWorkers and their connection lifecycle.
+    """Owns a fleet of DeviceSessions and their connection lifecycle.
 
     Iterable and indexable. Usable as a context manager — ``__enter__``
     connects all workers, ``__exit__`` disconnects them.
     """
 
     def __init__(self, device_cfgs: list[dict]) -> None:
-        """Build one DeviceWorker per config. Caller must pass explicit cfgs.
+        """Build one DeviceSession per config. Caller must pass explicit cfgs.
 
         No default: an implicit "all DEVICES" fallback would bypass role
         filtering and could silently grab the personal iPhone 11 (role=
@@ -45,7 +45,7 @@ class WorkerPool:
                 "default to the full DEVICES fleet (includes the personal phone). "
                 "Use select_devices()/resolve_devices() to pick the roster."
             )
-        self._workers: list[DeviceWorker] = [DeviceWorker(cfg) for cfg in device_cfgs]
+        self._workers: list[DeviceSession] = [DeviceSession(cfg) for cfg in device_cfgs]
 
     def __len__(self) -> int:
         return len(self._workers)
@@ -53,16 +53,16 @@ class WorkerPool:
     def __iter__(self):
         return iter(self._workers)
 
-    def __getitem__(self, idx) -> DeviceWorker:
+    def __getitem__(self, idx) -> DeviceSession:
         return self._workers[idx]
 
     @property
-    def workers(self) -> list[DeviceWorker]:
+    def workers(self) -> list[DeviceSession]:
         """A shallow copy of the worker list."""
         return list(self._workers)
 
     @property
-    def alive(self) -> list[DeviceWorker]:
+    def alive(self) -> list[DeviceSession]:
         """Workers not currently in the dead state."""
         return [w for w in self._workers if w.alive]
 
@@ -78,7 +78,7 @@ class WorkerPool:
         unreachable is logged and excluded from the pool rather than aborting
         the whole run. Raises RuntimeError only when *no* device connects.
         """
-        connected: list[DeviceWorker] = []
+        connected: list[DeviceSession] = []
         for w in self._workers:
             try:
                 w.connect()

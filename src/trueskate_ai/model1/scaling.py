@@ -24,8 +24,8 @@ from trueskate_ai.data.cohort_manifest import (
     seal_manifest,
     validate_manifest,
 )
-from trueskate_ai.vision.basic_linear_audit import command_key
-from trueskate_ai.vision.basic_linear_dataset import discover_basic_linear_samples
+from trueskate_ai.model1.linear.audit import command_key
+from trueskate_ai.model1.linear.dataset import discover_basic_linear_samples
 
 DEFAULT_LINEAR_RUNGS = (13_100, 26_200, 52_400, 104_800, 209_600)
 DEPLOYMENT_PARKS = (

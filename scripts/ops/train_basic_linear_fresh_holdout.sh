@@ -20,7 +20,7 @@ PYTHONPATH=src .venv/bin/python scripts/cloud/upload_basic_linear_corpus.py \
 PYTHONPATH=src .venv/bin/python scripts/cloud/upload_basic_linear_corpus.py \
   --source "$FRESH_OUT" --volume "$VOLUME" --remote-subdir "$DATA_SUBDIR/fresh" \
   --min-samples "$TARGET"
-env MODAL_CORPUS_VOLUME="$VOLUME" .venv/bin/modal run scripts/cloud/train_basic_linear_modal.py \
+env MODAL_CORPUS_VOLUME="$VOLUME" .venv/bin/modal run scripts/model1/train_basic_linear_modal.py \
   --data-subdir "$DATA_SUBDIR" --run-label "$RUN_LABEL" \
   --epochs 40 --batch-size 8 --lr 1e-3 --seed 0 --split-seed 0 --base-channels 16 \
   --split-strategy command --temporal-mixer --fresh-holdout-source fresh

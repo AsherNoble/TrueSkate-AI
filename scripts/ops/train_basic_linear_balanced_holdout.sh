@@ -30,7 +30,7 @@ import json
 import sys
 from collections import Counter
 from pathlib import Path
-from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset
+from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset
 
 root, target = Path(sys.argv[1]), int(sys.argv[2])
 data = BasicLinearClipDataset(root)
@@ -65,7 +65,7 @@ checkpoint_names=""
 for seed in 0 1 2; do
   label="${RUN_LABEL}_seed${seed}"
   env MODAL_CORPUS_VOLUME="$VOLUME" .venv/bin/modal run \
-    scripts/cloud/train_basic_linear_modal.py::train_remote \
+    scripts/model1/train_basic_linear_modal.py::train_remote \
     --data-subdir "$DATA_SUBDIR" --run-label "$label" \
     --epochs 40 --batch-size 8 --lr 1e-3 --seed "$seed" --split-seed 0 --base-channels 16 \
     --split-strategy command --temporal-mixer --fresh-holdout-source fresh \
@@ -74,6 +74,6 @@ for seed in 0 1 2; do
 done
 
 env MODAL_CORPUS_VOLUME="$VOLUME" .venv/bin/modal run \
-  scripts/cloud/train_basic_linear_modal.py::evaluate_checkpoint_ensemble \
+  scripts/model1/train_basic_linear_modal.py::evaluate_checkpoint_ensemble \
   --data-subdir "$DATA_SUBDIR" --checkpoint-names "$checkpoint_names" \
   --seed 0 --batch-size 8 --fresh-holdout-source fresh --fresh-stratify-by-device

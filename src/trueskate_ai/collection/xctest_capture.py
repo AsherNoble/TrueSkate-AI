@@ -90,7 +90,7 @@ class XCTestScreenRecorder:
     """Drives one XCTest screen-recording segment over an Appium driver.
 
     Stateless between segments: ``start()`` then ``stop_and_save(path)``. The driver
-    must be a live XCUITest session (e.g. ``DeviceWorker.driver``); the recording
+    must be a live XCUITest session (e.g. ``DeviceSession.driver``); the recording
     runs on the same session that fires gestures, so they coexist.
     """
 

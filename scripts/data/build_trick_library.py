@@ -33,7 +33,7 @@ _REPO_ROOT = _HERE.parent.parent
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from trueskate_ai.rl.cmaes.action_param import (
+from trueskate_ai.sim.gesture_params import (
     SPIN_PARAMS,
     build_param_bounds,
     clamp_params,

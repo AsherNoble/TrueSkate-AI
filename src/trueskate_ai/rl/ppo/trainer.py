@@ -19,7 +19,7 @@ from trueskate_ai.rl.ppo.collector import (
     collect_rollouts,
 )
 from trueskate_ai.rl.ppo.metrics import summarize_rollouts
-from trueskate_ai.rl.device_worker import DEVICES
+from trueskate_ai.sim.device import DEVICES
 from trueskate_ai.rl.ppo.buffer import RolloutBatch
 from trueskate_ai.rl.run_logger import RunLogger
 from trueskate_ai.rl.worker_pool import WorkerPool

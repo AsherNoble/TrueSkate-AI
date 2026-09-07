@@ -1,6 +1,6 @@
 """CMA-ES optimization loop for True Skate gesture search.
 
-Orchestrates parallel multi-device evaluation via DeviceWorker instances
+Orchestrates parallel multi-device evaluation via DeviceSession instances
 dispatched through a ThreadPoolExecutor. Reward shaping is delegated to
 a per-target Curriculum object injected via the ``curriculum`` argument of
 ``run()``. The CLI entry point is scripts/train/train_cmaes.py.
@@ -21,7 +21,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from trueskate_ai.rl.cmaes.action_param import (
+from trueskate_ai.sim.gesture_params import (
     build_coordinate_mask,
     build_initial_mean_from_priors,
     build_initial_sigma,
@@ -229,7 +229,7 @@ def run(
 ) -> None:
     """Execute the CMA-ES optimization loop across multiple devices.
 
-    Creates one DeviceWorker per device config, connects them, and
+    Creates one DeviceSession per device config, connects them, and
     dispatches candidate evaluations in parallel via ThreadPoolExecutor.
 
     Args:
@@ -481,7 +481,7 @@ def run(
                     try:
                         round_results[cand_idx] = future.result()
                     except Exception as exc:
-                        # Safety net — DeviceWorker.evaluate() catches internally,
+                        # Safety net — DeviceSession.evaluate() catches internally,
                         # but guard against unexpected thread-level failures.
                         logging.warning(
                             "Future for candidate %d raised: %s", cand_idx, exc

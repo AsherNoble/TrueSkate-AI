@@ -64,7 +64,7 @@ while :; do
   # into a false recorder-failure stop.
   rejections_before=$(find "$OUT" -type f -path "*/${DEVICE}_*/*.calibration_rejected.json" | wc -l | tr -d ' ')
   echo "[mvp_collect] $(date '+%H:%M:%S') segment $i on $DEVICE"
-  PYTHONPATH=src .venv/bin/python scripts/data/collect_sls_xctest.py \
+  PYTHONPATH=src .venv/bin/python scripts/collection/collect_sls_xctest.py \
     --devices "$DEVICE" \
     --basic-holds \
     --basic-hold-tap-frac "$TAP_FRAC" \

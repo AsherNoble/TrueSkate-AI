@@ -54,17 +54,17 @@ try:  # UDID env vars help ensure_foreground/reconnect; live-port connect works 
 except Exception:  # noqa: BLE001
     pass
 
-from trueskate_ai.rl.cmaes.action_param import execute_gesture_params  # noqa: E402
-from trueskate_ai.rl.device_worker import (  # noqa: E402
-    BUNDLE_ID, DeviceWorker, add_device_selection_args, resolve_devices,
+from trueskate_ai.sim.gesture_params import execute_gesture_params  # noqa: E402
+from trueskate_ai.sim.device import (  # noqa: E402
+    BUNDLE_ID, DeviceSession, add_device_selection_args, resolve_devices,
 )
 from trueskate_ai.sim.touch_actions import reset_position, skip_loading_screen  # noqa: E402
-from trueskate_ai.vision.gameplay_filter import is_menu_frame  # noqa: E402
+from trueskate_ai.collection.gameplay_filter import is_menu_frame  # noqa: E402
 
 # is_editor_frame exists on the rig branch (uncommitted) and on the sampler branch;
 # degrade gracefully if this checkout predates it rather than failing the whole test.
 try:
-    from trueskate_ai.vision.gameplay_filter import is_editor_frame
+    from trueskate_ai.collection.gameplay_filter import is_editor_frame
 except ImportError:  # pragma: no cover - old checkout
     def is_editor_frame(_img) -> bool:  # type: ignore[misc]
         return False
@@ -138,7 +138,7 @@ class MjpegFrameSaver:
             self._thread.join(timeout=6.0)
 
 
-def _relaunch(worker: DeviceWorker) -> None:
+def _relaunch(worker: DeviceSession) -> None:
     """Coordinate-free return to live gameplay (mirrors the collector's _exit_replay)."""
     d = worker.driver
     try:
@@ -152,7 +152,7 @@ def _relaunch(worker: DeviceWorker) -> None:
     time.sleep(1.0)
 
 
-def _fire(worker: DeviceWorker, params: list[float], log, tag: str, tail_s: float) -> dict:
+def _fire(worker: DeviceSession, params: list[float], log, tag: str, tail_s: float) -> dict:
     """One collector-faithful fire: reset -> gesture -> tail -> editor/menu scoring."""
     rec: dict = {"tag": tag, "n_params": len(params), "ok": False,
                  "editor": False, "menu": False, "error": None, "exec_s": None}
@@ -251,7 +251,7 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
     log = (args.out / "fires.jsonl").open("w")
 
-    worker = DeviceWorker(cfg)
+    worker = DeviceSession(cfg)
     print(f"Connecting to {cfg['name']} ...")
     worker.connect()
     worker.ensure_foreground()

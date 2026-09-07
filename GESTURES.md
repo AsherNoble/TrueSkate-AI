@@ -227,7 +227,7 @@ Libraries mined by `scripts/data/mine_all_tricks.py` also carry `num_gestures` (
    to return the board to its starting position.
 ```
 
-Push constants are defined in `src/trueskate_ai/sim/gestures.py`. Both replay (`src/trueskate_ai/sim/gesture_recipe.py::execute_gesture_recipe`) and the CMA-ES eval path (`src/trueskate_ai/rl/cmaes/action_param.py::execute_gesture_params`) call the **same** canonical pair: `execute_static_push` (`sim/gestures.py`) then `execute_n_slot_gestures` (`sim/touch_actions.py`). The replay path additionally resets the board afterward.
+Push constants are defined in `src/trueskate_ai/sim/gestures.py`. Both replay (`src/trueskate_ai/sim/gesture_recipe.py::execute_gesture_recipe`) and the CMA-ES eval path (`src/trueskate_ai/sim/gesture_params.py::execute_gesture_params`) call the **same** canonical pair: `execute_static_push` (`sim/gestures.py`) then `execute_n_slot_gestures` (`sim/touch_actions.py`). The replay path additionally resets the board afterward.
 
 ---
 
@@ -241,8 +241,8 @@ Push constants are defined in `src/trueskate_ai/sim/gestures.py`. Both replay (`
 | `execute_n_slot_gestures()` (N-slot scheduler: sequential / combined / spin HOLD) | `src/trueskate_ai/sim/touch_actions.py` |
 | `build_curved_drag()`, `make_touch_pointer()`, `perform_pointer_actions()` | `src/trueskate_ai/sim/touch_actions.py` |
 | `curved_drag_with_spin_hold()` (spin_flick: drag + held spin button, one payload, no push) | `src/trueskate_ai/sim/touch_actions.py` |
-| CMA-ES gesture parameter bounds, decode, execute | `src/trueskate_ai/rl/cmaes/action_param.py` |
+| CMA-ES gesture parameter bounds, decode, execute | `src/trueskate_ai/sim/gesture_params.py` |
 | PPO gesture parameter decode, execute | `src/trueskate_ai/rl/ppo/trick_conditioned_action.py` |
 | Library recipe replay | `scripts/inspect/execute_trick.py` |
 | Build trick library from JSONL log | `scripts/data/build_trick_library.py` |
-| Device configs (`DEVICES`, `logical_w`, `logical_h`) | `src/trueskate_ai/rl/device_worker.py` |
+| Device configs (`DEVICES`, `logical_w`, `logical_h`) | `src/trueskate_ai/sim/device.py` |

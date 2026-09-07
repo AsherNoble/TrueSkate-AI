@@ -8,7 +8,7 @@ import torch
 from torch.nn import functional as F
 
 from trueskate_ai.data.gesture_sampling import BASIC_LINEAR_MAX_S, BASIC_LINEAR_MIN_S
-from trueskate_ai.vision.basic_linear_bias import AlongPathBias
+from trueskate_ai.model1.linear.bias import AlongPathBias
 
 RECOVERY_ENDPOINT_TOLERANCE = 0.03
 RECOVERY_DURATION_TOLERANCE_S = 0.10
@@ -247,7 +247,7 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device, *
     if not start_errors:
         raise ValueError("cannot evaluate an empty loader")
     endpoint_errors = start_errors + end_errors
-    from trueskate_ai.vision.model1_certification import one_sided_binomial_lower_bound
+    from trueskate_ai.model1.certification import one_sided_binomial_lower_bound
 
     recovery_successes = int(sum(recovered))
     return {

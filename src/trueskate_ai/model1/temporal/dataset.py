@@ -778,7 +778,7 @@ def _build_sequence_record(
         return cv2.cvtColor(load_bgr(frame_path), cv2.COLOR_BGR2RGB)
 
     if settings.detect_menu_frames:
-        from trueskate_ai.vision.gameplay_filter import (
+        from trueskate_ai.collection.gameplay_filter import (
             is_bolt_modal_frame, is_editor_frame, is_menu_frame)
 
         middle = len(selected_paths) // 2
@@ -841,7 +841,7 @@ def _build_sequence_record(
 
     cached_frames = None
     if settings.cache_frames:
-        from trueskate_ai.bc.frame_prep import prep_frame_rgb
+        from trueskate_ai.model2.frame_prep import prep_frame_rgb
 
         cached_frames = np.stack(
             [
@@ -1150,7 +1150,7 @@ class TemporalTraceSequenceDataset(Dataset):
                 record.cached_frames.astype(np.float32) / 255.0, (0, 3, 1, 2)
             )
         else:
-            from trueskate_ai.bc.frame_prep import prep_frame_rgb
+            from trueskate_ai.model2.frame_prep import prep_frame_rgb
 
             for frame_index, frame_path in enumerate(record.frame_paths):
                 bgr = cv2.imread(str(frame_path), cv2.IMREAD_COLOR)

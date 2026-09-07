@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 import torch
 
-from trueskate_ai.vision.temporal_trace_dataset import (
+from trueskate_ai.model1.temporal.dataset import (
     TemporalTraceSequenceDataset,
     discover_sample_paths,
     split_by_sample,

@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from trueskate_ai.vision.gameplay_filter import (
+from trueskate_ai.collection.gameplay_filter import (
     bolt_modal_score, is_bolt_modal_frame, is_menu_frame)
 
 

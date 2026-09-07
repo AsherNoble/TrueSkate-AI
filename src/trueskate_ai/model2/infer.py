@@ -2,7 +2,7 @@
 
 Pure torch/numpy (no Appium/device deps), so it is unit-testable offline and is
 reused verbatim by the on-device deploy loop
-(`scripts/inspect/run_sequence_policy.py`).
+(`scripts/model2/run_sequence_policy.py`).
 
 Per decision:
 
@@ -30,9 +30,9 @@ import time
 
 import numpy as np
 
-from trueskate_ai.bc.frame_prep import prep_frame_rgb
-from trueskate_ai.bc.gesture_tokens import STROKE_DIM, decode, encode, strokes_to_param_vector
-from trueskate_ai.bc.model2 import SequencePolicy, SequencePolicyConfig
+from trueskate_ai.model2.frame_prep import prep_frame_rgb
+from trueskate_ai.model2.tokens import STROKE_DIM, decode, encode, strokes_to_param_vector
+from trueskate_ai.model2.policy import SequencePolicy, SequencePolicyConfig
 
 
 def load_policy(model_path, device):

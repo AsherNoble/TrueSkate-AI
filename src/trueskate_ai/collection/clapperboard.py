@@ -179,7 +179,7 @@ def calibrate_capture_offset(
     """
     from trueskate_ai.sim.gestures import execute_static_push
     from trueskate_ai.sim.touch_actions import reset_position
-    from trueskate_ai.vision.color_recorder import TimestampedColorRecorder
+    from trueskate_ai.collection.color_recorder import TimestampedColorRecorder
 
     _ = rng  # kept for signature compatibility; displacement is now a fixed push
     rec = TimestampedColorRecorder()
@@ -268,7 +268,7 @@ def calibrate_via_app(
     center ``mobile: tap``. Inject a drag (finger-up on the button) to measure Δ for a
     gesture's call-return vs a tap's — see experiments/clapperboard_drag_vs_tap.py.
     """
-    from trueskate_ai.vision.color_recorder import TimestampedColorRecorder
+    from trueskate_ai.collection.color_recorder import TimestampedColorRecorder
 
     do_action = action_fn or (
         lambda: driver.execute_script("mobile: tap", {"x": 0.5 * device_w, "y": 0.5 * device_h}))
@@ -379,12 +379,12 @@ if __name__ == "__main__":
         _root = Path(__file__).resolve().parents[3]
         if str(_root / "src") not in sys.path:
             sys.path.insert(0, str(_root / "src"))
-        from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
+        from trueskate_ai.sim.device import DEVICES, DeviceSession
 
         cfg = next((d for d in DEVICES if d["name"].lower() == args.device.lower()), None)
         if cfg is None:
             raise SystemExit(f"unknown device {args.device}")
-        w = DeviceWorker(cfg)
+        w = DeviceSession(cfg)
         print(f"Connecting to {cfg['name']} (needs WDA+Appium up)...")
         w.connect()
         try:

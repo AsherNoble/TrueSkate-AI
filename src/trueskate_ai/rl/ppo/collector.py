@@ -9,7 +9,7 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 
-from trueskate_ai.rl.device_worker import DeviceWorker
+from trueskate_ai.sim.device import DeviceSession
 from trueskate_ai.rl.reward import (
     ContinuousTrickMonitor,
     capture_and_detect_with_diagnostics,
@@ -83,7 +83,7 @@ class RolloutResult:
 
 
 def _collect_one(
-    worker: DeviceWorker,
+    worker: DeviceSession,
     task: RolloutTask,
     *,
     wait_time: float,
@@ -172,7 +172,7 @@ def collect_rollouts(
 ) -> list[RolloutResult]:
     """Collect rollout tasks in parallel across the pool's workers."""
     if len(pool) == 0:
-        raise ValueError("At least one DeviceWorker is required for rollout collection")
+        raise ValueError("At least one DeviceSession is required for rollout collection")
 
     results: dict[int, RolloutResult] = {}
     with ThreadPoolExecutor(max_workers=len(pool)) as executor:

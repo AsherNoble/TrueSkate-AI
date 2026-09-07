@@ -39,7 +39,7 @@ daemon (§4.2), which must run as a system `LaunchDaemon`.
 ## 2. Device roster
 
 Authoritative port and geometry map: `DEVICES` in
-`src/trueskate_ai/rl/device_worker.py`. Do not duplicate port numbers elsewhere;
+`src/trueskate_ai/sim/device.py`. Do not duplicate port numbers elsewhere;
 cite that list. The operational facts:
 
 | Device | Role | WDA port | Logical size | Display Zoom |
@@ -56,7 +56,7 @@ Role semantics:
   grabbed by the default roster. Select it explicitly with `--personal` or
   `--devices iPhone_11`.
 
-Display Zoom is load-bearing and enforced: `DeviceWorker.connect()` aborts on a
+Display Zoom is load-bearing and enforced: `DeviceSession.connect()` aborts on a
 logical-size mismatch (the "dim guard" kills services rather than train on a
 mis-sized screen). `iPhone_11` must keep Display Zoom **ON** (it reports
 375 × 812); `iPhone_XR` / `iPhone_XR2` must keep it **OFF** (414 × 896). See
@@ -109,13 +109,13 @@ CMA-ES). Fires a random SLS gesture mix and records the screen via Appium's
 XCTest screen recording. See `CLAUDE.md` → "SLS Frame→Gesture Data Collection"
 for the pipeline rationale.
 
-- **Collector:** `scripts/data/collect_sls_xctest.py` — records bounded
+- **Collector:** `scripts/collection/collect_sls_xctest.py` — records bounded
   `--segment-min` `.mov` segments while logging a per-gesture manifest.
   **`--segment-min` must stay short** (default 1.0; ≤ ~90 s): `stop_and_save`
   returns the whole `.mov` as one base64 HTTP response, which fails above
   ~114 MB. Per-device, e.g.
-  `python scripts/data/collect_sls_xctest.py --devices iPhone_XR2 --segment-min 1`.
-- **Aligner:** `scripts/data/align_xctest_traces.py` — slices each gesture's
+  `python scripts/collection/collect_sls_xctest.py --devices iPhone_XR2 --segment-min 1`.
+- **Aligner:** `scripts/collection/align_xctest_traces.py` — slices each gesture's
   frame window from the `.mov` into per-gesture sample dirs, then deletes the
   `.mov`. Spawned async after each segment by the collector by default.
 - **Corpus filter:** `scripts/data/flag_menu_samples.py` — marks replay/menu
@@ -283,7 +283,7 @@ These prevent the most common physical and overnight failures:
 - **Disable** automatic iOS updates, notifications (Do Not Disturb / Focus),
   Low Power Mode, and all alarms.
 - **Display Zoom** per the §2 table — `iPhone_11` ON; `iPhone_XR` / `iPhone_XR2`
-  OFF. A mismatch aborts `DeviceWorker.connect()`.
+  OFF. A mismatch aborts `DeviceSession.connect()`.
 - **Thermals.** Continuous GPU load plus charging for hours throttles the device
   and can drift trick timing. Maintain airflow; consider a charge-limit or
   duty-cycle for very long runs.
@@ -322,7 +322,7 @@ The scene guard ships disabled. To enable automatic park recovery:
 3. `python scripts/train/train_scene_classifier.py --manifest data/scene/manifest.json`
 4. Add `SCENE_GUARD_MODEL=notebooks/models/scene_classifier.pth` to `.env`.
 
-`DeviceWorker` then checks each eval and recovers into the park automatically.
+`DeviceSession` then checks each eval and recovers into the park automatically.
 
 ---
 

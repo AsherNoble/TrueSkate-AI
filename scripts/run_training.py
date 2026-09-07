@@ -38,7 +38,7 @@ if str(_REPO_ROOT / "src") not in sys.path:
 import requests  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
 
-from trueskate_ai.rl.device_worker import (  # noqa: E402
+from trueskate_ai.sim.device import (  # noqa: E402
     add_device_selection_args,
     resolve_devices,
 )

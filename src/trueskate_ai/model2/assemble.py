@@ -20,8 +20,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from trueskate_ai.bc.gesture_tokens import STROKE_DIM
-from trueskate_ai.rl.cmaes.action_param import build_param_bounds
+from trueskate_ai.model2.tokens import STROKE_DIM
+from trueskate_ai.sim.gesture_params import build_param_bounds
 
 _BOUNDS = build_param_bounds(1, use_spin=False)  # (8,2) one slot
 _DUR_LO, _DUR_HI = float(_BOUNDS[6, 0]), float(_BOUNDS[6, 1])      # 0.03, 0.8
@@ -105,7 +105,7 @@ def assemble_strokes(
 
 # --- round-trip self-test --------------------------------------------------
 if __name__ == "__main__":
-    from trueskate_ai.vision.self_label import label_frames
+    from trueskate_ai.data.touch_labels import label_frames
 
     # a curved 3-waypoint drag, sampled densely at 30 fps, with two strokes in a clip
     g1 = dict(waypoints=[(0.30, 0.72), (0.46, 0.50), (0.74, 0.44)], total_duration=0.40, easing_power=1.0)

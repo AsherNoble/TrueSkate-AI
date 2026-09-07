@@ -20,7 +20,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
+from trueskate_ai.sim.device import DEVICES, DeviceSession
 from trueskate_ai.sim.gesture_recipe import execute_gesture_recipe
 
 
@@ -74,7 +74,7 @@ def main() -> None:
 
     for device in active_devices:
         print(f"[{device['name']}] Executing...")
-        worker = DeviceWorker(device, calibrate_touch_on_connect=False)
+        worker = DeviceSession(device, calibrate_touch_on_connect=False)
         worker.connect()
         try:
             execute_gesture_recipe(

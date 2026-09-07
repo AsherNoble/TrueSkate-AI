@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-from trueskate_ai.rl.cmaes.action_param import PARAMS_PER_SLOT
+from trueskate_ai.sim.gesture_params import PARAMS_PER_SLOT
 from trueskate_ai.rl.reward import near_miss_multiplier, normalize_trick_name
 from trueskate_ai.sim.known_tricks import KNOWN_TRICKS
 from trueskate_ai.sim.trick_info_reader import TrickResult

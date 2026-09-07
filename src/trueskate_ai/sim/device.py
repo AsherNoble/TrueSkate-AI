@@ -1,6 +1,6 @@
 """Per-device worker for parallelized CMA-ES evaluation.
 
-Each DeviceWorker encapsulates one iPhone's Appium connection and can
+Each DeviceSession encapsulates one iPhone's Appium connection and can
 independently execute a candidate eval. The orchestrator dispatches
 candidates to workers via ThreadPoolExecutor and handles JSONL logging,
 resets, and CMA-ES bookkeeping.
@@ -8,7 +8,7 @@ resets, and CMA-ES bookkeeping.
 Public API:
     DEVICES          — list of device config dicts for all active iPhones.
     FrameRecorder    — MJPEG frame capture (one instance per eval).
-    DeviceWorker     — connects to one device, runs evaluate().
+    DeviceSession     — connects to one device, runs evaluate().
 """
 import io
 import logging
@@ -26,12 +26,12 @@ from PIL import Image
 
 from typing import Callable
 
-from trueskate_ai.rl.cmaes.action_param import execute_gesture_params
+from trueskate_ai.sim.gesture_params import execute_gesture_params
 from trueskate_ai.rl.reward import capture_and_detect_with_diagnostics
 from trueskate_ai.sim.gestures import DEFAULT_SPIN_BUTTON_XY
 from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position, skip_loading_screen
 from trueskate_ai.sim.trick_info_reader import TrickResult
-from trueskate_ai.vision.color_recorder import TimestampedColorRecorder
+from trueskate_ai.collection.color_recorder import TimestampedColorRecorder
 from trueskate_ai.vision.scene_classifier import SceneGuard
 
 # Set TRACE_COLLECT=1 to passively capture COLOR frames each eval (downscaled,
@@ -285,14 +285,14 @@ class FrameRecorder:
 
 
 # ---------------------------------------------------------------------------
-# DeviceWorker
+# DeviceSession
 # ---------------------------------------------------------------------------
 
 
-class DeviceWorker:
+class DeviceSession:
     """Encapsulates one iPhone's Appium connection and eval logic.
 
-    The orchestrator creates one DeviceWorker per physical device, calls
+    The orchestrator creates one DeviceSession per physical device, calls
     connect() once, then dispatches evaluate() calls via ThreadPoolExecutor.
     """
 

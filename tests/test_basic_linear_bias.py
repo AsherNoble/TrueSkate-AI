@@ -3,11 +3,11 @@ import numpy as np
 import pytest
 import torch
 
-from trueskate_ai.vision.basic_linear_bias import (
+from trueskate_ai.model1.linear.bias import (
     AlongPathBias, discordant_pairs, fit_along_path_bias, mcnemar_exact_p,
     along_path_fit_key, perpendicular_error, signed_along_path_error,
 )
-from trueskate_ai.vision.basic_linear_training import (
+from trueskate_ai.model1.linear.training import (
     basic_linear_metrics, decompose_endpoint_error, knot_columns, knot_component_labels,
     nearest_trail_gaps,
 )

@@ -14,9 +14,9 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from trueskate_ai.bc.frame_prep import prep_frame_rgb
-from trueskate_ai.bc.gesture_tokens import STROKE_DIM, encode
-from trueskate_ai.bc.model2 import SequencePolicyConfig
+from trueskate_ai.model2.frame_prep import prep_frame_rgb
+from trueskate_ai.model2.tokens import STROKE_DIM, encode
+from trueskate_ai.model2.policy import SequencePolicyConfig
 
 _MAX_CACHED_FRAMES = 20_000
 

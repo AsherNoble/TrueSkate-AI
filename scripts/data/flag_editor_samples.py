@@ -18,7 +18,7 @@ _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO / "src") not in sys.path:
     sys.path.insert(0, str(_REPO / "src"))
 
-from trueskate_ai.vision.gameplay_filter import is_editor_frame  # noqa: E402
+from trueskate_ai.collection.gameplay_filter import is_editor_frame  # noqa: E402
 
 
 def main() -> None:

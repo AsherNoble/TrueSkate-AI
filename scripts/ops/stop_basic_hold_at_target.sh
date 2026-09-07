@@ -19,7 +19,7 @@ while :; do
   accepted=$(PYTHONPATH=src .venv/bin/python - "$OUT" <<'PY'
 import sys
 from pathlib import Path
-from trueskate_ai.vision.basic_hold_dataset import discover_basic_hold_samples
+from trueskate_ai.model1.hold.dataset import discover_basic_hold_samples
 
 print(len(discover_basic_hold_samples(Path(sys.argv[1]))[0]))
 PY
