@@ -23,7 +23,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .temporal_trace_predictor import TemporalTraceState
+from .predictor import TemporalTraceState
 
 
 def _validate_probability(name: str, value: float) -> float:

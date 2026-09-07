@@ -1,44 +1,23 @@
-"""Per-device worker for parallelized CMA-ES evaluation.
+"""Device configuration, Appium sessions, foreground guards and recovery.
 
-Each DeviceSession encapsulates one iPhone's Appium connection and can
-independently execute a candidate eval. The orchestrator dispatches
-candidates to workers via ThreadPoolExecutor and handles JSONL logging,
-resets, and CMA-ES bookkeeping.
-
-Public API:
-    DEVICES          — list of device config dicts for all active iPhones.
-    FrameRecorder    — MJPEG frame capture (one instance per eval).
-    DeviceSession     — connects to one device, runs evaluate().
+No reward evaluation or optimisation dependencies.
 """
 import io
 import logging
 import os
-import threading
 import time
 from pathlib import Path
 
-import numpy as np
 import requests
 from appium import webdriver
 from appium.options.ios import XCUITestOptions
 from dotenv import load_dotenv
 from PIL import Image
 
-from typing import Callable
 
-from trueskate_ai.sim.gesture_params import execute_gesture_params
-from trueskate_ai.rl.reward import capture_and_detect_with_diagnostics
 from trueskate_ai.sim.gestures import DEFAULT_SPIN_BUTTON_XY
 from trueskate_ai.sim.touch_actions import calibrate_touch_timing, reset_position, skip_loading_screen
-from trueskate_ai.sim.trick_info_reader import TrickResult
-from trueskate_ai.collection.color_recorder import TimestampedColorRecorder
 from trueskate_ai.vision.scene_classifier import SceneGuard
-
-# Set TRACE_COLLECT=1 to passively capture COLOR frames each eval (downscaled,
-# trace-window subset saved by the optimizer) so CMA-ES runs double as
-# self-labeled trace-extraction data — the executed gesture vector is the label.
-_TRACE_COLLECT = bool(os.environ.get("TRACE_COLLECT"))
-_TRACE_RESIZE_WIDTH = 512
 
 # ---------------------------------------------------------------------------
 # Device configurations
@@ -213,75 +192,6 @@ ALL_DEAD_TIMEOUT = 300.0  # seconds before aborting when every worker is dead (p
 # ---------------------------------------------------------------------------
 
 
-class FrameRecorder:
-    """Reads 210x455 grayscale frames from WDA's MJPEG stream during an eval.
-
-    Connects to the MJPEG server started by WDA, extracts JPEG frames by
-    scanning for SOI/EOI markers (0xFF 0xD8 / 0xFF 0xD9), and decodes each
-    to a 210x455 grayscale numpy array. Typical throughput: 30-60 fps.
-    """
-
-    def __init__(self):
-        self._thread: threading.Thread | None = None
-        self._stop_flag = False
-        self._frames: list[np.ndarray] = []
-        self._response: requests.Response | None = None
-
-    def start(self, mjpeg_url: str) -> None:
-        self._stop_flag = False
-        self._frames = []
-        self._response = None
-        self._thread = threading.Thread(
-            target=self._capture_loop, args=(mjpeg_url,), daemon=True
-        )
-        self._thread.start()
-
-    def _capture_loop(self, mjpeg_url: str) -> None:
-        buf = b""
-        try:
-            resp = requests.get(mjpeg_url, stream=True, timeout=5)
-            self._response = resp
-            for chunk in resp.iter_content(chunk_size=4096):
-                if self._stop_flag:
-                    break
-                buf += chunk
-                while True:
-                    start_idx = buf.find(b"\xff\xd8")
-                    if start_idx == -1:
-                        buf = b""
-                        break
-                    end_idx = buf.find(b"\xff\xd9", start_idx + 2)
-                    if end_idx == -1:
-                        buf = buf[start_idx:]
-                        break
-                    jpeg_bytes = buf[start_idx : end_idx + 2]
-                    buf = buf[end_idx + 2:]
-                    try:
-                        img = (
-                            Image.open(io.BytesIO(jpeg_bytes))
-                            .convert("L")
-                            .resize((210, 455), Image.LANCZOS)
-                        )
-                        self._frames.append(np.array(img, dtype=np.uint8))
-                    except Exception as e:
-                        logging.debug(f"Failed to decode JPEG frame: {e}")
-        except Exception as e:
-            logging.warning(f"MJPEG capture failed: {e}")
-        finally:
-            self._response = None
-
-    def stop(self) -> list[np.ndarray]:
-        self._stop_flag = True
-        resp = self._response
-        if resp is not None:
-            try:
-                resp.close()
-            except Exception:
-                pass
-        if self._thread is not None:
-            self._thread.join(timeout=2.0)
-            self._thread = None
-        return self._frames
 
 
 # ---------------------------------------------------------------------------
@@ -290,22 +200,16 @@ class FrameRecorder:
 
 
 class DeviceSession:
-    """Encapsulates one iPhone's Appium connection and eval logic.
-
-    The orchestrator creates one DeviceSession per physical device, calls
-    connect() once, then dispatches evaluate() calls via ThreadPoolExecutor.
-    """
+    """Own one iPhone session, its foreground guard, resets and recovery."""
 
     def __init__(
         self,
         device_cfg: dict,
         *,
-        record_frames: bool = False,
         calibrate_touch_on_connect: bool = False,
     ) -> None:
         self.device_id: str = device_cfg["name"]
         self._cfg = device_cfg
-        self.record_frames = record_frames
         self.calibrate_touch_on_connect = calibrate_touch_on_connect
         self.driver: webdriver.Remote | None = None
         self.mjpeg_url: str | None = None
@@ -346,11 +250,6 @@ class DeviceSession:
         value = self._cfg.get("spin_button_xy", DEFAULT_SPIN_BUTTON_XY)
         return float(value[0]), float(value[1])
 
-    @property
-    def avf_name(self) -> str | None:
-        # AVFoundation/DAL capture device name (None if not mapped). Consumed by
-        # vision/dal_capture.DalFrameRecorder for high-rate screen capture.
-        return self._cfg.get("avf_name")
 
     # -- connection ---------------------------------------------------------
 
@@ -604,154 +503,6 @@ class DeviceSession:
 
     # -- evaluate -----------------------------------------------------------
 
-    def evaluate(
-        self,
-        params: np.ndarray,
-        wait_time: float,
-        eval_num: int,
-        generation: int,
-        *,
-        scorer: Callable[[TrickResult | None], float],
-        run_dir: Path | None = None,
-    ) -> dict:
-        """Execute one candidate eval on this device.
-
-        Runs: ensure_foreground -> record frames -> execute_gesture_params ->
-        capture_and_detect -> score via injected scorer -> stop recording.
-        Does NOT call reset_position (the orchestrator handles resets).
-
-        Args:
-            scorer: Callable mapping TrickResult | None → float. Typically
-                ``Curriculum.score`` passed in from the CMA-ES optimizer.
-            run_dir: Run folder; when set, OCR failures dump diagnostics to
-                ``run_dir/ocr_failures/``.
-
-        Returns a result dict; never raises — logs errors and returns
-        reward=0.0 on failure.
-        """
-        relaunched = self.ensure_foreground()
-        recorder = FrameRecorder() if self.record_frames else None
-        trace_rec = TimestampedColorRecorder() if _TRACE_COLLECT else None
-        eval_start_time = time.monotonic()
-        try:
-            if recorder is not None:
-                recorder.start(self.mjpeg_url)
-            if trace_rec is not None:
-                trace_rec.start(self.mjpeg_url, resize_width=_TRACE_RESIZE_WIDTH)
-            action_start_time = time.monotonic()
-            execute_gesture_params(
-                self.driver,
-                np.array(params),
-                device_w=self._cfg["logical_w"],
-                device_h=self._cfg["logical_h"],
-                spin_button_xy=self.spin_button_xy,
-                timing_device_key=self.device_id,
-            )
-            action_end_time = time.monotonic()
-            if wait_time > 0:
-                time.sleep(wait_time)
-            # Stamp AFTER the settle sleep so reward_eval_s measures capture+score
-            # only — action_end_time predates the sleep and would fold wait_time in.
-            # (action_end_time still anchors the capture window below: capture
-            #  reckons from gesture end, not post-settle.)
-            reward_eval_start_time = time.monotonic()
-            ocr_failure_dir = run_dir / "ocr_failures" if run_dir is not None else None
-            eval_label = f"eval_{eval_num:05d}_{self.device_id}"
-            trick_result, capture_diag = capture_and_detect_with_diagnostics(
-                self.driver,
-                capture_interval=0.15,
-                action_start_time=action_end_time,
-                max_window_s=3.5,
-                ocr_failure_dir=ocr_failure_dir,
-                eval_label=eval_label,
-            )
-            reward = scorer(trick_result)
-            reward_end_time = time.monotonic()
-        except Exception as exc:
-            if recorder is not None:
-                recorder.stop()
-            if trace_rec is not None:
-                trace_rec.stop()
-            logging.warning("[%s] eval %d failed: %s", self.device_id, eval_num, exc)
-            self.record_failure()
-            # Once the worker is dead (streak >= _DEAD_THRESHOLD), try to revive it
-            # on this failure and on every subsequent failure until one succeeds.
-            # Don't gate on a modulo of the streak: _reconnect() zeroes the streak
-            # on success, so a modulo could only ever fire once, and a failed
-            # reconnect would then go quiet instead of retrying. `not self.alive`
-            # ties the trigger to the single source of truth (_DEAD_THRESHOLD).
-            if not self.alive:
-                self._reconnect()
-            print(
-                f"[eval {eval_num:05d} | gen {generation:04d}] "
-                f"device={self.device_id} reward=0.00 status=error "
-                f"trick=- frames=0 error={exc}"
-            )
-            return {
-                "reward": 0.0,
-                "trick_name": None,
-                "trick_status": None,
-                "device_id": self.device_id,
-                "params": params,
-                "raw_frames": [],
-                "n_composites": 0,
-                "app_relaunched": relaunched,
-                "in_skatepark": None,
-                "action_exec_s": 0.0,
-                "reward_eval_s": 0.0,
-                "eval_total_s": 0.0,
-                "capture_attempts": 0,
-                "skipped_captures": 0,
-                "detection_capture_idx": None,
-                "capture_elapsed_s": 0.0,
-            }
-
-        self.record_success()
-        in_skatepark = self.check_scene()  # None unless the scene guard is enabled
-        raw_frames = recorder.stop() if recorder is not None else []
-        # Color trace frames + their times relative to gesture start (the executed
-        # gesture vector in "params" is the label; offline self_label aligns them).
-        trace_frames, trace_times = trace_rec.stop() if trace_rec is not None else ([], [])
-        trace_frame_times = [round(t - action_start_time, 4) for t in trace_times]
-        trick_name = trick_result.trick if trick_result else None
-        trick_status = trick_result.status if trick_result else None
-        trick_label = trick_name if trick_name else "-"
-        status_label = trick_status if trick_status else "-"
-        relaunched_label = "yes" if relaunched else "no"
-
-        print(
-            f"[eval {eval_num:05d} | gen {generation:04d}] "
-            f"device={self.device_id} reward={reward:.2f} "
-            f"status={status_label} trick={trick_label} "
-            f"frames={len(raw_frames)} relaunched={relaunched_label}"
-        )
-
-        return {
-            "reward": reward,
-            "trick_name": trick_name,
-            "trick_status": trick_status,
-            "device_id": self.device_id,
-            "params": params,
-            "raw_frames": raw_frames,
-            "trace_frames": trace_frames,
-            "trace_frame_times": trace_frame_times,
-            "n_composites": 0,
-            "app_relaunched": relaunched,
-            "in_skatepark": in_skatepark,
-            "action_exec_s": action_end_time - action_start_time,
-            "reward_eval_s": reward_end_time - reward_eval_start_time,
-            "eval_total_s": reward_end_time - eval_start_time,
-            "capture_attempts": int(capture_diag["captures_attempted"]),
-            "skipped_captures": int(capture_diag["skipped_captures"]),
-            "detection_capture_idx": (
-                None
-                if capture_diag["detection_capture_idx"] is None
-                else int(capture_diag["detection_capture_idx"])
-            ),
-            "capture_elapsed_s": float(capture_diag["capture_elapsed_s"]),
-            "anchor_candidates": int(capture_diag["anchor_candidates"]),
-            "ocr_calls": int(capture_diag["ocr_calls"]),
-        }
 
     # -- disconnect ---------------------------------------------------------
 

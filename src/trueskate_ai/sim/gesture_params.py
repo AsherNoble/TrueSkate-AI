@@ -1,8 +1,8 @@
-"""CMA-ES gesture parameterization: bounds, decode, and execution.
+"""Shared gesture parameterization: bounds, decode, and execution.
 
 Bridges a flat numpy parameter vector to gesture execution on device.
-CMA-ES optimizes this vector; this module handles bounds, unpacking, and
-execution. The number of gestures (N) is curriculum-defined.
+Collectors, recipe replay and Model 2 share this representation.
+The number of gestures (N) is inferred from the vector layout.
 
 Parameter layout for N gestures (vector length 8N + (N-1) = 9N - 1):
     Slot i (i in 0..N-1): x0,y0, x1,y1, x2,y2, duration, easing_power
@@ -123,36 +123,8 @@ _SPIN_GATE_SIGMA = 0.4   # large enough for CMA-ES to flip the gate on/off
 _SPIN_T_SIGMA = 0.2
 
 
-def build_initial_sigma(num_gestures: int, use_spin: bool = False) -> np.ndarray:
-    """Per-parameter initial step sizes for CMA-ES, sized for N gestures (+spin)."""
-    sigma = np.full(param_vector_length(num_gestures, use_spin), _COORD_SIGMA, dtype=np.float64)
-    for slot in range(num_gestures):
-        base = slot * PARAMS_PER_SLOT
-        sigma[base + 6] = _DUR_SIGMA
-        sigma[base + 7] = _EASING_SIGMA
-    delay_start = num_gestures * PARAMS_PER_SLOT
-    for d in range(max(0, num_gestures - 1)):
-        sigma[delay_start + d] = _DELAY_SIGMA
-    if use_spin:
-        spin_start = delay_start + max(0, num_gestures - 1)
-        sigma[spin_start] = _SPIN_GATE_SIGMA
-        sigma[spin_start + 1] = _SPIN_T_SIGMA
-        sigma[spin_start + 2] = _SPIN_T_SIGMA
-    return sigma
 
 
-def build_coordinate_mask(num_gestures: int, use_spin: bool = False) -> np.ndarray:
-    """Boolean mask: True where the param is a waypoint coord (x or y).
-
-    Used by warm-start to shrink sigma on coordinates while keeping
-    duration/easing/delay/spin sigma at defaults (spin params are NOT
-    coordinates → left False so warm-start keeps spin free to move).
-    """
-    mask = np.zeros(param_vector_length(num_gestures, use_spin), dtype=bool)
-    for slot in range(num_gestures):
-        base = slot * PARAMS_PER_SLOT
-        mask[base : base + 6] = True
-    return mask
 
 
 # ---------------------------------------------------------------------------
@@ -190,43 +162,8 @@ def default_spin_block() -> list[float]:
     return list(_DEFAULT_SPIN_BLOCK)
 
 
-def default_initial_mean(num_gestures: int) -> np.ndarray:
-    """Default informed initial mean. Only defined for num_gestures == 2.
-
-    The two-gesture prior is the 360-flip scoop+flick. For N != 2 the
-    curriculum must supply explicit priors (initial_means/initial_delays)
-    or a warm_start.
-    """
-    if num_gestures != 2:
-        raise NotImplementedError(
-            f"default_initial_mean is only defined for num_gestures=2 "
-            f"(got {num_gestures}); curriculum must supply explicit priors."
-        )
-    return np.array(_DEFAULT_SCOOP + _DEFAULT_FLICK + [_DEFAULT_DELAY], dtype=np.float64)
 
 
-def build_initial_mean_from_priors(
-    initial_means,
-    initial_delays,
-) -> np.ndarray:
-    """Flatten per-slot means + inter-gesture delays into a single param vector.
-
-    Args:
-        initial_means: sequence of N sequences of PARAMS_PER_SLOT floats.
-        initial_delays: sequence of N-1 floats. ``None`` is treated as empty
-            (only valid when N == 1).
-    """
-    if initial_delays is None:
-        initial_delays = ()
-    flat: list[float] = []
-    for slot_idx, slot in enumerate(initial_means):
-        if len(slot) != PARAMS_PER_SLOT:
-            raise ValueError(
-                f"initial_means[{slot_idx}] must have {PARAMS_PER_SLOT} values, got {len(slot)}"
-            )
-        flat.extend(float(v) for v in slot)
-    flat.extend(float(v) for v in initial_delays)
-    return np.array(flat, dtype=np.float64)
 
 
 # ---------------------------------------------------------------------------
@@ -384,77 +321,3 @@ def execute_gesture_params(
 # ---------------------------------------------------------------------------
 # Sanity-check entrypoint
 # ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    print("=== Default initial mean (informed 360-flip prior, N=2) ===")
-    mean_2 = default_initial_mean(2)
-    print(f"  param vector length: {len(mean_2)} (expected {param_vector_length(2)})")
-    recipe = unpack_gesture_params(mean_2, num_gestures=2)
-    for i, g in enumerate(recipe["gestures"]):
-        print(f"  Gesture {i + 1}: points={g['points']}, duration={g['duration']:.3f}s, easing_power={g['easing_power']:.2f}")
-    print(f"  Delays: {recipe['delays']}")
-    bounds_2 = build_param_bounds(2)
-    print(f"  bounds shape: {bounds_2.shape}")
-    sigma_2 = build_initial_sigma(2)
-    print(f"  sigma: {sigma_2.tolist()}")
-    mask_2 = build_coordinate_mask(2)
-    print(f"  coord mask True count: {mask_2.sum()} (expected 12 = 6 per slot * 2 slots)")
-
-    print("\n=== Synthetic N=3 prior ===")
-    synthetic_means = [
-        [0.45, 0.69, 0.45, 0.70, 0.46, 0.83, 0.06, 1.2],
-        [0.45, 0.58, 0.60, 0.57, 0.75, 0.56, 0.05, 0.9],
-        [0.40, 0.55, 0.50, 0.55, 0.60, 0.55, 0.05, 1.0],
-    ]
-    synthetic_delays = [0.15, 0.15]
-    mean_3 = build_initial_mean_from_priors(synthetic_means, synthetic_delays)
-    print(f"  param vector length: {len(mean_3)} (expected {param_vector_length(3)})")
-    recipe = unpack_gesture_params(mean_3, num_gestures=3)
-    for i, g in enumerate(recipe["gestures"]):
-        print(f"  Gesture {i + 1}: points={g['points']}, duration={g['duration']:.3f}s, easing_power={g['easing_power']:.2f}")
-    print(f"  Delays: {recipe['delays']}")
-    bounds_3 = build_param_bounds(3)
-    print(f"  bounds shape: {bounds_3.shape}")
-    mask_3 = build_coordinate_mask(3)
-    print(f"  coord mask True count: {mask_3.sum()} (expected 18 = 6 per slot * 3 slots)")
-    assert infer_num_gestures(len(mean_3)) == 3, "infer_num_gestures round-trip failed for N=3"
-    assert infer_num_gestures(len(mean_2)) == 2, "infer_num_gestures round-trip failed for N=2"
-    print("  infer_num_gestures round-trip: OK")
-
-    print("\n=== Spin block (N=2, use_spin=True) ===")
-    assert param_vector_length(2, use_spin=True) == 20, "spin N=2 length should be 20"
-    assert param_vector_length(2, use_spin=False) == 17, "no-spin N=2 length should be 17"
-    assert infer_layout(20) == (2, True), "infer_layout(20) should be (2, True)"
-    assert infer_layout(17) == (2, False), "infer_layout(17) should be (2, False)"
-    assert infer_layout(26) == (3, False), "infer_layout(26) should be (3, False)"
-    assert infer_layout(29) == (3, True), "infer_layout(29) should be (3, True)"
-    spin_mean = np.array(_DEFAULT_SCOOP + _DEFAULT_FLICK + [_DEFAULT_DELAY] + [0.5, 0.2, 0.7])
-    assert len(spin_mean) == 20
-    spin_bounds = build_param_bounds(2, use_spin=True)
-    spin_sigma = build_initial_sigma(2, use_spin=True)
-    spin_mask = build_coordinate_mask(2, use_spin=True)
-    assert spin_bounds.shape == (20, 2) and len(spin_sigma) == 20 and len(spin_mask) == 20
-    assert spin_mask.sum() == 12, "spin params must not be coordinates"
-    spin_recipe = unpack_gesture_params(clamp_params(spin_mean, spin_bounds), 2, use_spin=True)
-    sp = spin_recipe["spin"]
-    print(f"  decoded spin: {sp}")
-    assert sp["enabled"] is True, "gate 0.5 >= 0 → enabled"
-    assert abs(sp["t_start"] - 0.2) < 1e-6 and abs(sp["t_end"] - 0.7) < 1e-6, "t ordering"
-    # gate below 0 → disabled; reversed t's get sorted
-    off = unpack_gesture_params(
-        clamp_params(np.array(_DEFAULT_SCOOP + _DEFAULT_FLICK + [_DEFAULT_DELAY] + [-0.5, 0.8, 0.3]), spin_bounds),
-        2, use_spin=True,
-    )["spin"]
-    assert off["enabled"] is False and off["t_start"] < off["t_end"], "gate<0 disabled + sorted"
-    assert "spin" not in unpack_gesture_params(mean_2, num_gestures=2), "no-spin recipe has no spin key"
-    print("  spin round-trip: OK")
-
-    rng = np.random.default_rng(42)
-    print("\n=== 2 random samples (N=2, uniform within bounds) ===")
-    for sample_idx in range(2):
-        raw = rng.uniform(bounds_2[:, 0], bounds_2[:, 1])
-        recipe = unpack_gesture_params(clamp_params(raw, bounds_2), num_gestures=2)
-        print(f"\n  Sample {sample_idx + 1}:")
-        for i, g in enumerate(recipe["gestures"]):
-            print(f"    Gesture {i + 1}: points={g['points']}, duration={g['duration']:.3f}s, easing_power={g['easing_power']:.2f}")
-        print(f"    Delays: {recipe['delays']}")

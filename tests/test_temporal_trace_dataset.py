@@ -495,7 +495,7 @@ def test_optional_menu_detection_checks_priority_frames_before_retaining(tmp_pat
         images=[np.full((32, 16, 3), 255, np.uint8)] * 2,
     )
 
-    from trueskate_ai.vision import gameplay_filter
+    from trueskate_ai.collection import gameplay_filter
 
     monkeypatch.setattr(gameplay_filter, "is_editor_frame", lambda _image: False)
     monkeypatch.setattr(

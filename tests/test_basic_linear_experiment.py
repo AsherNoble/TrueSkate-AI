@@ -439,7 +439,7 @@ def test_linear_dataset_decodes_only_selected_video_frames(monkeypatch, tmp_path
 
 
 def test_selected_video_decode_falls_back_when_random_seek_is_unreliable(monkeypatch, tmp_path):
-    import trueskate_ai.model1.hold.dataset as holds
+    import trueskate_ai.data.clip_frames as holds
 
     sample = tmp_path / "sample"
     sample.mkdir()
