@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trueskate-ai"
+version = "0.1.0"
+description = "Behavioural cloning from True Skate gameplay and calibrated touch traces"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.24", "opencv-python>=4.8", "pillow>=10", "scipy>=1.10",
+  "requests>=2.31", "python-dotenv>=1", "appium-python-client>=2.10",
+]
+
+[project.optional-dependencies]
+training = ["torch>=2", "torchvision>=0.15", "matplotlib>=3.7"]
+cloud = ["modal>=1.5"]
+device = [
+  "pyobjc-core>=10; sys_platform == 'darwin'",
+  "pyobjc-framework-Cocoa>=10; sys_platform == 'darwin'",
+  "pyobjc-framework-Quartz>=10; sys_platform == 'darwin'",
+  "pyobjc-framework-Vision>=10; sys_platform == 'darwin'",
+]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["trueskate_ai*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

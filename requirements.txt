@@ -1,18 +1,2 @@
-opencv-python>=4.8.0
-numpy>=1.24.0
-torch>=2.0.0
-torchvision>=0.15.0
-scipy>=1.10.0
-pillow>=10.0.0
-appium-python-client>=2.10.0
-matplotlib>=3.7.0
-requests>=2.31.0
-cma>=3.3.0
-python-dotenv>=1.0.0
-# Corpus offload + cloud stats/training (scripts/ops, scripts/cloud)
-modal>=1.5.0
-# Apple Vision OCR backend (trick_info_reader.py / vision_ocr.py)
-pyobjc-core>=10.0
-pyobjc-framework-Cocoa>=10.0
-pyobjc-framework-Quartz>=10.0
-pyobjc-framework-Vision>=10.0
+# Full development environment. For smaller installs, select pyproject extras.
+-e .[training,device,cloud,test]
