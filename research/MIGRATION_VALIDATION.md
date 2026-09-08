@@ -63,6 +63,37 @@ recording remains under
 XR1 WDA still refused connections. Power and USB visibility alone have not
 restored collection readiness; normal gameplay and XR1 WDA remain prerequisites.
 
+### Operator clarification and idle-navigation correction
+
+The operator subsequently confirmed both screens were usable and that XR2's
+bottom bar appears during idle gameplay. The previous screenshot diagnosis was
+too strong: the neutral navigation signature alone does not establish blocked
+gameplay. Live measurements isolated this signature (four neutral cells,
+red/teal fractions both zero, editor detection false). Its score fluctuated
+around the threshold; a brief passing observation was not sufficient validation.
+
+Commit `292838de27cbf24ee8f39d378d7884ddc3044827` adds explicit
+`--allow-idle-navigation` collection, recorded in the segment manifest. Replay
+and editor checks remain active, and dataset filtering and calibration are
+unchanged. Local tests: 259 passed; both Linux CI runs passed. Rig guard tests:
+five passed, two optional visual-fixture skips. See the operating guidance in
+[DEPLOYMENT.md](../DEPLOYMENT.md#idle-navigation-versus-blocking-menus).
+
+Both WDA endpoints recovered through the existing supervisor. XR1's original
+collector resumed and was left undisturbed during the XR2 retry.
+
+XR2 then passed the bounded candidate run with the explicit allowance:
+79.07 MB, ten gestures, zero UI skips; calibration accepted two detected taps
+(MAD 0.0 s). All ten samples aligned. Strict linear admission accepted seven
+drags and rejected the three calibration taps as non-linear. Each accepted clip
+decoded to exactly 32 frames matching metadata, and the loader produced a
+`(32, 3, 288, 128)` tensor. Output:
+`/Users/training-server/trueskate-ai/tmp/migration-candidate-output-20260908/iPhone_XR2_20260907_213035/`.
+The collector automatically deleted the source MOV after successful alignment;
+sample clips and manifests remain. A duplicate disconnect emitted an already-
+terminated-session warning after successful completion; it did not invalidate
+the recording or alignment.
+
 ## Remaining acceptance and rollout
 
 1. Restore stable powered, unlocked USB access to both XRs on training-server.

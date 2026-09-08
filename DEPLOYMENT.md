@@ -41,6 +41,19 @@ wrappers still expect the stable rig root; do not launch them from a staging
 worktree and assume they select that worktree. Invoke the Python collector
 directly for staging checks.
 
+### Idle navigation versus blocking menus
+
+The neutral five-button bottom navigation can appear over usable idle gameplay
+(operator confirmation, 2026-09-08). It is not sufficient evidence that gestures
+are blocked. For an operator-confirmed scene, the collector's explicit
+`--allow-idle-navigation` option ignores only that signature and records the
+choice in the segment manifest. Replay/camera, editor and foreground checks
+remain enabled. Do not substitute `--no-menu-guard`.
+
+This option does not relax calibration or dataset admission and does not
+reclassify existing `.menu` samples. Frame filtering remains conservative;
+changing historical corpus labels requires a separate validated review.
+
 `scripts/rig_collect.sh` now lets the collector's start-failure cap terminate
 the process. It does not endlessly restart a wedged recorder or send repeated
 notifications; resolve the tunnel/attachment incident before restarting it.
