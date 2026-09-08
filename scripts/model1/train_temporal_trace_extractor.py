@@ -564,7 +564,10 @@ def train_temporal(
         getattr(getattr(val_dataset, "dataset", val_dataset), "max_touches", 8)
     )
     use_amp = device.type == "cuda" and not smoke
-    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
+    # Intel macOS rigs use Torch 2.2, before the unified torch.amp scaler API.
+    scaler = (torch.amp.GradScaler("cuda", enabled=use_amp)
+              if hasattr(torch.amp, "GradScaler")
+              else torch.cuda.amp.GradScaler(enabled=use_amp))
     plateau_scheduler = (
         torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,

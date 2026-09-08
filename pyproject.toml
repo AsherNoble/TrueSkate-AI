@@ -21,7 +21,8 @@ device = [
   "pyobjc-framework-Quartz>=10; sys_platform == 'darwin'",
   "pyobjc-framework-Vision>=10; sys_platform == 'darwin'",
 ]
-test = ["pytest>=8"]
+# Cloud wrapper contract tests construct Modal objects but never run remote jobs.
+test = ["pytest>=8", "modal>=1.5"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

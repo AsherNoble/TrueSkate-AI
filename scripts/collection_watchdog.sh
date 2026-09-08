@@ -63,8 +63,14 @@ newest_mtime() {  # $1=device tag
   # Stage collections are nested as <corpus>/<device bucket>/<session>.
   # Restrict by the session/device name rather than directory depth so the
   # watchdog continues to see the active run after a corpus layout change.
+  local stat_args
+  if [ "$(uname -s)" = Darwin ]; then
+    stat_args=(-f '%m')
+  else
+    stat_args=(-c '%Y')
+  fi
   find "$DATA" -name 'segment_*.json' -path "*${1}_*" -type f -print0 2>/dev/null \
-    | xargs -0 stat -f '%m' 2>/dev/null | sort -rn | head -1 || true
+    | xargs -0 stat "${stat_args[@]}" 2>/dev/null | sort -rn | head -1 || true
 }
 
 stack_status() {  # $1=device tag $2=WDA port
