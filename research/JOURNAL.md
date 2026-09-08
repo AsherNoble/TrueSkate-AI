@@ -13,8 +13,9 @@ Put substantial experiments in individual records and current facts in STATUS.
 - Baseline alignment test exposed FFmpeg 9 removal of `-vsync`; replacing it
   with `-fps_mode passthrough` restored the original 248-test suite before moves.
 - Local and clean Linux checks pass; staged dashboard HTTP checks pass.
-  Physical collection remains blocked by USB/WDA availability after a rejected
-  baseline calibration. See [migration validation](MIGRATION_VALIDATION.md)
+  Both XRs passed bounded calibrated collection and strict loader/frame-count
+  checks after an explicit operator-confirmed idle-navigation allowance.
+  See [migration validation](MIGRATION_VALIDATION.md)
   for exact revisions, evidence and remaining rollout gates.
 
 ## 2026-09-04 — Model 1 evaluation and scaling protocol

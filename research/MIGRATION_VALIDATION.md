@@ -38,7 +38,10 @@ Updated 2026-09-08. Implementation is staged, **not merged or deployed**.
   This was an HTTP check, not a visual browser review. The temporary loopback
   server on port 8401 was stopped; the live dashboard on 8400 was untouched.
 
-## Physical collection gate: not passed
+## Physical collection gate: passed with explicit idle-navigation allowance
+
+Both XRs passed at `292838de27cbf24ee8f39d378d7884ddc3044827`.
+Earlier rejected attempts below are retained as diagnostic history, not successes.
 
 The original live XR1 collector recorded one bounded segment: 74.4 MB,
 12 gestures and two menu skips/relaunches. Only one calibration tap was detected;
@@ -94,16 +97,24 @@ sample clips and manifests remain. A duplicate disconnect emitted an already-
 terminated-session warning after successful completion; it did not invalidate
 the recording or alignment.
 
+XR1 passed the same isolated check: 54.82 MB, 12 gestures, zero UI skips;
+calibration accepted all three taps (MAD 0.0 s). All 12 samples aligned;
+strict linear admission accepted nine drags and excluded three calibration taps.
+All nine accepted clips decoded to exactly 32 frames matching metadata, and
+the loader returned `(32, 3, 288, 128)`. Output:
+`/Users/training-server/trueskate-ai/tmp/migration-candidate-output-20260908/iPhone_XR_20260907_213520/`.
+The source MOV was automatically deleted after successful alignment. The original
+collector was gracefully interrupted after suspending its restart wrapper;
+the wrapper resumed in a `finally` block after candidate exit 0. Process inspection
+confirmed a new original collector running. WDA was never manually restarted.
+
 ## Remaining acceptance and rollout
 
-1. Restore stable powered, unlocked USB access to both XRs on training-server.
-2. Pass bounded one-minute collection on each XR from the staged candidate;
-   verify calibration, decoded frame counts and strict loader admission.
-   Keep validation output isolated with honest park provenance.
-3. Record final runtime results here. Merge #14 normally, retarget #15 to main,
+1. Physical acceptance is complete; preserve the isolated validation outputs.
+2. Merge #14 normally, retarget #15 to main,
    require green checks and merge normally. Enable main's required-check rules
    without imposing linear history or bypassing validation.
-4. Deploy committed source at a safe boundary, preserving the original dirty
+3. Deploy committed source at a safe boundary, preserving the original dirty
    checkout and service definitions. Record actual loaded service revisions;
    compatibility launchers alone do not change which checkout a service uses.
 
