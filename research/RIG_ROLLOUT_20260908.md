@@ -4,8 +4,10 @@
 
 Deployed source: `c8c384ffff6cc1bfdf75b3ec43c226886f234b85` (merged BC cleanup).
 
-Source cutover is complete. XR1 subsequently hit its recorder start-failure
-cap and is currently stopped; recorder recovery is separate from source rollout.
+Source cutover is complete. Both collectors are now intentionally disabled by
+the operator; recovery checks do not authorize resuming ongoing collection.
+See [the subsequent autostart investigation](COLLECTION_AUTOSTART_20260909.md).
+XR1 also needs Xcode signing/account attention before a bounded recording test.
 
 | Path | Role |
 |---|---|

@@ -12,6 +12,12 @@ directory or edit/pull into the active release.
 
 ## Services
 
+Collection is intentionally **off**. Both collector jobs and collection-only
+watchdogs are persistently disabled. The laptop agent-based autofixer has been
+removed. Maintenance checks must be bounded; do not enable ongoing collection
+or interpret intentional inactivity as a fault without explicit authorization.
+See [autostart investigation](research/COLLECTION_AUTOSTART_20260909.md).
+
 | Service | Purpose |
 |---|---|
 | `com.trueskate.services` | Appium/WDA/iproxy health monitoring |

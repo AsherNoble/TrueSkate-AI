@@ -22,6 +22,10 @@ Model 2 is unfinished. PPO/CMA-ES implementations are retired in tagged history.
 
 ## Rig invariants
 
+- Collection is OFF by operator intent. Do not infer authorization to resume
+  an open-ended run from maintenance, device power-on, or stale heartbeat data.
+  Use explicitly bounded isolated smoke tests when needed. Collector launchd
+  jobs and collection watchdogs are disabled; the autonomous fixer is retired.
 - XRs normally attach to `training-server`; use
   `tailscale ssh training-server@training-server`. Do not assume local USB.
 - UDIDs come from `.env`. XR1 WDA/Appium: 8100/4723; XR2: 8103/4726.
