@@ -89,6 +89,21 @@ bootstrap it until recorder recovery is verified. XR2 remains stopped.
 
 ## Recovery
 
+### Authorized attachment cleanup follow-up
+
+After explicit approval, the operator restarted the root tunnel daemon;
+the registry then showed both device tunnels active. The official XR1-only
+cleanup deleted all 547 listed XCTest attachments. Saved server corpus data
+and XR2's attachments were not deleted.
+
+A single five-second recording probe failed at start: XCTest reported
+`Already recording, there can only be one screen recording at a time`.
+WDA's `/wda/video` returned null; a direct `/wda/video/stop` also returned null.
+Inspection of the installed WDA implementation confirmed stop is a no-op when
+its recording promise/ID is missing. Thus clearing attachments did not clear
+the orphaned active-recording state. No further start retries or WDA restart
+were performed. Collection remains stopped pending XR1 reboot/recovery.
+
 Fresh source and installed-service snapshots were saved before cutover:
 
 - `/Users/training-server/trueskate-ai-preserved-20260908/tmp/cutover-source-20260908.tgz`
