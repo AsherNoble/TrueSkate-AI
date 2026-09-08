@@ -1,6 +1,8 @@
 # BC migration validation
 
-Updated 2026-09-08. Implementation is staged, **not merged or deployed**.
+Updated 2026-09-08. Both-phone candidate acceptance is complete. BC promotion
+is merged; the linked cleanup PR records its final merge state. Live rollout
+must be distinguished from the validated staging checkout described here.
 
 ## Source and preservation
 
@@ -10,7 +12,11 @@ Updated 2026-09-08. Implementation is staged, **not merged or deployed**.
   [PR #15](https://github.com/AsherNoble/TrueSkate-AI/pull/15).
 - Original sources, journals and installed service definitions are preserved
   through [ARCHIVE.md](ARCHIVE.md). Archive tags have active update/deletion
-  protection. Main's proposed required-check rules are not yet enabled.
+  protection. Main's required-check rules are active (ruleset 22508756):
+  PRs, strict `archive-integrity`/`offline-tests`, no force-push or deletion.
+- BC promotion #14 merged normally as
+  `4eb9cc3c6ad58f4258d7b41431729e694fa20cf8`. Cleanup #15 is retargeted to
+  main and incorporates that merge without rebasing or squashing history.
 - The original rig checkout remains at
   `463316d34b81129986a171920369dd6067e91f7b`, with its ten dirty tracked
   source files intact. It has not been reset, switched or replaced.
@@ -111,9 +117,8 @@ confirmed a new original collector running. WDA was never manually restarted.
 ## Remaining acceptance and rollout
 
 1. Physical acceptance is complete; preserve the isolated validation outputs.
-2. Merge #14 normally, retarget #15 to main,
-   require green checks and merge normally. Enable main's required-check rules
-   without imposing linear history or bypassing validation.
+2. Merge cleanup #15 normally after its required checks. BC promotion,
+   retargeting and protection setup are complete; do not bypass validation.
 3. Deploy committed source at a safe boundary, preserving the original dirty
    checkout and service definitions. Record actual loaded service revisions;
    compatibility launchers alone do not change which checkout a service uses.
