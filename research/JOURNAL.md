@@ -6,6 +6,9 @@ Put substantial experiments in individual records and current facts in STATUS.
 
 ## 2026-09-08 — BC reconciliation and repository reorganisation
 
+- Switched the rig's stable source path to clean merged main, preserved the
+  entire dirty checkout, and reloaded application services without restarting
+  healthy WDA. [Rollout and rollback](RIG_ROLLOUT_20260908.md).
 - Preserved original BC, old main, rig committed history and rig uncommitted
   source/service definitions on GitHub. [Disposition ledger](RIG_RECONCILIATION.md).
 - Preserved useful dashboard and all BC variants; extracted shared gesture,

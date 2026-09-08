@@ -4,6 +4,12 @@ The XR fleet is on `training-server`, normally checked out at
 `/Users/training-server/trueskate-ai`. Reach it via
 `tailscale ssh training-server@training-server`.
 
+The stable path now points to the clean `c8c384f` release. The original dirty
+checkout is preserved separately and backs the runtime data/environment links.
+See the [2026-09-08 rollout record](research/RIG_ROLLOUT_20260908.md) for exact
+paths, loaded-service exceptions and rollback. Do not delete the preserved
+directory or edit/pull into the active release.
+
 ## Services
 
 | Service | Purpose |
