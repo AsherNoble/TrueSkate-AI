@@ -39,9 +39,6 @@ DEVICES: list[dict] = [
         "logical_w": 414,
         "logical_h": 896,
         "spin_button_xy": (0.0604, 0.4040),
-        # AVFoundation/DAL device name (leading substring; indices reorder, so
-        # never address by index). Used by vision/dal_capture for 30fps capture.
-        "avf_name": "Test XR_1",
     },
     {
         "env_key": "IPHONE_11_UDID",
@@ -53,7 +50,6 @@ DEVICES: list[dict] = [
         "logical_w": 375,  # Display Zoom always on; reduces logical_w 414 → 375
         "logical_h": 812,  # Display Zoom always on; reduces logical_h 896 → 812
         "spin_button_xy": (0.0604, 0.4040),
-        "avf_name": None,  # fill from `view_device.py --list` if DAL-capturing the 11
     },
     {
         "env_key": "IPHONE_XS_UDID",
@@ -65,7 +61,6 @@ DEVICES: list[dict] = [
         "logical_w": 375,
         "logical_h": 812,
         "spin_button_xy": (0.0604, 0.4040),
-        "avf_name": None,  # fill from `view_device.py --list` when connected
     },
     {
         "env_key": "IPHONE_XR2_UDID",
@@ -77,7 +72,6 @@ DEVICES: list[dict] = [
         "logical_w": 414,  # Display Zoom must be OFF (dim guard kills services on mismatch)
         "logical_h": 896,
         "spin_button_xy": (0.0604, 0.4040),
-        "avf_name": "Test_ XR_2",
     },
 ]
 
@@ -192,8 +186,6 @@ ALL_DEAD_TIMEOUT = 300.0  # seconds before aborting when every worker is dead (p
 # ---------------------------------------------------------------------------
 
 
-
-
 # ---------------------------------------------------------------------------
 # DeviceSession
 # ---------------------------------------------------------------------------
@@ -218,7 +210,7 @@ class DeviceSession:
         self._dead_since: float | None = None
         # Optional visual "still in a skatepark?" guard. Disabled (no-op) unless
         # SCENE_GUARD_MODEL points at a trained checkpoint. See
-        # experiments/scene_classifier_journal.md.
+        # research/ARCHIVE.md (ARCH-001).
         self.scene_guard = SceneGuard.from_env()
 
     @property

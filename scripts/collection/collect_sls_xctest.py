@@ -1,7 +1,7 @@
 """Segment-based SLS trace collector on the headless 30fps XCTest capture path.
 
 Replaces the wedged DAL real-time capture (``collect_sls_traces.py``) with Apple's
-XCTest screen recording (``vision/xctest_capture``): records bounded ``--segment-min``
+XCTest screen recording (``collection/xctest_capture``): records bounded ``--segment-min``
 ``.mov`` segments while firing the SLS gesture mix, logging a per-gesture MANIFEST of
 host-epoch call times. Each segment's ``.mov`` + ``.json`` manifest are written to THIS
 host (the training-server Mac). Frames are aligned to gestures OFFLINE by

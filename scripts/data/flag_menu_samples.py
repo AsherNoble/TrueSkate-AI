@@ -7,7 +7,7 @@ those ``(menu-frame, random-gesture)`` pairs are noise for a frame->gesture mode
 collector now guards against this in-loop (``--no-gameplay-guard`` to disable); this
 script cleans what was collected *before* the guard.
 
-Uses ``vision.gameplay_filter.is_menu_frame`` across each sample. Replay state is
+Uses ``collection.gameplay_filter.is_menu_frame`` across each sample. Replay state is
 normally stable, but the gray app-hub navigation can fade in/out within a sample,
 so checking only the middle frame leaves partially contaminated samples behind.
 NON-DESTRUCTIVE by default: writes a ``.menu`` marker in each flagged sample dir

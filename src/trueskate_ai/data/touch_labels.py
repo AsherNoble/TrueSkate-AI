@@ -4,7 +4,7 @@ The agent fires gestures it knows EXACTLY (the waypoints it sent). True Skate
 renders an orange finger-trace; capturing color screen frames during the
 gesture yields (frame, known-touch) pairs for free — the corpus that trains
 Model 1 (the learned trace extractor) and lets us MEASURE the hand-tuned
-trace_extractor's true positional error. See experiments/vision_sequence_leap_journal.md.
+trace_extractor's true positional error. See research/ARCHIVE.md (ARCH-001).
 
 This module is the pure, device-free label core: given a gesture's waypoints +
 timing and a frame's timestamp (relative to the gesture start), it returns the

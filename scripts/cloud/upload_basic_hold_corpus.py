@@ -13,7 +13,6 @@ import json
 import sys
 from pathlib import Path
 
-import modal
 
 _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT / "src") not in sys.path:
@@ -73,6 +72,9 @@ def main() -> None:
         min_samples=args.min_samples,
         require_unique_commands=not args.allow_replayed_commands,
     )
+    # Validation is also used offline; import the cloud client only for upload.
+    import modal
+
     volume = modal.Volume.from_name(args.volume)
     with volume.batch_upload() as upload:
         for sample in dataset.sample_paths:

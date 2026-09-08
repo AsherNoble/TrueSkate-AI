@@ -6,7 +6,7 @@ Usage:
 
 Saves a state_dict to notebooks/models/scene_classifier.pth. Enable it at
 runtime by setting SCENE_GUARD_MODEL to that path in .env. CPU is fine — the
-model is tiny. See experiments/scene_classifier_journal.md.
+model is tiny. See research/ARCHIVE.md (ARCH-001).
 """
 import argparse
 import json

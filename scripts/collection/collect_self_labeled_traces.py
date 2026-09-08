@@ -2,11 +2,11 @@
 
 The agent fires diverse calibration drags it knows EXACTLY; True Skate renders
 the orange finger-trace; we capture COLOR screen frames timestamped during each
-drag. Offline, `vision/self_label.label_frames` turns each frame's timestamp
+drag. Offline, `data/touch_labels.label_frames` turns each frame's timestamp
 into the instantaneous ground-truth touch position. This is the corpus that
 (a) measures the hand-tuned trace_extractor's true positional error and
 (b) trains Model 1 (the learned trace extractor) — the unblocking step for the
-vision-grounded sequence leap. See experiments/vision_sequence_leap_journal.md.
+vision-grounded sequence leap. See research/ARCHIVE.md (ARCH-001).
 
 IMPORTANT vs. the RL FrameRecorder: that one decodes grayscale 210x455 (no
 color for orange-trace detection) and is discarded; this saves full-resolution
@@ -171,7 +171,7 @@ def main() -> None:
 
     worker.disconnect()
     print(f"\nDone: {saved} samples → {out_root}")
-    print("Label them offline with vision/self_label.label_frames (tune latency_s vs. the trace).")
+    print("Label them offline with data/touch_labels.label_frames (tune latency_s vs. the trace).")
 
 
 if __name__ == "__main__":

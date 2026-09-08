@@ -2,8 +2,8 @@
 
 `(n frames + m past strokes) -> next strokes`, trained on Asher's expert play
 auto-labeled by Model 1 (the trace extractor). This is the VPT second stage /
-the "sequence leap". See experiments/vision_sequence_leap_journal.md and
-~/.claude/plans/start-investigating-how-we-jazzy-stroustrup.md.
+the "sequence leap". See research/ARCHIVE.md (ARCH-001) and
+research/STATUS.md.
 
 Run modes:
     --smoke           prove the full pipeline (dataset->model->loss->step) on
@@ -11,7 +11,7 @@ Run modes:
                       runs + a learnable target's loss falls.
     --data <dir>      train on real assembled sequences (SequenceDataset).
 
-The model + tokens are pure torch (trueskate_ai.bc) so this script runs unchanged
+The model + tokens are pure torch (trueskate_ai.model2) so this script runs unchanged
 on any cloud GPU (Modal first) — the portable-harness target.
 
 Usage:

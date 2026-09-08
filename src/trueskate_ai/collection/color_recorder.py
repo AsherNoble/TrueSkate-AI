@@ -3,7 +3,7 @@
 The RL FrameRecorder (device_worker) decodes grayscale 210x455 for OCR; trace
 extraction needs COLOR (the orange finger-trace is a hue). This recorder keeps
 full-res RGB frames + per-frame monotonic capture timestamps so a frame can be
-aligned to the known gesture trajectory offline (see vision/self_label).
+aligned to the known gesture trajectory offline (see data/touch_labels).
 
 Used by the standalone collector AND, flag-gated, by the CMA-ES eval loop so
 trick runs passively generate (frame -> known-touch) pairs.

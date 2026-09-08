@@ -2,11 +2,11 @@
 
 Consumes the agent self-labeled corpus from collect_self_labeled_traces.py
 (sample_*/frame_*.png + meta.json), turns each frame's timestamp into a
-ground-truth touch heatmap via vision/self_label, and trains the existing
+ground-truth touch heatmap via data/touch_labels, and trains the existing
 GaussianBumpPredictor U-Net to predict it. This is the model that replaces the
 unreliable hand-tuned trace_extractor — and, once trained, labels Asher's
 expert play to feed Model 2 (the sequence leap). See
-experiments/vision_sequence_leap_journal.md.
+research/ARCHIVE.md (ARCH-001).
 
 Run modes:
     --smoke              verify the full pipeline (dataset->model->loss->step)
@@ -42,7 +42,7 @@ from PIL import Image  # noqa: E402
 # Validated 2026-06-14: True Skate's orange finger-trace lags the flick — the
 # swoosh peaks ~0.4-0.5s AFTER touch release. At latency_s≈0.45 the known-touch
 # labels align with the visible trace in ~80% of frames (vs ~1% at 0.0). See
-# experiments/vision_sequence_leap_journal.md.
+# research/ARCHIVE.md (ARCH-001).
 _DEFAULT_LATENCY_S = 0.45
 _TRACE_WARM_THRESHOLD = 200  # min warm-orange px near the label to count as trace-aligned
 

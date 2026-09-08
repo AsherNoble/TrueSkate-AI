@@ -4,7 +4,7 @@ Model 1 (the trace extractor) emits an instantaneous touch `(active, x, y)` per
 frame of a continuous expert clip. To label Asher's play for Model 2 we must turn
 that per-frame track back into the discrete *strokes* he made: segment the active
 runs, then fit each run to one curved drag — 3 waypoints + duration + easing —
-i.e. the inverse of `vision/self_label.label_frames`.
+i.e. the inverse of `data/touch_labels.label_frames`.
 
 This is the "+ gesture-assembly" half of Asher's "frame sequence -> gesture"
 labeler. Pure numpy; validated by a round-trip against `self_label` (synthesize a

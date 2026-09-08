@@ -25,14 +25,6 @@ from trueskate_ai.data.clip_frames import (
 )
 
 
-
-
-
-
-
-
-
-
 def _valid_meta(sample: Path, meta: dict) -> str | None:
     if (sample / ".menu").exists():
         return "menu_marked"
@@ -138,8 +130,6 @@ class BasicHoldClipDataset(Dataset):
                 dtype=torch.float32,
             ),
         }
-
-
 
 
 def split_by_segment(dataset: BasicHoldClipDataset, *, val_fraction: float = 0.15,

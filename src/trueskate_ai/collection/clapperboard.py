@@ -266,7 +266,7 @@ def calibrate_via_app(
 
     ``action_fn`` — the on-screen action whose CALL-RETURN anchors Δ; defaults to a
     center ``mobile: tap``. Inject a drag (finger-up on the button) to measure Δ for a
-    gesture's call-return vs a tap's — see experiments/clapperboard_drag_vs_tap.py.
+    gesture's call-return vs a tap's — see research/ARCHIVE.md (ARCH-001).
     """
     from trueskate_ai.collection.color_recorder import TimestampedColorRecorder
 

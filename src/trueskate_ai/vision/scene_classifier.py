@@ -2,7 +2,7 @@
 
 Used as a safety guard during 24h runs to catch the case where the agent has
 left the park (home screen, pause menu, another app) and would otherwise keep
-firing swipes into the void. See experiments/scene_classifier_journal.md.
+firing swipes into the void. See research/ARCHIVE.md (ARCH-001).
 
 Two entry points:
     SceneClassifier — the nn.Module (train with scripts/train/train_scene_classifier.py).

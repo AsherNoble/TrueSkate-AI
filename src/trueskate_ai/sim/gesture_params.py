@@ -112,61 +112,6 @@ def build_param_bounds(num_gestures: int, use_spin: bool = False) -> np.ndarray:
 
 
 # ---------------------------------------------------------------------------
-# Initial sigma
-# ---------------------------------------------------------------------------
-
-_COORD_SIGMA = 0.10
-_DUR_SIGMA = 0.15
-_EASING_SIGMA = 0.5
-_DELAY_SIGMA = 0.15
-_SPIN_GATE_SIGMA = 0.4   # large enough for CMA-ES to flip the gate on/off
-_SPIN_T_SIGMA = 0.2
-
-
-
-
-
-
-# ---------------------------------------------------------------------------
-# Initial mean — default 2-gesture prior (informed 360-flip)
-# ---------------------------------------------------------------------------
-
-# Southward gesture from the tail area
-_DEFAULT_SCOOP = [
-    0.4485, 0.6920,
-    0.4595, 0.7001,
-    0.4595, 0.8348,
-    0.06, 1.2,
-]
-
-# Rightward gesture from the upper-mid board area
-_DEFAULT_FLICK = [
-    0.4485, 0.5836,
-    0.6017, 0.5714,
-    0.7548, 0.5636,
-    0.05, 0.9,
-]
-
-# Slight overlap — flick starts just before scoop finishes
-_DEFAULT_DELAY = 0.3
-
-# Neutral spin prior appended to a non-spin warm-start / default mean when a
-# curriculum enables spin. gate at the 0.0 threshold means ~half the initial
-# population tries the rotate button (unbiased exploration from a non-spin
-# warm-start); the interior hold window is then tuned by CMA-ES.
-_DEFAULT_SPIN_BLOCK = [0.0, 0.2, 0.8]
-
-
-def default_spin_block() -> list[float]:
-    """Neutral [gate, t_start, t_end] appended to a non-spin mean under use_spin."""
-    return list(_DEFAULT_SPIN_BLOCK)
-
-
-
-
-
-
-# ---------------------------------------------------------------------------
 # Core functions
 # ---------------------------------------------------------------------------
 
