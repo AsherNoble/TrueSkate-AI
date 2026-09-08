@@ -53,6 +53,16 @@ WDA ports (8100 and 8103). The root remotexpc tunnel daemon was running.
 No healthy WDA service was manually restarted and no calibration, menu or
 frame-count gate was weakened.
 
+After the user confirmed both phones powered on, both USB IDs appeared and
+XR2 WDA became ready. A staged one-minute XR2 retry recorded 64.62 MB but
+skipped all 12 attempts as menu/replay frames: zero gestures, zero detected
+calibration taps, zero admitted samples. A read-only screenshot confirmed
+the game's bottom navigation and tutorial overlay were visible. The rejected
+recording remains under
+`/Users/training-server/trueskate-ai/tmp/migration-candidate-output-20260908/iPhone_XR2_20260907_172619/`.
+XR1 WDA still refused connections. Power and USB visibility alone have not
+restored collection readiness; normal gameplay and XR1 WDA remain prerequisites.
+
 ## Remaining acceptance and rollout
 
 1. Restore stable powered, unlocked USB access to both XRs on training-server.
