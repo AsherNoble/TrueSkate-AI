@@ -2,7 +2,7 @@
 
 This mirrors ``flag_menu_samples.py`` but targets park-editor contamination in
 the SLS frame->gesture corpus. It samples each ``sample_*`` dir's middle frame,
-runs ``vision.gameplay_filter.is_editor_frame``, and writes a ``.editor`` marker
+runs ``collection.gameplay_filter.is_editor_frame``, and writes a ``.editor`` marker
 for flagged dirs (idempotent: existing markers are counted and skipped).
 
     python scripts/data/flag_editor_samples.py [--root data/sls_xctest] [--device iPhone_XR2] [--dry-run]
@@ -18,7 +18,7 @@ _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO / "src") not in sys.path:
     sys.path.insert(0, str(_REPO / "src"))
 
-from trueskate_ai.vision.gameplay_filter import is_editor_frame  # noqa: E402
+from trueskate_ai.collection.gameplay_filter import is_editor_frame  # noqa: E402
 
 
 def main() -> None:

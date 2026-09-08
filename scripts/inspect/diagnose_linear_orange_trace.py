@@ -18,8 +18,8 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_ROOT / "src"))
 
-from trueskate_ai.vision.basic_hold_dataset import _decode_frames
-from trueskate_ai.vision.basic_linear_dataset import discover_basic_linear_samples
+from trueskate_ai.model1.hold.dataset import _decode_frames
+from trueskate_ai.model1.linear.dataset import discover_basic_linear_samples
 
 
 def _orange_delta_mask(frame: np.ndarray, reference: np.ndarray) -> np.ndarray:

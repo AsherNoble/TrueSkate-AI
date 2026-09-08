@@ -1,0 +1,366 @@
+"""Training and evaluation helpers for MVP 2 finite-slope linear drags."""
+from __future__ import annotations
+
+from typing import Sequence
+
+import numpy as np
+import torch
+from torch.nn import functional as F
+
+from trueskate_ai.data.gesture_sampling import BASIC_LINEAR_MAX_S, BASIC_LINEAR_MIN_S
+from trueskate_ai.model1.linear.bias import AlongPathBias
+
+RECOVERY_ENDPOINT_TOLERANCE = 0.03
+RECOVERY_DURATION_TOLERANCE_S = 0.10
+
+
+def target_knots(width: int) -> int:
+    """Number of trajectory knots encoded in a ``[..., 2K+1]`` target vector."""
+    if width < 5 or width % 2 == 0:
+        raise ValueError(f"target width {width} is not 2K+1 for any K>=2")
+    return (width - 1) // 2
+
+
+def knot_columns(width: int, knot: int) -> tuple[int, int]:
+    """Column indices of one knot in a ``[..., 2K+1]`` vector.
+
+    Evaluators used to hardcode ``[:2]``/``[2:4]``/``[4]`` as start/end/duration,
+    which silently reads the *interior* knot and a coordinate labelled "duration"
+    once K>2 (EQ-011).  Going through this makes the intent explicit and correct
+    at any K.
+    """
+    knots = target_knots(width)
+    index = range(knots)[knot]
+    return 2 * index, 2 * index + 1
+
+
+def knot_component_labels(width: int) -> list[str]:
+    """Names for every component of a ``[..., 2K+1]`` vector.
+
+    At K=2 this is exactly ``x0, y0, x1, y1, duration`` — the labels the K=2
+    audits already emit — so generalising changes no existing artefact.
+    """
+    return [name for index in range(target_knots(width))
+            for name in (f"x{index}", f"y{index}")] + ["duration"]
+
+
+def decompose_endpoint_error(commanded: Sequence[float],
+                             predicted: Sequence[float]) -> dict[str, float]:
+    """Split first- and last-knot error along and perpendicular to the chord.
+
+    A systematic along-path component is a bias (cheap to remove); perpendicular
+    scatter is variance (needs better localisation).  The two demand different
+    fixes and the aggregate error hides which one is present — this is the
+    decomposition that found the MVP-2 tail was a one-axis end bias.
+
+    Only the first and last knots are decomposed.  An interior knot's error has
+    no single meaningful "along" direction (the path bends through it), so
+    reporting one would invent a number rather than measure it.
+    """
+    commanded = np.asarray(commanded, dtype=float)
+    predicted = np.asarray(predicted, dtype=float)
+    if commanded.shape != predicted.shape:
+        raise ValueError("commanded and predicted must have the same shape")
+    first_x, first_y = knot_columns(len(commanded), 0)
+    last_x, last_y = knot_columns(len(commanded), -1)
+    chord = np.array([commanded[last_x] - commanded[first_x],
+                      commanded[last_y] - commanded[first_y]], dtype=float)
+    direction = chord / max(float(np.linalg.norm(chord)), 1e-9)
+    output: dict[str, float] = {}
+    for name, (column_x, column_y) in (("start", (first_x, first_y)), ("end", (last_x, last_y))):
+        offset = np.array([predicted[column_x] - commanded[column_x],
+                           predicted[column_y] - commanded[column_y]], dtype=float)
+        along = float(offset @ direction)
+        output[f"{name}_along"] = along
+        output[f"{name}_perp"] = float(np.linalg.norm(offset - along * direction))
+    return output
+
+
+def knot_errors(prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """Per-knot Euclidean error, shape ``[batch, K]``."""
+    knots = target_knots(prediction.shape[1])
+    difference = (prediction[:, :2 * knots] - target[:, :2 * knots]).reshape(-1, knots, 2)
+    return torch.linalg.vector_norm(difference, dim=2)
+
+
+def basic_linear_endpoint_map_loss(scores: torch.Tensor, xy: torch.Tensor,
+                                   centre_time: torch.Tensor) -> torch.Tensor:
+    """A gentle spatial-temporal score-map target for endpoint attention.
+
+    This uses the *same* 0.15 temperature as ``BasicLinearRegressor._read_xy``.
+    It is intentionally an optional low-weight auxiliary: an earlier dense,
+    sharp classification objective overwhelmed coordinate learning rather than
+    regularising the broad attention distributions behind tail errors.
+    """
+    if scores.ndim != 4 or xy.shape != (scores.shape[0], 2):
+        raise ValueError("scores must be [batch,time,height,width] and xy [batch,2]")
+    batch, steps, height, width = scores.shape
+    if centre_time.shape != (batch,):
+        raise ValueError("centre_time must have shape [batch]")
+    time = torch.linspace(0., 1., steps, dtype=scores.dtype, device=scores.device)
+    x = torch.linspace(0., 1., width, dtype=scores.dtype, device=scores.device)
+    y = torch.linspace(0., 1., height, dtype=scores.dtype, device=scores.device)
+    time_error = (time[None, :, None, None] - centre_time[:, None, None, None]) / .055
+    x_error = (x[None, None, None, :] - xy[:, 0, None, None, None]) / .035
+    y_error = (y[None, None, :, None] - xy[:, 1, None, None, None]) / .035
+    target = torch.exp(-.5 * (time_error.square() + x_error.square() + y_error.square())).flatten(1)
+    target = target / target.sum(dim=1, keepdim=True).clamp_min(1e-12)
+    return -(target * F.log_softmax(scores.flatten(1) / .15, dim=1)).sum(dim=1).mean()
+
+
+def basic_linear_trajectory_map_loss(scores: torch.Tensor, trajectory_xy: torch.Tensor,
+                                     trajectory_mask: torch.Tensor) -> torch.Tensor:
+    """Score-map CE against the manifest-known position at each active frame.
+
+    Unlike the old endpoint auxiliary this has no guessed onset/liftoff: the
+    per-frame target is computed from each sample's aligned ``frame_times`` and
+    constant-velocity command.  It supervises only the active path interval.
+    """
+    if (scores.ndim != 4 or trajectory_xy.shape != (*scores.shape[:2], 2)
+            or trajectory_mask.shape != scores.shape[:2]):
+        raise ValueError("scores [B,T,H,W], trajectory_xy [B,T,2], and mask [B,T] are required")
+    if not torch.any(trajectory_mask):
+        raise ValueError("trajectory supervision needs at least one active frame")
+    _batch, _steps, height, width = scores.shape
+    x = torch.linspace(0., 1., width, dtype=scores.dtype, device=scores.device)
+    y = torch.linspace(0., 1., height, dtype=scores.dtype, device=scores.device)
+    x_error = (x[None, None, None, :] - trajectory_xy[:, :, 0, None, None]) / .035
+    y_error = (y[None, None, :, None] - trajectory_xy[:, :, 1, None, None]) / .035
+    target = torch.exp(-.5 * (x_error.square() + y_error.square())).flatten(2)
+    target = target / target.sum(dim=2, keepdim=True).clamp_min(1e-12)
+    per_frame = -(target * F.log_softmax(scores.flatten(2) / .15, dim=2)).sum(dim=2)
+    mask = trajectory_mask.to(dtype=per_frame.dtype)
+    return (per_frame * mask).sum() / mask.sum().clamp_min(1.)
+
+
+def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor, *,
+                      start_scores: torch.Tensor | None = None,
+                      end_scores: torch.Tensor | None = None,
+                      map_weight: float = 0.0, trajectory_xy: torch.Tensor | None = None,
+                      trajectory_mask: torch.Tensor | None = None,
+                      trajectory_weight: float = 0.0,
+                      trajectory_scores: torch.Tensor | None = None) -> torch.Tensor:
+    """Robust endpoint error plus duration error in matched native scales."""
+    if prediction.shape != target.shape or prediction.ndim != 2:
+        raise ValueError("prediction and target must both have shape [batch,2K+1]")
+    knots = target_knots(prediction.shape[1])
+    if knots != 2:
+        # MVP-3 gates every knot equally, so the loss weights them equally too;
+        # there is no "start is the bottleneck" asymmetry to encode here.
+        positions = F.smooth_l1_loss(
+            prediction[:, :2 * knots].contiguous(), target[:, :2 * knots].contiguous(), beta=0.03,
+        )
+        duration_scale = BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S
+        duration = F.smooth_l1_loss(
+            prediction[:, -1] / duration_scale, target[:, -1] / duration_scale, beta=0.05,
+        )
+        loss = positions + duration
+        if trajectory_weight and trajectory_scores is not None:
+            if trajectory_xy is None or trajectory_mask is None:
+                raise ValueError("trajectory targets are required when trajectory_weight is positive")
+            loss = loss + trajectory_weight * basic_linear_trajectory_map_loss(
+                trajectory_scores, trajectory_xy, trajectory_mask,
+            )
+        return loss
+    # Component audit of the best command-held-out checkpoint: duration passes
+    # 98.7%, end 88.7%, but start only 78.7%.  Weight the start pair more
+    # heavily so optimisation spends capacity on the actual recovery bottleneck.
+    # torch 2.12's smooth_l1_loss viewers reject a column slice of a [B,5]
+    # tensor ("spans across two contiguous subspaces"), so materialise the
+    # endpoint pairs.  Values are unchanged; this only fixes the stride.
+    start = F.smooth_l1_loss(prediction[:, :2].contiguous(), target[:, :2].contiguous(), beta=0.03)
+    end = F.smooth_l1_loss(prediction[:, 2:4].contiguous(), target[:, 2:4].contiguous(), beta=0.03)
+    endpoints = 1.8 * start + end
+    duration_scale = BASIC_LINEAR_MAX_S - BASIC_LINEAR_MIN_S
+    duration = F.smooth_l1_loss(
+        prediction[:, 4] / duration_scale, target[:, 4] / duration_scale, beta=0.05,
+    )
+    if map_weight < 0 or trajectory_weight < 0:
+        raise ValueError("map_weight and trajectory_weight must be non-negative")
+    if map_weight == 0 and trajectory_weight == 0:
+        return endpoints + duration
+    if start_scores is None or end_scores is None or start_scores.shape != end_scores.shape:
+        raise ValueError("score maps are required when auxiliary map weights are positive")
+    loss = endpoints + duration
+    if map_weight:
+        onset = target.new_full((len(target),), .24)
+        liftoff = (onset + target[:, 4] / 2.27).clamp(max=.88)
+        map_loss = basic_linear_endpoint_map_loss(start_scores, target[:, :2], onset)
+        map_loss = map_loss + basic_linear_endpoint_map_loss(end_scores, target[:, 2:4], liftoff)
+        loss = loss + map_weight * map_loss
+    if trajectory_weight:
+        if trajectory_xy is None or trajectory_mask is None:
+            raise ValueError("trajectory targets are required when trajectory_weight is positive")
+        # A dedicated track score map avoids forcing endpoint-specific heads to
+        # label every intermediate contact position.  Retain the old two-head
+        # auxiliary as a backwards-compatible control when none is supplied.
+        if trajectory_scores is None:
+            trajectory_loss = basic_linear_trajectory_map_loss(start_scores, trajectory_xy, trajectory_mask)
+            trajectory_loss = trajectory_loss + basic_linear_trajectory_map_loss(end_scores, trajectory_xy, trajectory_mask)
+        else:
+            if trajectory_scores.shape != start_scores.shape:
+                raise ValueError("trajectory_scores must match endpoint score-map shape")
+            trajectory_loss = basic_linear_trajectory_map_loss(
+                trajectory_scores, trajectory_xy, trajectory_mask,
+            )
+        loss = loss + trajectory_weight * trajectory_loss
+    return loss
+
+
+@torch.no_grad()
+def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device, *,
+                         correction: AlongPathBias | None = None) -> dict[str, float]:
+    """Report independent endpoint geometry and duration errors.
+
+    ``correction`` is an explicit opt-in: an along-path bias fit on a *different*
+    (validation) split.  It is never fit here, so scoring a split with a
+    correction cannot tune on that split.
+    """
+    model.eval()
+    start_errors: list[float] = []
+    end_errors: list[float] = []
+    duration_errors: list[float] = []
+    recovered: list[float] = []
+    start_recovered: list[float] = []
+    end_recovered: list[float] = []
+    duration_recovered: list[float] = []
+    per_knot: list[list[float]] = []
+    for batch in loader:
+        prediction = model(batch["frames"].to(device))
+        if correction is not None:
+            prediction = correction.apply(prediction)
+        target = batch["target"].to(device)
+        errors = knot_errors(prediction, target)
+        per_knot.extend(errors.cpu().tolist())
+        # "start" and "end" keep their MVP-2 meaning: the first and last knot.
+        start = errors[:, 0]
+        end = errors[:, -1]
+        duration = torch.abs(prediction[:, -1] - target[:, -1])
+        start_errors.extend(start.cpu().tolist())
+        end_errors.extend(end.cpu().tolist())
+        duration_errors.extend(duration.cpu().tolist())
+        start_recovered.extend((start <= RECOVERY_ENDPOINT_TOLERANCE).float().cpu().tolist())
+        end_recovered.extend((end <= RECOVERY_ENDPOINT_TOLERANCE).float().cpu().tolist())
+        duration_recovered.extend((duration <= RECOVERY_DURATION_TOLERANCE_S).float().cpu().tolist())
+        recovered.extend(((errors <= RECOVERY_ENDPOINT_TOLERANCE).all(dim=1)
+                          & (duration <= RECOVERY_DURATION_TOLERANCE_S)).float().cpu().tolist())
+    if not start_errors:
+        raise ValueError("cannot evaluate an empty loader")
+    endpoint_errors = start_errors + end_errors
+    from trueskate_ai.model1.certification import one_sided_binomial_lower_bound
+
+    recovery_successes = int(sum(recovered))
+    return {
+        "samples": float(len(start_errors)),
+        "start_coordinate_median": float(np.median(start_errors)),
+        "end_coordinate_median": float(np.median(end_errors)),
+        "endpoint_coordinate_median": float(np.median(endpoint_errors)),
+        "endpoint_coordinate_p90": float(np.quantile(endpoint_errors, 0.90)),
+        "duration_mae": float(np.mean(duration_errors)),
+        "duration_p90": float(np.quantile(duration_errors, 0.90)),
+        "gesture_recovery_accuracy": float(np.mean(recovered)),
+        "gesture_recovery_successes": float(recovery_successes),
+        "gesture_recovery_one_sided_95_lower": one_sided_binomial_lower_bound(
+            recovery_successes, len(recovered), confidence=.95,
+        ),
+        "start_recovery_accuracy": float(np.mean(start_recovered)),
+        "end_recovery_accuracy": float(np.mean(end_recovered)),
+        "duration_recovery_accuracy": float(np.mean(duration_recovered)),
+        "recovery_endpoint_tolerance": RECOVERY_ENDPOINT_TOLERANCE,
+        "recovery_duration_tolerance_s": RECOVERY_DURATION_TOLERANCE_S,
+        "knots": float(len(per_knot[0])),
+        # Per-knot recovery keeps progress visible while the joint gate, which
+        # requires every knot at once, is still failing.
+        **{f"knot{index}_recovery_accuracy":
+           float(np.mean([row[index] <= RECOVERY_ENDPOINT_TOLERANCE for row in per_knot]))
+           for index in range(len(per_knot[0]))},
+        **{f"knot{index}_coordinate_median": float(np.median([row[index] for row in per_knot]))
+           for index in range(len(per_knot[0]))},
+    }
+
+
+@torch.no_grad()
+def basic_linear_recovery_records(model: torch.nn.Module, loader, device: torch.device, *,
+                                  correction: AlongPathBias | None = None) -> list[dict[str, float]]:
+    """Return per-clip recovery evidence for post-hoc split audits.
+
+    The training loader need only provide tensors; optional ``sample_index`` lets
+    callers join records to dataset provenance (device, slope, duration) without
+    making model evaluation depend on filesystem metadata.
+    """
+    model.eval()
+    records: list[dict[str, float]] = []
+    for batch in loader:
+        prediction = model(batch["frames"].to(device))
+        if correction is not None:
+            prediction = correction.apply(prediction)
+        target = batch["target"].to(device)
+        errors = knot_errors(prediction, target)
+        start, end = errors[:, 0], errors[:, -1]
+        duration = torch.abs(prediction[:, -1] - target[:, -1])
+        recovered = ((errors <= RECOVERY_ENDPOINT_TOLERANCE).all(dim=1)
+                     & (duration <= RECOVERY_DURATION_TOLERANCE_S))
+        for index in range(len(start)):
+            records.append({
+                "start_error": float(start[index]),
+                "end_error": float(end[index]),
+                "duration_error": float(duration[index]),
+                "recovered": float(recovered[index]),
+                "knot_errors": [float(v) for v in errors[index].cpu()],
+                # Keep the raw pair as well as the error: a tail audit needs to
+                # know *where* a missed endpoint landed (short of the trail, past
+                # it, or on the opposite end) to tell failure modes apart.
+                "predicted": [float(value) for value in prediction[index].cpu()],
+                "target": [float(value) for value in target[index].cpu()],
+            })
+    return records
+
+
+def passes_basic_linear_acceptance(metrics: dict[str, float]) -> bool:
+    """MVP 2 gate: both endpoints must be localised, not merely their midpoint."""
+    return (
+        # Gate every knot when the metrics carry them; fall back to the MVP-2
+        # endpoint pair for legacy two-knot reports that predate per-knot keys.
+        max([value for key, value in metrics.items()
+             if key.startswith("knot") and key.endswith("_coordinate_median")]
+            or [metrics["start_coordinate_median"], metrics["end_coordinate_median"]]) <= 0.03
+        and metrics["duration_mae"] <= 0.10
+        and metrics["gesture_recovery_accuracy"] >= 0.95
+    )
+
+
+@torch.no_grad()
+def nearest_trail_gaps(grid: torch.Tensor, strong: torch.Tensor,
+                       points: torch.Tensor) -> list[dict[str, float]]:
+    """Distance from each commanded point to the nearest trail pixel, per point.
+
+    ``grid`` is ``[pixels, 2]`` normalised pixel centres, ``strong`` is
+    ``[steps, pixels]`` marking trail pixels per frame, and ``points`` is
+    ``[K, 2]``.  Returns, for every point, the smallest distance over all frames
+    and the frame that achieved it (ties resolved to the earliest frame).
+
+    All K points are measured against one gather per frame, so the cost is flat
+    in K rather than K independent passes — and on an accelerator this is one
+    host sync per frame instead of one per frame per knot.  Extracted from
+    ``autopsy_failures`` so the arithmetic is unit-testable rather than only
+    assertable as a source substring.
+    """
+    if grid.ndim != 2 or grid.shape[1] != 2:
+        raise ValueError("grid must be [pixels, 2]")
+    if points.ndim != 2 or points.shape[1] != 2:
+        raise ValueError("points must be [K, 2]")
+    if strong.ndim != 2 or strong.shape[1] != grid.shape[0]:
+        raise ValueError("strong must be [steps, pixels] matching the grid")
+    best = torch.full((len(points),), float("inf"), dtype=grid.dtype, device=grid.device)
+    best_step = torch.full((len(points),), -1, dtype=torch.long, device=grid.device)
+    for step in range(len(strong)):
+        mask = strong[step]
+        if not bool(mask.any()):
+            continue
+        candidates = grid[mask]
+        distance = torch.cdist(points, candidates).min(dim=1).values
+        improved = distance < best
+        best = torch.where(improved, distance, best)
+        best_step = torch.where(improved, torch.full_like(best_step, step), best_step)
+    return [{"distance": float(value), "frame": int(frame)}
+            for value, frame in zip(best.cpu(), best_step.cpu())]

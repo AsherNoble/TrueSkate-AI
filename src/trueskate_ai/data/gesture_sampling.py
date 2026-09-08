@@ -33,7 +33,7 @@ from pathlib import Path
 
 import numpy as np
 
-from trueskate_ai.rl.cmaes.action_param import (
+from trueskate_ai.sim.gesture_params import (
     PARAMS_PER_SLOT,
     SPIN_PARAMS,
     build_param_bounds,

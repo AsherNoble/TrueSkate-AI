@@ -17,7 +17,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_ROOT / "src"))
 
-from trueskate_ai.vision.basic_linear_audit import audit_basic_linear_corpus  # noqa: E402
+from trueskate_ai.model1.linear.audit import audit_basic_linear_corpus  # noqa: E402
 
 
 def _gate_errors(report: dict, *, devices: list[str], park: str | None,

@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 import torch
 
-from scripts.data.build_bc_clips import (
+from scripts.model2.build_bc_clips import (
     LoadedTraceExtractor,
     _LEGACY_MODEL_TYPE,
     _TEMPORAL_MODEL_TYPE,
@@ -20,8 +20,8 @@ from scripts.data.build_bc_clips import (
     resolve_inference_config,
     resolve_latency_s,
 )
-import scripts.data.build_bc_clips as build_bc_clips
-from trueskate_ai.vision.temporal_trace_predictor import TemporalTracePredictor
+import scripts.model2.build_bc_clips as build_bc_clips
+from trueskate_ai.model1.temporal.predictor import TemporalTracePredictor
 
 
 def _write_frames(root: Path, values: list[int], *, h: int = 16, w: int = 12) -> list[Path]:
@@ -132,7 +132,7 @@ def test_loads_metadata_free_legacy_checkpoint_without_filename_guessing(
             super().__init__()
             self.weight = torch.nn.Parameter(torch.ones(base_channels, in_channels))
 
-    stub = types.ModuleType("trueskate_ai.vision.gaussian_bump_predictor")
+    stub = types.ModuleType("trueskate_ai.model1.heatmap.model")
     stub.GaussianBumpPredictor = LightweightLegacy
     monkeypatch.setitem(sys.modules, stub.__name__, stub)
 

@@ -10,7 +10,7 @@ Single source of truth for gesture structure, coordinate conventions, device geo
 |---|---|
 | **gesture** | A single touch path: a list of normalised waypoints, a duration, and an easing profile. The atomic unit of touch input. |
 | **gesture recipe** | A structured dict `{"gestures": [...], "delays": [...]}` — one or more gestures with inter-gesture timing. Stored in trick library JSON files. |
-| **gesture parameters** | The flat float vector that CMA-ES optimises (17 elements for the current 2-slot layout). Decoded into a gesture recipe at evaluation time. |
+| **gesture parameters** | Shared flat float vector used by collection, recipe replay and Model 2 (17 elements for the two-slot no-spin layout). Decoded into a gesture recipe for execution. |
 | **trick library** | A JSON file containing `median_gestures` and `best_gestures` recipes for a named trick, produced by `scripts/data/build_trick_library.py`. |
 
 **Do not use "action" or "swipe" to describe touch gestures.** "Action" is reserved for RL policy output concepts if they arise. "Swipe" is imprecise and should not appear in new code or documentation.
@@ -227,7 +227,7 @@ Libraries mined by `scripts/data/mine_all_tricks.py` also carry `num_gestures` (
    to return the board to its starting position.
 ```
 
-Push constants are defined in `src/trueskate_ai/sim/gestures.py`. Both replay (`src/trueskate_ai/sim/gesture_recipe.py::execute_gesture_recipe`) and the CMA-ES eval path (`src/trueskate_ai/rl/cmaes/action_param.py::execute_gesture_params`) call the **same** canonical pair: `execute_static_push` (`sim/gestures.py`) then `execute_n_slot_gestures` (`sim/touch_actions.py`). The replay path additionally resets the board afterward.
+Push constants are defined in `src/trueskate_ai/sim/gestures.py`. Both replay (`src/trueskate_ai/sim/gesture_recipe.py::execute_gesture_recipe`) and the CMA-ES eval path (`src/trueskate_ai/sim/gesture_params.py::execute_gesture_params`) call the **same** canonical pair: `execute_static_push` (`sim/gestures.py`) then `execute_n_slot_gestures` (`sim/touch_actions.py`). The replay path additionally resets the board afterward.
 
 ---
 
@@ -241,8 +241,8 @@ Push constants are defined in `src/trueskate_ai/sim/gestures.py`. Both replay (`
 | `execute_n_slot_gestures()` (N-slot scheduler: sequential / combined / spin HOLD) | `src/trueskate_ai/sim/touch_actions.py` |
 | `build_curved_drag()`, `make_touch_pointer()`, `perform_pointer_actions()` | `src/trueskate_ai/sim/touch_actions.py` |
 | `curved_drag_with_spin_hold()` (spin_flick: drag + held spin button, one payload, no push) | `src/trueskate_ai/sim/touch_actions.py` |
-| CMA-ES gesture parameter bounds, decode, execute | `src/trueskate_ai/rl/cmaes/action_param.py` |
-| PPO gesture parameter decode, execute | `src/trueskate_ai/rl/ppo/trick_conditioned_action.py` |
+| Shared gesture parameter bounds, decode, execute | `src/trueskate_ai/sim/gesture_params.py` |
+| Retired PPO/CMA-ES implementations | `research/ARCHIVE.md` (ARCH-002) |
 | Library recipe replay | `scripts/inspect/execute_trick.py` |
 | Build trick library from JSONL log | `scripts/data/build_trick_library.py` |
-| Device configs (`DEVICES`, `logical_w`, `logical_h`) | `src/trueskate_ai/rl/device_worker.py` |
+| Device configs (`DEVICES`, `logical_w`, `logical_h`) | `src/trueskate_ai/sim/device.py` |

@@ -68,7 +68,7 @@ while :; do
   # ``-u`` makes every phase visible immediately in the nohup log.  Without it
   # Python's redirected stdout only flushed when the segment ended, mimicking a
   # frozen collector for the entire record/retrieve/align cycle.
-  PYTHONPATH=src .venv/bin/python -u scripts/data/collect_sls_xctest.py \
+  PYTHONPATH=src .venv/bin/python -u scripts/collection/collect_sls_xctest.py \
     --devices "$DEVICE" \
     --basic-linears \
     --tap-calibrate \

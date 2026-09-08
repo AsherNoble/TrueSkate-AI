@@ -20,7 +20,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_ROOT / "src"))
 
-from trueskate_ai.vision.basic_hold_dataset import _decode_frames  # noqa: E402
+from trueskate_ai.model1.hold.dataset import _decode_frames  # noqa: E402
 
 _SCALE = 3
 

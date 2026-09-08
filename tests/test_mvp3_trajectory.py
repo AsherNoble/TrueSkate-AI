@@ -6,7 +6,7 @@ import torch
 from trueskate_ai.data.trajectory_resample import (
     command_knot_times, resample_command_at_times,
 )
-from trueskate_ai.vision.basic_linear_regressor import BasicLinearRegressor
+from trueskate_ai.model1.linear.regressor import BasicLinearRegressor
 
 
 def test_straight_drag_resamples_to_its_own_midpoint():

@@ -1,6 +1,6 @@
 import torch
 
-from trueskate_ai.vision.temporal_trace_predictor import (
+from trueskate_ai.model1.temporal.predictor import (
     TemporalTracePredictor,
     TemporalTraceState,
 )

@@ -21,7 +21,7 @@ strict_count() {
 import json
 import sys
 from pathlib import Path
-from trueskate_ai.vision.basic_linear_dataset import discover_basic_linear_samples
+from trueskate_ai.model1.linear.dataset import discover_basic_linear_samples
 
 root, device = Path(sys.argv[1]), sys.argv[2]
 samples, _stats = discover_basic_linear_samples(root)

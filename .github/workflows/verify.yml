@@ -1,0 +1,34 @@
+name: Verify
+on:
+  pull_request:
+  push:
+    branches: [main, 'reconcile/**', 'refactor/**']
+permissions:
+  contents: read
+jobs:
+  archive-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check append-only archive
+        env:
+          EVENT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          base="$EVENT_BASE"
+          if [ -z "$base" ] || [ "$base" = 0000000000000000000000000000000000000000 ]; then
+            base=origin/main
+          fi
+          python scripts/ops/check_archive.py --base "$base"
+  offline-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg libgl1
+      - run: python -m pip install -e '.[training,test]'
+      - run: python -m pytest -q

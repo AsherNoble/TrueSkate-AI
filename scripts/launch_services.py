@@ -29,7 +29,7 @@ _REPO_ROOT = _HERE.parent
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from trueskate_ai.rl.device_worker import (
+from trueskate_ai.sim.device import (
     BUNDLE_ID,
     DEVICES,
     add_device_selection_args,

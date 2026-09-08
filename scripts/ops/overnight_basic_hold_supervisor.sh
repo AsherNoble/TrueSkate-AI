@@ -26,7 +26,7 @@ log(){ echo "$(TZ=Australia/Sydney date '+%F %T %Z') $*" | tee -a "$LOG"; }
 notify(){ PYTHONPATH="$REPO/src" "$PY" -c "from trueskate_ai.utils.notify import notify; notify('''$1''', title='TrueSkate basic hold overnight')" 2>/dev/null || true; }
 deadline_epoch="$($PY -c 'from datetime import datetime; from zoneinfo import ZoneInfo; now=datetime.now(ZoneInfo("Australia/Sydney")); end=now.replace(hour=8,minute=0,second=0,microsecond=0); print(int(end.timestamp()))')"
 now_epoch(){ date +%s; }
-accepted(){ PYTHONPATH=src "$PY" -c "from trueskate_ai.vision.basic_hold_dataset import BasicHoldClipDataset; print(len(BasicHoldClipDataset('$ROOT')))"; }
+accepted(){ PYTHONPATH=src "$PY" -c "from trueskate_ai.model1.hold.dataset import BasicHoldClipDataset; print(len(BasicHoldClipDataset('$ROOT')))"; }
 stop_collector(){
   local parent children pid
   parent=$(pgrep -f "mvp_collect.sh iPhone_XR $ROOT" || true)
@@ -69,7 +69,7 @@ prune_if_needed(){
 train_variant(){
   local label="$1" channels="$2" epochs="$3" session="$4" result
   log "training $label channels=$channels epochs=$epochs" >&2
-  "$MODAL" run scripts/cloud/train_basic_hold_modal.py --data-subdir "$session" --run-label "$label" --base-channels "$channels" --epochs "$epochs" >> "$LOG" 2>&1
+  "$MODAL" run scripts/model1/train_basic_hold_modal.py --data-subdir "$session" --run-label "$label" --base-channels "$channels" --epochs "$epochs" >> "$LOG" 2>&1
   mkdir -p tmp/overnight_basic_hold
   "$MODAL" volume get "$MODELS" "basic_hold_${label}.json" tmp/overnight_basic_hold/ >/dev/null
   result=$(cat "tmp/overnight_basic_hold/basic_hold_${label}.json")

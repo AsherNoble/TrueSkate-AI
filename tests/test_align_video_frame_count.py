@@ -18,7 +18,7 @@ pytestmark = pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg n
 
 def _aligner():
     import importlib.util
-    path = Path(__file__).resolve().parents[1] / "scripts" / "data" / "align_xctest_traces.py"
+    path = Path(__file__).resolve().parents[1] / "scripts" / "collection" / "align_xctest_traces.py"
     spec = importlib.util.spec_from_file_location("align_xctest_traces", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

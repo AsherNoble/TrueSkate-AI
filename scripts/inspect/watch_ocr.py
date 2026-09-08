@@ -18,7 +18,7 @@ import numpy as np
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
+from trueskate_ai.sim.device import DEVICES, DeviceSession
 from trueskate_ai.sim.trick_info_reader import detect_trick_with_diagnostics, ensure_ocr_backend_ready
 
 
@@ -32,7 +32,7 @@ def main() -> None:
     ensure_ocr_backend_ready()
 
     device_cfg = next((d for d in DEVICES if d["name"] == args.device_name), DEVICES[0]) if args.device_name else DEVICES[0]
-    worker = DeviceWorker(device_cfg)
+    worker = DeviceSession(device_cfg)
     worker.connect()
 
     interval = 1.0 / args.fps

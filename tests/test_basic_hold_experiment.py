@@ -11,13 +11,13 @@ from trueskate_ai.data.gesture_sampling import (
     BASIC_HOLD_MIN_S,
     sample_basic_hold_mixture,
 )
-from trueskate_ai.vision.basic_hold_dataset import (
+from trueskate_ai.model1.hold.dataset import (
     BasicHoldClipDataset,
     split_by_command,
     split_by_segment,
 )
-from trueskate_ai.vision.basic_hold_regressor import BasicHoldRegressor
-from trueskate_ai.vision.basic_hold_training import passes_basic_hold_acceptance
+from trueskate_ai.model1.hold.regressor import BasicHoldRegressor
+from trueskate_ai.model1.hold.training import passes_basic_hold_acceptance
 
 
 def _write_sample(root: Path, segment: str, name: str, *, kind: str = "hold",

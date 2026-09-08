@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from trueskate_ai.vision.gameplay_filter import (
+from trueskate_ai.collection.gameplay_filter import (
     bolt_modal_score, is_bolt_modal_frame, is_menu_frame)
 
 
@@ -50,6 +50,15 @@ def test_synthetic_repeated_hub_cells_are_detected() -> None:
         x0 = cell * 20 + 5
         frame[184:194, x0:x0 + 10] = 170
     assert is_menu_frame(frame)
+    assert not is_menu_frame(frame, allow_idle_navigation=True)
+
+
+def test_idle_navigation_allowance_keeps_replay_color_guard() -> None:
+    frame = np.full((200, 100, 3), 150, dtype=np.uint8)
+    frame[180:, :50] = (220, 20, 20)
+    frame[180:, 50:] = (20, 200, 200)
+    assert is_menu_frame(frame)
+    assert is_menu_frame(frame, allow_idle_navigation=True)
 
 
 def test_synthetic_dark_gameplay_with_sparse_ui_is_not_hub() -> None:

@@ -168,3 +168,10 @@ def test_device_status_falls_back_to_collection(tmp_path: Path, corpus: Path):
     s = dash._device_status(tmp_path / "no-logs", DEVICE, corpus)
     assert s["mode"] == "collect"
     assert s["samples_1h"] == 4
+
+
+def test_existing_corpus_takes_priority_over_historical_rl_logs(monkeypatch, tmp_path: Path, corpus: Path):
+    monkeypatch.setattr(dash, "_newest_jsonl", lambda *_args: tmp_path / "old-run.jsonl")
+    state = dash._device_status(tmp_path, DEVICE, corpus)
+    assert state["mode"] == "collect"
+    assert state["samples_1h"] == 4

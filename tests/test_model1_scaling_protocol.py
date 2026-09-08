@@ -11,12 +11,12 @@ from trueskate_ai.data.cohort_manifest import (
 from trueskate_ai.data.sequential_shards import (
     build_sequential_shards, materialize_sequential_shards,
 )
-from trueskate_ai.vision.basic_linear_dataset import BasicLinearClipDataset
-from trueskate_ai.vision.model1_certification import (
+from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset
+from trueskate_ai.model1.certification import (
     TouchTrack, certification_report, complete_gesture_recovered,
     one_sided_binomial_lower_bound,
 )
-from trueskate_ai.vision.model1_scaling import (
+from trueskate_ai.model1.scaling import (
     assert_deterministic_nesting, build_experiment_manifest,
     build_linear_cohort_manifest, build_nested_subset_manifests,
     estimate_modal_rungs, fit_error_scaling_law, gradient_clipping_decision,
@@ -126,7 +126,7 @@ def test_cross_cohort_exact_command_collision_is_rejected(tmp_path):
 
 
 def test_trainer_records_manifest_bound_train_and_validation_curves(tmp_path, monkeypatch):
-    import scripts.train.train_basic_linear_regressor as trainer
+    import scripts.model1.train_basic_linear_regressor as trainer
     import torch
 
     training = _cohort(tmp_path, "training", role="training", start=0, count=6)

@@ -1,34 +1,15 @@
-"""Canonical training dashboard: phone-screen preview + training log + Mode A heartbeat.
+"""BC collection dashboard: corpus preview, progress and deployed source identity.
 
-Serves a single page — the only rig dashboard — with a per-device screen
-preview and a distilled per-device log built from the newest run JSONL
-(current trick, eval counts, throughput, rolling land rate, latest landed
-tricks), plus a top heartbeat bar for Mode A (CMA-ES) runs sourced from
-``logs/status.json`` (written by ``trueskate_ai.monitoring.status.StatusTracker``).
-Absorbs what used to be the separate ``status_server.py`` — that script is
-retired; two dashboards on two ports was one too many.
+Serves already-aligned XCTest clips without extra phone/WDA traffic. Supports
+flat and staged device-bucket corpora, contamination exclusion and stale footage
+badges. Collection takes priority over historical RL logs; old log/status JSON
+readers remain for inspecting archived runs, with no live optimiser dependency.
 
-The screen preview is NOT the old view_device.py HLS stream — that path is the
-AVFoundation/CoreMediaIO "DAL" screen-mirror capture, which is wedged at the OS
-level with no third-party (headless) fix (see memory
-ios-dal-screen-capture-wedge; re-confirmed dead 2026-07-13). Instead this
-serves the newest clip the Mode B XCTest collector has already aligned to disk
-(`data/<corpus>/<device>_*/.../sample_NNNNNN/frames.mp4`, or `frame_NNN.png`
-for corpora aligned before the video packing) — real gameplay footage, zero
-extra device/WDA traffic, but refreshed only on the collector's segment cadence
-(~60-75s), not true live video.
+The header reports the revision loaded by this dashboard process, uncommitted
+source and whether disk HEAD has changed. It does not assert that other running
+services loaded the same revision.
 
-Meant to run continuously (launchd, RunAtLoad+KeepAlive) rather than be
-spawned per training run — Mode A's heartbeat bar just shows "idle" when
-``logs/status.json`` is absent or stale, which is the common case since Mode B
-collection is the rig's current default activity.
-
-Usage:
-    python scripts/train_dashboard.py [--port 8400] [--host 0.0.0.0]
-        [--log-root logs/overnight] [--corpus-root data]
-        [--status-path logs/status.json]
-
-Open http://127.0.0.1:8400/ (or the tailnet IP from another device).
+Run: python scripts/train_dashboard.py --port 8400 --corpus-root data
 """
 import argparse
 import functools
@@ -44,6 +25,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT / "src"))
+from trueskate_ai.monitoring.deployment import deployment_status, revision
+
+_LOADED_REVISION = revision(_REPO_ROOT)
 load_dotenv(_REPO_ROOT / ".env")
 
 DEVICES = ["iPhone_XR", "iPhone_XR2"]
@@ -297,10 +283,10 @@ def _visible_rows(rows: list[dict], log_delay_s: float) -> list[dict]:
 
 def _device_status(log_root: Path, device: str, corpus_root: Path,
                    log_delay_s: float = 0.0) -> dict:
+    collection = _collection_status(corpus_root, device)
     j = _newest_jsonl(log_root, device)
-    if j is None:
-        # No Mode A run — report what Mode B collection is doing instead.
-        return _collection_status(corpus_root, device)
+    if collection.get("session") or j is None:
+        return collection
     with _STATUS_LOCK:
         cached = _STATUS_CACHE.get(device)
         if cached is None or cached["path"] != j:
@@ -492,21 +478,12 @@ async function refreshCams(){
 async function tickHeartbeat(){
   const pill = document.getElementById('hb-pill'), el = document.getElementById('hb-text');
   let s;
-  try { s = await (await fetch('/status.json', {cache:'no-store'})).json(); }
+  try { s = await (await fetch('/deployment.json', {cache:'no-store'})).json(); }
   catch(e){ pill.textContent='—'; pill.className='badge none'; el.textContent='heartbeat unreachable'; return; }
-  if (s.state === 'no-status-yet') {
-    pill.textContent = 'IDLE'; pill.className = 'badge none';
-    el.textContent = 'Mode A (CMA-ES): no training run active';
-    return;
-  }
-  const ageS = (Date.now() - Date.parse(s.updated_at)) / 1000;
-  const stale = ageS > 180;
-  pill.textContent = stale ? `STALE ${Math.round(ageS)}s` : 'LIVE';
-  pill.className = 'badge ' + (stale ? 'stale' : 'live');
-  const deadTxt = (s.dead && s.dead.length) ? ` · dead: ${s.dead.join(', ')}` : '';
-  el.innerHTML = `Mode A: <b>${s.target}</b> · run ${s.run_id} · gen ${s.generation} · ` +
-    `evals ${s.total_evals}/${s.max_evals} · land rate ${((s.land_rate||0)*100).toFixed(1)}% · ` +
-    `best ${s.best_reward} ${s.best_trick||''}${deadTxt}`;
+  pill.textContent = s.source_dirty === null ? 'UNKNOWN' : (s.source_dirty ? 'MODIFIED' : 'COMMITTED');
+  pill.className = 'badge ' + (s.source_dirty ? 'stale' : 'live');
+  el.textContent = 'BC collection · dashboard loaded ' + (s.loaded_revision || 'unknown').slice(0,12) +
+    (s.restart_pending ? ' · newer source on disk; dashboard restart pending' : '');
 }
 tick(); setInterval(tick, 5000);
 refreshCams(); setInterval(refreshCams, 10000);
@@ -524,7 +501,10 @@ class _Handler(BaseHTTPRequestHandler):
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
-        if self.path == "/data":
+        if self.path == "/deployment.json":
+            body = json.dumps(deployment_status(_REPO_ROOT, _LOADED_REVISION)).encode()
+            ctype = "application/json"
+        elif self.path == "/data":
             body = json.dumps([
                 _device_status(self.log_root, d, self.corpus_root, self.log_delay_s)
                 for d in DEVICES

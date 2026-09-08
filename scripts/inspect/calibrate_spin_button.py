@@ -16,7 +16,7 @@ _REPO_ROOT = _HERE.parents[1]  # scripts/inspect/ -> repo root
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from trueskate_ai.rl.device_worker import DEVICES, DeviceWorker
+from trueskate_ai.sim.device import DEVICES, DeviceSession
 from trueskate_ai.sim.gestures import scale_to_device
 
 
@@ -31,7 +31,7 @@ def main() -> None:
     parser.add_argument("--y", type=float, default=0.4040,
                         help="Normalised [0,1] Y (spin_button_xy convention).")
     parser.add_argument(
-        "--device-index", type=int, default=0, help="Index into DeviceWorker DEVICES list."
+        "--device-index", type=int, default=0, help="Index into DeviceSession DEVICES list."
     )
     parser.add_argument("--repeat", type=int, default=2, help="Number of taps to send.")
     parser.add_argument(
@@ -42,7 +42,7 @@ def main() -> None:
     if args.device_index < 0 or args.device_index >= len(DEVICES):
         raise SystemExit(f"Invalid --device-index {args.device_index}; expected 0..{len(DEVICES)-1}")
 
-    worker = DeviceWorker(DEVICES[args.device_index])
+    worker = DeviceSession(DEVICES[args.device_index])
     worker.connect()
     try:
         worker.ensure_foreground()

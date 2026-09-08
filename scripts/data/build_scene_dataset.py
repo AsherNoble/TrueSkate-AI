@@ -2,7 +2,7 @@
 
 Positives (in-skatepark frames) are auto-mined from existing repo imagery.
 Negatives (home screen / menus / other apps) come from a folder you populate.
-See experiments/scene_classifier_journal.md.
+See research/ARCHIVE.md (ARCH-001).
 
 Usage:
     python scripts/data/build_scene_dataset.py \

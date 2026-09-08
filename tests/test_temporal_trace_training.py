@@ -3,9 +3,9 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from trueskate_ai.vision import temporal_trace_training as trace_training
-from trueskate_ai.vision.temporal_trace_predictor import TemporalTraceState
-from trueskate_ai.vision.temporal_trace_training import (
+from trueskate_ai.model1.temporal import training as trace_training
+from trueskate_ai.model1.temporal.predictor import TemporalTraceState
+from trueskate_ai.model1.temporal.training import (
     BalancedTemporalTraceLoss,
     TeacherForcingSchedule,
     autoregressive_trace_rollout,

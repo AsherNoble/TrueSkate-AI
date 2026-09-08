@@ -6,10 +6,10 @@ import numpy as np
 import pytest
 import torch
 
-from trueskate_ai.bc.gesture_tokens import decode
-from trueskate_ai.bc.infer import SequencePolicyRunner, TimestampedMjpegBuffer
-from trueskate_ai.bc.model2 import SequencePolicyConfig, stroke_loss
-from trueskate_ai.bc.sequence_dataset import SequenceDataset
+from trueskate_ai.model2.tokens import decode
+from trueskate_ai.model2.infer import SequencePolicyRunner, TimestampedMjpegBuffer
+from trueskate_ai.model2.policy import SequencePolicyConfig, stroke_loss
+from trueskate_ai.model2.dataset import SequenceDataset
 
 
 def _stroke(start, end, value=0.5):
@@ -131,7 +131,7 @@ def test_smoke_never_defaults_to_a_durable_model_path():
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
-    source = (root / "scripts" / "train" / "train_sequence_model.py").read_text()
+    source = (root / "scripts" / "model2" / "train_sequence_model.py").read_text()
     # The default must be resolved after parsing, not baked into add_argument.
     assert 'ap.add_argument("--out", type=Path, default=None' in source
     assert '"tmp" / "sequence_model_smoke.pth" if args.smoke' in source
@@ -162,7 +162,7 @@ def test_smoke_honours_the_epochs_flag():
     """
     from pathlib import Path
     source = (Path(__file__).resolve().parents[1]
-              / "scripts" / "train" / "train_sequence_model.py").read_text()
+              / "scripts" / "model2" / "train_sequence_model.py").read_text()
     assert "max(3, args.epochs)" not in source
     assert "if smoke and ep >= 2" not in source
     assert "epochs=args.epochs, batch_size=args.batch_size" in source

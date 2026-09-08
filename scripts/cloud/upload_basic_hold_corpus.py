@@ -13,13 +13,12 @@ import json
 import sys
 from pathlib import Path
 
-import modal
 
 _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_ROOT / "src"))
 
-from trueskate_ai.vision.basic_hold_dataset import BasicHoldClipDataset  # noqa: E402
+from trueskate_ai.model1.hold.dataset import BasicHoldClipDataset  # noqa: E402
 
 
 def validated_dataset(root: Path, *, min_samples: int,
@@ -73,6 +72,9 @@ def main() -> None:
         min_samples=args.min_samples,
         require_unique_commands=not args.allow_replayed_commands,
     )
+    # Validation is also used offline; import the cloud client only for upload.
+    import modal
+
     volume = modal.Volume.from_name(args.volume)
     with volume.batch_upload() as upload:
         for sample in dataset.sample_paths:
