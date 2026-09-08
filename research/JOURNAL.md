@@ -12,8 +12,10 @@ Put substantial experiments in individual records and current facts in STATUS.
   device and clip utilities, and separated canonical workflow entrypoints.
 - Baseline alignment test exposed FFmpeg 9 removal of `-vsync`; replacing it
   with `-fps_mode passthrough` restored the original 248-test suite before moves.
-- Physical validation and final deployment results belong in the migration
-  report once measured; do not infer success from this work-in-progress entry.
+- Local and clean Linux checks pass; staged dashboard HTTP checks pass.
+  Physical collection remains blocked by USB/WDA availability after a rejected
+  baseline calibration. See [migration validation](MIGRATION_VALIDATION.md)
+  for exact revisions, evidence and remaining rollout gates.
 
 ## 2026-09-04 — Model 1 evaluation and scaling protocol
 
