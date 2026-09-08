@@ -2,7 +2,10 @@
 
 ## Source and state
 
-Deployed source: `c8c384ffff6cc1bfdf75b3ec43c226886f234b85` (merged BC cleanup).
+Initial rollout source: `c8c384ffff6cc1bfdf75b3ec43c226886f234b85` (merged BC cleanup).
+The paths and process IDs below describe that initial cutover. Later clean
+releases may replace the stable symlink; inspect it and the live dashboard's
+`/deployment.json` before acting on these historical recovery instructions.
 
 Source cutover is complete. Both collectors are now intentionally disabled by
 the operator; recovery checks do not authorize resuming ongoing collection.
