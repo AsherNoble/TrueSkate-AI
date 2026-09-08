@@ -6,11 +6,13 @@ there for a long stretch — the park is still visible behind a replay, so the f
 just poke the replay UI. Those ``(frame, random-gesture)`` pairs are noise for a
 frame->gesture model.
 
-Two bottom-bar signatures are reliable:
+Two bottom-bar signatures are detected:
 
 * replay/camera menus have saturated red ``BACK`` plus teal action buttons;
-* the app hub has five repeated neutral-gray navigation cells (``ME``,
-  ``SKATEPARKS``, ``COMMUNITY``, ``SHOP``, ``SETTINGS``) on a dark band.
+* five repeated neutral-gray navigation cells (``ME``, ``SKATEPARKS``,
+  ``COMMUNITY``, ``SHOP``, ``SETTINGS``) on a dark band. This second signature
+  is ambiguous: it can also appear over usable idle gameplay. It is retained
+  conservatively by default, with an explicit collection-only allowance.
 
 Both checks are resolution-independent.  The hub check deliberately requires the
 repeated signature in at least four fifths of the screen, so a dark park, the home
@@ -185,12 +187,20 @@ def hub_nav_score(img) -> tuple[int, tuple[tuple[float, float], ...]]:
     return _hub_nav_score_rgb(_to_rgb01(img))
 
 
-def is_menu_frame(img) -> bool:
-    """True for replay/camera menus or the five-cell app hub, never gameplay."""
+def is_menu_frame(img, *, allow_idle_navigation: bool = False) -> bool:
+    """Detect menu signatures, conservatively including neutral navigation.
+
+    The five-cell navigation bar can also overlay usable idle gameplay (operator
+    observation, 2026-09-08). Collection may explicitly allow that signature;
+    replay/camera detection remains enabled. Dataset callers retain the default
+    conservative policy until separately validated.
+    """
     a = _to_rgb01(img)
     rf, tf = _menu_bar_score_rgb(a)
     if rf > _RED_THRESH and tf > _TEAL_THRESH:
         return True
+    if allow_idle_navigation:
+        return False
     hub_cells, _ = _hub_nav_score_rgb(a)
     return hub_cells >= _HUB_MIN_CELLS
 

@@ -338,6 +338,10 @@ def main() -> None:
                     help="Disable the in-loop replay/menu guard (by default, gestures fired "
                          "while True Skate is in replay/menu are NOT logged, and the app is "
                          "relaunched to return to live gameplay).")
+    ap.add_argument("--allow-idle-navigation", action="store_true",
+                    help="Allow the neutral five-button idle navigation overlay after operator "
+                         "confirmation of gameplay. Replay/editor guards and dataset admission "
+                         "remain unchanged; this choice is recorded in the segment manifest.")
     ap.add_argument("--no-menu-guard", action="store_true",
                     help="Disable only the screenshot replay/editor heuristic while keeping the "
                          "OS-level True Skate foreground guard. Use only for a human-confirmed "
@@ -628,7 +632,8 @@ def main() -> None:
                     try:
                         _guard_png = worker.driver.get_screenshot_as_png()
                         _in_editor = is_editor_frame(_guard_png)
-                        if _in_editor or is_menu_frame(_guard_png):
+                        if _in_editor or is_menu_frame(
+                                _guard_png, allow_idle_navigation=args.allow_idle_navigation):
                             non_gameplay_streak += 1
                             total_menu_skips += 1
                             _what = "park editor" if _in_editor else "replay/menu"
@@ -697,7 +702,8 @@ def main() -> None:
                         time.sleep(0.35)  # let any newly-opened UI render before scoring
                         _post_png = worker.driver.get_screenshot_as_png()
                         _post_editor = is_editor_frame(_post_png)
-                        _post_menu = is_menu_frame(_post_png)
+                        _post_menu = is_menu_frame(
+                            _post_png, allow_idle_navigation=args.allow_idle_navigation)
                         if _post_editor or _post_menu:
                             total_menu_skips += 1
                             _what = "park editor" if _post_editor else "replay/app menu"
@@ -813,6 +819,7 @@ def main() -> None:
                 "host_stop_epoch_s": res.host_stop_epoch_s,
                 "fps": res.fps, "codec": res.codec,
                 "capture_offset_s": args.capture_offset_s,
+                "allow_idle_navigation": args.allow_idle_navigation,
                 "tail_s": args.tail_s,
                 # Sampler config, so a corpus session is reconstructable without
                 # console logs (mirrors the DAL collector's session_meta.json).
