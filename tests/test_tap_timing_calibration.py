@@ -188,12 +188,11 @@ def test_aligner_recovers_a_known_offset_from_a_synthetic_mov(tmp_path):
         (2.0, 4.3, (0.45, 0.62)),
         (5.0, 7.3, (0.58, 0.72)),
     ]
-    source = tmp_path / "source.mp4"
+    # Generate source PNGs: the Intel rig's OpenCV can decode video via
+    # AVFoundation but has no MP4 writer. Production encoding uses ffmpeg too.
+    source = tmp_path / "source"
+    source.mkdir()
     mov = tmp_path / "segment_00000.mov"
-    writer = cv2.VideoWriter(
-        str(source), cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
-    )
-    assert writer.isOpened()
     for frame_index in range(360):
         time_s = frame_index / fps
         image = np.full((height, width, 3), (40, 70, 90), dtype=np.uint8)
@@ -206,12 +205,12 @@ def test_aligner_recovers_a_known_offset_from_a_synthetic_mov(tmp_path):
                     (10, 150, 245),
                     thickness=-1,
                 )
-        writer.write(image)
-    writer.release()
+        assert cv2.imwrite(str(source / f"frame_{frame_index:04d}.png"), image)
     # XCTest emits h264. Re-encode the synthetic source so calibration sees the
     # same family of codec artefacts as production instead of lossless arrays.
     encoded = subprocess.run(
-        ["ffmpeg", "-y", "-v", "error", "-i", str(source), "-c:v", "libx264",
+        ["ffmpeg", "-y", "-v", "error", "-framerate", str(fps),
+         "-i", str(source / "frame_%04d.png"), "-c:v", "libx264",
          "-crf", "28", "-pix_fmt", "yuv420p", str(mov)],
         capture_output=True,
         text=True,
@@ -302,14 +301,9 @@ def test_aligner_preserves_source_when_requested_calibration_rejects(monkeypatch
 
 def test_direct_video_extracts_a_compact_clip_without_temporary_pngs(tmp_path):
     aligner = _aligner_module()
-    source = tmp_path / "segment.mov"
-    writer = cv2.VideoWriter(str(source), cv2.VideoWriter_fourcc(*"mp4v"), 30, (80, 120))
-    assert writer.isOpened()
-    for index in range(75):
-        writer.write(np.full((120, 80, 3), index, dtype=np.uint8))
-    writer.release()
     encoded = subprocess.run(
-        ["ffmpeg", "-y", "-v", "error", "-i", str(source), "-c:v", "libx264",
+        ["ffmpeg", "-y", "-v", "error", "-f", "lavfi",
+         "-i", "testsrc=size=80x120:rate=30:duration=2.5", "-c:v", "libx264",
          "-pix_fmt", "yuv420p", str(tmp_path / "segment_h264.mov")],
         capture_output=True, text=True,
     )
