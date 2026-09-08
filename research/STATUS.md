@@ -15,6 +15,10 @@ experiments. Their negative results and calibration discoveries are retained
 through the [archive](ARCHIVE.md). The linear pipeline is not a substitute for
 curved or curved+spin certification.
 
+One useful negative result: [full ungating](experiments/M1-20260719-ungating.md)
+collapsed precision in the earlier per-frame heatmap model. Do not repeat that
+experiment without a changed hypothesis, or generalise it to the newer linear model.
+
 The [scaling protocol](protocols/model1_scaling.md) defines frozen cohorts,
 nested subsets, validation-only selection, interrupted-run resume and separate
 certification. Its historical cost figures are dated estimates, not current
