@@ -4,13 +4,21 @@ The XR fleet is on `training-server`, normally checked out at
 `/Users/training-server/trueskate-ai`. Reach it via
 `tailscale ssh training-server@training-server`.
 
-The stable path now points to the clean `c8c384f` release. The original dirty
+The stable path points to a clean committed release; `/deployment.json` on the
+dashboard reports the loaded/disk revisions, and `readlink` shows its directory.
+The original dirty
 checkout is preserved separately and backs the runtime data/environment links.
 See the [2026-09-08 rollout record](research/RIG_ROLLOUT_20260908.md) for exact
 paths, loaded-service exceptions and rollback. Do not delete the preserved
 directory or edit/pull into the active release.
 
 ## Services
+
+Collection is intentionally **off**. Both collector jobs and collection-only
+watchdogs are persistently disabled. The laptop agent-based autofixer has been
+removed. Maintenance checks must be bounded; do not enable ongoing collection
+or interpret intentional inactivity as a fault without explicit authorization.
+See [autostart investigation](research/COLLECTION_AUTOSTART_20260909.md).
 
 | Service | Purpose |
 |---|---|

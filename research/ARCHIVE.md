@@ -49,3 +49,11 @@ To restore a whole historical environment without modifying the active checkout:
 - Recovery: `git worktree add --detach /absolute/new/arch-005 cb491fc6405c5022700274f5852837aa41106b97`
 - Artifacts: Only committed artifacts are preserved; machine-local datasets/checkpoints are independent.
 
+## ARCH-006 — Retired autonomous collection fixer
+
+- Description: Laptop watchdog that launched a Claude recovery agent when collection appeared stale, its agent prompt, and its launchd template. Retired at the operator's request; stopped collection is intentional, not an incident to repair automatically.
+- Commit: `8ff3720a1bfc9873b501459ad97c26dce243cf22`
+- Tag: `archive/autofixer-20260909`
+- Paths: [scripts/ops/xr_watchdog_spawn_claude.sh](https://github.com/AsherNoble/TrueSkate-AI/blob/8ff3720a1bfc9873b501459ad97c26dce243cf22/scripts/ops/xr_watchdog_spawn_claude.sh), `scripts/ops/xr_fix_agent_prompt.md`, `scripts/ops/com.trueskate.xrwatchdog.plist` in the same tree.
+- Recovery: `git worktree add --detach /absolute/new/arch-006 8ff3720a1bfc9873b501459ad97c26dce243cf22`; do not reinstall or enable the fixer without new explicit authorization.
+- Artifacts: Existing logs remain at `/Users/ashernoble/.claude/xr_watchdog.log`; the exact installed plist was moved to the laptop repository's ignored `tmp/com.trueskate.xrwatchdog.retired-20260909.plist`. Neither is a corpus backup.

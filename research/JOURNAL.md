@@ -4,6 +4,15 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-09 — Unintended collection autostart retired
+
+- Confirmed login-time collector jobs, the historical restart loop, and a loaded
+  laptop agent-based fixer as automatic start/restart paths. Removed the fixer,
+  disabled collector/watchdog jobs, and established collection-off intent.
+  [Evidence and operating rule](COLLECTION_AUTOSTART_20260909.md).
+- XR1 reboot verification is blocked by an Xcode account/provisioning error;
+  no unbounded run or healthy XR2 WDA restart was performed.
+
 ## 2026-09-08 — BC reconciliation and repository reorganisation
 
 - Switched the rig's stable source path to clean merged main, preserved the

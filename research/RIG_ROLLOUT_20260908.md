@@ -2,10 +2,15 @@
 
 ## Source and state
 
-Deployed source: `c8c384ffff6cc1bfdf75b3ec43c226886f234b85` (merged BC cleanup).
+Initial rollout source: `c8c384ffff6cc1bfdf75b3ec43c226886f234b85` (merged BC cleanup).
+The paths and process IDs below describe that initial cutover. Later clean
+releases may replace the stable symlink; inspect it and the live dashboard's
+`/deployment.json` before acting on these historical recovery instructions.
 
-Source cutover is complete. XR1 subsequently hit its recorder start-failure
-cap and is currently stopped; recorder recovery is separate from source rollout.
+Source cutover is complete. Both collectors are now intentionally disabled by
+the operator; recovery checks do not authorize resuming ongoing collection.
+See [the subsequent autostart investigation](COLLECTION_AUTOSTART_20260909.md).
+XR1 also needs Xcode signing/account attention before a bounded recording test.
 
 | Path | Role |
 |---|---|
@@ -88,6 +93,21 @@ XR1 was left unloaded/stopped after installing the configuration; do not
 bootstrap it until recorder recovery is verified. XR2 remains stopped.
 
 ## Recovery
+
+### Authorized attachment cleanup follow-up
+
+After explicit approval, the operator restarted the root tunnel daemon;
+the registry then showed both device tunnels active. The official XR1-only
+cleanup deleted all 547 listed XCTest attachments. Saved server corpus data
+and XR2's attachments were not deleted.
+
+A single five-second recording probe failed at start: XCTest reported
+`Already recording, there can only be one screen recording at a time`.
+WDA's `/wda/video` returned null; a direct `/wda/video/stop` also returned null.
+Inspection of the installed WDA implementation confirmed stop is a no-op when
+its recording promise/ID is missing. Thus clearing attachments did not clear
+the orphaned active-recording state. No further start retries or WDA restart
+were performed. Collection remains stopped pending XR1 reboot/recovery.
 
 Fresh source and installed-service snapshots were saved before cutover:
 
