@@ -73,6 +73,9 @@ on-device XCTest attachments on XR1 (12 on XR2); nothing was deleted. A running
 tunnel daemon alone does not prove its per-device transport remains healthy:
 its log also records terminated SSL forwarders. Attachment cleanup/recovery
 requires separate approval because recordings never downloaded could be lost.
+The live registry check confirmed `activeTunnels: 0` and an empty tunnel map
+despite the daemon being alive. Restore per-device tunnel registration before
+expecting automatic attachment cleanup to work; do not restart healthy WDA.
 
 The installed XR1 plist now invokes the canonical collector directly, adding
 `--allow-idle-navigation` (operator-confirmed idle UI) and
