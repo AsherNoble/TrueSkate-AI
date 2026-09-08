@@ -324,6 +324,7 @@ def execute_gesture_params(
     spin_button_xy: tuple[float, float] | None = None,
     on_post_push=None,
     timing_device_key: str | None = None,
+    static_push: bool = True,
 ) -> None:
     """Clamp, unpack, and execute a gesture parameter vector on the device.
 
@@ -336,6 +337,10 @@ def execute_gesture_params(
             ``num_gestures`` is None).
         spin_button_xy: normalised [0, 1] coords of True Skate's rotate button.
             Required for spin to fire; when None, an enabled spin block is a no-op.
+        static_push: fire the board-propelling static push before the gestures.
+            True for CMA-ES single-trick eval (reset+push+trick). A streaming
+            policy (Model 2 receding-horizon) sets False so it does not inject a
+            push before every predicted stroke.
     """
     from trueskate_ai.sim.touch_actions import execute_n_slot_gestures  # noqa: PLC0415
 
@@ -354,7 +359,8 @@ def execute_gesture_params(
         p = g["easing_power"]
         easings.append((lambda t, p=p: t ** p) if p != 1.0 else None)
 
-    execute_static_push(driver, device_w=device_w, device_h=device_h, on_post_push=on_post_push)
+    if static_push:
+        execute_static_push(driver, device_w=device_w, device_h=device_h, on_post_push=on_post_push)
 
     spin = recipe.get("spin")
     spin_button_pt = None

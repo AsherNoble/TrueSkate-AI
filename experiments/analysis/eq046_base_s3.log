@@ -1,0 +1,147 @@
+Note that running a local entrypoint in detached mode only keeps the last triggered Modal function alive after the parent process has been killed or disconnected.
+✓ Initialized. View run at 
+https://modal.com/apps/ashernoble/main/ap-w49ZbUKtpaGY6nABGimgBj
+✓ Created objects.
+├── 🔨 Created mount /Users/ashernoble/Projects/Robotics & 
+│   hardware/TrueSkate-AI/scripts/cloud/train_basic_linear_modal.py
+├── 🔨 Created mount /Users/ashernoble/Projects/Robotics & 
+│   hardware/TrueSkate-AI/scripts/train/train_basic_linear_regressor.py
+├── 🔨 Created mount /Users/ashernoble/Projects/Robotics & 
+│   hardware/TrueSkate-AI/src/trueskate_ai
+├── 🔨 Created function train_remote.
+├── 🔨 Created function train_remote_cpu.
+├── 🔨 Created function evaluate_test_once.
+├── 🔨 Created function evaluate_refinement.
+├── 🔨 Created function evaluate_start_timing.
+├── 🔨 Created function evaluate_start_timing_validation_selected.
+├── 🔨 Created function audit_orange_endpoint_cue.
+├── 🔨 Created function audit_endpoint_residuals.
+├── 🔨 Created function evaluate_checkpoint_ensemble.
+├── 🔨 Created function evaluate_bias_correction.
+├── 🔨 Created function audit_clip_headroom.
+├── 🔨 Created function audit_split_session_overlap.
+├── 🔨 Created function audit_clip_frame_counts.
+├── 🔨 Created function audit_corpus_coverage.
+├── 🔨 Created function audit_trail_presence_threshold.
+├── 🔨 Created function audit_liftoff_edge.
+├── 🔨 Created function audit_liftoff_growth.
+├── 🔨 Created function audit_duration_difference.
+├── 🔨 Created function audit_trail_head.
+├── 🔨 Created function audit_duration_head_attribution.
+├── 🔨 Created function audit_duration_decomposition.
+├── 🔨 Created function audit_learned_series_capacity.
+└── 🔨 Created function autopsy_failures.
+device=cuda name=NVIDIA L4
+epoch=1 val_start_med=0.0283 val_end_med=0.0286 val_duration_mae=0.1003 val_recovery=23.8% secs=231.9
+epoch=2 val_start_med=0.0149 val_end_med=0.0209 val_duration_mae=0.0657 val_recovery=52.5% secs=68.8
+epoch=3 val_start_med=0.0139 val_end_med=0.0174 val_duration_mae=0.0621 val_recovery=61.4% secs=69.0
+epoch=4 val_start_med=0.0122 val_end_med=0.0170 val_duration_mae=0.0582 val_recovery=67.3% secs=68.1
+epoch=5 val_start_med=0.0099 val_end_med=0.0160 val_duration_mae=0.0437 val_recovery=74.6% secs=68.8
+epoch=6 val_start_med=0.0105 val_end_med=0.0150 val_duration_mae=0.0551 val_recovery=72.9% secs=69.1
+epoch=7 val_start_med=0.0128 val_end_med=0.0188 val_duration_mae=0.0405 val_recovery=68.3% secs=68.9
+epoch=8 val_start_med=0.0114 val_end_med=0.0165 val_duration_mae=0.0357 val_recovery=77.2% secs=68.6
+epoch=9 val_start_med=0.0118 val_end_med=0.0168 val_duration_mae=0.0330 val_recovery=74.9% secs=68.9
+epoch=10 val_start_med=0.0116 val_end_med=0.0167 val_duration_mae=0.0306 val_recovery=77.2% secs=68.7
+epoch=11 val_start_med=0.0134 val_end_med=0.0174 val_duration_mae=0.0372 val_recovery=70.3% secs=69.1
+epoch=12 val_start_med=0.0120 val_end_med=0.0154 val_duration_mae=0.0322 val_recovery=79.2% secs=69.2
+epoch=13 val_start_med=0.0103 val_end_med=0.0154 val_duration_mae=0.0435 val_recovery=74.6% secs=69.1
+epoch=14 val_start_med=0.0131 val_end_med=0.0192 val_duration_mae=0.0445 val_recovery=61.4% secs=69.0
+epoch=15 val_start_med=0.0100 val_end_med=0.0143 val_duration_mae=0.0304 val_recovery=83.2% secs=69.0
+epoch=16 val_start_med=0.0110 val_end_med=0.0160 val_duration_mae=0.0282 val_recovery=78.5% secs=68.9
+epoch=17 val_start_med=0.0096 val_end_med=0.0140 val_duration_mae=0.0284 val_recovery=83.5% secs=69.2
+epoch=18 val_start_med=0.0089 val_end_med=0.0133 val_duration_mae=0.0299 val_recovery=83.8% secs=69.1
+epoch=19 val_start_med=0.0086 val_end_med=0.0129 val_duration_mae=0.0329 val_recovery=85.5% secs=69.4
+epoch=20 val_start_med=0.0124 val_end_med=0.0149 val_duration_mae=0.0354 val_recovery=71.3% secs=68.8
+epoch=21 val_start_med=0.0102 val_end_med=0.0149 val_duration_mae=0.0253 val_recovery=80.5% secs=68.7
+epoch=22 val_start_med=0.0111 val_end_med=0.0132 val_duration_mae=0.0273 val_recovery=82.2% secs=68.8
+epoch=23 val_start_med=0.0100 val_end_med=0.0154 val_duration_mae=0.0269 val_recovery=82.8% secs=69.1
+epoch=24 val_start_med=0.0090 val_end_med=0.0129 val_duration_mae=0.0286 val_recovery=83.2% secs=69.2
+epoch=25 val_start_med=0.0085 val_end_med=0.0114 val_duration_mae=0.0294 val_recovery=86.5% secs=68.6
+epoch=26 val_start_med=0.0087 val_end_med=0.0110 val_duration_mae=0.0249 val_recovery=86.5% secs=68.7
+epoch=27 val_start_med=0.0085 val_end_med=0.0128 val_duration_mae=0.0232 val_recovery=86.8% secs=68.8
+epoch=28 val_start_med=0.0087 val_end_med=0.0118 val_duration_mae=0.0321 val_recovery=87.1% secs=68.8
+epoch=29 val_start_med=0.0096 val_end_med=0.0150 val_duration_mae=0.0316 val_recovery=81.5% secs=68.9
+epoch=30 val_start_med=0.0087 val_end_med=0.0104 val_duration_mae=0.0248 val_recovery=89.4% secs=69.4
+epoch=31 val_start_med=0.0090 val_end_med=0.0112 val_duration_mae=0.0249 val_recovery=90.1% secs=68.7
+epoch=32 val_start_med=0.0096 val_end_med=0.0153 val_duration_mae=0.0465 val_recovery=76.9% secs=69.2
+epoch=33 val_start_med=0.0139 val_end_med=0.0177 val_duration_mae=0.0364 val_recovery=66.3% secs=68.8
+epoch=34 val_start_med=0.0111 val_end_med=0.0129 val_duration_mae=0.0259 val_recovery=86.8% secs=68.9
+epoch=35 val_start_med=0.0090 val_end_med=0.0121 val_duration_mae=0.0232 val_recovery=89.4% secs=68.9
+epoch=36 val_start_med=0.0084 val_end_med=0.0105 val_duration_mae=0.0256 val_recovery=92.1% secs=69.2
+epoch=37 val_start_med=0.0085 val_end_med=0.0095 val_duration_mae=0.0219 val_recovery=88.4% secs=68.2
+epoch=38 val_start_med=0.0082 val_end_med=0.0091 val_duration_mae=0.0250 val_recovery=90.8% secs=68.4
+epoch=39 val_start_med=0.0079 val_end_med=0.0091 val_duration_mae=0.0233 val_recovery=90.1% secs=68.9
+epoch=40 val_start_med=0.0078 val_end_med=0.0084 val_duration_mae=0.0212 val_recovery=91.1% secs=68.7
+{
+  "base_channels": 16,
+  "best_epoch": 36,
+  "cache_frames": true,
+  "checkpoint": "basic_linear_eq046_base_s3.pth",
+  "created_at": "2026-08-21T15:21:20+0000",
+  "dataset_fingerprint": "sha256:2022:934ba0036365516cda1dbf6b60740c60f92ed0ea5eeb365ff7c697d854455f2e",
+  "dataset_stats": {
+    "accepted": 2022,
+    "discovered": 2022
+  },
+  "end_onset": 0.24,
+  "endpoint_map_weight": 0.0,
+  "fresh_holdout_source": null,
+  "fresh_stratify_by_device": false,
+  "gesture_contract": "two-point, constant-velocity, finite-slope linear drag",
+  "huber_delta": null,
+  "image_height": 288,
+  "image_width": 128,
+  "irls_iterations": null,
+  "knots": 2,
+  "line_fit": false,
+  "model_type": "basic_linear_regressor_v3_separate_endpoint_heads_tight_start_prior",
+  "passes_acceptance": null,
+  "run_label": "eq046_base_s3",
+  "sequence_length": 32,
+  "spatial_map_stride": 2,
+  "split_seed": 0,
+  "split_sizes": {
+    "test": 303,
+    "train": 1416,
+    "validation": 303
+  },
+  "split_strategy": "command",
+  "start_onset": 0.24,
+  "start_sigma": 0.05,
+  "target_schema": [
+    "x0",
+    "y0",
+    "x1",
+    "y1",
+    "duration_s"
+  ],
+  "temporal_mixer": true,
+  "test": null,
+  "test_recovery_audit": null,
+  "test_tail": null,
+  "trajectory_map_weight": 0.0,
+  "trajectory_track": false,
+  "uses_pre_touch_difference": true,
+  "validation": {
+    "duration_mae": 0.025616017701995647,
+    "duration_p90": 0.05167863368988038,
+    "duration_recovery_accuracy": 0.9867986798679867,
+    "end_coordinate_median": 0.010489637963473797,
+    "end_recovery_accuracy": 0.9636963696369637,
+    "endpoint_coordinate_median": 0.009259290993213654,
+    "endpoint_coordinate_p90": 0.021365377120673656,
+    "gesture_recovery_accuracy": 0.9207920792079208,
+    "knot0_coordinate_median": 0.008403410203754902,
+    "knot0_recovery_accuracy": 0.9570957095709571,
+    "knot1_coordinate_median": 0.010489637963473797,
+    "knot1_recovery_accuracy": 0.9636963696369637,
+    "knots": 2.0,
+    "recovery_duration_tolerance_s": 0.1,
+    "recovery_endpoint_tolerance": 0.03,
+    "samples": 303.0,
+    "start_coordinate_median": 0.008403410203754902,
+    "start_recovery_accuracy": 0.9570957095709571
+  }
+}
+✓ App completed. View run at 
+https://modal.com/apps/ashernoble/main/ap-w49ZbUKtpaGY6nABGimgBj

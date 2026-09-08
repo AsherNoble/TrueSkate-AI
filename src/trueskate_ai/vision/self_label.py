@@ -26,6 +26,7 @@ class TouchLabel:
     active: bool
     x: float
     y: float
+    spin_on: bool = False  # spin (rotate) button held at this frame
 
 
 def segment_durations_s(num_waypoints: int, total_duration: float, easing_power: float) -> list[float]:
@@ -73,7 +74,7 @@ def label_frames(
     frame_times: list[float],
     *,
     latency_s: float = 0.0,
-    spin_active: bool = False,
+    spin_hold: tuple[float, float] | None = None,
 ) -> list[TouchLabel]:
     """Label each captured frame with the instantaneous touch position.
 
@@ -86,22 +87,26 @@ def label_frames(
         latency_s: subtracted from each frame time to compensate the
             capture/render pipeline delay (frame shown at T reflects state at
             T - latency). Tunable offline against trace overlays.
-        spin_active: whether the rotate button was held during this gesture.
+        spin_hold: (start_s, end_s) window the spin (rotate) button was held,
+            relative to the gesture start — spin_flick meta carries it as
+            spin_hold_start_s/spin_hold_end_s. The same latency shift applies,
+            so both touches share one tunable time base.
 
     A frame whose compensated time falls within [0, total_duration] is an active
-    touch; outside that window the finger is up → inactive (x, y = -1).
+    touch; outside that window the finger is up → inactive (x, y = -1). spin_on
+    is independent of active: the held button outlasts the drag by design.
     """
     seg = segment_durations_s(len(waypoints), total_duration, easing_power)
     total = sum(seg)
     labels: list[TouchLabel] = []
     for ft in frame_times:
         t = ft - latency_s
+        spin_on = bool(spin_hold is not None and spin_hold[0] <= t <= spin_hold[1])
         if 0.0 <= t <= total:
             x, y = position_at(waypoints, seg, t)
-            labels.append(TouchLabel(active=True, x=float(x), y=float(y)))
+            labels.append(TouchLabel(active=True, x=float(x), y=float(y), spin_on=spin_on))
         else:
-            labels.append(TouchLabel(active=False, x=-1.0, y=-1.0))
-    _ = spin_active  # carried through by the dataset for the spin-state channel
+            labels.append(TouchLabel(active=False, x=-1.0, y=-1.0, spin_on=spin_on))
     return labels
 
 
@@ -125,4 +130,12 @@ if __name__ == "__main__":
     # latency shift: a frame at t=0.05 with latency 0.05 → start
     shifted = label_frames(wps, dur, ep, [0.05], latency_s=0.05)[0]
     assert abs(shifted.x - 0.2) < 1e-6 and abs(shifted.y - 0.8) < 1e-6, shifted
+    # spin hold: held through the drag AND past its end (spin_flick shape)
+    slabs = label_frames(wps, dur, ep, [0.05, 0.5, 1.4, 2.0], spin_hold=(0.1, 1.5))
+    assert slabs[0].active and not slabs[0].spin_on          # before the hold starts
+    assert slabs[1].active and slabs[1].spin_on              # drag + button together
+    assert not slabs[2].active and slabs[2].spin_on          # hold outlasts the drag
+    assert not slabs[3].active and not slabs[3].spin_on      # both released
+    # latency shifts the spin window on the same time base
+    assert label_frames(wps, dur, ep, [0.1], latency_s=0.05, spin_hold=(0.1, 1.5))[0].spin_on is False
     print("self_label tests OK; seg=", [round(s, 3) for s in seg], " mid=", tuple(round(v, 3) for v in mid))

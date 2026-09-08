@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LAPTOP-side LaunchAgent: the XR collector watchdog that spawns a bounded Claude
+  fixer session when a collector stops producing segments.
+
+  Runs on ASHER'S LAPTOP (not the rig) because the fixer reaches the rig via
+  `tailscale ssh`, which needs this laptop's tailnet membership. The laptop must be
+  awake + on the tailnet for a check to fire (StartInterval skips while asleep).
+
+  Install (as Asher, on the laptop):
+    cp "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/scripts/ops/com.trueskate.xrwatchdog.plist" ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.trueskate.xrwatchdog.plist
+    launchctl enable gui/$(id -u)/com.trueskate.xrwatchdog
+  Check:  launchctl print gui/$(id -u)/com.trueskate.xrwatchdog | head
+          tail -f ~/.claude/xr_watchdog.log
+  Stop:   launchctl bootout gui/$(id -u)/com.trueskate.xrwatchdog
+
+  StartInterval is 900s (15 min). Adjust to taste. The script self-throttles
+  spawns via COOLDOWN_SECONDS so overlapping checks won't stack fixer sessions.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.trueskate.xrwatchdog</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/ashernoble/Projects/Robotics &amp; hardware/TrueSkate-AI/scripts/ops/xr_watchdog_spawn_claude.sh</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/opt/homebrew/bin:/Applications/Tailscale.app/Contents/MacOS:/Users/ashernoble/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>StartInterval</key>
+    <integer>900</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/ashernoble/.claude/xr_watchdog.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/ashernoble/.claude/xr_watchdog.err.log</string>
+</dict>
+</plist>

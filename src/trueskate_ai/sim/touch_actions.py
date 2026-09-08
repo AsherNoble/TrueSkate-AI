@@ -9,6 +9,7 @@ passing points to these functions.
 Gesture and coordinate conventions: GESTURES.md at the repo root.
 """
 import logging
+import os
 import time
 from dataclasses import dataclass
 from itertools import count
@@ -22,6 +23,12 @@ _DEFAULT_COMBINED_THRESHOLD = 0.6
 _MIN_COMBINED_THRESHOLD = 0.45
 _MAX_COMBINED_THRESHOLD = 0.75
 _MAX_SEQUENTIAL_COMPENSATION = 0.25
+# Minimum stagger (s) between consecutive finger-DOWNS in a combined multi-finger
+# payload. True Skate reads a simultaneous 2-finger touch as a camera gesture that
+# opens the park editor (confirmed: nslot/recipe open it ~8.6%/3.2% of the time,
+# flick never; a 0.12s stagger drops that to 0). Env-gated so only the SLS collector
+# enables it (set TRUESKATE_MIN_FINGER_STAGGER_S); CMA-ES executes unchanged.
+_MIN_FINGER_STAGGER_S = float(os.environ.get("TRUESKATE_MIN_FINGER_STAGGER_S", "0") or "0")
 
 
 @dataclass(frozen=True)
@@ -249,6 +256,59 @@ def perform_pointer_actions(driver, fingers):
         release_actions()
 
 
+def _build_spin_hold_finger(bx, by, *, start_offset_s, hold_s):
+    """Spin (rotate) button HOLD finger for a combined W3C payload.
+
+    Position, wait, then RE-ISSUE the move before pointer_down: WDA drops a
+    standalone zero-duration move when a pause follows it, so the down would
+    otherwise fire at the pointer origin (0,0).
+    """
+    sf = make_touch_pointer("spin")
+    sf.create_pointer_move(x=bx, y=by, duration=0)
+    if start_offset_s > 0:
+        sf.create_pause(start_offset_s)
+    sf.create_pointer_move(x=bx, y=by, duration=0)
+    sf.create_pointer_down()
+    if hold_s > 0:
+        sf.create_pause(hold_s)
+    sf.create_pointer_up(0)
+    return sf
+
+
+def curved_drag_with_spin_hold(
+    driver,
+    points,
+    *,
+    total_duration=0.5,
+    easing=None,
+    spin_button_pt,
+    hold_start_s,
+    hold_end_s,
+):
+    """Single-finger curved drag + spin (rotate) button HOLD in ONE W3C payload.
+
+    The drag executes exactly like curved_drag(); an extra finger holds the
+    spin button from hold_start_s to hold_end_s (ABSOLUTE seconds, relative to
+    the drag's touch-down at payload t=0). The hold may outlast the drag — the
+    payload simply runs until the button lifts. No static push (unlike the
+    N-slot trick path): this is the SLS collector's spin_flick primitive, and
+    every touch it makes must be label-accounted.
+    """
+    if len(points) < 2:
+        raise ValueError("curved_drag_with_spin_hold needs at least 2 points")
+    if hold_end_s <= hold_start_s:
+        raise ValueError(f"spin hold window is empty: [{hold_start_s}, {hold_end_s}]")
+    drag = make_touch_pointer("finger")
+    build_curved_drag(drag, points, total_duration=total_duration, easing=easing)
+    bx, by = spin_button_pt
+    spin = _build_spin_hold_finger(
+        bx, by,
+        start_offset_s=max(0.0, hold_start_s),
+        hold_s=hold_end_s - max(0.0, hold_start_s),
+    )
+    perform_pointer_actions(driver, [drag, spin])
+
+
 def _build_quick_probe_drag(x, y):
     finger = make_touch_pointer("probe")
     build_curved_drag(
@@ -377,6 +437,9 @@ def execute_n_slot_gestures(
     # inter-slot delays for the (possibly reordered) schedule. Sorting
     # guarantees every start is non-decreasing, so each delay >= -duration.
     starts = [s - raw_starts[0] for s in raw_starts]
+    if _MIN_FINGER_STAGGER_S > 0.0:
+        for i in range(1, n):
+            starts[i] = max(starts[i], starts[i - 1] + _MIN_FINGER_STAGGER_S)
     delays = [
         starts[i + 1] - starts[i] - gestures_durations[i] for i in range(n - 1)
     ]
@@ -391,8 +454,9 @@ def execute_n_slot_gestures(
     # Combined when: forced; any overlap requires a single payload; or every gap
     # is short enough that a single bundled payload preserves the schedule better
     # than separate WDA calls.
-    # Spin forces the combined single-payload path: one perform() in flight
-    # racing the spin-button tap thread (the topology the PPO path validated).
+    # Spin forces the combined single-payload path: a held spin finger must share
+    # the drags' perform() (the old concurrent tap-thread design cancelled the
+    # in-flight gesture on the shared WDA session — since removed everywhere).
     spin_active = bool(spin and spin.get("enabled") and spin_button_pt is not None)
 
     has_delays = len(delays) > 0
@@ -466,19 +530,9 @@ def execute_n_slot_gestures(
             start_offset = max(0.0, float(spin["t_start"]) * spin_total)
             hold = max(0.0, (float(spin["t_end"]) - float(spin["t_start"])) * spin_total)
             bx, by = spin_button_pt
-            sf = make_touch_pointer("spin")
-            # Position, wait, then RE-ISSUE the move before pointer_down: WDA
-            # drops a standalone zero-duration move when a pause follows it, so
-            # the down would otherwise fire at the pointer origin (0,0).
-            sf.create_pointer_move(x=bx, y=by, duration=0)
-            if start_offset > 0:
-                sf.create_pause(start_offset)
-            sf.create_pointer_move(x=bx, y=by, duration=0)
-            sf.create_pointer_down()
-            if hold > 0:
-                sf.create_pause(hold)
-            sf.create_pointer_up(0)
-            fingers.append(sf)
+            fingers.append(
+                _build_spin_hold_finger(bx, by, start_offset_s=start_offset, hold_s=hold)
+            )
 
         perform_pointer_actions(driver, fingers)
 

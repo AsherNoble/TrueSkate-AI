@@ -7,10 +7,12 @@ those ``(menu-frame, random-gesture)`` pairs are noise for a frame->gesture mode
 collector now guards against this in-loop (``--no-gameplay-guard`` to disable); this
 script cleans what was collected *before* the guard.
 
-Uses ``vision.gameplay_filter.is_menu_frame`` on each sample's middle frame (the replay
-state is stable across a sample's ~1.2s window). NON-DESTRUCTIVE by default: writes a
-``.menu`` marker in each flagged sample dir so a training loader can exclude any sample
-dir containing ``.menu``. ``--delete`` removes flagged dirs instead.
+Uses ``vision.gameplay_filter.is_menu_frame`` across each sample. Replay state is
+normally stable, but the gray app-hub navigation can fade in/out within a sample,
+so checking only the middle frame leaves partially contaminated samples behind.
+NON-DESTRUCTIVE by default: writes a ``.menu`` marker in each flagged sample dir
+so a training loader can exclude any sample dir containing ``.menu``. ``--delete``
+removes flagged dirs instead.
 
     python scripts/data/flag_menu_samples.py [--device iPhone_XR2] [--dry-run] [--delete]
 """
@@ -21,11 +23,44 @@ import shutil
 import sys
 from pathlib import Path
 
+import cv2
+
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO / "src") not in sys.path:
     sys.path.insert(0, str(_REPO / "src"))
 
 from trueskate_ai.vision.gameplay_filter import is_menu_frame  # noqa: E402
+
+
+def _sample_has_menu_frame(sample_dir: Path) -> bool:
+    """Inspect all retained PNG frames or all frames in the compact MP4 variant."""
+    pngs = sorted(sample_dir.glob("frame_*.png"))
+    if pngs:
+        # Probe likely hits first; retain the exhaustive sweep for a menu that
+        # appears only in the lead-in/tail of an otherwise gameplay sample.
+        mid = len(pngs) // 2
+        ordered = list(dict.fromkeys((pngs[mid], pngs[0], pngs[-1])))
+        priority = set(ordered)
+        ordered.extend(frame for frame in pngs if frame not in priority)
+        return any(is_menu_frame(frame) for frame in ordered)
+
+    video = sample_dir / "frames.mp4"
+    if not video.is_file():
+        raise ValueError(f"{sample_dir}: no retained frames")
+    capture = cv2.VideoCapture(str(video))
+    try:
+        if not capture.isOpened():
+            raise ValueError(f"{sample_dir}: unreadable frames.mp4")
+        while True:
+            ok, frame = capture.read()
+            if not ok:
+                break
+            # OpenCV decodes BGR; gameplay_filter's array path expects RGB.
+            if is_menu_frame(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)):
+                return True
+    finally:
+        capture.release()
+    return False
 
 
 def main() -> None:
@@ -44,11 +79,8 @@ def main() -> None:
             continue
         menu = 0
         for sd in sds:
-            frames = sorted(sd.glob("frame_*.png"))
-            if not frames:
-                continue
             try:
-                flagged = is_menu_frame(frames[len(frames) // 2])
+                flagged = _sample_has_menu_frame(sd)
             except Exception:  # noqa: BLE001 — a bad frame shouldn't abort the sweep
                 continue
             if flagged:

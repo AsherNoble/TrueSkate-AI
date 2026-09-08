@@ -218,6 +218,7 @@
 - **Good finding — bigger push 360-flips the gap.** In SLS Super Crown the flatground 360 catches obstacles, but a vision-guided experiment (board localizer + OCR) showed `PUSH_COUNT=2` builds enough board speed to roll up the runway and cleanly 360-flip the yellow ledge/gap (PUSH_COUNT=1 → "360 FLIP + NOSE SLIDE" combos; =3 overshoots). The static push is now tunable via `PUSH_COUNT` / `PUSH_END_Y` env (`sim/gestures.py`). The earlier "0 360 lands in Super Crown" was a MISCOUNT — the 360 lands as combos (the journal's combo-tolerant-reward case), which the curriculum's max-component scoring credits.
 - **SLOP runs (wrong park) — STOPPED, no harm done.** Launched the 360-family (flip/double/triple) self-improvement on BOTH XRs but in SLS OBSTACLE arenas (XR1 Super Crown, XR2 another SLS arena), NOT the 360's clean flatground training park. The obstacle combos are park-/combo-flavored slop. Asher stopped the runs mid-trick; the orchestrator mines only on trick completion, so **NOTHING was mined — `trick_libraries/` is untouched (0 files modified 2026-06-14)**. The 7 run dirs (`logs/overnight/iPhone_XR*/00_360_flip/runs/cmaes_run_20260614_*`) each carry a `SLOP_DO_NOT_MINE.md` marker.
 - **Lesson (memory `dont-pollute-well-mined-params`):** self-improvement of a converged recipe must run in its CLEAN TRAINING PARK; verify the recipe lands cleanly there first. Trace-data collection (TRACE_COLLECT) is the separable goal and can run in any park.
+
 - **Salvageable: ~439 SLS-domain trace evals** captured by `TRACE_COLLECT` across those runs (color frame→known-gesture pairs) — valid Model-1 trace data regardless of land rate; the only part worth keeping from the slop runs.
 - **Tooling added this session:** `PUSH_COUNT`/`PUSH_END_Y`, `TRACE_COLLECT` (CMA-ES passively saves color trace frames + the gesture vector as label, capped/.noindex'd), board localizer tuned for live in-park frames (deck via tighter ROI + bright-surround + saturated-colour, not the menu bar/ledge), `scripts/inspect/vision_heartbeat.py`. All opt-in / default-off — normal CMA-ES + the well-mined params are unaffected.
 ## XCTest 30fps Collector: Crash-Loop Root Causes Found + Fixed (2026-06-26, branch feat/dal-capture-prep)
@@ -240,3 +241,2113 @@
 - **Also this stretch:** the 5-min-segment payload bug (base64-over-HTTP ceiling → 60s segments); replay-menu contamination (~63% of one session; gameplay guard + `flag_menu_samples` `.menu` markers); the launcher's liveness-only monitor (now health-checks `:port/status`); ntfy collection watchdogs. Δ still 0 (uncalibrated, repro-validated).
 - **Process lesson (hard-won):** do NOT interrupt the live workhorse collector for experiments — the bootout/reconnect churn is what tipped XR2 into the wedge.
 - **Spatial coverage:** a board-move (a couple of `execute_static_push`) confirmed the boards DO relocate to new park zones and collection captures there (Asher confirmed visually). A "wander" mode to systematically broaden park coverage is PARKED, not built.
+## Spin-Family Tricks Need Their OWN Gestures — Not "Cousin + Spin Hold" (2026-07-12, Asher domain knowledge)
+- **Resolves the open BASE-gesture question from the 2026-06-14 spin entries (205-216).** Asher (domain expert): taking the EXACT gesture sequence that lands a 360 POP SHOVE-IT and holding the spin button through it does NOT produce a BACKSIDE 360 (or any spin-family cousin). So the on-device "spin over a 360-pop-shove → 5/5 'none'" result was NOT a mechanics/coord bug — the base gesture was simply wrong for the target.
+- **Rule:** the required gesture for a spin-family trick is substantially DIFFERENT from its non-spin cousin. You cannot reach a spin trick by adding a spin hold to a working non-spin recipe; the spin trick lives in a different region of gesture space, not "cousin + spin".
+- **Implication for `big_spin.json`:** warm-starting a spin curriculum from the 162-sample 360-pop-shove recipe is a WEAK prior (wrong basin). Spin-family tricks need a hand-guessed spin seed (Asher's kickflip approach) or a from-scratch spin search — thin/cousin priors will wander, same as the dolphin/dragon negative result. The spin *framework* (vector/bounds/mining, held-finger execution) is correct and unblocked; only the SEED/base gesture was wrong.
+## PPO Spin Mech Unified + SLS Spin Corpus Knob (2026-07-12)
+- **PPO spin path was never migrated to the held-finger fix — now done.** `rl/ppo/trick_conditioned_action.execute_gesture_recipe` still fired the spin via a background-thread `mobile: tap` (on at t_start, off at t_end) concurrent with the W3C `perform()` — the exact broken topology from 2026-06-14 (cancels the in-flight gesture on the shared WDA session; PPO `match_rate` stayed 0). Replaced with a HELD finger scheduled inside the SAME single `perform()` (move→pause(t_start·total)→re-move→down→pause(hold)→up), mirroring `touch_actions.execute_n_slot_gestures`. Removed the dead `_tap_at_time`/`threading`/`time` + the no-gesture two-tap branch. Verified offline (mock driver): a spin-enabled 42-dim action emits a `spin` finger with down+hold+up in one perform and NEVER calls `mobile: tap`; spin-disabled emits drag fingers only.
+- **SLS corpus: dedicated guaranteed-spin sampler.** The SLS mix already routed `use_spin` through the correct held-finger path (`gesture_sampling` → `execute_gesture_params`), but `--use-spin` was coarse: it only made the nslot branch spin-*length*, ~half gate-OFF, ~12% of fires. Added `sample_spin` (random N-slot base, gate FORCED enabled, hold window ≥ `_SPIN_MIN_HOLD=0.25` so the button is visibly held) + a `spin_frac` mixture slice, tagged `kind="spin"` (distinct corpus label, same execution path). Wired `--spin-frac` into `collect_sls_xctest.py`. Corpus is outcome-agnostic, so a random base + held spin is exactly the (frames→gesture) label the video model needs — no need for a landing spin trick. Verified: `spin_frac=0.2` → ~20% spin samples, every one gate-on with a ≥0.25 hold, layout round-trips; `spin_frac=0` unchanged (no spin).
+## Spin ON-DEVICE VERIFIED — Sampler + Fixed PPO + Visual Rotation (2026-07-16, iPhone_XR)
+- **Method:** `scripts/inspect/verify_spin_on_device.py` staged to the rig (`~/spin_verify/`) with pre-generated sampler output (40 N=2 + 6 N=3 `sample_spin` vectors, 20 no-spin controls — all offline-certified gate-on/hold≥0.25) so the rig's OWN branch executed them; rig-side precheck confirmed vector/signature compatibility before any fire. XR1's collector stopped via launchd bootout for the test (XR2 untouched), restored after.
+- **Results (production stagger env `0.12`):** spin fires **40/40 OK — 0 WDA errors, 0 park-editor, 0 replay-menu**; controls 20/20 identical → the third (spin) finger adds NO editor/menu regression. Fixed-PPO held-finger path (`trick_conditioned_action`, threaded `mobile: tap` fully removed) **2/2 OK**.
+- **Visual confirmation (the button ENGAGES):** 360-double-flip recipe fired control vs +spin (`[gate 1.0, 0.05, 0.95]`) with MJPEG frames saved both runs. Control: camera square behind the board, straight run, 9 mph. Spin: mid-trick frames show the camera whirling (straight-down overhead frame, horizon gone), settling ~90-135° rotated facing the side wall at ~1 mph. Same vector except the spin block → rotation only with spin. The held-finger mechanic verifiably drives True Skate's rotate control through the exact collector path.
+- **Ship state:** `--spin-frac` is ready for production collection (needs the sampler branch merged to the rig). Ops fixes from the same session: launcher `_coredevice_available` substring bug ("unavailable" contains "available" → absent phones read as found, 2×240s WDA builds burned per cycle), and the verify script's own pgrep guard needed `--devices <name>($| )` anchoring (bare "iPhone_XR" matches the XR2 collector's cmdline). Watchdog blind spot noted: post-reboot it waits for a first segment before arming, so a dead-from-boot rig never alerts.
+## Dashboards Merged Into One; Tailscale Serve ACL Reset (2026-07-17)
+- **Menu bar app broke because two independent things failed at once.** Asher's `~/Applications/TrueSkate-AI-Dashboard.app` opens `http://<tailscale-ip>:8400/` (plain HTTP, direct tailnet IP — `~/.trueskate_dashboard_url`), which is `scripts/train_dashboard.py`. That process wasn't running (rig rebooted 2026-07-15, it was only ever hand-started with `nohup`, no launchd). Separately, the OLD `status_server.py` (:8200, published via `tailscale serve`) had its tailnet Serve grant reset (needed re-enabling at `login.tailscale.com/f/serve` — an account-level ACL toggle, unrelated to the rig). Chasing the :8200 symptom first was a red herring for the actual app.
+- **Consolidated to one dashboard.** `status_server.py` is deleted; its Mode A heartbeat (per-device alive/dead, evals/hr, land rate, best, **STALE** badge off `logs/status.json`) is now a top bar in `train_dashboard.py`, which stays the Mode B screen-preview + log page it already was. `run_training.py` no longer spawns/supervises a status-server child — the dashboard is fully decoupled from training-run lifecycle now.
+- **New launchd agent `com.trueskate.dashboard`** (`scripts/ops/com.trueskate.dashboard.plist`, RunAtLoad+KeepAlive) keeps `:8400` up across rig reboots, independent of Mode A/B. Bare `nohup` processes on this rig do not survive reboots and are the recurring failure mode here — same lesson as the remotexpc tunnel daemon.
+## Model 1 Stationary-Touch MVP — Per-Segment Tap Calibration (2026-07-23, offline)
+- **Corrected a contradicted assumption before scaling:** the uncommitted “fresh collector process fixes the XCTest anchor” explanation conflicted with the later handover experiment that falsified it. `--max-segments` remains a bounded-pilot control only; timing is no longer claimed to be repaired by restarts.
+- **Added a fail-closed calibration gate:** `align_xctest_traces.py --tap-calibrate` detects each manifest-known tap's rendered onset by local frame differencing, robustly fits a median/MAD segment offset, then shifts every gesture's fallback Δ while preserving the measured tap→ActionChains relative difference. Sparse/disagreeing taps write **no samples**, no `.aligned` marker, preserve the `.mov`, emit a rejection report, and exit non-zero. Provenance is written into both sample meta and the segment marker.
+- **Pilot ergonomics:** collector forwards `--tap-calibrate`; `--wait-for-align` makes its accepted/rejected result visible. `mvp_collect.sh` defaults to one segment, passes both flags, and no longer promises restarts are corrective.
+- **Offline experiment passed:** a synthetic h264 30fps `.mov` with a known 2.30s tap delay (within the observed drift range) was decoded through the real ffmpeg path; calibration recovered Δtap=2.30, shift=+1.19, and correctly assigned a hold Δ=2.25 (retaining the −0.05s path difference). 114 tests pass. The required one-real-segment gate remains blocked until hands-on WDA signing recovery; do **not** restart services before that recovery.
+
+## Model 1 Stage 0 — First Real Calibrated Segment Accepted (2026-08-04)
+
+- **Signing recovery unblocked the hardware gate.** After both XRs trusted the developer app, XR1 WDA was remotely healthy and ran the bounded `mvp_collect.sh` pilot; XR2's existing generic SLS collector was left untouched.
+- **Result:** 20 stationary-touch samples were written from one 60s segment. Three of five known taps were independently detected in the recording; their measured command→pixel offsets were 0.2333s, 0.2000s, and 0.1667s (median 0.2000s, MAD 0.0333s), so the <=0.10s fail-closed gate accepted the segment. The derived correction was -0.91s relative to the old reference and was stamped into every sample's `tap_calibration` provenance.
+- **Decision:** timing is now evidenced for this segment, not merely assumed. Continue only with bounded stationary batches that pass the same per-segment gate; rejected segments remain unlabelled for diagnosis.
+
+## Fleet Watchdog: Transition-Only ntfy Alerts (2026-08-03)
+
+- **Eliminated unbounded outage spam:** the two per-XR watchdogs emitted paired `STILL down` notifications every hour for the same 13-day signing outage (~630 pushes). They now share one lock-protected, persistent fleet state (`healthy` / `degraded` / `down` / initial `pending`): one alert when an incident starts or changes severity, no reminders while unchanged, and one recovery with duration. Persisting the state prevents launchd restarts from re-paging an existing incident.
+
+## Basic Model 1 Stationary-Hold Regressor (2026-08-09)
+
+- Added as an **additive first-principles experiment**, not a replacement for the temporal trace tracker or later full Model 1 work. It learns one clip-level target `{x, y, dur}` from a complete hold clip.
+- Corpus contract: one stationary non-spin hold, `dur` uniformly in `0.30–1.50s`; no taps, drags, multi-touch, or spin holds may enter train/validation/test. Calibration taps remain raw-recording controls only, allowing the proven per-segment timing gate to remain mandatory.
+- Initial protocol: 1,000 accepted clips in The Workshop; 70/15/15 split by recording segment; offline acceptance is median coordinate error <=0.03 normalized and duration MAE <=0.10s (with P90s reported). No live execution gate yet.
+
+## Basic Hold Baseline Diagnosis: Spatial Signal Was Pooled Away (2026-08-11)
+
+- The first 1,008-clip Modal baseline plateaued near coordinate median 0.31--0.36 and duration MAE 0.27s, far outside the acceptance gate. This was not evidence that the rendered hold is unobservable: direct inspection found the orange mark at the command-normalised point for frames from onset to liftoff. The apparent screen-coordinate discrepancy was only the captured 512x1104 raster versus the XR's 414x896 logical input grid.
+- Root cause in the model: the encoder applied `AdaptiveAvgPool2d(1)` to every frame, erasing the spatial position before the x/y head. Replaced it with a spatial-score map and differentiable soft-argmax over time and space; the duration head consumes the ordered per-frame score series (peak + mean) rather than mean/max pooled frame embeddings.
+- Corpus caveat: repeated collector restarts reused the same seed, leaving only 18 distinct sampled hold commands replicated across 1,008 clips. This can validate visual extraction after the architecture fix but cannot establish generalisation. The next collection must use unique seeds (or a persisted RNG state) and be evaluated on held-out command values as well as held-out segments.
+
+## Basic Hold Spatial-Temporal Repair — Segment-Held-Out Pass (2026-08-11)
+
+- The repaired spatial-temporal regressor passed its held-out **segment** test on the existing 1,008 clips: coordinate median **0.00881** (P90 0.01344) and duration MAE **0.01067s** (P90 0.02164s), versus acceptance limits of 0.03 and 0.10s. This confirms the clip contains enough visual evidence and that preserving spatial coordinates fixes the baseline failure.
+- This is deliberately not treated as command generalisation: the source corpus has only 18 exact `{x,y,duration}` commands. Collection now persists and advances its random seed; the new corpus had 156 accepted clips with 156 distinct commands at this checkpoint. The next authoritative run must split by command, never by segment alone.
+
+## Basic Hold Spatial-Temporal Repair — Command-Held-Out Pass (2026-08-11)
+
+- A second Modal run split the same 1,008 clips by exact `{x,y,duration}` command, leaving all 174 test commands absent from training. It passed: **0.01067** median coordinate error (P90 0.02110) and **0.02282s** duration MAE (P90 0.04798). The model is therefore locating and timing the rendered mark, not simply identifying duplicated clips or command IDs.
+
+## MVP 2 Finite-Slope Linear Drag Contract (2026-08-12)
+
+- Added the next additive clip→gesture experiment: a trainable event is one single-finger, two-point, constant-velocity drag labelled `{x0,y0,x1,y1,duration}`. This is the device-safe form of finite `y=mx+c`: `m=(y1-y0)/(x1-x0)` and `c=y0-m*x0` can be recovered exactly, while the executor retains the endpoints it needs.
+- Scope is deliberately narrow: duration `0.30–1.20s`, horizontal reach `|dx|>=0.16`, and `|slope|<=2.5`; vertical/near-vertical paths, curves, holds, taps, multi-touch, and spin are outside this MVP. Three deterministic taps begin every segment as timing controls but are rejected by the strict dataset; this prevents a short segment from failing the >=2-tap timing gate purely by chance.
+- The collector’s `--basic-linears` mode is mutually exclusive with basic holds and the broad SLS mix, requires `--tap-calibrate --no-reset`, and has a separate persisted-seed runner/corpus so it cannot contaminate or interrupt the ongoing hold collection. Loader and Modal uploader accept only calibrated, menu-clean clips satisfying the exact contract. The endpoint regressor preserves spatial maps and reports separate start/end median coordinate errors plus duration MAE; the acceptance gate requires each endpoint median <=0.03 and duration MAE <=0.10s on an exact-command-held-out split.
+
+## MVP 2 Collection and Evaluation Hardening (2026-08-12)
+
+- The live corpus uses both healthy XRs with separate persisted seed files. A fleet target guard confirms each collector command before stopping it at 1,000 strict admissions; the finalizer then menu-scans, uploads only the strict-loader allow-list, and runs the Modal exact-command holdout. At the latest checkpoint the corpus had 211 accepted clips and 211 distinct commands.
+- A one-minute segment can contain 8–13 fires. Three deterministic leading taps establish the segment timing correction; only calibrated `linear` events enter the strict corpus. Brief Appium invalid-session failures dropped entire segments rather than manufacturing labels, then the collector reconnected on the next bounded segment.
+- Alignment now direct-encodes each 32-frame clip to H.264 from the source segment rather than materialising PNGs and re-encoding them. Real XR1/XR2 output verified `frames_format=mp4`, 32 frame times spanning the same `[-0.5, 1.77]s` response window, and accepted 3-tap timing provenance. Foreground alignment remains enabled because attempting to overlap session teardown with a background aligner invalidated both Appium sessions; the safe performance gain is direct encoding, not concurrent device sessions.
+- The final model now keeps stride-two spatial evidence and separate learned start/end score maps. Its acceptance is not a median proxy: a test clip counts as recovered only when start and end coordinate errors are each <=0.03 normalized units and duration error <=0.10s. The exact-command-held-out report additionally breaks recovery down by XR device and low/mid/high slope bands.
+- This is a meaningful causal check but still limited by the old corpus's 18 sampled command values. Keep the higher-standard new collection: independently generated, one distinct command per accepted clip, then use the same command split.
+- Ops repair during this collection: a genuinely rejected timing-calibration segment had been mistaken for a recorder failure because the shell loop compared report timestamps. The loop now compares the pre/post count of rejection reports for the exact device, continues fail-closed after a calibration rejection, and only stops for an actual recorder failure. A PID-verified target guard now stops that exact XR1 loop at 1,000 strict-loader admissions.
+
+## MVP 2 Command-Held-Out Baseline and Start Recovery (2026-08-12)
+
+- The fixed Modal corpus contains 1,003 strict, calibrated, menu-clean linear clips, one command per clip. On the fixed 70/15/15 exact-command split (703/150/150), the duration-conditioned spatial baseline recovered 70.0% of test commands under the strict joint gate (each endpoint <=0.03 normalised; duration <=0.10s). Its component passes were start 78.7%, end 88.7%, duration 98.7%: start localisation was the clear bottleneck.
+- Upweighting the start loss 1.8x improved the untouched test result to **74.7%** (start 84.0%, end 91.3%, duration 94.0%; start/end medians 0.0124/0.0162; duration MAE 0.0380s). This is progress, not an MVP pass; the required full-command recovery remains >=95%.
+- A frozen-checkpoint test-time sweep, changing only the calibrated start-attention interval, reached 79.3% held-out recovery and 88.7% start-component recovery with a 0.04--0.06 normalized-time onset window. This establishes that start-vs-full-trace temporal ambiguity remains material. The next trained variant uses a separate onset-window encoder over frames 6--9 (of 32) to identify the first rendered pixel directly; it is being evaluated on the identical split.
+- **Current best:** retaining the proven separate endpoint heads but training with the evidence-backed tight start-time prior (sigma 0.05) raised the untouched test recovery to **80.0%**. Components: start **89.3%**, end **89.3%**, duration **96.0%**; endpoint medians 0.0117/0.0167 and duration MAE 0.0349s. This remains below the 95% full-gesture gate. A separately trained onset-window start encoder improved start precision but regressed joint recovery to 74.0%; a dense full-resolution end encoder failed to learn duration/endpoint localisation and was stopped at 2.7% validation recovery. Keep the tight-prior architecture as the baseline for capacity/data experiments.
+- A validation-only convex ensemble of the three compatible 1,003-clip checkpoints selected 80% tight-start + 20% start-weighted. It achieved **80.7%** on the untouched test commands (start 88.7%, end 89.3%, duration 96.7%). This is a small valid gain, not an acceptance pass. The separate clean expansion is required because an independent initialization on the same corpus was materially worse, demonstrating high training variance.
+- Two early two-device expansion pilots were quarantined after strict inspection found duplicated commands: first a shared seed file, then same-second identical seed initialization. Collector seed persistence is now device-specific and device-hash diversified; the third corpus began with 10/10 and then 90/90 strict clips/unique commands. Only this verified corpus may be uploaded.
+
+## MVP 2 Endpoint Timing and Cue Diagnostics (2026-08-13)
+
+- A frozen-checkpoint full timing sweep showed the aligned render trail begins earlier than the old fixed start prior assumed. To avoid test-set model selection, a declared grid was selected on the 150 validation commands: onset **-0.24** / sigma **0.08**. It achieved **81.3%** joint recovery on the 150 held-out commands (start 92.0%, end 89.3%, duration 96.0%; start/end medians 0.0103/0.0167; duration MAE 0.0349s). This is a valid small improvement over the 80.0% checkpoint, but still far below the 95% gate and must not be called an acceptance pass.
+- A target-timed warm-pixel argmax audit was explicitly diagnostic-only, not a model result: it reached 44.7% start, 24.0% end, and 17.3% both-endpoint recovery at the 0.03 tolerance. The learned spatial model is therefore extracting substantially more useful context than a raw orange-colour rule; do not replace it with hand-coded colour inference.
+- The fresh verified two-XR corpus continued cleanly after the earlier pilots were quarantined: at this checkpoint it had 372 strict accepted clips and exactly 372 unique commands. The target remains 2,000, after which the finalizer uploads only this corpus to its dedicated Modal volume and runs the same command-held-out protocol.
+- A deliberately very-low-weight endpoint score-map auxiliary (`0.005`) is being retained as a negative control only unless it catches up: by epoch 29 its validation recovery had peaked at 60.7%, far below the baseline. A controlled retrain with the validation-selected configurable start prior has been queued on the unchanged 1,003-clip benchmark.
+
+## MVP 2 Temporal Context Result (2026-08-13)
+
+- A residual 3-D temporal mixer before the spatial endpoint-score heads was evaluated on the same fixed 1,003-clip / 703:150:150 exact-command split. Its validation-selected epoch 40 achieved **82.0%** held-out joint recovery (start 92.7%, end 90.0%, duration 94.7%; start/end medians 0.0096/0.0141; duration MAE 0.0334s). This is the new benchmark leader over 81.3%, but remains well below the required 95% and therefore is not an acceptance pass. Device audit was XR1 81.7% (93) / XR2 82.5% (57); low/mid/high slope 87.1% (70) / 74.5% (55) / 84.0% (25), identifying mid-slope generalisation as the weakest band.
+- Discarded an invalid retraining attempt that directly used the frozen-model sweep's negative start-time coordinate as a model anchor: it placed end attention into the fixed pre-touch mask and stayed at 0% through six epochs. The model now records separate start and end anchors; no result from that stopped run is comparable evidence.
+- Next controlled ablation uses exact manifest frame-times plus the known constant-velocity command to supervise score maps along the active trajectory (`trajectory_weight=0.005`). This is distinct from the rejected fixed-time endpoint map loss and is evaluated on the same command holdout.
+
+## MVP 2 Verified 2,022-Clip Baseline (2026-08-13)
+
+- The clean expanded corpus has **2,022 strict clips / 2,022 distinct commands**, no menu-marked samples, and a fixed exact-command split of 1,416/303/303. The CPU baseline selected epoch 34 by validation recovery, then obtained **76.9%** strict joint recovery on the untouched 303-command test set (start/end median errors 0.0157/0.0149; duration MAE 0.0268s). Duration passed 99.3%; start/end component recovery was 83.2%/90.1%, so endpoint tail errors—not timing—remain the bottleneck.
+- The failure is stable across phones (XR 76.7%, XR2 77.1%) and strongest in the mid-slope band (72.7%, versus 80.0% low and 75.0% high). It is below the 95% acceptance gate. A separate temporal-mixer run is queued on the identical corpus and split; no validation/test protocol has been relaxed.
+- A read-only raw orange-component diagnostic matched only 13/150 clips and achieved 0% dual-endpoint recovery at the 0.03 tolerance. It rules out replacing learned temporal visual inference with a hand-coded colour shortcut.
+
+## MVP 2 2,022-Clip Temporal-Mixer Result (2026-08-13)
+
+- The residual temporal mixer was evaluated on the same 1,416/303/303 exact-command split, choosing its epoch only by validation recovery. Its held-out result was **90.1%** strict joint recovery (start/end medians **0.0088/0.0101**, duration MAE **0.0236s**; component recovery 94.4%/95.7%/99.0%). This is the current valid leader, a 13.2-point improvement over the 2k spatial baseline, but it remains below the 95% acceptance requirement.
+- The unrecovered test tail is geometry-dependent: low slope 93.1% (160), mid slope 86.9% (99), high slope 86.4% (44); XR and XR2 are similar at 90.8%/89.3%. The next controlled run adds a dedicated moving-contact score map trained against manifest-known per-frame trajectory positions, then allows its evidence to correct the two endpoint heads. It keeps the corpus, split, optimiser, endpoint tolerance, and duration tolerance unchanged.
+
+## MVP 2 Fixed-Split Temporal Ensemble (2026-08-13)
+
+- Four independently initialised residual-temporal models were trained on the unchanged 2,022-command corpus and fixed 1,416/303/303 exact-command split. Initialization varied while `split_seed=0` was explicit, so all models saw the same train/validation/test command partition. Validation-best checkpoints were combined by a predeclared 0.1-grid convex-weight search on the 303 validation commands only; the selected mixture was then evaluated once on test.
+- The validation-selected mixture (0.1 original temporal + 0.6 seed-2 + 0.3 seed-3; seed-1 0.0) reached **93.07% strict held-out recovery (282/303)**. Start/end medians were **0.00627/0.00998**, duration MAE **0.01979s**, and component recovery **98.35%/95.71%/99.01%**. This is the valid leader, but it is **six commands short of the 95% acceptance gate**; do not call MVP 2 passed.
+- The remaining error is a narrow endpoint tail, not duration or global calibration: test endpoint P90 is 0.01875, well under the 0.03 tolerance, but end-point recovery is the limiting component. The next experiment should use the isolated, independently collected expansion corpus; do not tune these test cases or relax tolerances.
+
+## MVP 2 Independent Fresh-Holdout Protocol (2026-08-13)
+
+- The new `basic_linear_xctest_4k_verified` corpus is generated independently with one strict clip per exact command. Its 1,000-clip target is guarded by a PID-verified collector stop and a finalizer that menu-scans, uploads only strict clips, and runs a temporal-mixer command split on its own dedicated Modal volume.
+- The stronger acceptance experiment then uploads the established 2,022-command corpus under `legacy/` and the new corpus under `fresh/` in a separate volume. It trains on all legacy commands plus the training slice of fresh commands, while validation and the final strict test consist only of fresh exact commands. Any exact command shared by the two subtrees raises an error before training. Checkpoint ensemble selection uses only this fresh validation slice.
+
+## MVP 2 Trajectory-Map Control (2026-08-13)
+
+- A temporal-mixer model with a separately supervised moving-contact map (`trajectory_weight=0.005`, path-map fusion enabled) was started on the old fixed 2,022-command benchmark with a new initialization and unchanged split. Validation reached only **70.6%** at epochs 5--6 and then regressed (61.1% at epoch 7), well below the temporal baseline/ensemble. It was stopped before test evaluation, so it is a negative control rather than a comparable held-out result. Do not spend fresh-holdout capacity on this architecture without a new evidence-backed redesign.
+
+## MVP 2 First Independent Fresh-Holdout Result (2026-08-13)
+
+- The pooled temporal-mixer trained on 2,734 commands (2,022 legacy plus the fresh training slice), selected epoch 25 using only 153 fresh validation commands, then evaluated once on the disjoint 153-command fresh test slice. It obtained **94.12% strict joint recovery (144/153)**: start/end median coordinate errors **0.00635 / 0.00921**, duration MAE **0.01890s**, and component recovery **100.0% / 95.42% / 98.69%**. This is two clips below the 95% MVP gate, so MVP 2 is still not passed.
+- The remaining nine failures are endpoint tails, not duration. Device evidence is imbalanced in this otherwise clean fresh test (XR: 146 samples, 95.21%; XR2: 7 samples, 71.43%), so do not extrapolate an overall device conclusion from the XR2 figure. No post-test model or threshold tuning is allowed.
+- Next protocol: collect a **new, untouched, device-balanced** strict corpus (500 accepted/unique commands per XR) with independent persisted seeds and separate per-device target guards. Use it only for a new validation/test partition; retain the completed 3,040-command corpus as training data. The guard was corrected to count strict admissions by manifest `device`, preventing one phone from satisfying the other phone's quota.
+
+## MVP 2 Predeclared Device-Balanced Fresh-Holdout Protocol (2026-08-13)
+
+- The new corpus is partitioned by exact command with explicit `device` provenance. Fresh validation and test are independently stratified by XR/XR2 (15% from each device for each partition); every device must have at least three commands, and a command appearing with more than one device identity fails closed. Legacy material and fresh-training commands remain train-only.
+- Three temporal-mixer initializations will train against that one fixed split with test evaluation disabled. A convex 0.1-grid ensemble is selected only on the balanced fresh validation partition, then the selected mixture is evaluated exactly once on the balanced fresh test partition. MVP 2 passes only if that one strict result is at least 95% joint recovery under the unchanged endpoint/duration tolerances.
+
+## MVP 2 XR2 Calibration Reliability Check (2026-08-13)
+
+- XR2 timing calibration is intermittently invisible even while Appium/WDA health endpoints are live. Accepted five-control segments showed all controls with ActionChains/mobile-tap call walls around 1.08--1.13s; rejected segments mostly returned in 0.55--0.60s with zero controls detected. The gate correctly preserves and excludes every rejected `.mov`; no fallback label was manufactured.
+- An opt-in 0.1s ActionChains calibration-control dwell was implemented with an ActionChains reference-latency adjustment and tested locally. Its one clean XR2 pilot still detected zero of five controls and was rejected, so it is **not** enabled for production. XR2 remains on its previously demonstrated five-control instantaneous-tap configuration. The data-quality gate, device quotas, and fresh split are unchanged.
+
+## MVP 2 XR2 WDA Recovery Blocker (2026-08-13)
+
+- XR2 collection was paused after Appium began returning invalid WDA sessions. The phone is connected, unlocked, paired, developer-mode enabled, and its developer disk image/tunnel services are healthy. A controlled XR2 reboot did not restore WDA.
+- Direct Xcode evidence identifies the blocker: installing `WebDriverAgentRunner-Runner` fails with `0xe8008011` because the embedded provisioning profile for `com.asher.WebDriverAgentRunner.xctrunner` has expired. This needs a WDA signing/provisioning renewal in Xcode (`-allowProvisioningUpdates` cannot repair the already-built runner automatically here). No additional XR2 samples should be collected until WDA is re-signed; XR1 material remains strict but cannot satisfy a device-balanced fresh holdout alone.
+
+## MVP 2 Signing Recovery Recheck (2026-08-14)
+
+- Rechecked `training-server`: the Xcode Apple-account token remains absent, with **zero** valid code-signing identities and **zero** provisioning profiles. A `build-for-testing -allowProvisioningUpdates` probe fails on missing account, profile, and development private key.
+- Tested the only plausible fallback—the local Mac—using a temporary copied WDA checkout and a separately named runner under its valid-looking Apple Development identity. Xcode likewise lacks usable account credentials/profiles and reports no matching development private key. Neither host can create an installable runner non-interactively. The required external action is Apple-account sign-in/certificate/profile renewal in Xcode; no corpus or model protocol was changed.
+
+## MVP 2 Tail Diagnosis and Robust Line-Fit Decoder (2026-08-18)
+
+- **The remaining MVP-2 gap is a tail, not a precision limit.** Fitting a Rayleigh to the observed endpoint-error medians and asking what that bulk alone would score at the 0.03 tolerance gives: fresh-holdout end 0.00921 median -> sigma 0.00782 -> P(err>0.03) 0.064%, i.e. **99.94% predicted against 95.42% observed**; the 93.07% ensemble's end median 0.00998 predicts 99.81% against 95.71% observed. The observed failure population is 20-70x fatter than its own core, while test endpoint P90 (0.01875) sits comfortably inside tolerance. Failures are also structured, not random: almost always the **end** endpoint, never start, and tracking slope band (93.1/86.9/86.4%). Conclusion: median-moving levers (capacity, epochs, more ensemble members, time-prior sweeps) cannot close this; only removing a discrete outlier population can.
+- Separately, **99.9% is unmeasurable under the current protocol**: by the rule of three, zero failures in the 303-command test slice certifies only 99.01%. A defensible 99.9% needs >=3,000 untouched unique commands (~10,000 to tolerate a few). Certification was deliberately deferred (Asher's call); the current work targets accuracy on existing corpora only.
+- **Built the robust constant-velocity line-fit decoder** (`--line-fit`). The command is analytically `p(t) = p0 + (p1-p0)*clamp(t/T,0,1)`, so the decoder now regresses a per-frame contact position from the moving-contact map, fits that line by **closed-form weighted least squares**, and reads the endpoints off the fit — instead of two independent soft-argmax reads that each rest on essentially one moment of evidence. Wrapped in 2-3 **IRLS passes with Huber weights** on per-frame residuals so an occluded or mis-detected frame demotes itself. Onset is now a learned per-clip head; the swept `start_onset=.24` / `liftoff=onset+duration/2.27` constants are not re-imposed on this path.
+- Numerically verified the mechanism before training: on a synthetic 30-frame track, a **single** corrupted frame moves a plain least-squares start endpoint by 0.045 — past the 0.03 tolerance on its own — while three IRLS passes recover it to 0.0002. That is precisely the tail-to-Gaussian conversion the diagnosis calls for.
+- **This is not the failed trajectory-map control** (`trajectory_weight=0.005`, peaked 70.6% then regressed). That run kept time-softmax windows over the path map and blended through a cold `sigmoid(-4)` fusion gate; it never fit a line and had no robust loss. Only the per-frame manifest supervision is reused, and `--line-fit` now fails closed unless a positive `--trajectory-weight` supervises the map it fits.
+- Added `--image-width`/`--image-height`: the stride-two score map at 128px input has an x-cell of **0.0156, over half the entire 0.03 tolerance**, so a resolution ablation is a first-class control rather than a code change.
+- **Two real bugs found and fixed while wiring this up.** (1) `basic_linear_loss` crashed on **torch 2.12** ("view size is not compatible...") when slicing endpoint pairs out of the `[B,5]` prediction — this affected the *existing* baseline equally, and since the Modal image pip-installs `torch` unpinned, a fresh cloud build would have hit it too. (2) Every checkpoint-backed Modal evaluator constructed its dataset at the library default 128x288, so a checkpoint trained at another resolution would have been scored on inputs it never saw — silently, and looking like a failed ablation. Evaluators now take the resolution from the checkpoint payload and an ensemble whose members disagree fails closed.
+- Per-clip audit evidence added: recovery records now carry the predicted/target pair, sample path, device, slope band and dx, and the payload gains `test_tail` (endpoint P99, max, failing-sample list). Recovery is a threshold statistic, so two checkpoints at the same percentage can have very different tails; this makes "did the tail shrink?" answerable per run.
+- Full suite green (170 tests). No corpus, split, tolerance, or acceptance protocol was changed; no new collection was started.
+
+## MVP 2 Failure Autopsy — The Tail Is a One-Axis End Bias (2026-08-18)
+
+- Ran a new `autopsy_failures` Modal diagnostic on the valid leader (`basic_linear_linear_mixed_fresh_holdout_20260813`, 94.12%, 144/153) over its exact fresh split. For every clip it measures the distance from the **commanded** endpoint to the nearest rendered trail pixel anywhere in the clip, and decomposes each endpoint error **along** and **perpendicular** to the commanded path. Positions come only from the manifest and the model; the colour mask locates evidence and never defines a target.
+- **The labels are clean and the evidence is present.** Across all 9 failures the largest commanded-to-trail gap is **0.0152**, half the 0.03 tolerance, and all 32 frames carry trail in every failing clip. There is no occlusion, no missing render, no timing truncation, and no detectable label-pixel disagreement. The label floor is **not** the binding constraint at this tolerance. (Caveat: a nearest-pixel test cannot detect an executed drag that *overshoots* the commanded end.)
+- **The entire endpoint error lives on one axis.** End endpoint over all 153 test clips: perpendicular error median **0.0036**, sd 0.0032, and **within 0.03 for 100% of clips**. Along-path error: mean **-0.0095**, median -0.0062, sd 0.0176, **negative in 85% of clips**, P99 0.0783. Every one of the 7 end failures is a negative along-path miss with near-zero perpendicular component. The model localises *the line* essentially perfectly; it only misjudges how far along it the touch ended.
+- **It is specific to the end, and it is a bias, not scatter.** The start endpoint shows no such asymmetry (along mean +0.0013, negative in 48% of clips — symmetric). This is the signature of soft-argmax over a **cumulative** trail: the rendered line persists, so an end-score attention averages backward from the tip. The start has no such trailing mass behind it.
+- **Counterfactuals on the same checkpoint, no retraining:** removing only the mean along-path bias takes 94.12% -> **96.08%**; removing the along-path component entirely gives **98.69% (151/153)**, after which the *only* remaining failures are the two duration clips. So 98.69% is the ceiling of endpoint work on this checkpoint and duration then becomes the binding constraint.
+- **The bias replicates out of sample, so the correction is usable rather than oracle.** Validation end along-path mean is **-0.0071** (80% negative) against test **-0.0095** (85% negative). Applying the *validation-fit* shift to the untouched test split yields **96.08% (147/153)** with no test-set tuning. A validation-fit scalar is therefore worth ~2 points for free.
+- **Bucket counts (n=9):** end along-path undershoot **7/9** (2 of them XR2 clips sitting just over tolerance at 0.031/0.032), duration-only failures **2/9** (endpoints recovered; duration missed by 0.148 and 0.175s). Occlusion, no-render, timing, label disagreement: **0/9**.
+- **Consequences for the queued work.** The line-fit decoder is aimed correctly — reading endpoints off a fitted line evaluated at s=1 attacks along-path undershoot directly, and the near-zero perpendicular error means the fit starts from an easy geometry. But two corrections follow: (1) a validation-fit end bias term is a cheaper and more certain first move than any retraining, and should be measured as a control before crediting the line fit; (2) the line fit as built leaves duration to the existing head, so it cannot address 2/9 of the current failures, and those become 100% of the residual once endpoints are fixed. Duration needs its own work to go beyond ~98.7%.
+
+## SLS Corpus Prune: Nothing Prunable, Offload Gate Is the Real Cause (2026-08-19)
+
+- A filtered prune of the 316 GiB `data/sls_xctest` reclaimed **zero bytes**, correctly. Only **one** session is local (`iPhone_XR_20260814_042825`, 21,786 samples, one park), and it carries **zero** `.menu` / `.editor` / `.trace_mismatch` markers because it has never been run through `flag_menu_samples.py` or `flag_editor_samples.py`. Every older session was already offloaded and deleted by the standing autooffload pipeline. Independently verified: one session directory, zero marker files, no collector running.
+- **Root cause of the 87% disk is the offload gate, not missing prune candidates.** `logs/autooffload.log` shows an hourly `SKIP iPhone_XR_20260814_042825 (spin_frac=0.5 < 0.8; kept local)`. `MIN_SPIN_FRAC=0.8` is injected by the `com.trueskate.autooffload` launchd plist (the script's own default is `0`), while collectors run `--spin-frac 0.5`. The entire 316 GiB session is therefore permanently stranded and will never offload as configured. This is memory `offload-spin-frac-gate-strands-data` biting in production.
+- **The offload target may also be full — check before flipping the gate.** The plist sends to `MODAL_VOLUME=trueskate-corpus`, which the July MVP handover recorded as effectively full on both axes (997.9/1024 GB, 2.37M files against a 500k inode limit). A `trueskate-corpus-v2` volume exists and already holds sessions, implying a migration was underway. Fixing `MIN_SPIN_FRAC` alone may just move the wall.
+- **The "~48% park-editor contamination" figure is probably wrong and should stop being cited.** It came from a dry-run classifier that TIMED OUT. The last *completed* `flag_editor_samples.py` runs (2026-07-16, since-deleted sessions) measured **~4%** (314/7841 and 316/8049) — an order of magnitude lower. A prune justified by "half the corpus is contamination" is not supported by any finished measurement.
+- Consequence: the cheap real lever is to run the two flaggers for real against the current session (expect single-digit percent, order ~13 GiB), and separately to reconcile the offload gate with the collector's actual spin fraction against a target volume with room. Neither was done here; both are owner decisions.
+
+## SLS Flagger Run on the Current Session — 6.6% Editor, 0.01% Menu (2026-08-19)
+
+- Ran both flaggers non-destructively (marker-only, no `--delete`) over the only local session, `iPhone_XR_20260814_042825` (21,786 samples), with no collector running. Both completed rc=0 with zero errors: editor 17:51→18:43, menu 18:43→19:37.
+- **Editor: 1,442 / 21,786 = 6.62%. Menu: 2 / 21,786 = 0.01%.** The union is exactly 1,442 — both menu samples are also editor-flagged — occupying **22.0 GB (21.0 GiB)**, i.e. 6.6% of the 316 GiB session, matching the count fraction.
+- **The "~48% park-editor contamination" figure is now definitively refuted by a completed measurement** on the actual current corpus, not just by the ~4% July baseline on since-deleted sessions. Any prune plan premised on removing half the corpus was wrong by roughly 7x.
+- **The in-loop gameplay guard has essentially eliminated menu contamination for new collection**: 2 samples in 21,786, versus the substantial contamination that motivated `flag_menu_samples.py` in the first place (memory `sls-collector-replay-menu-contamination`). The residual contamination is entirely park-editor, consistent with memory `park-editor-multifinger-trigger` — multi-finger gestures open the editor *during* execution, which no pre-gesture guard can catch, so a post-hoc flagger remains necessary.
+- A genuine Tier-1 prune of 21.0 GiB now exists but was **not** executed; it is an owner decision and recovers only 6.6% of the session. The dominant lever remains the stranded autooffload gate (`MIN_SPIN_FRAC=0.8` vs collector `--spin-frac 0.5`), which holds all 316 GiB local.
+- **Tooling gotcha recorded:** `tailscale ssh` discards the remote command's exit status and always returns 0 locally (verified: remote `exit 7` -> local `rc=0`). Any rig polling of the form `tailscale ssh host 'cmd' && ...` is silently unreliable; gate on a printed token in stdout instead. This produced two false "process finished" readings during this run.
+
+## SLS Tier-1 Prune Executed — 1,442 Flagged Samples Deleted (2026-08-19)
+
+- Before deleting, the `.editor` detector was visually spot-checked rather than trusted: flagged frames (`sample_002739`, `sample_002741`) unmistakably show True Skate's park editor — the SORT/SNAP toolbar, object palette, and undo/trash/save row — while an unflagged control (`sample_005000`) shows normal gameplay HUD with speedometer and no palette. No sign of systematic false positives.
+- Deleted **1,442** flagged sample dirs from `iPhone_XR_20260814_042825/sls_2015_super_crown`, skipped 0. Each dir's marker was re-checked immediately before `rm` and every path was pattern-restricted to the park directory, so nothing outside the session could be touched. A manifest of exactly what was removed is kept at `~/trueskate-ai/tmp/prune_deleted_20260818_200942.txt` on the rig. No collector was running.
+- Result: **20,344 samples remain** (21,786 − 1,442, exact), zero `.editor`/`.menu` markers left, `data/sls_xctest` **316 GiB → 295 GiB**, free disk **60 GiB → 81 GiB**.
+- **Verification gotcha worth remembering:** the post-delete check reported "remaining samples: 0", which looked like catastrophic loss. It was `ls -d $PARK/sample_*/` hitting ARG_MAX on 20k+ matches and failing silently under `2>/dev/null`. A `find`-based recount gave the correct 20,344. Never count large directory sets with a shell glob; use `find`.
+- This recovers 6.6% of the session. The remaining 295 GiB is still stranded locally by the autooffload `MIN_SPIN_FRAC=0.8` gate against the collector's `--spin-frac 0.5`; that remains the dominant lever and is untouched.
+
+## MVP 3 Representation Validated, Line-Fit Decoder Regresses (2026-08-19)
+
+Two runs on the **unchanged** 2,022-command corpus, `split_seed=0`, fixed 1,416/303/303 exact-command split, 40 epochs — directly comparable to the 90.1% temporal-mixer baseline.
+
+| run | joint | knot0 | mid | last | duration |
+|---|---|---|---|---|---|
+| MVP-2 temporal mixer (soft-argmax, baseline) | **90.10%** | 94.4% | — | 95.7% | 99.0% |
+| K=2 line fit (control) | 83.17% | 93.07% (med .00891) | — | 87.13% (med .01306) | 97.69% |
+| K=3 line fit | 67.33% | 88.78% (.01304) | **89.77%** (.01308) | 78.55% (.01885) | 99.67% |
+
+- **The MVP-3 fixed-time representation is validated.** The interior knot — "where was the finger at half time" — recovers at **89.77%**, the *best* of the three knots, above knot0 (88.78%) and far above the last knot (78.55%). Predicting an interior trajectory position is not harder than predicting an endpoint, which was the open question. The straight-drag degenerate case gives the cleanest possible test of this and it passes.
+- **The line-fit decoder is a regression, not an improvement.** At K=2, on an identical corpus/split/epoch budget, it scores **83.17% against the baseline's 90.10%**, with the end knot at 87.13% versus the baseline's 95.7%. My primary architectural bet from the MVP-2 tail plan does not pay off as configured. This must not be reported as progress.
+- **The line fit did not fix the end-endpoint undershoot, contradicting the stated hypothesis.** The 2026-08-18 autopsy showed the last endpoint suffers a systematic along-path undershoot from the cumulative trail, and predicted a consensus fit would remove it. The last knot remains the worst component in both line-fit runs (87.13% at K=2, 78.55% at K=3). The mechanism was demonstrated on synthetic outliers but does not transfer to the real failure mode.
+- **Adding a knot costs accuracy on the existing knots too.** K=3's knot0 (88.78%) and last knot (78.55%) are both below their K=2 counterparts (93.07%, 87.13%), so the joint drop is not purely the extra gate. Observed K=3 joint 67.3% vs 62.6% predicted from independent knots — knots are near-independent, so the joint gate roughly multiplies and per-knot accuracy is what must rise.
+- **Confounds, stated rather than buried:** the line-fit runs use `trajectory_weight=0.02` (an untuned first guess), equal knot weighting instead of the baseline's 1.8x start weighting, and a freshly initialised onset head trained inside the same 40 epochs. So this is "the line fit as configured is worse", not "the line fit is fundamentally worse". A `trajectory_weight` sweep and a longer budget are the obvious next controls before abandoning it.
+- **Consequence for the 95% MVP-3 target:** 95% joint over 3 knots needs ~98.5% per knot. The best per-knot figure anywhere here is 94.4% (baseline, K=2). The gap is large and the current decoder direction is not closing it. The soft-argmax temporal mixer remains the model to beat, and the cheap validation-fit end-bias correction (worth ~2 points on the fresh holdout) is still unspent.
+
+## EQ-001 — End-bias correction implemented; the "free 2 points" claim does NOT survive red team (2026-08-19)
+
+First item run through the new `experiment-queue` skill (`experiments/queue.md`, one item per
+invocation, red-teamed before belief).
+
+- **Hypothesis:** the end-endpoint along-path undershoot is a reproducible scalar bias, so a shift
+  fit on validation and applied unchanged to test is a correction, not test tuning.
+  **Expected:** tests green, injected bias recovered within 10%. **Kill:** the correction cannot be
+  expressed without touching test-split statistics.
+- **Ran:** offline only, no cloud spend, no checkpoint access. New `vision/basic_linear_bias.py`
+  (`signed_along_path_error`, `fit_along_path_bias` -> frozen `AlongPathBias.apply`); opt-in
+  keyword-only `correction=` on `basic_linear_metrics` / `basic_linear_recovery_records`; 9 new
+  tests in `tests/test_basic_linear_bias.py`. Suite **196 passed**.
+- **Numbers:** injected bias -0.0071 recovered within 10%; held-out mean along-path error reduced
+  >5x; zero shift an exact no-op; perpendicular displacement contributes nothing to the fit.
+- **Verdict: INCONCLUSIVE.** The mechanics are right and independently verified, but the claim the
+  item was built to support — "~2 free points, EQ-002 unblocked" — is not supported.
+- **Red team: CONFOUNDED.** Verified sound: index arithmetic for K=2/3/4 and knot in {-1,K-1,-2,K-2}
+  (exactly two components mutate, duration untouched, no aliasing); `.apply()` is label-free;
+  direction-source second-order error is negligible (chords 0.16-0.52 by `BASIC_LINEAR_MIN_DX`,
+  induced perpendicular displacement median 1.5e-4, P99 1.4e-3, under 5% of tolerance). What it
+  broke:
+  1. **The design constants were read off the test split.** `statistic="mean"` is documented as
+     matching the autopsy counterfactual — which was computed on test (94.12 -> 96.08). The code
+     never sees the split; the author did. The kill criterion was written one level too low to
+     catch this.
+  2. **EQ-002 as written cannot fail.** Its expectation and its kill threshold both come from that
+     same journal line, so the run would reproduce a number already recorded.
+  3. **It is a different operator.** The autopsy decomposes along the **commanded** path
+     (`train_basic_linear_modal.py:762-770`, built from labels); `AlongPathBias.apply` uses the
+     **predicted** chord. The fit itself is label-directioned (`signed_along_path_error` projects
+     onto the target chord while apply projects onto the predicted one). "Expected 96.08%" is not a
+     prediction about this code.
+  4. **The tests are structurally blind to that.** `_record` builds the displacement with the same
+     unit-vector convention the module uses and always sets predicted start == target start; max
+     predicted-vs-commanded chord angle across the generator is 2.1e-8 rad. Every test would pass
+     identically if `.apply()` read its direction from the target. No test has a wrong first knot,
+     yet start recovery is 78.7-94.4% — a wrong first knot is the normal real case.
+  5. **"Not test tuning" is caller discipline only** — a docstring assertion the code cannot check;
+     `AlongPathBias` carries no provenance.
+  6. **mean vs median is below the noise floor**: simulating the reported moments gives net +1.7
+     clips at either statistic, ~0.1 clips apart. Neither is the right estimator for a threshold
+     metric.
+  7. **The effect is 3 clips out of 153.** ~2.6 gained, ~0.9 lost. McNemar on the implied discordant
+     pairs gives two-sided p=0.375 (best case 0.25). Clopper-Pearson on 147/153 is [91.66, 98.55],
+     overlapping the 144/153 interval and with a lower bound *below* the 0.95 acceptance gate.
+     **"~2 free points" is statistically indistinguishable from zero at n=153.**
+  8. **Nothing calls it** — no fit-on-validation -> apply-on-test entry point exists in
+     `train_basic_linear_modal.py`, so EQ-002 was not runnable as written.
+- **What this rules out:** the cheap-2-points framing carried through the 08-18 plan. It was never
+  2 points of evidence; it was 3 clips on a split too small to resolve them. This does not refute
+  the along-path bias itself (the autopsy's 85%-negative asymmetry stands) — it refutes the claim
+  that a 153-clip evaluation could demonstrate the correction works.
+- **Next:** EQ-001 closed. EQ-002 restated as an operator-agreement check with McNemar discordant
+  pairs predeclared instead of an accuracy delta (was: reproduce 96.08%). New EQ-008 (make fit and
+  apply share an axis; add a displaced-first-knot test) and EQ-009 (the missing entry point), both
+  FREE, both gating EQ-002.
+
+## EQ-008 — Estimator and corrector now share an axis; axis choice is worth ~4e-5 (2026-08-19)
+
+Loop tick 2 (`experiment-queue`, self-paced). Fixes the estimator/corrector mismatch the EQ-001
+red team found: the fit measured against the **commanded** chord while `apply` corrects along the
+**predicted** one.
+
+- **Hypothesis:** making them consistent changes the fitted shift by less than the noise floor.
+  **Expected:** shift moves < 0.001. **Kill:** it moves materially, so the autopsy's numbers do not
+  transfer at all.
+- **Ran:** offline, no cloud spend. `signed_along_path_error` / `fit_along_path_bias` gained
+  `axis="predicted"|"commanded"`, defaulting to predicted (matching `apply`); `AlongPathBias` gained
+  an `axis` field; test helper gained `start_error` to displace the predicted first knot.
+  **Deviation from the declared method:** the commanded-chord path was kept behind the parameter
+  rather than deleted, because EQ-002 must compare the two operators. Simulation at
+  `scratchpad/eq008_axis_shift.py`, drawing from the autopsy's reported moments — **simulated, not
+  measured on real records**, which live on Modal with nothing cached locally.
+- **Numbers** (40 seeds x 2,000 records): true injected -0.00950; predicted-axis fit -0.00942,
+  commanded-axis -0.00946 (sd across seeds 0.00045 each). |delta| median **3.7e-5**, max 4.2e-5 =
+  **0.14% of the 0.03 tolerance**. Predeclared gate < 0.001: PASS. Suite **201 passed** (was 196).
+- **Verdict: CONFIRMED, but only in the restated form below.** The axes agree far inside tolerance,
+  so the correction can use the predicted chord — the one available at inference.
+- **Red team: CONFOUNDED — the delta is real and inside the gate, but the stated reason was wrong
+  and the conclusion over-reached.** Its findings, and what changed as a result:
+  1. **The sensitivity sweep inflated the wrong variable.** delta ≈ E[perp²]·E[1/L]: it is driven by
+     *perpendicular* error and is first-order insensitive to first-knot error. Re-run over the right
+     variable and independently reproduced: first-knot **x0 (removed entirely) 3.6e-5**, baseline
+     3.8e-5, first-knot x8 1.2e-4 — but perp x2 1.5e-4, perp x3 3.2e-4, **perp x5 8.9e-4, at the
+     gate**. Analytic E[perp²]·E[1/L] = 3.4e-5, matching. So "robust to 8x first-knot error" was true
+     and nearly vacuous. **Restated claim: delta = E[perp²]/|chord| ≈ 4e-5 at the autopsy's measured
+     perpendicular sd of 0.0032, and transfers only while that sd holds.** It is a data-dependent
+     transfer, not an operator property.
+  2. **The perp²/|chord| leak is exact, not curve-fitted** — algebraically q²/√(L²+q²), verified to
+     4.4e-15 relative. It is also **strictly positive whatever the sign of q**, i.e. a systematic
+     estimator bias, not noise that averages out. Test tightened from rel=0.05 to abs=1e-12 against
+     the exact form, plus a sign-flip assertion.
+  3. **"EQ-002's operator-agreement question is answered in simulation" was unsupported** — EQ-008
+     varied the *scalar*, not the apply *direction*. The red team ran that itself (6,120 simulated
+     clips): per-clip displacement between the shipped and autopsy operators median 1.0e-4, P99
+     5.5e-4, **discordant pairs b=0, c=0**. Recorded as its run, not ours; EQ-002 still owes the
+     measurement on real records.
+  4. **The deviation was a live footgun, worse than the EQ-001 state**: a commanded-axis fit returned
+     an `AlongPathBias` whose `axis` field *looked* like a guarantee while `apply` silently ignored
+     it and used the predicted chord. **Fixed** — `apply` now raises unless `axis == "predicted"`,
+     with a test.
+  5. **Correlated errors are optimistic by at most ~2x** and in a knowable direction: rho=-1
+     (stroke rotation) doubles delta to 7.3e-5; rho=+1 (translation) gives exactly zero. Not enough
+     to flip the verdict.
+  6. Test docstring cited 78.7-94.4% first-knot recovery from unrelated baselines; the checkpoint
+     EQ-002 will actually run has **100.0% start recovery**, median 0.00635. Corrected.
+  7. **"New tests fail before and pass after" was not met in the intended sense** — at HEAD they
+     raise `TypeError` on an unknown kwarg rather than failing on behaviour, and no new test
+     exercised `apply`. The footgun test in (4) now does.
+- **Supersedes** the EQ-001 entry's line that "perpendicular displacement contributes nothing to the
+  fit": true on the commanded axis, false by default now — it contributes +perp²/|chord|.
+- **Next:** EQ-008 closed. EQ-002 unblocked once EQ-009 lands, with its expectation restated around
+  perpendicular sd rather than first-knot error. New EQ-010: verify perpendicular sd on the EQ-002
+  split before trusting the transfer, since delta scales with its square.
+
+## EQ-009 — Bias-correction evaluator built; red team found a split-leak path that would have inflated EQ-002 (2026-08-19)
+
+Loop tick 3 (`experiment-queue`, self-paced). EQ-002 was not runnable: nothing in the codebase
+called the correction.
+
+- **Hypothesis:** n/a, implementation. **Expected:** runnable, CPU smoke passes locally.
+- **Ran:** offline, no cloud spend. New `evaluate_bias_correction()` in
+  `scripts/cloud/train_basic_linear_modal.py`; supporting pure helpers in `basic_linear_bias.py`
+  (`discordant_pairs`, `mcnemar_exact_p`, `perpendicular_error`, `along_path_fit_key`, and a
+  `fit_on` provenance field). Suite **207 passed**.
+- **Deviation, stated rather than buried: "CPU smoke passes locally" was NOT met.** A Modal function
+  body cannot run without volumes, corpus and checkpoint. Verified `py_compile` plus unit tests of
+  the extracted helpers only. The red team was asked to enumerate what that gap leaves exposed and
+  did (below).
+- **Verdict: CONFIRMED after correction** — EQ-002 is runnable, but only because the red team's
+  findings were fixed first. As originally written the evaluator would have produced inflated,
+  uninterpretable numbers.
+- **Red team: CONFOUNDED.** Static soundness verified independently (pyflakes clean; every kwarg and
+  dict key checked against source; McNemar matched `scipy.stats.binomtest` to 1e-9 across ten cases).
+  Findings and fixes:
+  1. **THE IMPORTANT ONE — the split-disjointness assertion was vacuous and the real leak path was
+     unguarded.** `set(val_indices) & set(test_indices)` is empty *by construction* (`_split_by_key`
+     carves both from disjoint slices of one permutation) so it could never fire. Meanwhile the
+     evaluator re-derived the split from its own `seed` argument and ignored the six split fields the
+     checkpoint records. Since the corpus is still being collected, a corpus that has gained samples
+     since training changes `sorted(set(keys))`, changes the permutation, and silently fills "test"
+     with commands the checkpoint trained on — **inflating baseline and corrected numbers together,
+     correlated, in a way the paired test cannot reveal.** Fixed: `seed`, `fresh_holdout_source`,
+     `fresh_stratify_by_device` and `knots` now default from the payload; the corpus is
+     fingerprint-matched against the one the checkpoint was split on; re-derived split sizes are
+     checked against the recorded ones. All three fail loudly. Guard test added.
+  2. **`knots` was left at the dataset default of 2** while the model was rebuilt from
+     `payload["knots"]` — a k=3 checkpoint (which HEAD~ just added) would have thrown a shape error
+     after loading the whole corpus. Pre-existing pattern at six other call sites; EQ-009 inherited
+     it. Fixed here; the other six remain and are worth a sweep.
+  3. **The evaluator cannot resolve EQ-002 and must not be recorded as if it could.** Exact
+     two-sided McNemar needs b>=6 with c=0 to clear p<0.05; the journal's own estimate is ~2.6
+     gained / ~0.9 lost, so the run is pre-determined to land near p=0.375. Significance needs
+     EQ-007's >=3,000-command holdout. This is now stated in the docstring and emitted in the JSON
+     as `mcnemar_note`.
+  4. **`fit_on` was decorative** — a caller-written f-string that could claim a provenance the
+     artefact did not have while the suite stayed green. Now derived from a hash of the actual index
+     set (`along_path_fit_key`), so it can be re-derived and checked.
+  5. **Pairing is genuinely safe** (dataset deterministic, `shuffle=False`, `Subset` preserves order,
+     model in `.eval()`), so the discordant counts are real — but the test loader was walked three
+     times where two suffice. Fixed.
+  6. Reproducibility gaps: the JSON recorded neither seed, `data_subdir`, fingerprint nor the
+     tolerances, and the output path had no seed or statistic in it, so a `median` rerun would have
+     silently overwritten the `mean` run. All now recorded; path is
+     `basic_linear_bias_correction_{stem}_{statistic}_seed{seed}.json`.
+  7. `signed_perpendicular_error` returned a nonnegative magnitude — renamed `perpendicular_error`,
+     with the folded-quantity caveat in the docstring and the JSON key.
+  8. The `7 -> 8` `_payload_resolution` call-site bump was judged correct and concealing nothing.
+- **Next:** EQ-009 closed. EQ-002 is now unblocked and is the top todo — tier PAID, so it stops for
+  owner approval. New EQ-011: sweep the six other Modal evaluators that build datasets without
+  passing `knots` from the payload.
+
+## EQ-011 — Knots sweep; the fix first converted two loud failures into silent misreports (2026-08-19)
+
+Loop tick 4 (`experiment-queue`, self-paced). EQ-002 remained top of the queue but is PAID and awaits
+owner approval, so this tick took the FREE defect sweep EQ-009 raised.
+
+- **Hypothesis:** six evaluators build `BasicLinearClipDataset` without passing `knots` from the
+  payload, so a k>2 checkpoint is scored against a 2-knot target and throws a shape error after the
+  whole corpus has loaded — **or silently compares the wrong components if a future change makes the
+  shapes compatible.** **Expected:** no behaviour change at k=2; k=3 checkpoints become evaluable.
+- **Ran:** offline, no cloud spend. `_payload_resolution` -> `_payload_dataset_kwargs` (it now
+  resolves knot count as well as resolution, so the old name was a misnomer); all seven
+  checkpoint-backed call sites take both from the payload; ensemble members that disagree on either
+  now raise. Suite **207 passed**.
+- **Verdict: CONFIRMED for the k=2 half, FALSIFIED for the k=3 half** — and the sweep as first
+  written was a net regression.
+- **Red team: CONFOUNDED.** Confirmed clean: `knots` defaults to 2 in `BasicLinearClipDataset` with
+  no "was it supplied" sentinel, so passing it explicitly is byte-identical at k=2;
+  `audit_orange_endpoint_cue` is correctly left alone (no checkpoint, self-consistent at any corpus);
+  `payloads = list(payloads)` fixed a latent generator bug. What it broke:
+  1. **THE IMPORTANT ONE — the sweep triggered the second branch of its own hypothesis.** Making k=3
+     datasets *constructible* is not making evaluators k=3-*correct*. Three of seven decode a
+     hardcoded 5-wide layout. `evaluate_refinement` still rejects loudly (`refine_linear_endpoints`
+     requires `[batch,5]`). But `audit_endpoint_residuals` and `autopsy_failures` slice `[:, :2]`,
+     `[:, 2:4]`, `[:, 4]` as start/end/duration — under k=3 those are knot 0, the **interior** knot,
+     and knot 2's **x** relabelled "duration". Before the sweep a 7-vs-5 broadcast error crashed
+     them; after it they emit a complete, plausible, **mislabelled** JSON artefact, and
+     `autopsy_failures` computes `recovered` and measures trail evidence at the wrong point. **The
+     diff was itself the "future change that makes the shapes compatible".** Fixed: added
+     `_require_two_knots()`, which those three now call so they refuse a k>2 checkpoint with a clear
+     message instead of misreporting. Genuinely knot-general: `evaluate_start_timing`, its
+     validation-selected variant, `evaluate_checkpoint_ensemble`, `evaluate_bias_correction`,
+     `basic_linear_metrics`/`knot_errors`.
+  2. **The call-site guard was inverted** — it asserted a literal count of 8, so an evaluator that
+     *skips* the helper leaves the count at 8 and passes; it only tripped when a new evaluator *used*
+     it. The comment claimed the opposite. Replaced with a structural property check: every
+     `BasicLinearClipDataset(` construction inside an `@app.function` must take its shape from the
+     helper, with `audit_orange_endpoint_cue` named as the one deliberate exception. **Verified by
+     mutation** (in memory, repo untouched): appending a new evaluator that skips the helper leaves
+     the old count guard at 8 and **passing**, while the new guard reports
+     `CAUGHT (evaluate_something_new)`.
+  3. Nothing in the suite asserted any evaluator *body* is knot-general — which is why three broken
+     evaluators passed 207 tests. The `_require_two_knots` assertions now cover the three.
+  4. Stale `_payload_resolution` references in `experiments/queue.md` (live spec — updated) and in
+     the EQ-009 journal entry (historical record — left as written).
+  5. No unstated EQ-009 behaviour change: the helper computes the identical value the inline
+     expression did.
+  6. Minor, queued not fixed: `audit_orange_endpoint_cue` silently pins 128x288, so its "cue
+     observability ceiling" is not measured at the resolution a 256x576 checkpoint sees. Do not quote
+     it against such a checkpoint.
+- **Process note:** a command in this tick paired the mutation test with `git checkout` on a file
+  holding uncommitted work; the sandbox classifier blocked it. It would have discarded the tick. The
+  mutation check was redone against an in-memory copy instead — the repo file is never written.
+- **Next:** EQ-011 closed. New EQ-012: make `audit_endpoint_residuals` and `autopsy_failures`
+  knot-general (they currently refuse k>2 rather than handle it). EQ-002 still top of queue, PAID,
+  awaiting owner approval.
+
+## EQ-012 — Endpoint decomposition generalised to k-knot vectors (2026-08-19)
+
+Loop tick 5 (`experiment-queue`; Asher asked for EQ-012 directly). EQ-011 stopped two evaluators
+lying about k=3 checkpoints; it did not make them usable, and MVP-3 is producing k=3 checkpoints now.
+
+- **Hypothesis:** `audit_endpoint_residuals` and `autopsy_failures` can read first/last knot and
+  duration from a 2K+1 vector rather than refusing k>2. **Expected:** identical output at k=2;
+  correct first/last decomposition at k=3. **Kill:** along/perpendicular is not meaningful for an
+  interior knot — then keep the refusal.
+- **Ran:** offline, no cloud spend. New library primitives `knot_columns`, `knot_component_labels`,
+  `decompose_endpoint_error` in `basic_linear_training.py` (the testable core, rather than logic
+  buried in Modal bodies). Both audits read knots by index; `autopsy_failures` now gates **every**
+  knot for `recovered` (matching `basic_linear_metrics`); `_require_two_knots` retained only on
+  `evaluate_refinement`, which hard-requires `[batch,5]` downstream. Suite **213 passed**.
+- **Kill criterion, partially triggered and handled explicitly:** the decomposition covers only the
+  first and last knot. The path bends through interior knots, so there is no single meaningful
+  "along" direction and reporting one would invent a number. Endpoints are decomposed; interior
+  knots are not, and the docstring says so.
+- **Verdict: CONFIRMED (narrow).** Recorded as "endpoint decomposition generalised to k-knot
+  vectors", **not** "audit/autopsy are k=3-correct" — the red team showed those are different claims.
+- **Red team: CONFIRMED (narrow), with three live K>2 problems.** It verified independently that every
+  edit landed, that no 5-wide read survives in either body, and that k=2 is bit-identical (500 random
+  batches for the audit; `knot_errors` reproducing the old norms to 1e-12; `errors.max() <= .03`
+  matching the old two-endpoint gate; `start_only_fail`/`end_only_fail` predicates textually
+  unchanged under the rename). Degenerate chords behave exactly as before. What it found:
+  1. **`start_score_peak_frame`/`end_score_peak_frame` were mislabelled for every k>2 checkpoint.**
+     `knots != 2` *requires* `line_fit` (`basic_linear_regressor.py:32`), and in the line-fit branch
+     the prediction is built entirely from `trajectory_scores`; the endpoint maps only feed
+     duration/onset. So those keys described heads that produce no coordinate — the same
+     "plausible, mislabelled artefact" class EQ-011 existed to block, reached by a different route
+     that the substring guard could not see. **Fixed:** the autopsy now detects `line_fit` and emits
+     `trajectory_score_peak_frame` from the map that actually decodes the knots.
+  2. **`recovered` got stricter while the diagnostics did not follow**, and the summary had no way to
+     say so. `recovery` is now computed under a strictly harder gate at k=3 than at k=2. **Fixed:**
+     `knots` and `line_fit` added to the summary, with a comment that recovery is not comparable
+     across K. Interior-knot failures still have no `trail_gap_*` evidence column — queued, not
+     silently accepted.
+  3. **`scripts/inspect/render_linear_failures.py` unpacked five names** from `record["commanded"]`
+     and broke on k=3 reports. **Fixed:** it now draws the whole polyline and labels first/last knot.
+  4. **The guard test was a spelling blacklist** — `target[item][2:4]` and friends would pass it.
+     **Fixed:** added the positive invariant (the layout must come from the shared helpers) plus
+     assertions covering the line-fit peak keys. The per-item `knot_errors` call was also hoisted out
+     of the loop as the red team noted.
+- **Process note, because it bears on trust in the diff:** I applied these edits with `str.replace`
+  and **one silently no-op'd** (an old string typed from memory that did not match). For a period
+  `audit_endpoint_residuals` had its `_require_two_knots` guard removed while its body was still
+  hardcoded — exactly the dangerous state EQ-011 created the guard to prevent. Caught by re-reading
+  the file, then every intended edit was grep-audited, and the red team was explicitly told to verify
+  the tree rather than my description. Subsequent edits assert each old string matches before writing.
+- **Next:** EQ-012 closed. New EQ-013: give interior-knot failures their own `trail_gap` evidence so a
+  k=3 autopsy can say *why* an interior knot missed. EQ-002 still top of queue, PAID, awaiting owner
+  approval — now stale by three ticks.
+
+## EQ-013 — Per-knot trail evidence, in the records AND the summary (2026-08-19)
+
+Loop tick 6. EQ-012 made `recovered` gate every knot, so a clip could fail on a knot the report said
+nothing about — the diagnostic was weaker than the gate it explained.
+
+- **Hypothesis:** `autopsy_failures` can report a `trail_gap` per knot, not just first and last.
+  **Expected:** identical keys/values at k=2 plus the new per-knot ones. **Kill:** `nearest()` cost per
+  knot dominates the autopsy — then sample frames.
+- **Ran:** offline, no cloud spend. Per-knot `trail_gap_knot{i}` / `trail_frame_knot{i}`; the trail
+  arithmetic extracted to `nearest_trail_gaps()` in `basic_linear_training.py`; summary gained
+  `failed_knot_trail_gaps` and `median_trail_gap_by_knot`. Suite **217 passed**.
+- **Verdict: CONFIRMED.** Kill criterion did not fire.
+- **Red team: CONFIRMED (narrowly)**, having verified k=2 equivalence exactly — `knot_columns(5,-1)`
+  is `(2,3)`, so `per_knot_trail[0]/[-1]` are the same two calls on the same slices as the old
+  explicit code, and `nearest` is deterministic with ties resolved to the earliest frame. Its
+  objections, all acted on:
+  1. **The hypothesis was only half delivered and I was about to overclaim it.** Every knot got a
+     column in `all_records`, but the quoted summary statistics were still endpoint-only:
+     `failed_end_trail_gaps` filters on `end_error`, `median_trail_gap_all` reads `trail_gap_end`. At
+     k=3 a clip failing *only* on its interior knot contributed nothing to the evidence-vs-misread
+     split. **Fixed** — per-knot summary keys added, `failed_end_trail_gaps` retained unchanged for
+     comparability with the k=2 reports already quoted. Records now carry `knot_errors` so the
+     per-knot filter is possible at all.
+  2. **My benchmark did not measure this code.** Real strong-mask stats over 25 local clips: mean
+     strong fraction 0.0108 (so ~2% was fine as a fraction) but the benchmark used a 64x144 grid
+     (9,216 points) against the real 36,864 — the `grid[mask]` gather is O(pixels) per frame per knot
+     regardless of candidates, ~4x the benchmarked constant. Every frame has trail (`any_strong`
+     fraction 1.000), so the skip never fires. And the real run is on **cuda**, where each
+     `float(...min())` is a host sync: 32xK syncs per clip, latency-bound and invisible to a local CPU
+     benchmark. **The quoted 2.16/3.00/5.05/9.36 ms figures are withdrawn** — they measured a
+     synthetic stand-in, not this evaluator.
+  3. **The K-linearity was self-inflicted.** `nearest_trail_gaps` now gathers once per frame and
+     measures all K points against it with `cdist`, so gathers and host syncs are flat in K rather
+     than K independent passes. Verified equal to K independent reference passes, tie-break included.
+  4. **`len(errors)` was the wrong loop bound** (latent): `knot_errors` derives K from the
+     *prediction* and truncates silently, so a prediction/target width disagreement would have made
+     `per_knot_trail[-1]` an interior knot and silently changed what `trail_gap_end` means. Now bound
+     by `target_knots(target.shape[1])`, making the guarantee local.
+  5. **"213 passed" proved nothing about values** — the guard asserts *source substrings* of a Modal
+     body that never executes in tests. This is why the arithmetic was extracted: `nearest_trail_gaps`
+     now has four real unit tests, including equivalence against a per-point reference loop.
+- **Downstream checked clean:** only `render_linear_failures.py` consumes the JSON, by name, and it
+  already handles 2K+1 vectors after EQ-012. Nothing indexes records positionally.
+- **Next:** EQ-013 closed. **The FREE queue is now empty.** Every remaining item is PAID (EQ-002,
+  EQ-003, EQ-004, EQ-005, EQ-010) or blocked on owner action (EQ-006, EQ-007).
+
+## EQ-006 — Owner decisions taken; both halves of the offload strand identified (2026-08-19)
+
+Asher supplied the three EQ-006 decisions and a $10 Modal budget.
+
+**(a) Apple signing — SETTLED, staying free-tier. Closed, do not re-propose.**
+The MVP-2 plan called a paid Apple Developer account "the single biggest risk to this entire plan"
+and "the highest-leverage non-model action". That assessment was written on a premise that no longer
+holds: it assumed long stretches away from the rig. Asher is now within reach of the rig for at least
+an hour daily and re-signs on the 7-day cycle without difficulty, so an expiry costs hours, not days.
+`experiments/model1_mvp2_999_plan.md` §6 item 1 amended; memory
+`wda-signing-free-team-7day-expiry` updated to record the decision as settled. What survives
+unchanged: never restart a healthy `com.trueskate.services` to test something — a running WDA
+survives expiry, and a needless restart converts a working rig into one needing hands-on 2FA.
+
+**(b) Spin fraction — the gate was mis-set, and the expert prior is ~5%.**
+New information from Asher: across the ~3 hours of Model-2 expert demonstration video, spin is active
+roughly **5% of the time**, in bursts of no more than a few seconds. Two distinct consequences, which
+had been conflated:
+- **The offload gate can never pass.** `MIN_SPIN_FRAC=0.8` is checked against segment manifests
+  written by collectors running `--spin-frac 0.5`. Confirmed live in `logs/autooffload.log`, hourly:
+  `SKIP iPhone_XR_20260814_042825 (spin provenance: segment_00000.json: spin_frac=0.5 < 0.8; kept
+  local)`. **Decision: set `MIN_SPIN_FRAC=0.3`** — below the collector's actual 0.5 so real sessions
+  pass, above 0 so genuinely pre-spin sessions still fail the provenance check, which is what the gate
+  was for.
+- **Collection at `--spin-frac 0.5` over-represents spin ~10x versus deployment.** Some
+  over-representation is justified for Model 1: `spin_flick` is the main source of *simultaneous
+  multi-touch* supervision, which was measurably starved (63 multi-touch sequences / 146 frames).
+  Fifty percent is far more than that needs, and it consumes the disk that is already the binding
+  constraint. **Decision: `--spin-frac 0.2` on the next collection restart** — still 4x the deployment
+  prior, preserving scarce multi-touch coverage, without spending half of all future collection on 5%
+  of reality. Per memory `spin-frac-raises-corpus-wide-fraction` this steers the corpus-wide
+  aggregate, so it will settle the aggregate near ~20% rather than driving it toward 50%.
+- **Scoping note, since these were being conflated:** the 5% figure describes the Model-2 *expert*
+  corpus. SLS is Model-1 training data — a different corpus. So 5% sets the deployment prior Model 1
+  must be *good at*; it is not a target SLS collection must *match*.
+
+**(c) Target volume — this was my question to answer, not Asher's.**
+The plist sends offload to `MODAL_VOLUME=trueskate-corpus`, which the July handover recorded as
+effectively full on both axes (997.9/1024 GB, 2.37M files against a 500k inode limit).
+`trueskate-corpus-v2` was created 2026-08-06 and already holds at least eight sessions dating from
+June/July, so a migration was already underway and simply never reached this plist. **Decision: point
+the offload at `trueskate-corpus-v2`.** This is the second half of the strand — fixing
+`MIN_SPIN_FRAC` alone would have aimed 295 GiB at a full volume, exactly the "may just move the wall"
+risk flagged on 2026-08-19.
+
+**Rig state verified read-only before deciding:** collectors are stopped (0 loaded, 0 running), disk
+free 81 GiB, rig clock 2026-08-19T05:58 (skewed behind local — judged by the rig's own `date` per
+memory `rig-clock-skew-vs-local`). With collectors down there is no frozen-supervisor-loop risk in
+editing config now.
+
+**NOT APPLIED — needs Asher at the rig.** The sandbox classifier blocked the remote plist edit, and I
+did not work around it. Two further reasons to keep it manual: (1) arming this pipeline **uploads
+then deletes 295 GiB locally**, and that session is post-anchor-fix corpus with recoverable timing
+(memory `corpus-pre-post-anchor-fix-split`) — it is the valuable half; (2) **`trueskate-corpus-v2`
+capacity is unverified** — `modal_volume_space.py` hardcodes the v1 volume and walks every file, which
+was not a defensible use of a $10 budget while a real experiment was queued. Verify v2 has room
+before the first offload deletes anything locally.
+
+## EQ-002 / EQ-010 — End-bias correction measured on real records; operator validated, effect NOT significant (2026-08-19)
+
+First PAID item of the queue ($10 budget). One Modal **CPU** evaluation, no training, on the exact
+existing fresh split of `basic_linear_linear_mixed_fresh_holdout_20260813`. Cost was minutes of
+8-core CPU, a small fraction of the budget.
+
+```
+MODAL_CORPUS_VOLUME=trueskate-mvp-linear-mixed-fresh-v1 modal run \
+  scripts/cloud/train_basic_linear_modal.py::evaluate_bias_correction \
+  --data-subdir basic_linear_mixed_fresh_holdout \
+  --checkpoint-name basic_linear_linear_mixed_fresh_holdout_20260813.pth
+```
+
+- **Provenance guards all fired:** dataset fingerprint matched the checkpoint's recorded
+  `sha256:3040:eaefaf49…`, seed/holdout-source came from the payload, `fit_on` =
+  `validation[153]:725e80c9cf9bec1b` (a hash of the actual index set, not a caller's label).
+- **Predictions vs measurements** — every prior number landed:
+
+  | quantity | predicted | measured |
+  |---|---|---|
+  | validation-fit shift | −0.0071 (2026-08-18 autopsy) | **−0.0070735** |
+  | commanded-axis shift | −0.0071 | **−0.0071229** |
+  | axis disagreement | 3.7e−5 (EQ-008, simulated) | **4.9e−5** |
+  | recovery | 94.12 → 96.08 (autopsy counterfactual) | **94.12 → 96.08** |
+  | perpendicular sd | 0.0032 | **0.003165** (p99 0.0148, kill was 0.016) |
+  | McNemar | ~0.25–0.375, cannot resolve | **p = 0.25** (gained 3, lost 0) |
+
+- **Verdict: CONFIRMED for the operator; the effect is NOT demonstrated.** EQ-010 discharged.
+- **Red team: CONFIRMED**, having established the artefact is from this run (volume timestamp after
+  today's commit; contains fields only in today's code; `duration_mae` and `start_coordinate_median`
+  bit-identical between baseline and corrected, which only happens if both passes ran on the same
+  clips in order and the correction touched only the last knot). Its scope corrections, recorded
+  because the claim will otherwise grow:
+  1. **The commanded operator was never APPLIED** — it is fit, its shift reported, then discarded
+     (`apply()` refuses a commanded-axis fit by design). So "the operators agree" was inferred from a
+     scalar. Worse, `axis_disagreement` compares **magnitudes only** and omits the direction term,
+     which is larger: ≈√(Δshift² + shift²·θ²) with θ≈perp/|chord| ≈ 8.5e−5 at a 0.3 chord, about **2×
+     the reported number**. Still ~300× under the gate, but the headline understated the gap.
+     **RESOLVED by direct measurement, zero compute:** replaying both operators over the autopsy's
+     per-clip records (`basic_linear_autopsy_fresh_94_v2.json`) reproduces 144/153 → **147/153 for
+     both**, and the gained sets are **identical** (symmetric difference empty):
+     `iPhone_XR2_20260813_052855/…/sample_000003`, `…/sample_000007`,
+     `iPhone_XR_20260813_052531/…/sample_000011`. The two operators agree on the *mechanism*, not
+     merely the score — the one outcome that would have broken the claim while leaving every
+     aggregate intact.
+  2. **The agreement was ~97% likely a priori** and "four significant figures" is not precision: 153
+     clips quantise accuracy to 0.654%, so 94.12/96.08 is just "144" and "147". Report *bounded
+     disagreement*, not a striking replication. The genuinely strong corroboration is elsewhere:
+     `test_along_uncorrected` sd **0.017633** / median **−0.006249** on the *predicted* axis
+     reproduces the autopsy's commanded-axis 0.0176 / −0.0062 — two operators agreeing to four digits
+     on a whole distribution rather than one scalar.
+- **THE HEADLINE SHOULD BE THE CONTINUOUS EVIDENCE, NOT THE COUNT.** The threshold statistic is
+  exhausted at 3 clips; the distributional improvement is real and low-variance, all of it
+  out-of-sample from a validation-fit scalar:
+  - `end_coordinate_median` 0.00921 → **0.00728 (−20.9%)**
+  - `endpoint_coordinate_p90` 0.01721 → **0.01304 (−24.2%)**
+  - `end_recovery_accuracy` 95.43% → 97.39%
+  - `start_coordinate_median` and `duration_mae` **exactly unchanged** — the correction touched only
+    what it was designed to touch.
+- **THIS DOES NOT PASS MVP-2, and that sentence must survive quotation.** The gate is 0.95
+  (`passes_basic_linear_acceptance`). Clopper-Pearson on 147/153 is **[91.66%, 98.55%]** — the lower
+  bound is below the gate, and it overlaps 144/153's [89.13%, 97.28%] heavily. p = 0.25 (b=6 with c=0
+  would be needed for p<0.05). **3 clips at n=153 is indistinguishable from zero.**
+- **mean vs median, bounded without a rerun:** the median shift would be ≈ −0.00566 (80% of the mean).
+  A clip is gained iff its uncorrected end error lies in (0.03, 0.03+shift], so a smaller shift is a
+  strictly narrower window and cannot create an overshoot loss where 0.00707 created none ⇒ median
+  gives gained ∈ {0..3}, lost = 0 — weakly dominated. No selection effect: `mean` was predeclared and
+  is the only artefact on the volume. The fitted shift is itself imprecise: **−0.0071 ± 0.0016 (95%)**.
+- **The central bias transfers; the tail does not.** Validation along sd 0.0097 vs test 0.0176 — but
+  medians (−0.00566 vs −0.00625) and upper tails (p90 0.0023 vs 0.0020) nearly match, so the entire 2×
+  lives in the **left/undershoot tail, i.e. the failing clips**. The correction is fit to a mean on a
+  split whose failure tail is ~1.8× lighter than the split it is scored on, which is exactly why
+  −0.0071 undershoots the autopsy's test mean of −0.0095 (~1.5σ, not distinguishable, but
+  directionally systematic and mean-specific).
+- **Gaps to close next time (cheap):** emit the *validation* perpendicular distribution beside the
+  test one, and record which clips flipped, so the identity check above needs no external artefact.
+- **Next:** EQ-002 and EQ-010 closed. The correction is validated as an operator and is worth keeping
+  for its distributional effect, but it cannot be *shown* to lift recovery until EQ-007's ≥3,000-clip
+  holdout exists.
+
+## EQ-003 — Duration: kill criterion RETRACTED; failures are an onset/headroom effect, not scatter (2026-08-19)
+
+Loop tick (30m cron). **Cost: $0** — the per-clip dump EQ-003 asked for already existed in two
+autopsy artefacts on the volume (`basic_linear_autopsy_fresh_94_v2.json` test +
+`basic_linear_autopsy_fresh_94_val.json` validation, verified disjoint, 306 unique clips). Deviation
+from the declared method: analysed those offline rather than paying for a new run.
+
+- **Hypothesis:** duration failures are a distinct, characterisable population, as the endpoint
+  failures were. **Kill:** unstructured across every covariate ⇒ a precision limit needing capacity.
+- **What I found first (and got wrong):** no structure in commanded duration (corr +0.004 signed),
+  chord (−0.063), slope (+0.028), or device; compression falsified (predicted-on-commanded slope
+  **1.0004 ± 0.0119**, predicted sd 0.2524 vs commanded 0.2510, and inverting the trend fixes
+  nothing); 3/306 = 0.98% failures, all long-duration undershoots of 12–19% with fine endpoints. I
+  concluded the kill criterion had fired.
+- **Verdict: the kill criterion did NOT fire. Duration error IS structured** — on a covariate that was
+  in the artefact and I never tested.
+- **Red team: CONFOUNDED, and correct.** Independently reproduced here:
+  - `corr(trail_frame_start, |err|) = +0.328` — **2.7× the largest correlation I reported**, on an axis
+    near-orthogonal to duration (`corr(trail_frame_start, commanded) = +0.045`).
+  - Define **headroom = 31 − (trail_frame_start + commanded·32/2.27)**, the frames of clip remaining
+    after commanded liftoff. **headroom < 2: 2/6 fail (mean signed −0.0812). headroom ≥ 2: 1/300 fail
+    (mean −0.0043). Fisher exact two-sided p = 9.56e−04.** Two clips have **negative** headroom — the
+    commanded liftoff falls past the end of the clip.
+  - **My "not a window-truncation artefact" reasoning was wrong.** I argued 0.30–1.20s fits inside
+    `CLIP_WINDOW_S = 2.27`. True, but *the gesture does not start at t=0*: `trail_frame_start` ranges
+    0→23, so a late onset puts liftoff at or beyond frame 31 and the evidence is simply not in the
+    clip. Undershoot is exactly what a model does when the liftoff frame is off the end. **2 of the 3
+    failures are explained by this**; the third (headroom 7.6) is not, and may be genuine scatter.
+  - **"Scatter not bias" was wrong as worded.** The global mean IS significantly non-zero (t = −3.93
+    iid, −3.18 session-clustered). It is −0.00578s = **−0.081 frames** — a real but negligible bias.
+    `|mean|/sd = 0.225` measures effect size, not existence; it cannot support "no bias".
+  - **`trail_frames_present` is misnamed, and its saturation is itself a finding.** It is
+    `int(any_strong.sum())` = frames containing *any* strong trail pixel, and it is **32/32 in all 306
+    clips**. The rendered trail does not vanish at liftoff — it persists before touchdown and after —
+    so duration cannot be read off trail presence at all. That is precisely *why* duration is the
+    residual constraint.
+  - **Independence caveat:** the split is command-disjoint by protocol, not session-disjoint — 111
+    recording sessions appear in both halves. Session-clustered SE is 0.00182 vs 0.00147 iid. No sign
+    changes here, but "306 clips" overstates the effective units.
+- **The failures, with headroom:** cmd 0.918s err −0.175 (start frame 17, headroom **+1.1**); cmd
+  1.086s err −0.132 (start frame 15, headroom **+0.7**); cmd 1.091s err −0.148 (start frame 8,
+  headroom +7.6 — unexplained).
+- **What survives from the first pass:** median duration error is **0.19 frames**, p90 **0.50 frames**
+  — genuinely sub-frame on the 98% of clips with adequate headroom. Compression and sigmoid
+  saturation of the duration head are both ruled out. The endpoint bias playbook still does not
+  transfer. And 3/306 cannot distinguish 99% from 97%.
+- **Consequence — the implied next step changes completely.** "Capacity or more frames" is wrong:
+  clips whose commanded liftoff falls outside the 32-frame window cannot be fixed by a bigger model.
+  This is an **aligner/window** problem, and it is the expected residue of the known Δ ≈ +1.11s
+  command→pixel offset that the aligner currently applies as 0 (memory `xctest-command-to-pixel-delta`).
+  Cheapest fix is a window/offset change.
+- **Next:** EQ-003 closed. New EQ-015 (headroom fix — extend the window or apply the Δ so late-onset
+  clips contain their own liftoff), EQ-016 (the saturated `strong` trail mask), EQ-017 (confirm
+  whether train shares sessions with val/test in a way that leaks).
+
+## EQ-015 — My headroom audit was CIRCULAR; the EQ-003 truncation mechanism SURVIVES, corrected (2026-08-20)
+
+- **Verdict: INVALID.** `audit_clip_headroom` cannot test the hypothesis it was built for.
+- **Why:** `align_xctest_traces.py:387` **synthesises** `frame_times` from constants —
+  `[round(i / output_fps - pre_s, 4) for i in range(max_frames)]`. It asserts a schedule; it never
+  measures one. So my "constant 0.5 s lead-in" and "constant 0.0731 s spacing" across 3,040 clips were
+  the aligner's own config divided by itself. Worse, the headline collapses algebraically:
+  `tail = (1.7667 − duration)/0.0731194`, an **exact affine function of commanded duration**. "0 clips
+  below 2 frames" merely restates `BASIC_LINEAR_MAX_S`. The audit was blind by construction to every
+  way rendered pixels can be misplaced — tap-calibration residual, the `start = max(0, gv − pre_s)`
+  clamp, and short mp4s (`_extract_sample_video` never verifies frame count, and `_decode_even_frames`
+  stretches whatever exists across 32).
+- **So the truncation mechanism was never falsified — I falsified a tautology.** Retracting the EQ-015
+  claim in full.
+- **`trail_frame_start` IS a real rendered-onset measurement.** Regressing
+  `trail_frame_end − trail_frame_start` on `duration/0.0731194`: **slope 1.008, intercept 0.09,
+  r = 0.915** (3/306 incoherent). The argmin pair spans the commanded duration in frames; no confound
+  does that.
+- **Corrected numbers, on RENDERED headroom** `31 − (trail_frame_start + duration/0.0731194)`:
+  min **−0.24**, **1 clip negative** (not 2 — the EQ-003 entry used 32/2.27 = 14.10 fr/s instead of the
+  actual 1/0.0731194 = 13.68), **6 clips below 2 frames (2.0%)**, with a monotone dose-response in mean
+  |duration error|: **0.094** (hr<2) / 0.070 (hr<4) / 0.053 (hr<6) / **0.016** (rest), all
+  underestimation. Decisively: among the **291 clips with headroom ≥ 6, corr(trail_frame_start,
+  |err|) = +0.039** — the +0.328 is carried entirely by the low-headroom tail, and is not a general
+  late-onset effect, not `end_error` (r = −0.048), not chord, not gesture index.
+- **There is NO unapplied 15-frame Δ in this corpus.** Median rendered onset is frame 8 vs nominal
+  6.84 → ~0.085 s residual; `basic_linear_dataset.py:33-35` rejects any sample lacking
+  `tap_calibration.accepted`, so every clip here was per-segment calibrated. 94% endpoint recovery is
+  consistent with a sub-frame residual.
+
+### Corrections to the 2026-08-19 EQ-003 entry — these sentences are FALSE
+1. "it is the expected residue of the known Δ ≈ +1.11s command→pixel offset that the aligner currently
+   applies as 0" — **false for this corpus**; it is per-segment calibrated, residual ~1 frame.
+2. "Two clips have **negative** headroom" — **arithmetic error**; recomputed at the true sampled rate it
+   is **one** clip, with six below 2 frames.
+3. "the **commanded** liftoff falls past the end of the clip" — **wrong word, and the word that misled
+   EQ-015**. Commanded liftoff is always inside the window; **rendered** liftoff is what leaves.
+4. "Cheapest fix is a window/offset change" — **false as a prescription**. The defect is per-clip
+   variance about a correct constant, so a constant shift fixes nothing. The fix is per-clip:
+   validate mp4 frame count against `frame_times`, or flag clips whose detected onset deviates from
+   nominal by more than N frames.
+- **Scope discipline:** the mechanism rests on **6 clips at headroom<2 and 3 failures**. With n=6 one
+  cannot distinguish "truncation causes all the excess" from "half of it". Do not let this become a
+  quantitative claim about what a fix buys.
+- **Next:** EQ-018 — corpus-wide mp4 frame-count vs `frame_times` audit (running). If videos are short,
+  this is a harness bug affecting label timing corpus-wide; if they are 32, the cause is
+  tap-calibration residual and the fix is an onset-deviation filter.
+
+## EQ-017 — The holdout is command-disjoint and 100% session-SHARED (2026-08-20)
+
+- **Verdict: CONFIRMED as a measurement**, with two of my four conclusion sentences withdrawn.
+- **Measured** (`audit_split_session_overlap`, metadata only, split re-derived from the payload):
+  train 2,734 / validation 153 / test 153 clips; **every** validation and test clip sits in a session
+  that also appears in training; **zero** sessions unique to test. Corroborated independently: the
+  audit's 90 test / 91 validation sessions exactly equal the distinct session directories in the
+  autopsy artefacts, produced by a different function.
+- **Red team CONFOUNDED two claims:**
+  1. **"Stronger than the hypothesis predicted" — withdrawn.** 100% is the design's *expected* value,
+     not a surprise: test commands are a ~5% random draw over fresh sessions holding tens of clips
+     each, so P(a session contributes both a train and a test clip) → 1. `sessions_unique_to_test = []`
+     is what a correct random command split *must* produce.
+  2. **"Every MVP-2 number inherits this caveat" — unmeasured, and partly unmeasurable.** 90.10% and
+     93.07% come from the 2,022-command corpus under `split_by_command`, which I did not audit; legacy
+     metas carry no `session` field, so this audit would collapse them all into one bucket and prove
+     nothing. Only 94.12% and EQ-002's 96.08% — the split I actually measured — provably inherit it.
+- **A defect in my own key:** `_segment_key` falls back to `legacy:<dir>`, so `rsplit(":", 1)[0]`
+  returns the literal `"legacy"` for every such sample. `distinct_sessions.train = 348` is therefore
+  ~347 fresh sessions plus one collapsed bucket. It deflates the train count and **cannot** inflate the
+  headline (test/val keys are true session ids), but the count should not be quoted until fixed.
+- **The more useful finding, from the artefacts:** session identity looks like a *weak* nuisance here.
+  The 9 test failures fall in 8 distinct sessions and the 9 validation failures in 9 — no bunching.
+  And every evaluated clip is `the_workshop`, all sessions dated 2026-08-13 within a four-hour window,
+  146 XR / 7 XR2. **The binding coverage gap is park / day / device, not session id** — XR2 has 7 test
+  clips and already scores 71.4%. Session-disjointness inside a four-hour single-park window would buy
+  almost nothing.
+- **Next:** EQ-019 (fix the legacy session key and extend the audit to the 2,022-command split before
+  any cross-corpus claim); EQ-020 (device/park/day coverage is the real generalisation gap — quantify
+  it for EQ-007's protocol).
+
+## EQ-018 — Every clip is one frame short of the window its labels assert (2026-08-20)
+
+The check the EQ-015 red team asked for. **Verdict: CONFIRMED — a real, uniform, decode-verified
+corpus-wide off-by-one.**
+
+- **Measured** over all 3,040 clips of `basic_linear_mixed_fresh_holdout`: `len(frame_times)` = **32**,
+  decoded video frames = **31**, for **every clip, no exceptions**. Verified by *decoding and counting*,
+  not by header metadata — `header_disagrees_with_decode = 0`, so this is not a
+  `CAP_PROP_FRAME_COUNT` estimation artefact. Timing (40-clip pass): fps exactly **13.6765**, video
+  span **2.1935 s**, label span **2.2667 s**, difference **+0.0732 s = 1.00 label-frame**.
+- **Root cause, one line** (`scripts/data/align_xctest_traces.py:375`):
+  `output_fps = (max_frames - 1) / max(dur - 1 / fps, 1 / fps)`. With `pre_s=0.5`, `window_s=1.8` →
+  `dur=2.3`, source `fps=30` → `output_fps=13.67647`, putting slot 31 at `dur − 1/30 = 2.2667 s`. The
+  ffmpeg call (lines 274-277) uses `-ss` input seek + `-t dur` + an `fps=` filter, leaving only
+  **1/30 s (0.4 output slots)** of tail margin; input-seek quantisation to the source's 1/30 grid eats
+  it and the filter flushes one slot short. `_extract_sample_video` checks only rc/size, and
+  `frame_times` is synthesised unconditionally from `range(max_frames)` at line 387.
+  **The frame count is a fragile function of `-t` versus slot positions and is never verified.**
+- **`_decode_even_frames` stretches, it does not pad** (`basic_hold_dataset.py:67,73,86`):
+  `linspace(0, total-1, count).round()` with total=31, count=32. So model index `i` shows source frame
+  `round(30i/31)` — content from an *earlier* real time than the label claims — while
+  `basic_linear_dataset.py:163` leaves the label grid undistorted. Pixels are on a 31/30-stretched
+  timebase, labels are not: a genuine timebase error, not a shuffle.
+- **My "sign mismatch" worry was a category error.** I flagged that the mapping predicts a +3.3%
+  duration overestimate while the measured global bias is −0.8%. No trained model reads duration off
+  index positions with a fixed `1/f` — it learns pixels→duration, and every training clip carries the
+  identical distortion, so the 31/30 factor is absorbed into the learned scale. There is no predicted
+  bias to compare against, and the residual is **not** evidence for or against the mapping.
+- **Fixing this invalidates every existing checkpoint.** On corrected 32-frame clips a given real
+  duration spans 30/31 as many index steps, so current models would underestimate duration by ~3.2%
+  (≈24 ms at the 0.75 s median). **Any fix must be paired with a retrain, not a re-eval.**
+- **Do NOT "fix" it by shortening `frame_times` to 31** — that keeps the truncated content. Correct fix:
+  extract with real margin (`-t dur + 2/fps`, keeping `-frames:v 32`) **and assert the produced frame
+  count equals `max_frames`**, failing the sample otherwise.
+- **A second, per-clip consequence of the same line — and it challenges EQ-003's attribution.** `-ss
+  start` lands on the source frame at or after `start`, so frame 0 carries a per-clip
+  ε ∈ [0, 1/30 s) that the `fps` filter then re-stamps away — **up to ±0.45 label-frames of genuine
+  per-clip phase jitter**. EQ-003 attributed the low-headroom tail wholly to tap-calibration residual;
+  this is a live alternative for part of it.
+- **Provenance correction (two artefacts were being conflated, both correct):**
+  - **Rendered** headroom, from `trail_frame_start` in the autopsy artefacts: min **−0.24**,
+    **6 clips < 2 frames**, **1 negative**; failures 2/6 below versus 1/300 above.
+  - **Commanded** headroom, from `headroom.json` (nominal constant onset): min **+7.81**, **0 clips**
+    below 2, 0 negative.
+  These are different quantities and do not contradict; the EQ-003/EQ-015 entries should say which is
+  which. Re-measured here rather than re-quoted.
+- **Accounting for the shortfall** (the true window is 30 intervals, not 31), rendered headroom becomes
+  min **−1.24**, **8 clips < 2**, **3 negative** — so the truncation population grows from 6 to 8 clips.
+  Still small: do not turn this into a quantitative claim about what a fix buys.
+- **Next:** EQ-021 (fix the extractor + assert frame count; requires a retrain to benefit), EQ-022
+  (measure the `-ss` phase jitter on segments whose `.mov` survives — decides whether EQ-003's tail is
+  calibration residual or aligner phase).
+
+## EQ-021 — Frame-count assertion shipped; the tail-margin fix is UNVALIDATED (2026-08-20)
+
+- **Verdict: PARTIAL.** The guard is in and tested. The margin is not demonstrated and must not be
+  reported as a fix.
+- **Shipped:** `_extract_sample_video` now requests `-t duration + 2/source_fps` of tail and, more
+  importantly, calls a new `_video_frame_count()` and **fails the sample** unless the produced clip
+  holds exactly `max_frames` decodable frames — deleting the file rather than letting the loader
+  stretch it. `_video_frame_count` decodes and counts rather than trusting `CAP_PROP_FRAME_COUNT`.
+  Four ffmpeg-driven tests; suite **221 passed**.
+- **Why the margin is unproven — a measurement discrepancy worth recording.** On this machine's ffmpeg,
+  the un-margined call produces **29-30** frames, not the corpus's uniform 31, and adding margin
+  (1, 2, 3, 4, 6 source frames), dropping `-t` entirely, setting `fps=...:start_time=0`, or switching
+  to output seek all plateau at **30**. Probing why: these files' containers advertise **32** frames
+  while only **30 decode** (`nb_frames=32` vs `nb_read_frames=30`; cv2's header agrees with the
+  container at 32, its decode with ffprobe at 30). So this build writes an index for frames that are
+  not decodable — a pathology the rig does not exhibit, since the corpus audit found header and decode
+  **agreeing at 31** on all 3,040 clips. **My local environment is not a faithful reproduction of the
+  rig's aligner, so the margin cannot be validated here.**
+- **What that does and does not mean:**
+  - EQ-018's corpus finding is **unaffected** — there header and decode agreed, so those containers
+    genuinely hold 31 frames.
+  - The margin may or may not be sufficient on the rig. **Validate there before believing it.**
+  - The assertion is the part that actually matters: it converts a silent, corpus-wide label/pixel
+    mismatch into a loud per-sample failure, whatever the underlying cause.
+- **Test design consequence:** the regression witness now asserts only that the un-margined call comes
+  up **short**, not by how much. The shortfall magnitude is source- and build-dependent (1 frame on the
+  rig's real captures, 2-3 here), and pinning a specific number would have made the test a
+  build-detector rather than a defect-detector.
+- **Next:** EQ-023 — validate on the rig that the margin actually yields 32 frames, using a surviving
+  `.mov`. Until then the corpus keeps its documented 31/30 skew and any re-extract remains blocked.
+
+## EQ-020 — What the held-out numbers actually cover: one park, one day, 95% one device (2026-08-20)
+
+EQ-017's review said the binding gap is park/day/device, not session identity. This measures it.
+**Verdict: CONFIRMED**, with two corrections to earlier entries.
+
+- **Evaluated split** (306 clips, parsed from autopsy `sample` paths; device cross-checked against the
+  explicit `meta.json` field with **0/306 mismatches**):
+  - TEST 153: 100% `fresh`, 100% `the_workshop`, 100% `20260813`, session span 04:22-08:38,
+    **XR 146 / XR2 7**. XR recovery 139/146 = 0.952 [0.904, 0.981]; XR2 5/7 = 0.714 **[0.290, 0.963]**.
+  - VALIDATION 153: same park/date/window, XR 150 / XR2 3.
+- **Corpus-wide** (3,040 clips, metadata only): **one park** (`the_workshop`); two dates — legacy 2,022
+  on 08-12, fresh 1,018 on 08-13; devices near-balanced overall (XR 2,023 / XR2 1,017) but the **fresh
+  source is 969 XR / 49 XR2**. Test's 7/153 is proportional to that, not a selection effect
+  (binomial p = 1.00 against 49/1018; test+val 10/306 vs 14.7 expected, hypergeometric P = 0.085).
+- **Capture time is real, not a staging artefact** (the review's decisive check): from
+  `gesture_start_monotonic`, legacy runs 2026-08-12 14:42→19:47 (5.08 h) and fresh 2026-08-13
+  11:22→15:39 (4.28 h) — a **15.6-hour overnight gap**, with **0** disagreements against the session
+  directory names. So "next day" is a genuine separate capture block, which is a stronger notion of
+  held-out than "a few hours later". Same rig and same park throughout.
+
+### Corrections to earlier entries
+1. **RETRACT "XR2 already scores 71.4%"** (used in the EQ-017 entry as evidence of a device weakness).
+   Fisher exact 5/7 vs 139/146 gives **p = 0.056** two-sided (test+val 8/10 vs 280/296, **p = 0.111**),
+   and it is one of five post-hoc slices in `test_recovery_audit` (device ×2, geometry ×3), so an
+   unadjusted 0.056 is not evidence. **5/7 is indistinguishable from the XR rate.** The correct
+   statement is that the XR2 cell carries no information, not that XR2 performs worse.
+2. **`fresh_stratify_by_device: null` is a red herring** — I framed it as "the device-balanced option
+   that wasn't used". Enabling it allocates `round(len(keys) * 0.15)` per device, and with only 49
+   fresh XR2 clips it yields ~7 XR2 test clips either way. The real fix is more fresh XR2 collection,
+   or a device-stratified holdout over the whole corpus — which would forfeit the overnight property.
+
+### Scope limits worth keeping
+- **Park is self-reported, not observed.** The path segment is `_park_tag(ev["park"])`, from the same
+  collector field as the meta park, so "one park" is a claim by the collector rather than a
+  measurement. Date is likewise from the session dir name — though `gesture_start_monotonic` now
+  corroborates it independently.
+- **Park matters for the distractor distribution, not the trail.** The trail is a game-rendered overlay
+  whose colour and width are park-invariant, so the *target* signal does not change. But the model
+  works on a pre-touch difference image dominated by background motion as the camera follows the
+  board, on plain RGB with no hand-coded colour prior. The workshop is indoor, low-texture,
+  low-contrast; an outdoor or high-texture park raises the residual floor. "Orange-ish blob on grey
+  concrete" is a hypothesis this corpus **cannot falsify**.
+- **Legacy is 1,054 XR / 968 XR2 while fresh is 969 XR / 49 XR2** — day and device mix moved together,
+  so the two axes are confounded. What is demonstrated is "held-out commands, same rig, same park,
+  XR-dominant, one day later", which is two knobs under one label.
+- **Session-disjointness is still absent** (EQ-017: 153/153 test clips share a session with training).
+  The fresh-holdout language should not imply otherwise.
+- **Fixed while measuring:** `session_device` was keyed on session name without the source prefix, so a
+  session dir recurring under both sources would have collapsed. Harmless here (legacy 08-12, fresh
+  08-13 cannot collide) but wrong; now keyed `source/session`.
+
+### Consequence for EQ-007
+A ≥3,000-command certification holdout built this way inherits all three limits and would certify
+generalisation to unseen **commands** under one park, one device-dominant mix, one time of day. Those
+axes are cheap to widen at collection time and impossible to fix afterwards. EQ-007 should predeclare
+which of park / device / day it intends to certify — see EQ-024.
+
+## EQ-016 — Trail presence loses to a constant window; BOTH prior claims retracted (2026-08-20)
+
+**Verdict: kill criterion FIRES — for a different reason than hypothesised.** Two successive claims
+about trail presence were wrong, mine included.
+
+- **Retraction 1 (EQ-015's claim).** "The rendered trail does not vanish at liftoff — it persists
+  before touchdown and after — so duration cannot be read off trail presence at all." **Never
+  measured.** The autopsy's mask is
+  `evidence.flatten(2) > evidence.flatten(2).amax(dim=2, keepdim=True) * .25`; on a `[B,T,H,W]` tensor
+  `amax(dim=2)` is the **per-frame** max, so `strong` always contains that frame's argmax pixel and
+  `trail_frames_present` counts frames. **32/32 on 306/306 clips is a tautology, not an observation.**
+- **Retraction 2 (my replacement claim).** Re-normalising against the **per-clip** max gave balanced
+  accuracy **0.846** at threshold 0.35 (precision 0.789, recall 0.799) against the manifest contact
+  interval, and I was about to report that presence does carry timing information. It does not:
+  **a constant window using no pixels at all beats it.**
+
+| detector | balanced acc | precision | recall |
+|---|---|---|---|
+| pixel evidence, best threshold (0.35 × clip max) | 0.8458 | 0.789 | 0.799 |
+| **constant `[7, 19]` window — zero image input** | **0.8997** | 0.772 | 0.938 |
+
+  Measured on the same 200 clips / 6,400 frames, not simulated. `evidence_beats_constant_window: False`.
+- **Why a constant wins, and it is structural.** `frame_times` on the direct-video path is a *uniform
+  synthesised grid* (`align_xctest_traces.py`: `i/output_fps - pre_s`, `pre_s=0.5`), so **the contact
+  interval starts at frame 7 for every clip** and only its trailing edge varies with duration.
+  Meanwhile `trail_evidence` builds its reference from `frames[:, :round(32*0.22)]` = frames 0-6 — the
+  same 0.5 s lead-in — so its `motion` term is ≈0 on exactly the frames the mask labels non-contact.
+  **Roughly a third of all negatives are scored correct by construction**, for both detectors, and the
+  leading edge is free information that neither had to earn.
+- **So the entire error budget sits at the trailing edge**, which is precisely where duration is
+  decided: ~2.15 FN + ~2.3 FP per clip ⇒ the liftoff boundary is off by **~2 frames ≈ 0.15 s**, against
+  a duration gate of **0.10 s** and a frame quantum of 0.073 s. A perfect edge read would satisfy the
+  gate on quantisation alone; a 2-frame read does not.
+- **Timebase caveat, and why it does not rescue the result.** The ground truth rides the labels'
+  timebase, which EQ-018 showed is 31/30-stretched relative to pixels, deflating the achievable score.
+  But the constant-window baseline is measured against the *same* mis-timed mask and is largely
+  invariant to a clip-constant offset, whereas the evidence detector is not — so correcting the
+  timebase likely **narrows** the gap rather than reversing it. It would have to move evidence by
+  >0.06 balanced accuracy to matter.
+- **Net effect on the duration question: unchanged in either direction.** Presence-based reading is
+  ruled out as a lever (it loses to a constant), and the earlier "trail persists" explanation for why
+  duration is hard was never evidence. Duration remains open, and the only part of the signal that
+  could carry it is the trailing edge.
+- **Method note:** `trail_frames_present` should be renamed or removed — it is a constant by
+  construction and has now caused two false conclusions.
+- **Next:** EQ-025 — measure the trailing edge directly (leading edge is constant by construction, so
+  it is the only part that can carry duration), and compare against the constant-window baseline
+  restricted to frames ≥ 7 so neither side gets free credit for the suppressed lead-in.
+
+## EQ-025 — Liftoff edge: the population objection resolved, in the opposite direction (2026-08-20)
+
+Measures the trailing edge directly, since EQ-016 showed the leading edge is constant by construction
+and carries no information either detector had to earn.
+
+- **Setup:** `audit_liftoff_edge`, 300 stride-sampled clips. Estimated liftoff = last frame whose
+  per-clip-normalised trail evidence exceeds a swept threshold (frames 0-6 excluded); commanded
+  liftoff = last index the manifest calls contact; baseline = predict the corpus-mean edge for every
+  clip (no pixels). Frame quantum 0.0731 s.
+- **Aggregate (300 clips):** evidence at 0.60 gives MAE **2.592** frames, median **1.0**, p90 7.0,
+  within-gate **51.2%**; the constant baseline gives MAE 2.984, median 3.3, within-gate 25.3%.
+  Commanded edge mean 16.7, sd 3.46 — an invertible function of `meta["duration"]`, so the target is
+  the same quantity the model predicts.
+- **Red team CONFOUNDED the headline** ("the model is 5.5x past a presence-edge decoder"), on four
+  grounds: population mismatch (my sample spans legacy+fresh, the model's test split is fresh-only),
+  integer-vs-continuous output, the EQ-018 timebase defect biasing an *absolute*-index estimator that a
+  *difference*-based model never pays, and my using a fade-threshold rather than a growth-based edge
+  estimator. Its decisive check was to split by source.
+- **SPLIT BY SOURCE — and it falsifies the red team's own attribution:**
+
+  | source | n | evidence MAE | median | p90 | gate | constant MAE | constant gate |
+  |---|---|---|---|---|---|---|---|
+  | **fresh** | 102 | **3.176** | 2.0 | 9.0 | 48.0% | **2.816** | 27.5% |
+  | legacy | 198 | 2.289 | 1.0 | 6.0 | 52.8% | 3.071 | 24.2% |
+
+  The catastrophic mode is in **fresh**, not legacy — so it is *not* legacy lead-in contamination
+  (the hypothesis was that pre-anchor-fix clips have the trail already drawn during the lead-in,
+  poisoning the pre-touch reference). Measured, that population is the *better* one for edge reading.
+- **Consequences, both directions:**
+  - **The population objection is resolved and reverses the sign.** On fresh — the comparable
+    population — the edge read is MAE **3.176 frames** against the model's duration MAE of 0.0189 s =
+    **0.26 frames**. That is ~12x, not 5.5x, and it strengthens rather than kills the original reading.
+    Integer output cannot explain a 3.18-frame MAE (an integer estimator that is simply right achieves
+    ~0.25).
+  - **On fresh, evidence LOSES to the pixel-free constant on MAE** (3.176 vs 2.816) while winning on
+    gate fraction (48.0% vs 27.5%) — i.e. more clips near-perfect *and* a heavier tail. The estimator
+    is bimodal on exactly the population that matters.
+  - **Still untested, and still live:** the timebase bias (order 0.5-0.7 frames of the error is
+    label/pixel misalignment the model never pays, because a duration is a *difference* of two edges
+    while this estimator reads an *absolute* index), and the fade-vs-growth estimator choice. `peak` is
+    a spatial **max**, so it tracks the newest bright trail segment and decays — "last frame above
+    threshold" is a fade timer, the weakest member of the edge-estimator family.
+- **Threshold selection:** best-of-18 by MAE. Pre-committing to 0.5 gives 2.663 vs the baseline's
+  2.984 — the MAE margin is thin (~1.5-2 SE unpaired, and no paired test was run) and should not be
+  leaned on. The **gate** effect (25% → 48-56%) is large and reproduced by every threshold in
+  0.35-0.70; that is the claim worth keeping.
+- **Unit correction:** errors were converted to seconds with the *label* quantum (2.2667/31) when the
+  stretched pixel quantum is 2.1935/31 — a 3.3% overstatement (0.1895 → 0.183 s). Same EQ-018 root
+  cause.
+- **Where this leaves duration:** a *fade*-based presence-edge decoder is not a route — on fresh it
+  does not even beat a constant on MAE. Whether a *growth*-based one is remains genuinely open, and is
+  the only untested member of the family.
+- **Next:** EQ-026 — growth-based edge estimator (last frame at which NEW trail pixels appear, i.e. the
+  knee of spatial extent) on fresh only, with the threshold pre-committed and a paired test against the
+  constant baseline.
+
+## EQ-026 — Kill criterion does NOT fire: two edge estimators beat the constant (2026-08-20)
+
+Pre-committed design (threshold 0.35, knee 0.95, fresh-only, paired sign test) — the discipline EQ-025
+lacked. **Verdict: my first conclusion was wrong and is retracted; the family is not exhausted.**
+
+- **First pass, and the red team's correction.** I reported growth (MAE 4.184) losing to a pixel-free
+  constant (3.061, paired sign p=0.0042) and concluded "presence/geometry edge decoding is exhausted".
+  Three defects, all real:
+  1. **I did not implement what I pre-committed to.** The spec was "last frame at which NEW trail
+     pixels appear"; I built "FIRST frame reaching 95% of max extent". A first-crossing statistic is
+     `<= argmax(extent)` **by construction**, so it can only ever read early — the −3.38 bias is what
+     the estimator was built to produce, not a fact about trails.
+  2. **Raw MAE against a mean-centred constant is a calibration test, not an information test.** A
+     biased index reader loses even when it is more informative.
+  3. **Per-arm masks and a non-integer constant** (ties structurally impossible, so the sign test was
+     not like-for-like).
+- **Its INVALID hypothesis was falsified by measurement.** It predicted the growth estimator was pinned
+  at its `grid >= 7` floor (memory `sls-window-anchored-to-call-end`: the trace is fully drawn in
+  frame_000 for ~half of SLS samples), which would have made p90 9.0 an anchoring artefact.
+  **Measured: 1 clip of 293 = 0.34%.** Not a floor effect.
+- **Re-run with the literal spec, the named untested members, a common mask, an integer constant, and
+  de-biased MAE alongside raw:**
+
+  | estimator | MAE | de-biased MAE | bias | median | p90 | gate | vs constant (paired sign) |
+  |---|---|---|---|---|---|---|---|
+  | growth (first-crossing) | 4.184 | 3.036 | −3.381 | 4.0 | 9.0 | 22.8% | **loses** p=0.0006 |
+  | **last_increase** (literal spec) | 3.561 | 3.964 | +1.643 | 1.0 | 10.7 | **51.4%** | **WINS** p=0.0032 |
+  | argmax_extent | 3.990 | 2.971 | −3.146 | 3.0 | 8.0 | 25.2% | — |
+  | fade (EQ-025) | 3.969 | 4.187 | +3.350 | 2.0 | 12.0 | 46.6% | — |
+  | **midpoint (growth+fade)/2** | **2.821** | **2.818** | **−0.015** | 2.0 | 6.5 | 34.7% | **WINS** p=0.035 |
+  | constant (integer) | 3.041 | 3.055 | −0.293 | 3.0 | 5.0 | 22.5% | — |
+
+- **The symmetric bracket was real and usable.** growth −3.38 / fade +3.35 average to a bias of
+  **−0.015**: the midpoint is essentially unbiased and is the best estimator tested (MAE 2.821 vs the
+  constant's 3.041), which is exactly the one-line member the red team said I had closed the line
+  without trying.
+- **`last_increase` beats the constant on the paired test and more than doubles the gate fraction
+  (51.4% vs 22.5%) while being WORSE on MAE** (3.561, p90 10.7). Same bimodal shape seen throughout:
+  excellent typically, catastrophic on a subset.
+- **CONCLUSION, corrected:** "presence/geometry edge decoding is exhausted" is **retracted**. Two
+  members beat a pixel-free constant on a pre-committed paired test. But the useful framing is
+  unchanged: the best of them (midpoint, 2.82 frames ≈ 0.20 s) is still **~11x worse than the trained
+  model's 0.26 frames**. So edge decoding carries genuine information yet is not a route to *improving*
+  duration — the model is already an order of magnitude past it.
+- **Caveats kept live:** all arms read an ABSOLUTE index against the label grid, so they pay the EQ-018
+  timebase skew and `-ss` phase jitter that a difference-based model does not; the clips sampled here
+  span train/val/test while the model's 0.26 frames is held-out only, so the ~11x is across different
+  clip sets; `within_duration_gate` here uses the pixel quantum (0.0708 s) and is not comparable to
+  EQ-025's label-quantum figures.
+- **Next:** EQ-027 — a difference-based reader (`fade - growth` as a duration estimate rather than two
+  absolute edges), which cancels any clip-constant offset and is the one structural advantage the model
+  has that none of these estimators were given.
+
+## EQ-027 — INVALID as a difference test; the plateau claim survives and strengthens (2026-08-20)
+
+- **Verdict: INVALID for the hypothesis it was built to test.** The kill criterion does not fire on
+  anything, because the design cannot exercise the difference/offset-cancellation question.
+- **The structural defect.** EQ-025 established the contact **leading edge is constant by
+  construction** (frame 7 for every clip); both readers gate on `grid >= 7`. So
+  `duration = liftoff − 7·quantum`, i.e. duration and liftoff index are related by a **fixed affine
+  map** — precisely the map the cross-fitted affine calibration then absorbs. `increase_span` is
+  EQ-026's `last_increase` family re-expressed in seconds; nothing was differenced away. Confirmed
+  arithmetically: EQ-026's constant measured 3.041 frames on liftoff *index* and EQ-027's measured
+  3.047 frames on *duration* — **the same baseline twice**.
+- **And the preprocessing erases the edge that would have to cancel.** `reference =
+  frames[:, :7].mean(...)` subtracts a mean of frames 0-6 — the pre-contact and touchdown frames — so
+  `motion` is ~0 exactly there. Only liftoff is observed in pixels, so any per-clip offset is carried
+  in full. The result looks like "no benefit" because **no cancellation was available**, not because
+  offsets are absent.
+- **`fade_minus_growth` should never have been counted.** growth (bias −3.38) and fade (bias +3.35) are
+  both estimators of the **same event** — liftoff — biased in opposite directions. Their difference has
+  expectation ~6.7 frames with no mechanical dependence on duration at all; r = 0.182 is a reader with
+  essentially no signal. The pre-registered method in the queue said "(fade edge − growth edge)", which
+  was already wrong in EQ-026's own terms, and the error propagated unexamined.
+- **The decisive check, run:** `sd(first_rising) = 2.451` (mean 9.05, r = 0.137 with duration) versus
+  `sd(last_rising) = 6.395` (mean 18.45, **r = 0.451**). So `increase_span` is *not* a pure single-edge
+  reader — but the duration information is overwhelmingly in the trailing edge, and **the single edge
+  alone (r = 0.451) is MORE informative than the difference (r = 0.415)**. Differencing removed signal
+  rather than cancelling offset — weak evidence that a shared per-clip offset is not dominant here,
+  though the question remains properly untested.
+- **What IS supported, and it strengthened:** scalar trail-summary readers — thresholded pixel count,
+  spatial max brightness, and every knee/threshold variant across EQ-016/025/026/027 — plateau at
+  **~0.19 s MAE** on fresh clips against the model's **0.0189 s**. The reader is at its linear ceiling:
+  r = 0.415 predicts an optimal-affine MAE of 0.181 s against the observed 0.189, so there is no hidden
+  non-linear structure left to recover by re-thresholding.
+- **The model comparison is now a LOWER bound, not an inflated one.** The checkpoint's
+  `fresh_holdout_source` is `"fresh"`, so its test split is fresh-only too; the population mismatch is
+  train-vs-test, worth ~10% from the val/test gap (0.0171 → 0.0189), and my clips are train-heavy where
+  the model scores at or below 0.0189. The earlier "different clip sets" caveat is withdrawn. The
+  affine calibration also flatters the readers (the model gets no per-corpus calibration at inference),
+  so 10x is conservative on both axes.
+- **Honest headline is the effect size, not the p-value.** 261/381 = 68.5% win rate is a large
+  *directional* effect; the magnitude is small and uniform (median 0.173 vs 0.208, p90 0.347 vs 0.392).
+  **r = 0.415, R² = 0.17** — the reader explains 17% of duration variance. Also: do not compare
+  EQ-027's p-values to EQ-026's — EQ-026 had 16-27 ties while affine-calibrated predictions never tie,
+  so the apparent p=0.035 → p≈0 jump is partly a tie-elimination artefact.
+- **Retracted from my conclusion:** "the per-clip noise is NOT a shared clip-constant offset". The
+  design cannot support it; the EQ-018 timebase caveat stays open.
+- **"Closes trail-geometry decoding" is overreach** — it closes **scalar trail-summary** decoding.
+  Every reader so far collapses each frame to a scalar and uses none of the trail's *position*. The
+  model localises endpoints to 0.006 normalised units, so it plainly reads geometry spatially.
+- **Fixed:** `model_duration_mae_s` was hardcoded at 0.0189; it now reads
+  `payload["test"]["duration_mae"]` (0.0189032…), so a run against another checkpoint cannot silently
+  report the wrong reference.
+- **Sampling caveat:** `fresh[::max(1, len(fresh)//400)]` gives stride 1 when `len(fresh) < 800`, so
+  these are the **first 400 fresh clips in path order** — a contiguous, likely session-clustered block.
+  That bounds the generality of the plateau, not its validity.
+- **Next:** EQ-028 — track the trail HEAD: project above-threshold pixels onto the commanded start→end
+  axis, take the max projection per frame, and read liftoff as the frame where that projection stops
+  advancing. For a constant-velocity linear drag that is a direct kinematic read of contact end, immune
+  to fade. A different family, not another threshold sweep.
+
+## EQ-028 — Head tracking is the best reader yet; but the model's duration head sees NO position (2026-08-20)
+
+The reader the EQ-027 review named: project above-threshold pixels onto the commanded chord, take the
+max projection per frame (the trail head), read liftoff as the last frame where it still advances.
+**Verdict: kill criterion does NOT fire — position helps. But my headline was false.**
+
+- **Results** (389 fresh clips, 11 dropped, pre-committed threshold 0.35 / advance 0.02):
+
+  | reader | MAE (s) | frames | gate | r | R² |
+  |---|---|---|---|---|---|
+  | **head tracking** | **0.163** | 2.30 | 36.8% | **0.582** | **0.339** |
+  | best scalar (increase_span) | 0.189 | 2.67 | 30.2% | 0.451 | 0.204 |
+  | constant duration | 0.2167 | 3.06 | 23.1% | — | — |
+  | trained model | 0.0189 | 0.26 | — | — | ~0.99 |
+
+  Head vs constant: 297 wins / 92 losses. Median head reach 0.953 of the chord — it is genuinely
+  tracking the drag. Constant MAE 0.2167 = 0.866·sd, the uniform-distribution value, so the arithmetic
+  is coherent.
+- **RETRACTED before it was written: "the model is extracting far more trail geometry than any
+  hand-crafted reader."** Verified in `basic_linear_regressor.py:259-261`:
+  `series = torch.stack((evidence.amax((2,3)), evidence.mean((2,3))), dim=1)` and `duration_head` is
+  `Conv1d(2, c, 3) → … → Linear`. **Its entire input is a 2×T scalar series — spatial max and spatial
+  mean per frame.** Position is collapsed before the duration head sees anything. The model's duration
+  path is the **same reader family** as EQ-016/025/026/027. The 8.6× gap cannot be attributed to
+  geometry, and that sentence must not appear anywhere.
+- **Two live explanations for the gap, and EQ-028 separates neither:**
+  1. a **learned evidence map** (`max(start_scores, end_scores)`) beats a hand-crafted colour×motion
+     filter — better front end, same family;
+  2. a **learned temporal decoder** over the whole series beats one hand-picked event — same front end,
+     better back end.
+- **Much of the "8.6×" is output type, not information.** An integer frame index carries irreducible
+  quantisation noise of `quantum/√12 ≈ 0.021 s`; the model's residual sd is **≈0.024 s**. **No
+  integer-event reader can structurally reach it.** The honest comparison is variance explained:
+  **reader R² = 0.34 vs model ≈ 0.99**, not a ratio of MAEs.
+- **The oracle advantage is negligible — I over-credited it.** Endpoint median error is 0.0074 (p90
+  0.0172) against chords of 0.16–0.48, so predicted endpoints give a chord off by ≲3° and ~5% in
+  length; the length scale is absorbed by the affine slope and a 3° rotation moves the max-projection
+  well under the 0.02 advance threshold. "Even with the oracle chord handed to it" is rhetoric and is
+  struck. Silver lining: **this reader is essentially inference-feasible**, not merely an upper bound.
+- **Defects in my own estimator, to fix before it is quoted again:**
+  - **The code contradicts its own comment.** The comment says "furthest point drawn so far" — a
+    *cumulative* max — but it computes a *per-frame* max, which can drop and re-rise; `advancing[-1]`
+    then latches onto that spurious late rise, so one flicker sends the estimate to the clip end.
+    `head.cummax(dim=0)` before diffing is a **bug fix**, not a new arm.
+  - **p90 reach 1.22 is contamination that biases LATE.** Not the +0.12 colour offsets (a neutral grey
+    pixel scores ~0.0115 vs a trail pixel's ~0.222 and cannot pass 0.35×max) but the `motion` factor:
+    anything orange-ish that moves after onset enters — in True Skate that is the board/skater, which
+    moves *after* liftoff, creating late advances at high projection.
+  - **p10 reach 0.82 is not EQ-018 truncation** (every drag fits the window with ≥0.6 s spare). It is
+    the reference window: the model asserts onset at 0.24 while `trail_evidence` builds its reference
+    from the first 0.22 — under one frame apart, against a Δ that varies ~0.12 s by call path. When Δ
+    jitters early the first trail frames are subtracted into the background.
+  - The 11 drops are all "no frame advanced >0.02", which is *anti*-correlated with short duration
+    (short drags advance more per frame); 2.75%, optimistic in direction, immaterial in size.
+  - `quantum_s = 2.1935/31` is stale against `CLIP_WINDOW_S = 2.27` → `mae_frames` is 2.23 not 2.30.
+    Cosmetic; `mae_s` and `r` are unaffected because the affine fit maps index→seconds directly.
+- **Comparability is sound:** the model's test split is fresh-only (same population), `duration_mae` is
+  raw seconds on the same target, and the window is fixed regardless of gesture duration so there is no
+  clip-length leak. Every residual asymmetry favours the reader.
+- **Next:** EQ-029 — the experiment that actually answers what the gap is: feed the hand-crafted
+  `trail_evidence` scalar series into a freshly-trained copy of `duration_head` on the same split.
+  Beats 0.163 s ⇒ the gap was the decoder; stays ⇒ the gap was the evidence map. EQ-030 — the estimator
+  bug fix (cummax + clip to [0,1]) and a sub-frame liftoff read, the only way any reader goes below the
+  0.021 s quantisation floor.
+
+## EQ-029 — Attribution: the duration gap is decoder AND front end, and the residual IS addressable (2026-08-20)
+
+The experiment EQ-028's review named. Holds the decoder fixed and swaps the front end: the hand-crafted
+`trail_evidence` 2xT series (per-frame spatial max + mean) into a freshly initialised copy of the real
+`duration_head`, same split, epoch chosen on validation, test scored once.
+
+| arm | test MAE (s) | step |
+|---|---|---|
+| hand-crafted evidence + hand-picked event (EQ-028) | 0.163 | — |
+| **hand-crafted evidence + learned decoder** | **0.0629** | decoder ≈ **2.6x**, 95% CI [2.1, 3.2] |
+| learned evidence + learned decoder (the model) | 0.0189 | front end ≈ **3.3x** |
+
+Within-gate rises 36.8% → **82.4%** from the decoder swap alone. Median 0.0376, p90 0.150.
+
+- **THE DECISIVE RESULT — the residual is a real front-end advantage, not a data defect.** Running the
+  checkpoint on the *same* 153 test clips: per-clip |error| correlation **pearson −0.008, spearman
+  −0.024**, and the failure sets are **disjoint** — **0** clips out of gate for both, **27**
+  hand-crafted only, **2** model only, 124 neither. The residual 3.3x is therefore **addressable by
+  front-end work**: the model is not merely winning on easy clips, it succeeds on precisely the clips
+  the fixed colour×motion filter fails. This kills the live worry that part of the gap was EQ-025's
+  low-headroom/late-onset damage.
+- **Independence confirmed:** **153 distinct commands in 153 test clips**, so effective n is the full
+  153 and the intervals above stand. Model MAE recomputed here as 0.01890, matching the checkpoint's
+  recorded figure exactly.
+- **Red team CONFOUNDED the clean two-factor story, and it is right:**
+  1. **Three variables changed, not one.** Decoder architecture, fitting budget (2 affine parameters
+     cross-fit on 389 clips vs ~2.4k parameters on 2,734), and my per-clip normalisation which the
+     0.35-threshold reader never had. The credit is not yet assignable to the *convolution*. Honest
+     phrasing: "a learned temporal read of the same evidence, fit on 2.7k clips, is 2.6x better than
+     one hand-picked event affinely calibrated".
+  2. **"Evidence map worth 3.3x" mis-describes the cut.** `temporal_mixer` is **True** in this
+     checkpoint and runs *before* the score maps (`basic_linear_regressor.py:246-248`), trained
+     end-to-end with the duration loss flowing into the encoder. There is decoder-like machinery on
+     **both** sides of my supposed boundary. Correct description: "learned, duration-supervised front
+     end (including a temporal mixer)" versus "fixed colour×motion filter".
+  3. **Stop quoting validation 0.05659.** It is the argmin of 300 noisy epochs (val SE ≈ 0.006) sitting
+     ~1.3 SE below the honest plateau of ~0.063-0.064 — which is exactly why test came in at 0.06289.
+     The val/test gap is selection noise, not overfitting. Quote test only.
+  4. **The normalisation is a second knob with unknown sign.** `scale = flat.amax(dim=(1,2))` forces the
+     amax channel to touch 1.0 in every clip, destroying cross-clip intensity/headroom information —
+     which plausibly helps by removing a nuisance, but also removes the very signal EQ-025 says marks
+     the bad mode. Either way it is charged to the decoder's ledger.
+- **Protocol verified independently:** the audit's head is byte-for-byte the real `duration_head`
+  (same architecture, c=16, same sigmoid scaling); the split is re-derived from the checkpoint's own
+  `split_seed`/`fresh_holdout_source` and matches its recorded sizes; test is scored once after loading
+  the validation-selected state. Gap: this audit does not *assert* the split-size equality the way
+  `evaluate_bias_correction` does — it happened to match. Worth adding.
+- **What this means for duration work.** Both halves are real and roughly comparable in size, and the
+  residual is reachable. The decoder half is available to any reader essentially for free (swap one
+  hand-picked event for a learned temporal read). The front-end half is an undifferentiated bundle of
+  {learned filter, temporal mixer, duration-supervised training} and needs decomposing before it is a
+  target.
+- **Next:** EQ-031 — separate the three bundled variables: a ridge over ~5 hand-picked scalars of the
+  same series (same 2,734 train / 153 test budget) isolates multivariate reading from shape reading,
+  and re-running `extract()` without normalisation and with a corpus-global scale isolates the
+  normalisation knob.
+
+## EQ-031 — It is CAPACITY, not temporal shape: 6 scalars + an MLP get within 16% of the decoder (2026-08-20)
+
+Control arms the EQ-031 review demanded, all matching the conv decoder's loss (`smooth_l1 beta=0.05`)
+and its sigmoid range constraint, so only functional class and input width vary. Same split, epoch
+chosen on validation, test scored once.
+
+| arm | test MAE (s) | gate | isolates |
+|---|---|---|---|
+| ridge_6 (squared loss, unbounded) | 0.14554 | 0.392 | — |
+| **linear_6** (matched loss + range) | **0.12057** | 0.556 | loss/range: **1.21x** |
+| **mlp_6** (nonlinear, same 6 scalars) | **0.07295** | 0.752 | capacity: **1.65x** |
+| linear_64 (linear, full 2x32 series) | 0.12097 | 0.588 | information at fixed class: **1.00x** |
+| mlp_64 (nonlinear, full series) | 0.06296 | 0.804 | information given capacity: 1.16x |
+| conv_32 (temporal convolution) | 0.06289 | 0.824 | conv structure: **~0** |
+| model (learned front end) | 0.01890 | — | — |
+
+- **RETRACTED: "temporal shape dominates."** It does not. `linear_64` (the whole 32-frame series, linear)
+  scores **0.12097** against `linear_6`'s **0.12057** — full temporal information buys **nothing** at
+  fixed functional class. And `conv_32` (0.06289) is indistinguishable from `mlp_64` (0.06296), so the
+  convolution's temporal structure adds **essentially zero** over a plain MLP on the flattened series.
+- **The dominant term is CAPACITY.** Nonlinearity over the same six hand-picked scalars takes
+  0.12057 → **0.07295** (1.65x), which is **within 16% of the full conv decoder**. Ordering of the
+  three real factors: capacity 1.65x > information-given-capacity 1.16x ≈ loss/range 1.21x >> conv
+  structure ~1.00x.
+- **RETRACTED: "hand-picked feature approaches are a dead end."** Refuted by direct measurement — six
+  scalars plus a small MLP reach 0.0730 s at gate 0.752, versus the decoder's 0.0629 s at 0.824. The
+  review was right that one feature set at one alpha could not support that claim.
+- **Also retracted from the first pass:** the 1.12x "multivariate" step (its 0.163 anchor was
+  oracle-assisted — handed the commanded chord — and scored on 389 clips spanning train/val/test
+  against 153 test clips here, so it is not a comparison), and the 1.11x normalisation claim (n_seeds=1,
+  with an epoch picked as argmin over 300 noisy validation evaluations whose tail already swings 0.0058
+  against a 0.0072 total spread). Both deleted rather than softened. My stated "0.1455 → 0.0701 at
+  matched normalisation" was also mis-stated: that paired a per-clip ridge against a no-normalisation
+  conv; the matched pair is 0.1455 vs 0.0629.
+- **Feature-set caveat:** the six scalars are only valid under per-clip normalisation — `lit_count` and
+  `last_lit` use an absolute 0.35 threshold, and the corpus scale is 0.0933, so under `none` the series
+  never reaches it and both features would be identically zero.
+- **Actionable consequence.** Duration work should target **model capacity over the evidence series**,
+  not temporal-structure design and not richer hand-picked features. A cheap deployable reader already
+  exists: six summary scalars + a small MLP, no convolution, no positional information, 75% within the
+  0.10 s gate.
+
+## EQ-019 — Session key fixed; the 2,022-command corpus is ALSO 100% session-shared (2026-08-20)
+
+- **A layout bug caught before it was journaled.** My first path-derived key took `parts[1]`, which is
+  the session in the mixed corpus (`<source>/<session>/<park>/sample`) but the **park** in the 2k corpus
+  (`<session>/<park>/sample`). It reported "1 distinct session" for the whole 2,022-command corpus —
+  a bug, not a finding. The key now matches the session directory by **pattern**
+  (`iPhone_\w+_\d{8}_\d{6}`) anywhere in the path, and falls back to the full relative parent so a miss
+  can never silently collapse distinct recordings.
+- **Measured on the 2,022-command corpus** (`split_by_command`, checkpoint
+  `basic_linear_linear_2k_verified_temporal_gpuany_20260813`): 1,416 / 303 / 303 clips over **233 train,
+  172 validation and 171 test sessions**; train∩test = 171; **303/303 = 100% of test clips sit in a
+  training session; zero sessions unique to test.**
+- **This restores the claim EQ-017 had to withdraw.** The 90.10% and 93.07% figures come from the 2k
+  corpus, which EQ-017 could not audit because legacy metas carry no `session` field. Now measured
+  directly: **that corpus is 100% session-shared too**, so every MVP-2 number — 90.10%, 93.07%, 94.12%
+  and EQ-002's 96.08% — demonstrates generalisation to unseen **commands**, not to unseen recording
+  conditions. Consistent with EQ-020: the binding axes are park/day/device, and session-disjointness
+  was never tested anywhere.
+
+## CONSOLIDATION — what is actually true after EQ-001..EQ-031 (2026-08-20)
+
+Eighteen queue items ran, with heavy retraction traffic: several entries assert things that later
+entries overturn. Reading them in order is now a poor way to learn the state, so this entry is the
+single source of truth. **Where this contradicts an earlier entry, this wins.**
+
+### Established, and I would defend these
+
+1. **The end-bias correction works as an operator, and is not significant.** Predicted-chord and
+   commanded-chord operators agree to 4.9e-5 and flip the **identical three clips**. 94.12% → 96.08%,
+   end-error median −20.9%, p90 −24.2%. But 3 clips at n=153 gives McNemar **p = 0.25**, and 96.08%
+   **does not pass** the 0.95 gate (Clopper-Pearson lower bound 91.66%). (EQ-002, EQ-008, EQ-010)
+2. **Every clip is one frame short of the window its labels assert.** 3,040/3,040, decode-verified,
+   header agreeing. Root cause `align_xctest_traces.py:375` leaves 1/30 s of tail margin and the frame
+   count was never checked. Pixels sit on a 31/30-stretched timebase; labels do not. **Fixing it
+   requires a retrain, not a re-eval.** A frame-count assertion now rejects short extracts; the tail
+   margin remains unvalidated on the rig. (EQ-018, EQ-021)
+3. **Every held-out number in MVP-2 is command-disjoint but 100% session-shared** — on BOTH corpora
+   (2k: 233 train / 171 test sessions, 0 unique to test; mixed-fresh: same). 90.10%, 93.07%, 94.12%
+   and 96.08% demonstrate generalisation to unseen **commands**, not unseen recording conditions.
+   (EQ-017, EQ-019)
+4. **Coverage is one park, one day per source, 95% one device.** The fresh source is 969 XR / 49 XR2,
+   so a device-balanced holdout is impossible from it; `fresh_stratify_by_device` cannot fix that.
+   Park generalisation is untestable — one park in 3,040 clips. (EQ-020)
+5. **Duration failures are ~1% and concentrate at low rendered headroom** (2/6 below 2 frames vs
+   1/300 above, Fisher p=9.6e-4). Typical duration error is **sub-frame** (0.19 frames median).
+   (EQ-003)
+6. **The duration gap decomposes**: decoder ≈2.6x, front end ≈3.3x, and the two arms' per-clip errors
+   are **uncorrelated with disjoint failure sets** — so the residual is a genuine front-end advantage,
+   **addressable**, not a data defect. (EQ-029)
+7. **The decoder half is CAPACITY, not temporal structure.** Full series ≈ 6 scalars at fixed
+   functional class; conv ≈ MLP on the flattened series. Nonlinearity over six hand-picked scalars
+   reaches 0.0730 s / 75% within gate, **within 16% of the full decoder**. (EQ-031)
+
+### Retracted — do not cite these from earlier entries
+
+- "~2 free points from the end-bias correction" — it is 3 clips, p=0.25. (EQ-001)
+- "Duration is unstructured scatter / a precision limit needing capacity." (EQ-003)
+- "Commanded liftoff falls outside the clip" and "Δ ≈ +1.11 s residue" — this corpus is per-segment
+  calibrated, residual ~1 frame; the **rendered** edge is what leaves. (EQ-015)
+- "The trail persists after liftoff so duration is unreadable from presence" — `trail_frames_present`
+  is a tautology (per-frame max). (EQ-016)
+- "Trail presence carries contact information" — it loses to a pixel-free constant window. (EQ-016)
+- "XR2 already scores 71.4%" — Fisher p=0.056 across five post-hoc slices; the cell carries no
+  information. (EQ-020)
+- "Presence/geometry edge decoding is exhausted." (EQ-026)
+- "The per-clip noise is not a shared clip-constant offset" — the design could not test it. (EQ-027)
+- "The model extracts far more trail geometry" — its `duration_head` sees a 2xT scalar series and
+  **no position at all**. (EQ-028)
+- "Temporal shape dominates" and "hand-picked features are a dead end." (EQ-031)
+
+### Method notes worth keeping
+
+- **Three fields did not measure what their names implied**: `trail_frames_present` (constant by
+  construction), `trail_frame_start` (an argmin, not an onset), and the synthesised `frame_times`
+  (asserts a schedule rather than measuring one). Two of those produced published-then-retracted
+  conclusions. Treat any timing field in this pipeline as guilty until measured.
+- **Baselines decided almost every question.** A pixel-free constant window beat three successive
+  detectors; matched-loss/range controls overturned "shape". Where a reader was compared to a fitted
+  constant, the comparison was calibration, not information.
+- **Two audits I wrote were circular or layout-dependent** (`audit_clip_headroom` divided aligner
+  constants by themselves; the session key read the park on one of two corpus layouts). Both were
+  caught, one by review and one by me, before their numbers were acted on.
+
+### The honest state of the goal
+
+Model 1's MVP-2 accuracy is **94.12% joint** on a command-disjoint, session-shared, single-park,
+single-day, XR-dominant holdout of 153 clips. The 99%/99.9% target remains **unmeasurable** at this
+n (rule of three: 0 failures in 153 certifies only 98.0%), and EQ-007's ≥3,000-command protocol is
+still blocked on collection. **Nothing in EQ-001..EQ-031 moved the headline accuracy** — the value
+delivered was diagnostic: one real corpus-wide data defect (EQ-018), the coverage limits of every
+number quoted so far (EQ-017/019/020), and an attribution of the duration gap that says where to
+spend next (EQ-029/031).
+
+## EQ-032 — The duration signal lives in the map's temporal envelope; two claims retracted (2026-08-20)
+
+Frozen the model's own evidence map (`torch.no_grad`, so no duration gradient reaches the encoder),
+reduced it exactly as `duration_head` does, and trained a fresh head on it.
+
+| arm | MAE (s) | gate | median |
+|---|---|---|---|
+| hand-crafted series + conv head (EQ-029) | 0.06289 | 0.824 | — |
+| hand-crafted series + mlp_6 (EQ-031) | 0.07295 | 0.752 | — |
+| **learned series (frozen) + fresh conv head** | **0.01703** | 0.9935 | 0.0137 |
+| learned series (frozen) + fresh MLP head | 0.02032 | 0.9935 | 0.0151 |
+| model, end-to-end | 0.01890 | 0.9869 | — |
+
+- **Verified clean:** `forward_with_scores` returns exactly the tensors lines 259-261 consume
+  (post-temporal-mixer) — no wrong-tensor bug. And no test leakage:
+  `split_with_fresh_command_holdout` reserves test/val commands exclusively from the fresh source and
+  fails closed on collision, so the map never saw a test command.
+- **RETRACTED: "a fresh head slightly EXCEEDS the model."** It is a selection artefact. Checkpoint
+  selection is lexicographic — `(-gesture_recovery_accuracy, start_med + end_med + duration_mae)`
+  (`train_basic_linear_regressor.py:281-285`) — so duration is only a **tie-breaker under an endpoint
+  gate**, and epoch 38 is not the model's duration optimum. My fresh head selected its epoch on
+  validation duration MAE alone. The 10% difference is exactly that asymmetry.
+- **RETRACTED: "end-to-end duration supervision contributes nothing."** The checkpoint has
+  `endpoint_map_weight = 0.0` and `trajectory_map_weight = 0.0` — there is **no direct map
+  supervision at all**. The only gradients shaping `start_score`/`end_score` are the endpoint
+  soft-argmax readout and **the duration loss itself**, which reaches the maps through `series`.
+  **The map I froze was built by duration supervision.** What was actually shown is far narrower:
+  the duration gradient is not needed *at head-fit time, given an already duration-shaped map*.
+- **The 3.7x vs EQ-029's 3.3x carries no information** — these are ratios along one chain
+  (0.163 → 0.0629 → 0.0189/0.0170) and compose by construction; the 0.4x delta is the same selection
+  asymmetry, not a factor interaction.
+- **The gate difference is one clip** (152/153 here vs the model's 151/153, `duration_recovery_accuracy`
+  0.9869). With 1 failure in 153 the upper bound on the true failure rate is ~3-4%; this sample cannot
+  distinguish 99.3% from 96%. Not a differentiator.
+- **What IS supported, stated narrowly:** *the per-frame spatial max and mean of
+  `max(start_scores, end_scores)` already contain the contact on/off temporal envelope, and reading
+  duration off it is easy* — a fresh head recovers 0.017-0.020 s from frozen features, versus 0.063 s
+  from the hand-crafted colour×motion series. **Not** supported: "duration accuracy is a function of
+  evidence-map quality" in general — there is exactly one map here, produced under duration
+  supervision, and no evidence that map quality measured any other way (e.g. endpoint recovery)
+  tracks duration.
+- **The attribution line is NOT closed.** The decisive experiment is a retrain with the duration path
+  **detached** from the maps (`evidence.detach()` at `basic_linear_regressor.py:260`), then freeze and
+  fit the same fresh head: ~0.017 ⇒ the map is duration-legible independently of duration supervision;
+  degrading toward 0.06 ⇒ duration supervision is precisely what makes it legible. That is a full
+  retrain and is queued, not run.
+- **Process note:** EQ-032's code was swept into the previous `docs:` consolidation commit by
+  `git add -u`, so a reviewer reading that commit sees a docs message over a code change. Stage by
+  path when a tick produces both.
+
+## EQ-005 — Model 2 is blocked on a TOOLING GAP, not on Model 1's accuracy (2026-08-20)
+
+EQ-005 asked: derive Model 1's fidelity target from Model 2's tolerance, instead of asserting 99%.
+Method was to inject noise ε into ground-truth gesture parameters, train Model 2, and find the ε at
+which it degrades. **Verdict: blocked as written — but the blocker is not what the project assumed,
+and the unblock is concrete and cheap.**
+
+- **Model 2 infrastructure is complete**: `src/trueskate_ai/bc/model2.py`, `sequence_dataset.py`,
+  `assemble.py`, `gesture_tokens.py`, `frame_prep.py`, `infer.py`, plus
+  `scripts/train/train_sequence_model.py` (full CLI: epochs, n-frames, m-past, m-out, d-model,
+  208×96 frames) and `scripts/inspect/run_sequence_policy.py`.
+- **But there is no trained Model 2 baseline on real data.** The only checkpoints are a synthetic
+  smoke (`tmp/model2_v2_smoke.pth`) and `notebooks/models/sequence_model.pth`. The 2026-07-19 entry
+  records why: Model-1-assembled clips were **~5% real strokes / ~95% spurious**, "useless to train
+  Model 2 on". So EQ-005's ε-sweep has no ε=0 arm to degrade *from*, and its kill criterion fires as
+  written.
+- **THE STRUCTURAL FINDING.** `build_bc_clips.py` requires `--model` (a Model 1 checkpoint) for real
+  mode — **there is no ground-truth path**. Every route to a Model 2 training corpus currently runs
+  through Model 1, which is why the whole milestone has been gated behind "Model 1 must reach 99%".
+  That gate is an artefact of the tooling, not a requirement: the SLS corpus carries **command
+  manifests**, and the machinery to turn them into ground-truth strokes already exists and is already
+  used — `_schedule_from_meta` (`temporal_trace_dataset.py:562`) yields the drag `_TouchInterval`
+  waypoints that the 2026-07-19 stroke-recovery study used as GT, and `assemble_strokes`
+  (`bc/assemble.py:88`) is the same assembler the Model-1 path feeds.
+- **So a Model 2 corpus with PERFECT gesture labels is buildable today, independent of Model 1.**
+  That single missing writer would deliver three things the project has been waiting on Model 1 for:
+  1. **proof Model 2 trains at all** on real frames — never yet demonstrated;
+  2. the **ε=0 arm**, i.e. the ceiling Model 2 can reach with flawless gestures;
+  3. the **tolerance curve** by injecting ε, which is exactly what turns "99%" from an assertion into
+     a derived requirement.
+- **Consequence for the milestone.** "~99% on Model 1 before Model 2" was set on 2026-07-19 as an
+  instinct, and the stroke-recovery negative was read as validating it. That reading conflated two
+  things: Model-1-*derived* clips are indeed unusable at 35% per-frame, but that says nothing about
+  whether Model 2 works, or about how much gesture error it tolerates. **Both questions are
+  answerable now, in the wrong order to what the roadmap assumes.**
+- **No spend this tick** — the finding is from reading the code and the existing artefacts.
+- **Next:** EQ-034 — add a ground-truth mode to `build_bc_clips.py` (manifest → `clip.json`, no Model 1),
+  then train Model 2 on it for the ε=0 baseline; EQ-035 — the ε-sweep that finally derives Model 1's
+  target. EQ-005 stays open, blocked on EQ-034, rather than closed.
+
+## EQ-034 — RETRACTION of the EQ-005 finding: the Model-1 gate is REAL (2026-08-20)
+
+**The previous entry's headline — "Model 2 is blocked on a tooling gap, not on Model 1's accuracy" —
+is WRONG. Retracted in full.** It was written after one tick of code reading and did not check the
+one fact that decides it.
+
+- **Model 2 trains on EXPERT PLAY — Asher's own recorded gameplay — which has NO command manifests.**
+  Verified: `data/extracted_frames/` (the expert corpus) contains frame directories and no `meta.json`
+  anywhere. He plays by hand; no agent issues the touches, so nothing records them. **Model 1 exists
+  precisely to label expert play** — that is its stated purpose in the two-model spine
+  (`CLAUDE.md`, and the journal's opening line).
+- **Why the proposed substitute fails.** A ground-truth `clip.json` *is* buildable from SLS manifests,
+  as I said — but SLS gestures are **randomly sampled by construction**. A sequence model trained on
+  them has nothing predictable to learn: the next gesture is independent of the last. Model 2 would sit
+  at chance for every ε, so EQ-035's sweep would fire its kill criterion for a **degenerate** reason
+  and measure nothing about tolerance. Structure and labels are on opposite sides: expert play has
+  structure but no labels; SLS has labels but no structure.
+- **So the "~99% Model 1 before Model 2" gate is real**, not an artefact of `build_bc_clips.py`
+  requiring `--model`. Asher's 2026-07-19 instinct stands, and the stroke-recovery negative supports it
+  for the reason originally given.
+- **What survives, narrowed:** an SLS-based GT corpus would still be worth building as a **plumbing and
+  capacity check** — it would prove Model 2's architecture can fit gesture sequences and that the
+  training path runs end to end on real frames, which has never been demonstrated. That is a smoke
+  test, not a tolerance study, and it must not be sold as the latter.
+
+### The real blocker this tick did surface, and it sharpens EQ-020
+
+Even a 99% Model 1 may not label expert play usably, because **it would be 99% in the wrong park**.
+
+- EQ-020 measured the MVP corpus as **one park (`the_workshop`) across all 3,040 clips**.
+- The journal (2026-06) records that the expert clips are in **SLS-arena parks**, that
+  **expert transfer is a DOMAIN-GAP problem, not a data-quantity problem**, and that the SLS-arena
+  parks are **not installed** — store/download only. Multi-park collection (Glass House, Underpass)
+  was started then; the current MVP-2/MVP-3 corpora are single-park.
+- So the chain to Model 2 has **two** gates, and the project has been tracking only one: Model 1 must
+  be accurate enough **and** must transfer to the parks the expert corpus uses. EQ-020's "one park"
+  finding is not academic — it is exactly the axis on which expert transfer was already observed to
+  fail.
+- This also explains why EQ-020's park caveat matters more than its device caveat: park is the axis
+  that stands between Model 1 and the only corpus Model 2 can train on.
+- **Process note:** the retracted claim was reported to Asher as "the most consequential finding of the
+  whole loop" before this check was run. The check that killed it — does the expert corpus carry
+  manifests? — was one `find` command. Cheap disconfirming checks belong **before** the write-up, not
+  after.
+
+## EQ-037 — Model 2's training path runs; and I clobbered a checkpoint doing it (2026-08-20)
+
+The cheapest unanswered question about Model 2: does its training path work at all? Never
+demonstrated on anything.
+
+- **Ran** `train_sequence_model.py --smoke --epochs 3` locally (MPS, free, no cloud): 64 synthetic
+  samples, `n_frames=6 m_past=4 m_out=1 d=256`, **3.62M params**, loss **1.41 → 0.063 → 0.032**,
+  `SMOKE OK`. So the architecture, dataset plumbing and training loop are sound, and the model can fit
+  a gesture-sequence objective.
+- **What this does and does not establish.** It proves the *path* runs and the objective is learnable
+  on synthetic data. It says nothing about real frames, and — per the EQ-034 retraction — the real-frame
+  question cannot be answered without labels on structured play, which is exactly the Model-1 gate.
+  Do not cite this as "Model 2 works".
+- **MISTAKE, disclosed: the smoke run overwrote `notebooks/models/sequence_model.pth`.** The trainer's
+  default `--out` is that path and I did not override it. `*.pth` is gitignored, so there is no version
+  history to restore from. Mitigating evidence that the loss is small: the EQ-005 investigation found
+  Model 2 has never been trained on real data (the 2026-07-19 entry records Model-1-assembled clips as
+  ~5% real strokes, "useless to train Model 2 on"), so the file was almost certainly a prior smoke
+  artefact — `tmp/model2_v2_smoke.pth` (2026-07-17) is its sibling. But "almost certainly" is not
+  "verified", and the file is gone either way.
+- **Lesson for the harness, not just this run:** a *diagnostic* invocation wrote to a *production*
+  artefact path by default. Any smoke or audit run should be given an explicit throwaway `--out`.
+  Worth a guard: default the smoke path to `tmp/` rather than `notebooks/models/`.
+- **Next:** EQ-038 — make `--smoke` write to `tmp/` by default so a diagnostic can never clobber a
+  model artefact.
+
+## EQ-038 — A diagnostic can no longer clobber a model artefact (2026-08-20)
+
+Fixes the defect that cost a checkpoint in EQ-037.
+
+- **`train_sequence_model.py`**: `--out` now defaults to `None` and is resolved after parsing —
+  `tmp/sequence_model_smoke.pth` under `--smoke`, `notebooks/models/sequence_model.pth` for a real run.
+  An explicit `--out` still wins in either mode. Verified end to end: the smoke now writes to `tmp/`.
+- **Swept the other entry points.** Three scripts default `--out` into `notebooks/models/`:
+  `train_sequence_model.py` (fixed), `train_trace_extractor.py`, `train_scene_classifier.py`.
+  - `train_scene_classifier.py` has **no** smoke mode — not exposed.
+  - `train_trace_extractor.py` was **already safe**: its smoke branch passes
+    `out_path=tmp/trace_extractor_smoke.pth` explicitly and never reads `args.out`. **I patched it
+    anyway and thereby introduced a bug** (`args.out` would have been `None` on the real path);
+    caught immediately and reverted. Worth recording as its own small lesson: a sweep that "fixes"
+    code which was already correct is a net negative, and the check for "is this instance actually
+    affected?" belongs before the edit, not after.
+- **Test added** (`test_smoke_never_defaults_to_a_durable_model_path`): asserts the default is resolved
+  post-parse, that smoke resolves under `tmp/` and a real run under `models/`, and that an explicit
+  `--out` overrides both. Suite green.
+- **Incidental finding, not fixed:** the smoke path ignores `--epochs`. It hardcodes a stop at
+  `ep >= 2` (`train_sequence_model.py:112`), so `--epochs 1` still runs three epochs. Harmless for a
+  smoke test but the flag is a lie; queued as EQ-039 rather than silently patched, since it is
+  cosmetic and unrelated to the defect this item exists to fix.
+
+## EQ-039 — `--epochs` now means what it says (2026-08-20)
+
+- **Two independent caps** made the flag inert under `--smoke`: `epochs=max(3, args.epochs)` in the
+  smoke branch, and `if smoke and ep >= 2: break` inside `train()`. Every smoke run printed
+  "epoch 3/3" whatever was requested. Both removed; verified `--epochs 1` runs 1, `--epochs 4` runs 4.
+  Smoke epochs are one batch each, so honouring the flag costs nothing.
+- **Caught a self-inflicted side effect mid-fix:** I also changed the parser default from 10 to 3,
+  which would have silently altered **real** training runs. Reverted; the test now asserts the real-run
+  default is still 10, so the next person fixing a smoke path cannot quietly re-scope it.
+- Test added; suite **223 passed**.
+- **Why a cosmetic defect was worth a tick.** This is the fourth name-versus-behaviour mismatch found
+  in this queue — after `trail_frames_present` (constant by construction), `trail_frame_start` (an
+  argmin, not an onset), and `frame_times` (synthesised, asserting a schedule rather than measuring
+  one). The first three each produced a published-then-retracted conclusion. The pattern is now
+  frequent enough to treat as a project-level hazard rather than a run of coincidences: **in this
+  codebase, a field or flag's name is a hypothesis about its behaviour, not a description of it.**
+
+## EQ-040 — Name-vs-behaviour sweep: two more found, and one is a value doubling as a mode switch (2026-08-20)
+
+Prompted by four such mismatches already having produced retracted conclusions. Swept the timing
+fields first, since those are what conclusions get drawn from.
+
+### The register so far
+
+| name | implies | actually | cost |
+|---|---|---|---|
+| `trail_frames_present` | frames containing trail | **constant by construction** (per-frame max threshold) | 2 retractions (EQ-015, EQ-016) |
+| `trail_frame_start` / `_end` | touch onset / liftoff | **argmin over frames** of distance to nearest trail pixel | 1 retraction (EQ-015) |
+| `frame_times` | measured frame timings | **synthesised** from aligner constants; asserts a schedule | 1 retraction (EQ-015, circular audit) |
+| `--epochs` (smoke) | epochs to run | ignored; capped twice at 3 | cosmetic (EQ-039) |
+| **`gesture_start_monotonic`** | a **monotonic** clock reading | **epoch seconds** — assigned `float(ev["t_call_start_epoch_s"])` (`align_xctest_traces.py:483`) | none yet |
+| **same field, second issue** | a value | **also a MODE SWITCH** — its mere *presence* flips `_is_end_relative()` to False (`temporal_trace_dataset.py:586-588`), selecting the start-relative label branch | none yet |
+
+### Why the two new ones matter
+
+- **`gesture_start_monotonic` is epoch, not monotonic.** The distinction is not pedantic: a monotonic
+  clock is not comparable across processes or reboots, while epoch is. Anyone trusting the name would
+  *avoid* exactly the cross-session comparison the field is good for — or, worse, feed it to something
+  expecting seconds-since-boot. EQ-020's capture-time analysis used `datetime.fromtimestamp()` on it
+  and got wall-clock dates matching the session directory names, which is what validated the epoch
+  reading; that check is the only reason the conclusion there was sound.
+- **A field whose presence changes semantics is not a field, it is a flag.** `_is_end_relative()`
+  returns False if `gesture_start_monotonic` is present, and otherwise looks for
+  `gesture_end_monotonic` / `gesture_video_time_s` / `t_call_end_epoch_s`. So label scheduling — whether
+  touches are placed start-relative or end-relative — is decided by **which keys happen to exist in a
+  meta dict**. A corpus written by a slightly different aligner version silently gets a different label
+  convention, with no version field and no error. This is the same shape as the EQ-018 defect (a
+  schedule asserted rather than checked) and it is the one on this list most likely to produce a future
+  wrong number.
+
+### Assessment
+
+Six mismatches, four of which already cost retractions. The dominant failure mode in this queue has not
+been bad experiments — it has been **trusting a name**. Two structural fixes are worth more than
+renaming any individual field:
+
+1. **An explicit label-convention field in every meta** (e.g. `label_time_base: "start" | "end"`), so
+   the convention is stated rather than inferred from key presence. `_is_end_relative` becomes a
+   fallback for legacy corpora only.
+2. **Rename `gesture_start_monotonic` → `gesture_start_epoch_s`**, keeping the old key readable for
+   legacy corpora. This is a data-format change and must not be done casually — every existing corpus
+   carries the old key, and `_is_end_relative` keys off it.
+
+Both are queued (EQ-041) rather than done here: they touch the label semantics of every corpus on
+disk, which is exactly the kind of change that should not be made inside a loop tick.
+
+## EQ-014 — the offload was blocked TWICE; the second block was an ARG_MAX bug that looked like an empty park (2026-08-20)
+
+- **Hypothesis:** with `MIN_SPIN_FRAC` below the collectors' actual spin fraction and `MODAL_VOLUME`
+  pointed at a volume with room, the stranded 295 GiB offloads. **Expected:** session becomes eligible,
+  ~295 GiB uploads, local free disk rises from 81 GiB. **Kill:** `trueskate-corpus-v2` lacks capacity.
+- **Ran:** owner applied the predeclared plist change on the rig (`MIN_SPIN_FRAC 0.8 -> 0.3`,
+  `MODAL_VOLUME -> trueskate-corpus-v2`) with bootout/bootstrap. Verified loaded. **Deviation from the
+  plan:** the item assumed config was the whole fix. It was not, and diagnosing the remainder became
+  this iteration.
+- **Numbers:** the session became eligible and then made zero progress, every round:
+  `SESSION iPhone_XR_20260814_042825: 20344 samples across 1 park(s)` /
+  `PARK sls_2015_super_crown: 0 sample dirs -> 0 batches of 90` /
+  `KEEP: remote 0 vs local 20344, manifests_ok=1, provenance_ok=1`.
+  Root cause `scripts/ops/offload_corpus_to_modal.sh:216`:
+  `ls -d "${parkpath}"sample_*/ 2>/dev/null`. `$parkpath` is absolute (113 bytes/entry measured);
+  113 x 20,344 = **2.30 MB** against `getconf ARG_MAX` = **1,048,576**. The shell fails with
+  `argument list too long`, `2>/dev/null` eats it, and a full park reads as an empty one. Reproduced
+  both directions on the rig: the same glob with a short RELATIVE prefix (~44 B, ~0.90 MB) succeeds.
+  Fixed to `find "${parkpath%/}" -maxdepth 1 -type d -name 'sample_*' | sort` (`sort` because glob
+  output was ordered and `find` is not). Post-fix: `20344 sample dirs -> 227 batches of 90`,
+  `batch 0/227 ok`, `batch 1/227 ok`.
+- **Verdict:** CONFIRMED. The config change was necessary but not sufficient; any park above roughly
+  13k sample dirs was silently unofloadable. **Kill criterion resolved, contrary to the item's fear:**
+  `trueskate-corpus` currently holds **>550,000 entries**, above Modal v1's documented 500,000-inode
+  hard cap, which proves these are **v2-format** volumes. The applicable v2 limit is 262,144 files
+  *per directory*; the deepest directory here holds 20,344 entries. Size lands at ~303/1024 GB. The
+  journal's earlier "2.37M files against a 500k inode limit" line (2026-08-19) is self-refuting and
+  should not be reasoned from again.
+- **Red team:** CONFIRMED, and it closed the confound I most wanted closed — the failing 06:26 round
+  had ALREADY printed `minimum spin_frac=0.5`, which is only reachable under `MIN_SPIN_FRAC=0.3`, so
+  the config change and the bootout sit on *both* sides of the comparison and cannot explain the
+  change. It verified `find` enumerates the identical set (0 symlinks; `NSAMP == LOCAL == 20344`),
+  that batch indices are claimed by `mkdir` so ordering cannot drop work, and that every failure path
+  drives `REMOTE < LOCAL` -> KEEP. **Residual risks it named:** (1) file count is 671,352 not ~400k
+  (my error — since resolved as harmless by the v2 finding); (2) `com.trueskate.storageguard` still
+  watched `trueskate-corpus` while the offloader writes to v2, so its 950 GB alarm was blind — **fixed
+  this iteration**, plist repointed and reloaded; (3) the rig's copy of the fix is uncommitted on a
+  different branch and a `git pull` would silently restore the bug (EQ-045); (4) the `REMOTE == LOCAL`
+  guard counts `meta.json` only and verifies presence, not integrity — 2 spot-checked dirs of 20,344
+  certifies nothing (EQ-042, must run before the delete fires).
+- **The lesson that should have been swept, and was not.** The 2026-08-19 prune entry diagnosed this
+  EXACT bug one day earlier — "the post-delete check reported 'remaining samples: 0'... it was
+  `ls -d $PARK/sample_*/` hitting ARG_MAX... Never count large directory sets with a shell glob;
+  use `find`" — in a throwaway verification command, on the SAME park. The identical construct
+  sat in the production offloader and nobody grepped for it. A lesson recorded as a lesson but
+  not swept for as a defect class is worth very little; the sweep is the deliverable.
+  **Sweep now done:** `grep -rn 'sample_\*' scripts src` finds one shell-glob site (the one
+  fixed) and eight Python `glob`/`rglob` sites, which build lists in-process and are not
+  subject to ARG_MAX. No other instance of this defect exists in the repo.
+- **Next:** EQ-042 (integrity spot-check before delete), EQ-045 (commit the rig's fix). EQ-036 closed
+  as a side effect — see below.
+
+## EQ-036 — the park gate was already closed in June, and the evidence was inside the stranded session (2026-08-20)
+
+- **Ran:** no experiment. Re-read `vision_sequence_leap_journal.md` and inspected the stranded corpus
+  while diagnosing EQ-014.
+- **Numbers / findings:** (i) the 2026-06-14 entry records Asher re-signing the App Store into the
+  Apple ID owning the SLS DLC and **installing** SLS 2016 Super Crown / Newark / Munich and SLS 2015
+  Super Crown — "the exact domain of the expert clips". Option (a) was executed two months ago; the
+  EQ-036 write-up asserted the parks were "NOT INSTALLED (store/download only)" by quoting the
+  *earlier* 2026-06-14 entry ("Park-Switching Works") and missing the *later* same-day entry
+  ("SLS Arena … Installed + Collected") six lines below it, which reverses exactly that clause. (ii) The 295 GiB stranded session
+  `iPhone_XR_20260814_042825` is **entirely** `sls_2015_super_crown`: 20,344 domain-matched samples
+  that have existed since 2026-08-14 and were invisible only because of the EQ-014 bug. (iii) Owner
+  has since set XR1 to SLS 2015 Super Crown and XR2 to SLS 2013 Kansas City.
+- **Verdict:** RESOLVED, and the framing was wrong. EQ-036 was never a separate decision — it was the
+  same blocker as EQ-014 wearing a different name. Domain-matched Model-1 training data already
+  exists; it was stranded, not missing. XR1/XR2 now deliver option (a) and option (c) at once.
+- **Red team:** not spawned — this is a documentation correction from primary sources, with no number
+  to attack. The correction itself came from checking a claim I had written from a partial read.
+- **Lesson, and it is the seventh of its kind:** I stated "SLS-arena parks are NOT installed" as
+  settled fact from a journal line that a later journal line reversed. This is the same failure shape
+  as the six name-vs-behaviour mismatches in EQ-040 — a plausible reading treated as verified. The
+  register stands at seven, five of which caused retractions.
+- **Next:** EQ-044 — no collector is running on either phone, so the park change records nothing yet.
+
+## EQ-024 — certification axes settled: all four (2026-08-21)
+
+- **Ran:** no experiment. A design decision that had to be made before collection, put to the owner in
+  plain language and answered "do all four axes".
+- **Decision:** the EQ-007 holdout will certify a Model-1 recovery rate that is simultaneously
+  command-disjoint, device-balanced (both XRs, each >= 40% of clips), park-disjoint (>= 1 park with
+  zero training clips, **named before collection ends**), and day-disjoint (no session in both sides,
+  holdout spans >= 2 calendar days). Written into EQ-007, together with an explicit list of what is
+  NOT certified: other devices, parks outside the SLS-arena family plus The Workshop, other True Skate
+  versions, and expert human gestures.
+- **Why this was affordable now and was not before:** as of 2026-08-20 XR1 sits on SLS 2015 Super Crown
+  and XR2 on SLS 2013 Kansas City, so device parity and park-disjointness fall out of collecting from
+  both phones as they currently stand. Day-disjointness costs only a calendar gap. The axes that were
+  expensive when EQ-024 was written are now nearly free, which is the whole reason to re-ask a costing
+  question after the rig configuration changes.
+- **Verdict:** RESOLVED. EQ-007 is no longer blocked on a decision, only on collection (EQ-044).
+- **Red team:** not spawned — an owner decision with no measurement to attack. The protocol itself will
+  be red-teamed when EQ-007 runs, which is the point at which it can be checked against real tranches.
+- **Consequence for EQ-044:** restarting collection is no longer "turn the collectors back on". Both
+  phones must run, on different parks, spanning two days, or the certification silently degrades back
+  to command-disjoint-only. Recorded in the EQ-044 item.
+
+## EQ-004 calibration — the sweep costs ~$2.5-5.1, but `gpu="any"` contaminates it (2026-08-21)
+
+- **Hypothesis:** a short calibration run yields seconds-per-epoch, from which the 6-setting
+  `trajectory_weight` sweep can be priced exactly. **Expected:** one number. **Kill:** n/a.
+- **Ran:** three runs on `trueskate-mvp-linear-2k` / `basic_linear_xctest`, K=2, line-fit,
+  `--trajectory-weight 0.02 --temporal-mixer --split-seed 0`, at 1, 2 and 3 epochs, all with
+  `--no-evaluate-test`. Deviation from plan: the first two were useless — local wall clock gave
+  N=2 -> 255 s but N=1 -> **373 s**, i.e. one epoch took longer than two, because wall clock measures
+  container scheduling, not training. So `time.monotonic()` per-epoch instrumentation was added to
+  `train_basic_linear_regressor.py` and the 3-epoch run repeated.
+- **Numbers:** epoch1 239.9 s, epoch2 77.8 s, epoch3 78.0 s. Red team then pulled
+  `modal app logs --timestamps` for all three apps and found the 2-epoch run's second epoch took
+  **29 s** — 2.7x faster than the 78 s I called steady state.
+- **Verdict:** INCONCLUSIVE as a single number, CONFIRMED as a bound. `gpu="any"` draws from
+  {T4, L4, A10} and the draw is worth 2.7x in epoch time. Per run: 22 min (fast) to 55 min (slow),
+  each paying a ~163 s epoch-1 decode premium that is stable and per-container. With `memory=16384`
+  billed at $0.128/hr (which I had omitted) and a ~60-90 s test-evaluation tail the calibration never
+  measured, the sweep lands at **~$2.5 best case, ~$5.1 realistic worst** — inside the $10 budget, but
+  for different reasons than my first arithmetic gave.
+- **Red team:** CONFOUNDED. Three findings that changed the conclusion: (1) my "n=2 steady-state
+  samples" were two epochs of the SAME container, i.e. n=1 for the quantity that actually varies;
+  (2) I had the risk story backwards — the 163 s premium is the STABLE part (CPU/IO decode) and the
+  per-epoch figure is the VOLATILE part (GPU-bound); (3) time and price are ANTI-correlated, since the
+  cheapest GPU is the slowest, so the worst realistic corner is L4 rather than A10. It also found that
+  one of EQ-004's three stated confounds is stale: `basic_linear_training.py:173` already applies the
+  1.8x start weighting at K=2, so there is nothing to restore.
+- **The finding that matters more than the cost.** Identical-seed epoch-1 validation differed across
+  draws (start_med 0.0296 / 0.0262 / 0.0296 — the two runs that agreed are the two that plausibly drew
+  the same hardware). cuDNN algorithm selection moves the number the sweep exists to compare. Six runs
+  on `gpu="any"` would have been six hardware conditions, and a small `trajectory_weight` effect would
+  have been indistinguishable from the draw. **Fixed:** `MODAL_TRAIN_GPU` now parameterises
+  `train_remote`'s accelerator (default `any`, so one-off runs still avoid queueing on a scarce named
+  type), and `_device()` prints `device=cuda name=...` so a run's hardware is always attributable —
+  it never was before, which is why 29 vs 78 could not be explained from the artefacts.
+- **Holdout discipline:** all three runs returned `"test": null`; no holdout was consumed. Artefacts
+  are under distinct `eq004_calib_{1,2,3}ep_20260821` labels and no aggregator globs them.
+- **Cost disclosure:** I quoted ~$0.05 for one 2-epoch run and spent ~$0.20-0.30 across three, a 6x
+  overrun caused by my estimation method failing, not by the runs.
+- **Next:** EQ-004 is now priced and runnable, but only with `MODAL_TRAIN_GPU` pinned. Awaiting owner
+  authorisation to spend ~$5.
+
+## EQ-004 — the trajectory_weight sweep resolves the COLLAPSE and retracts the regression, but cannot resolve the knob (2026-08-21)
+
+- **Hypothesis:** the line fit's 83.17% test joint (vs the 90.10% baseline) is a configuration artefact —
+  `trajectory_weight=0.02` untuned. **Expected:** >= 90.10% at some weight. **Kill:** no setting reaches
+  the baseline, closing the line fit as a falsified architectural bet.
+- **Ran:** six runs, `trajectory_weight` in {0.005, 0.01, 0.02, 0.05, 0.10, 0.20}, everything else
+  identical to the recorded K=2 control (`trueskate-mvp-linear-2k`, `basic_linear_xctest`, 40 epochs,
+  seed 0, split_seed 0, base_channels 16, command split, temporal mixer, line fit, K=2). All six passed
+  `--no-evaluate-test` (`"test": null` on every payload). GPU pinned to L4 via the new `MODAL_TRAIN_GPU`;
+  all six logged `device=cuda name=NVIDIA L4`. Validation-selected winner scored once on test via a new
+  `evaluate_test_once` Modal function (no grid, no variants — the existing evaluators either sweep a knob
+  on test or blend candidates, so neither can serve as a final look).
+  **Deviations:** (i) a local DNS failure killed the client during wave 1; the containers had already
+  finished and written their payloads, verified by `best_epoch` and full validation blocks in the JSONs,
+  so nothing was lost and wave 2 was relaunched with `--detach`. (ii) the first `evaluate_test_once` call
+  printed nothing — `modal run module::function` does not surface a remote return value — so the function
+  was given a print + volume write and re-run on the same frozen checkpoint.
+- **Numbers.** Validation joint (n=303): 0.005 -> 90.76, **0.01 -> 92.41**, 0.02 -> 91.09, 0.05 -> 84.82,
+  0.10 -> 70.30, 0.20 -> 46.86. Last-knot recovery over the same range: 94.06 / 96.37 / 95.38 / 90.43 /
+  76.57 / 51.82, while duration stays 98.3-99.7 throughout. Test, tw=0.01: **90.10% (273/303)**,
+  CP95 [86.17, 93.22]. Test, tw=0.02 (replication of the control): **86.80% (263/303)**.
+- **Verdict:** SPLIT.
+  **CONFIRMED and large:** `trajectory_weight` >= 0.05 destroys the line fit monotonically, and it does so
+  through the ENDPOINTS (last knot 96.37 -> 51.82) while duration is untouched. That is a 20-45 point
+  effect, far above the noise floor, and it is the real result of this item.
+  **INCONCLUSIVE below 0.05:** the 0.005/0.01/0.02 cells span 1.65 validation points, which is noise.
+  **The kill criterion cannot be applied as written**, because it compares against a baseline that is
+  itself a single draw.
+- **Red team: CONFOUNDED, and it did the decisive work.** It pulled four baseline checkpoints that differ
+  only by `--seed` on this exact corpus/split: test 83.83 / 91.42 / 91.75 / 90.10 (sd 3.7, range 8.9).
+  Consequences:
+  1. **RETRACTION — "the line-fit decoder is a regression" (2026-08-19) is withdrawn.** 83.17% sits inside
+     the baseline's own seed spread (seed1 = 83.83%). That claim was a single draw compared against
+     another single draw, and it was reported as an architectural finding.
+  2. **The intended conclusion "tuning one hyperparameter moved 83.17 -> 90.10" is NOT supported.** The
+     exact re-run of the control (tw=0.02, every recorded setting identical, both best_epoch 39) scores
+     86.80% test / 91.09% validation against the control's 83.17% / 86.47%. Re-running alone is worth
+     ~3.6 test points; the 0.02 -> 0.01 step is worth ~3.3 more. Both are inside a +-3.7-point noise band.
+  3. **Two knobs changed, not one:** the 2026-08-19 control ran `gpu="any"`; the sweep is pinned L4, and
+     this journal's own calibration entry established the draw moves the metric.
+  4. **Selection is a max-of-40 then a max-of-6.** Epoch selection is the argmax of the reported statistic
+     itself (`train_basic_linear_regressor.py:285-288`), and tw=0.01's last eight epochs read 88.1, 89.8,
+     86.8, 87.8, 92.4, 91.4, 75.6, 87.8. The winner was chosen essentially at random among the top three.
+     This does not contaminate the test look — the checkpoint was frozen first — but it means the test
+     look was spent on an arbitrary member of a tie.
+  5. **`end_recovery_accuracy` IS `knot1_recovery_accuracy` at K=2** by construction
+     (`basic_linear_training.py:236-237`), so the "three identical numbers" I flagged are two. The
+     knot0/knot1 equality at 283/303 is a coincidence of counts, not a collapse: the joint's 30 failures
+     against 20+20 component failures force the failure sets to be mostly disjoint.
+  6. The exact 90.10% tie with the baseline is genuine, verified from the baseline payload rather than the
+     journal (test, n=303, same fingerprint, same split) — and meaningless, since CP95 is [86.17, 93.22].
+- **Holdout accounting, stated plainly:** the test split was looked at three times — tw=0.01 twice (the
+  second a plumbing retry on a frozen checkpoint, no selection in between) and tw=0.02 once as a
+  replication the red team asked for. None of the six selection runs touched it. No candidate was ever
+  chosen using a test number.
+- **Cost:** six 40-epoch runs at a steady 73.5 s/epoch on pinned L4 (~52 min each) ~ 5.2 container-hours,
+  plus calibration and three cheap evaluations: **~$5.2 of the $10 budget.**
+- **Next:** EQ-046 — the item can only be settled by comparing DISTRIBUTIONS. 3 seeds x {0.005, 0.01, 0.02}
+  against the 3 baseline seeds already on the volume. ~9 runs ~ $7, which exceeds the remaining budget, so
+  it is queued rather than run. Until then the honest position is: the line fit is neither a regression nor
+  an improvement, and nothing distinguishes it from the baseline at n=1 per cell.
+
+## EQ-046 — the line fit is not settled, and the reason is that our measuring instrument has ~6 points of noise (2026-08-22)
+
+- **Hypothesis:** the line fit and the temporal-mixer baseline are indistinguishable; apparent differences
+  are seed noise. **Kill:** distributions overlap -> close the line fit as "no effect".
+- **Ran:** 9 runs = 3 arms x 3 seeds (1,2,3), all pinned L4 (`device=cuda name=NVIDIA L4` in all nine
+  logs), all 40 epochs, all `--no-evaluate-test` (`"test": null` on all nine), rc=0. Common config:
+  `trueskate-mvp-linear-2k` / `basic_linear_xctest`, batch 8, lr 1e-3, split_seed 0, base_channels 16,
+  command split, temporal mixer, K=2. Arms: `base` (no line fit, trajectory_weight 0),
+  `lf001` (`--line-fit --trajectory-weight 0.01`), `lf002` (`--line-fit --trajectory-weight 0.02`).
+  **Deviation, deliberate:** the queued method said to reuse the three existing baseline seed
+  checkpoints; those ran under `gpu="any"` while this arm is pinned L4, so the baseline arm was
+  retrained on matched hardware instead. All nine payloads share one `dataset_fingerprint` and one
+  1416/303/303 split.
+- **Numbers (validation joint, best-of-40 as reported by the trainer):**
+  base 84.49 / 94.06 / 92.08 (mean 90.21), lf001 92.74 / 87.13 / 90.43 (mean 90.10),
+  lf002 91.75 / 88.78 / 90.43 (mean 90.32). Welch t(4): lf001-base **-0.17, 95% CI [-9.5, +9.1]**;
+  lf002-base **+0.07, 95% CI [-8.4, +8.5]**. Minimum detectable effect at 80% power: **~9 points.**
+- **Verdict: INCONCLUSIVE, and the kill criterion as written is unfalsifiable.** "The distributions
+  overlap" fires for any true effect below ~9 points, which is every effect anyone has proposed on this
+  project. Firing it records that the instrument has no resolution, not that the architectures are equal.
+  I had intended to write "settled as no effect". That would have been wrong.
+- **Red team: CONFOUNDED, with three findings that matter beyond this item.**
+  1. **The seeds are not matched across arms, so the paired analysis was meaningless.**
+     `basic_linear_regressor.py:80` inserts `trajectory_score` only when `trajectory_track` is on, BEFORE
+     `duration_head` (:88) and `onset_head` (:96). The red team built both arms at seed 1: encoder,
+     temporal mixer and the two score heads are bit-identical, but **all 8 `duration_head` tensors differ**
+     and the global RNG state diverges. `train_loader` (`train_basic_linear_regressor.py:245`) uses
+     `shuffle=True` with no explicit generator, so **all 40 epochs of minibatch order differ between arms
+     at the same `--seed`**. The +8.3 / -6.9 / -1.7 "paired" differences are three unpaired draws.
+  2. **The headline is a best-of-40 order statistic, and within-run epoch noise is BIGGER than the
+     between-seed band.** Independently reproduced here from the nine epoch curves: mean within-run
+     validation sd over epochs 21-40 is **6.31 points**, against the ~3.7-point "seed noise" EQ-004
+     measured and a binomial floor of only 1.7 at n=303. Selection is a strict argmax over 40 draws on
+     the same 303 validation commands (`train_basic_linear_regressor.py:295`). Plateau means (epochs
+     21-40, 20x more data per run) tell the same non-story with the ordering reversed:
+     base 73.61 / 86.77 / 85.42 (mean 81.93), lf001 84.77 / 81.83 / 82.75 (83.12),
+     lf002 83.83 / 80.48 / 85.05 (83.12).
+     **So EQ-004's "seed noise" was mostly CHECKPOINT-SELECTION noise, and every headline Model-1 number
+     in this journal is ~7-8 points above the typical quality of the model that produced it.**
+  3. **`--line-fit` bundles three changes** — the line-fit decoder, the `trajectory_track`/`onset_head`
+     pair, and trajectory map supervision at weight w — against a base arm with all three off. "The line
+     fit has no effect" is not separated from "the supervision helps and the decoder hurts, cancelling".
+  Also corrected: `best_epoch` 40/40/36 in the base arm is argmax-of-noise, not undertraining (base_s2
+  scored 77.9 at epoch 35 and 94.1 at 39); `base_s1` is a genuinely depressed run but seed 1 is not a bad
+  seed (it is the BEST seed in both line-fit arms); the sd trend 0.0505 -> 0.0282 -> 0.0149 is not
+  variance reduction (F(2,2) admits an sd ratio of [0.16, 6.2], and dropping base_s1 puts base below
+  lf002); and the earlier `gpu="any"` seed-1 baseline is the SAME trajectory measured twice, not an
+  independent sample.
+- **What is supported:** at n=3 and 40 epochs on this corpus, **no arm difference larger than ~9 points
+  exists**, and the line fit is not the ~7-point regression the original claim asserted. Nothing finer.
+- **No test look was spent.** Correct, but not the binding constraint — a test look carries the same
+  +-9-point interval. The item is unsettled for want of a measurement protocol, not a holdout.
+- **Cost:** 9 runs x ~52 min on L4 ~ 7.8 container-hours ~ **$7.2**; ~$12.4 total against a $10 budget
+  the owner extended for this run.
+- **Next:** EQ-048 (make seeds genuinely matched), EQ-049 (replace argmax-of-40 selection and re-baseline
+  every headline number), EQ-050 (unbundle the three changes `--line-fit` carries). **EQ-049 comes first:
+  until selection noise is below the effect size, no further spend on this corpus can resolve anything.**
+
+## EQ-049 — INVALID as concluded: the "no estimator wins" result was one collapsing run, and the bias claim was wrong (2026-08-24)
+
+- **Hypothesis:** a plateau/averaged estimator cuts between-seed sd from ~6 points toward the binomial
+  floor, making sub-5-point effects measurable. **Kill:** no estimator beats argmax -> the corpus is the
+  limit and only more validation commands can help.
+- **Ran:** free re-analysis of the nine saved EQ-046 epoch curves under nine estimators. No GPU.
+- **What I first concluded, and it was wrong:** pooled between-seed sd came out 3.13-5.74 with argmax at
+  3.45, so I fired the kill criterion and reported "no estimator beats argmax; the variance is real
+  run-to-run variation, not selection noise".
+- **Red team: INVALID.** It reproduced every number and then broke the inference twice.
+  1. **The pooled sd is one run.** `base_s1` is not noisy, it is **non-convergent**: within-run sd over
+     the last 20 epochs is **13.41** against 3.85-6.07 for the other eight, with a minimum of **25.1%**
+     at epoch 28. Pooling averages arm variances, so that single run supplies most of every pooled
+     figure. Per-arm, on the two arms containing no collapsed run, **mean-last-10 cuts between-seed sd
+     from 2.24 to 0.85 — a 2.6x reduction.** Reproduced independently here.
+  2. **The design could never have detected that anyway.** Pooled sd has 6 df; the 95% CI on argmax's
+     3.45 is [2.22, 7.59], and the F(6,6) critical sd-ratio is 2.41 against an observed spread of 1.83.
+     "No estimator beats argmax" was not a finding; it was the design's resolution.
+  3. **RETRACTION — the selection-bias claim.** I told the owner the headline "sits ~7-8 points above
+     the model's typical quality", implying reported numbers overstate deployed quality. Five runs carry
+     both validation and test at the argmax checkpoint: val-test = +1.98 / -0.66 / -0.33 / -1.32 / +3.30,
+     **mean +0.59 points (sd 1.96)**. Selection optimism on held-out data is about half a point. The
+     6-8 point argmax-vs-plateau gap is real but it measures **training instability**, not reporting bias.
+     Those two must not be merged, and I merged them.
+- **Verdict:** the item's kill criterion did NOT legitimately fire. Supported: *on converged runs a
+  plateau estimator cuts between-seed sd ~2.6x, and N=3 cannot resolve whether that generalises.*
+- **The finding that actually matters, and it is not about estimators.** Roughly **1 run in 9 fails to
+  converge** in 40 epochs of AdamW at lr 1e-3 on this corpus, and every within-run curve oscillates
+  +-4-13 points to the end. That is why between-seed spread is large, and no reporting statistic can fix
+  it. Queued as EQ-051, which now outranks every other measurement item.
+- **Kept regardless:** the payload records `validation_curve`, `validation_plateau_mean_last10` and
+  `validation_is_best_of_n_epochs`, pinned by a test. Whatever the estimator debate resolves to, no
+  future re-analysis should need re-runs.
+- **Next:** EQ-051 (training stability) before any further paid comparison.
+
+## EQ-048 — `--seed` now means the same initialisation in every arm (2026-08-24)
+
+- **Defect:** optional modules were built interleaved with unconditional ones, so enabling
+  `trajectory_track` shifted the global RNG and changed all 8 `duration_head` tensors; the training
+  DataLoader then inherited the shifted stream via `shuffle=True` with no generator, changing minibatch
+  order for all 40 epochs. Paired per-seed comparisons across arms were meaningless.
+- **Fix:** every optional module now draws one seed UNCONDITIONALLY and is built inside
+  `torch.random.fork_rng(devices=[])` from that seed; the training DataLoader takes an explicit
+  `torch.Generator().manual_seed(seed)`. Reordering alone was insufficient — the red team showed the
+  first-built optional still shifted the stream for the rest, so arms differing in `temporal_mixer`
+  still got different `onset_head` weights.
+- **Verified across all 15 pairs of six arm configurations, pre-fix vs post-fix:**
+  mismatched unconditional tensors **140 -> 0**; mismatched shared optional tensors **16 -> 0**;
+  arm-pairs whose global RNG position diverged **15/15 -> 0/15**.
+- **Verdict:** CONFIRMED. Test `test_seed_matches_shared_weights_across_arms_that_differ_only_in_optional_modules`
+  covers five arm variations and asserts all three invariants; it fails on the pre-fix module.
+- **Red team:** CONFIRMED with a scope limit I then closed — it found the reorder still left
+  `temporal_mixer`-differing arms divergent, which the forked-RNG version fixes. It also confirmed
+  nothing else draws from the global stream per epoch (no dropout, no augmentation, `num_workers=0`,
+  unshuffled val/test loaders).
+- **Consequence that must not be lost:** at `temporal_mixer=True`, **16 of 30 tensors differ pre-fix vs
+  post-fix at the same seed**. A post-fix seed-1 run is a different run from EQ-046's seed-1, so
+  **every arm must be retrained post-fix; the existing baseline seeds cannot serve as the control.**
+  Checkpoint loading is unaffected (every call site is key-based `load_state_dict`, no shapes changed).
+
+## EQ-051 phase 1 — the collapses are ENDPOINT collapses, and the base rate confirms it (2026-08-24)
+
+- **Hypothesis:** the between-seed spread blocking every A/B on this corpus is training instability, not
+  measurement noise. **Method:** free analysis of the nine saved EQ-046 epoch curves. No GPU, no Modal.
+- **Delegated** to Codex (`codex exec`, `gpt-5.6-terra` at `model_reasoning_effort=high`) under a written
+  brief, sandboxed to a scratch copy of the logs. Note: `gpt-5.6-codex-sol` and `gpt-5.6-codex` are both
+  rejected on a ChatGPT account ("not supported"); `terra` is the account default. Also note `codex exec`
+  **exits 0 even when it does nothing** — the first dispatch died on "Not inside a trusted directory" and
+  still returned success. Verify the deliverable, never the exit code.
+- **Numbers (Codex, reproduced independently here):** 57 collapses (recovery drop >5 pp) across 9 runs —
+  24 single-epoch spikes, 24 sustained regressions, 9 unclassified. At collapse, the end-endpoint median
+  worsened in **56/57**, duration in only 32/57, and there were **zero duration-only collapses**.
+  corr(end-median rise, recovery drop) = **+0.67**. `base_s1` is extreme in degree (tail sd 13.41 vs
+  4.92 median; epoch 28 falls 78.2% -> 25.1%) but not different in kind — it shows the same two shapes.
+- **The control Codex omitted, and it strengthens the result.** "End worsened in 56/57" means nothing
+  without the base rate. Computed here over the 294 non-collapse transitions: the end median worsens in
+  **33%** of ordinary epochs versus **98%** at collapses — a 3.0x lift, essentially deterministic.
+  Duration worsens 31% ordinary vs 56% at collapse, a lift of only 1.8x. **Endpoints are implicated;
+  duration mostly comes along for the ride.**
+- **Checked the alternative mechanism.** A soft-argmax attention mode-flip (a subset of clips jumping to
+  the wrong end of the trail) would show a large recovery drop with little movement in the aggregate
+  median. Instead the end-median shift scales with collapse size — 11% of the 0.03 tolerance for drops
+  <=10 pp, 28% for drops >20 pp — which is global degradation, not a tail flip. Codex's reading survives.
+- **Verified the premise:** `train_basic_linear_regressor.py:261` is `torch.optim.AdamW(params, lr=lr)`
+  with no gradient clipping, no scheduler and no warmup anywhere in the file.
+- **Verdict:** CONFIRMED that instability is real, endpoint-centred, and present in every run and every
+  arm (no run is flat at epoch 40). NOT established: the underlying mechanism. Gradient and update norms
+  are not logged, so "sporadic oversized updates" remains a hypothesis, and Codex said so rather than
+  overclaiming.
+- **Red team:** not spawned. I reviewed this myself — recomputed the collapse counts, the 56/57, the
+  +0.67, and added the missing base-rate control and the mode-flip discriminator. Spawning an adversary
+  to check an adversarially-reviewed analysis I had just re-derived would have been ceremony.
+- **What I did NOT accept:** Codex's one-epoch-ahead predictor screen (best AUC 0.62, uncorrected,
+  10 features, correlated epochs) is not a usable warning signal and is recorded as negative.
+- **Artefacts kept:** `experiments/analysis/analyze_eq051.py` plus the nine input curves, so phase 2 does
+  not depend on scratch files.
+- **Next:** EQ-051 phase 2 (PAID) — gradient clipping is the right first test because it constrains the
+  hypothesised rare large update while leaving every ordinary update and the LR trajectory untouched; a
+  schedule or a lower LR changes every step and would confound the answer. Gated on owner approval.
+
+## EQ-051 phase 2 — matched gradient-clipping experiment launched (2026-08-31)
+
+- **Owner approval:** explicit (“okay continue”) after the $4.80 estimate for the full six-run A/B.
+- **Implementation:** added optional `--max-grad-norm` to the local and Modal trainers. Every update now
+  records its pre-clip global L2 gradient norm; the no-clipping control uses a read-only reduction, while
+  the intervention uses `clip_grad_norm_` and additionally records the number of affected steps. The
+  default remains no clipping. Focused regression suite: 42 passed. Commit `89da581`.
+- **Protocol, predeclared:** three postfix controls (seeds 0/1/2), then the same three seeds with one
+  threshold selected solely from the controls' recorded norm distribution. All runs use the same
+  `trueskate-mvp-linear-2k/basic_linear_xctest` corpus, fixed command split seed 0, 40 epochs, batch 8,
+  lr 1e-3, temporal mixer, pinned NVIDIA L4, and `--no-evaluate-test`. No test command is read. The
+  threshold will target the upper tail of observed norms; if the controls show no material upper tail,
+  the clipped arm will not be launched.
+- **Launched controls:** Modal apps `ap-s4OJAuBHQq11fCuvXcHvgr`, `ap-sREmi11yOwjuBaNQnOTo7L`, and
+  `ap-naXN3sIHH45OOtQ4YvJjAF`, labelled `eq051_clip_base_postfix_seed{0,1,2}`. Results pending.
+
+### Control results and threshold (2026-08-31)
+
+- **Controls completed, validation only:** best recovery was 94.72% / 88.12% / 91.42% for seeds 0/1/2;
+  their last-10-epoch means were 85.21% / 82.48% / 88.88%. The difference confirms substantial
+  late-training instability without reading a test command.
+- **Norm evidence:** across 120 epoch summaries (21,240 updates), median per-epoch P95 was 1.586,
+  P90 3.197, P95 3.704, and maximum 5.272. Per-epoch maximum norms had median 5.151, P90 12.986,
+  P95 18.352, and maximum 25.499. The telemetry is epoch-quantiled, not raw-update retained, so it
+  cannot estimate an exact global clipping fraction; it does establish a repeated long upper tail.
+- **Predeclared decision applied:** `max_grad_norm=5.0`. It exceeds the P95 in 119/120 epoch summaries,
+  leaving at least 95% of updates unmodified in those epochs, yet bounds the repeated extreme maxima.
+  This tests the rare-oversized-update mechanism rather than lowering the ordinary update scale.
+- **Launched clipped arm:** `eq051_clip_norm5_postfix_seed{0,1,2}` in Modal apps
+  `ap-bVD0BIbM9O1Kep0ZxAUSxK`, `ap-7FMPBtDic6xiqoeM0cl9Rm`, and
+  `ap-ZAYGpJ8hi1r8yXUxGVM3ta`. Same corpus/split/hardware/seeds and validation-only protocol.
+
+## No-Modal Model 1 Stage 1: offline audit + balanced collection (2026-08-31)
+
+- **No Modal calls:** no jobs, uploads, downloads, artifact retrieval, or evaluations were made in this stage.
+- **Offline audit added:** `scripts/data/audit_basic_linear_corpus.py` reuses the strict linear loader and reports admissions/rejections, explicit device and park provenance, exact command duplicates (including cross-device), start/end grids, duration/slope/displacement histograms, sparse cells, and nearest distinct-command spacing. Its gates can require each device/park minimum and unique commands before training use.
+- **Existing evidence rechecked locally:** the saved nine-run EQ-051 analysis reproduces 57 >5pp collapse events; end error worsens in 56/57 (vs 33% of ordinary transitions), while no event is duration-only. The instability remains endpoint-centred; no paid follow-up was run.
+- **Rig preflight:** WDA `:8100` (XR1) and `:8103` (XR2) both returned healthy. No collector service restart, phone reboot, or WDA rebuild was done. Strict local inventory on the rig confirms the 1,018-clip fresh baseline (`basic_linear_xctest`).
+- **Stage 1 launched:** independent `iPhone_XR` and `iPhone_XR2` collectors write to `data/basic_linear_stage1_20260831/<device>/`, using the calibrated no-reset, fixed-The-Workshop, one-minute, 128px linear mode. Each has its own persisted seed file, PID, and strict per-device 1,100-clip target watcher. This tranche remains training-only; after both watchers stop, run the menu flagger then the audit command with `--require-device` twice, `--require-park 'The Workshop'`, `--min-per-device 1000`, and `--require-unique-commands`.
+
+## Stage 1 gap recovery + unattended closeout (2026-08-31)
+
+- **Failure found:** no-reset linear collection let XR1 drift into a board position that needs the game's reset control; XR2 was trapped in replay/menu and correctly admitted zero clips rather than silently collecting contamination. XR1 had 136 strict clips before both phones were manually rebooted.
+- **Fix:** added `--reset-before-segment` to the XCTest collector and enabled it for `mvp_collect_linear.sh`. It taps the known reset control at normalised `(0.50, 0.0558)` **before** `rec.start()`, then waits a mandatory 1.5 s for the reset tap's rendered trace to clear. Resets still never occur between gestures, so every trainable clip remains free of unlabelled reset-touch contamination. This limits bad-position exposure to one bounded segment.
+- **Unattended closeout:** a rig-side finalizer now waits for both strict 1,100-clip targets, waits for collector exit, flags menu samples non-destructively, writes a strict device/park/duplicate gate report, and emits one notification. A restart supervisor waits for both WDA endpoints after the reboots before launching the collectors with the new recovery flag; it emits one 15-minute WDA/USB incident alert and one recovery alert, never a restart loop.
+- **Verification:** focused collector/audit/menu/calibration suite: 58 passed. No Modal call, training run, artifact retrieval, or service rebuild was made.
+
+## Stage 1 provenance change: intentional SLS parks (2026-09-01)
+
+- **Owner direction supersedes the Workshop-only tranche:** XR1 is intentionally in **SLS 2015 Super Crown** (the initial Model-2 expert-demo domain); XR2 is intentionally in **SLS 2013 Kansas City**. The old Workshop-labelled collectors were stopped before their first segment could complete, avoiding false metadata.
+- **Collection is now segregated, not pooled:** `data/basic_linear_sls_stage1_20260901/iPhone_XR_sls_2015_super_crown/` and `.../iPhone_XR2_sls_2013_kansas_city/`. `mvp_collect_linear.sh` now accepts `BASIC_LINEAR_PARK`, passed through to provenance-only `--park-label`; it never changes the actual in-game park. The original Workshop corpus remains separate and untouched.
+- **Acceptance updated for this deliberate domain split:** each device must retain >=1,000 strict, menu-clean, explicitly device-provenanced and exact-command-unique clips, with XR1 exclusively Super Crown and XR2 exclusively Kansas City. A matching no-Modal finalizer was armed to flag menus, write that gate report, and notify on completion.
+
+## SLS Stage 1 completed at target (2026-09-01)
+
+- **Expected stop, not a rig failure:** both bounded collector wrappers and their target watchers exited after closeout; WDA remained healthy on both `:8100` and `:8103` endpoints.
+- **Gate result:** 2,226 accepted strict linear clips total — 1,121 from `iPhone_XR` / SLS 2015 Super Crown and 1,105 from `iPhone_XR2` / SLS 2013 Kansas City. The finalizer found no exact-command duplicate groups. Menu flagging completed with zero `.menu` files in the XR1 root; the stage gate records both expected park counts. This corpus remains training-only.
+
+## Model 1 full-corpus timeout hardening (2026-09-03)
+
+- **Failure:** the first 13,100-clip L4 seed reached epoch 38/40 then hit its 8-hour Modal function timeout. The old trainer saved only after the complete loop, so it produced no checkpoint; the logged validation curve remains diagnostic-only.
+- **Hardening:** each completed epoch now writes an atomic resume snapshot containing model, optimizer, best-model state, validation/gradient histories, DataLoader and framework RNG state. Modal commits that snapshot to `trueskate-models` after every epoch. Resume refuses any changed corpus/split/hyperparameter configuration; successful final completion atomically writes the final checkpoint then removes the resume snapshot.
+- **Timeout policy:** full-corpus function timeout increased to 12 hours (50% observed-runtime margin). A provider timeout can now lose at most the in-flight epoch, not all completed work.
+- **Verification:** focused Model-1 suite 45 passed, including a simulated interruption, strict changed-config rejection, exact next-epoch resume, and final snapshot cleanup test.
+
+## Model 1 13,100-clip MVP evaluation (2026-09-04)
+
+- **Selection protocol:** three 40-epoch L4 seeds used the fixed command split (9,170 train / 1,965 validation / 1,965 test) with `split_seed=0`, validation-only checkpoint selection, and no per-seed test reads. Seed 0 won validation: 80.00% complete-gesture recovery at epoch 37 (seed 1: 78.42%; seed 2: 75.83%).
+- **One final test exposure:** `basic_linear_model1_recovered_20260903_seed0.pth` was scored once on the untouched 1,965 test commands. Persisted artifact: `trueskate-models/basic_linear_model1_recovered_20260903_seed0_test_once.json`.
+- **Result:** 80.05% complete-gesture recovery; start/end median coordinate error 0.00750 / 0.00968; endpoint P90 0.03256; duration MAE/P90 0.03788 s / 0.07182 s. Start/end/duration recovery: 92.57% / 86.26% / 93.13%. Test agreement with validation is close (+0.05 pp recovery), so there is no observed generalisation drop on this command-held-out split.
+
+## Model 1 scaling protocol and pre-spend estimate (2026-09-04)
+
+- **No Modal jobs launched.** Added content-addressed cohort/subset/experiment manifests, deterministic device/park-balanced nesting, exact-command/content/path leakage rejection, and manifest-driven training with changed-content refusal.
+- **Training evidence hardened:** optional per-epoch training recovery, full train/validation metric histories, exact one-sided recovery bounds, throughput, accelerator identity, and manifest fingerprints now survive atomic resume.
+- **Large-rung I/O:** bounded sequential tar shards preserve original compact clips, verify archive/content identity, stage to ephemeral SSD, and feed the unchanged directory loader. Modal shard runs fail closed if decoded-frame RAM caching is enabled; timeout/provider interruptions resume from the last completed epoch.
+- **Certification contract implemented:** separate linear, curved, and curved+spin complete-gesture scoring; fixed five-time-point curve comparison; two-frame spin-edge tolerance; any extra/missing/merged/lost track fails; 30,000-example one-sided 95% Clopper-Pearson gate (>99.9%, 20 failures pass, 21 fail).
+- **Cost:** current public Modal L4 is $0.7992/GPU-hour. Including the trainer's 64 GiB and default 0.125 CPU gives $1.316583/hour. From the observed 8.42 h/seed at 13.1k, the next two three-seed doublings cost an estimated **$121.12 GPU-only / $199.54 billed compute** and permit the earliest plateau decision. An identifiable three-parameter law fit needs one more rung (through 104.8k): **$282.63 GPU-only / $465.60 billed compute** beyond baseline. Predeclare a **$299.31 approval ceiling** only for the first two doublings until one 26.2k shard-backed epoch measures staging and training-metric overhead. No paid tranche launches without fresh owner approval.

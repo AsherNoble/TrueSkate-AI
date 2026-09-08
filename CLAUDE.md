@@ -19,6 +19,8 @@ pip install -r requirements.txt
 
 External tools: Appium (npm), WebDriverAgent (Xcode), ffmpeg, libimobiledevice.
 
+- **XR rig access:** By default, and almost always, the XR phones are connected to `training-server`, not this laptop. Run XR device/service commands there via the tailnet (`tailscale ssh training-server@training-server`); only use a local connection when explicitly confirmed.
+
 - Device UDID stored in `.env` (not hardcoded)
 - WDA project: `~/Projects/WebDriverAgent` (needs `-allowProvisioningUpdates` after Xcode updates)
 - Appium: localhost:4723, WDA: localhost:8100
@@ -62,13 +64,13 @@ tmp/                # Debug output (gitignored)
 
 A second track collects a **frame→gesture corpus** (for a future sequence model that predicts the gesture from a clip of frames). It fires random SLS-mix gestures and records the screen — NOT CMA-ES, no reward. Headless 30fps capture is Apple's **XCTest screen recording via Appium** (`src/trueskate_ai/vision/xctest_capture.py`); the CoreMediaIO/DAL screen-mirror path is dead on this rig's macOS/iOS (see memory `ios-dal-screen-capture-wedge`).
 
-- **Collector** `scripts/data/collect_sls_xctest.py` — records bounded `--segment-min` `.mov` segments (default **60s — keep short**: `stop_and_save` returns the whole `.mov` as one base64 HTTP response, which fails above ~114 MB / ~90s) while firing gestures + logging a per-gesture manifest. Hardened with: a **gameplay guard** (`vision/gameplay_filter.is_menu_frame` — skips gestures fired into True Skate's replay/menu, relaunches to exit), per-segment resilience (a failed segment is skipped, never fatal), and a **start-fail cap** (`--max-start-fails`: hammering `rec.start()` re-wedges the recorder, so it exits for a clean supervisor restart).
+- **Collector** `scripts/data/collect_sls_xctest.py` — records bounded `--segment-min` `.mov` segments (default **60s — keep short**: `stop_and_save` returns the whole `.mov` as one base64 HTTP response, which fails above ~114 MB / ~90s) while firing gestures + logging a per-gesture manifest. Hardened with: a **gameplay guard** (`vision/gameplay_filter.is_menu_frame` — skips gestures fired into True Skate's replay/menu, relaunches to exit), per-segment resilience (a failed segment is skipped, never fatal), and a **start-fail cap** (`--max-start-fails`: hammering `rec.start()` re-wedges the recorder, so it exits for a clean supervisor restart). **Spin:** `--spin-frac 0.15` in production — the slice splits 50/50 `spin_flick` (single flick + held spin button, Model-1 trainable; meta carries `spin_active`/`spin_hold_*_s`/`payload_total_s`, see `GESTURES.md`) and nslot-`spin`.
 - **Aligner** `scripts/data/align_xctest_traces.py` — slices each gesture's frame window from the `.mov` → per-gesture sample dirs (`frame_NNN.png` + `meta.json`), deletes the `.mov`. Async per segment. Δ (command→pixel offset) is currently 0 (uncalibrated; repro-validated, a constant `frame_times` shift to refine later).
 - **Corpus filter** `scripts/data/flag_menu_samples.py` — marks already-collected replay/menu samples with a `.menu` file. **Training loaders MUST exclude any sample dir containing `.menu`.**
 
 **CRITICAL OPERATIONAL PREREQ — the remotexpc tunnel daemon.** The appium-xcuitest driver only auto-deletes on-device XCTest recording attachments when its **remotexpc tunnel registry is reachable**, which needs a ROOT daemon: `sudo appium driver run xcuitest tunnel-creation` (staged as `scripts/ops/com.trueskate.remotexpc-tunnel.plist` → `/Library/LaunchDaemons/`). Without it, attachments accumulate in testmanagerd until recording wedges with `XCTDaemon.ScreenRecordingError Code=7 "Failed to write file"` (despite free disk) — this benched BOTH phones. Recovery: ensure the daemon is up, then `scripts/recover_remotexpc_attachments.sh` (wraps the official `appium … cleanup-videos`, `--dry-run`/`--delete`) clears the backlog. See memory `xctest-recording-attachments-accumulate`.
 
-**Rig ops (launchd):** `com.trueskate.services` (launch_services: Appium+WDA+iproxy, health-aware monitor), `com.trueskate.collect.xr1|xr2` (supervised collectors via `scripts/rig_collect.sh`), `com.trueskate.watchdog.xr1|xr2` (`scripts/collection_watchdog.sh`: ntfy alert if a phone stops producing segments), and the root `com.trueskate.remotexpc-tunnel`. Ports are +3/device (XR1 wda 8100, XR2 wda 8103).
+**Rig ops (launchd):** `com.trueskate.services` (launch_services: Appium+WDA+iproxy, health-aware monitor), `com.trueskate.collect.xr1|xr2` (supervised collectors via `scripts/rig_collect.sh`), `com.trueskate.watchdog.xr1|xr2` (`scripts/collection_watchdog.sh`: one persistent fleet incident alert on state change, then one recovery — never periodic reminders), and the root `com.trueskate.remotexpc-tunnel`. Ports are +3/device (XR1 wda 8100, XR2 wda 8103).
 
 ### Labeling Pipeline (legacy — pre-RL pivot)
 
@@ -101,7 +103,7 @@ Located at `experiments/rl_poc_experiment_journal.md`. Read at start of relevant
 - Debug/temporary output → `tmp/` (gitignored)
 - `.venv/` is the sole virtual environment
 - `*.pth` model files gitignored; stored in `notebooks/models/`
-- Commit messages: 10–20 words, one commit at a time
+- Commit messages: use `type: message` (e.g. `feat: built a new thing`), one commit at a time
 - Function names should reflect actual behavior precisely (e.g., `reset_position()` not `go_to_waypoint()`)
 - Use full absolute paths — tilde expansion (`~/`) is unreliable in tooling
 - Communication style: prefer terse dot points over prose. State what changed and the next step; skip the essay/recap. Less word salad.

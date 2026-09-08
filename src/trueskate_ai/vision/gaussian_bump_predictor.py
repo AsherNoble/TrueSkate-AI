@@ -298,9 +298,12 @@ class GaussianBumpPredictor(nn.Module):
 # ============================================================================
 
 class GaussianBumpLoss(nn.Module):
-    """
-    Combined loss for gaussian bump prediction.
-    Uses MSE + focal-style weighting for sparse targets.
+    """CenterNet-style penalty-reduced focal loss for the Gaussian heatmap.
+
+    NOT an MSE (there is no squared-error term): positives use a focal BCE on the
+    peak, negatives are down-weighted by (1 - target)**beta so pixels near the
+    Gaussian bump are penalised less. `alpha`/`beta` are the CornerNet/CenterNet
+    focal exponents. Handles the extreme sparsity of a single-touch target.
     """
 
     def __init__(self, alpha: float = 2.0, beta: float = 4.0):

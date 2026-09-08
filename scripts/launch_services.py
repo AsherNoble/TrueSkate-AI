@@ -175,7 +175,14 @@ def _coredevice_available(udid: str) -> bool:
                            capture_output=True, text=True, timeout=30)
     except Exception:  # noqa: BLE001
         return False
-    return any(udid in line and "available" in line.lower() for line in r.stdout.splitlines())
+    # NB: a plain substring test for "available" also matches "unavailable" (a
+    # disconnected-but-remembered device), which made the launcher burn 2x240s
+    # WDA builds (exit 70) per cycle against an absent phone instead of
+    # reporting "not connected". (?<!un) keeps every other "available" variant.
+    return any(
+        udid in line and re.search(r"(?<!un)available", line.lower())
+        for line in r.stdout.splitlines()
+    )
 
 
 def _check_device_connected(device: dict) -> bool:
@@ -475,24 +482,22 @@ def _restart_device(device: dict) -> bool:
 
     if not _wait_for_device(device):
         print(f"[{name}] Device not back on USB; will retry on next monitor cycle.")
-        notify(
-            f"{name}: device still missing from USB after restart attempt "
-            f"{attempt + 1}. Check the cable/hub.",
-            title="TrueSkate rig", priority="high", tags=["warning"],
-        )
         return False
 
     if _start_device(device):
         procs["restart_count"] = 0  # full recovery; clear escalation
         _launch_trueskate_on_devices([device])
         print(f"[{name}] Recovered.")
-        notify(f"{name} recovered and back collecting.",
-               title="TrueSkate rig", tags=["white_check_mark"])
+        # One incident produces one failure alert and one recovery alert.  The
+        # monitor can retry many times while a phone is unplugged or WDA is
+        # unhealthy; emitting an alert for every retry turns one actionable
+        # incident into hundreds of ntfy notifications.
+        if procs.pop("incident_open", False):
+            notify(f"{name} recovered and back collecting.",
+                   title="TrueSkate rig", tags=["white_check_mark"])
         return True
 
     print(f"[{name}] Restart failed (attempt {attempt + 1}).")
-    notify(f"{name} restart failed (attempt {attempt + 1}).",
-           title="TrueSkate rig", priority="high", tags=["warning"])
     return False
 
 
@@ -707,7 +712,9 @@ def main():
                 if died:
                     msg = f"{name}: {died} died — restarting device services."
                     print(f"\n[{name}] {died} — restarting")
-                    notify(msg, title="TrueSkate rig", priority="high", tags=["warning"])
+                    if not procs.get("incident_open", False):
+                        procs["incident_open"] = True
+                        notify(msg, title="TrueSkate rig", priority="high", tags=["warning"])
                     _restart_device(device)
                     procs["wda_health_fails"] = 0  # fresh stack; don't carry stale fails
 

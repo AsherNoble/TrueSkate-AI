@@ -1,0 +1,354 @@
+"""EQ-001: validation-fit along-path end-bias correction."""
+import numpy as np
+import pytest
+import torch
+
+from trueskate_ai.vision.basic_linear_bias import (
+    AlongPathBias, discordant_pairs, fit_along_path_bias, mcnemar_exact_p,
+    along_path_fit_key, perpendicular_error, signed_along_path_error,
+)
+from trueskate_ai.vision.basic_linear_training import (
+    basic_linear_metrics, decompose_endpoint_error, knot_columns, knot_component_labels,
+    nearest_trail_gaps,
+)
+
+
+def _record(start, end, *, along=0.0, perpendicular=0.0, duration=0.5,
+            start_error=(0.0, 0.0)):
+    """A synthetic record whose last knot is displaced by a known amount.
+
+    ``start_error`` displaces the *predicted* first knot away from the commanded
+    one, so the predicted and commanded chords genuinely differ.  The checkpoint
+    EQ-002 will run (`basic_linear_linear_mixed_fresh_holdout_20260813`) has
+    100.0% start recovery at median 0.00635, so the displacement is small but
+    never exactly zero.
+    """
+    start, end = np.asarray(start, dtype=float), np.asarray(end, dtype=float)
+    unit = (end - start) / np.linalg.norm(end - start)
+    normal = np.array([-unit[1], unit[0]])
+    predicted_end = end + along * unit + perpendicular * normal
+    predicted_start = start + np.asarray(start_error, dtype=float)
+    return {
+        "predicted": [*predicted_start, *predicted_end, duration],
+        "target": [*start, *end, duration],
+    }
+
+
+def test_signed_error_is_negative_for_an_undershoot():
+    record = _record((0.2, 0.3), (0.7, 0.8), along=-0.012)
+    assert signed_along_path_error(record) == pytest.approx(-0.012, abs=1e-9)
+
+
+def test_perpendicular_displacement_does_not_enter_the_commanded_axis():
+    record = _record((0.2, 0.3), (0.7, 0.8), along=0.0, perpendicular=0.02)
+    assert signed_along_path_error(record, axis="commanded") == pytest.approx(0.0, abs=1e-9)
+
+
+def test_perpendicular_displacement_leaks_into_the_predicted_axis_second_order():
+    """The predicted chord is itself rotated by the perpendicular error.
+
+    Exactly q**2 / sqrt(L**2 + q**2) for a perpendicular displacement q on a
+    chord of length L (q**2/L to leading order) — 3.7e-5 at the autopsy's
+    measured perpendicular sd (0.0032) over a typical 0.35 chord, i.e. ~0.1% of
+    the 0.03 tolerance.  Note it is **strictly positive whatever the sign of q**,
+    so it is a systematic bias of the estimator, not noise that averages out.
+    """
+    start, end, perpendicular = np.array([0.2, 0.3]), np.array([0.7, 0.8]), 0.02
+    record = _record(start, end, along=0.0, perpendicular=perpendicular)
+    chord = float(np.linalg.norm(end - start))
+    exact = perpendicular ** 2 / np.hypot(chord, perpendicular)
+    assert signed_along_path_error(record, axis="predicted") == pytest.approx(exact, abs=1e-12)
+    assert exact == pytest.approx(perpendicular ** 2 / chord, rel=0.001)
+    assert abs(exact) < 0.001
+    # Strictly positive either way: flipping the sign of q gives the same leak.
+    flipped = _record(start, end, along=0.0, perpendicular=-perpendicular)
+    assert signed_along_path_error(flipped, axis="predicted") == pytest.approx(exact, abs=1e-12)
+
+
+def test_fit_recovers_a_known_injected_bias_within_ten_percent():
+    rng = np.random.default_rng(0)
+    injected = -0.0071  # the measured validation figure
+    records = []
+    for _ in range(400):
+        start = rng.uniform(0.2, 0.4, size=2)
+        end = start + rng.uniform(0.2, 0.4, size=2)
+        records.append(_record(start, end, along=injected + rng.normal(0., 0.004),
+                               perpendicular=rng.normal(0., 0.003)))
+    bias = fit_along_path_bias(records)
+    assert bias.samples == 400
+    assert bias.shift == pytest.approx(injected, rel=0.10)
+
+
+def test_applying_the_fit_removes_the_bias_from_held_out_records():
+    rng = np.random.default_rng(1)
+    injected = -0.010
+
+    def draw(count, generator):
+        rows = []
+        for _ in range(count):
+            start = generator.uniform(0.2, 0.4, size=2)
+            end = start + generator.uniform(0.2, 0.4, size=2)
+            rows.append(_record(start, end, along=injected + generator.normal(0., 0.003)))
+        return rows
+
+    bias = fit_along_path_bias(draw(300, rng))
+    held_out = draw(300, np.random.default_rng(2))
+    before = np.mean([signed_along_path_error(record) for record in held_out])
+    corrected = []
+    for record in held_out:
+        prediction = bias.apply(torch.tensor([record["predicted"]], dtype=torch.float64))
+        corrected.append(signed_along_path_error(
+            {"predicted": prediction[0].tolist(), "target": record["target"]}))
+    assert before == pytest.approx(injected, abs=0.002)
+    assert abs(float(np.mean(corrected))) < abs(before) / 5
+
+
+def test_a_zero_shift_is_an_exact_no_op():
+    prediction = torch.tensor([[0.2, 0.3, 0.7, 0.8, 0.5]])
+    corrected = AlongPathBias(shift=0., samples=0).apply(prediction)
+    assert torch.equal(corrected, prediction)
+    assert corrected is not prediction
+
+
+def test_correction_leaves_every_other_component_untouched():
+    prediction = torch.tensor([[0.2, 0.3, 0.5, 0.4, 0.7, 0.8, 0.55]])  # K=3
+    corrected = AlongPathBias(shift=-0.01, samples=10).apply(prediction)
+    assert torch.allclose(corrected[:, :4], prediction[:, :4])  # knots 0 and 1
+    assert corrected[0, -1] == prediction[0, -1]                # duration
+    assert not torch.allclose(corrected[:, 4:6], prediction[:, 4:6])
+
+
+def test_correction_moves_the_last_knot_forward_along_the_predicted_path():
+    prediction = torch.tensor([[0.2, 0.2, 0.6, 0.2, 0.5]])  # horizontal, +x
+    corrected = AlongPathBias(shift=-0.01, samples=10).apply(prediction)
+    assert corrected[0, 2] == pytest.approx(0.61, abs=1e-6)  # pushed forward
+    assert corrected[0, 3] == pytest.approx(0.20, abs=1e-6)  # not sideways
+
+
+def test_degenerate_paths_are_skipped_and_never_corrected():
+    degenerate = {"predicted": [0.3, 0.3, 0.3, 0.3, 0.5], "target": [0.3, 0.3, 0.3, 0.3, 0.5]}
+    assert signed_along_path_error(degenerate) is None
+    assert fit_along_path_bias([degenerate]).shift == 0.
+    prediction = torch.tensor([[0.3, 0.3, 0.3, 0.3, 0.5]])
+    assert torch.allclose(AlongPathBias(shift=-0.01, samples=5).apply(prediction), prediction)
+
+
+def test_metrics_accept_the_correction_and_never_fit_it():
+    class _Model(torch.nn.Module):
+        def forward(self, frames):
+            return torch.tensor([[0.2, 0.2, 0.59, 0.2, 0.5]]).repeat(len(frames), 1)
+
+    batch = {"frames": torch.zeros(1, 1), "target": torch.tensor([[0.2, 0.2, 0.62, 0.2, 0.5]])}
+    device = torch.device("cpu")
+    uncorrected = basic_linear_metrics(_Model(), [batch], device)
+    corrected = basic_linear_metrics(_Model(), [batch], device,
+                                     correction=AlongPathBias(shift=-0.03, samples=100))
+    assert uncorrected["end_coordinate_median"] == pytest.approx(0.03, abs=1e-6)
+    assert corrected["end_coordinate_median"] == pytest.approx(0.0, abs=1e-6)
+
+
+def test_the_two_axes_diverge_once_the_first_knot_is_wrong():
+    """Every other test has predicted start == commanded start, where the axes
+    agree to ~1e-8 rad and the choice is unobservable."""
+    agreeing = _record((0.2, 0.3), (0.7, 0.8), along=-0.01)
+    assert (signed_along_path_error(agreeing, axis="predicted")
+            == pytest.approx(signed_along_path_error(agreeing, axis="commanded"), abs=1e-9))
+    displaced = _record((0.2, 0.3), (0.7, 0.8), along=-0.01, start_error=(0.012, -0.009))
+    predicted_axis = signed_along_path_error(displaced, axis="predicted")
+    commanded_axis = signed_along_path_error(displaced, axis="commanded")
+    assert predicted_axis != pytest.approx(commanded_axis, abs=1e-6)
+    # Both still recover the injected undershoot to well inside tolerance.
+    assert predicted_axis == pytest.approx(-0.01, abs=0.002)
+    assert commanded_axis == pytest.approx(-0.01, abs=0.002)
+
+
+def test_a_wrong_first_knot_does_not_break_the_fit():
+    rng = np.random.default_rng(7)
+    injected = -0.0095
+    records = [
+        _record(start := rng.uniform(0.2, 0.4, size=2),
+                start + rng.uniform(0.2, 0.4, size=2),
+                along=injected + rng.normal(0., 0.004),
+                perpendicular=rng.normal(0., 0.0036),
+                start_error=rng.normal(0., 0.0054, size=2))
+        for _ in range(600)
+    ]
+    predicted_axis = fit_along_path_bias(records, axis="predicted")
+    commanded_axis = fit_along_path_bias(records, axis="commanded")
+    assert predicted_axis.axis == "predicted"
+    assert predicted_axis.shift == pytest.approx(injected, rel=0.10)
+    assert commanded_axis.shift == pytest.approx(injected, rel=0.10)
+    assert abs(predicted_axis.shift - commanded_axis.shift) < 0.001
+
+
+def test_axis_is_validated():
+    with pytest.raises(ValueError):
+        signed_along_path_error(_record((0.2, 0.3), (0.7, 0.8)), axis="nonsense")
+
+
+def test_a_commanded_axis_fit_cannot_be_applied():
+    """apply() corrects along the predicted chord and reads no axis field, so a
+    commanded-axis fit would silently reintroduce the EQ-001 mismatch."""
+    records = [_record((0.2, 0.3), (0.7, 0.8), along=-0.01)]
+    commanded = fit_along_path_bias(records, axis="commanded")
+    assert commanded.axis == "commanded"
+    with pytest.raises(ValueError, match="cannot be applied"):
+        commanded.apply(torch.tensor([[0.2, 0.3, 0.7, 0.8, 0.5]]))
+    fit_along_path_bias(records).apply(torch.tensor([[0.2, 0.3, 0.7, 0.8, 0.5]]))
+
+
+def test_discordant_pairs_counts_direction_not_totals():
+    assert discordant_pairs([0., 0., 1., 1.], [1., 0., 1., 0.]) == (1, 1)
+    assert discordant_pairs([0.] * 5, [0.] * 5) == (0, 0)
+    with pytest.raises(ValueError):
+        discordant_pairs([0., 1.], [1.])
+
+
+def test_mcnemar_exact_matches_the_hand_computed_cases():
+    # The EQ-001 red team's figures for the end-bias correction's own counts.
+    assert mcnemar_exact_p(4, 1) == pytest.approx(0.375)
+    assert mcnemar_exact_p(3, 0) == pytest.approx(0.25)
+    assert mcnemar_exact_p(0, 0) == 1.0
+    assert mcnemar_exact_p(1, 1) == 1.0
+    # Symmetric in its arguments: gaining 6 is as surprising as losing 6.
+    assert mcnemar_exact_p(6, 0) == pytest.approx(mcnemar_exact_p(0, 6))
+    # Only a much larger, one-sided imbalance clears the usual bar.
+    assert mcnemar_exact_p(10, 0) < 0.05
+
+
+def test_perpendicular_error_is_the_across_path_component():
+    record = _record((0.2, 0.3), (0.7, 0.8), along=-0.02, perpendicular=0.004)
+    assert perpendicular_error(record, axis="commanded") == pytest.approx(0.004, abs=1e-9)
+    # Pure along-path error has no perpendicular component on either axis.
+    pure = _record((0.2, 0.3), (0.7, 0.8), along=-0.02)
+    assert perpendicular_error(pure, axis="commanded") == pytest.approx(0., abs=1e-9)
+    assert perpendicular_error(pure, axis="predicted") == pytest.approx(0., abs=1e-9)
+
+
+def test_the_fit_records_where_it_came_from():
+    records = [_record((0.2, 0.3), (0.7, 0.8), along=-0.01)]
+    key = along_path_fit_key("validation", [3, 1, 4])
+    bias = fit_along_path_bias(records, fit_on=key)
+    assert bias.fit_on == key
+    assert fit_along_path_bias([]).fit_on == "unspecified"
+
+
+def test_the_provenance_key_is_derived_from_the_indices_not_asserted():
+    """A caller-written label can claim a provenance the artefact lacks; a hash
+    of the index set can be re-derived and checked."""
+    assert along_path_fit_key("validation", [1, 2, 3]).startswith("validation[3]:")
+    assert along_path_fit_key("validation", [1, 2, 3]) == along_path_fit_key("validation", [1, 2, 3])
+    assert along_path_fit_key("validation", [1, 2, 3]) != along_path_fit_key("validation", [1, 2, 4])
+    # Order matters: a different split ordering is a different split.
+    assert along_path_fit_key("validation", [1, 2, 3]) != along_path_fit_key("validation", [3, 2, 1])
+    assert along_path_fit_key("test", [1, 2, 3]) != along_path_fit_key("validation", [1, 2, 3])
+
+
+def test_knot_component_labels_are_unchanged_at_k2_and_extend_at_k3():
+    assert knot_component_labels(5) == ["x0", "y0", "x1", "y1", "duration"]
+    assert knot_component_labels(7) == ["x0", "y0", "x1", "y1", "x2", "y2", "duration"]
+
+
+def test_knot_columns_resolve_first_and_last_not_the_first_two():
+    assert knot_columns(5, 0) == (0, 1) and knot_columns(5, -1) == (2, 3)
+    # The EQ-011 defect: at K=3 the old [:, 2:4] slice is the INTERIOR knot.
+    assert knot_columns(7, -1) == (4, 5)
+    assert knot_columns(7, 1) == (2, 3)
+
+
+def test_decomposition_is_identical_at_k2_to_the_hand_written_version():
+    rng = np.random.default_rng(11)
+    for _ in range(200):
+        commanded = [*rng.uniform(.2, .4, size=2), *rng.uniform(.5, .8, size=2), .5]
+        predicted = [value + rng.normal(0., .01) for value in commanded[:4]] + [.5]
+        x0, y0, x1, y1, _ = commanded
+        direction = np.array([x1 - x0, y1 - y0])
+        direction = direction / max(float(np.linalg.norm(direction)), 1e-9)
+        expected = {}
+        for name, centre, guess in (("start", np.array([x0, y0]), np.array(predicted[:2])),
+                                    ("end", np.array([x1, y1]), np.array(predicted[2:4]))):
+            offset = guess - centre
+            along = float(offset @ direction)
+            expected[f"{name}_along"] = along
+            expected[f"{name}_perp"] = float(np.linalg.norm(offset - along * direction))
+        assert decompose_endpoint_error(commanded, predicted) == pytest.approx(expected, abs=1e-12)
+
+
+def test_decomposition_uses_the_chord_not_the_interior_knot_at_k3():
+    # A Z-ish path: the interior knot is far off the chord.  "end" must decompose
+    # against the first->last chord, and no interior component is invented.
+    commanded = [0.2, 0.2, 0.5, 0.7, 0.8, 0.2, 0.6]
+    predicted = [0.2, 0.2, 0.5, 0.7, 0.79, 0.2, 0.6]
+    result = decompose_endpoint_error(commanded, predicted)
+    assert set(result) == {"start_along", "start_perp", "end_along", "end_perp"}
+    # Chord is horizontal (0.2,0.2)->(0.8,0.2), so a -0.01 x error is pure along.
+    assert result["end_along"] == pytest.approx(-0.01, abs=1e-9)
+    assert result["end_perp"] == pytest.approx(0., abs=1e-9)
+
+
+def test_decomposition_rejects_mismatched_widths():
+    with pytest.raises(ValueError):
+        decompose_endpoint_error([0.2, 0.2, 0.6, 0.2, 0.5], [0.2, 0.2, 0.6, 0.2, 0.5, 0.1, 0.1])
+
+
+def test_decomposition_handles_a_degenerate_chord_as_the_old_code_did():
+    # First knot == last knot: no direction exists.  The old code divided by
+    # max(norm, 1e-9), giving along=0 and perp=|offset|; that is preserved.
+    result = decompose_endpoint_error([0.3, 0.3, 0.3, 0.3, 0.5], [0.3, 0.3, 0.32, 0.34, 0.5])
+    assert result["end_along"] == pytest.approx(0., abs=1e-6)
+    assert result["end_perp"] == pytest.approx(float(np.hypot(0.02, 0.04)), abs=1e-6)
+
+
+def _grid(height, width):
+    xa, ya = torch.linspace(0., 1., width), torch.linspace(0., 1., height)
+    return torch.stack((xa[None, :].expand(height, width),
+                        ya[:, None].expand(height, width)), dim=2).reshape(-1, 2)
+
+
+def test_nearest_trail_gaps_finds_the_closest_pixel_and_its_frame():
+    grid = _grid(4, 4)
+    strong = torch.zeros(3, 16, dtype=torch.bool)
+    strong[1, 5] = True   # grid index 5 -> (x=1/3, y=1/3)
+    strong[2, 0] = True   # (0, 0)
+    gaps = nearest_trail_gaps(grid, strong, torch.tensor([[1 / 3, 1 / 3], [0., 0.]]))
+    assert gaps[0]["distance"] == pytest.approx(0., abs=1e-6)
+    assert gaps[0]["frame"] == 1
+    assert gaps[1]["distance"] == pytest.approx(0., abs=1e-6)
+    assert gaps[1]["frame"] == 2
+
+
+def test_nearest_trail_gaps_matches_a_per_point_reference_loop():
+    """The batched implementation must equal K independent passes, including
+    the earliest-frame tie-break."""
+    torch.manual_seed(3)
+    grid = _grid(12, 10)
+    strong = torch.rand(6, 120) < 0.08
+    points = torch.rand(4, 2)
+    batched = nearest_trail_gaps(grid, strong, points)
+    for index in range(len(points)):
+        best, best_step = float("inf"), -1
+        for step in range(len(strong)):
+            if not bool(strong[step].any()):
+                continue
+            candidates = grid[strong[step]]
+            distance = float(torch.linalg.vector_norm(
+                candidates - points[index][None, :], dim=1).min())
+            if distance < best:
+                best, best_step = distance, step
+        assert batched[index]["distance"] == pytest.approx(best, abs=1e-6)
+        assert batched[index]["frame"] == best_step
+
+
+def test_nearest_trail_gaps_handles_frames_with_no_trail():
+    grid = _grid(4, 4)
+    strong = torch.zeros(3, 16, dtype=torch.bool)
+    gaps = nearest_trail_gaps(grid, strong, torch.tensor([[0.5, 0.5]]))
+    assert gaps[0]["frame"] == -1 and gaps[0]["distance"] == float("inf")
+
+
+def test_nearest_trail_gaps_validates_shapes():
+    grid = _grid(4, 4)
+    with pytest.raises(ValueError):
+        nearest_trail_gaps(grid, torch.zeros(2, 9, dtype=torch.bool), torch.zeros(1, 2))
+    with pytest.raises(ValueError):
+        nearest_trail_gaps(grid, torch.zeros(2, 16, dtype=torch.bool), torch.zeros(1, 3))
