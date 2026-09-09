@@ -48,3 +48,13 @@ def test_invalid_times_and_elapsed_shift():
 def test_predictor_has_no_metadata_input():
     import inspect
     assert list(inspect.signature(predict).parameters)==['frames','elapsed_times','config']
+
+
+@pytest.mark.parametrize('reverse',[False,True])
+def test_consensus_recovery(reverse):
+    frames,times,points=clip(reverse,fade=6)
+    p=predict(frames,times,Config(tracking='consensus'))
+    assert p is not None
+    assert np.linalg.norm(np.asarray(p[:2])-points[0]/[127,287])<.02
+    assert np.linalg.norm(np.asarray(p[2:4])-points[-1]/[127,287])<.02
+    assert abs(p[-1]-.825)<.08

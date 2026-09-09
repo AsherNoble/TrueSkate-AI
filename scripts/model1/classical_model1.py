@@ -93,8 +93,8 @@ def evaluate(args):
         entries = sorted(entries, key=lambda e: digest(e['command']))[:args.limit]
     run_dir = args.out / run_id; run_dir.mkdir(exist_ok=True)
     config_id = digest({k:v for k,v in asdict(config).items() if k in
-                        ('hue_low','hue_high','saturation','value','difference','min_area')})[:16]
-    extractor_id = digest([inspect.getsource(extract), '32-128x288-BGR-elapsed-v1'])[:16]
+                        ('hue_low','hue_high','saturation','saturation_max','value','difference','min_area','max_components')})[:16]
+    extractor_id = digest([inspect.getsource(extract), '32-128x288-BGR-elapsed-historical-neural-v2'])[:16]
     cv2.setNumThreads(1)
     def one(e):
         path = Path(e['path']); key = digest(e)[:24]; saved = run_dir / (key+'.json')
@@ -103,6 +103,7 @@ def evaluate(args):
         meta = json.loads((path/'meta.json').read_text())
         feature_path = args.out / 'features' / extractor_id / config_id / (key+'.json')
         error = None
+        frame_count_audit = None
         try:
             if feature_path.exists(): features = json.loads(feature_path.read_text())
             else:
@@ -111,20 +112,26 @@ def evaluate(args):
                 else:
                     capture = cv2.VideoCapture(str(path/'frames.mp4'))
                     count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT)); capture.release()
-                if count != len(meta['frame_times']): raise ValueError('video/metadata frame-count mismatch')
+                frame_count_audit = {'container_frames':count, 'metadata_frames':len(meta['frame_times']),
+                                     'mode':'historical_neural_loader_even_resampling'}
+                # Preserve the historical neural input convention, including its
+                # seek fallback. This is not an admission rule for new collections.
                 frames = _decode_even_frames(path, 32)
+                if len(frames) != 32: raise ValueError('historical loader must return 32 frames')
                 frames = [cv2.resize(f, (128,288), interpolation=cv2.INTER_AREA) for f in frames]
                 raw = np.asarray(meta['frame_times'], dtype=float)
                 selected = np.linspace(0,len(raw)-1,32).round().astype(int)
                 elapsed = raw[selected] - raw[0]  # absolute touch anchor deliberately removed
                 features = extract(frames, elapsed, config)
+                features['frame_count_audit'] = frame_count_audit
                 atomic(feature_path, features)
             prediction = predict_features(features, config)
         except (ValueError, cv2.error) as exc:
             prediction = None; error = str(exc)
         target = [*meta['waypoints'][0], *meta['waypoints'][1], meta['duration']]
         record = {'path':str(path), 'prediction':None if prediction is None else list(map(float,prediction)),
-                  'target':target, 'error':error}
+                  'target':target, 'error':error,
+                  'frame_count_audit':features.get('frame_count_audit') if error is None else frame_count_audit}
         atomic(saved, record); return record
     rows = []
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
