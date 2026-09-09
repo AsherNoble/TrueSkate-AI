@@ -1,8 +1,9 @@
 # BC migration validation
 
-Updated 2026-09-08. Both-phone candidate acceptance is complete. BC promotion
-is merged; the linked cleanup PR records its final merge state. Live rollout
-must be distinguished from the validated staging checkout described here.
+Closed out 2026-09-09. Both-phone candidate acceptance, BC promotion, cleanup
+merge and live source rollout are complete. The checks below are historical
+candidate evidence, not a claim that both phones are currently ready.
+XR1's later signing issue is separate operational recovery.
 
 ## Source and preservation
 
@@ -15,8 +16,8 @@ must be distinguished from the validated staging checkout described here.
   protection. Main's required-check rules are active (ruleset 22508756):
   PRs, strict `archive-integrity`/`offline-tests`, no force-push or deletion.
 - BC promotion #14 merged normally as
-  `4eb9cc3c6ad58f4258d7b41431729e694fa20cf8`. Cleanup #15 is retargeted to
-  main and incorporates that merge without rebasing or squashing history.
+  `4eb9cc3c6ad58f4258d7b41431729e694fa20cf8`. Cleanup #15 merged normally as
+  `c8c384ffff6cc1bfdf75b3ec43c226886f234b85`, without rebasing or squashing history.
 - The original rig checkout remains at
   `463316d34b81129986a171920369dd6067e91f7b`, with its ten dirty tracked
   source files intact. It has not been reset, switched or replaced.
@@ -114,14 +115,17 @@ collector was gracefully interrupted after suspending its restart wrapper;
 the wrapper resumed in a `finally` block after candidate exit 0. Process inspection
 confirmed a new original collector running. WDA was never manually restarted.
 
-## Remaining acceptance and rollout
+## Acceptance and rollout — complete
 
-1. Physical acceptance is complete; preserve the isolated validation outputs.
-2. Merge cleanup #15 normally after its required checks. BC promotion,
-   retargeting and protection setup are complete; do not bypass validation.
-3. Deploy committed source at a safe boundary, preserving the original dirty
-   checkout and service definitions. Record actual loaded service revisions;
-   compatibility launchers alone do not change which checkout a service uses.
+Both-phone physical acceptance passed; isolated outputs remain preserved.
+Cleanup #15 merged and its source was deployed, preserving the dirty checkout
+and service definitions. See [initial rollout](RIG_ROLLOUT_20260908.md).
+The later autofixer-removal PR #17 also merged and was deployed as
+`9ff97c5fb29e799ac7cf027fde100cbce9b64600`; the live dashboard reported that
+exact loaded/disk revision, clean source and no pending restart.
 
-Follow [DEPLOYMENT.md](../DEPLOYMENT.md) for rollout and recovery. Neither
-successful offline tests nor phone power-on alone waives the physical gate.
+There is no outstanding merge/refactor acceptance gate. XR1's later reboot
+exposed an Xcode account/provisioning failure; its bounded recovery check is
+deferred to operator signing work. Collection is intentionally off, including
+after any future recovery probe. See [autostart investigation](COLLECTION_AUTOSTART_20260909.md)
+and [current deployment guidance](../DEPLOYMENT.md).

@@ -6,11 +6,13 @@ The XR fleet is on `training-server`, normally checked out at
 
 The stable path points to a clean committed release; `/deployment.json` on the
 dashboard reports the loaded/disk revisions, and `readlink` shows its directory.
-The original dirty
-checkout is preserved separately and backs the runtime data/environment links.
+Runtime data/environment live separately at
+`/Users/training-server/trueskate-ai-runtime`; release-local links select them.
+The original dirty checkout and its original storage remain preserved separately.
 See the [2026-09-08 rollout record](research/RIG_ROLLOUT_20260908.md) for exact
 paths, loaded-service exceptions and rollback. Do not delete the preserved
-directory or edit/pull into the active release.
+directory or edit/pull into the active release. See
+[storage separation and backup limits](research/RIG_STORAGE_20260909.md).
 
 ## Services
 
@@ -40,9 +42,12 @@ the pre-migration installed definitions are preserved in ARCH-004.
    WDA endpoints and tunnel. Preserve any new source before deployment.
 2. Stage the candidate in a separate worktree. Reuse the existing environment
    only when dependencies match; do not upgrade a live environment during a run.
-3. Run offline checks and one bounded collector segment per XR into `tmp/`.
+3. For collection/device behaviour changes, run offline checks and one bounded
+   collector segment per XR into `tmp/`.
    Use the actual park name, or explicitly label an unclassified validation
    scene. Verify calibration, decoded frame counts and strict loader admission.
+   Documentation-only changes do not require phone activity. Runtime-path-only
+   changes require link/import/HTTP checks, not a new collection run.
 4. Switch operational callers only between collection segments. Preserve
    installed service definitions and the previous committed revision. Do not
    restart healthy WDA services just because Python files moved.

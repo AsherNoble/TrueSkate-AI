@@ -12,6 +12,9 @@ Put substantial experiments in individual records and current facts in STATUS.
   [Evidence and operating rule](COLLECTION_AUTOSTART_20260909.md).
 - XR1 reboot verification is blocked by an Xcode account/provisioning error;
   no unbounded run or healthy XR2 WDA restart was performed.
+- Closed out stale merge/deployment gates and separated release runtime storage
+  from the retained dirty checkout. Independent backup coverage is not verified;
+  neither same-SSD copy may be deleted. [Storage audit](RIG_STORAGE_20260909.md).
 
 ## 2026-09-08 — BC reconciliation and repository reorganisation
 

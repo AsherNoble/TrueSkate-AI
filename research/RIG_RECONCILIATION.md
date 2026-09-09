@@ -188,7 +188,11 @@ Compared with original BC, including uncommitted rig edits. A rig deletion relat
 | `tests/test_temporal_trace_training.py` | BC-only addition retained. |
 | `tests/test_train_dashboard_preview.py` | Retain newer BC implementation and tests; rig version preserved at snapshot. |
 
-## Operational state and evidence
+## Historical operational state at initial reconciliation
+
+The unavailable-phone observations below predate successful both-phone
+acceptance and deployment. Those gates are now complete; see
+[migration close-out](MIGRATION_VALIDATION.md#acceptance-and-rollout--complete).
 
 - Dashboard, collector, service launcher, watchdog and offload source on disk match original BC once rig edits are included. Installed dashboard is running; loaded code identity was not inferred from disk hashes.
 - Eight installed user launchd definitions are preserved under `preservation/deployed-launchagents/` in the rig snapshot. Root remotexpc tunnel is running; it remains installed in place.
@@ -196,4 +200,3 @@ Compared with original BC, including uncommitted rig edits. A rig deletion relat
 - Baseline: 247 passed, one synthetic calibration failure with FFmpeg 9.0.1 (`-vsync` removed). Replacing it with `-fps_mode passthrough` passes all 16 calibration/alignment tests. Rig FFmpeg is 8.1.2.
 - Local `data/`, `logs/`, `notebooks/models/` and rig counterparts remain untouched. Historical Modal volume names: `trueskate-corpus`, `trueskate-corpus-v2`, `trueskate-mvp`, `trueskate-models`. Availability/backups of cloud artifacts were not verified and no paid job was launched.
 - Preserve .env on each machine independently; never put credentials in the archive. Data fingerprints and model manifests remain authoritative for individual experiments.
-
