@@ -2,6 +2,13 @@
 
 ## Source and state
 
+Code rollout baseline: PR #17 merged and was deployed as
+`9ff97c5fb29e799ac7cf027fde100cbce9b64600` on 2026-09-09 (Sydney date).
+At that verification the stable path pointed to `trueskate-ai-releases/9ff97c5`; dashboard loaded and
+disk revisions matched, source was clean and no restart was pending. Both
+collectors/watchdogs remained disabled and XR2 WDA was unchanged and ready.
+Later documentation-only merges do not imply an unrecorded runtime deployment.
+
 Initial rollout source: `c8c384ffff6cc1bfdf75b3ec43c226886f234b85` (merged BC cleanup).
 The paths and process IDs below describe that initial cutover. Later clean
 releases may replace the stable symlink; inspect it and the live dashboard's
@@ -24,15 +31,18 @@ was renamed intact, not reset or cleaned. Its branch remains at
 `463316d34b81129986a171920369dd6067e91f7b`; all dirty source remains recoverable.
 The linked migration worktree was repaired and still resolves to `292838d`.
 
-The release links `.env`, `.venv`, `data`, `logs`, `tmp` and the historical
+At the initial cutover, the release linked `.env`, `.venv`, `data`, `logs`, `tmp` and the historical
 notebook output directories to the preserved directory. No environment upgrade,
 corpus copy, checkpoint conversion or credential publication was performed.
 Deployment-local Git exclusions cover only those external runtime links;
 tracked source remains fully visible to Git and the dashboard's dirty check.
 
-**Do not delete the preserved directory:** it is also the live backing store for
-data, logs and the environment. This is source preservation, not an independent
-backup of the growing corpus. Do not run `git pull` or agent edits inside a live
+The later [storage separation](RIG_STORAGE_20260909.md) moved active release
+links to a dedicated runtime directory while retaining these original copies.
+**Do not delete the preserved directory:** the untouched long-lived service
+monitor still depends on the old process environment/cwd and may write old logs;
+the historical linked worktree also remains there. Neither same-disk copy is an
+independent corpus backup. Do not run `git pull` or agent edits inside a live
 release; prepare another clean release and switch at a safe boundary.
 
 ## Service transition
@@ -71,9 +81,9 @@ this exception with a claim that every live process reloaded new code.
   The capped collector exited instead of retrying indefinitely. A later run
   also reached its start-failure cap without collecting samples.
 
-## Recorder recovery and collector configuration
+## Historical recorder investigation and collector configuration
 
-WDA remains responsive. A read-only official attachment listing found 547
+At this stage WDA remained responsive. A read-only official attachment listing found 547
 on-device XCTest attachments on XR1 (12 on XR2); nothing was deleted. A running
 tunnel daemon alone does not prove its per-device transport remains healthy:
 its log also records terminated SSL forwarders. Attachment cleanup/recovery
@@ -107,7 +117,9 @@ WDA's `/wda/video` returned null; a direct `/wda/video/stop` also returned null.
 Inspection of the installed WDA implementation confirmed stop is a no-op when
 its recording promise/ID is missing. Thus clearing attachments did not clear
 the orphaned active-recording state. No further start retries or WDA restart
-were performed. Collection remains stopped pending XR1 reboot/recovery.
+were performed during that probe. The operator subsequently rebooted XR1;
+WDA could not rebuild because of an Xcode account/provisioning error.
+That hardware recovery is deferred; collection remains off by operator intent.
 
 Fresh source and installed-service snapshots were saved before cutover:
 
@@ -115,15 +127,13 @@ Fresh source and installed-service snapshots were saved before cutover:
 - `/Users/training-server/trueskate-ai-preserved-20260908/tmp/cutover-tracked-20260908.patch`
 - `/Users/training-server/trueskate-ai-preserved-20260908/tmp/cutover-services-20260908.tgz`
 
-For rollback, first drain collectors/aligners and suspend scheduled writers.
-Stop only collector/dashboard/watchdog jobs. Verify that the stable path is
-exactly the release symlink above, remove only that symlink, and rename the
-preserved directory back to the stable path. Repair its migration worktree at
-the restored location and restore the original XR1 plist from the backup above
-(the legacy source does not support the new idle-navigation flag). Restore
-dashboard/watchdog jobs and scheduled enablement; resume collection only after
-recorder recovery. Leave WDA untouched. Never recursively delete either
-directory or reset the preserved checkout.
+For source rollback, inspect the current stable symlink and choose a preserved
+clean release explicitly. Verify its runtime links before atomically replacing
+only the stable symlink, then reload only affected application services.
+Do not rename the dirty checkout over the stable path or run the old cutover
+script again. Leave WDA untouched and keep collector/watchdog jobs disabled;
+recovery alone is never permission to resume collection. Never recursively
+delete a release or reset the preserved checkout as part of rollback.
 
 The one-off cutover script at `/Users/training-server/cutover_rig_20260908.py`
 contains the executed checks and rollback handling. It is not an idempotent
