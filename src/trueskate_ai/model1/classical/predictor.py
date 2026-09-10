@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 import cv2
 import numpy as np
+from trueskate_ai.model1.classical.background import newly_brightened
 
 
 @dataclass(frozen=True)
@@ -15,6 +16,7 @@ class Config:
     min_area: int = 3
     position: str = 'centroid'
     tracking: str = 'nearest'
+    background: str = 'prefix'
     max_components: int = 5
     motion_fraction: float = .12
     duration_correction: float = 0.0
@@ -37,6 +39,8 @@ def extract(frames, times, config=Config()):
         raise ValueError('expected BGR frames [time,height,width,3] and elapsed times')
     if len(times) < 3 or not np.isfinite(times).all() or np.any(np.diff(times) <= 0):
         raise ValueError('need at least three strictly increasing finite timestamps')
+    if config.background == 'affine':
+        frames = np.asarray(newly_brightened(frames))
     h, w = frames.shape[1:3]
     reference = np.median(frames[:min(5, len(frames))], axis=0)
     result = []

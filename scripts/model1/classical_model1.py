@@ -31,7 +31,8 @@ def atomic(path, value):
 
 def source_hash():
     return digest([(str(p.relative_to(ROOT)), hashlib.sha256(p.read_bytes()).hexdigest())
-                   for p in [Path(__file__), ROOT / 'src/trueskate_ai/model1/classical/predictor.py']])
+                   for p in [Path(__file__), ROOT / 'src/trueskate_ai/model1/classical/predictor.py',
+                             ROOT / 'src/trueskate_ai/model1/classical/background.py']])
 
 
 def content_hash(path):
@@ -72,10 +73,11 @@ def prepare(args):
 
 def evaluate(args):
     started = time.monotonic()
+    source_at_start = source_hash()
     manifest = json.loads(args.manifest.read_text())
     if digest(manifest['entries']) != manifest['fingerprint']: raise ValueError('manifest changed')
     config = Config(**json.loads(args.config.read_text())) if args.config else Config()
-    run_id = digest([manifest['fingerprint'], asdict(config), source_hash(), args.partition, args.limit])[:20]
+    run_id = digest([manifest['fingerprint'], asdict(config), source_at_start, args.partition, args.limit])[:20]
     args.out.mkdir(parents=True, exist_ok=True)
     frozen_path = args.out / 'frozen.json'
     if args.partition == 'test':
@@ -93,8 +95,9 @@ def evaluate(args):
         entries = sorted(entries, key=lambda e: digest(e['command']))[:args.limit]
     run_dir = args.out / run_id; run_dir.mkdir(exist_ok=True)
     config_id = digest({k:v for k,v in asdict(config).items() if k in
-                        ('hue_low','hue_high','saturation','saturation_max','value','difference','min_area','max_components')})[:16]
-    extractor_id = digest([inspect.getsource(extract), '32-128x288-BGR-elapsed-historical-neural-v2'])[:16]
+                        ('hue_low','hue_high','saturation','saturation_max','value','difference','min_area','max_components','background')})[:16]
+    from trueskate_ai.model1.classical.background import newly_brightened
+    extractor_id = digest([inspect.getsource(extract), inspect.getsource(newly_brightened), '32-128x288-BGR-elapsed-historical-neural-v2'])[:16]
     cv2.setNumThreads(1)
     def one(e):
         path = Path(e['path']); key = digest(e)[:24]; saved = run_dir / (key+'.json')
@@ -140,11 +143,13 @@ def evaluate(args):
             if time.monotonic()-started >= args.seconds: break
             rows.extend(pool.map(one, entries[offset:offset+max(2,args.workers*4)]))
             atomic(run_dir/'progress.json', {'completed':len(rows),'total':len(entries), 'elapsed_s':time.monotonic()-started})
-    result = {'run_id':run_id, 'partition':args.partition, 'config':asdict(config), 'source':source_hash(),
+    result = {'run_id':run_id, 'partition':args.partition, 'config':asdict(config), 'source':source_at_start,
               'manifest':manifest['fingerprint'], 'complete':len(rows)==len(entries),
               'wall_seconds':time.monotonic()-started, 'peak_rss_bytes':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
               'metrics':metrics([r['prediction'] for r in rows],[r['target'] for r in rows]) if rows else None,
               'hypothesis':args.hypothesis}
+    if source_hash() != source_at_start:
+        raise ValueError('source changed during evaluation; results are not publishable')
     atomic(run_dir/'summary.json', result)
     atomic(args.out/'latest.json', result)
     print(json.dumps(result,indent=2))

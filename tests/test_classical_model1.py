@@ -58,3 +58,21 @@ def test_consensus_recovery(reverse):
     assert np.linalg.norm(np.asarray(p[:2])-points[0]/[127,287])<.02
     assert np.linalg.norm(np.asarray(p[2:4])-points[-1]/[127,287])<.02
     assert abs(p[-1]-.825)<.08
+
+
+def test_motion_compensation_suppresses_static_background_without_mutation():
+    from trueskate_ai.model1.classical.background import newly_brightened
+    rng=np.random.default_rng(10)
+    frame=rng.integers(0,255,(80,40,3),dtype=np.uint8)
+    frames=np.stack([frame]*6);original=frames.copy()
+    result=newly_brightened(frames)
+    assert np.array_equal(frames,original)
+    assert np.count_nonzero(result)==0
+
+
+def test_motion_compensated_touch():
+    f,t,points=clip()
+    p=predict(f,t,Config(background='affine',tracking='linear'))
+    assert p is not None
+    assert np.linalg.norm(np.asarray(p[:2])-points[0]/[127,287])<.03
+    assert np.linalg.norm(np.asarray(p[2:4])-points[-1]/[127,287])<.03
