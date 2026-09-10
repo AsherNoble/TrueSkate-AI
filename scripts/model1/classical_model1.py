@@ -95,9 +95,11 @@ def evaluate(args):
         entries = sorted(entries, key=lambda e: digest(e['command']))[:args.limit]
     run_dir = args.out / run_id; run_dir.mkdir(exist_ok=True)
     config_id = digest({k:v for k,v in asdict(config).items() if k in
-                        ('hue_low','hue_high','saturation','saturation_max','value','difference','min_area','max_components','background')})[:16]
+                        ('hue_low','hue_high','saturation','saturation_max','value','difference','min_area','max_components','background','detector')})[:16]
     from trueskate_ai.model1.classical.background import newly_brightened
-    extractor_id = digest([inspect.getsource(extract), inspect.getsource(newly_brightened), '32-128x288-BGR-elapsed-historical-neural-v2'])[:16]
+    from trueskate_ai.model1.classical.predictor import _peak_components
+    extractor_id = digest([inspect.getsource(extract), inspect.getsource(newly_brightened),
+                           inspect.getsource(_peak_components), '32-128x288-BGR-elapsed-historical-neural-v2'])[:16]
     cv2.setNumThreads(1)
     def one(e):
         path = Path(e['path']); key = digest(e)[:24]; saved = run_dir / (key+'.json')

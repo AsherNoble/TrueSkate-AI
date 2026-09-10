@@ -76,3 +76,16 @@ def test_motion_compensated_touch():
     assert p is not None
     assert np.linalg.norm(np.asarray(p[:2])-points[0]/[127,287])<.03
     assert np.linalg.norm(np.asarray(p[2:4])-points[-1]/[127,287])<.03
+
+
+def test_peak_detector_finds_touch_without_components():
+    f,t,points=clip()
+    p=predict(f,t,Config(detector='peaks',background='affine',tracking='linear',max_components=15))
+    assert p is not None
+    assert np.linalg.norm(np.asarray(p[:2])-points[0]/[127,287])<.03
+    assert np.linalg.norm(np.asarray(p[2:4])-points[-1]/[127,287])<.03
+
+
+def test_invalid_detector_rejected():
+    with pytest.raises(ValueError):
+        Config(detector='blobs')

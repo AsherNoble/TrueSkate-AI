@@ -21,10 +21,13 @@ class Config:
     motion_fraction: float = .12
     duration_correction: float = 0.0
     endpoint_extension: float = 0.0
+    detector: str = 'components'
 
     def __post_init__(self):
         if self.position not in ('centroid', 'tip'):
             raise ValueError('position must be centroid or tip')
+        if self.detector not in ('components', 'peaks'):
+            raise ValueError('detector must be components or peaks')
         if not 0 <= self.hue_low <= self.hue_high <= 179:
             raise ValueError('invalid OpenCV hue range')
         if not 0 <= self.motion_fraction <= 1 or self.min_area < 1:
@@ -41,6 +44,8 @@ def extract(frames, times, config=Config()):
         raise ValueError('need at least three strictly increasing finite timestamps')
     if config.background == 'affine':
         frames = np.asarray(newly_brightened(frames))
+    if config.detector == 'peaks':
+        return {'times': times.tolist(), 'components': _peak_components(frames, config)}
     h, w = frames.shape[1:3]
     reference = np.median(frames[:min(5, len(frames))], axis=0)
     result = []
@@ -70,6 +75,33 @@ def extract(frames, times, config=Config()):
                                         (center + hi * direction).tolist()]})
         result.append(candidates)
     return {'times': times.tolist(), 'components': result}
+
+
+def _peak_components(frames, config):
+    """Locate warm luminous peaks directly; the trace core is pale, not saturated orange."""
+    h, w = frames.shape[1:3]
+    result = []
+    for frame in frames:
+        blue, green, red = np.moveaxis(frame.astype(float) / 255, -1, 0)
+        score = np.maximum(red - green + .12, 0) * np.maximum(green - blue + .12, 0) * np.maximum(red - .2, 0)
+        score = cv2.GaussianBlur(score, (0, 0), 1)
+        peaks = (score >= cv2.dilate(score, np.ones((7, 7), np.uint8))) & (score > .001)
+        ys, xs = np.where(peaks)
+        candidates = []
+        for k in np.argsort(score[ys, xs])[::-1][:config.max_components]:
+            x, y = int(xs[k]), int(ys[k])
+            y0, y1 = max(0, y - 4), min(h, y + 5)
+            x0, x1 = max(0, x - 3), min(w, x + 4)
+            weights = score[y0:y1, x0:x1]
+            grid_y, grid_x = np.mgrid[y0:y1, x0:x1]
+            total = weights.sum()
+            center = [float((weights * grid_x).sum() / total / (w - 1)),
+                      float((weights * grid_y).sum() / total / (h - 1))]
+            candidates.append({'area': int((weights > .001).sum()), 'center': center,
+                               'ends': [center, center],
+                               'brightening': float(score[y, x] * 3000)})
+        result.append(candidates)
+    return result
 
 
 def predict_features(features, config=Config()):
