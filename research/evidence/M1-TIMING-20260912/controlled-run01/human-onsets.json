@@ -1,0 +1,43 @@
+{
+  "recording": "xr2-six-touch-20260912-run01/segment_00000.mov",
+  "frame_numbering": "zero-based",
+  "frame_count": 472,
+  "labels": [
+    {
+      "frame": 38,
+      "time_s": 1.408333,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 94,
+      "time_s": 3.275,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 149,
+      "time_s": 5.108333,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 212,
+      "time_s": 7.208333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 309,
+      "time_s": 10.441667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 400,
+      "time_s": 13.473333,
+      "kind": "gesture",
+      "note": ""
+    }
+  ]
+}
