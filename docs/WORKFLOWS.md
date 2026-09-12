@@ -65,3 +65,18 @@ independent resampling convention, so a full decode alone does not establish
 synchronization. `--require-miss` is an exact quota; this selection is not an
 accuracy estimate. The JSON sidecar records every screened sample, including
 those not rendered. Test-split inspection must be treated as holdout exposure.
+
+## Original-recording onset annotation
+
+Use `python scripts/inspect/build_onset_viewer.py --video /absolute/original.mov
+--out /absolute/empty-output --recording-id session/original.mov
+--title "Session name" --export-name timing-labels-session.json` as one command.
+Requires FFmpeg/ffprobe. The output includes every original-resolution decoded
+frame and its actual presentation timestamp; extraction never changes frame rate.
+Open `index.html` in a browser. Arrow keys step one frame, Shift+arrows step 30,
+M marks onset, and Download saves labels for comparison with the command manifest.
+The browser stores annotations by recording identity. Export labels before
+clearing browser data. Output must be empty to protect existing annotations.
+Neither this tool nor the overlay contacts the rig or updates training labels.
+See [timing findings](../research/experiments/M1-TIMING-20260912.md), including
+the human-confirmed training exclusion that must be enforced before the next run.

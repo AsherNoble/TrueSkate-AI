@@ -1,0 +1,208 @@
+{
+  "matching": "Matched chronologically within touch type; reset annotations preserved separately",
+  "stats": {
+    "calibration": {
+      "n": 3,
+      "median_offset_s": -0.6268630659027101,
+      "range_s": 0.030866273696899094,
+      "min_s": -0.6559610689239502,
+      "max_s": -0.6250947952270511,
+      "within_one_frame": 3,
+      "within_two_frames": 3,
+      "max_abs_residual_s": 0.029098003021240104
+    },
+    "gesture": {
+      "n": 17,
+      "median_offset_s": -0.579621881301879,
+      "range_s": 0.18664810408020216,
+      "min_s": -0.613119102661134,
+      "max_s": -0.42647099858093185,
+      "within_one_frame": 12,
+      "within_two_frames": 14,
+      "max_abs_residual_s": 0.15315088272094712,
+      "overhead_correlation": 0.8692533277942963
+    }
+  },
+  "rows": [
+    {
+      "kind": "calibration",
+      "gesture_index": 0,
+      "frame": 19,
+      "time_s": 0.741667,
+      "offset_s": -0.6559610689239502,
+      "overhead_s": 0.44235987663269044
+    },
+    {
+      "kind": "calibration",
+      "gesture_index": 1,
+      "frame": 84,
+      "time_s": 2.908333,
+      "offset_s": -0.6268630659027101,
+      "overhead_s": 0.45388407707214357
+    },
+    {
+      "kind": "calibration",
+      "gesture_index": 2,
+      "frame": 146,
+      "time_s": 4.975,
+      "offset_s": -0.6250947952270511,
+      "overhead_s": 0.45072622299194337
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 3,
+      "frame": 212,
+      "time_s": 7.175,
+      "offset_s": -0.6103951454162599,
+      "overhead_s": 0.513150386099104
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 4,
+      "frame": 306,
+      "time_s": 10.308333,
+      "offset_s": -0.5895401632232673,
+      "overhead_s": 0.5406693992547345
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 5,
+      "frame": 395,
+      "time_s": 13.29,
+      "offset_s": -0.5480839824676522,
+      "overhead_s": 0.507453767265774
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 6,
+      "frame": 473,
+      "time_s": 15.89,
+      "offset_s": -0.6021309947967524,
+      "overhead_s": 0.5090286097864167
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 7,
+      "frame": 562,
+      "time_s": 18.873333,
+      "offset_s": -0.613119102661134,
+      "overhead_s": 0.525879739709479
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 8,
+      "frame": 709,
+      "time_s": 23.79,
+      "offset_s": -0.5956410980224618,
+      "overhead_s": 0.5509371506827765
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 9,
+      "frame": 788,
+      "time_s": 26.423333,
+      "offset_s": -0.4702719938201909,
+      "overhead_s": 0.5981374107774012
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 10,
+      "frame": 867,
+      "time_s": 29.056667,
+      "offset_s": -0.579621881301879,
+      "overhead_s": 0.5198846389993796
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 11,
+      "frame": 959,
+      "time_s": 32.123333,
+      "offset_s": -0.5724611055297828,
+      "overhead_s": 0.536219112432112
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 12,
+      "frame": 1047,
+      "time_s": 35.056667,
+      "offset_s": -0.5292569101409939,
+      "overhead_s": 0.5420944054986665
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 13,
+      "frame": 1194,
+      "time_s": 39.971667,
+      "offset_s": -0.5764220274047887,
+      "overhead_s": 0.5050190975241091
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 14,
+      "frame": 1294,
+      "time_s": 43.305,
+      "offset_s": -0.5936048698425296,
+      "overhead_s": 0.5086424906687703
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 15,
+      "frame": 1370,
+      "time_s": 45.838333,
+      "offset_s": -0.5057591306610121,
+      "overhead_s": 0.6185866509241884
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 16,
+      "frame": 1465,
+      "time_s": 49.021667,
+      "offset_s": -0.5763180292205803,
+      "overhead_s": 0.5391309213537823
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 17,
+      "frame": 1562,
+      "time_s": 52.271667,
+      "offset_s": -0.42647099858093185,
+      "overhead_s": 0.6490678770880168
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 18,
+      "frame": 1712,
+      "time_s": 57.288333,
+      "offset_s": -0.6102761613769516,
+      "overhead_s": 0.4833282310136542
+    },
+    {
+      "kind": "gesture",
+      "gesture_index": 19,
+      "frame": 1801,
+      "time_s": 60.255,
+      "offset_s": -0.5979031276702855,
+      "overhead_s": 0.5212122855663064
+    }
+  ],
+  "reset_labels": [
+    {
+      "frame": 626,
+      "time_s": 21.006667,
+      "kind": "reset",
+      "note": ""
+    },
+    {
+      "frame": 1112,
+      "time_s": 37.223333,
+      "kind": "reset",
+      "note": ""
+    },
+    {
+      "frame": 1630,
+      "time_s": 54.555,
+      "kind": "reset",
+      "note": ""
+    }
+  ]
+}

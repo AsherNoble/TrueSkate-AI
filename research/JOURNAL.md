@@ -4,6 +4,14 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-12 — Human onset timing audit
+
+- Preserved three original-recording annotation sets, manifests, frame timestamps
+  and findings; false calibration detections and a within-recording timing shift
+  require investigation. Recorded the user-confirmed spin-control exclusion.
+- Added the reusable frame viewer. No collection or training changes deployed.
+  [M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).
+
 ## 2026-09-09 — Unintended collection autostart retired
 
 - Confirmed login-time collector jobs, the historical restart loop, and a loaded

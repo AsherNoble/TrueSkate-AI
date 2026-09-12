@@ -1,0 +1,35 @@
+{
+  "method": "known-point-local-frame-difference",
+  "tap_events": 3,
+  "tap_detections": 2,
+  "tap_skipped": 1,
+  "reference_tap_delta_s": 1.06,
+  "candidate_offsets_s": [
+    3.2333,
+    1.1
+  ],
+  "inlier_offsets_s": [
+    3.2333,
+    1.1
+  ],
+  "tap_offset_s": 2.1667,
+  "mad_s": 1.0667,
+  "accepted": false,
+  "reason": "tap offset MAD 1.067s exceeds allowed 0.100s",
+  "detections": [
+    {
+      "gesture_index": 1,
+      "onset_video_s": 7.0608,
+      "offset_s": 3.2333,
+      "score": 938,
+      "threshold": 12
+    },
+    {
+      "gesture_index": 2,
+      "onset_video_s": 7.065,
+      "offset_s": 1.1,
+      "score": 382,
+      "threshold": 12
+    }
+  ]
+}

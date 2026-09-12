@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-08. Behavioural cloning is the development direction.
+Updated 2026-09-12. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -38,3 +38,13 @@ action groups and activity masks; the older rig model must not overwrite it.
 - How should future collection broaden spatial coverage without contaminating labels?
 
 These are research decisions, not tasks automatically authorized by maintenance.
+
+## Timing and data-quality audit
+
+Three original recordings now have preserved human onset annotations. Two show
+false automatic calibration detections; one shows an approximately half-second
+within-recording timing shift. These selected surviving originals do not estimate
+accepted-corpus error prevalence. Shared decoding and calibration remain unchanged.
+A human-confirmed spin-contaminated gesture must be excluded before the next
+linear training build; exclusion enforcement is still pending. See
+[M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).

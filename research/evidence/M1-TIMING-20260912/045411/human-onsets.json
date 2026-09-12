@@ -1,0 +1,121 @@
+{
+  "recording": "iPhone_XR2_20260901_045411/segment_00000.mov",
+  "frame_numbering": "zero-based",
+  "frame_count": 1849,
+  "labels": [
+    {
+      "frame": 217,
+      "time_s": 7.348333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 308,
+      "time_s": 10.381667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 402,
+      "time_s": 13.515,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 498,
+      "time_s": 16.713333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 579,
+      "time_s": 19.413333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 660,
+      "time_s": 22.113333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 739,
+      "time_s": 24.746667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 823,
+      "time_s": 27.546667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 915,
+      "time_s": 30.646667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1004,
+      "time_s": 33.63,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1085,
+      "time_s": 36.33,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1173,
+      "time_s": 39.263333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1257,
+      "time_s": 42.061667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1352,
+      "time_s": 45.245,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1429,
+      "time_s": 47.811667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1522,
+      "time_s": 50.911667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1620,
+      "time_s": 54.195,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1694,
+      "time_s": 56.661667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1792,
+      "time_s": 59.945,
+      "kind": "gesture",
+      "note": ""
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "recording": "iPhone_XR2_20260901_073122/segment_00000.mov",
+  "frame_numbering": "zero-based",
+  "frame_count": 1859,
+  "labels": [
+    {
+      "frame": 19,
+      "time_s": 0.741667,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 84,
+      "time_s": 2.908333,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 146,
+      "time_s": 4.975,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 212,
+      "time_s": 7.175,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 306,
+      "time_s": 10.308333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 395,
+      "time_s": 13.29,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 473,
+      "time_s": 15.89,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 562,
+      "time_s": 18.873333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 626,
+      "time_s": 21.006667,
+      "kind": "reset",
+      "note": ""
+    },
+    {
+      "frame": 709,
+      "time_s": 23.79,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 788,
+      "time_s": 26.423333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 867,
+      "time_s": 29.056667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 959,
+      "time_s": 32.123333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1047,
+      "time_s": 35.056667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1112,
+      "time_s": 37.223333,
+      "kind": "reset",
+      "note": ""
+    },
+    {
+      "frame": 1194,
+      "time_s": 39.971667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1294,
+      "time_s": 43.305,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1370,
+      "time_s": 45.838333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1465,
+      "time_s": 49.021667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1562,
+      "time_s": 52.271667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1630,
+      "time_s": 54.555,
+      "kind": "reset",
+      "note": ""
+    },
+    {
+      "frame": 1712,
+      "time_s": 57.288333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 1801,
+      "time_s": 60.255,
+      "kind": "gesture",
+      "note": ""
+    }
+  ]
+}
