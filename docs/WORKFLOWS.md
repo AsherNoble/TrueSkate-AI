@@ -51,3 +51,17 @@ separate from calibration controls and exclude contamination markers.
 trick-library tools. [The scaling protocol](../research/protocols/model1_scaling.md)
 contains the exact frozen experimental procedure. [Trick-library provenance](../trick_libraries/README.md)
 explains the retained CMA-ES outputs and their BC use.
+
+## Prediction overlays
+
+Run `python scripts/inspect/render_prediction_overlay.py --corpus /absolute/corpus
+--checkpoint /absolute/checkpoint.pth --manifest /absolute/manifest.json
+--out /absolute/output --partition train --count 5 --require-miss 1 --no-open`
+as one command. FFmpeg/ffprobe are required; decoding defaults to FFmpeg.
+The output compares raw frames, the commanded gesture, and the model prediction.
+Both animations assume the stored t=0; neither measures onset. The shared
+training decoder is unchanged. Images and metadata times retain the historical
+independent resampling convention, so a full decode alone does not establish
+synchronization. `--require-miss` is an exact quota; this selection is not an
+accuracy estimate. The JSON sidecar records every screened sample, including
+those not rendered. Test-split inspection must be treated as holdout exposure.
