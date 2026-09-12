@@ -1,0 +1,152 @@
+{
+  "experiment": "isolated-six-touch-timing",
+  "device": "iPhone_XR2",
+  "park": "Skateboard GB (SB GB signage; exact version unverified)",
+  "started_at_epoch_s": 1789185163.925074,
+  "host_start_epoch_s": 1789185163.162635,
+  "host_stop_epoch_s": 1789185182.3653471,
+  "fps": 30,
+  "allow_idle_navigation": true,
+  "wait_requested_s": 1.0,
+  "wait_measured_monotonic_s": [
+    1.121271300013177,
+    1.1387930589844473,
+    1.114718132012058,
+    1.1208102050004527,
+    1.1241254920023493,
+    1.1265356889925897,
+    1.1451170329819433
+  ],
+  "settings_before_recording": {
+    "nativeWebTap": false,
+    "nativeWebTapStrict": false,
+    "useJSONSource": false,
+    "webScreenshotMode": "native",
+    "shouldUseCompactResponses": true,
+    "elementResponseAttributes": "type,label",
+    "mjpegServerScreenshotQuality": 25,
+    "mjpegServerFramerate": 10,
+    "screenshotQuality": 1,
+    "mjpegScalingFactor": 100,
+    "reduceMotion": null,
+    "pageSourceExcludedAttributes": ""
+  },
+  "gestures": [
+    {
+      "gesture_index": 0,
+      "t_call_start_epoch_s": 1789185164.935804,
+      "t_call_end_epoch_s": 1789185165.420811,
+      "t_call_start_monotonic_s": 494582.415112516,
+      "t_call_end_monotonic_s": 494582.900124437,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.4,
+          0.35
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    },
+    {
+      "gesture_index": 1,
+      "t_call_start_epoch_s": 1789185166.559604,
+      "t_call_end_epoch_s": 1789185167.309477,
+      "t_call_start_monotonic_s": 494584.038939287,
+      "t_call_end_monotonic_s": 494584.788822933,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.6,
+          0.35
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    },
+    {
+      "gesture_index": 2,
+      "t_call_start_epoch_s": 1789185168.424196,
+      "t_call_end_epoch_s": 1789185169.13669,
+      "t_call_start_monotonic_s": 494585.903563606,
+      "t_call_end_monotonic_s": 494586.616066822,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.5,
+          0.65
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    },
+    {
+      "gesture_index": 3,
+      "t_call_start_epoch_s": 1789185170.2575,
+      "t_call_end_epoch_s": 1789185172.180331,
+      "t_call_start_monotonic_s": 494587.736898431,
+      "t_call_end_monotonic_s": 494589.659759435,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.38,
+          0.65
+        ],
+        [
+          0.62,
+          0.45
+        ]
+      ],
+      "duration": 1.0,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 4,
+      "t_call_start_epoch_s": 1789185173.3044622,
+      "t_call_end_epoch_s": 1789185175.395241,
+      "t_call_start_monotonic_s": 494590.78391192,
+      "t_call_end_monotonic_s": 494592.874723728,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.62,
+          0.65
+        ],
+        [
+          0.38,
+          0.45
+        ]
+      ],
+      "duration": 1.0,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 5,
+      "t_call_start_epoch_s": 1789185176.5217779,
+      "t_call_end_epoch_s": 1789185178.4446359,
+      "t_call_start_monotonic_s": 494594.001282708,
+      "t_call_end_monotonic_s": 494595.924170819,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.38,
+          0.55
+        ],
+        [
+          0.62,
+          0.55
+        ]
+      ],
+      "duration": 1.0,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    }
+  ],
+  "training_admission": "diagnostic only; pending per-recording human calibration",
+  "script_sha256": "f5f99ede9f56d4cdc147d881811a8e97766b7df7d88899c11367bf4e8148a3c7"
+}
