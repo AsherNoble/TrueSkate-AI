@@ -1,0 +1,115 @@
+{
+  "rule": "Precommitted return-minus-duration rule, offset from first calibration only",
+  "residual_sign": "observed minus predicted; positive means prediction early",
+  "offset_s": -0.023347019012451176,
+  "command_start_offset_s": 0.38383300418090815,
+  "rows": [
+    {
+      "index": 0,
+      "kind": "calibration",
+      "duration_s": 0.05,
+      "frame": 37,
+      "visible_s": 1.351667,
+      "predicted_s": 1.351667,
+      "error_s": 0.0,
+      "within_one_frame": true,
+      "command_start_error_s": 0.0
+    },
+    {
+      "index": 1,
+      "kind": "calibration",
+      "duration_s": 0.05,
+      "frame": 85,
+      "visible_s": 2.951667,
+      "predicted_s": 2.979564024154663,
+      "error_s": -0.027897024154662997,
+      "within_one_frame": true,
+      "command_start_error_s": 0.00016984939575204194
+    },
+    {
+      "index": 2,
+      "kind": "calibration",
+      "duration_s": 0.05,
+      "frame": 133,
+      "visible_s": 4.551667,
+      "predicted_s": 4.55406482333374,
+      "error_s": -0.0023978233337400567,
+      "within_one_frame": true,
+      "command_start_error_s": 0.00362892150878924
+    },
+    {
+      "index": 3,
+      "kind": "gesture",
+      "duration_s": 0.3,
+      "frame": 184,
+      "visible_s": 6.251667,
+      "predicted_s": 6.198674989883423,
+      "error_s": 0.052992010116577504,
+      "within_one_frame": false,
+      "command_start_error_s": 0.09350099563598668
+    },
+    {
+      "index": 4,
+      "kind": "gesture",
+      "duration_s": 0.6,
+      "frame": 240,
+      "visible_s": 8.118333,
+      "predicted_s": 8.065729881469727,
+      "error_s": 0.05260311853027311,
+      "within_one_frame": false,
+      "command_start_error_s": 0.08934695016479566
+    },
+    {
+      "index": 5,
+      "kind": "gesture",
+      "duration_s": 1.0,
+      "frame": 309,
+      "visible_s": 10.418333,
+      "predicted_s": 10.378239036743164,
+      "error_s": 0.04009396325683667,
+      "within_one_frame": false,
+      "command_start_error_s": 0.1997932125244155
+    },
+    {
+      "index": 6,
+      "kind": "gesture",
+      "duration_s": 0.3,
+      "frame": 390,
+      "visible_s": 13.116667,
+      "predicted_s": 13.182323051635741,
+      "error_s": -0.06565605163574162,
+      "within_one_frame": false,
+      "command_start_error_s": 0.18765391349792537
+    },
+    {
+      "index": 7,
+      "kind": "gesture",
+      "duration_s": 0.6,
+      "frame": 450,
+      "visible_s": 15.116667,
+      "predicted_s": 15.174437071029663,
+      "error_s": -0.05777007102966358,
+      "within_one_frame": false,
+      "command_start_error_s": 0.07985319137573299
+    },
+    {
+      "index": 8,
+      "kind": "gesture",
+      "duration_s": 1.0,
+      "frame": 518,
+      "visible_s": 17.383333,
+      "predicted_s": 17.373594881240845,
+      "error_s": 0.009738118759155867,
+      "within_one_frame": true,
+      "command_start_error_s": 0.05428310166931283
+    }
+  ],
+  "stats": {
+    "evaluated": 8,
+    "within_one_frame": 3,
+    "max_absolute_error_s": 0.06565605163574162,
+    "mean_absolute_error_s": 0.038643522602081426,
+    "start_rule_within_one_frame": 2,
+    "start_rule_max_absolute_error_s": 0.1997932125244155
+  }
+}
