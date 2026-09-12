@@ -1,6 +1,7 @@
 """One isolated XR2 timing sequence. No collector jobs or training admission.
 
-Three 50 ms holds followed by three one-second linear gestures. Seven one-second
+Three 50 ms holds followed by three one-second linear gestures (original),
+or six linear gestures of 0.3, 0.6, 1.0 s repeated (duration-repeat). One-second
 waits: before, between returned calls, and after. The measured loop has no
 screenshots, checks, resets, logging writes, or other device requests.
 """
@@ -13,8 +14,8 @@ import subprocess
 import time
 
 
-def sequence():
-    return [
+def sequence(profile="original"):
+    items = [
         {'kind': 'calibration', 'points': [[.40, .35]], 'duration': .05},
         {'kind': 'calibration', 'points': [[.60, .35]], 'duration': .05},
         {'kind': 'calibration', 'points': [[.50, .65]], 'duration': .05},
@@ -22,6 +23,13 @@ def sequence():
         {'kind': 'linear', 'points': [[.62, .65], [.38, .45]], 'duration': 1.0},
         {'kind': 'linear', 'points': [[.38, .55], [.62, .55]], 'duration': 1.0},
     ]
+    if profile == 'duration-repeat':
+        linears = items[3:]
+        items = items[:3] + [dict(g, duration=d) for _ in range(2)
+                             for g, d in zip(linears, (.3, .6, 1.0))]
+    elif profile != 'original':
+        raise ValueError('Unknown sequence profile')
+    return items
 
 
 def run_sequence(commands, *, sleep=time.sleep, epoch=time.time, monotonic=time.monotonic):
@@ -52,7 +60,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--park', required=True, help='Observed park provenance, including uncertainty')
+    parser.add_argument('--profile', choices=('original', 'duration-repeat'), default='original')
     args = parser.parse_args()
+    specs = sequence(args.profile)
     if args.out.exists():
         raise SystemExit('Use a new output directory; never overwrite an experiment.')
     tunnel = subprocess.check_output(['launchctl', 'print', 'system/com.trueskate.remotexpc-tunnel'], text=True)
@@ -72,7 +82,7 @@ def main():
             raise RuntimeError('Preflight detected blocking menu/editor; no recording started.')
         settings = driver.get_settings()
         commands = []
-        for spec in sequence():
+        for spec in specs:
             finger = make_touch_pointer('finger')
             action = ActionChains(driver, devices=[finger])
             x, y = spec['points'][0]
@@ -82,7 +92,7 @@ def main():
                 finger.create_pause(spec['duration'])
             else:
                 x, y = spec['points'][1]
-                finger.create_pointer_move(x=x * 414, y=y * 896, duration=1000)
+                finger.create_pointer_move(x=x * 414, y=y * 896, duration=round(spec['duration'] * 1000))
             finger.create_pointer_up(0)
             commands.append(action)
         recorder = XCTestScreenRecorder(driver, fps=30)
@@ -92,7 +102,7 @@ def main():
         finally:
             result = recorder.stop_and_save(args.out / 'segment_00000.mov')
         manifest = {
-            'experiment': 'isolated-six-touch-timing', 'device': 'iPhone_XR2',
+            'experiment': 'isolated-touch-timing', 'profile': args.profile, 'device': 'iPhone_XR2',
             'park': args.park, 'started_at_epoch_s': result.started_at_epoch_s,
             'host_start_epoch_s': result.host_start_epoch_s, 'host_stop_epoch_s': result.host_stop_epoch_s,
             'fps': result.fps, 'allow_idle_navigation': True,
@@ -101,7 +111,7 @@ def main():
             'training_admission': 'diagnostic only; pending per-recording human calibration',
             'script_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         }
-        for i, (spec, times) in enumerate(zip(sequence(), events)):
+        for i, (spec, times) in enumerate(zip(specs, events)):
             manifest['gestures'].append({'gesture_index': i, **times,
                 'gesture_distribution': 'tap' if spec['kind'] == 'calibration' else 'linear',
                 'waypoints': spec['points'], 'duration': spec['duration'], 'easing_power': 1.0,

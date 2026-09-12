@@ -23,3 +23,17 @@ def test_measured_sequence_contains_only_six_calls_and_seven_waits():
     assert waits == [1.0] * 7
     assert len(events) == 6
     assert all(e['t_call_end_monotonic_s'] - e['t_call_start_monotonic_s'] == 1.5 for e in events)
+
+
+def test_duration_repeat_has_three_controls_and_two_duration_cycles():
+    specs = probe.sequence('duration-repeat')
+    assert len(specs) == 9
+    assert [s['duration'] for s in specs] == [.05, .05, .05, .3, .6, 1., .3, .6, 1.]
+    calls = []
+    class Command:
+        def perform(self):
+            calls.append('touch')
+    events, waits = probe.run_sequence([Command() for _ in specs],
+        sleep=lambda d: calls.append(('wait', d)), epoch=lambda: 0., monotonic=lambda: 0.)
+    assert calls == [('wait', 1.)] + ['touch', ('wait', 1.)] * 9
+    assert len(events) == 9 and len(waits) == 10
