@@ -61,6 +61,7 @@ def main():
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--park', required=True, help='Observed park provenance, including uncertainty')
     parser.add_argument('--profile', choices=('original', 'duration-repeat'), default='original')
+    parser.add_argument('--appium-port', type=int, default=4726, help='Optional isolated logging Appium; WDA remains on 8103')
     args = parser.parse_args()
     specs = sequence(args.profile)
     if args.out.exists():
@@ -69,7 +70,9 @@ def main():
     if 'state = running' not in tunnel:
         raise SystemExit('Required recording tunnel is not running.')
     args.out.mkdir(parents=True)
-    worker = DeviceSession(next(d for d in DEVICES if d['name'] == 'iPhone_XR2'))
+    cfg = dict(next(d for d in DEVICES if d['name'] == 'iPhone_XR2'))
+    cfg['appium_port'] = args.appium_port
+    worker = DeviceSession(cfg)
     recorder = None
     try:
         worker.connect()
@@ -106,6 +109,7 @@ def main():
             'park': args.park, 'started_at_epoch_s': result.started_at_epoch_s,
             'host_start_epoch_s': result.host_start_epoch_s, 'host_stop_epoch_s': result.host_stop_epoch_s,
             'fps': result.fps, 'allow_idle_navigation': True,
+            'appium_port': args.appium_port, 'wda_port': 8103,
             'wait_requested_s': 1.0, 'wait_measured_monotonic_s': waits,
             'settings_before_recording': settings, 'gestures': [],
             'training_admission': 'diagnostic only; pending per-recording human calibration',
