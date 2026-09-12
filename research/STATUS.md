@@ -48,3 +48,7 @@ accepted-corpus error prevalence. Shared decoding and calibration remain unchang
 A human-confirmed spin-contaminated gesture must be excluded before the next
 linear training build; exclusion enforcement is still pending. See
 [M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).
+
+Bounded timing repeats show return-minus-duration alignment does not reliably
+achieve one-frame accuracy. Run03 now captures Appium proxy boundaries: most
+call overhead occurs within the WDA round trip; physical onset labels are pending.
