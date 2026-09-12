@@ -56,6 +56,8 @@ def build_bundle(driver, specs):
     from trueskate_ai.sim.touch_actions import make_touch_pointer
     finger = make_touch_pointer('bundle')
     command = ActionChains(driver, devices=[finger])
+    x, y = specs[0]['points'][0]
+    finger.create_pointer_move(x=x * 414, y=y * 896, duration=0)
     finger.create_pause(1.0)
     elapsed, starts = 1.0, []
     for spec in specs:

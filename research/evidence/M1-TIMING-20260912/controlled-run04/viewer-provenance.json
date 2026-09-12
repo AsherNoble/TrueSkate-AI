@@ -1,0 +1,8 @@
+{
+  "recording": "xr2-bundled-20260912-run04b/segment_00000.mov",
+  "original_video": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/timing-probe-20260912/run04b/segment_00000.mov",
+  "sha256": "1d7a8781cebac6b397332cf3f2600000327ab9d5fdcd1bdace713d0e8f8fb9a1",
+  "frame_count": 637,
+  "status": "One request with nine touches. Mark first visible frame for three calibration touches and six swipes.",
+  "extraction": "Every decoded frame, original resolution, JPEG quality 2, actual presentation timestamps"
+}

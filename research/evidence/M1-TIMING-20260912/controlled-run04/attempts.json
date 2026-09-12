@@ -1,0 +1,17 @@
+{
+  "run04": "WDA rejected initial pause without preceding pointerMove during action synthesis; recorder stopped and failed attempt retained. No manifest written by probe on exception.",
+  "run04b": "Added zero-duration pointerMove before initial pause, without pointerDown. Request succeeded; postflight passed.",
+  "artifact_root": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/timing-probe-20260912",
+  "requested_onsets_s": [
+    1.0,
+    2.05,
+    3.0999999999999996,
+    4.1499999999999995,
+    5.449999999999999,
+    7.049999999999999,
+    9.049999999999999,
+    10.35,
+    11.95
+  ],
+  "batch_call_duration_s": 21.234345546923578
+}
