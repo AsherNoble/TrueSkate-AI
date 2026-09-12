@@ -51,4 +51,6 @@ linear training build; exclusion enforcement is still pending. See
 
 Bounded timing repeats show return-minus-duration alignment does not reliably
 achieve one-frame accuracy. Run03 now captures Appium proxy boundaries: most
-call overhead occurs within the WDA round trip; physical onset labels are pending.
+call overhead occurs within the WDA round trip. Human labels again yield only
+1/6 swipes within one frame using return-minus-duration; using WDA response
+instead of client return does not improve that count.

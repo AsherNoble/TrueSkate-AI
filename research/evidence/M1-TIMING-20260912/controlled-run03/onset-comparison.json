@@ -1,0 +1,164 @@
+{
+  "rule": "First calibration only sets each offset; return-minus-duration is preregistered, WDA boundaries exploratory",
+  "residual_sign": "Observed minus predicted; positive means prediction early",
+  "clock_caution": "Offsets absorb device/video versus host clock origin. Absolute video time plus recorder startedAt is not an independently synchronized host timestamp.",
+  "offsets_s": {
+    "return_minus_duration": 0.06719308262634272,
+    "command_start": 0.7030351198272704,
+    "wda_forward": 0.6921169794158935,
+    "wda_response_minus_duration": 0.07111697560119623
+  },
+  "rows": [
+    {
+      "index": 0,
+      "kind": "calibration",
+      "frame": 45,
+      "visible_s": 1.603333,
+      "duration_s": 0.05,
+      "errors_ms": {
+        "return_minus_duration": 0.0,
+        "command_start": 0.0,
+        "wda_forward": 0.0,
+        "wda_response_minus_duration": 0.0
+      }
+    },
+    {
+      "index": 1,
+      "kind": "calibration",
+      "frame": 100,
+      "visible_s": 3.436667,
+      "duration_s": 0.05,
+      "errors_ms": {
+        "return_minus_duration": 4.131825,
+        "command_start": 6.709845,
+        "wda_forward": 9.334118,
+        "wda_response_minus_duration": 3.334076
+      }
+    },
+    {
+      "index": 2,
+      "kind": "calibration",
+      "frame": 154,
+      "visible_s": 5.236667,
+      "duration_s": 0.05,
+      "errors_ms": {
+        "return_minus_duration": 4.587014,
+        "command_start": 1.364787,
+        "wda_forward": 6.334145,
+        "wda_response_minus_duration": 3.334124
+      }
+    },
+    {
+      "index": 3,
+      "kind": "gesture",
+      "frame": 219,
+      "visible_s": 7.403333,
+      "duration_s": 0.3,
+      "errors_ms": {
+        "return_minus_duration": -48.142147,
+        "command_start": 351.942825,
+        "wda_forward": 357.00016,
+        "wda_response_minus_duration": -49.999905
+      }
+    },
+    {
+      "index": 4,
+      "kind": "gesture",
+      "frame": 292,
+      "visible_s": 9.836667,
+      "duration_s": 0.6,
+      "errors_ms": {
+        "return_minus_duration": -63.992279,
+        "command_start": 306.801731,
+        "wda_forward": 312.333996,
+        "wda_response_minus_duration": -64.66605
+      }
+    },
+    {
+      "index": 5,
+      "kind": "gesture",
+      "frame": 375,
+      "visible_s": 12.603333,
+      "duration_s": 1.0,
+      "errors_ms": {
+        "return_minus_duration": -17.209101,
+        "command_start": 344.974995,
+        "wda_forward": 350.000143,
+        "wda_response_minus_duration": -18.999863
+      }
+    },
+    {
+      "index": 6,
+      "kind": "gesture",
+      "frame": 468,
+      "visible_s": 15.701667,
+      "duration_s": 0.3,
+      "errors_ms": {
+        "return_minus_duration": -64.675167,
+        "command_start": 318.105862,
+        "wda_forward": 323.334143,
+        "wda_response_minus_duration": -65.666034
+      }
+    },
+    {
+      "index": 7,
+      "kind": "gesture",
+      "frame": 542,
+      "visible_s": 18.168333,
+      "duration_s": 0.6,
+      "errors_ms": {
+        "return_minus_duration": 51.40995,
+        "command_start": 329.271021,
+        "wda_forward": 334.999981,
+        "wda_response_minus_duration": 49.999943
+      }
+    },
+    {
+      "index": 8,
+      "kind": "gesture",
+      "frame": 622,
+      "visible_s": 20.835,
+      "duration_s": 1.0,
+      "errors_ms": {
+        "return_minus_duration": 35.828024,
+        "command_start": 343.319851,
+        "wda_forward": 348.667103,
+        "wda_response_minus_duration": 34.667164
+      }
+    }
+  ],
+  "stats": {
+    "return_minus_duration": {
+      "evaluated": 8,
+      "within_one_frame": 3,
+      "within_two_frames": 8,
+      "max_absolute_error_ms": 64.675167,
+      "mean_absolute_error_ms": 36.246938375,
+      "linear_within_one_frame": 1
+    },
+    "command_start": {
+      "evaluated": 8,
+      "within_one_frame": 2,
+      "within_two_frames": 2,
+      "max_absolute_error_ms": 351.942825,
+      "mean_absolute_error_ms": 250.31136462499998,
+      "linear_within_one_frame": 0
+    },
+    "wda_forward": {
+      "evaluated": 8,
+      "within_one_frame": 2,
+      "within_two_frames": 2,
+      "max_absolute_error_ms": 357.00016,
+      "mean_absolute_error_ms": 255.250473625,
+      "linear_within_one_frame": 0
+    },
+    "wda_response_minus_duration": {
+      "evaluated": 8,
+      "within_one_frame": 3,
+      "within_two_frames": 8,
+      "max_absolute_error_ms": 65.666034,
+      "mean_absolute_error_ms": 36.333394874999996,
+      "linear_within_one_frame": 1
+    }
+  }
+}

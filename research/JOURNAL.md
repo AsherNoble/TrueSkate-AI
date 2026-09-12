@@ -9,6 +9,8 @@ Put substantial experiments in individual records and current facts in STATUS.
 - Preserved three original-recording annotation sets, manifests, frame timestamps
   and findings; false calibration detections and a within-recording timing shift
   require investigation. Recorded the user-confirmed spin-control exclusion.
+- Bounded timing repeats and human labels reject reliable one-frame return-based
+  alignment; logged WDA responses do not resolve the residual.
 - Added the reusable frame viewer. No collection or training changes deployed.
   [M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).
 
