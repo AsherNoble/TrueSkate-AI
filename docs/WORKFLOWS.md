@@ -80,3 +80,12 @@ clearing browser data. Output must be empty to protect existing annotations.
 Neither this tool nor the overlay contacts the rig or updates training labels.
 See [timing findings](../research/experiments/M1-TIMING-20260912.md), including
 the human-confirmed training exclusion that must be enforced before the next run.
+
+For last-visible trace frames, run `python scripts/inspect/build_trace_end_viewer.py
+--viewer-dir /absolute/existing-viewer --starts /absolute/human-onsets.json` as one
+command. This adds `trace-ends.html` beside the original viewer, reuses its frames,
+and embeds the original starts unchanged. Select a gesture, mark its last visible
+frame with M, then use Next unmarked gesture. End labels are paired by start frame
+and exported separately. Ambiguous or recording-truncated endings can be marked
+uncertain. Browser storage is separate from onset labels. This measures visible
+trace lifetime, not actual contact duration or finger-up.
