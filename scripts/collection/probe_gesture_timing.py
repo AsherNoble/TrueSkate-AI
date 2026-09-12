@@ -50,6 +50,31 @@ def run_sequence(commands, *, sleep=time.sleep, epoch=time.time, monotonic=time.
     return events, waits
 
 
+def build_bundle(driver, specs):
+    """One pointer source, released during pauses; returns requested onset schedule."""
+    from selenium.webdriver.common.action_chains import ActionChains
+    from trueskate_ai.sim.touch_actions import make_touch_pointer
+    finger = make_touch_pointer('bundle')
+    command = ActionChains(driver, devices=[finger])
+    finger.create_pause(1.0)
+    elapsed, starts = 1.0, []
+    for spec in specs:
+        x, y = spec['points'][0]
+        finger.create_pointer_move(x=x * 414, y=y * 896, duration=0)
+        finger.create_pointer_down()
+        starts.append(elapsed)
+        if spec['kind'] == 'calibration':
+            finger.create_pause(spec['duration'])
+        else:
+            x, y = spec['points'][1]
+            finger.create_pointer_move(x=x * 414, y=y * 896,
+                                       duration=round(spec['duration'] * 1000))
+        finger.create_pointer_up(0)
+        finger.create_pause(1.0)
+        elapsed += spec['duration'] + 1.0
+    return command, starts, elapsed
+
+
 def main():
     from selenium.webdriver.common.action_chains import ActionChains
     from trueskate_ai.sim.device import DeviceSession, DEVICES, BUNDLE_ID
@@ -58,6 +83,7 @@ def main():
     from trueskate_ai.collection.gameplay_filter import is_menu_frame, is_editor_frame
 
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--bundled', action='store_true', help='One request with device-side pauses')
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--park', required=True, help='Observed park provenance, including uncertainty')
     parser.add_argument('--profile', choices=('original', 'duration-repeat'), default='original')
@@ -98,10 +124,22 @@ def main():
                 finger.create_pointer_move(x=x * 414, y=y * 896, duration=round(spec['duration'] * 1000))
             finger.create_pointer_up(0)
             commands.append(action)
+        if args.bundled:
+            bundle, planned_starts, planned_duration = build_bundle(driver, specs)
+            encoded_bundle = bundle.w3c_actions.pointer_action.source.encode()
         recorder = XCTestScreenRecorder(driver, fps=30)
         recorder.start()  # Single attempt. No retries or WDA restarts.
         try:
-            events, waits = run_sequence(commands)
+            if args.bundled:
+                t0, m0 = time.time(), time.monotonic()
+                bundle.perform()
+                m1, t1 = time.monotonic(), time.time()
+                batch_times = dict(t_call_start_epoch_s=t0, t_call_end_epoch_s=t1,
+                                   t_call_start_monotonic_s=m0, t_call_end_monotonic_s=m1)
+                events = [{'planned_onset_from_batch_start_s': t} for t in planned_starts]
+                waits = []
+            else:
+                events, waits = run_sequence(commands)
         finally:
             result = recorder.stop_and_save(args.out / 'segment_00000.mov')
         manifest = {
@@ -115,6 +153,10 @@ def main():
             'training_admission': 'diagnostic only; pending per-recording human calibration',
             'script_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         }
+        if args.bundled:
+            manifest.update(execution_mode='single-bundled-request', batch_call=batch_times,
+                            planned_batch_duration_s=planned_duration,
+                            encoded_actions=encoded_bundle)
         for i, (spec, times) in enumerate(zip(specs, events)):
             manifest['gestures'].append({'gesture_index': i, **times,
                 'gesture_distribution': 'tap' if spec['kind'] == 'calibration' else 'linear',

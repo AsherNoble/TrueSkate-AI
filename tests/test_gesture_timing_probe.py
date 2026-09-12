@@ -37,3 +37,31 @@ def test_duration_repeat_has_three_controls_and_two_duration_cycles():
         sleep=lambda d: calls.append(('wait', d)), epoch=lambda: 0., monotonic=lambda: 0.)
     assert calls == [('wait', 1.)] + ['touch', ('wait', 1.)] * 9
     assert len(events) == 9 and len(waits) == 10
+
+
+def test_bundle_sends_one_request_with_released_pauses_and_exact_schedule():
+    import pytest
+    class Driver:
+        def __init__(self): self.calls = []
+        def execute(self, command, params): self.calls.append((command, params))
+    driver = Driver()
+    command, starts, duration = probe.build_bundle(driver, probe.sequence('duration-repeat'))
+    command.perform()
+    assert len(driver.calls) == 1
+    sources = driver.calls[0][1]['actions']
+    assert len(sources) == 1 and sources[0]['parameters']['pointerType'] == 'touch'
+    elapsed = 0; down = False; observed = []; gaps = []
+    for action in sources[0]['actions']:
+        if action['type'] == 'pointerDown':
+            assert not down
+            down = True; observed.append(elapsed / 1000)
+        elif action['type'] == 'pointerUp':
+            assert down
+            down = False
+        elif action['type'] == 'pause' and not down:
+            gaps.append(action['duration'])
+        elapsed += action.get('duration', 0)
+    assert not down and gaps == [1000] * 10
+    assert observed == pytest.approx([1, 2.05, 3.1, 4.15, 5.45, 7.05, 9.05, 10.35, 11.95])
+    assert starts == pytest.approx(observed)
+    assert duration == pytest.approx(13.95) == elapsed / 1000
