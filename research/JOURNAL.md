@@ -6,13 +6,17 @@ Put substantial experiments in individual records and current facts in STATUS.
 
 ## 2026-09-13 — Instrumented-WDA onset alignment validated
 
-- WDA's internal `submitted_to_ios` timestamp plus one calibration touch per
-  recording aligns every gesture onset within one video frame (28/28 across four
-  XR2 recordings; true jitter ≤ ~13 ms, the 30 fps labelling floor) and beats the
-  uninstrumented host send-clock by up to ~7 frames. Red-team CONFIRMED.
+- WDA's internal `submitted_to_ios` timestamp aligns gesture onsets to the video
+  within one frame (28/28 across four short XR2 recordings; true jitter ≤ ~13 ms,
+  the 30 fps labelling floor) and beats the uninstrumented host send-clock by up
+  to ~7 frames. Red-team CONFIRMED.
   [ALIGN-20260913](experiments/ALIGN-20260913-wda-onset.md).
-- Scope: one device, park and session. Next: a multi-anchor recording to confirm
-  one anchor transfers across a whole recording before certifying self-labelling.
+- A multi-anchor recording (run09) then showed one anchor does NOT hold over a
+  ~23 s clip: a per-recording linear timebase drift (~−1900 ppm) reaches 1.28
+  frames by +22.6 s. A ≥2-anchor offset+rate fit collapses it back to ≤ 0.58
+  frame — so long recordings need two anchors (start and end), re-fit per clip.
+- Scope: one device, park and session. Not yet certified: cross-park/session/
+  device generalisation or the drift-rate distribution across recordings.
 
 ## 2026-09-09 — Unintended collection autostart retired
 

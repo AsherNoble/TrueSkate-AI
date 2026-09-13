@@ -38,10 +38,14 @@ action groups and activity masks; the older rig model must not overwrite it.
 - How should future collection broaden spatial coverage without contaminating labels?
 
 The frame-alignment sub-problem of self-labelling is validated: WDA's internal
-`submitted_to_ios` timestamp plus one calibration touch per recording aligns
-gesture onsets within one video frame, beating the uninstrumented host clock
-([ALIGN-20260913](experiments/ALIGN-20260913-wda-onset.md)). This is one device,
-park and session; it does not certify cross-park/session/device generalisation
-or downstream trace quality. The instrumentation is unmerged and hand-launched.
+`submitted_to_ios` timestamp aligns gesture onsets to the video within one frame
+and beats the uninstrumented host clock ([ALIGN-20260913](experiments/ALIGN-20260913-wda-onset.md)).
+One calibration anchor suffices only for short clips (< ~15 s); a per-recording
+linear timebase drift (~−1900 ppm, phone wall-clock vs video media-clock) pushes
+a single anchor past one frame by ~23 s, so longer recordings need ≥2 anchors
+(start and end) with a per-recording offset+rate fit. This is one device, park
+and session; it does not certify cross-park/session/device generalisation, the
+drift-rate distribution across recordings, or downstream trace quality. The
+instrumentation is unmerged and hand-launched.
 
 These are research decisions, not tasks automatically authorized by maintenance.
