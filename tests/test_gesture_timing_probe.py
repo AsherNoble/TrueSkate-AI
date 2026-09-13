@@ -88,3 +88,23 @@ def test_wda_timing_validation_rejects_incomplete_or_misattributed_records():
     with pytest.raises(ValueError): probe.validate_wda_timings(report, 'abc', 2)
     bad = copy.deepcopy(report); bad['dropped_records'] = 1
     with pytest.raises(ValueError): probe.validate_wda_timings(bad, 'abc', 1)
+
+
+def test_minute_schedule_keeps_separate_calls_and_spread_anchors():
+    import pytest
+    specs = probe.random_sequence(8, 1010, 3, True)
+    assert [i for i,s in enumerate(specs) if s['kind']=='calibration'] == [0,5,10]
+    now = [0.]; calls = []
+    class Command:
+        def perform(self): calls.append(now[0]); now[0] += 1.8
+    def sleep(d): now[0] += d
+    events, waits = probe.run_minute_sequence([Command() for _ in specs], sleep=sleep,
+        epoch=lambda: now[0]+1000, monotonic=lambda: now[0])
+    assert calls == pytest.approx(probe.MINUTE_SLOTS)
+    assert len(events)==11 and len(waits)==12 and now[0]<60
+    now[0]=0
+    class Slow:
+        def perform(self): now[0]+=10
+    with pytest.raises(RuntimeError, match='Late command'):
+        probe.run_minute_sequence([Slow() for _ in specs], sleep=sleep,
+            epoch=lambda:now[0], monotonic=lambda:now[0])

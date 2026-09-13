@@ -90,6 +90,31 @@ def run_sequence(commands, *, sleep=time.sleep, epoch=time.time, monotonic=time.
     return events, waits
 
 
+MINUTE_SLOTS = (1., 6., 12., 18., 24., 30., 36., 42., 48., 54., 57.)
+
+def run_minute_sequence(commands, *, sleep=time.sleep, epoch=time.time, monotonic=time.monotonic):
+    """Separate requests spaced across one minute; host timestamps only between calls."""
+    if len(commands) != len(MINUTE_SLOTS):
+        raise ValueError('Minute profile requires eleven touches')
+    origin = monotonic()
+    events, waits = [], []
+    for slot, command in zip(MINUTE_SLOTS, commands):
+        remaining = origin + slot - monotonic()
+        if remaining < 0.95:
+            raise RuntimeError('Late command: aborting minute schedule, never compressing gaps')
+        a = monotonic(); sleep(remaining); waits.append(monotonic() - a)
+        if monotonic() > origin + slot + 0.5:
+            raise RuntimeError('Sleep overrun: aborting minute schedule')
+        t0, m0 = epoch(), monotonic()
+        command.perform()
+        m1, t1 = monotonic(), epoch()
+        events.append(dict(t_call_start_epoch_s=t0, t_call_end_epoch_s=t1,
+                           t_call_start_monotonic_s=m0, t_call_end_monotonic_s=m1,
+                           planned_call_start_s=slot))
+    a = monotonic(); sleep(1.0); waits.append(monotonic() - a)
+    return events, waits
+
+
 def build_bundle(driver, specs):
     """One pointer source, released during pauses; returns requested onset schedule."""
     from selenium.webdriver.common.action_chains import ActionChains
@@ -158,6 +183,8 @@ def main():
     from trueskate_ai.collection.gameplay_filter import is_menu_frame, is_editor_frame
 
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--minute-test', action='store_true', help='11 separate touches across about one minute')
+    parser.add_argument('--device', choices=('iPhone_XR', 'iPhone_XR2'), default='iPhone_XR2')
     parser.add_argument('--wda-timing-revision', help='Require opt-in timing from this exact WDA build SHA')
     parser.add_argument('--bundled', action='store_true', help='One request with device-side pauses')
     parser.add_argument('--out', type=Path, required=True)
@@ -168,11 +195,16 @@ def main():
     parser.add_argument('--seed', type=int, help='Seed for --gestures randomisation (required with --gestures)')
     parser.add_argument('--spread-calibrations', action='store_true',
                         help='Distribute calibration anchors across the timeline instead of leading')
-    parser.add_argument('--appium-port', type=int, default=4726, help='Optional isolated logging Appium; WDA remains on 8103')
+    parser.add_argument('--appium-port', type=int, default=None, help='Optional Appium port override')
     args = parser.parse_args()
     if args.wda_timing_revision and args.bundled:
         parser.error('WDA internal timing experiment requires separate requests')
-    if args.gestures is not None:
+    if args.minute_test:
+        if args.bundled or args.gestures is not None or not args.wda_timing_revision:
+            parser.error('Minute test requires instrumented WDA and no bundled/gestures override')
+        specs = random_sequence(8, args.seed if args.seed is not None else 1010, 3, True)
+        args.profile = 'minute-3cal-8linear-constant-speed'
+    elif args.gestures is not None:
         if args.bundled:
             parser.error('Randomised single-anchor runs use separate requests, not --bundled')
         if args.seed is None:
@@ -188,8 +220,10 @@ def main():
     if 'state = running' not in tunnel:
         raise SystemExit('Required recording tunnel is not running.')
     args.out.mkdir(parents=True)
-    cfg = dict(next(d for d in DEVICES if d['name'] == 'iPhone_XR2'))
-    cfg['appium_port'] = args.appium_port
+    cfg = dict(next(d for d in DEVICES if d['name'] == args.device))
+    if args.appium_port is not None:
+        cfg['appium_port'] = args.appium_port
+    wda_base = f"http://127.0.0.1:{cfg['wda_port']}"
     worker = DeviceSession(cfg)
     recorder = None
     timing_url = None
@@ -221,12 +255,12 @@ def main():
             bundle, planned_starts, planned_duration = build_bundle(driver, specs)
             encoded_bundle = bundle.w3c_actions.pointer_action.source.encode()
         if args.wda_timing_revision:
-            status = timing_http('http://127.0.0.1:8103/status')
+            status = timing_http(wda_base + '/status')
             session_id = status.get('sessionId')
             if not session_id:
                 raise RuntimeError('WDA status has no active session')
             from urllib.parse import quote
-            candidate = 'http://127.0.0.1:8103/session/' + quote(session_id, safe='') + '/wda/actionTiming'
+            candidate = wda_base + '/session/' + quote(session_id, safe='') + '/wda/actionTiming'
             current = timing_http(candidate)['value']
             if current.get('build_revision') != args.wda_timing_revision or current.get('schema_version') != 1:
                 raise RuntimeError('Instrumented WDA build identity mismatch; no recording started')
@@ -238,7 +272,9 @@ def main():
         recorder = XCTestScreenRecorder(driver, fps=30)
         recorder.start()  # Single attempt. No retries or WDA restarts.
         try:
-            if args.bundled:
+            if args.minute_test:
+                events, waits = run_minute_sequence(commands)
+            elif args.bundled:
                 t0, m0 = time.time(), time.monotonic()
                 bundle.perform()
                 m1, t1 = time.monotonic(), time.time()
@@ -257,12 +293,14 @@ def main():
                     (args.out / 'wda-action-timings.json').write_text(json.dumps(report, indent=2))
                     timing_url = None
         manifest = {
-            'experiment': 'isolated-touch-timing', 'profile': args.profile, 'device': 'iPhone_XR2',
+            'experiment': 'isolated-touch-timing', 'profile': args.profile, 'device': args.device,
             'park': args.park, 'started_at_epoch_s': result.started_at_epoch_s,
             'host_start_epoch_s': result.host_start_epoch_s, 'host_stop_epoch_s': result.host_stop_epoch_s,
             'fps': result.fps, 'allow_idle_navigation': True,
-            'appium_port': args.appium_port, 'wda_port': 8103,
-            'wait_requested_s': 1.0, 'wait_measured_monotonic_s': waits,
+            'appium_port': cfg['appium_port'], 'wda_port': cfg['wda_port'],
+            'wait_requested_s': None if args.minute_test else 1.0,
+            'minute_slots_s': list(MINUTE_SLOTS) if args.minute_test else None,
+            'seed': args.seed if args.seed is not None else (1010 if args.minute_test else None), 'wait_measured_monotonic_s': waits,
             'settings_before_recording': settings, 'gestures': [],
             'training_admission': 'diagnostic only; pending per-recording human calibration',
             'script_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
