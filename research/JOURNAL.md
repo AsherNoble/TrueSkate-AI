@@ -4,6 +4,13 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-13 — Minute-scale two-anchor test
+
+- Run10 captured 59.10 s, with 56.02 s between calibration endpoints. Frozen
+  endpoint-only fit: all eight gestures pass one-frame target; held-out middle
+  calibration misses at38.24 ms. Initial gate fails (8/9); replications paused.
+  Preserved raw labels and full comparison in M1-TIMING-20260912/run10 evidence.
+
 ## 2026-09-13 — Internal WDA timing prepared
 
 - Pushed tested opt-in WDA instrumentation and prepared the separate-request

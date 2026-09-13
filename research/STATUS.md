@@ -63,5 +63,7 @@ observed joined gestures; use separate requests.
 Update following Claude handoff: signing/deployment succeeded and runs05–09
 were completed (see research/wda-onset-timing-20260913 branch). Run10 now tests
 first/last-anchor correction across a 59.10 s recording, with a held-out middle
-calibration and eight gestures. Collection succeeded; human labels are pending.
-Replication across two devices and three parks is gated on that initial result.
+calibration and eight gestures. Run10 labels evaluated: 8/9 held-out touches within one frame; all eight
+gestures pass, but middle calibration error38.239 ms exceeds33.333 ms.
+Two-anchor correction improves little over one anchor. Initial gate failed;
+XR1/park replications are paused pending discussion.
