@@ -59,3 +59,9 @@ Internal WDA instrumentation is pushed and tested; XR2 deployment is blocked by
 training-server Xcode account/certificate/profile errors. Existing WDA remains
 running; run05 has no recording yet. Bundled run04b was rejected after the user
 observed joined gestures; use separate requests.
+
+Update following Claude handoff: signing/deployment succeeded and runs05–09
+were completed (see research/wda-onset-timing-20260913 branch). Run10 now tests
+first/last-anchor correction across a 59.10 s recording, with a held-out middle
+calibration and eight gestures. Collection succeeded; human labels are pending.
+Replication across two devices and three parks is gated on that initial result.
