@@ -4,6 +4,16 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-13 — Instrumented-WDA onset alignment validated
+
+- WDA's internal `submitted_to_ios` timestamp plus one calibration touch per
+  recording aligns every gesture onset within one video frame (28/28 across four
+  XR2 recordings; true jitter ≤ ~13 ms, the 30 fps labelling floor) and beats the
+  uninstrumented host send-clock by up to ~7 frames. Red-team CONFIRMED.
+  [ALIGN-20260913](experiments/ALIGN-20260913-wda-onset.md).
+- Scope: one device, park and session. Next: a multi-anchor recording to confirm
+  one anchor transfers across a whole recording before certifying self-labelling.
+
 ## 2026-09-09 — Unintended collection autostart retired
 
 - Confirmed login-time collector jobs, the historical restart loop, and a loaded

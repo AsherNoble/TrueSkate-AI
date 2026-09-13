@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-08. Behavioural cloning is the development direction.
+Updated 2026-09-13. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -36,5 +36,12 @@ action groups and activity masks; the older rig model must not overwrite it.
 - When should linear work expand to curved and curved+spin trajectories?
 - Can Model 1 label expert recordings accurately enough for useful Model 2 training?
 - How should future collection broaden spatial coverage without contaminating labels?
+
+The frame-alignment sub-problem of self-labelling is validated: WDA's internal
+`submitted_to_ios` timestamp plus one calibration touch per recording aligns
+gesture onsets within one video frame, beating the uninstrumented host clock
+([ALIGN-20260913](experiments/ALIGN-20260913-wda-onset.md)). This is one device,
+park and session; it does not certify cross-park/session/device generalisation
+or downstream trace quality. The instrumentation is unmerged and hand-launched.
 
 These are research decisions, not tasks automatically authorized by maintenance.
