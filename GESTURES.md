@@ -173,6 +173,19 @@ The additive basic Model 1 experiment intentionally does **not** use the general
 
 `point` is normalized screen position and `hold_duration_s` is constrained to `[0.30, 1.50]`. Its corpus loader admits only `gesture_distribution: "hold"`, one non-spin finger, accepted tap-calibration provenance, and no `.menu` marker. Known-position taps can be recorded as timing controls but are never model examples. The regression interface returns `{x, y, dur}` in those native units.
 
+### Basic Model 1 linear experiment
+
+The linear collection target is one constant-speed, two-point drag with
+normalised start/end coordinates and duration. Each one-minute segment is
+bracketed by two 50 ms timing-control holds at the exact screen centre
+`[0.5, 0.5]`. Both controls are separate WDA requests and carry
+`calibration_control: true` plus `calibration_role: "start"` or `"end"`.
+They remain in the raw manifest for timing provenance; the aligner never emits
+them as Model 1 samples. Their first visible frames define an affine mapping
+from the instrumented WDA `submitted_to_ios.monotonic_s` clock to video time.
+No unlabelled reset may occur during the recording; the canonical wrapper resets
+and settles the board before recording begins.
+
 ---
 
 ## Trick Library File Format

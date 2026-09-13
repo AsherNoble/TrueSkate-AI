@@ -10,6 +10,7 @@ import pytest
 
 from trueskate_ai.collection.tap_timing_calibration import (
     detect_tap_onset,
+    fit_two_anchor_timeline,
     fit_tap_offsets,
 )
 
@@ -101,6 +102,130 @@ def test_fit_tap_offsets_requires_enough_detected_taps():
     assert not result.accepted
     assert result.offset_s is None
     assert result.reason == "need at least 2 detected taps; found 1"
+
+
+def test_two_anchor_timeline_maps_internal_wda_clock():
+    fit = fit_two_anchor_timeline(100.0, 1.0, 156.0, 57.05)
+
+    assert fit.anchor_span_s == pytest.approx(56.0)
+    assert fit.video_time_s(128.0) == pytest.approx(29.025)
+    with pytest.raises(ValueError, match="below required"):
+        fit_two_anchor_timeline(100.0, 1.0, 105.0, 6.0)
+
+
+def test_wda_two_anchor_calibration_uses_two_centre_controls(monkeypatch, tmp_path):
+    aligner = _aligner_module()
+    started_at = 1000.0
+    report = {
+        "schema_version": 1,
+        "build_revision": "revision-a",
+        "dropped_records": 0,
+        "records": [],
+    }
+    for sequence, monotonic_s in enumerate((100.0, 128.0, 156.0)):
+        stamps = {}
+        for offset, boundary in enumerate((
+            "request_entered", "preparation_started", "preparation_finished",
+            "submitted_to_ios", "ios_completion_callback", "stability_wait_started",
+            "stability_wait_finished", "request_finished",
+        )):
+            stamps[boundary] = {
+                "monotonic_s": monotonic_s + offset * .001,
+                "epoch_s": started_at + (monotonic_s - 99.0) + offset * .001,
+            }
+        report["records"].append({
+            "sequence": sequence, "outcome": "success", "session_id": "session-a",
+            "missing_ios_callback": False, "ios_callback_result": True, **stamps,
+        })
+    (tmp_path / "timings.json").write_text(json.dumps(report))
+    manifest = {
+        "wda_action_timing_report": "timings.json",
+        "wda_timing_revision": "revision-a",
+        "wda_action_count": 3,
+        "gestures": [
+            {"gesture_index": 0, "gesture_distribution": "tap", "point": [.5, .5],
+             "calibration_control": True, "calibration_role": "start", "wda_action_sequence": 0},
+            {"gesture_index": 1, "gesture_distribution": "linear", "wda_action_sequence": 1},
+            {"gesture_index": 2, "gesture_distribution": "tap", "point": [.5, .5],
+             "calibration_control": True, "calibration_role": "end", "wda_action_sequence": 2},
+        ],
+    }
+
+    def fake_decode(_mov, *, command_video_s, **_kwargs):
+        onset = command_video_s + (.10 if command_video_s < 10 else .15)
+        frames, times, _point, _command = _tap_window(onset_s=.9, command_s=.4)
+        frames = [np.roll(frame, -18, axis=0) for frame in frames]
+        return frames, (times - .9 + onset).tolist()
+
+    monkeypatch.setattr(aligner, "_decode_calibration_window", fake_decode)
+    info, fit = aligner._wda_two_anchor_calibration(
+        manifest=manifest, manifest_path=tmp_path / "segment.json",
+        mov=tmp_path / "segment.mov", started_at=started_at, fps=30,
+        search_after_s=2.0, resize_width=256,
+    )
+
+    assert info["accepted"]
+    assert info["method"] == "wda-submitted-two-centre-controls-v2"
+    assert fit.video_time_s(report["records"][1]["submitted_to_ios"]["monotonic_s"]) == \
+        pytest.approx(29.1265, abs=.01)
+
+
+def test_wda_controls_are_not_emitted_as_training_samples(monkeypatch, tmp_path):
+    aligner = _aligner_module()
+    mov = tmp_path / "segment.mov"
+    mov.write_bytes(b"decoder is mocked")
+    report = {
+        "records": [
+            {"submitted_to_ios": {"monotonic_s": value, "epoch_s": 1000.0 + value}}
+            for value in (1.0, 20.0, 56.0)
+        ]
+    }
+    (tmp_path / "timings.json").write_text(json.dumps(report))
+    controls = [
+        {"gesture_index": 0, "gesture_distribution": "tap", "point": [.5, .5],
+         "calibration_control": True, "calibration_role": "start", "wda_action_sequence": 0},
+        {"gesture_index": 2, "gesture_distribution": "tap", "point": [.5, .5],
+         "calibration_control": True, "calibration_role": "end", "wda_action_sequence": 2},
+    ]
+    manifest = {
+        "mov": mov.name, "started_at_epoch_s": 1000.0,
+        "device_logical_w": 414, "device_logical_h": 896,
+        "timing_alignment": "wda_submitted_two_anchor",
+        "wda_action_timing_report": "timings.json",
+        "gestures": [controls[0], {
+            "gesture_index": 1, "gesture_distribution": "linear",
+            "waypoints": [[.3, .4], [.6, .6]], "duration": .5,
+            "park": "park", "wda_action_sequence": 1,
+        }, controls[1]],
+    }
+    manifest_path = tmp_path / "segment.json"
+    manifest_path.write_text(json.dumps(manifest))
+    fit = fit_two_anchor_timeline(1.0, 1.0, 56.0, 56.0)
+    monkeypatch.setattr(
+        aligner, "_wda_two_anchor_calibration",
+        lambda **_kwargs: ({
+            "accepted": True, "method": "test",
+            "anchor_span_s": fit.anchor_span_s, "rate": fit.rate,
+        }, fit),
+    )
+
+    def fake_extract(_mov, sample_dir, **_kwargs):
+        sample_dir.mkdir(parents=True)
+        (sample_dir / "frames.mp4").write_bytes(b"video")
+        return True
+
+    monkeypatch.setattr(aligner, "_extract_sample_video", fake_extract)
+    saved = aligner.align_segment(
+        manifest_path, pre_s=.5, window_s=1.8, fps=30, resize_width=128,
+        max_frames=32, delta_override=None, delete_mov=False,
+        tap_calibrate=True, direct_video=True,
+    )
+
+    assert saved == 1
+    assert not (tmp_path / "park" / "sample_000000").exists()
+    assert not (tmp_path / "park" / "sample_000002").exists()
+    meta = json.loads((tmp_path / "park" / "sample_000001" / "meta.json").read_text())
+    assert meta["capture_offset_source"] == "wda_submitted_two_anchor"
 
 
 def test_segment_tap_calibration_preserves_dispatch_path_relative_offset(monkeypatch, tmp_path):

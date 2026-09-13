@@ -5,12 +5,11 @@ manifest of host-epoch gesture call times) and slices a frame window around each
 gesture out of the ``.mov``, writing per-gesture sample dirs that match the DAL
 collector's on-disk format (``frame_NNN.png`` + ``meta.json`` with ``frame_times``).
 
-Alignment: the manifest's ``started_at_epoch_s`` is video t0 (same epoch clock as the
-gesture call times), so a gesture whose call STARTED at host ``ts`` maps to video PTS
-``gv = (ts - started_at) + Δ``. The per-kind offsets in ``_DELTA_BY_KIND`` are a
-fallback; ``--tap-calibrate`` instead derives the segment shift from the known-position
-tap arm of the stationary-touch MVP. ``frame_time`` 0 is therefore the moment the
-touch's first pixels land. We extract ``[gv - pre, gv + window]`` at the native fps
+For canonical linear segments, two visible centre-screen controls map WDA's internal
+``submitted_to_ios.monotonic_s`` timestamps onto video time with an affine fit. The
+controls remain auditable manifest events but never become training samples. Legacy
+segments retain the host-clock/per-kind offset path. ``frame_time`` 0 is the estimated
+moment the touch's first pixels land. We extract ``[gv - pre, gv + window]`` at the native fps
 (fast INPUT-seek per gesture, so a 5-min segment isn't re-decoded N times), downscale to
 ``--resize-width``, evenly downsample to ``--max-frames``, and stamp each kept frame's
 ``frame_time`` (video PTS - gv).
@@ -55,8 +54,13 @@ if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from trueskate_ai.collection.tap_timing_calibration import (  # noqa: E402
+    TwoAnchorTimingFit,
     detect_tap_onset,
+    fit_two_anchor_timeline,
     fit_tap_offsets,
+)
+from trueskate_ai.collection.wda_action_timing import (  # noqa: E402
+    validate_action_timing_report,
 )
 
 
@@ -118,14 +122,34 @@ def _decode_calibration_window(
     search_after_s: float,
     resize_width: int,
 ) -> tuple[list, list[float]]:
-    """Decode a small tap-search window without retaining a whole segment in RAM."""
+    """Decode exact source frames and retain their original presentation times."""
     start = max(0.0, command_video_s - reference_window_s)
-    duration = (command_video_s - start) + search_after_s
+    stop = command_video_s + search_after_s
+    probe = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0",
+         "-show_entries", "frame=best_effort_timestamp_time", "-of", "json", str(mov)],
+        capture_output=True, text=True,
+    )
+    if probe.returncode != 0:
+        return [], []
+    try:
+        payload = json.loads(probe.stdout)
+        all_times = [
+            float(frame["best_effort_timestamp_time"])
+            for frame in payload.get("frames", [])
+            if "best_effort_timestamp_time" in frame
+        ]
+    except (TypeError, ValueError, KeyError, json.JSONDecodeError):
+        return [], []
+    selected = [index for index, value in enumerate(all_times) if start <= value <= stop]
+    if not selected:
+        return [], []
+    first_index, last_index = selected[0], selected[-1]
     with tempfile.TemporaryDirectory(prefix="trueskate-tap-cal-") as tmp:
         raw = Path(tmp)
+        select = f"select=between(n\\,{first_index}\\,{last_index}),scale={resize_width}:-2"
         result = subprocess.run(
-            ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.3f}", "-i", str(mov),
-             "-t", f"{duration:.3f}", "-vf", f"fps={fps},scale={resize_width}:-2",
+            ["ffmpeg", "-y", "-v", "error", "-i", str(mov), "-vf", select,
              "-fps_mode", "passthrough", str(raw / "f_%04d.png")],
             capture_output=True, text=True,
         )
@@ -134,7 +158,10 @@ def _decode_calibration_window(
             return [], []
         frames = [cv2.imread(str(path), cv2.IMREAD_COLOR) for path in paths]
         frames = [frame for frame in frames if frame is not None]
-    return frames, [start + index / fps for index in range(len(frames))]
+    times = all_times[first_index:last_index + 1]
+    if len(frames) != len(times):
+        return [], []
+    return frames, times
 
 
 def _tap_calibration(
@@ -210,7 +237,7 @@ def _tap_calibration(
 
     fit = fit_tap_offsets(offsets, min_taps=min_taps, max_mad_s=max_mad_s)
     info = {
-        "method": "known-point-local-frame-difference",
+        "method": "known-point-local-background-v2",
         "tap_events": len(tap_events),
         "tap_detections": len(offsets),
         "tap_skipped": skipped,
@@ -228,6 +255,96 @@ def _tap_calibration(
     shift = fit.offset_s - reference_tap_delta
     info["shift_s"] = round(shift, 4)
     return info, shift
+
+
+def _wda_two_anchor_calibration(
+    *, manifest: dict, manifest_path: Path, mov: Path, started_at: float,
+    fps: int, search_after_s: float, resize_width: int,
+    pre_s: float = 0.5, window_s: float = 1.8,
+) -> tuple[dict, TwoAnchorTimingFit]:
+    """Detect the two centre controls and fit video time from WDA submit time."""
+    report_name = manifest.get("wda_action_timing_report")
+    revision = manifest.get("wda_timing_revision")
+    expected_count = manifest.get("wda_action_count")
+    if not report_name or not revision or not isinstance(expected_count, int):
+        raise ValueError("manifest lacks complete WDA action timing provenance")
+    report_path = manifest_path.parent / str(report_name)
+    report = json.loads(report_path.read_text())
+    records = validate_action_timing_report(
+        report, expected_revision=str(revision), expected_count=expected_count,
+    )
+    controls = [ev for ev in manifest.get("gestures", []) if ev.get("calibration_control")]
+    by_role = {ev.get("calibration_role"): ev for ev in controls}
+    if set(by_role) != {"start", "end"} or len(controls) != 2:
+        raise ValueError("two-anchor timing requires exactly one start and one end control")
+
+    detections = []
+    anchors = []
+    for role in ("start", "end"):
+        event = by_role[role]
+        point = _tap_point(event)
+        if point != (0.5, 0.5):
+            raise ValueError(f"{role} calibration control is not at screen centre")
+        sequence = event.get("wda_action_sequence")
+        if not isinstance(sequence, int) or not 0 <= sequence < len(records):
+            raise ValueError(f"{role} calibration control has invalid WDA sequence")
+        submitted = records[sequence]["submitted_to_ios"]
+        approximate_video_s = float(submitted["epoch_s"]) - started_at
+        frames, times = _decode_calibration_window(
+            mov,
+            command_video_s=approximate_video_s,
+            fps=fps,
+            reference_window_s=0.75,
+            search_after_s=search_after_s,
+            resize_width=resize_width,
+        )
+        onset = detect_tap_onset(
+            frames, times, point_xy=point, command_s=approximate_video_s,
+            reference_window_s=0.75,
+        )
+        if onset is None:
+            raise ValueError(f"could not detect {role} centre calibration control")
+        monotonic_s = float(submitted["monotonic_s"])
+        anchors.append((monotonic_s, onset.onset_s))
+        detections.append({
+            "role": role,
+            "gesture_index": event.get("gesture_index"),
+            "wda_action_sequence": sequence,
+            "submitted_to_ios_monotonic_s": monotonic_s,
+            "submitted_to_ios_epoch_s": float(submitted["epoch_s"]),
+            "onset_video_s": round(onset.onset_s, 6),
+            "detector_score": round(onset.score, 4),
+            "detector_threshold": onset.threshold,
+        })
+    fit = fit_two_anchor_timeline(
+        anchors[0][0], anchors[0][1], anchors[1][0], anchors[1][1],
+    )
+    control_onsets = [value[1] for value in anchors]
+    for event in manifest.get("gestures", []):
+        if event.get("calibration_control"):
+            continue
+        sequence = event.get("wda_action_sequence")
+        if not isinstance(sequence, int) or not 0 <= sequence < len(records):
+            raise ValueError("payload gesture has invalid WDA action sequence")
+        payload_start = fit.video_time_s(
+            float(records[sequence]["submitted_to_ios"]["monotonic_s"])
+        )
+        clip_start = max(0.0, payload_start - pre_s)
+        clip_end = payload_start + window_s
+        if any(clip_start <= onset <= clip_end for onset in control_onsets):
+            raise ValueError(
+                f"calibration control overlaps gesture {event.get('gesture_index')} clip"
+            )
+    info = {
+        "method": "wda-submitted-two-centre-controls-v2",
+        "accepted": True,
+        "wda_timing_revision": revision,
+        "rate": fit.rate,
+        "intercept_s": fit.intercept_s,
+        "anchor_span_s": fit.anchor_span_s,
+        "detections": detections,
+    }
+    return info, fit
 
 
 def _encode_sample_video(sample_dir: Path, n_frames: int, fps: int, crf: int) -> bool:
@@ -366,20 +483,39 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
     deltas_used: set[float] = set()
     calibration_info: dict | None = None
     calibration_shift_s = 0.0
+    wda_timeline = None
     try:
         if tap_calibrate:
-            calibration_info, shift = _tap_calibration(
-                manifest=manifest,
-                mov=mov,
-                started_at=started_at,
-                fps=fps,
-                delta_override=delta_override,
-                manifest_delta=manifest_delta,
-                min_taps=tap_calibration_min_taps,
-                max_mad_s=tap_calibration_max_mad_s,
-                search_after_s=tap_calibration_search_s,
-                resize_width=tap_calibration_width,
-            )
+            try:
+                if manifest.get("timing_alignment") == "wda_submitted_two_anchor":
+                    calibration_info, wda_timeline = _wda_two_anchor_calibration(
+                        manifest=manifest, manifest_path=manifest_path, mov=mov,
+                        started_at=started_at, fps=fps,
+                        search_after_s=tap_calibration_search_s,
+                        resize_width=tap_calibration_width,
+                        pre_s=pre_s, window_s=window_s,
+                    )
+                    shift = 0.0
+                else:
+                    calibration_info, shift = _tap_calibration(
+                        manifest=manifest,
+                        mov=mov,
+                        started_at=started_at,
+                        fps=fps,
+                        delta_override=delta_override,
+                        manifest_delta=manifest_delta,
+                        min_taps=tap_calibration_min_taps,
+                        max_mad_s=tap_calibration_max_mad_s,
+                        search_after_s=tap_calibration_search_s,
+                        resize_width=tap_calibration_width,
+                    )
+            except (OSError, KeyError, TypeError, ValueError) as exc:
+                calibration_info = {
+                    "method": "wda-submitted-two-centre-controls-v2",
+                    "accepted": False,
+                    "reason": str(exc),
+                }
+                shift = None
             if shift is None:
                 # A failed calibration is a data-quality failure, not a reason to
                 # manufacture labels from the fallback constants.  Preserve the .mov
@@ -391,15 +527,37 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                       f"and wrote {rejected.name}")
                 raise TapCalibrationRejected(str(calibration_info["reason"]))
             calibration_shift_s = shift
-            print(f"[align] {manifest_path.name}: tap calibration accepted "
-                  f"(Δtap={calibration_info['tap_offset_s']}s, "
-                  f"shift={calibration_shift_s:+.3f}s, "
-                  f"n={len(calibration_info['inlier_offsets_s'])}, "
-                  f"MAD={calibration_info['mad_s']}s)")
+            if wda_timeline is not None:
+                print(f"[align] {manifest_path.name}: WDA two-anchor calibration accepted "
+                      f"(span={calibration_info['anchor_span_s']:.3f}s, "
+                      f"rate={calibration_info['rate']:.8f})")
+            else:
+                print(f"[align] {manifest_path.name}: tap calibration accepted "
+                      f"(Δtap={calibration_info['tap_offset_s']}s, "
+                      f"shift={calibration_shift_s:+.3f}s, "
+                      f"n={len(calibration_info['inlier_offsets_s'])}, "
+                      f"MAD={calibration_info['mad_s']}s)")
         for ev in gestures:
-            delta = _delta_for(ev, delta_override, manifest_delta) + calibration_shift_s
+            # Dedicated controls calibrate the timeline and never become Model 1
+            # examples. Their labels remain in the raw manifest for auditing.
+            if ev.get("calibration_control"):
+                continue
+            if wda_timeline is not None:
+                sequence = ev.get("wda_action_sequence")
+                if not isinstance(sequence, int):
+                    raise TapCalibrationRejected("payload gesture lacks WDA action sequence")
+                report = json.loads((seg_dir / manifest["wda_action_timing_report"]).read_text())
+                submitted = report["records"][sequence]["submitted_to_ios"]
+                submitted_monotonic_s = float(submitted["monotonic_s"])
+                gv = wda_timeline.video_time_s(submitted_monotonic_s)
+                delta = gv - (float(submitted["epoch_s"]) - started_at)
+            else:
+                submitted_monotonic_s = None
+                delta = _delta_for(ev, delta_override, manifest_delta) + calibration_shift_s
             deltas_used.add(delta)
-            if anchor == "start":
+            if wda_timeline is not None:
+                pass
+            elif anchor == "start":
                 # Anchor on when the touch's FIRST PIXELS land: t_call_start + Δ. The old
                 # `t_call_end` anchor was when Appium's HTTP perform() RETURNED, which
                 # trails the actual touch by the whole call wall (median 1.7s on the SLS
@@ -461,7 +619,8 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                 "gesture_video_time_s": round(gv, 4),
                 "capture_offset_s": delta,
                 "capture_offset_source": (
-                    "tap_self_calibrated" if calibration_info is not None
+                    "wda_submitted_two_anchor" if wda_timeline is not None
+                    else "tap_self_calibrated" if calibration_info is not None
                     else "per_kind_fallback"
                 ),
                 "anchor": anchor,
@@ -480,7 +639,10 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                 # switches the label scheduler to the START-relative branch, which is what
                 # these frame_times now are. Without it the scheduler would add the payload
                 # duration and place every touch a full stroke too late.
-                meta["gesture_start_monotonic"] = float(ev["t_call_start_epoch_s"])
+                meta["gesture_start_monotonic"] = (
+                    submitted_monotonic_s if submitted_monotonic_s is not None
+                    else float(ev["t_call_start_epoch_s"])
+                )
             if video or direct_video:
                 meta["frames_format"] = frames_format
             (sample_dir / "meta.json").write_text(json.dumps(meta, indent=2))

@@ -380,6 +380,8 @@ def test_linear_collector_supports_clean_segment_boundary_resets():
     assert "--no-menu-guard" in result.stdout
     assert "--no-run-notifications" in result.stdout
     assert "--heartbeat-path" in result.stdout
+    assert "--wda-timing-revision" in result.stdout
+    assert "--end-calibration-reserve-s" in result.stdout
     source = Path("scripts/collection/collect_sls_xctest.py").read_text()
     assert "--segment-reset-settle-s must be >= 1.5" in source
     assert source.index("if args.reset_before_segment:") < source.index("rec.start()")
@@ -390,6 +392,10 @@ def test_linear_collector_supports_clean_segment_boundary_resets():
     assert "segment_payload_samples\n                        and args.reset_every_samples" in source
     assert source.index("if not args.no_gameplay_guard:", source.index("post-gesture foreground")) < \
         source.index("if not args.no_menu_guard:", source.index("post-gesture menu/editor"))
+    assert 'GestureSample(kind="tap", point=(0.5, 0.5)' in source
+    assert '"calibration_role": "end"' in source
+    assert '"calibration_role"] = "start"' in source
+    assert "--basic-linears forbids in-recording resets" in source
 
 
 def test_linear_collector_uses_a_device_specific_seed_file():
@@ -397,14 +403,15 @@ def test_linear_collector_uses_a_device_specific_seed_file():
     assert ".basic_linear_next_seed_${DEVICE}" in source
     assert "device_seed=$(printf '%s' \"$DEVICE\" | cksum" in source
     assert 'printf \'%s\\n\' "$next_seed" > "$SEED_FILE"' in source
-    assert 'BASIC_LINEAR_CALIBRATION_TAPS_PER_SEGMENT' in source
+    assert 'CALIBRATION_TAPS_PER_SEGMENT=2' in source
     assert '--calibration-taps-per-segment "$CALIBRATION_TAPS_PER_SEGMENT"' in source
     assert 'BASIC_LINEAR_CALIBRATION_TAP_HOLD_S' in source
     assert '--calibration-tap-hold-s "$CALIBRATION_TAP_HOLD_S"' in source
     assert 'CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0.05}"' in source
-    assert 'RESET_EVERY_SAMPLES="${BASIC_LINEAR_RESET_EVERY_SAMPLES:-5}"' in source
+    assert 'BASIC_LINEAR_WDA_TIMING_REVISION' in source
+    assert '--wda-timing-revision "$WDA_TIMING_REVISION"' in source
     assert '--reset-before-segment' in source
-    assert '--reset-every-samples "$RESET_EVERY_SAMPLES"' in source
+    assert '--reset-every-samples 0' in source
     assert 'BASIC_LINEAR_NO_MENU_GUARD' in source
     assert 'MENU_GUARD_ARGS=(--no-menu-guard)' in source
     assert '--no-run-notifications' in source

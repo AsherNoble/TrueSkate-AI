@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-12. Behavioural cloning is the development direction.
+Updated 2026-09-13. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -55,21 +55,24 @@ call overhead occurs within the WDA round trip. Human labels again yield only
 1/6 swipes within one frame using return-minus-duration; using WDA response
 instead of client return does not improve that count.
 
-Internal WDA instrumentation is pushed and tested; XR2 deployment is blocked by
-training-server Xcode account/certificate/profile errors. Existing WDA remains
-running; run05 has no recording yet. Bundled run04b was rejected after the user
-observed joined gestures; use separate requests.
-
-Update following Claude handoff: signing/deployment succeeded and runs05–09
-were completed (see research/wda-onset-timing-20260913 branch). Run10 now tests
+Internal WDA instrumentation is pushed and tested. Its initial deployment was
+blocked by training-server signing errors; the later signing/deployment succeeded
+and runs05–09 were completed (see research/wda-onset-timing-20260913 branch).
+Bundled run04b was rejected after the user observed joined gestures; use separate
+requests. Run10 tested
 first/last-anchor correction across a 59.10 s recording, with a held-out middle
-calibration and eight gestures. Run10 labels evaluated: 8/9 held-out touches within one frame; all eight
-gestures pass, but middle calibration error38.239 ms exceeds33.333 ms.
-Two-anchor correction improves little over one anchor. Initial gate failed;
-XR1/park replications are paused pending discussion.
+calibration and eight gestures. All eight gestures were within one 30 fps frame;
+the held-out middle calibration missed by 38.239 ms. The user accepted this as
+sufficient practical evidence for the linear collection path. The canonical
+implementation now brackets each minute with fixed centre-screen controls and
+maps WDA `submitted_to_ios.monotonic_s` to video time with those two observed
+onsets. It rejects incomplete WDA reports, overlapping controls, and in-recording
+resets, and never emits controls as training examples. This code has offline test
+coverage but has not yet collected a production segment on this branch.
 
-An exploratory classical onset detector now uses local-background subtraction
+The classical onset detector now uses local-background subtraction
 and short look-ahead confirmation. On the reused development set it matches
 23/24 sampled swipe starts exactly, up from 21/24 for the preserved colour-only
 baseline; one moving floor graphic still triggers early. This is not held-out
-accuracy and is not integrated into collection or training.
+accuracy. It is now the calibration-control detector; fixed centre controls avoid
+the observed red-floor edge case.

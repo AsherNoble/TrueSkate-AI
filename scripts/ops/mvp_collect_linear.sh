@@ -20,17 +20,16 @@ REPO=/Users/training-server/trueskate-ai
 # roots and set BASIC_LINEAR_PARK explicitly rather than mislabelling them as
 # The Workshop.
 PARK="${BASIC_LINEAR_PARK:-The Workshop}"
-# The calibration gate itself remains two consistent observed taps.  A delayed
-# recorder can render the first leading clapperboards before its useful window,
-# so callers may increase redundant controls without weakening that gate.
-CALIBRATION_TAPS_PER_SEGMENT="${BASIC_LINEAR_CALIBRATION_TAPS_PER_SEGMENT:-3}"
+# Exactly two centre-screen controls bracket each one-minute recording. Their
+# visible onsets map WDA's internal submitted-to-iOS clock onto video time.
+CALIBRATION_TAPS_PER_SEGMENT=2
 # A 50ms ActionChains press still has ``tap`` provenance (and strict loaders
 # exclude it), but is much more consistently visible to the XCTest timing
 # calibrator than Appium's instantaneous mobile:tap on XR2.
 CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0.05}"
-# Reset after five trainable drags (calibration taps do not count).  This keeps
-# the board out of walls/gaps while the collector still labels only linear drags.
-RESET_EVERY_SAMPLES="${BASIC_LINEAR_RESET_EVERY_SAMPLES:-5}"
+# This is the instrumented WDA revision validated by the timing experiments.
+# Override only when the replacement fork build exposes the same checked schema.
+WDA_TIMING_REVISION="${BASIC_LINEAR_WDA_TIMING_REVISION:-b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6}"
 MENU_GUARD_ARGS=()
 if [ "${BASIC_LINEAR_NO_MENU_GUARD:-0}" = "1" ]; then
   # SLS parks can render a persistent five-cell bottom strip that the generic
@@ -74,10 +73,11 @@ while :; do
     --tap-calibrate \
     --calibration-taps-per-segment "$CALIBRATION_TAPS_PER_SEGMENT" \
     --calibration-tap-hold-s "$CALIBRATION_TAP_HOLD_S" \
+    --wda-timing-revision "$WDA_TIMING_REVISION" \
     --wait-for-align \
     --no-reset \
     --reset-before-segment \
-    --reset-every-samples "$RESET_EVERY_SAMPLES" \
+    --reset-every-samples 0 \
     "${MENU_GUARD_ARGS[@]}" \
     --park-label "$PARK" \
     --align-video \

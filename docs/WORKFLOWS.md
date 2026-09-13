@@ -38,8 +38,13 @@ jobs is a separate paid action, not an installation or smoke requirement.
 On the rig, the bounded linear wrapper remains
 `bash scripts/ops/mvp_collect_linear.sh iPhone_XR /absolute/output/path 1`.
 Set `BASIC_LINEAR_PARK` to the actual loaded park; the label does not navigate.
-It uses one-minute segments, three leading calibration controls, per-segment
-reset and strict aligned video. Use separate outputs for validation.
+It uses one-minute segments, an exact centre-screen control at the start and
+end, instrumented WDA `submitted_to_ios` timestamps, a two-anchor video-time
+fit, a reset before recording, and strict aligned video. Set
+`BASIC_LINEAR_WDA_TIMING_REVISION` only when deliberately deploying a compatible
+instrumented WDA build. No reset is sent while recording. The two controls stay
+in the raw manifest but the aligner emits no training clips for them. Use
+separate outputs for validation.
 
 For mixed/hold collection, inspect the collector's `--help`; preserve its
 guards and metadata. Label `--park-label` honestly. Keep all trainable samples

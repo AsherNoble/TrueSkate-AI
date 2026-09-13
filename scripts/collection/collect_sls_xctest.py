@@ -2,8 +2,9 @@
 
 Replaces the wedged DAL real-time capture (``collect_sls_traces.py``) with Apple's
 XCTest screen recording (``collection/xctest_capture``): records bounded ``--segment-min``
-``.mov`` segments while firing the SLS gesture mix, logging a per-gesture MANIFEST of
-host-epoch call times. Each segment's ``.mov`` + ``.json`` manifest are written to THIS
+``.mov`` segments while firing the SLS gesture mix, logging a per-gesture MANIFEST.
+Canonical linear segments also retain validated internal WDA submission timestamps
+and fixed centre-screen controls at both ends. Each segment's artifacts are written to THIS
 host (the training-server Mac). Frames are aligned to gestures OFFLINE by
 ``scripts/collection/align_xctest_traces.py`` — spawned async after each segment by default,
 so a bad segment is caught before its footage is deleted.
@@ -28,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import os
 import re
 import signal
@@ -54,7 +56,7 @@ os.environ.setdefault("TRUESKATE_MIN_FINGER_STAGGER_S", "0.12")
 from trueskate_ai.data.gesture_sampling import (  # noqa: E402
     BASIC_HOLD_CALIBRATION_TAP_SHARE, load_recipe_vectors,
     BASIC_LINEAR_CALIBRATION_TAP_SHARE, clamp_in_bounds, sample_basic_hold_mixture,
-    sample_basic_linear_mixture, sample_mixture, sample_tap,
+    GestureSample, sample_basic_linear_mixture, sample_mixture, sample_tap,
 )
 from trueskate_ai.sim.gesture_params import execute_gesture_params  # noqa: E402
 from trueskate_ai.sim.device import (  # noqa: E402
@@ -68,6 +70,9 @@ from trueskate_ai.sim.touch_actions import (  # noqa: E402
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
 from trueskate_ai.collection.gameplay_filter import is_editor_frame, is_menu_frame  # noqa: E402
 from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder  # noqa: E402
+from trueskate_ai.collection.wda_action_timing import (  # noqa: E402
+    WDAActionTimingCapture, validate_action_timing_report,
+)
 
 # Same 11 SLS arenas + cycle order as the DAL collector (labels for prompting/tagging).
 DEFAULT_SLS_PARKS = [
@@ -295,9 +300,9 @@ def main() -> None:
                     help="Deprecated compatibility option for --basic-linears. Dedicated per-segment "
                          "calibration taps are used instead.")
     ap.add_argument("--calibration-taps-per-segment", type=int, default=3,
-                    help="For --basic-holds/--basic-linears, reserve this many deterministic "
-                         "tap clapperboards at the start of every segment (default 3). "
-                         "They replace random calibration-arm draws and are never trainable clips.")
+                    help="For --basic-holds, reserve this many leading controls (default 3). "
+                         "--basic-linears requires 2 and places fixed centre controls at the "
+                         "start and end. Controls are never trainable clips.")
     ap.add_argument("--calibration-tap-hold-s", type=float, default=0.0,
                     help="Optional short ActionChains dwell for calibration-only tap controls. "
                          "The manifest still labels these controls as taps, so strict MVP loaders exclude them.")
@@ -305,6 +310,13 @@ def main() -> None:
                     help="Ask the offline aligner to require per-segment timing calibration "
                          "from the known-position tap arm. Intended for --static-frac MVP "
                          "collection; a rejected calibration preserves the source .mov.")
+    ap.add_argument("--wda-timing-revision", default=None,
+                    help="Exact instrumented WDA build SHA required for --basic-linears. "
+                         "Its submitted-to-iOS timestamps are mapped to video time by the "
+                         "two centre-screen calibration controls.")
+    ap.add_argument("--end-calibration-reserve-s", type=float, default=7.0,
+                    help="Seconds reserved at the end of a basic-linear segment for its "
+                         "centre calibration control and visible trace tail (default 7).")
     ap.add_argument("--num-gestures", type=int, default=2)
     ap.add_argument("--use-spin", action="store_true",
                     help="Legacy: make the plain nslot branch spin-capable (~half gate-off). "
@@ -389,6 +401,8 @@ def main() -> None:
         raise SystemExit("--segment-reset-settle-s must be >= 1.5 to clear the reset trace")
     if args.reset_every_samples < 0:
         raise SystemExit("--reset-every-samples must be >= 0")
+    if args.end_calibration_reserve_s <= 0.0:
+        raise SystemExit("--end-calibration-reserve-s must be > 0")
     if args.align_resize_width < 8:
         raise SystemExit("--align-resize-width must be >= 8")
     if args.basic_holds:
@@ -417,6 +431,16 @@ def main() -> None:
             raise SystemExit("--basic-linears requires --no-reset; reset taps contaminate the next linear clip")
         if not 0.0 <= args.basic_linear_tap_frac < 1.0:
             raise SystemExit("--basic-linear-tap-frac must be in [0, 1) with --basic-linears")
+        if args.calibration_taps_per_segment != 2:
+            raise SystemExit("--basic-linears requires exactly two calibration controls")
+        if not args.wda_timing_revision:
+            raise SystemExit("--basic-linears requires --wda-timing-revision")
+        if args.calibration_tap_hold_s <= 0.0:
+            raise SystemExit("--basic-linears requires a visible --calibration-tap-hold-s")
+        if args.reset_every_samples:
+            raise SystemExit("--basic-linears forbids in-recording resets; use --reset-before-segment")
+        if not math.isclose(args.segment_min, 1.0):
+            raise SystemExit("--basic-linears requires a one-minute --segment-min 1 recording")
 
     try:
         devices = resolve_devices(devices_arg=args.devices, personal=args.personal,
@@ -580,9 +604,24 @@ def main() -> None:
                 time.sleep(3.0)
                 continue
             start_fail_streak = 0  # rec.start() succeeded
+            timing_capture = None
+            if args.basic_linears:
+                timing_capture = WDAActionTimingCapture(
+                    wda_port=int(cfg["wda_port"]),
+                    expected_revision=args.wda_timing_revision,
+                )
+                try:
+                    timing_capture.start()
+                except Exception:
+                    rec.abort()
+                    raise
             _write_heartbeat(args.heartbeat_path, device=device,
                              state="recording", segment=segment_idx)
             seg_deadline = time.monotonic() + args.segment_min * 60.0
+            payload_deadline = (
+                seg_deadline - args.end_calibration_reserve_s
+                if args.basic_linears else seg_deadline
+            )
             events: list[dict] = []
             park_switched = False
             seg_aborted = False
@@ -590,8 +629,9 @@ def main() -> None:
             segment_events = 0
             segment_payload_samples = 0
             non_gameplay_streak = 0
+            action_attempts = 0
 
-            while not _STOP and time.monotonic() < seg_deadline:
+            while not _STOP and time.monotonic() < payload_deadline:
                 if global_deadline and time.monotonic() > global_deadline:
                     break
 
@@ -650,7 +690,12 @@ def main() -> None:
                         print(f"[seg {segment_idx}] gameplay check failed: {exc!r} — proceeding")
                 seg_iter += 1
 
-                if (args.basic_holds or args.basic_linears) and segment_events < args.calibration_taps_per_segment:
+                if args.basic_linears and segment_events == 0:
+                    # Fixed centre controls avoid the red ground-marking false
+                    # positive found by the V2 onset detector. The second control
+                    # is emitted after the payload loop, near the segment end.
+                    g = GestureSample(kind="tap", point=(0.5, 0.5), hold_duration_s=0.0)
+                elif args.basic_holds and segment_events < args.calibration_taps_per_segment:
                     # Bernoulli sampling can yield fewer than two taps in a short
                     # segment (as the first MVP-2 smoke did), making a clean segment
                     # fail a timing gate before a trainable drag is examined.  Reserve
@@ -669,16 +714,24 @@ def main() -> None:
                     # stamp before meta() so the logged coord is the one that fires
                     g.spin_button_xy = worker.spin_button_xy
                 t0 = time.time()
+                wda_action_sequence = action_attempts if timing_capture is not None else None
+                action_attempts += int(timing_capture is not None)
                 try:
                     calibration_hold_s = (
                         args.calibration_tap_hold_s
-                        if (args.basic_holds or args.basic_linears)
-                        and segment_events < args.calibration_taps_per_segment
+                        if (
+                            (args.basic_linears and segment_events == 0)
+                            or (args.basic_holds
+                                and segment_events < args.calibration_taps_per_segment)
+                        )
                         else 0.0
                     )
                     _execute(worker, g, calibration_tap_hold_s=calibration_hold_s)
                 except Exception as exc:  # noqa: BLE001
                     print(f"  gesture {total_gestures} failed: {exc}")
+                    if timing_capture is not None:
+                        seg_aborted = True
+                        break
                     continue
                 t1 = time.time()
                 # --- post-gesture foreground check: a gesture that itself backgrounds
@@ -691,6 +744,9 @@ def main() -> None:
                             total_menu_skips += 1
                             print(f"[seg {segment_idx}] gesture backgrounded True Skate "
                                   f"— relaunched, dropping sample (not logged)")
+                            if timing_capture is not None:
+                                seg_aborted = True
+                                break
                             continue
                     except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
                         print(f"[seg {segment_idx}] post-gesture foreground check failed: {exc!r} — proceeding")
@@ -709,6 +765,9 @@ def main() -> None:
                             _what = "park editor" if _post_editor else "replay/app menu"
                             print(f"[seg {segment_idx}] gesture opened the {_what} "
                                   f"— dropping sample (not logged)")
+                            if timing_capture is not None:
+                                seg_aborted = True
+                                break
                             continue  # do NOT log a gesture that landed in non-gameplay UI
                     except Exception as exc:  # noqa: BLE001 — never let the guard crash the run
                         print(f"[seg {segment_idx}] post-gesture UI check failed: {exc!r} — proceeding")
@@ -720,9 +779,14 @@ def main() -> None:
                     "park_change_index": park_idx,
                     **g.meta(),
                 })
+                if wda_action_sequence is not None:
+                    events[-1]["wda_action_sequence"] = wda_action_sequence
                 if calibration_hold_s:
                     events[-1]["calibration_execution"] = "short_hold"
                     events[-1]["calibration_tap_hold_s"] = calibration_hold_s
+                if args.basic_linears and segment_events == 0:
+                    events[-1]["calibration_control"] = True
+                    events[-1]["calibration_role"] = "start"
                 segment_events += 1
                 total_gestures += 1
                 if g.kind != "tap":
@@ -780,9 +844,44 @@ def main() -> None:
                     last_poll = now
                     print(f"[collect_xctest] timer fired — prompted to switch to {nxt}")
 
+            if args.basic_linears and _STOP:
+                seg_aborted = True
+            if args.basic_linears and not seg_aborted:
+                # The end control is a separate WDA request at the same exact
+                # centre point as the start control. It calibrates time only.
+                g = GestureSample(kind="tap", point=(0.5, 0.5), hold_duration_s=0.0)
+                t0 = time.time()
+                wda_action_sequence = action_attempts
+                action_attempts += 1
+                try:
+                    _execute(worker, g, calibration_tap_hold_s=args.calibration_tap_hold_s)
+                except Exception as exc:  # noqa: BLE001
+                    print(f"[seg {segment_idx}] end calibration failed: {exc!r} — discard segment")
+                    seg_aborted = True
+                else:
+                    t1 = time.time()
+                    events.append({
+                        "gesture_index": total_gestures,
+                        "t_call_start_epoch_s": t0,
+                        "t_call_end_epoch_s": t1,
+                        "park": cur_park,
+                        "park_change_index": park_idx,
+                        "wda_action_sequence": wda_action_sequence,
+                        "calibration_control": True,
+                        "calibration_role": "end",
+                        "calibration_execution": "short_hold",
+                        "calibration_tap_hold_s": args.calibration_tap_hold_s,
+                        **g.meta(),
+                    })
+                    segment_events += 1
+                    total_gestures += 1
+                    time.sleep(args.tail_s)
+
             # --- close + save the segment (partial segments on STOP/switch are still saved) ---
             if seg_aborted:
                 # session dropped mid-segment: discard the partial recording, recover, skip.
+                if timing_capture is not None:
+                    timing_capture.cleanup()
                 try:
                     rec.abort()
                 except Exception:  # noqa: BLE001
@@ -791,6 +890,25 @@ def main() -> None:
                     print("[collect_xctest] session unrecoverable — exit for supervisor restart.")
                     break
                 continue
+            timing_report = None
+            timing_error = None
+            if timing_capture is not None:
+                try:
+                    timing_report = timing_capture.stop()
+                    records = validate_action_timing_report(
+                        timing_report,
+                        expected_revision=args.wda_timing_revision,
+                        expected_count=action_attempts,
+                    )
+                    for event in events:
+                        sequence = event["wda_action_sequence"]
+                        submitted = records[sequence]["submitted_to_ios"]
+                        event["wda_submitted_monotonic_s"] = submitted["monotonic_s"]
+                        event["wda_submitted_epoch_s"] = submitted["epoch_s"]
+                except Exception as exc:  # noqa: BLE001 - preserve footage for diagnosis
+                    timing_error = str(exc)
+                    if timing_capture.active:
+                        timing_capture.cleanup()
             mov_path = out_root / f"segment_{segment_idx:05d}.mov"
             try:
                 _write_heartbeat(args.heartbeat_path, device=device,
@@ -811,6 +929,9 @@ def main() -> None:
                 segment_idx += 1  # keep segment numbering monotonic even on a lost segment
                 continue
             manifest_path = out_root / f"segment_{segment_idx:05d}.json"
+            timing_report_path = out_root / f"segment_{segment_idx:05d}.wda-action-timings.json"
+            if timing_report is not None:
+                timing_report_path.write_text(json.dumps(timing_report, indent=2))
             manifest = {
                 "device": device, "device_logical_w": dw, "device_logical_h": dh,
                 "segment_index": segment_idx, "park": cur_park, "park_change_index": park_idx,
@@ -819,6 +940,15 @@ def main() -> None:
                 "host_stop_epoch_s": res.host_stop_epoch_s,
                 "fps": res.fps, "codec": res.codec,
                 "capture_offset_s": args.capture_offset_s,
+                "timing_alignment": (
+                    "wda_submitted_two_anchor" if args.basic_linears else None
+                ),
+                "wda_timing_revision": args.wda_timing_revision,
+                "wda_action_count": action_attempts if args.basic_linears else None,
+                "wda_action_timing_report": (
+                    timing_report_path.name if timing_report is not None else None
+                ),
+                "wda_timing_validation_error": timing_error,
                 "allow_idle_navigation": args.allow_idle_navigation,
                 "tail_s": args.tail_s,
                 # Sampler config, so a corpus session is reconstructable without

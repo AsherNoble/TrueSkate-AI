@@ -13,6 +13,11 @@ Put substantial experiments in individual records and current facts in STATUS.
 - Exploratory local-background and look-ahead trace detection improves the same
   51 labelled examples from 45 to 47 exact and 45 to 48 within one frame. One moving
   floor graphic still triggers early; this is development evidence, not a holdout.
+- Canonical linear collection now uses separate start/end 50 ms controls at exact
+  screen centre, WDA submitted-to-iOS timestamps and an affine video-time fit.
+  Controls stay in manifests and are never emitted as training clips; in-recording
+  resets and incomplete timing reports reject the segment. Offline tests pass;
+  device/park validation remains to be run before a larger collection.
 
 ## 2026-09-13 — Internal WDA timing prepared
 
