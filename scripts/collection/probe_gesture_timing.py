@@ -32,6 +32,46 @@ def sequence(profile="original"):
     return items
 
 
+def random_sequence(n_gestures, seed, n_cal=1, spread=False):
+    """Calibration anchor(s) plus randomised linear (constant-speed) gestures.
+
+    Gestures stay inside a central safe band (x in [.32,.68], y in [.44,.66]) that
+    avoids the spin control (x~.06) and the top reset, with a minimum travel so
+    each is a genuine swipe. Reproducible from ``seed``.
+
+    With ``spread`` the ``n_cal`` calibration anchors are distributed evenly across
+    the timeline (first and last positions included) instead of bunched at the
+    start, so an anchor at the start can be tested against a calibration many
+    seconds later. Otherwise all calibrations lead.
+    """
+    import random
+    rng = random.Random(seed)
+    cal = lambda: {'kind': 'calibration', 'points': [[.50, .55]], 'duration': .05}
+    gestures = []
+    for _ in range(n_gestures):
+        while True:
+            x0, y0 = rng.uniform(.32, .68), rng.uniform(.44, .66)
+            x1, y1 = rng.uniform(.32, .68), rng.uniform(.44, .66)
+            if ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** .5 >= .18:
+                break
+        gestures.append({'kind': 'linear',
+                         'points': [[round(x0, 3), round(y0, 3)], [round(x1, 3), round(y1, 3)]],
+                         'duration': rng.choice([.3, .5, .7, 1.0])})
+    if not spread or n_cal <= 1:
+        return [cal() for _ in range(n_cal)] + gestures
+    total = n_gestures + n_cal
+    cal_at = {round(i * (total - 1) / (n_cal - 1)) for i in range(n_cal)}
+    if len(cal_at) != n_cal:  # rounding collision (too many anchors for the length)
+        raise ValueError('Too many spread calibrations for this gesture count')
+    items, gi = [], 0
+    for pos in range(total):
+        if pos in cal_at:
+            items.append(cal())
+        else:
+            items.append(gestures[gi]); gi += 1
+    return items
+
+
 def run_sequence(commands, *, sleep=time.sleep, epoch=time.time, monotonic=time.monotonic):
     """Only waits, timestamps, prepared touch calls and in-memory bookkeeping."""
     events, waits = [], []
@@ -97,7 +137,8 @@ def validate_wda_timings(report, expected_revision, count):
     for i, record in enumerate(report['records']):
         if record.get('sequence') != i or record.get('outcome') != 'success':
             raise ValueError('Unordered or failed WDA action')
-        if record.get('missing_ios_callback') is not False or record.get('ios_callback_result') is not True:
+        # WDA serialises ObjC BOOLs as JSON 0/1, so test truthiness, not identity.
+        if record.get('missing_ios_callback') or not record.get('ios_callback_result'):
             raise ValueError('Missing or unsuccessful iOS callback')
         if not record.get('session_id') or (session is not None and record['session_id'] != session):
             raise ValueError('WDA session changed')
@@ -122,11 +163,25 @@ def main():
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--park', required=True, help='Observed park provenance, including uncertainty')
     parser.add_argument('--profile', choices=('original', 'duration-repeat'), default='original')
+    parser.add_argument('--gestures', type=int, help='Randomised single-anchor run: this many linear swipes')
+    parser.add_argument('--calibrations', type=int, default=1, help='Calibration anchors for --gestures runs (default 1)')
+    parser.add_argument('--seed', type=int, help='Seed for --gestures randomisation (required with --gestures)')
+    parser.add_argument('--spread-calibrations', action='store_true',
+                        help='Distribute calibration anchors across the timeline instead of leading')
     parser.add_argument('--appium-port', type=int, default=4726, help='Optional isolated logging Appium; WDA remains on 8103')
     args = parser.parse_args()
     if args.wda_timing_revision and args.bundled:
         parser.error('WDA internal timing experiment requires separate requests')
-    specs = sequence(args.profile)
+    if args.gestures is not None:
+        if args.bundled:
+            parser.error('Randomised single-anchor runs use separate requests, not --bundled')
+        if args.seed is None:
+            parser.error('--gestures requires --seed for reproducibility')
+        specs = random_sequence(args.gestures, args.seed, args.calibrations, args.spread_calibrations)
+        layout = 'spread' if args.spread_calibrations else 'lead'
+        args.profile = f'single-anchor-{args.calibrations}cal-{layout}-{args.gestures}g-seed{args.seed}'
+    else:
+        specs = sequence(args.profile)
     if args.out.exists():
         raise SystemExit('Use a new output directory; never overwrite an experiment.')
     tunnel = subprocess.check_output(['launchctl', 'print', 'system/com.trueskate.remotexpc-tunnel'], text=True)
@@ -177,7 +232,8 @@ def main():
                 raise RuntimeError('Instrumented WDA build identity mismatch; no recording started')
             timing_url = candidate
             enabled = timing_http(timing_url, {'enabled': True})['value']
-            if enabled.get('enabled') is not True or enabled.get('records') != []:
+            # WDA serialises the ObjC BOOL as JSON 0/1, so test truthiness, not identity.
+            if not enabled.get('enabled') or enabled.get('records'):
                 raise RuntimeError('WDA timing capture failed to initialize')
         recorder = XCTestScreenRecorder(driver, fps=30)
         recorder.start()  # Single attempt. No retries or WDA restarts.
