@@ -1,0 +1,28 @@
+{
+  "date": "2026-09-13",
+  "version": "v1",
+  "selection": {
+    "calibrations": "all 27 labelled calibration touches in 11 available recordings",
+    "swipes": "24 sampled without replacement from 107 eligible labelled linear swipes",
+    "random_seed": 20260913,
+    "excluded": "human-confirmed spin-control activation at 105440 frame 547"
+  },
+  "search_window": "recorded request start minus 1 second through request completion plus 1 second",
+  "method": {
+    "crop_pixels": [96, 96],
+    "radius_pixels": 12,
+    "score": "mean min(R-G, R-B) in the circle around the commanded start",
+    "selection_rule": "first adjacent-frame score increase >= 2.0",
+    "threshold": 2.0
+  },
+  "results": {
+    "calibration": {"count": 27, "exact": 24, "within_one": 24, "missed": 1},
+    "gesture": {"count": 24, "exact": 21, "within_one": 21, "missed": 0}
+  },
+  "limitations": [
+    "The threshold was chosen after inspecting these calibration examples.",
+    "Three old-recording calibration windows omitted the onset transition.",
+    "Three swipe predictions triggered 7, 15, and 17 frames early on background changes."
+  ],
+  "untracked_review_artifact": "tmp/onset-wide-search-20260913/index.html"
+}
