@@ -65,3 +65,26 @@ def test_bundle_sends_one_request_with_released_pauses_and_exact_schedule():
     assert observed == pytest.approx([1, 2.05, 3.1, 4.15, 5.45, 7.05, 9.05, 10.35, 11.95])
     assert starts == pytest.approx(observed)
     assert duration == pytest.approx(13.95) == elapsed / 1000
+
+
+def test_wda_timing_validation_rejects_incomplete_or_misattributed_records():
+    import copy
+    import pytest
+    boundaries = ('request_entered', 'preparation_started', 'preparation_finished',
+                  'submitted_to_ios', 'ios_completion_callback', 'stability_wait_started',
+                  'stability_wait_finished', 'request_finished')
+    record = dict(sequence=0, outcome='success', session_id='session-a',
+                  missing_ios_callback=False, ios_callback_result=True)
+    record.update({name: {'monotonic_s': float(i)} for i, name in enumerate(boundaries)})
+    report = dict(schema_version=1, build_revision='abc', dropped_records=0, records=[record])
+    assert probe.validate_wda_timings(report, 'abc', 1)
+    for key, value in [('sequence', 1), ('outcome', 'error'), ('missing_ios_callback', True),
+                       ('ios_callback_result', False), ('session_id', '')]:
+        bad = copy.deepcopy(report); bad['records'][0][key] = value
+        with pytest.raises(ValueError): probe.validate_wda_timings(bad, 'abc', 1)
+    bad = copy.deepcopy(report); bad['records'][0]['submitted_to_ios']['monotonic_s'] = 99
+    with pytest.raises(ValueError): probe.validate_wda_timings(bad, 'abc', 1)
+    with pytest.raises(ValueError): probe.validate_wda_timings(report, 'wrong', 1)
+    with pytest.raises(ValueError): probe.validate_wda_timings(report, 'abc', 2)
+    bad = copy.deepcopy(report); bad['dropped_records'] = 1
+    with pytest.raises(ValueError): probe.validate_wda_timings(bad, 'abc', 1)

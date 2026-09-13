@@ -1,0 +1,5 @@
+/Users/training-server/WebDriverAgent-timing/WebDriverAgent.xcodeproj: error: No Accounts: Add a new account in Accounts settings. (in target 'WebDriverAgentRunner' from project 'WebDriverAgent')
+/Users/training-server/WebDriverAgent-timing/WebDriverAgent.xcodeproj: error: No profiles for 'com.asher.WebDriverAgentRunner.xctrunner' were found: Xcode couldn't find any iOS App Development provisioning profiles matching 'com.asher.WebDriverAgentRunner.xctrunner'. (in target 'WebDriverAgentRunner' from project 'WebDriverAgent')
+/Users/training-server/WebDriverAgent-timing/WebDriverAgent.xcodeproj: error: No Accounts: Add a new account in Accounts settings. (in target 'WebDriverAgentLib' from project 'WebDriverAgent')
+/Users/training-server/WebDriverAgent-timing/WebDriverAgent.xcodeproj: error: No signing certificate "iOS Development" found: No "iOS Development" signing certificate matching team ID "BK75JV5YK4" with a private key was found. (in target 'WebDriverAgentLib' from project 'WebDriverAgent')
+xcodebuild: error: Failed writing xctestrun file: The folder “WebDriverAgentRunner_iphoneos18.2-arm64.xctestrun” doesn’t exist..

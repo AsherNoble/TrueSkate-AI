@@ -4,6 +4,13 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-13 — Internal WDA timing prepared
+
+- Pushed tested opt-in WDA instrumentation and prepared the separate-request
+  probe. Signed rig build blocked by account/certificate/profile errors;
+  original XR2 WDA remains running. Joined-gesture batch experiment abandoned.
+  [M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).
+
 ## 2026-09-12 — Human onset timing audit
 
 - Preserved three original-recording annotation sets, manifests, frame timestamps

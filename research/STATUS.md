@@ -54,3 +54,8 @@ achieve one-frame accuracy. Run03 now captures Appium proxy boundaries: most
 call overhead occurs within the WDA round trip. Human labels again yield only
 1/6 swipes within one frame using return-minus-duration; using WDA response
 instead of client return does not improve that count.
+
+Internal WDA instrumentation is pushed and tested; XR2 deployment is blocked by
+training-server Xcode account/certificate/profile errors. Existing WDA remains
+running; run05 has no recording yet. Bundled run04b was rejected after the user
+observed joined gestures; use separate requests.

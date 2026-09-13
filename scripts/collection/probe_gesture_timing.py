@@ -77,6 +77,38 @@ def build_bundle(driver, specs):
     return command, starts, elapsed
 
 
+def timing_http(url, payload=None):
+    from urllib.request import Request, urlopen
+    body = None if payload is None else json.dumps(payload).encode()
+    request = Request(url, data=body, headers={'Content-Type': 'application/json'})
+    with urlopen(request, timeout=10) as response:
+        return json.load(response)
+
+
+def validate_wda_timings(report, expected_revision, count):
+    if report.get('schema_version') != 1 or report.get('build_revision') != expected_revision:
+        raise ValueError('Unexpected WDA timing schema or build revision')
+    if report.get('dropped_records') != 0 or len(report.get('records', [])) != count:
+        raise ValueError('Missing or overflowed WDA timing records')
+    boundaries = ('request_entered', 'preparation_started', 'preparation_finished',
+                  'submitted_to_ios', 'ios_completion_callback', 'stability_wait_started',
+                  'stability_wait_finished', 'request_finished')
+    session = None
+    for i, record in enumerate(report['records']):
+        if record.get('sequence') != i or record.get('outcome') != 'success':
+            raise ValueError('Unordered or failed WDA action')
+        if record.get('missing_ios_callback') is not False or record.get('ios_callback_result') is not True:
+            raise ValueError('Missing or unsuccessful iOS callback')
+        if not record.get('session_id') or (session is not None and record['session_id'] != session):
+            raise ValueError('WDA session changed')
+        session = record['session_id']
+        stamps = [record[b]['monotonic_s'] for b in boundaries]
+        import math
+        if not all(math.isfinite(t) for t in stamps) or any(b < a for a, b in zip(stamps, stamps[1:])):
+            raise ValueError('Invalid WDA timestamp ordering')
+    return True
+
+
 def main():
     from selenium.webdriver.common.action_chains import ActionChains
     from trueskate_ai.sim.device import DeviceSession, DEVICES, BUNDLE_ID
@@ -85,12 +117,15 @@ def main():
     from trueskate_ai.collection.gameplay_filter import is_menu_frame, is_editor_frame
 
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--wda-timing-revision', help='Require opt-in timing from this exact WDA build SHA')
     parser.add_argument('--bundled', action='store_true', help='One request with device-side pauses')
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--park', required=True, help='Observed park provenance, including uncertainty')
     parser.add_argument('--profile', choices=('original', 'duration-repeat'), default='original')
     parser.add_argument('--appium-port', type=int, default=4726, help='Optional isolated logging Appium; WDA remains on 8103')
     args = parser.parse_args()
+    if args.wda_timing_revision and args.bundled:
+        parser.error('WDA internal timing experiment requires separate requests')
     specs = sequence(args.profile)
     if args.out.exists():
         raise SystemExit('Use a new output directory; never overwrite an experiment.')
@@ -102,6 +137,7 @@ def main():
     cfg['appium_port'] = args.appium_port
     worker = DeviceSession(cfg)
     recorder = None
+    timing_url = None
     try:
         worker.connect()
         driver = worker.driver
@@ -129,6 +165,20 @@ def main():
         if args.bundled:
             bundle, planned_starts, planned_duration = build_bundle(driver, specs)
             encoded_bundle = bundle.w3c_actions.pointer_action.source.encode()
+        if args.wda_timing_revision:
+            status = timing_http('http://127.0.0.1:8103/status')
+            session_id = status.get('sessionId')
+            if not session_id:
+                raise RuntimeError('WDA status has no active session')
+            from urllib.parse import quote
+            candidate = 'http://127.0.0.1:8103/session/' + quote(session_id, safe='') + '/wda/actionTiming'
+            current = timing_http(candidate)['value']
+            if current.get('build_revision') != args.wda_timing_revision or current.get('schema_version') != 1:
+                raise RuntimeError('Instrumented WDA build identity mismatch; no recording started')
+            timing_url = candidate
+            enabled = timing_http(timing_url, {'enabled': True})['value']
+            if enabled.get('enabled') is not True or enabled.get('records') != []:
+                raise RuntimeError('WDA timing capture failed to initialize')
         recorder = XCTestScreenRecorder(driver, fps=30)
         recorder.start()  # Single attempt. No retries or WDA restarts.
         try:
@@ -143,7 +193,13 @@ def main():
             else:
                 events, waits = run_sequence(commands)
         finally:
-            result = recorder.stop_and_save(args.out / 'segment_00000.mov')
+            try:
+                result = recorder.stop_and_save(args.out / 'segment_00000.mov')
+            finally:
+                if timing_url:
+                    report = timing_http(timing_url, {'enabled': False})['value']
+                    (args.out / 'wda-action-timings.json').write_text(json.dumps(report, indent=2))
+                    timing_url = None
         manifest = {
             'experiment': 'isolated-touch-timing', 'profile': args.profile, 'device': 'iPhone_XR2',
             'park': args.park, 'started_at_epoch_s': result.started_at_epoch_s,
@@ -165,6 +221,8 @@ def main():
                 'waypoints': spec['points'], 'duration': spec['duration'], 'easing_power': 1.0,
                 'calibration_execution': 'short_hold' if spec['kind'] == 'calibration' else None})
         (args.out / 'segment_00000.json').write_text(json.dumps(manifest, indent=2))
+        if args.wda_timing_revision:
+            validate_wda_timings(report, args.wda_timing_revision, len(specs))
         after = driver.get_screenshot_as_png()
         (args.out / 'after.png').write_bytes(after)
         validation = {'foreground': driver.query_app_state(BUNDLE_ID) == 4,
@@ -174,6 +232,12 @@ def main():
         print(json.dumps({'out': str(args.out), 'gestures': len(events), 'waits': waits,
                           'postflight': validation}), flush=True)
     finally:
+        if timing_url:
+            try:
+                report = timing_http(timing_url, {'enabled': False})['value']
+                (args.out / 'wda-action-timings.json').write_text(json.dumps(report, indent=2))
+            except Exception as error:
+                print(f'WDA timing cleanup failed: {error}', flush=True)
         if recorder is not None and recorder.is_recording:
             recorder.abort()
         worker.disconnect()
