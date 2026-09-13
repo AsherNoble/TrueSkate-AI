@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-13. Behavioural cloning is the development direction.
+Updated 2026-09-14. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -37,6 +37,18 @@ action groups and activity masks; the older rig model must not overwrite it.
 - Can Model 1 label expert recordings accurately enough for useful Model 2 training?
 - How should future collection broaden spatial coverage without contaminating labels?
 
+The frame-alignment sub-problem of self-labelling is validated: WDA's internal
+`submitted_to_ios` timestamp aligns gesture onsets to the video within one frame
+and beats the uninstrumented host clock ([ALIGN-20260913](experiments/ALIGN-20260913-wda-onset.md)).
+One calibration anchor suffices only for short clips (< ~15 s); a per-recording
+linear timebase drift (~−1900 ppm, phone wall-clock vs video media-clock) pushes
+a single anchor past one frame by ~23 s, so longer recordings need ≥2 anchors
+(start and end) with a per-recording offset+rate fit. This is one device, park
+and session; it does not certify cross-park/session/device generalisation, the
+drift-rate distribution across recordings, or downstream trace quality. The WDA
+fork instrumentation remains on its feature branch and was hand-launched; its
+validated client/alignment integration is now present on this repository branch.
+
 These are research decisions, not tasks automatically authorized by maintenance.
 
 ## Timing and data-quality audit
@@ -44,7 +56,8 @@ These are research decisions, not tasks automatically authorized by maintenance.
 Three original recordings now have preserved human onset annotations. Two show
 false automatic calibration detections; one shows an approximately half-second
 within-recording timing shift. These selected surviving originals do not estimate
-accepted-corpus error prevalence. Shared decoding and calibration remain unchanged.
+accepted-corpus error prevalence. The replacement calibration path applies only
+to newly collected segments and does not retroactively repair the old corpus.
 A human-confirmed spin-contaminated gesture must be excluded before the next
 linear training build; exclusion enforcement is still pending. See
 [M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).
@@ -57,7 +70,7 @@ instead of client return does not improve that count.
 
 Internal WDA instrumentation is pushed and tested. Its initial deployment was
 blocked by training-server signing errors; the later signing/deployment succeeded
-and runs05–09 were completed (see research/wda-onset-timing-20260913 branch).
+and runs05–09 were completed ([ALIGN-20260913](experiments/ALIGN-20260913-wda-onset.md)).
 Bundled run04b was rejected after the user observed joined gestures; use separate
 requests. Run10 tested
 first/last-anchor correction across a 59.10 s recording, with a held-out middle

@@ -4,37 +4,38 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
-## 2026-09-13 — Minute-scale two-anchor test
+## 2026-09-13 — Instrumented-WDA onset alignment validated
 
-- Run10 captured 59.10 s, with 56.02 s between calibration endpoints. Frozen
-  endpoint-only fit: all eight gestures pass one-frame target; held-out middle
-  calibration misses at38.24 ms. Initial gate fails (8/9); replications paused.
-  Preserved raw labels and full comparison in M1-TIMING-20260912/run10 evidence.
-- Exploratory local-background and look-ahead trace detection improves the same
-  51 labelled examples from 45 to 47 exact and 45 to 48 within one frame. One moving
-  floor graphic still triggers early; this is development evidence, not a holdout.
+- WDA's internal `submitted_to_ios` timestamp aligns gesture onsets to the video
+  within one frame (28/28 across four short XR2 recordings; true jitter ≤ ~13 ms,
+  the 30 fps labelling floor) and beats the uninstrumented host send-clock by up
+  to ~7 frames. Red-team CONFIRMED.
+  [ALIGN-20260913](experiments/ALIGN-20260913-wda-onset.md).
+- A multi-anchor recording (run09) then showed one anchor does NOT hold over a
+  ~23 s clip: a per-recording linear timebase drift (~−1900 ppm) reaches 1.28
+  frames by +22.6 s. A ≥2-anchor offset+rate fit collapses it back to ≤ 0.58
+  frame — so long recordings need two anchors (start and end), re-fit per clip.
+- Scope: one device, park and session. Not yet certified: cross-park/session/
+  device generalisation or the drift-rate distribution across recordings.
+- Run10 extended the test to 59.10 s. All eight held-out gestures pass one frame;
+  the held-out middle calibration misses by 38.24 ms. The user accepted this
+  practical result for rebuilding the linear corpus.
+- The local-background V2 onset detector matches 23/24 sampled swipe starts
+  exactly on reused development labels. Fixed centre controls avoid its observed
+  moving red-floor edge case.
 - Canonical linear collection now uses separate start/end 50 ms controls at exact
-  screen centre, WDA submitted-to-iOS timestamps and an affine video-time fit.
-  Controls stay in manifests and are never emitted as training clips; in-recording
-  resets and incomplete timing reports reject the segment. Offline tests pass;
-  device/park validation remains to be run before a larger collection.
-
-## 2026-09-13 — Internal WDA timing prepared
-
-- Pushed tested opt-in WDA instrumentation and prepared the separate-request
-  probe. Signed rig build blocked by account/certificate/profile errors;
-  original XR2 WDA remains running. Joined-gesture batch experiment abandoned.
-  [M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).
+  screen centre, WDA submission timestamps and an affine video-time fit. Controls
+  stay in manifests and are never emitted as training clips; in-recording resets
+  and incomplete timing reports reject the segment. Offline tests pass.
+  [Timing audit](experiments/M1-TIMING-20260912.md).
 
 ## 2026-09-12 — Human onset timing audit
 
 - Preserved three original-recording annotation sets, manifests, frame timestamps
   and findings; false calibration detections and a within-recording timing shift
-  require investigation. Recorded the user-confirmed spin-control exclusion.
-- Bounded timing repeats and human labels reject reliable one-frame return-based
-  alignment; logged WDA responses do not resolve the residual.
-- Added the reusable frame viewer. No collection or training changes deployed.
-  [M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).
+  motivated the WDA experiments. Recorded the user-confirmed spin exclusion.
+- Bounded timing repeats rejected host-call and return-based alignment. Added the
+  reusable frame viewer. [M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).
 
 ## 2026-09-09 — Unintended collection autostart retired
 
