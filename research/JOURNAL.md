@@ -10,6 +10,9 @@ Put substantial experiments in individual records and current facts in STATUS.
   endpoint-only fit: all eight gestures pass one-frame target; held-out middle
   calibration misses at38.24 ms. Initial gate fails (8/9); replications paused.
   Preserved raw labels and full comparison in M1-TIMING-20260912/run10 evidence.
+- Exploratory local-background and look-ahead trace detection improves the same
+  51 labelled examples from 45 to 47 exact and 45 to 48 within one frame. One moving
+  floor graphic still triggers early; this is development evidence, not a holdout.
 
 ## 2026-09-13 — Internal WDA timing prepared
 

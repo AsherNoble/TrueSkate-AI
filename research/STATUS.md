@@ -67,3 +67,9 @@ calibration and eight gestures. Run10 labels evaluated: 8/9 held-out touches wit
 gestures pass, but middle calibration error38.239 ms exceeds33.333 ms.
 Two-anchor correction improves little over one anchor. Initial gate failed;
 XR1/park replications are paused pending discussion.
+
+An exploratory classical onset detector now uses local-background subtraction
+and short look-ahead confirmation. On the reused development set it matches
+23/24 sampled swipe starts exactly, up from 21/24 for the preserved colour-only
+baseline; one moving floor graphic still triggers early. This is not held-out
+accuracy and is not integrated into collection or training.
