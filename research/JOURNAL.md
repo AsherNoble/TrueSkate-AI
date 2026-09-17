@@ -13,6 +13,10 @@ Put substantial experiments in individual records and current facts in STATUS.
   stationary board, a reset or a new park, and disappears or stays absent during
   motion. The current profile deliberately blocks it at all times. Its exclusion
   may become state-dependent later only if the lost sampling area matters.
+- The preregistered XR2 contamination run failed after 2/300 swipes: a Camera
+  probe began outside the 16-point exclusion but opened Replay as it moved into
+  the control. The start-only rule is not ready for collection; evidence is
+  preserved in [M1-CONTROL-20260917](experiments/M1-CONTROL-20260917.md).
 
 ## 2026-09-13 — Instrumented-WDA onset alignment validated
 

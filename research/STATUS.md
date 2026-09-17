@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-14. Behavioural cloning is the development direction.
+Updated 2026-09-17. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -91,8 +91,11 @@ accuracy. It is now the calibration-control detector; fixed centre controls avoi
 the observed red-floor edge case.
 
 New Model 1 sampling uses the versioned XR control-start map with a 16-logical-point
-margin. Each moving gesture's touch-down is excluded from mapped controls, while
-intermediate and end points may cross them; stationary taps/holds remain excluded.
-The transient bottom navigation row is conservatively treated as present at all
-times. This is implemented and offline-tested, but has not yet passed the planned
-bounded on-device contamination run.
+margin. The transient bottom navigation row is conservatively treated as present
+at all times. The map is implemented and offline-tested, but its start-only rule
+failed the first bounded on-device test: a swipe starting about 20 logical points
+below the mapped Camera edge and moving immediately into it opened Replay. The
+run stopped after 2/300 gestures and was preserved without replacement. The next
+test must separate an underestimated Camera hitbox from insufficient travel before
+entering it; this sampler is not ready for corpus collection. See
+[M1-CONTROL-20260917](experiments/M1-CONTROL-20260917.md).
