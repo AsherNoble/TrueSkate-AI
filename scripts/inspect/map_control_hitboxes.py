@@ -32,6 +32,10 @@ from trueskate_ai.collection.gameplay_filter import (
     is_editor_frame,
     is_menu_frame,
 )
+from trueskate_ai.data.control_hitboxes import (
+    CONTROL_SAFETY_MARGIN_POINTS,
+    CONTROL_START_MAP_VERSION,
+)
 from trueskate_ai.sim.device import BUNDLE_ID, DEVICES, DeviceSession
 from trueskate_ai.sim.touch_actions import long_press, reset_position, skip_loading_screen
 
@@ -39,7 +43,7 @@ from trueskate_ai.sim.touch_actions import long_press, reset_position, skip_load
 HISTORICAL_SPIN_POINT = (0.1832222850, 0.4213833183)
 PRESS_SCORE_GAP_MIN = 2.0
 BOTTOM_PRESS_SCORE_GAP_MIN = 8.0
-SAFETY_MARGIN_POINTS = 16
+SAFETY_MARGIN_POINTS = CONTROL_SAFETY_MARGIN_POINTS
 
 
 @dataclass(frozen=True)
@@ -328,7 +332,8 @@ def _rectangle_map(boundaries: dict[str, float]) -> list[dict]:
                       "rect": [0.0, y_edges[i], right, y_edges[i + 1]]})
     bottom_names = ("me", "skateparks", "community", "shop", "settings")
     for i, name in enumerate(bottom_names):
-        rects.append({"name": name, "source": "measured upper edge; horizontal split inferred from five cells",
+        rects.append({"name": name,
+                      "source": "conservative upper edge inferred; transient row kept strict",
                       "rect": [i / 5, boundaries[name], (i + 1) / 5, 1.0]})
     return rects
 
@@ -379,19 +384,23 @@ def render_overlay(baseline: bytes, rects: list[dict], width: float, height: flo
                        fill=(0, 0, 0, 190))
         draw.text((label_x, label_y), label, fill="white", font=font)
     composed = Image.alpha_composite(base, overlay)
-    panel_width = 650
-    legend_height = 124
+    panel_width = 780
+    legend_height = 172
     legend = Image.new("RGBA", (base.width + panel_width, legend_height), (18, 18, 18, 255))
     legend_draw = ImageDraw.Draw(legend)
-    legend_draw.text((18, 10), "XR2 proposed effective control map — REVIEW REQUIRED",
+    legend_draw.text((18, 10), "XR2 CONTROL START EXCLUSION MAP",
                      fill="white", font=title_font)
     legend_draw.line((18, 43, 90, 43), fill=(255, 55, 55), width=4)
     legend_draw.text((100, 34), "solid red = effective hitbox estimate", fill="white", font=font)
     for x in range(18, 90, 24):
         legend_draw.line((x, 72, min(x + 12, 90), 72), fill=(255, 220, 40), width=4)
-    legend_draw.text((100, 63), "dashed yellow = proposed +16-point safety boundary",
+    legend_draw.text((100, 63), "dashed yellow = enforced +16-point start exclusion",
                      fill="white", font=font)
-    legend_draw.text((18, 92), "* One axis is measured; the other follows the visible control-cell split. More inherits the top-row depth.",
+    legend_draw.text((18, 92), "Only the touch-down must stay outside yellow; a moving gesture may cross or end inside.",
+                     fill=(100, 220, 255), font=font)
+    legend_draw.text((18, 116), "Bottom row is transient, but this profile blocks it at all times.",
+                     fill=(255, 225, 80), font=font)
+    legend_draw.text((18, 140), "* One axis is measured; the other follows the visible control-cell split. More inherits top depth.",
                      fill=(255, 170, 220), font=font)
     canvas = Image.new("RGBA", (base.width + panel_width, base.height + legend.height),
                        (18, 18, 18, 255))
@@ -399,7 +408,7 @@ def render_overlay(baseline: bytes, rects: list[dict], width: float, height: flo
     canvas.paste(composed, (0, legend.height))
     panel_draw = ImageDraw.Draw(canvas)
     panel_x = base.width + 22
-    panel_draw.text((panel_x, legend.height + 16), "Normalised rectangles", fill="white", font=title_font)
+    panel_draw.text((panel_x, legend.height + 16), "Normalised start exclusions", fill="white", font=title_font)
     y = legend.height + 56
     for item in rects:
         measured = ", ".join(f"{value:.4f}" for value in item["rect"])
@@ -408,7 +417,7 @@ def render_overlay(baseline: bytes, rects: list[dict], width: float, height: flo
         panel_draw.text((panel_x, y + 23), f"hitbox  [{measured}]", fill="white", font=font)
         panel_draw.text((panel_x, y + 46), f"safety  [{safety}]", fill=(255, 225, 80), font=font)
         if item.get("uncertainty"):
-            panel_draw.text((panel_x, y + 69), "UNCERTAIN: " + item["uncertainty"][:50],
+            panel_draw.text((panel_x, y + 69), "UNCERTAIN: " + item["uncertainty"][:46],
                             fill=(255, 140, 220), font=font)
             y += 98
         else:
@@ -518,6 +527,9 @@ def main() -> None:
         result = {
             "experiment": "xr2-control-hitbox-map",
             "training_admission": "never; diagnostic only",
+            "control_start_map_version": CONTROL_START_MAP_VERSION,
+            "enforcement": "gesture origin only; paths may cross or end inside controls",
+            "bottom_navigation_policy": "transient in game; conservatively enforced at all times",
             "device": args.device,
             "logical_size": [worker.device_w, worker.device_h],
             "press_score_gap_min": PRESS_SCORE_GAP_MIN,

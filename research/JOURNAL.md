@@ -4,6 +4,16 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-17 — Gesture starts protected from XR controls
+
+- XR2 mapping produced a versioned 414×896 control-start exclusion profile with
+  a 16-point margin. Only moving gestures' touch-down positions are excluded;
+  their paths and endpoints may cross controls. Taps and holds remain excluded.
+- The bottom Me–Settings row is transient: it appears about one second after the
+  stationary board, a reset or a new park, and disappears or stays absent during
+  motion. The current profile deliberately blocks it at all times. Its exclusion
+  may become state-dependent later only if the lost sampling area matters.
+
 ## 2026-09-13 — Instrumented-WDA onset alignment validated
 
 - WDA's internal `submitted_to_ios` timestamp aligns gesture onsets to the video

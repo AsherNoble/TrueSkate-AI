@@ -89,3 +89,10 @@ and short look-ahead confirmation. On the reused development set it matches
 baseline; one moving floor graphic still triggers early. This is not held-out
 accuracy. It is now the calibration-control detector; fixed centre controls avoid
 the observed red-floor edge case.
+
+New Model 1 sampling uses the versioned XR control-start map with a 16-logical-point
+margin. Each moving gesture's touch-down is excluded from mapped controls, while
+intermediate and end points may cross them; stationary taps/holds remain excluded.
+The transient bottom navigation row is conservatively treated as present at all
+times. This is implemented and offline-tested, but has not yet passed the planned
+bounded on-device contamination run.

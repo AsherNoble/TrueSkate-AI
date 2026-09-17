@@ -1,0 +1,106 @@
+import numpy as np
+import pytest
+
+from trueskate_ai.data.control_hitboxes import (
+    CONTROL_START_EXCLUSIONS,
+    controls_at_start,
+    move_start_out_of_controls,
+    start_is_safe,
+)
+from trueskate_ai.data.gesture_sampling import (
+    GestureSample,
+    clamp_in_bounds,
+    sample_basic_linear_mixture,
+    sample_mixture,
+)
+from trueskate_ai.sim.gesture_params import PARAMS_PER_SLOT, build_param_bounds
+
+
+@pytest.mark.parametrize("hitbox", CONTROL_START_EXCLUSIONS, ids=lambda h: h.name)
+def test_each_control_region_moves_a_touch_down_to_safety(hitbox):
+    x0, y0, x1, y1 = hitbox.rect
+    unsafe = ((x0 + x1) / 2, (y0 + y1) / 2)
+    assert hitbox.name in controls_at_start(unsafe)
+    moved = move_start_out_of_controls(unsafe)
+    assert start_is_safe(moved)
+
+
+def test_moving_gesture_endpoint_and_control_point_may_remain_in_controls():
+    endpoint = (0.5, 0.125)  # reset safety region, within global bounds
+    control = (0.15, 0.405)  # spin safety region, within global bounds
+    sample = GestureSample(
+        kind="flick",
+        waypoints=[(0.14, 0.20), control, endpoint],  # start in Bolt safety region
+        duration=0.5,
+        easing_power=1.0,
+    )
+
+    clamp_in_bounds(sample)
+
+    assert start_is_safe(sample.waypoints[0])
+    assert sample.waypoints[1] == pytest.approx(control)
+    assert sample.waypoints[2] == pytest.approx(endpoint)
+    assert controls_at_start(sample.waypoints[1]) == ("spin",)
+    assert controls_at_start(sample.waypoints[2]) == ("reset",)
+
+
+@pytest.mark.parametrize("kind", ["tap", "hold"])
+def test_stationary_touch_point_is_treated_as_its_start(kind):
+    sample = GestureSample(kind=kind, point=(0.9, 0.95), hold_duration_s=0.5)
+    clamp_in_bounds(sample)
+    assert start_is_safe(sample.point)
+
+
+def test_multislot_vectors_only_move_each_slots_first_waypoint():
+    num_gestures = 2
+    params = np.mean(build_param_bounds(num_gestures), axis=1)
+    starts = ((0.14, 0.20), (0.15, 0.405))
+    untouched = (
+        ((0.15, 0.405), (0.5, 0.125)),
+        ((0.14, 0.30), (0.9, 0.87)),
+    )
+    for slot in range(num_gestures):
+        base = slot * PARAMS_PER_SLOT
+        params[base:base + 2] = starts[slot]
+        params[base + 2:base + 4] = untouched[slot][0]
+        params[base + 4:base + 6] = untouched[slot][1]
+    sample = GestureSample(
+        kind="nslot", params=params.tolist(), num_gestures=num_gestures, use_spin=False,
+    )
+
+    clamp_in_bounds(sample)
+
+    for slot in range(num_gestures):
+        base = slot * PARAMS_PER_SLOT
+        assert start_is_safe((sample.params[base], sample.params[base + 1]))
+        assert sample.params[base + 2:base + 4] == pytest.approx(untouched[slot][0])
+        assert sample.params[base + 4:base + 6] == pytest.approx(untouched[slot][1])
+
+
+def test_transient_bottom_row_is_still_strictly_excluded():
+    assert controls_at_start((0.5, 0.95)) == ("community",)
+    assert start_is_safe(move_start_out_of_controls((0.5, 0.95)))
+
+
+def test_linear_sampler_never_starts_on_controls_but_retains_control_end_coverage():
+    rng = np.random.default_rng(20260917)
+    endpoints_in_controls = 0
+    for _ in range(2_000):
+        sample = sample_basic_linear_mixture(rng, tap_fraction=0.0)
+        assert start_is_safe(sample.waypoints[0])
+        endpoints_in_controls += bool(controls_at_start(sample.waypoints[-1]))
+    assert endpoints_in_controls > 0
+
+
+def test_random_multislot_sampler_resamples_every_touch_down():
+    rng = np.random.default_rng(91017)
+    for _ in range(500):
+        sample = sample_mixture(
+            rng,
+            fracs=(0.0, 1.0, 0.0),
+            num_gestures=3,
+            use_spin=False,
+        )
+        for slot in range(sample.num_gestures):
+            base = slot * PARAMS_PER_SLOT
+            assert start_is_safe((sample.params[base], sample.params[base + 1]))

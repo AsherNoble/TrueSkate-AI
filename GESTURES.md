@@ -50,13 +50,21 @@ The difference between any two of these aspect ratios is **< 0.05%** — sub-pix
 X:         [X_BOUND_MIN, X_BOUND_MAX]   valid RL gesture area
 Y:         [Y_BOUND_MIN, Y_BOUND_MAX]   valid RL gesture area
 
-X_BOUND_MIN = 0.12   # left edge hosts in-game buttons (spin ~x=0.06, clip/replay below) — gestures grazing them open the replay-clip UI
+X_BOUND_MIN = 0.12   # coarse left play-area bound; the control start map adds precise exclusions
 X_BOUND_MAX = 1.0    # right screen edge
-Y_BOUND_MIN = 0.12   # top of board play area (avoids game controls — reset pos, rewind, etc)
-Y_BOUND_MAX = 0.88   # bottom of board play area (avoids home indicator zone & game menu)
+Y_BOUND_MIN = 0.12   # coarse top play-area bound
+Y_BOUND_MAX = 0.88   # coarse bottom play-area bound (avoids home indicator and game menu)
 ```
 
 Defined in `src/trueskate_ai/sim/gestures.py`; imported by both RL pipelines (`action_param.py`, `trick_conditioned_action.py`). These bounds apply only to RL gesture parameters — utility gestures (`skip_loading_screen`, `reset_position`, `execute_static_push`) use their own fixed normalised positions and are not constrained by these values.
+
+Random corpus gestures also use the versioned XR control-start profile in
+`src/trueskate_ai/data/control_hitboxes.py`. Its 16-logical-point safety regions
+apply only to each gesture's first point (touch-down). A swipe may cross or end
+inside a control region because moving contact does not activate the button.
+Stationary taps and holds must remain outside because their sole point is their
+touch-down. Deliberate, labelled spin-button holds are exempt. The bottom menu
+is transient but is conservatively blocked at all times in the current profile.
 
 ---
 
