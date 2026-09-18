@@ -412,6 +412,8 @@ def test_linear_collector_uses_a_device_specific_seed_file():
     assert '--wda-timing-revision "$WDA_TIMING_REVISION"' in source
     assert '--reset-before-segment' in source
     assert '--reset-every-samples 0' in source
+    assert 'BASIC_LINEAR_ALLOW_IDLE_NAVIGATION' in source
+    assert 'MENU_GUARD_ARGS=(--allow-idle-navigation)' in source
     assert 'BASIC_LINEAR_NO_MENU_GUARD' in source
     assert 'MENU_GUARD_ARGS=(--no-menu-guard)' in source
     assert '--no-run-notifications' in source

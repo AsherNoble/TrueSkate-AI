@@ -42,9 +42,11 @@ It uses one-minute segments, an exact centre-screen control at the start and
 end, instrumented WDA `submitted_to_ios` timestamps, a two-anchor video-time
 fit, a reset before recording, and strict aligned video. Set
 `BASIC_LINEAR_WDA_TIMING_REVISION` only when deliberately deploying a compatible
-instrumented WDA build. No reset is sent while recording. The two controls stay
-in the raw manifest but the aligner emits no training clips for them. Use
-separate outputs for validation.
+instrumented WDA build. For an operator-confirmed gameplay scene with the neutral
+bottom row visible, set `BASIC_LINEAR_ALLOW_IDLE_NAVIGATION=1`; replay and editor
+guards remain enabled. No reset is sent while recording. The two controls stay in
+the raw manifest but the aligner emits no training clips for them. Use separate
+outputs for validation.
 
 For mixed/hold collection, inspect the collector's `--help`; preserve its
 guards and metadata. Label `--park-label` honestly. Keep all trainable samples

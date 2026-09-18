@@ -31,7 +31,11 @@ CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0.05}"
 # Override only when the replacement fork build exposes the same checked schema.
 WDA_TIMING_REVISION="${BASIC_LINEAR_WDA_TIMING_REVISION:-b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6}"
 MENU_GUARD_ARGS=()
-if [ "${BASIC_LINEAR_NO_MENU_GUARD:-0}" = "1" ]; then
+if [ "${BASIC_LINEAR_ALLOW_IDLE_NAVIGATION:-0}" = "1" ]; then
+  # Keep replay/editor detection enabled while accepting the operator-confirmed
+  # neutral five-cell row that appears over idle gameplay.
+  MENU_GUARD_ARGS=(--allow-idle-navigation)
+elif [ "${BASIC_LINEAR_NO_MENU_GUARD:-0}" = "1" ]; then
   # SLS parks can render a persistent five-cell bottom strip that the generic
   # app-hub detector mistakes for a menu. The OS foreground guard stays ON.
   MENU_GUARD_ARGS=(--no-menu-guard)
