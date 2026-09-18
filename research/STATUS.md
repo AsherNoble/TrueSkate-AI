@@ -90,12 +90,12 @@ baseline; one moving floor graphic still triggers early. This is not held-out
 accuracy. It is now the calibration-control detector; fixed centre controls avoid
 the observed red-floor edge case.
 
-New Model 1 sampling uses the versioned XR control-start map with a 16-logical-point
+New Model 1 sampling uses the versioned XR control map with a 16-logical-point
 margin. The transient bottom navigation row is conservatively treated as present
-at all times. The map is implemented and offline-tested, but its start-only rule
-failed the first bounded on-device test: a swipe starting about 20 logical points
-below the mapped Camera edge and moving immediately into it opened Replay. The
-run stopped after 2/300 gestures and was preserved without replacement. The next
-test must separate an underestimated Camera hitbox from insufficient travel before
-entering it; this sampler is not ready for corpus collection. See
-[M1-CONTROL-20260917](experiments/M1-CONTROL-20260917.md).
+at all times. Its initial start-only rule failed the first bounded on-device test:
+a swipe starting about 20 logical points below the mapped Camera edge and moving
+immediately into it opened Replay. The run stopped after 2/300 gestures and was
+preserved without replacement. Pending later research into path, speed and drag-
+recognition conditions, the linear corpus sampler now requires both start and end
+points to clear every expanded hitbox; intermediate crossings remain allowed.
+See [M1-CONTROL-20260917](experiments/M1-CONTROL-20260917.md).

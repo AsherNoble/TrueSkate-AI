@@ -1,9 +1,9 @@
-"""Versioned True Skate control regions used to protect gesture touch-downs.
+"""Versioned True Skate control regions used to protect gesture endpoints.
 
-The XR controls respond to taps and holds, but a moving finger may cross or end
-inside a control without changing game state.  These regions therefore apply
-only to the first point of each gesture.  Stationary taps/holds have only one
-point, so that point is treated as their start.
+The exact conditions under which a moving finger activates a control are not yet
+known.  Until that is resolved, these regions apply to both the first and last
+point of each gesture. Intermediate path points may still cross a control.
+Stationary taps/holds have only one point, so that point is checked once.
 
 The bottom navigation row is transient, but this first profile deliberately
 blocks it at all times.  We can make that region state-dependent later if the
@@ -83,27 +83,39 @@ def _inflate(hitbox: ControlHitbox) -> ControlHitbox:
 
 
 CONTROL_START_EXCLUSIONS = tuple(_inflate(hitbox) for hitbox in EFFECTIVE_CONTROL_HITBOXES)
+# The geometry is shared by both endpoint checks. Keep the historical name above
+# for experiment-artifact compatibility.
+CONTROL_ENDPOINT_EXCLUSIONS = CONTROL_START_EXCLUSIONS
+
+
+def controls_at_point(point: tuple[float, float]) -> tuple[str, ...]:
+    """Return every conservatively expanded control containing ``point``."""
+    return tuple(hitbox.name for hitbox in CONTROL_ENDPOINT_EXCLUSIONS if hitbox.contains(point))
+
+
+def point_is_safe(point: tuple[float, float]) -> bool:
+    return not controls_at_point(point)
 
 
 def controls_at_start(point: tuple[float, float]) -> tuple[str, ...]:
-    """Return every conservatively expanded control containing ``point``."""
-    return tuple(hitbox.name for hitbox in CONTROL_START_EXCLUSIONS if hitbox.contains(point))
+    """Compatibility name for callers that only inspect touch-downs."""
+    return controls_at_point(point)
 
 
 def start_is_safe(point: tuple[float, float]) -> bool:
-    return not controls_at_start(point)
+    return point_is_safe(point)
 
 
-def move_start_out_of_controls(point: tuple[float, float]) -> tuple[float, float]:
-    """Move a touch-down minimally toward play space until no control contains it.
+def move_point_out_of_controls(point: tuple[float, float]) -> tuple[float, float]:
+    """Move an endpoint minimally toward play space until no control contains it.
 
     Top controls move downward, left controls move right, and the transient
     bottom row moves upward.  Iteration handles overlap between the top and left
-    safety regions. This function is intentionally for gesture starts only.
+    safety regions.
     """
     x, y = (float(point[0]), float(point[1]))
-    for _ in range(len(CONTROL_START_EXCLUSIONS) + 1):
-        containing = [h for h in CONTROL_START_EXCLUSIONS if h.contains((x, y))]
+    for _ in range(len(CONTROL_ENDPOINT_EXCLUSIONS) + 1):
+        containing = [h for h in CONTROL_ENDPOINT_EXCLUSIONS if h.contains((x, y))]
         if not containing:
             return x, y
         for hitbox in containing:
@@ -114,4 +126,9 @@ def move_start_out_of_controls(point: tuple[float, float]) -> tuple[float, float
                 y = math.nextafter(y1, math.inf)
             else:
                 x = math.nextafter(x1, math.inf)
-    raise RuntimeError(f"could not move gesture start out of control regions: {(x, y)}")
+    raise RuntimeError(f"could not move gesture endpoint out of control regions: {(x, y)}")
+
+
+def move_start_out_of_controls(point: tuple[float, float]) -> tuple[float, float]:
+    """Compatibility name for callers that only sanitize touch-downs."""
+    return move_point_out_of_controls(point)

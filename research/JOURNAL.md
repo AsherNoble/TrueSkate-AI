@@ -17,6 +17,11 @@ Put substantial experiments in individual records and current facts in STATUS.
   probe began outside the 16-point exclusion but opened Replay as it moved into
   the control. The start-only rule is not ready for collection; evidence is
   preserved in [M1-CONTROL-20260917](experiments/M1-CONTROL-20260917.md).
+- Follow-up decision (2026-09-18): control activation may depend on path, speed
+  and/or drag-recognition distance. That mechanism is deferred but remains
+  important. For the new linear corpus, both gesture start and end points must
+  clear the expanded hitboxes; intermediate crossings remain provisionally
+  allowed and require later research.
 
 ## 2026-09-13 — Instrumented-WDA onset alignment validated
 

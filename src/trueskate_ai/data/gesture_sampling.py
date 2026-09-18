@@ -33,7 +33,7 @@ from pathlib import Path
 
 import numpy as np
 
-from trueskate_ai.data.control_hitboxes import move_start_out_of_controls, start_is_safe
+from trueskate_ai.data.control_hitboxes import move_point_out_of_controls, point_is_safe
 from trueskate_ai.sim.gesture_params import (
     PARAMS_PER_SLOT,
     SPIN_PARAMS,
@@ -229,7 +229,7 @@ def _sample_safe_start(
     """Draw a touch-down outside controls without piling samples on their edges."""
     for _ in range(256):
         point = (float(rng.uniform(*x_bounds)), float(rng.uniform(*y_bounds)))
-        if start_is_safe(point):
+        if point_is_safe(point):
             return point
     raise RuntimeError("could not sample a gesture start outside control regions")
 
@@ -528,12 +528,14 @@ def sample_basic_linear_mixture(
         ex, ey = sx + dx, sy + slope * dx
         if not (X_BOUND_MIN <= ex <= X_BOUND_MAX and Y_BOUND_MIN <= ey <= Y_BOUND_MAX):
             continue
+        if not point_is_safe((ex, ey)):
+            continue
         sample = GestureSample(
             kind="linear", waypoints=[(sx, sy), (float(ex), float(ey))],
             duration=float(rng.uniform(BASIC_LINEAR_MIN_S, BASIC_LINEAR_MAX_S)),
             easing_power=1.0,
         )
-        # Start sanitisation may change the line geometry, so only return the
+        # Endpoint sanitisation may change the line geometry, so only return the
         # command if it still obeys the strict contract the loader enforces.
         sample = clamp_in_bounds(sample)
         (x0, y0), (x1, y1) = sample.waypoints
@@ -545,13 +547,14 @@ def sample_basic_linear_mixture(
 
 
 def clamp_in_bounds(s: GestureSample) -> GestureSample:
-    """Clamp coordinates and keep every gesture touch-down out of UI controls.
+    """Clamp coordinates and keep gesture endpoints out of UI controls.
 
-    Only the first waypoint of a moving gesture is control-checked: observed game
-    behavior permits a swipe to cross or finish on a button without activating it.
-    A tap/hold's sole point is its start. For multi-slot vectors, each slot's x0/y0
-    is protected while control and end waypoints remain untouched. The deliberate,
-    separately labelled spin hold is not a gesture origin and remains allowed.
+    The first and last waypoint of a moving gesture are control-checked. Its
+    intermediate path may still cross a control while the activation conditions
+    remain unresolved. A tap/hold's sole point is checked once. For multi-slot
+    vectors, each slot's x0/y0 and x2/y2 are protected while its middle control
+    waypoint remains untouched. The deliberate, separately labelled spin hold is
+    exempt.
 
     The SAMPLE itself is mutated, so saved labels match executed coordinates.
     """
@@ -561,16 +564,16 @@ def clamp_in_bounds(s: GestureSample) -> GestureSample:
              float(np.clip(y, Y_BOUND_MIN, Y_BOUND_MAX)))
             for x, y in s.waypoints
         ]
-        pushed[0] = move_start_out_of_controls(pushed[0])
+        pushed[0] = move_point_out_of_controls(pushed[0])
         # Moving the start can place it close enough to the end
         # point to violate _FLICK_MIN_REACH (see _restore_min_reach); only the
         # first/last waypoints define that displacement, so re-check just those.
         sx, sy = pushed[0]
         ex, ey = _restore_min_reach(sx, sy, *pushed[-1])
-        pushed[-1] = (ex, ey)
+        pushed[-1] = move_point_out_of_controls((ex, ey))
         s.waypoints = pushed
     elif s.kind in ("hold", "tap") and s.point is not None:
-        s.point = move_start_out_of_controls((
+        s.point = move_point_out_of_controls((
             float(np.clip(s.point[0], X_BOUND_MIN, X_BOUND_MAX)),
             float(np.clip(s.point[1], Y_BOUND_MIN, Y_BOUND_MAX))))
     elif s.params is not None and s.num_gestures is not None:
@@ -578,10 +581,10 @@ def clamp_in_bounds(s: GestureSample) -> GestureSample:
         arr = clamp_params(np.asarray(s.params, dtype=np.float64), bounds)
         for slot in range(s.num_gestures):
             b = slot * PARAMS_PER_SLOT
-            # Only x0/y0 is a touch-down. A moving finger may cross or finish
-            # inside any control without activating it.
-            arr[b], arr[b + 1] = move_start_out_of_controls(
+            arr[b], arr[b + 1] = move_point_out_of_controls(
                 (float(arr[b]), float(arr[b + 1])))
+            arr[b + 4], arr[b + 5] = move_point_out_of_controls(
+                (float(arr[b + 4]), float(arr[b + 5])))
         s.params = [float(v) for v in arr]
     return s
 

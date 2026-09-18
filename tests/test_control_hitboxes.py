@@ -3,7 +3,10 @@ import pytest
 
 from trueskate_ai.data.control_hitboxes import (
     CONTROL_START_EXCLUSIONS,
+    controls_at_point,
     controls_at_start,
+    point_is_safe,
+    move_point_out_of_controls,
     move_start_out_of_controls,
     start_is_safe,
 )
@@ -25,7 +28,7 @@ def test_each_control_region_moves_a_touch_down_to_safety(hitbox):
     assert start_is_safe(moved)
 
 
-def test_moving_gesture_endpoint_and_control_point_may_remain_in_controls():
+def test_moving_gesture_protects_endpoints_but_not_intermediate_points():
     endpoint = (0.5, 0.125)  # reset safety region, within global bounds
     control = (0.15, 0.405)  # spin safety region, within global bounds
     sample = GestureSample(
@@ -39,9 +42,9 @@ def test_moving_gesture_endpoint_and_control_point_may_remain_in_controls():
 
     assert start_is_safe(sample.waypoints[0])
     assert sample.waypoints[1] == pytest.approx(control)
-    assert sample.waypoints[2] == pytest.approx(endpoint)
+    assert point_is_safe(sample.waypoints[2])
     assert controls_at_start(sample.waypoints[1]) == ("spin",)
-    assert controls_at_start(sample.waypoints[2]) == ("reset",)
+    assert sample.waypoints[2] != pytest.approx(endpoint)
 
 
 @pytest.mark.parametrize("kind", ["tap", "hold"])
@@ -51,19 +54,19 @@ def test_stationary_touch_point_is_treated_as_its_start(kind):
     assert start_is_safe(sample.point)
 
 
-def test_multislot_vectors_only_move_each_slots_first_waypoint():
+def test_multislot_vectors_move_each_slots_start_and_end_only():
     num_gestures = 2
     params = np.mean(build_param_bounds(num_gestures), axis=1)
     starts = ((0.14, 0.20), (0.15, 0.405))
-    untouched = (
+    waypoints = (
         ((0.15, 0.405), (0.5, 0.125)),
         ((0.14, 0.30), (0.9, 0.87)),
     )
     for slot in range(num_gestures):
         base = slot * PARAMS_PER_SLOT
         params[base:base + 2] = starts[slot]
-        params[base + 2:base + 4] = untouched[slot][0]
-        params[base + 4:base + 6] = untouched[slot][1]
+        params[base + 2:base + 4] = waypoints[slot][0]
+        params[base + 4:base + 6] = waypoints[slot][1]
     sample = GestureSample(
         kind="nslot", params=params.tolist(), num_gestures=num_gestures, use_spin=False,
     )
@@ -73,8 +76,8 @@ def test_multislot_vectors_only_move_each_slots_first_waypoint():
     for slot in range(num_gestures):
         base = slot * PARAMS_PER_SLOT
         assert start_is_safe((sample.params[base], sample.params[base + 1]))
-        assert sample.params[base + 2:base + 4] == pytest.approx(untouched[slot][0])
-        assert sample.params[base + 4:base + 6] == pytest.approx(untouched[slot][1])
+        assert sample.params[base + 2:base + 4] == pytest.approx(waypoints[slot][0])
+        assert point_is_safe((sample.params[base + 4], sample.params[base + 5]))
 
 
 def test_transient_bottom_row_is_still_strictly_excluded():
@@ -82,14 +85,20 @@ def test_transient_bottom_row_is_still_strictly_excluded():
     assert start_is_safe(move_start_out_of_controls((0.5, 0.95)))
 
 
-def test_linear_sampler_never_starts_on_controls_but_retains_control_end_coverage():
+def test_linear_sampler_never_starts_or_ends_on_controls():
     rng = np.random.default_rng(20260917)
-    endpoints_in_controls = 0
     for _ in range(2_000):
         sample = sample_basic_linear_mixture(rng, tap_fraction=0.0)
         assert start_is_safe(sample.waypoints[0])
-        endpoints_in_controls += bool(controls_at_start(sample.waypoints[-1]))
-    assert endpoints_in_controls > 0
+        assert point_is_safe(sample.waypoints[-1])
+
+
+def test_generic_endpoint_helpers_share_the_versioned_regions():
+    unsafe = (0.5, 0.125)
+    assert controls_at_point(unsafe) == controls_at_start(unsafe) == ("reset",)
+    moved = move_point_out_of_controls(unsafe)
+    assert point_is_safe(moved)
+    assert moved == move_start_out_of_controls(unsafe)
 
 
 def test_random_multislot_sampler_resamples_every_touch_down():
@@ -104,3 +113,4 @@ def test_random_multislot_sampler_resamples_every_touch_down():
         for slot in range(sample.num_gestures):
             base = slot * PARAMS_PER_SLOT
             assert start_is_safe((sample.params[base], sample.params[base + 1]))
+            assert point_is_safe((sample.params[base + 4], sample.params[base + 5]))
