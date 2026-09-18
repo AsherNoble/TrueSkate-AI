@@ -384,7 +384,12 @@ def test_linear_collector_supports_clean_segment_boundary_resets():
     assert "--end-calibration-reserve-s" in result.stdout
     source = Path("scripts/collection/collect_sls_xctest.py").read_text()
     assert "--segment-reset-settle-s must be >= 1.5" in source
-    assert source.index("if args.reset_before_segment:") < source.index("rec.start()")
+    recorder_bind = "rec = XCTestScreenRecorder(worker.driver, fps=args.fps)"
+    recorder_bind_index = source.index(recorder_bind)
+    recorder_start_index = source.index("\n                rec.start()", recorder_bind_index)
+    assert source.index("if args.reset_before_segment:") < recorder_start_index
+    assert recorder_bind_index < recorder_start_index
+    assert recorder_bind_index > source.index("while not _STOP:")
     reset_after_sample = source.index("if (segment_payload_samples")
     assert source.index("time.sleep(args.tail_s)") < reset_after_sample
     assert "normalized (0.50, 0.0558)" in source

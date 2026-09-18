@@ -479,7 +479,9 @@ def main() -> None:
     dw, dh = worker.device_w, worker.device_h
     udid = os.environ.get(cfg.get("env_key", ""), "") or cfg.get("udid", "")
 
-    rec = XCTestScreenRecorder(worker.driver, fps=args.fps)
+    # A reconnect replaces worker.driver. Build the recorder immediately before
+    # each start attempt so it can never retain the Appium session that failed.
+    rec: XCTestScreenRecorder | None = None
     session = time.strftime("%Y%m%d_%H%M%S")
     out_root = args.out_dir / f"{device}_{session}"
     out_root.mkdir(parents=True, exist_ok=True)
@@ -571,6 +573,7 @@ def main() -> None:
             try:
                 _write_heartbeat(args.heartbeat_path, device=device,
                                  state="starting_recording", segment=segment_idx)
+                rec = XCTestScreenRecorder(worker.driver, fps=args.fps)
                 rec.start()
             except Exception as exc:  # noqa: BLE001
                 # XCTest recording can transiently fail (XCTDaemon "Failed to write
@@ -977,7 +980,8 @@ def main() -> None:
         _write_heartbeat(args.heartbeat_path, device=device, state="stopped",
                          segment=segment_idx)
         try:
-            rec.abort()  # ensure no recording leaks on the device
+            if rec is not None:
+                rec.abort()  # ensure no recording leaks on the device
         except Exception:  # noqa: BLE001
             pass
         worker.disconnect()
