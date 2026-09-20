@@ -171,21 +171,42 @@ function stepFrame(delta) {{
   const idx=Math.max(0,Math.min(frameCount()-1,frameIndex()+delta));
   video.currentTime=Math.min(video.duration-.001,(idx+.08)*video.duration/frameCount()); updateFrame();
 }}
-function drawOverlay() {{
+function relativeVideoTime(sample, mediaTime) {{
+  const times=sample?.meta?.frame_times||[];
+  if (!times.length) return mediaTime-.5;
+  if (!video.duration || !Number.isFinite(video.duration)) return Number(times[frameIndex()]);
+  const position=Math.max(0,Math.min(times.length-1,mediaTime/video.duration*times.length));
+  const low=Math.floor(position), high=Math.min(times.length-1,low+1), blend=position-low;
+  return Number(times[low])+(Number(times[high])-Number(times[low]))*blend;
+}}
+function drawOverlay(mediaTime=video.currentTime) {{
   const canvas=el('gestureOverlay'); const sample=current();
   const width=video.clientWidth, height=video.clientHeight, ratio=window.devicePixelRatio||1;
-  canvas.width=Math.max(1,Math.round(width*ratio)); canvas.height=Math.max(1,Math.round(height*ratio));
+  const pixelWidth=Math.max(1,Math.round(width*ratio)), pixelHeight=Math.max(1,Math.round(height*ratio));
+  if(canvas.width!==pixelWidth)canvas.width=pixelWidth;if(canvas.height!==pixelHeight)canvas.height=pixelHeight;
   const context=canvas.getContext('2d'); context.setTransform(ratio,0,0,ratio,0,0); context.clearRect(0,0,width,height);
   if (!overlayVisible || !sample) return;
   const points=sample.meta.waypoints||[]; if(points.length<2) return;
   const start={{x:Number(points[0][0])*width,y:Number(points[0][1])*height}};
-  const finish={{x:Number(points.at(-1)[0])*width,y:Number(points.at(-1)[1])*height}};
-  const angle=Math.atan2(finish.y-start.y,finish.x-start.x), head=14;
+  const target={{x:Number(points.at(-1)[0])*width,y:Number(points.at(-1)[1])*height}};
+  const relative=relativeVideoTime(sample,mediaTime), duration=Math.max(.001,Number(sample.meta.duration)||.001);
+  const progress=Math.max(0,Math.min(1,relative/duration));
+  const finish={{x:start.x+(target.x-start.x)*progress,y:start.y+(target.y-start.y)*progress}};
+  el('overlayLegend').textContent=relative<0?`Executed swipe · starts in ${{(-relative).toFixed(3)}} s`:relative<=duration?`Executed swipe · t=+${{relative.toFixed(3)}} s · ${{Math.round(progress*100)}}%`:`Executed swipe · complete at +${{duration.toFixed(3)}} s`;
+  if(relative<0)return;
+  const angle=Math.atan2(target.y-start.y,target.x-start.x), travelled=Math.hypot(finish.x-start.x,finish.y-start.y), head=Math.min(14,travelled*.35);
   context.save(); context.strokeStyle='#ff9f1c'; context.fillStyle='#ff9f1c'; context.lineWidth=5; context.lineCap='round'; context.lineJoin='round'; context.shadowColor='#000d'; context.shadowBlur=4;
   context.beginPath(); context.moveTo(start.x,start.y); context.lineTo(finish.x,finish.y); context.stroke();
-  context.beginPath(); context.moveTo(finish.x,finish.y); context.lineTo(finish.x-head*Math.cos(angle-.55),finish.y-head*Math.sin(angle-.55)); context.lineTo(finish.x-head*Math.cos(angle+.55),finish.y-head*Math.sin(angle+.55)); context.closePath(); context.fill();
+  if(head>3){{context.beginPath(); context.moveTo(finish.x,finish.y); context.lineTo(finish.x-head*Math.cos(angle-.55),finish.y-head*Math.sin(angle-.55)); context.lineTo(finish.x-head*Math.cos(angle+.55),finish.y-head*Math.sin(angle+.55)); context.closePath(); context.fill();}}
   context.fillStyle='#101214'; context.beginPath(); context.arc(start.x,start.y,8,0,Math.PI*2); context.fill(); context.strokeStyle='#ff9f1c'; context.lineWidth=4; context.stroke();
+  context.fillStyle='#fff'; context.beginPath(); context.arc(finish.x,finish.y,5,0,Math.PI*2); context.fill(); context.strokeStyle='#ff9f1c'; context.lineWidth=3; context.stroke();
   context.restore();
+}}
+let overlayFramePending=false;
+function scheduleOverlayFrame() {{
+  if(overlayFramePending||video.paused||video.ended)return; overlayFramePending=true;
+  if('requestVideoFrameCallback' in video){{video.requestVideoFrameCallback((_now,metadata)=>{{overlayFramePending=false;drawOverlay(metadata.mediaTime);scheduleOverlayFrame();}});}}
+  else{{requestAnimationFrame(()=>{{overlayFramePending=false;drawOverlay();scheduleOverlayFrame();}});}}
 }}
 function updateOverlay() {{
   el('overlayToggle').textContent=overlayVisible?'Hide swipe':'Show swipe';
@@ -202,7 +223,7 @@ function load() {{
   el('metadata').textContent=JSON.stringify(m,null,2);
   note.value=reviewFor(sample).note||'';
   for (const verdict of ['clean','unsure','issue']) el(verdict).classList.toggle('active',reviewFor(sample).verdict===verdict);
-  el('jump').value=cursor+1; updateFrame(); requestAnimationFrame(drawOverlay);
+  el('jump').value=cursor+1; updateFrame(); requestAnimationFrame(()=>drawOverlay());
 }}
 function move(delta) {{ if (!visible.length) return; cursor=(cursor+delta+visible.length)%visible.length; load(); }}
 function mark(verdict) {{
@@ -228,8 +249,9 @@ el('export').onclick=()=>{{
   const blob=new Blob([JSON.stringify({{schema:'linear-corpus-audit-v1',corpus:DATA.corpus,exportedAt:new Date().toISOString(),reviews}},null,2)],{{type:'application/json'}});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='linear-corpus-audit-reviews.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }};
-video.addEventListener('loadedmetadata',()=>{{updateFrame();drawOverlay();}}); video.addEventListener('timeupdate',updateFrame); video.addEventListener('seeked',updateFrame);
-new ResizeObserver(drawOverlay).observe(video);
+video.addEventListener('loadedmetadata',()=>{{updateFrame();drawOverlay();}}); video.addEventListener('timeupdate',()=>{{updateFrame();drawOverlay();}}); video.addEventListener('seeked',()=>drawOverlay());
+video.addEventListener('play',scheduleOverlayFrame); video.addEventListener('pause',()=>drawOverlay()); video.addEventListener('ended',()=>drawOverlay());
+new ResizeObserver(()=>drawOverlay()).observe(video);
 document.addEventListener('keydown',e=>{{
   if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
   if(e.key===' '){{e.preventDefault();video.paused?video.play():video.pause();}}
