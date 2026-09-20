@@ -179,9 +179,14 @@ function updateFrame() {{
   el('frame').textContent=`Frame ${{idx+1}} / ${{frameCount()}} · ${{video.currentTime.toFixed(3)}} s${{rel===undefined?'':` · ${{Number(rel).toFixed(4)}} s from gesture start`}}`;
   el('frameSeek').value=idx;
 }}
+function seekSelectedFrame() {{
+  if(!current()||video.readyState<1||!video.duration||!Number.isFinite(video.duration))return;
+  const target=Math.min(video.duration-.001,(selectedFrame+.5)*video.duration/frameCount());
+  if(Math.abs(video.currentTime-target)>.002)video.currentTime=target;
+}}
 function showFrame(index) {{
   if (!current()) return; video.pause(); selectedFrame=Math.max(0,Math.min(frameCount()-1,Math.round(index)||0));
-  if(video.duration&&Number.isFinite(video.duration))video.currentTime=Math.min(video.duration-.001,(selectedFrame+.08)*video.duration/frameCount());
+  seekSelectedFrame();
   updateFrame(); drawOverlay();
 }}
 function stepFrame(delta) {{ showFrame(selectedFrame+delta); }}
@@ -189,6 +194,7 @@ function togglePlay() {{ if(video.paused){{if(video.ended)showFrame(0);video.pla
 function relativeVideoTime(sample, mediaTime) {{
   const times=sample?.meta?.frame_times||[];
   if (!times.length) return mediaTime-.5;
+  if(video.paused&&times[selectedFrame]!==undefined)return Number(times[selectedFrame]);
   if (!video.duration || !Number.isFinite(video.duration)) return Number(times[frameIndex()]);
   const position=Math.max(0,Math.min(times.length-1,mediaTime/video.duration*times.length));
   const low=Math.floor(position), high=Math.min(times.length-1,low+1), blend=position-low;
@@ -270,7 +276,9 @@ el('export').onclick=()=>{{
   const blob=new Blob([JSON.stringify({{schema:'linear-corpus-audit-v1',corpus:DATA.corpus,exportedAt:new Date().toISOString(),reviews}},null,2)],{{type:'application/json'}});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='linear-corpus-audit-reviews.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }};
-video.addEventListener('loadedmetadata',()=>{{showFrame(selectedFrame);drawOverlay();}}); video.addEventListener('timeupdate',()=>{{if(!video.paused)selectedFrame=mediaFrameIndex();updateFrame();drawOverlay();}}); video.addEventListener('seeked',()=>drawOverlay());
+video.addEventListener('loadedmetadata',()=>{{seekSelectedFrame();updateFrame();drawOverlay();}}); video.addEventListener('loadeddata',seekSelectedFrame); video.addEventListener('canplay',seekSelectedFrame);
+video.addEventListener('timeupdate',()=>{{if(!video.paused)selectedFrame=mediaFrameIndex();updateFrame();drawOverlay();}});
+video.addEventListener('seeked',()=>{{if(video.paused&&mediaFrameIndex()!==selectedFrame)requestAnimationFrame(seekSelectedFrame);drawOverlay();}});
 video.addEventListener('play',()=>{{el('play').textContent='Pause';scheduleOverlayFrame();}}); video.addEventListener('pause',()=>{{el('play').textContent='Play';drawOverlay();}}); video.addEventListener('ended',()=>{{el('play').textContent='Play';selectedFrame=frameCount()-1;updateFrame();drawOverlay();}});
 video.addEventListener('click',togglePlay);
 new ResizeObserver(()=>drawOverlay()).observe(video);
