@@ -4,6 +4,13 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-20 — Replacement corpus park provenance corrected
+
+- The operator identified the XR2 park as Skateboard GB 2024. Corrected the
+  erroneous `The Workshop` label in all 910 admitted clip records and their
+  segment manifests, and renamed 86 park directories to `skateboard_gb_2024`.
+  The paused collector was not relaunched.
+
 ## 2026-09-18 — Replacement linear corpus started on XR2
 
 - Linear sampling now keeps both the start and end point outside every expanded
@@ -13,7 +20,7 @@ Put substantial experiments in individual records and current facts in STATUS.
   service launch exposed and fixed a stale screen-recorder binding after Appium
   session recovery (`b60f19d`). The service supervisor was then unloaded because
   it conflicts with the separately launched prebuilt WDA stack.
-- XR2 collection started in The Workshop at `b60f19d`, in a new
+- XR2 collection started in Skateboard GB 2024 at `b60f19d`, in a new
   `basic_linear_v2_20260918` corpus, with idle-navigation allowance but all
   replay/editor and foreground guards retained. The first production segment
   admitted 10 clips; a strict watcher stops at 1,100. XR1 was unavailable.

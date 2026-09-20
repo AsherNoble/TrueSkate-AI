@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-18. Behavioural cloning is the development direction.
+Updated 2026-09-20. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -98,7 +98,10 @@ immediately into it opened Replay. The run stopped after 2/300 gestures and was
 preserved without replacement. Pending later research into path, speed and drag-
 recognition conditions, the linear corpus sampler now requires both start and end
 points to clear every expanded hitbox; intermediate crossings remain allowed.
-The replacement XR2 corpus began in The Workshop from revision `b60f19d` after a
+The replacement XR2 corpus began in Skateboard GB 2024 from revision `b60f19d` after a
 strictly admitted 10-clip production segment; its automatic stop target is 1,100
-strict clips. XR1 was unavailable when collection began. See
+strict clips. On 2026-09-20, all 910 admitted clip records and their segment
+manifests were corrected from the erroneous `The Workshop` provenance label;
+collection remained paused after the correction. XR1 was unavailable when
+collection began. See
 [M1-CONTROL-20260917](experiments/M1-CONTROL-20260917.md).
