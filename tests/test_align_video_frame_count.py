@@ -9,6 +9,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import cv2
+import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "data"))
@@ -115,3 +117,48 @@ def test_frame_count_decodes_rather_than_trusting_the_header(source, tmp_path):
     )
     assert module._video_frame_count(out) == 7
     assert module._video_frame_count(tmp_path / "missing.mp4") == -1
+
+
+def test_direct_extract_does_not_put_future_pixels_in_a_pre_onset_frame(tmp_path):
+    """A rendered onset must not appear before its declared output time.
+
+    FFmpeg's default nearest-frame rounding moved a source onset at 0.500 s into
+    output slot 6 (0.439 s).  The training metadata therefore called a visibly
+    active frame ``-0.0613 s`` relative to the gesture.  This fixture has an
+    unambiguous black-to-white onset at the same phase as production clips and
+    verifies that it first appears in slot 7 (0.512 s).
+    """
+    module = _aligner()
+    source_dir = tmp_path / "onset_source"
+    source_dir.mkdir()
+    source_fps = 30
+    for index in range(150):
+        frame = np.zeros((160, 96, 3), dtype=np.uint8)
+        if index >= 75:  # 2.500 s in the source, 0.500 s into the sliced window.
+            frame[70:90, 38:58] = 255
+        assert cv2.imwrite(str(source_dir / f"frame_{index:04d}.png"), frame)
+    source = tmp_path / "onset.mov"
+    subprocess.run(
+        ["ffmpeg", "-y", "-v", "error", "-framerate", str(source_fps),
+         "-i", str(source_dir / "frame_%04d.png"), "-c:v", "libx264",
+         "-g", "1", "-bf", "0", "-pix_fmt", "yuv420p", str(source)],
+        check=True, capture_output=True,
+    )
+
+    max_frames, pre_s, window_s = 32, 0.5, 1.8
+    duration = pre_s + window_s
+    output_fps = (max_frames - 1) / (duration - 1 / source_fps)
+    extracted = tmp_path / "extracted"
+    extracted.mkdir()
+    subprocess.run(
+        ["ffmpeg", "-y", "-v", "error", "-ss", "2.000", "-i", str(source),
+         "-t", f"{duration + 2 / source_fps:.3f}",
+         "-vf", module._direct_video_filter(output_fps, 96),
+         "-frames:v", str(max_frames), str(extracted / "frame_%03d.png")],
+        check=True, capture_output=True,
+    )
+    frames = [cv2.imread(str(path)) for path in sorted(extracted.glob("frame_*.png"))]
+    assert len(frames) == max_frames
+    assert frames[6][70:90, 38:58].mean() < 30
+    assert frames[7][70:90, 38:58].mean() > 220
+    assert 6 / output_fps - pre_s < 0.0 <= 7 / output_fps - pre_s

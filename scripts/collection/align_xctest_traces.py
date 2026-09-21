@@ -374,6 +374,12 @@ def _encode_sample_video(sample_dir: Path, n_frames: int, fps: int, crf: int) ->
     return True
 
 
+def _direct_video_filter(output_fps: float, resize_width: int) -> str:
+    """Build the causal, zero-based filter used by compact sample extraction."""
+    return (f"fps={output_fps:.8f}:start_time=0:round=up,"
+            f"scale={resize_width}:-2")
+
+
 def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, duration_s: float,
                           resize_width: int, output_fps: float, max_frames: int,
                           crf: int, source_fps: float = 30.0) -> bool:
@@ -395,6 +401,16 @@ def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, durati
     request a couple of source frames of extra tail (``-frames:v`` still bounds
     the output at ``max_frames``), and verify the produced count, failing the
     sample loudly rather than emitting a clip whose pixels and labels disagree.
+
+    **Causal frame rounding.**  The default ``fps`` filter rounds a source frame
+    to its nearest output timestamp.  It can therefore place pixels captured
+    *after* a gesture onset into the preceding output slot, while ``frame_times``
+    still labels that slot as pre-onset.  ``round=up`` assigns source pixels to
+    the first output slot at or after their source time.  It normally leaves the
+    first output PTS one slot late, so ``start_time=0`` asks the filter to pad the
+    beginning explicitly.  Together these preserve a zero-based, exactly
+    ``max_frames`` clip without leaking future gesture pixels into a pre-onset
+    frame.
     """
     sample_dir.mkdir(parents=True, exist_ok=True)
     out = sample_dir / "frames.mp4"
@@ -402,7 +418,7 @@ def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, durati
     r = subprocess.run(
         ["ffmpeg", "-y", "-v", "error", "-ss", f"{start_s:.3f}", "-i", str(mov),
          "-t", f"{duration_s + margin_s:.3f}",
-         "-vf", f"fps={output_fps:.8f},scale={resize_width}:-2",
+         "-vf", _direct_video_filter(output_fps, resize_width),
          "-frames:v", str(max_frames), "-c:v", "libx264", "-crf", str(crf),
          "-pix_fmt", "yuv420p", str(out)],
         capture_output=True, text=True,

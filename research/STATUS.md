@@ -90,6 +90,17 @@ baseline; one moving floor graphic still triggers early. This is not held-out
 accuracy. It is now the calibration-control detector; fixed centre controls avoid
 the observed red-floor edge case.
 
+The 1,109-clip September replacement tranche exposed a separate compact-video
+phase defect: FFmpeg's default nearest-frame resampling placed post-onset pixels
+in the preceding 73 ms output slot, although the synthetic `frame_times` still
+labelled that slot as pre-onset. The operator observed the same one-slot lead in
+35/35 reviewed clips. A surviving raw recording confirmed that the centre-touch
+detector chooses the first visible frame and that the two-anchor WDA fit remains
+within one native 30 fps frame. Compact extraction now uses causal upward
+rounding with an explicit zero-time slot. The existing tranche will be replaced,
+not repaired; corrected collection still requires a bounded on-device smoke test.
+See [M1-20260921](experiments/M1-20260921-direct-video-phase.md).
+
 New Model 1 sampling uses the versioned XR control map with a 16-logical-point
 margin. The transient bottom navigation row is conservatively treated as present
 at all times. Its initial start-only rule failed the first bounded on-device test:

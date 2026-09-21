@@ -4,6 +4,20 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-21 — Compact-video onset phase corrected
+
+- The operator marked the first visible trace as frame 7 in 35/35 audited clips,
+  while synthetic timing placed onset at frame 8. A surviving raw tranche video
+  showed both centre-control detections were already on their first visible
+  frames and the fitted WDA time missed a swipe onset by only 8.3 ms.
+- FFmpeg's default nearest-frame resampling was pulling future source pixels into
+  the preceding compact-video slot. Causal upward rounding with an explicit
+  zero-time slot moved all seven detector-confirmed preserved swipes from frame
+  7 to frame 8 without changing their timing metadata. The extractor and
+  regression coverage were updated. The operator chose recollection over repair
+  of the 1,109-clip tranche.
+  [Experiment record](experiments/M1-20260921-direct-video-phase.md).
+
 ## 2026-09-20 — Replacement corpus park provenance corrected
 
 - The operator identified the XR2 park as Skateboard GB 2024. Corrected the
