@@ -156,6 +156,7 @@ let migrated=false; for(const review of Object.values(reviews)){{if(LEGACY_VERDI
 if(migrated)localStorage.setItem(STORAGE_KEY,JSON.stringify(reviews));
 let overlayVisible=localStorage.getItem(OVERLAY_KEY)==='1';
 let visible=[]; let cursor=0; let selectedFrame=0;
+let sourceToken=0; let videoObjectUrl='';
 const el=id=>document.getElementById(id);
 const save=()=>{{ localStorage.setItem(STORAGE_KEY,JSON.stringify(reviews)); updateProgress(); }};
 const current=()=>visible[cursor];
@@ -239,16 +240,29 @@ function refreshReviewUi() {{
   note.value=review.note||'';
   for (const verdict of ['good','mild_issue','critical_issue']) el(verdict).classList.toggle('active',review.verdict===verdict);
 }}
+async function loadVideo(sample, token) {{
+  try {{
+    const response=await fetch(sample.video,{{cache:'force-cache'}});
+    if(!response.ok)throw new Error(`HTTP ${{response.status}}`);
+    const blob=await response.blob();
+    if(token!==sourceToken)return;
+    const nextUrl=URL.createObjectURL(blob), oldUrl=videoObjectUrl;
+    videoObjectUrl=nextUrl; video.src=nextUrl; video.load();
+    if(oldUrl)URL.revokeObjectURL(oldUrl);
+  }} catch(error) {{
+    if(token===sourceToken)el('frame').textContent=`Could not load clip: ${{error.message}}`;
+  }}
+}}
 function load() {{
-  const sample=current(); updateProgress();
-  if (!sample) {{ video.removeAttribute('src'); video.load(); el('sampleId').textContent='No samples'; el('facts').innerHTML=''; note.value=''; return; }}
-  selectedFrame=0; video.src=sample.video; video.load(); el('frameSeek').max=frameCount()-1;
+  const sample=current(), token=++sourceToken; updateProgress();
+  if (!sample) {{ video.removeAttribute('src'); video.load(); if(videoObjectUrl){{URL.revokeObjectURL(videoObjectUrl);videoObjectUrl='';}} el('sampleId').textContent='No samples'; el('facts').innerHTML=''; note.value=''; return; }}
+  selectedFrame=0; video.removeAttribute('src'); video.load(); el('frameSeek').max=frameCount()-1;
   el('sampleId').textContent=sample.id;
   const m=sample.meta, points=m.waypoints||[];
   el('facts').innerHTML=fact('Visible index',`${{cursor+1}} / ${{visible.length}}`)+fact('Device',m.device)+fact('Park',m.park)+fact('Session',m.session)+fact('Gesture index',m.gesture_index)+fact('Start',points[0]?.map(v=>Number(v).toFixed(3)).join(', '))+fact('End',points.at(-1)?.map(v=>Number(v).toFixed(3)).join(', '))+fact('Duration',m.duration===undefined?'—':Number(m.duration).toFixed(3)+' s')+fact('Frames',m.n_frames)+fact('Capture offset',m.capture_offset_s===undefined?'—':Number(m.capture_offset_s).toFixed(4)+' s')+fact('Metadata',`<a href="${{sample.metaFile}}" target="_blank">open JSON</a>`);
   el('metadata').textContent=JSON.stringify(m,null,2);
   refreshReviewUi();
-  el('jump').value=cursor+1; updateFrame(); requestAnimationFrame(()=>drawOverlay());
+  el('jump').value=cursor+1; el('frame').textContent='Loading clip…'; requestAnimationFrame(()=>drawOverlay()); loadVideo(sample,token);
 }}
 function move(delta) {{ if (!visible.length) return; cursor=(cursor+delta+visible.length)%visible.length; load(); }}
 function mark(verdict) {{
