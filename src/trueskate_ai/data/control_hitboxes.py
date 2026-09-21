@@ -1,9 +1,10 @@
-"""Versioned True Skate control regions used to protect gesture endpoints.
+"""Versioned True Skate control regions used to protect gestures.
 
 The exact conditions under which a moving finger activates a control are not yet
-known.  Until that is resolved, these regions apply to both the first and last
-point of each gesture. Intermediate path points may still cross a control.
-Stationary taps/holds have only one point, so that point is checked once.
+known.  Linear corpus gestures conservatively reject any path which intersects
+one of these regions. Other moving-gesture samplers still protect their first
+and last points. Stationary taps/holds have only one point, so that point is
+checked once.
 
 The bottom navigation row is transient, but this first profile deliberately
 blocks it at all times.  We can make that region state-dependent later if the
@@ -95,6 +96,50 @@ def controls_at_point(point: tuple[float, float]) -> tuple[str, ...]:
 
 def point_is_safe(point: tuple[float, float]) -> bool:
     return not controls_at_point(point)
+
+
+def _segment_intersects_rect(
+    start: tuple[float, float],
+    end: tuple[float, float],
+    rect: tuple[float, float, float, float],
+) -> bool:
+    """Return whether a closed line segment touches an axis-aligned rectangle."""
+    x0, y0 = (float(start[0]), float(start[1]))
+    x1, y1 = (float(end[0]), float(end[1]))
+    rx0, ry0, rx1, ry1 = rect
+    t_low, t_high = 0.0, 1.0
+    for origin, delta, lower, upper in (
+        (x0, x1 - x0, rx0, rx1),
+        (y0, y1 - y0, ry0, ry1),
+    ):
+        if delta == 0.0:
+            if origin < lower or origin > upper:
+                return False
+            continue
+        enter = (lower - origin) / delta
+        leave = (upper - origin) / delta
+        if enter > leave:
+            enter, leave = leave, enter
+        t_low = max(t_low, enter)
+        t_high = min(t_high, leave)
+        if t_low > t_high:
+            return False
+    return True
+
+
+def controls_along_segment(
+    start: tuple[float, float], end: tuple[float, float],
+) -> tuple[str, ...]:
+    """Return expanded controls touched anywhere by the closed segment."""
+    return tuple(
+        hitbox.name
+        for hitbox in CONTROL_ENDPOINT_EXCLUSIONS
+        if _segment_intersects_rect(start, end, hitbox.rect)
+    )
+
+
+def segment_is_safe(start: tuple[float, float], end: tuple[float, float]) -> bool:
+    return not controls_along_segment(start, end)
 
 
 def controls_at_start(point: tuple[float, float]) -> tuple[str, ...]:

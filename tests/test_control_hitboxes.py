@@ -3,11 +3,13 @@ import pytest
 
 from trueskate_ai.data.control_hitboxes import (
     CONTROL_START_EXCLUSIONS,
+    controls_along_segment,
     controls_at_point,
     controls_at_start,
     point_is_safe,
     move_point_out_of_controls,
     move_start_out_of_controls,
+    segment_is_safe,
     start_is_safe,
 )
 from trueskate_ai.data.gesture_sampling import (
@@ -85,12 +87,33 @@ def test_transient_bottom_row_is_still_strictly_excluded():
     assert start_is_safe(move_start_out_of_controls((0.5, 0.95)))
 
 
-def test_linear_sampler_never_starts_or_ends_on_controls():
+def test_segment_intersection_detects_crossing_with_safe_endpoints():
+    start = (0.10, 0.50)
+    end = (0.30, 0.30)
+
+    assert point_is_safe(start)
+    assert point_is_safe(end)
+    assert controls_along_segment(start, end) == ("spin",)
+    assert not segment_is_safe(start, end)
+
+
+def test_segment_intersection_treats_control_boundary_as_unsafe():
+    reset = next(hitbox for hitbox in CONTROL_START_EXCLUSIONS if hitbox.name == "reset")
+    _, _, _, lower_edge = reset.rect
+    assert "reset" in controls_along_segment((0.45, lower_edge), (0.55, lower_edge))
+
+
+def test_segment_clear_of_controls_is_safe():
+    assert segment_is_safe((0.30, 0.40), (0.75, 0.65))
+
+
+def test_linear_sampler_never_crosses_controls():
     rng = np.random.default_rng(20260917)
     for _ in range(2_000):
         sample = sample_basic_linear_mixture(rng, tap_fraction=0.0)
         assert start_is_safe(sample.waypoints[0])
         assert point_is_safe(sample.waypoints[-1])
+        assert segment_is_safe(sample.waypoints[0], sample.waypoints[-1])
 
 
 def test_generic_endpoint_helpers_share_the_versioned_regions():

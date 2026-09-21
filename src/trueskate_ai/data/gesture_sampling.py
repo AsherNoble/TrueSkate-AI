@@ -33,7 +33,11 @@ from pathlib import Path
 
 import numpy as np
 
-from trueskate_ai.data.control_hitboxes import move_point_out_of_controls, point_is_safe
+from trueskate_ai.data.control_hitboxes import (
+    move_point_out_of_controls,
+    point_is_safe,
+    segment_is_safe,
+)
 from trueskate_ai.sim.gesture_params import (
     PARAMS_PER_SLOT,
     SPIN_PARAMS,
@@ -541,9 +545,12 @@ def sample_basic_linear_mixture(
         (x0, y0), (x1, y1) = sample.waypoints
         clamped_dx = x1 - x0
         if (abs(clamped_dx) >= BASIC_LINEAR_MIN_DX
-                and abs((y1 - y0) / clamped_dx) <= BASIC_LINEAR_MAX_ABS_SLOPE):
+                and abs((y1 - y0) / clamped_dx) <= BASIC_LINEAR_MAX_ABS_SLOPE
+                and segment_is_safe((x0, y0), (x1, y1))):
             return sample
-    raise RuntimeError("could not sample an in-bounds finite-slope linear drag")
+    raise RuntimeError(
+        "could not sample an in-bounds, control-clear finite-slope linear drag"
+    )
 
 
 def clamp_in_bounds(s: GestureSample) -> GestureSample:
