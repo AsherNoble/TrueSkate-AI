@@ -101,6 +101,14 @@ rounding with an explicit zero-time slot. The existing tranche will be replaced,
 not repaired; corrected collection still requires a bounded on-device smoke test.
 See [M1-20260921](experiments/M1-20260921-direct-video-phase.md).
 
+The bounded phase-fix validation also exposed an iOS-overlay guard gap. With
+Control Center already open, Appium still reported True Skate as foreground and
+the collector executed an entire segment against SpringBoard. The raw recordings
+were rejected by calibration and retained. Connection and per-gesture guards now
+also require WDA's frontmost bundle to be True Skate; unavailable active-app data
+falls back to the existing app-state and screenshot guards. Clean validation of
+this guard and the phase fix is still pending.
+
 New Model 1 sampling uses the versioned XR control map with a 16-logical-point
 margin. The transient bottom navigation row is conservatively treated as present
 at all times. Its initial start-only rule failed the first bounded on-device test:

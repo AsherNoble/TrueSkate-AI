@@ -16,6 +16,11 @@ Put substantial experiments in individual records and current facts in STATUS.
   7 to frame 8 without changing their timing metadata. The extractor and
   regression coverage were updated. The operator chose recollection over repair
   of the 1,109-clip tranche.
+- Two bounded validation attempts started underneath an already-open iOS Control
+  Center panel. The existing app-state check incorrectly called True Skate
+  foreground; raw frame zero disproved any claim that a sampled swipe opened the
+  panel. WDA's frontmost-bundle endpoint identified SpringBoard, so connection
+  and per-gesture guards now use it to reject this contamination route.
   [Experiment record](experiments/M1-20260921-direct-video-phase.md).
 
 ## 2026-09-20 — Replacement corpus park provenance corrected

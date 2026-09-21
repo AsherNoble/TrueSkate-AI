@@ -73,6 +73,12 @@ This option does not relax calibration or dataset admission and does not
 reclassify existing `.menu` samples. Frame filtering remains conservative;
 changing historical corpus labels requires a separate validated review.
 
+The foreground guard checks both Appium's True Skate process state and WDA's
+frontmost bundle. iOS Control Center can cover the game while Appium still calls
+True Skate foreground; WDA reports `com.apple.springboard` in that state. Treat
+that as contamination, reactivate True Skate, and discard any instrumented
+segment in progress.
+
 `scripts/rig_collect.sh` now lets the collector's start-failure cap terminate
 the process. It does not endlessly restart a wedged recorder or send repeated
 notifications; resolve the tunnel/attachment incident before restarting it.

@@ -33,4 +33,13 @@
   Add a real-FFmpeg regression fixture that forbids future source pixels in a
   pre-onset output slot. Do not repair this cheap 1,109-clip tranche; recollect
   after the corrected extractor passes a bounded on-device smoke test.
-
+- **Smoke-test guard finding:** two isolated XR2 validation segments correctly
+  failed admission because their end control was not detected. Their preserved
+  recordings show that iOS Control Center's Game Mode panel was already covering
+  True Skate from frame zero through the final frame; neither run is evidence
+  that a sampled swipe opened it. Appium's `query_app_state` still returned True
+  Skate as foreground, while WDA `/wda/activeAppInfo` correctly returned
+  `com.apple.springboard`. The device guard now consults that frontmost-bundle
+  endpoint at connection and before/after every gesture. A SpringBoard overlay
+  causes True Skate to be reactivated and the instrumented segment to be
+  discarded. Final clean on-device validation remains pending.
