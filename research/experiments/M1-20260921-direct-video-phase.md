@@ -78,3 +78,11 @@
   `.mov` was retained; it contributed no training clips. The tranche is served
   through the linear audit viewer from
   `/Users/training-server/trueskate-ai-runtime/tmp/model1-300-exact-pts-audit-20260921`.
+- **Operator audit:** the operator reviewed 17 clips and marked all 17 `good`,
+  with no issue notes. The exported review is preserved at
+  [`../evidence/M1-TIMING-20260912/exact-pts-audit-reviews-20260921.json`](../evidence/M1-TIMING-20260912/exact-pts-audit-reviews-20260921.json).
+- **Historical control check:** the old 13,100-sample corpus and this tranche
+  both use 32-frame inputs, the same nominal onset slot, and gesture durations
+  spanning the same 0.30–1.20 second range. Exact measurements and the one
+  sub-millisecond boundary case are in
+  [M1-LABEL-CONTROL-20260922](M1-LABEL-CONTROL-20260922.md).

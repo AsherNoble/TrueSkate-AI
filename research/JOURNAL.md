@@ -4,6 +4,16 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-22 — Exact-PTS tranche passed audit and preserves label controls
+
+- The operator marked 17/17 inspected exact-PTS clips `good`; the review export
+  is preserved with the timing evidence.
+- Metadata comparison against all 13,100 historical samples found that both
+  corpora use 32-frame clips, the same nominal gesture-onset slot, and varied
+  0.30–1.20 second command durations. The new clips retain exact source PTS;
+  their small timing variation reflects real frame phase rather than a changed
+  label policy. [Comparison](experiments/M1-LABEL-CONTROL-20260922.md).
+
 ## 2026-09-21 — Compact-video onset phase corrected
 
 - The operator marked the first visible trace as frame 7 in 35/35 audited clips,

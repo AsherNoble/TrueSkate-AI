@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-20. Behavioural cloning is the development direction.
+Updated 2026-09-22. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -125,6 +125,12 @@ the exact extractor. All clips decode to 32 frames and carry 32 increasing
 source-relative timestamps. During that run, the live foreground guard caught
 SpringBoard, restored True Skate and withheld the affected attempt; the segment
 then failed calibration and retained its raw recording without emitting clips.
+The operator marked 17/17 inspected clips `good`. A full metadata comparison
+found that the historical 13,100-sample corpus also used 32-frame windows and a
+fixed onset slot, while both corpora vary command duration across the same
+0.30–1.20 second range. The exact-PTS tranche therefore preserves those label
+controls while fixing the pixel/timestamp alignment defect. See
+[M1-LABEL-CONTROL-20260922](experiments/M1-LABEL-CONTROL-20260922.md).
 
 New Model 1 sampling uses the versioned XR control map with a 16-logical-point
 margin. The transient bottom navigation row is conservatively treated as present
