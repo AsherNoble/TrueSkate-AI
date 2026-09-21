@@ -35,6 +35,11 @@ Put substantial experiments in individual records and current facts in STATUS.
   reported SpringBoard while Appium still reported True Skate foreground;
   `ensure_foreground()` reactivated True Skate and WDA confirmed its bundle
   afterward. The recovery mechanism is now directly device-validated.
+  A follow-up Skateboard GB 2024 audit tranche admitted 310 strict exact-PTS
+  clips. Every clip decodes to 32 frames with 32 increasing stored timestamps.
+  The live guard also caught SpringBoard during collection, restored True Skate
+  and withheld the affected attempt; the segment then failed calibration and
+  retained its raw recording without contributing clips.
   [Experiment record](experiments/M1-20260921-direct-video-phase.md).
 
 ## 2026-09-20 — Replacement corpus park provenance corrected

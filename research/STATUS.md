@@ -120,6 +120,11 @@ A direct XR2 check also validated recovery: with Control Center opened after
 connection, WDA reported SpringBoard despite Appium reporting True Skate
 foreground; the shared foreground guard reactivated True Skate and WDA then
 reported the True Skate bundle. No gesture was recorded in that check.
+The subsequent Skateboard GB 2024 audit tranche admitted 310 strict clips with
+the exact extractor. All clips decode to 32 frames and carry 32 increasing
+source-relative timestamps. During that run, the live foreground guard caught
+SpringBoard, restored True Skate and withheld the affected attempt; the segment
+then failed calibration and retained its raw recording without emitting clips.
 
 New Model 1 sampling uses the versioned XR control map with a 16-logical-point
 margin. The transient bottom navigation row is conservatively treated as present

@@ -69,3 +69,12 @@
   returned `True`, reactivated True Skate, and WDA then reported
   `com.trueaxis.skate`. This confirms the recovery mechanism on-device; the
   test intentionally performed no gesture or recording.
+- **Audit tranche:** a bounded XR2 collection in Skateboard GB 2024 produced
+  310 strict clips using the exact source-frame extractor. All 310 clips decode
+  to exactly 32 frames, carry 32 strictly increasing source-relative timestamps,
+  and pass the strict loader. During collection, the foreground guard observed
+  `com.apple.springboard`, reactivated True Skate and refused to log the affected
+  attempt. The enclosing segment subsequently failed calibration and its raw
+  `.mov` was retained; it contributed no training clips. The tranche is served
+  through the linear audit viewer from
+  `/Users/training-server/trueskate-ai-runtime/tmp/model1-300-exact-pts-audit-20260921`.
