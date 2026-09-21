@@ -137,9 +137,12 @@ margin. The transient bottom navigation row is conservatively treated as present
 at all times. Its initial start-only rule failed the first bounded on-device test:
 a swipe starting about 20 logical points below the mapped Camera edge and moving
 immediately into it opened Replay. The run stopped after 2/300 gestures and was
-preserved without replacement. Pending later research into path, speed and drag-
-recognition conditions, the linear corpus sampler now requires both start and end
-points to clear every expanded hitbox; intermediate crossings remain allowed.
+preserved without replacement. The basic-linear sampler now rejects the entire
+straight path if it touches any expanded hitbox. A 100,000-command offline stress
+run had no retry exhaustion, and a bounded XR2 segment admitted 11/11 strict,
+32-frame exact-PTS clips with zero geometric intersections or detected UI
+transitions. Research into the game's path/speed activation mechanism remains
+deferred because the conservative sampling rule is sufficient for this corpus.
 The replacement XR2 corpus began in Skateboard GB 2024 from revision `b60f19d` after a
 strictly admitted 10-clip production segment; its automatic stop target is 1,100
 strict clips. On 2026-09-20, all 910 admitted clip records and their segment

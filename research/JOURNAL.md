@@ -13,6 +13,11 @@ Put substantial experiments in individual records and current facts in STATUS.
   0.30–1.20 second command durations. The new clips retain exact source PTS;
   their small timing variation reflects real frame phase rather than a changed
   label policy. [Comparison](experiments/M1-LABEL-CONTROL-20260922.md).
+- Basic-linear sampling now rejects the entire path if it touches an expanded
+  control rectangle. A 100,000-command offline stress run had no retry
+  exhaustion, and one bounded XR2 segment admitted 11/11 strict, 32-frame,
+  exact-PTS clips with zero path intersections or detected UI transitions.
+  [Control experiment](experiments/M1-CONTROL-20260917.md).
 
 ## 2026-09-21 — Compact-video onset phase corrected
 
