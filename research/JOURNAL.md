@@ -10,17 +10,20 @@ Put substantial experiments in individual records and current facts in STATUS.
   while synthetic timing placed onset at frame 8. A surviving raw tranche video
   showed both centre-control detections were already on their first visible
   frames and the fitted WDA time missed a swipe onset by only 8.3 ms.
-- FFmpeg's default nearest-frame resampling was pulling future source pixels into
-  the preceding compact-video slot. Causal upward rounding with an explicit
-  zero-time slot moved all seven detector-confirmed preserved swipes from frame
-  7 to frame 8 without changing their timing metadata. The extractor and
-  regression coverage were updated. The operator chose recollection over repair
-  of the 1,109-clip tranche.
+- FFmpeg's resampling paired selected pixels with an invented output-time grid.
+  Upward rounding fixed the preserved example but did not give a reliable timing
+  contract on a new clean segment. Compact extraction now selects exact source
+  frame numbers and stores their actual source PTS relative to gesture onset.
+  The operator chose recollection over repair of the 1,109-clip tranche.
 - Two bounded validation attempts started underneath an already-open iOS Control
   Center panel. The existing app-state check incorrectly called True Skate
   foreground; raw frame zero disproved any claim that a sampled swipe opened the
   panel. WDA's frontmost-bundle endpoint identified SpringBoard, so connection
   and per-gesture guards now use it to reject this contamination route.
+- After Control Center was closed, a third bounded segment passed two-anchor
+  calibration, strict admission (11/11 payloads), 32-frame decoding and the new
+  frontmost-app guard. It preceded the exact-PTS extractor, whose final bounded
+  device validation remains pending.
   [Experiment record](experiments/M1-20260921-direct-video-phase.md).
 
 ## 2026-09-20 — Replacement corpus park provenance corrected

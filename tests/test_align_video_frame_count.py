@@ -56,13 +56,14 @@ def test_a_clip_is_only_written_when_it_holds_the_asserted_frames(source, tmp_pa
     duration = pre_s + window_s
     output_fps = (max_frames - 1) / max(duration - 1 / fps, 1 / fps)
     sample = tmp_path / "sample"
-    accepted = module._extract_sample_video(
+    selected_times = module._extract_sample_video(
         source, sample, start_s=2.0, duration_s=duration,
         resize_width=128, output_fps=output_fps, max_frames=max_frames,
-        crf=20, source_fps=fps,
+        crf=20, source_frame_times=module._probe_video_frame_times(source),
     )
     clip = sample / "frames.mp4"
-    if accepted:
+    if selected_times is not None:
+        assert len(selected_times) == max_frames
         assert module._video_frame_count(clip) == max_frames
     else:
         assert not clip.exists(), "a rejected extract must leave no clip behind"
@@ -100,10 +101,11 @@ def test_a_short_extract_is_rejected_rather_than_written(source, tmp_path):
     module = _aligner()
     sample = tmp_path / "sample"
     # Demand more frames than the requested window can possibly contain.
-    assert not module._extract_sample_video(
+    assert module._extract_sample_video(
         source, sample, start_s=2.0, duration_s=0.2,
-        resize_width=128, output_fps=5.0, max_frames=32, crf=20, source_fps=30.0,
-    )
+        resize_width=128, output_fps=5.0, max_frames=32, crf=20,
+        source_frame_times=module._probe_video_frame_times(source),
+    ) is None
     assert not (sample / "frames.mp4").exists()
 
 
@@ -119,14 +121,13 @@ def test_frame_count_decodes_rather_than_trusting_the_header(source, tmp_path):
     assert module._video_frame_count(tmp_path / "missing.mp4") == -1
 
 
-def test_direct_extract_does_not_put_future_pixels_in_a_pre_onset_frame(tmp_path):
-    """A rendered onset must not appear before its declared output time.
+def test_direct_extract_preserves_the_selected_source_frame_times(tmp_path):
+    """A rendered onset must agree with the exact PTS stored in metadata.
 
     FFmpeg's default nearest-frame rounding moved a source onset at 0.500 s into
-    output slot 6 (0.439 s).  The training metadata therefore called a visibly
-    active frame ``-0.0613 s`` relative to the gesture.  This fixture has an
-    unambiguous black-to-white onset at the same phase as production clips and
-    verifies that it first appears in slot 7 (0.512 s).
+    an earlier synthetic output slot. This fixture has an unambiguous
+    black-to-white onset and verifies that the returned metadata is the PTS of
+    the exact source frames that were encoded.
     """
     module = _aligner()
     source_dir = tmp_path / "onset_source"
@@ -148,17 +149,23 @@ def test_direct_extract_does_not_put_future_pixels_in_a_pre_onset_frame(tmp_path
     max_frames, pre_s, window_s = 32, 0.5, 1.8
     duration = pre_s + window_s
     output_fps = (max_frames - 1) / (duration - 1 / source_fps)
-    extracted = tmp_path / "extracted"
-    extracted.mkdir()
-    subprocess.run(
-        ["ffmpeg", "-y", "-v", "error", "-ss", "2.000", "-i", str(source),
-         "-t", f"{duration + 2 / source_fps:.3f}",
-         "-vf", module._direct_video_filter(output_fps, 96),
-         "-frames:v", str(max_frames), str(extracted / "frame_%03d.png")],
-        check=True, capture_output=True,
+    sample = tmp_path / "sample"
+    selected_times = module._extract_sample_video(
+        source, sample, start_s=2.0, duration_s=duration,
+        resize_width=96, output_fps=output_fps, max_frames=max_frames,
+        crf=20, source_frame_times=module._probe_video_frame_times(source),
     )
-    frames = [cv2.imread(str(path)) for path in sorted(extracted.glob("frame_*.png"))]
+    assert selected_times is not None
+    capture = cv2.VideoCapture(str(sample / "frames.mp4"))
+    frames = []
+    while True:
+        ok, frame = capture.read()
+        if not ok:
+            break
+        frames.append(frame)
+    capture.release()
     assert len(frames) == max_frames
-    assert frames[6][70:90, 38:58].mean() < 30
-    assert frames[7][70:90, 38:58].mean() > 220
-    assert 6 / output_fps - pre_s < 0.0 <= 7 / output_fps - pre_s
+    onset_index = next(index for index, frame in enumerate(frames)
+                       if frame[70:90, 38:58].mean() > 220)
+    assert selected_times[onset_index] == pytest.approx(2.5, abs=1 / source_fps)
+    assert selected_times[onset_index - 1] < 2.5

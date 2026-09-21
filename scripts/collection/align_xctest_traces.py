@@ -9,10 +9,9 @@ For canonical linear segments, two visible centre-screen controls map WDA's inte
 ``submitted_to_ios.monotonic_s`` timestamps onto video time with an affine fit. The
 controls remain auditable manifest events but never become training samples. Legacy
 segments retain the host-clock/per-kind offset path. ``frame_time`` 0 is the estimated
-moment the touch's first pixels land. We extract ``[gv - pre, gv + window]`` at the native fps
-(fast INPUT-seek per gesture, so a 5-min segment isn't re-decoded N times), downscale to
-``--resize-width``, evenly downsample to ``--max-frames``, and stamp each kept frame's
-``frame_time`` (video PTS - gv).
+moment the touch's first pixels land. We extract ``[gv - pre, gv + window]``,
+downscale to ``--resize-width``, evenly select ``--max-frames`` source frames,
+and stamp each kept frame's actual ``frame_time`` (source video PTS - gv).
 
 HISTORY — why the anchor moved (2026-07-21). This previously anchored on
 ``t_call_end_epoch_s`` with Δ=0 and 0.3s of lead-in. That is when Appium's HTTP
@@ -45,6 +44,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path
 
 import cv2
@@ -374,51 +374,63 @@ def _encode_sample_video(sample_dir: Path, n_frames: int, fps: int, crf: int) ->
     return True
 
 
-def _direct_video_filter(output_fps: float, resize_width: int) -> str:
-    """Build the causal, zero-based filter used by compact sample extraction."""
-    return (f"fps={output_fps:.8f}:start_time=0:round=up,"
-            f"scale={resize_width}:-2")
+def _probe_video_frame_times(path: Path) -> list[float]:
+    """Return every source frame's presentation time, preserving VFR timing."""
+    probe = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0",
+         "-show_entries", "frame=best_effort_timestamp_time", "-of", "json", str(path)],
+        capture_output=True, text=True,
+    )
+    if probe.returncode != 0:
+        return []
+    try:
+        payload = json.loads(probe.stdout)
+        return [
+            float(frame["best_effort_timestamp_time"])
+            for frame in payload.get("frames", [])
+            if "best_effort_timestamp_time" in frame
+        ]
+    except (TypeError, ValueError, KeyError, json.JSONDecodeError):
+        return []
 
 
 def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, duration_s: float,
                           resize_width: int, output_fps: float, max_frames: int,
-                          crf: int, source_fps: float = 30.0) -> bool:
-    """Slice, downsample, and encode a compact sample video in one ffmpeg pass.
+                          crf: int, source_frame_times: Sequence[float]) -> list[float] | None:
+    """Encode exact source frames and return their original presentation times.
 
     The former compact-video path first decoded every requested frame to PNG and
     then encoded those PNGs back to H.264.  For a fixed clip-level regressor
-    that is needless disk I/O and roughly doubles the alignment wall time.  This
-    direct path has exactly the same source window and resize contract while
-    avoiding temporary files entirely.
-
-    **Tail margin and frame-count assertion (EQ-018).**  ``output_fps`` places
-    the final slot at ``duration_s - 1/source_fps``, which left only 0.4 output
-    slots of margin; ``-ss`` input-seek quantises to the source's frame grid and
-    ate it, so the ``fps`` filter flushed at EOF one frame short.  Every clip in
-    the 3,040-sample MVP corpus came out with 31 frames while its synthesised
-    ``frame_times`` asserted 32 — and nothing noticed, because the loader
-    stretches whatever frames exist across the requested count.  Two changes:
-    request a couple of source frames of extra tail (``-frames:v`` still bounds
-    the output at ``max_frames``), and verify the produced count, failing the
-    sample loudly rather than emitting a clip whose pixels and labels disagree.
-
-    **Causal frame rounding.**  The default ``fps`` filter rounds a source frame
-    to its nearest output timestamp.  It can therefore place pixels captured
-    *after* a gesture onset into the preceding output slot, while ``frame_times``
-    still labels that slot as pre-onset.  ``round=up`` assigns source pixels to
-    the first output slot at or after their source time.  It normally leaves the
-    first output PTS one slot late, so ``start_time=0`` asks the filter to pad the
-    beginning explicitly.  Together these preserve a zero-based, exactly
-    ``max_frames`` clip without leaking future gesture pixels into a pre-onset
-    frame.
+    that temporary disk I/O is unnecessary. The faster resampling implementation
+    used FFmpeg's ``fps`` filter and then invented a matching time grid; a human
+    audit showed that source pixels could land one output slot before those
+    synthetic times. This implementation instead chooses source frame numbers
+    from their probed PTS, encodes exactly those frames, and returns those same
+    PTS for metadata. Playback PTS are rewritten only inside the compact MP4;
+    training timing remains the source recording's measured timeline.
     """
     sample_dir.mkdir(parents=True, exist_ok=True)
     out = sample_dir / "frames.mp4"
-    margin_s = 2.0 / max(source_fps, 1e-6)
+    stop_s = start_s + duration_s
+    candidates = [
+        index for index, value in enumerate(source_frame_times)
+        if start_s <= value <= stop_s
+    ]
+    if len(candidates) < max_frames:
+        print(f"  {sample_dir.name}: source window has {len(candidates)} frames, "
+              f"needs {max_frames}")
+        return None
+    selected = [candidates[index] for index in _even_indices(len(candidates), max_frames)]
+    select_expr = "+".join(f"eq(n\\,{index})" for index in selected)
+    # Encoding uses a regular playback clock so OpenCV and browsers decode the
+    # same 32-frame sequence. The returned source PTS remain authoritative.
+    video_filter = (
+        f"select={select_expr},scale={resize_width}:-2,"
+        f"setpts=N/({output_fps:.8f}*TB)"
+    )
     r = subprocess.run(
-        ["ffmpeg", "-y", "-v", "error", "-ss", f"{start_s:.3f}", "-i", str(mov),
-         "-t", f"{duration_s + margin_s:.3f}",
-         "-vf", _direct_video_filter(output_fps, resize_width),
+        ["ffmpeg", "-y", "-v", "error", "-i", str(mov),
+         "-vf", video_filter,
          "-frames:v", str(max_frames), "-c:v", "libx264", "-crf", str(crf),
          "-pix_fmt", "yuv420p", str(out)],
         capture_output=True, text=True,
@@ -426,15 +438,15 @@ def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, durati
     if r.returncode != 0 or not out.exists() or out.stat().st_size == 0:
         print(f"  {sample_dir.name}: direct video extract failed ({r.stderr[:120]})")
         out.unlink(missing_ok=True)
-        return False
+        return None
     produced = _video_frame_count(out)
     if produced != max_frames:
         # A short clip is silently stretched by the loader, so it must never be
         # written: the labels would assert content the pixels do not contain.
         print(f"  {sample_dir.name}: extract produced {produced} frames, expected {max_frames}")
         out.unlink(missing_ok=True)
-        return False
-    return True
+        return None
+    return [float(source_frame_times[index]) for index in selected]
 
 
 def _video_frame_count(path: Path) -> int:
@@ -553,6 +565,10 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                       f"shift={calibration_shift_s:+.3f}s, "
                       f"n={len(calibration_info['inlier_offsets_s'])}, "
                       f"MAD={calibration_info['mad_s']}s)")
+        source_frame_times = _probe_video_frame_times(mov) if direct_video else []
+        if direct_video and not source_frame_times:
+            print(f"[align] {manifest_path.name}: could not probe source frame PTS — preserving MOV")
+            return 0
         for ev in gestures:
             # Dedicated controls calibrate the timeline and never become Model 1
             # examples. Their labels remain in the raw manifest for auditing.
@@ -586,19 +602,20 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
             dur = pre_s + window_s
             sample_dir = seg_dir / _park_tag(ev.get("park", "park")) / f"sample_{ev['gesture_index']:06d}"
             if direct_video:
-                # Keep 32 evenly spaced time samples over the same window the
-                # PNG path used.  The dataset selects across decoded frames, so
-                # the explicit count both bounds storage and preserves temporal
-                # coverage for the clip-level endpoint model.
+                # Select exact source frames and retain their real presentation
+                # times. Resampling pixels onto an invented output grid caused a
+                # systematic one-slot onset lead in the September 2026 tranche.
                 output_fps = (max_frames - 1) / max(dur - 1 / fps, 1 / fps)
-                if not _extract_sample_video(
+                selected_times = _extract_sample_video(
                     mov, sample_dir, start_s=start, duration_s=dur,
                     resize_width=resize_width, output_fps=output_fps,
-                    max_frames=max_frames, crf=video_crf, source_fps=fps,
-                ):
+                    max_frames=max_frames, crf=video_crf,
+                    source_frame_times=source_frame_times,
+                )
+                if selected_times is None:
                     shutil.rmtree(sample_dir, ignore_errors=True)
                     continue
-                frame_times = [round(i / output_fps - pre_s, 4) for i in range(max_frames)]
+                frame_times = [round(value - gv, 4) for value in selected_times]
                 frames_format = "mp4"
             else:
                 frames_format = None
@@ -721,8 +738,9 @@ def main() -> None:
                          "smaller and 1 inode instead of N. The dataset loader reads "
                          "either format transparently.")
     ap.add_argument("--direct-video", action="store_true",
-                    help="Slice and encode compact videos directly from the segment MOV. "
-                         "Avoids temporary PNGs; implies --video.")
+                    help="Select exact source frame numbers and encode compact videos directly "
+                         "from the segment MOV. Retains source PTS in metadata, avoids temporary "
+                         "PNGs, and implies --video.")
     ap.add_argument("--video-crf", type=int, default=20,
                     help="x264 CRF for --video. 20 keeps the orange trace intact "
                          "(measured 4.5%% error in the path-glow statistic).")

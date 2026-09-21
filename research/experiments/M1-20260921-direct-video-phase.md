@@ -22,17 +22,24 @@
   `fps` filter. It assigned the first post-onset source frame to output index 6,
   whose metadata says `-0.0613 s`. The metadata was a synthetic output grid and
   did not account for that nearest-frame choice.
-- **Candidate fix:** `fps=...:start_time=0:round=up` assigns source pixels to the
-  first output slot at or after their source time, while explicitly filling the
-  zero-time slot. Across the eight preserved swipes, the old extractor's local
-  detector chose index 6 for 8/8. The candidate chose index 7 for 7/8; one scene
-  was detector-inconclusive because of local floor brightness. All candidate
-  clips decoded as exactly 32 frames on the rig. The first preserved swipe moved
-  from `-0.0613 s` to `+0.0118 s`, matching its raw source onset.
-- **Decision:** make causal upward rounding canonical for compact extraction.
-  Add a real-FFmpeg regression fixture that forbids future source pixels in a
-  pre-onset output slot. Do not repair this cheap 1,109-clip tranche; recollect
-  after the corrected extractor passes a bounded on-device smoke test.
+- **Rejected interim fix:** `fps=...:start_time=0:round=up` fixed the first
+  preserved swipe and moved 7/8 local-detector results from index 6 to index 7;
+  one scene was detector-inconclusive. A later clean XR2 segment still produced
+  mixed detector positions (six index 6, four index 7, one missed, with one
+  unrelated late scene change). The local detector is imperfect on moving
+  scenery, but the larger design problem remains: resampled pixels are paired
+  with invented times rather than the selected source frames' PTS. Rounding is
+  therefore not a trustworthy timing contract.
+- **Final fix:** probe the source recording's frame PTS once, choose 32 exact
+  source frame numbers from each gesture window, encode those frames directly,
+  and store those same source PTS relative to the fitted gesture onset. A
+  preserved raw swipe encodes in 0.85 s, produces exactly 32 frames, and places
+  its first visible trace at source-relative `+0.008336 s` (index 7). A
+  real-FFmpeg regression fixture verifies that an unambiguous onset's encoded
+  frame and stored source PTS agree.
+- **Decision:** exact source-frame selection is canonical for compact linear
+  clips. Do not repair this cheap 1,109-clip tranche; recollect after the exact
+  extractor passes a bounded on-device smoke test.
 - **Smoke-test guard finding:** two isolated XR2 validation segments correctly
   failed admission because their end control was not detected. Their preserved
   recordings show that iOS Control Center's Game Mode panel was already covering
@@ -42,4 +49,8 @@
   `com.apple.springboard`. The device guard now consults that frontmost-bundle
   endpoint at connection and before/after every gesture. A SpringBoard overlay
   causes True Skate to be reactivated and the instrumented segment to be
-  discarded. Final clean on-device validation remains pending.
+  discarded. After the operator closed Control Center, a third bounded segment
+  passed the guard and two-anchor calibration (rate `0.99994434`), admitted 11/11
+  payload clips, decoded all clips at 32 frames, and left True Skate frontmost.
+  That run used the rejected rounding candidate; clean validation of the exact
+  source-frame extractor remains pending.

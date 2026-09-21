@@ -91,14 +91,15 @@ accuracy. It is now the calibration-control detector; fixed centre controls avoi
 the observed red-floor edge case.
 
 The 1,109-clip September replacement tranche exposed a separate compact-video
-phase defect: FFmpeg's default nearest-frame resampling placed post-onset pixels
-in the preceding 73 ms output slot, although the synthetic `frame_times` still
-labelled that slot as pre-onset. The operator observed the same one-slot lead in
-35/35 reviewed clips. A surviving raw recording confirmed that the centre-touch
-detector chooses the first visible frame and that the two-anchor WDA fit remains
-within one native 30 fps frame. Compact extraction now uses causal upward
-rounding with an explicit zero-time slot. The existing tranche will be replaced,
-not repaired; corrected collection still requires a bounded on-device smoke test.
+phase defect: FFmpeg resampling paired selected pixels with a synthetic output
+time grid. The operator observed a one-slot lead in 35/35 reviewed clips. A
+surviving raw recording confirmed that the centre-touch detector chooses the
+first visible frame and that the two-anchor WDA fit remains within one native
+30 fps frame. An upward-rounding workaround fixed the preserved example but did
+not establish a reliable contract on a new clean segment. Compact extraction now
+chooses exact source frame numbers and stores those frames' probed source PTS
+relative to gesture onset. The existing tranche will be replaced, not repaired;
+the exact-PTS extractor still requires a bounded on-device smoke test.
 See [M1-20260921](experiments/M1-20260921-direct-video-phase.md).
 
 The bounded phase-fix validation also exposed an iOS-overlay guard gap. With
@@ -107,7 +108,8 @@ the collector executed an entire segment against SpringBoard. The raw recordings
 were rejected by calibration and retained. Connection and per-gesture guards now
 also require WDA's frontmost bundle to be True Skate; unavailable active-app data
 falls back to the existing app-state and screenshot guards. Clean validation of
-this guard and the phase fix is still pending.
+the guard passed one bounded XR2 segment (11/11 strict payload admissions); final
+on-device validation of the later exact-PTS extractor is still pending.
 
 New Model 1 sampling uses the versioned XR control map with a 16-logical-point
 margin. The transient bottom navigation row is conservatively treated as present

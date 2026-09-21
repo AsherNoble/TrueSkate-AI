@@ -212,8 +212,9 @@ def test_wda_controls_are_not_emitted_as_training_samples(monkeypatch, tmp_path)
     def fake_extract(_mov, sample_dir, **_kwargs):
         sample_dir.mkdir(parents=True)
         (sample_dir / "frames.mp4").write_bytes(b"video")
-        return True
+        return [19.5 + index / 15 for index in range(32)]
 
+    monkeypatch.setattr(aligner, "_probe_video_frame_times", lambda _mov: [float(i) for i in range(100)])
     monkeypatch.setattr(aligner, "_extract_sample_video", fake_extract)
     saved = aligner.align_segment(
         manifest_path, pre_s=.5, window_s=1.8, fps=30, resize_width=128,
@@ -434,10 +435,12 @@ def test_direct_video_extracts_a_compact_clip_without_temporary_pngs(tmp_path):
     )
     assert encoded.returncode == 0, encoded.stderr
     sample = tmp_path / "sample"
-    assert aligner._extract_sample_video(
+    selected_times = aligner._extract_sample_video(
         tmp_path / "segment_h264.mov", sample, start_s=0.1, duration_s=1.2,
         resize_width=64, output_fps=20.0, max_frames=24, crf=20,
+        source_frame_times=aligner._probe_video_frame_times(tmp_path / "segment_h264.mov"),
     )
+    assert selected_times is not None and len(selected_times) == 24
     video = sample / "frames.mp4"
     assert video.is_file() and video.stat().st_size > 0
     cap = cv2.VideoCapture(str(video))
