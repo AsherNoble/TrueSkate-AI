@@ -31,6 +31,10 @@ Put substantial experiments in individual records and current facts in STATUS.
   surviving original `.mov`, with no emitted clips from that interrupted
   recording. It cannot be faithfully regenerated; the next corpus will be
   collected with the exact extractor from the outset.
+  A direct XR2 guard test then opened Control Center after connection. WDA
+  reported SpringBoard while Appium still reported True Skate foreground;
+  `ensure_foreground()` reactivated True Skate and WDA confirmed its bundle
+  afterward. The recovery mechanism is now directly device-validated.
   [Experiment record](experiments/M1-20260921-direct-video-phase.md).
 
 ## 2026-09-20 — Replacement corpus park provenance corrected

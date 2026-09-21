@@ -62,3 +62,10 @@
   admitted, every compact clip decoded to 32 frames with 32 stored source
   relative timestamps, and WDA still reported `com.trueaxis.skate` frontmost.
   The extractor is therefore validated on-device for this collection path.
+- **Foreground-guard validation:** a direct XR2 test connected while True Skate
+  was visible, then the operator opened Control Center. During the pause,
+  WDA reported `com.apple.springboard` while Appium still reported foreground
+  state `4`. Calling the same `ensure_foreground()` method used by collection
+  returned `True`, reactivated True Skate, and WDA then reported
+  `com.trueaxis.skate`. This confirms the recovery mechanism on-device; the
+  test intentionally performed no gesture or recording.

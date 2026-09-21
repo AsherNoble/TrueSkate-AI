@@ -116,6 +116,10 @@ also require WDA's frontmost bundle to be True Skate; unavailable active-app dat
 falls back to the existing app-state and screenshot guards. Clean validation of
 the guard passed the bounded XR2 segments, including the final exact-PTS run
 (11/11 strict payload admissions).
+A direct XR2 check also validated recovery: with Control Center opened after
+connection, WDA reported SpringBoard despite Appium reporting True Skate
+foreground; the shared foreground guard reactivated True Skate and WDA then
+reported the True Skate bundle. No gesture was recorded in that check.
 
 New Model 1 sampling uses the versioned XR control map with a 16-logical-point
 margin. The transient bottom navigation row is conservatively treated as present
