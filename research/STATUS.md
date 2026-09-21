@@ -150,3 +150,11 @@ manifests were corrected from the erroneous `The Workshop` provenance label;
 collection remained paused after the correction. XR1 was unavailable when
 collection began. See
 [M1-CONTROL-20260917](experiments/M1-CONTROL-20260917.md).
+
+The residual XR2 XCTest attachment from the whole-path smoke test is resolved.
+It was a preserved 304-second June orphan; Appium's cleanup RPC falsely reported
+deleting it. Removing its directory and restarting testmanagerd while the
+directory was absent restored the recorder, after which two consecutive short
+recordings completed and self-cleaned. The cleanup wrapper now relists after
+deletion and fails if a UUID survives. See
+[XCTEST-ATTACHMENT-20260922](experiments/XCTEST-ATTACHMENT-20260922.md).

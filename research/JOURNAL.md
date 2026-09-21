@@ -18,6 +18,11 @@ Put substantial experiments in individual records and current facts in STATUS.
   exhaustion, and one bounded XR2 segment admitted 11/11 strict, 32-frame,
   exact-PTS clips with zero path intersections or detected UI transitions.
   [Control experiment](experiments/M1-CONTROL-20260917.md).
+- A surviving 304-second June XCTest attachment exposed a false-success path in
+  Appium's cleanup command. After preserving it, removing its directory and
+  restarting XR2 testmanagerd, two consecutive short recordings completed and
+  self-cleaned. The wrapper now verifies deletion by relisting.
+  [Recovery record](experiments/XCTEST-ATTACHMENT-20260922.md).
 
 ## 2026-09-21 — Compact-video onset phase corrected
 
