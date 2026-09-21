@@ -39,7 +39,11 @@
   frame and stored source PTS agree.
 - **Decision:** exact source-frame selection is canonical for compact linear
   clips. Do not repair this cheap 1,109-clip tranche; recollect after the exact
-  extractor passes a bounded on-device smoke test.
+  extractor passes a bounded on-device smoke test. A later inventory confirmed
+  that the tranche contains 1,109 compact clips but only one surviving original
+  `.mov`, and that recording has no emitted compact clips because its alignment
+  was interrupted. The complete tranche therefore cannot be faithfully
+  regenerated from original pixels; it remains an audit artifact only.
 - **Smoke-test guard finding:** two isolated XR2 validation segments correctly
   failed admission because their end control was not detected. Their preserved
   recordings show that iOS Control Center's Game Mode panel was already covering
@@ -52,5 +56,9 @@
   discarded. After the operator closed Control Center, a third bounded segment
   passed the guard and two-anchor calibration (rate `0.99994434`), admitted 11/11
   payload clips, decoded all clips at 32 frames, and left True Skate frontmost.
-  That run used the rejected rounding candidate; clean validation of the exact
-  source-frame extractor remains pending.
+  That run used the rejected rounding candidate. A final bounded XR2 segment
+  using the exact source-frame extractor then passed the same checks: two-anchor
+  calibration was accepted (`rate=0.99994441`), 11/11 payload clips were
+  admitted, every compact clip decoded to 32 frames with 32 stored source
+  relative timestamps, and WDA still reported `com.trueaxis.skate` frontmost.
+  The extractor is therefore validated on-device for this collection path.

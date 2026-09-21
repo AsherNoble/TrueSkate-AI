@@ -22,8 +22,15 @@ Put substantial experiments in individual records and current facts in STATUS.
   and per-gesture guards now use it to reject this contamination route.
 - After Control Center was closed, a third bounded segment passed two-anchor
   calibration, strict admission (11/11 payloads), 32-frame decoding and the new
-  frontmost-app guard. It preceded the exact-PTS extractor, whose final bounded
-  device validation remains pending.
+  frontmost-app guard. A final bounded segment using the exact-PTS extractor
+  also passed two-anchor calibration (rate `0.99994441`), admitted 11/11
+  payloads, decoded every clip at 32 frames with 32 stored source-relative
+  timestamps, and left True Skate frontmost. The extractor is now validated on
+  device for this collection path.
+  An inventory then confirmed that the audited 1,109-clip tranche has only one
+  surviving original `.mov`, with no emitted clips from that interrupted
+  recording. It cannot be faithfully regenerated; the next corpus will be
+  collected with the exact extractor from the outset.
   [Experiment record](experiments/M1-20260921-direct-video-phase.md).
 
 ## 2026-09-20 — Replacement corpus park provenance corrected

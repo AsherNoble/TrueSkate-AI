@@ -98,8 +98,14 @@ first visible frame and that the two-anchor WDA fit remains within one native
 30 fps frame. An upward-rounding workaround fixed the preserved example but did
 not establish a reliable contract on a new clean segment. Compact extraction now
 chooses exact source frame numbers and stores those frames' probed source PTS
-relative to gesture onset. The existing tranche will be replaced, not repaired;
-the exact-PTS extractor still requires a bounded on-device smoke test.
+relative to gesture onset. The existing tranche will be replaced, not repaired.
+A bounded XR2 smoke test of the exact-PTS extractor accepted 11/11 payload
+clips; every clip decoded to 32 frames with 32 stored source-relative
+timestamps, and WDA confirmed True Skate remained frontmost.
+The audited 1,109-clip tranche has only one surviving original `.mov`, and that
+recording has no emitted clips because alignment was interrupted. It cannot be
+faithfully regenerated from original pixels, so it remains an audit artifact;
+the next tranche must be collected with the exact extractor enabled.
 See [M1-20260921](experiments/M1-20260921-direct-video-phase.md).
 
 The bounded phase-fix validation also exposed an iOS-overlay guard gap. With
@@ -108,8 +114,8 @@ the collector executed an entire segment against SpringBoard. The raw recordings
 were rejected by calibration and retained. Connection and per-gesture guards now
 also require WDA's frontmost bundle to be True Skate; unavailable active-app data
 falls back to the existing app-state and screenshot guards. Clean validation of
-the guard passed one bounded XR2 segment (11/11 strict payload admissions); final
-on-device validation of the later exact-PTS extractor is still pending.
+the guard passed the bounded XR2 segments, including the final exact-PTS run
+(11/11 strict payload admissions).
 
 New Model 1 sampling uses the versioned XR control map with a 16-logical-point
 margin. The transient bottom navigation row is conservatively treated as present
