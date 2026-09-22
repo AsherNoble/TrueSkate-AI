@@ -28,6 +28,10 @@ Put substantial experiments in individual records and current facts in STATUS.
   two consecutive recordings self-cleaned and both XRs ended with zero
   attachments. The WDA fork and rig checkout now use `master` at `b5ace217`.
   Collection remains off.
+- The 13,100-sample replacement plan preserves the historical device/park mix.
+  Its 310 accepted XR2 Skateboard GB 2024 clips leave 12,790 new clips; XR1's
+  loaded park awaits operator confirmation. Collection remains off.
+  [Plan](experiments/M1-RECOLLECT-20260922.md).
 
 ## 2026-09-21 — Compact-video onset phase corrected
 
