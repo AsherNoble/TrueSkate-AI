@@ -30,14 +30,15 @@ Put substantial experiments in individual records and current facts in STATUS.
   Collection remains off.
 - The 13,100-sample replacement plan preserves the historical device/park mix.
   Its 310 accepted XR2 Skateboard GB 2024 clips leave 12,790 new clips; XR1's
-  loaded park awaits operator confirmation.
+  loaded park is confirmed as SLS 2015 Los Angeles.
   [Plan](experiments/M1-RECOLLECT-20260922.md).
 - The operator authorized a bounded first tranche to 2,000 strict clips per
   device. A simultaneous exact-PTS smoke admitted 11/11 clips on each XR with
   32 source-timed frames per clip. Release `13554c9` now collects XR1 to 2,000
   new clips and XR2 to 1,690 new clips plus its 310-clip baseline. Persisted NTFY
-  monitors announce each new ten-percent milestone; the first production
-  segments admitted 11 clips per device.
+  monitors announce each new ten-percent milestone. XR1's first 598 records were
+  corrected from the explicit park placeholder without changing strict count or
+  command fingerprint; collection resumed while XR2 continued uninterrupted.
 
 ## 2026-09-21 — Compact-video onset phase corrected
 
