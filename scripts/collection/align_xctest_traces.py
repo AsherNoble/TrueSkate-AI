@@ -431,6 +431,11 @@ def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, durati
     r = subprocess.run(
         ["ffmpeg", "-y", "-v", "error", "-i", str(mov),
          "-vf", video_filter,
+         # Older FFmpeg builds otherwise duplicate selected frames back onto
+         # the input stream's nominal rate even though setpts defines the
+         # compact clip's playback clock. That makes pixels and selected PTS
+         # disagree while still producing the requested frame count.
+         "-fps_mode", "passthrough",
          "-frames:v", str(max_frames), "-c:v", "libx264", "-crf", str(crf),
          "-pix_fmt", "yuv420p", str(out)],
         capture_output=True, text=True,
