@@ -1,7 +1,7 @@
 # M1-RECOLLECT-20260922 — Replacement linear corpus park plan
 
-Status: planned; collection remains off. XR1's currently loaded park awaits
-operator confirmation.
+Status: bounded collection active. XR1's currently loaded park awaits operator
+confirmation; its interim provenance label is explicit rather than guessed.
 
 ## Objective
 
@@ -71,3 +71,30 @@ Collection stops only at segment boundaries and may slightly overshoot a quota.
 Preserve surplus clips, then create a deterministic 13,100-sample manifest with
 the exact counts above for the controlled training comparison.
 
+## First bounded tranche launch
+
+The operator authorized collection to 2,000 total strict clips per device. The
+audited XR2 baseline is exactly 310 clips, despite the tranche's informal
+"300-clip" name. The finite targets are therefore:
+
+- XR1: 2,000 new strict clips;
+- XR2: 1,690 new strict clips plus the 310 audited baseline, for 2,000 total.
+
+Release `13554c98b654d10fd30363c99caef6bf9f27efa7` is deployed as a clean rig
+worktree; the previous `b60f19d` release remains intact. Before launch, one
+simultaneous isolated segment per XR passed strict provenance and unique-command
+admission with 11/11 payload clips on each device. All 22 clips decode to 32
+frames, have 32 strictly increasing source-relative timestamps, and report
+`wda_submitted_two_anchor` timing. Both recorders returned idle.
+
+Production outputs are separate from smoke evidence:
+
+- XR1: `data/model1_linear_replacement_20260922/iPhone_XR/pending_operator_check`;
+- XR2: `data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024`.
+
+Each collector enforces its finite strict-admission target between complete
+one-minute segments. A persisted monitor sends exactly
+`XR1 is at [10–100]% completion` or `XR2 is at [10–100]% completion` at newly
+crossed ten-percent milestones. XR2 starts with 10% recorded as already reached,
+so its first new notification is 20%; XR1's first is 10%. The first production
+segments admitted 11 clips on each device and both collectors began segment 2.

@@ -165,10 +165,13 @@ trusted the replacement runner; the exact instrumented WDA build reports
 healthy. Two consecutive bounded recordings completed, returned the recorder to
 idle and self-deleted; a final listing found zero attachments on both XRs. The
 fork and rig WDA checkouts now use clean `master` at that SHA. Collection remains
-off pending an explicitly authorized workload.
+off until an explicitly authorized workload begins.
 
 The replacement-corpus plan preserves the historical 13,100-sample device and
 park allocation. Its 310 accepted XR2 Skateboard GB 2024 clips leave 12,790 new
-clips to collect. XR1's currently loaded park is deliberately unresolved until
-the operator checks it; XR2 remains on Skateboard GB 2024. Collection remains
-off. See [M1-RECOLLECT-20260922](experiments/M1-RECOLLECT-20260922.md).
+clips overall. A first explicitly authorized bounded tranche is active from
+release `13554c9`: XR1 stops at 2,000 new strict clips, while XR2 stops at 1,690
+new clips so its audited 310-clip baseline totals 2,000. XR1 uses the honest
+interim label `PENDING OPERATOR CHECK`; XR2 remains on Skateboard GB 2024.
+Persisted NTFY monitors announce each newly reached ten-percent milestone.
+See [M1-RECOLLECT-20260922](experiments/M1-RECOLLECT-20260922.md).
