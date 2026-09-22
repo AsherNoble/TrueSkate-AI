@@ -136,7 +136,10 @@ def test_direct_extract_preserves_the_selected_source_frame_times(tmp_path):
     for index in range(150):
         frame = np.zeros((160, 96, 3), dtype=np.uint8)
         if index >= 75:  # 2.500 s in the source, 0.500 s into the sliced window.
-            frame[70:90, 38:58] = 255
+            # Use a full-frame transition: the invariant under test is which
+            # source frame was selected, not a codec build's chroma resampling
+            # around one small fixed-coordinate patch.
+            frame[:] = 255
         assert cv2.imwrite(str(source_dir / f"frame_{index:04d}.png"), frame)
     source = tmp_path / "onset.mov"
     subprocess.run(
@@ -166,6 +169,6 @@ def test_direct_extract_preserves_the_selected_source_frame_times(tmp_path):
     capture.release()
     assert len(frames) == max_frames
     onset_index = next(index for index, frame in enumerate(frames)
-                       if frame[70:90, 38:58].mean() > 220)
+                       if frame.mean() > 220)
     assert selected_times[onset_index] == pytest.approx(2.5, abs=1 / source_fps)
     assert selected_times[onset_index - 1] < 2.5
