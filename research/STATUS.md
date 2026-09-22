@@ -158,3 +158,11 @@ directory was absent restored the recorder, after which two consecutive short
 recordings completed and self-cleaned. The cleanup wrapper now relists after
 deletion and fails if a UUID survives. See
 [XCTEST-ATTACHMENT-20260922](experiments/XCTEST-ATTACHMENT-20260922.md).
+
+XR1 recovery completed on 2026-09-22. The operator refreshed Xcode signing and
+trusted the replacement runner; the exact instrumented WDA build reports
+`b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6`. WDA 8100 and Appium 4723 are
+healthy. Two consecutive bounded recordings completed, returned the recorder to
+idle and self-deleted; a final listing found zero attachments on both XRs. The
+fork and rig WDA checkouts now use clean `master` at that SHA. Collection remains
+off pending an explicitly authorized workload.

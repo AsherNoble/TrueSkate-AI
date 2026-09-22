@@ -23,6 +23,11 @@ Put substantial experiments in individual records and current facts in STATUS.
   restarting XR2 testmanagerd, two consecutive short recordings completed and
   self-cleaned. The wrapper now verifies deletion by relisting.
   [Recovery record](experiments/XCTEST-ATTACHMENT-20260922.md).
+- XR1 recovered after the operator refreshed Xcode signing and trusted the new
+  runner. Its exact WDA timing build, Appium endpoint and RemoteXPC tunnel passed;
+  two consecutive recordings self-cleaned and both XRs ended with zero
+  attachments. The WDA fork and rig checkout now use `master` at `b5ace217`.
+  Collection remains off.
 
 ## 2026-09-21 — Compact-video onset phase corrected
 
