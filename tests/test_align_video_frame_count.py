@@ -153,10 +153,15 @@ def test_direct_extract_preserves_the_selected_source_frame_times(tmp_path):
     duration = pre_s + window_s
     output_fps = (max_frames - 1) / (duration - 1 / source_fps)
     sample = tmp_path / "sample"
+    source_frame_times = module._probe_video_frame_times(source)
+    # MOV edit lists can give the first decoded frame a nonzero media PTS on
+    # some FFmpeg builds. The extractor's contract is the probed source PTS,
+    # rather than an assumed zero-based frame_index / fps clock.
+    expected_onset_time = source_frame_times[75]
     selected_times = module._extract_sample_video(
         source, sample, start_s=2.0, duration_s=duration,
         resize_width=96, output_fps=output_fps, max_frames=max_frames,
-        crf=20, source_frame_times=module._probe_video_frame_times(source),
+        crf=20, source_frame_times=source_frame_times,
     )
     assert selected_times is not None
     capture = cv2.VideoCapture(str(sample / "frames.mp4"))
@@ -170,5 +175,5 @@ def test_direct_extract_preserves_the_selected_source_frame_times(tmp_path):
     assert len(frames) == max_frames
     onset_index = next(index for index, frame in enumerate(frames)
                        if frame.mean() > 220)
-    assert selected_times[onset_index] == pytest.approx(2.5, abs=1 / source_fps)
-    assert selected_times[onset_index - 1] < 2.5
+    assert selected_times[onset_index] == pytest.approx(expected_onset_time, abs=1 / source_fps)
+    assert selected_times[onset_index - 1] < expected_onset_time
