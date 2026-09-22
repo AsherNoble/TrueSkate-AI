@@ -424,6 +424,11 @@ def test_linear_collector_uses_a_device_specific_seed_file():
     assert '--no-run-notifications' in source
     assert 'HEARTBEAT_FILE=' in source
     assert '--heartbeat-path "$HEARTBEAT_FILE"' in source
+    assert 'BASIC_LINEAR_ACCEPTED_TARGET' in source
+    assert 'BASIC_LINEAR_ACCEPTED_BASE' in source
+    assert source.index('total=$(accepted_total)', source.index('while :; do')) > \
+        source.index('--no-caffeinate')
+    assert 'accepted target reached between segments' in source
 
 
 def test_linear_finalizer_can_target_a_fresh_modal_volume():

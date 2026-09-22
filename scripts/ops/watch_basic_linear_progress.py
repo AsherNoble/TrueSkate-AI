@@ -155,7 +155,10 @@ def main() -> int:
             flush=True,
         )
         if total >= args.target:
-            stop_collector(pid, device=args.device, output=output)
+            # The finite collector normally exits itself between complete
+            # segments. Stop it only if the watcher observes the target first.
+            if collector_alive(pid, device=args.device, output=output):
+                stop_collector(pid, device=args.device, output=output)
             return 0
         if not collector_alive(pid, device=args.device, output=output):
             raise RuntimeError(

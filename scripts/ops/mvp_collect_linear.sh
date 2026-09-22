@@ -45,9 +45,43 @@ fi
 # it and emit identical commands, defeating command-held-out generalisation.
 SEED_FILE="${BASIC_LINEAR_SEED_FILE:-$OUT/.basic_linear_next_seed_${DEVICE}}"
 HEARTBEAT_FILE="${BASIC_LINEAR_HEARTBEAT_FILE:-$OUT/.collector_heartbeat_${DEVICE}.json}"
+# Optional finite-run guard. The baseline lets a new output directory extend a
+# separately preserved admitted tranche without copying it. Target checks happen
+# only between complete segments, before another recorder start.
+ACCEPTED_TARGET="${BASIC_LINEAR_ACCEPTED_TARGET:-0}"
+ACCEPTED_BASE="${BASIC_LINEAR_ACCEPTED_BASE:-0}"
+
+case "$ACCEPTED_TARGET:$ACCEPTED_BASE" in
+  *[!0-9:]*) echo "BASIC_LINEAR_ACCEPTED_TARGET and BASIC_LINEAR_ACCEPTED_BASE must be non-negative integers" >&2; exit 2 ;;
+esac
 
 cd "$REPO" || exit 1
 mkdir -p logs "$OUT"
+
+accepted_total() {
+  PYTHONPATH=src .venv/bin/python - "$OUT" "$DEVICE" "$ACCEPTED_BASE" <<'PY'
+import json
+import sys
+from pathlib import Path
+from trueskate_ai.model1.linear.dataset import discover_basic_linear_samples
+
+root, device, baseline = Path(sys.argv[1]), sys.argv[2], int(sys.argv[3])
+samples, _ = discover_basic_linear_samples(root)
+current = sum(
+    json.loads((sample / "meta.json").read_text()).get("device") == device
+    for sample in samples
+)
+print(baseline + current)
+PY
+}
+
+if [ "$ACCEPTED_TARGET" -gt 0 ]; then
+  total=$(accepted_total)
+  if [ "$total" -ge "$ACCEPTED_TARGET" ]; then
+    echo "[mvp_collect_linear] accepted target already reached: $total/$ACCEPTED_TARGET"
+    exit 0
+  fi
+fi
 if [ -s "$SEED_FILE" ] && grep -Eq '^[0-9]+$' "$SEED_FILE"; then
   next_seed=$(cat "$SEED_FILE")
 else
@@ -103,6 +137,14 @@ while :; do
   if [ $rc -ne 0 ]; then
     echo "[mvp_collect_linear] collector exited $rc — STOPPED; recover recorder/tunnel before restart"
     break
+  fi
+  if [ "$ACCEPTED_TARGET" -gt 0 ]; then
+    total=$(accepted_total)
+    echo "[mvp_collect_linear] accepted total=$total target=$ACCEPTED_TARGET"
+    if [ "$total" -ge "$ACCEPTED_TARGET" ]; then
+      echo "[mvp_collect_linear] accepted target reached between segments"
+      break
+    fi
   fi
   sleep 2
 done
