@@ -1,0 +1,13 @@
+{
+  "recording": "iPhone_XR2_20260901_105440/segment_00000.mov",
+  "exclusions": [
+    {
+      "gesture_index": 7,
+      "frame": 547,
+      "time_s": 18.396667,
+      "reason": "User visually confirmed accidental spin-control activation; exclude from next isolated-linear training run",
+      "timing_annotation_retained": true
+    }
+  ],
+  "enforcement": "Recorded exclusion decision; not yet integrated into dataset builder or training loader"
+}

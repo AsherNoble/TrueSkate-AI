@@ -1,0 +1,124 @@
+{
+  "rule": "First and last calibration only; middle calibration and all gestures held out",
+  "residual_sign": "Observed minus predicted",
+  "clock": "submitted_to_ios.monotonic_s",
+  "anchor_span_s": 56.01813054166632,
+  "minute_admission": true,
+  "rate": 0.9999143573407407,
+  "rows": [
+    {
+      "index": 0,
+      "kind": "calibration",
+      "frame": 46,
+      "fit_anchor": true,
+      "observed_s": 1.65,
+      "single_anchor_error_ms": 3.637090628672013e-10,
+      "two_anchor_error_ms": 0.0
+    },
+    {
+      "index": 1,
+      "kind": "gesture",
+      "frame": 205,
+      "fit_anchor": false,
+      "observed_s": 6.95,
+      "single_anchor_error_ms": -1.9047499998121609,
+      "two_anchor_error_ms": -1.450680778247282
+    },
+    {
+      "index": 2,
+      "kind": "gesture",
+      "frame": 390,
+      "fit_anchor": false,
+      "observed_s": 13.115,
+      "single_anchor_error_ms": -6.9502083331460796,
+      "two_anchor_error_ms": -5.967720010778166
+    },
+    {
+      "index": 3,
+      "kind": "gesture",
+      "frame": 551,
+      "fit_anchor": false,
+      "observed_s": 18.481667,
+      "single_anchor_error_ms": -26.46358333369392,
+      "two_anchor_error_ms": -25.019808200759996
+    },
+    {
+      "index": 4,
+      "kind": "gesture",
+      "frame": 732,
+      "fit_anchor": false,
+      "observed_s": 24.531667,
+      "single_anchor_error_ms": -15.597791666749572,
+      "two_anchor_error_ms": -13.636809020589169
+    },
+    {
+      "index": 5,
+      "kind": "calibration",
+      "frame": 908,
+      "fit_anchor": false,
+      "observed_s": 30.398333,
+      "single_anchor_error_ms": -40.70445833267655,
+      "two_anchor_error_ms": -38.23888860759439
+    },
+    {
+      "index": 6,
+      "kind": "gesture",
+      "frame": 1091,
+      "fit_anchor": false,
+      "observed_s": 36.498333,
+      "single_anchor_error_ms": -21.121041666901874,
+      "two_anchor_error_ms": -18.13472889621437
+    },
+    {
+      "index": 7,
+      "kind": "gesture",
+      "frame": 1271,
+      "fit_anchor": false,
+      "observed_s": 42.496667,
+      "single_anchor_error_ms": -22.602416667155012,
+      "two_anchor_error_ms": -19.10226375269275
+    },
+    {
+      "index": 8,
+      "kind": "gesture",
+      "frame": 1465,
+      "fit_anchor": false,
+      "observed_s": 48.963333,
+      "single_anchor_error_ms": -6.318125000383645,
+      "two_anchor_error_ms": -2.265544243179818
+    },
+    {
+      "index": 9,
+      "kind": "gesture",
+      "frame": 1646,
+      "fit_anchor": false,
+      "observed_s": 54.996667,
+      "single_anchor_error_ms": -2.4886666664087898,
+      "two_anchor_error_ms": 2.0802968937587707
+    },
+    {
+      "index": 10,
+      "kind": "calibration",
+      "frame": 1726,
+      "fit_anchor": true,
+      "observed_s": 57.663333,
+      "single_anchor_error_ms": -4.797541665958249,
+      "two_anchor_error_ms": 0.0
+    }
+  ],
+  "stats": {
+    "single_anchor": {
+      "evaluated": 9,
+      "within_one_frame": 8,
+      "max_absolute_ms": 40.70445833267655,
+      "mean_absolute_ms": 16.0167824074364
+    },
+    "two_anchor": {
+      "evaluated": 9,
+      "within_one_frame": 8,
+      "max_absolute_ms": 38.23888860759439,
+      "mean_absolute_ms": 13.988526711534966
+    }
+  },
+  "initial_test_pass": false
+}

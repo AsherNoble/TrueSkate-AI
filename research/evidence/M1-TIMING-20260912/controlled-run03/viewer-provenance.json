@@ -1,0 +1,8 @@
+{
+  "recording": "xr2-duration-repeat-20260912-run03/segment_00000.mov",
+  "original_video": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/timing-probe-20260912/run03/segment_00000.mov",
+  "sha256": "0dd200be3dc609dc115a15f70bdb89c3f6cf4657cd35b39d7d6ff70454cbaf34",
+  "frame_count": 694,
+  "status": "Diagnostic only. Mark first visible touch for three calibration touches and six swipes.",
+  "extraction": "Every decoded frame, original resolution, JPEG quality 2, actual presentation timestamps"
+}

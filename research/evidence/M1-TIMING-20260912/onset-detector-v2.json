@@ -1,0 +1,35 @@
+{
+  "date": "2026-09-13",
+  "version": "v2",
+  "baseline_commit": "c17ec61",
+  "comparison": "same 27 calibrations and frozen seed-20260913 sample of 24 linear swipes as v1",
+  "method": {
+    "centre_radius_pixels": 10,
+    "background_ring_pixels": [20, 40],
+    "frame_score": "mean RGB brightness in centre minus mean RGB brightness in surrounding ring",
+    "immediate_increase_threshold": 4.0,
+    "history_frames": 3,
+    "lookahead_frames": 3,
+    "confirmation_rule": "median local contrast after candidate minus median before candidate >= 6.0",
+    "reported_frame": "candidate frame; look-ahead frames only confirm it"
+  },
+  "results": {
+    "v1": {
+      "all": {"count": 51, "exact": 45, "within_one": 45, "missed": 1, "detected_mae_frames": 2.22, "maximum_detected_error_frames": 69},
+      "calibration": {"count": 27, "exact": 24, "within_one": 24, "missed": 1},
+      "gesture": {"count": 24, "exact": 21, "within_one": 21, "missed": 0, "early_by_more_than_one": 3}
+    },
+    "v2": {
+      "all": {"count": 51, "exact": 47, "within_one": 48, "missed": 2, "detected_mae_frames": 0.22448979591836735, "maximum_detected_error_frames": 10},
+      "calibration": {"count": 27, "exact": 24, "within_one": 25, "missed": 2},
+      "gesture": {"count": 24, "exact": 23, "within_one": 23, "missed": 0, "early_by_more_than_one": 1}
+    }
+  },
+  "remaining_errors": [
+    "Two calibration searches return no result because the old search windows omit the onset transition.",
+    "One old calibration is selected one frame after the human label because its onset is the first searchable frame.",
+    "One swipe is selected ten frames early when a moving red floor graphic produces sustained local brightening."
+  ],
+  "interpretation": "V2 improves this retrospective development set, especially sampled swipes, but the sample and thresholds are not independent validation.",
+  "untracked_review_artifact": "tmp/onset-detector-v2-20260913/index.html"
+}

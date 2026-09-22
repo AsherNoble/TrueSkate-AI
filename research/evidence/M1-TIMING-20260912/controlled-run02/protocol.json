@@ -1,0 +1,11 @@
+{
+  "status": "Fixed before recording and before seeing human labels",
+  "sequence": "3 x 50 ms calibration holds; linear durations 0.3, 0.6, 1.0, 0.3, 0.6, 1.0 seconds",
+  "waits": "10 x requested 1 second; before, between completed calls, after",
+  "primary_rule": "video onset = host command return - recorder start - requested physical duration + C",
+  "calibration": "C fitted using calibration touch 1 only",
+  "evaluation": "Remaining 2 calibration touches and all 6 linear gestures; report signed residuals and count within 1/30 seconds",
+  "comparison": "host command start - recorder start + C_start; C_start from calibration touch 1 only",
+  "missing_labels": "Do not shift correspondence or refit; resolve missing/ambiguous touch identities explicitly",
+  "retention": "Keep every result, including failures; no intermediate checks, resets, screenshots, settings queries or log writes"
+}

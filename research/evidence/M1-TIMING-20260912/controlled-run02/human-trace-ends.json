@@ -1,0 +1,106 @@
+{
+  "recording": "xr2-duration-repeat-20260912-run02/segment_00000.mov",
+  "frame_numbering": "zero-based",
+  "frame_count": 591,
+  "labels": [
+    {
+      "frame": 37,
+      "time_s": 1.351667,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 85,
+      "time_s": 2.951667,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 133,
+      "time_s": 4.551667,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 184,
+      "time_s": 6.251667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 240,
+      "time_s": 8.118333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 309,
+      "time_s": 10.418333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 390,
+      "time_s": 13.116667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 450,
+      "time_s": 15.116667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 518,
+      "time_s": 17.383333,
+      "kind": "gesture",
+      "note": ""
+    }
+  ],
+  "annotation_type": "trace-last-visible",
+  "end_labels": [
+    {
+      "start_frame": 184,
+      "frame": 199,
+      "time_s": 6.751667,
+      "status": "marked",
+      "note": ""
+    },
+    {
+      "start_frame": 240,
+      "frame": 264,
+      "time_s": 8.918333,
+      "status": "marked",
+      "note": ""
+    },
+    {
+      "start_frame": 309,
+      "frame": 345,
+      "time_s": 11.618333,
+      "status": "marked",
+      "note": ""
+    },
+    {
+      "start_frame": 390,
+      "frame": 405,
+      "time_s": 13.616667,
+      "status": "marked",
+      "note": ""
+    },
+    {
+      "start_frame": 450,
+      "frame": 474,
+      "time_s": 15.916667,
+      "status": "marked",
+      "note": ""
+    },
+    {
+      "start_frame": 518,
+      "frame": 555,
+      "time_s": 18.616667,
+      "status": "marked",
+      "note": ""
+    }
+  ]
+}

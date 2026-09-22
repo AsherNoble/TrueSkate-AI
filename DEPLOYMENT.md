@@ -73,6 +73,12 @@ This option does not relax calibration or dataset admission and does not
 reclassify existing `.menu` samples. Frame filtering remains conservative;
 changing historical corpus labels requires a separate validated review.
 
+The foreground guard checks both Appium's True Skate process state and WDA's
+frontmost bundle. iOS Control Center can cover the game while Appium still calls
+True Skate foreground; WDA reports `com.apple.springboard` in that state. Treat
+that as contamination, reactivate True Skate, and discard any instrumented
+segment in progress.
+
 `scripts/rig_collect.sh` now lets the collector's start-failure cap terminate
 the process. It does not endlessly restart a wedged recorder or send repeated
 notifications; resolve the tunnel/attachment incident before restarting it.
@@ -88,6 +94,39 @@ For recorder failures, confirm the root tunnel, then inspect
 `scripts/recover_remotexpc_attachments.sh --help` and use its dry-run before
 targeted cleanup. Do not restart healthy WDA: expired signing may prevent it
 from rebuilding. Never broaden a source migration into phone reconfiguration.
+
+### Stale XCTest attachment recovery
+
+The normal cleanup RPC can report success while leaving an old attachment in
+place. The repository wrapper therefore lists again after `--delete` and exits
+non-zero if a UUID survives. Do not treat the first success message as proof and
+do not loop recorder starts or cleanup calls.
+
+Use this deeper repair only for a verified survivor and only on the affected
+phone:
+
+1. Keep collection off. Confirm the root RemoteXPC tunnel, adequate device free
+   space, no Appium session, and `GET /wda/video` returning `null`.
+2. Copy every surviving UUID from testmanagerd's `tmp/Attachments` app-data
+   domain to durable host storage. Record its size, media duration and hash.
+3. Stop only the affected prebuilt WDA test runner. Do not rebuild it, restart
+   Appium, or disturb the other phone.
+4. Replace `tmp/Attachments` with an empty host directory using `devicectl
+   device copy to ... --remove-existing-content true`. For an empty source,
+   CoreDevice removes the destination directory. Never recreate it with a
+   placeholder: that produced `XCTDaemon.ScreenRecordingError Code=7`.
+5. Find the affected phone's `testmanagerd` PID with `devicectl device info
+   processes`, terminate that PID with `devicectl device process terminate`,
+   and relaunch the same known-good prebuilt WDA command. testmanagerd must be
+   restarted while the bad directory is absent; restarting WDA alone did not
+   repair the incident.
+6. Make one five-second, gesture-free recording attempt. If it succeeds, stop
+   and retrieve it, confirm `/wda/video` is `null`, and verify zero attachment
+   UUIDs. Make one second short recording to prove the cleanup lifecycle can
+   repeat before considering collection.
+
+The validated XR2 incident and exact evidence are recorded in
+[XCTEST-ATTACHMENT-20260922](research/experiments/XCTEST-ATTACHMENT-20260922.md).
 
 Keep `.env`, datasets, cloud volumes and checkpoints independent of source
 deployment. No corpus migration or cloud retraining is required by this refactor.

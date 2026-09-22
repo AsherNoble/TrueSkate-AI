@@ -1,0 +1,290 @@
+{
+  "experiment": "isolated-touch-timing",
+  "profile": "minute-3cal-8linear-constant-speed",
+  "device": "iPhone_XR2",
+  "park": "Skateboard GB 2024 (last operator-confirmed; no park change requested)",
+  "started_at_epoch_s": 1789279413.86203,
+  "host_start_epoch_s": 1789279413.582137,
+  "host_stop_epoch_s": 1789279498.041025,
+  "fps": 30,
+  "allow_idle_navigation": true,
+  "appium_port": 4726,
+  "wda_port": 8103,
+  "wait_requested_s": null,
+  "minute_slots_s": [
+    1.0,
+    6.0,
+    12.0,
+    18.0,
+    24.0,
+    30.0,
+    36.0,
+    42.0,
+    48.0,
+    54.0,
+    57.0
+  ],
+  "seed": 1010,
+  "wait_measured_monotonic_s": [
+    1.145987955000237,
+    4.2954157770000165,
+    4.0446145000005345,
+    4.495585565999136,
+    5.147974903000431,
+    4.993634353999369,
+    5.5319353159993625,
+    4.944188409001072,
+    4.832674264000161,
+    4.680860536000182,
+    1.6947539940010756,
+    1.1470263190003607
+  ],
+  "settings_before_recording": {
+    "nativeWebTap": false,
+    "nativeWebTapStrict": false,
+    "useJSONSource": false,
+    "webScreenshotMode": "native",
+    "shouldUseCompactResponses": true,
+    "elementResponseAttributes": "type,label",
+    "mjpegServerScreenshotQuality": 25,
+    "mjpegServerFramerate": 10,
+    "screenshotQuality": 1,
+    "mjpegScalingFactor": 100,
+    "reduceMotion": null,
+    "pageSourceExcludedAttributes": ""
+  },
+  "gestures": [
+    {
+      "gesture_index": 0,
+      "t_call_start_epoch_s": 1789279414.881367,
+      "t_call_end_epoch_s": 1789279415.585415,
+      "t_call_start_monotonic_s": 14540.908860138,
+      "t_call_end_monotonic_s": 14541.612838835,
+      "planned_call_start_s": 1.0,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.5,
+          0.55
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    },
+    {
+      "gesture_index": 1,
+      "t_call_start_epoch_s": 1789279419.880821,
+      "t_call_end_epoch_s": 1789279421.836145,
+      "t_call_start_monotonic_s": 14545.908286371,
+      "t_call_end_monotonic_s": 14547.863626131,
+      "planned_call_start_s": 6.0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.562,
+          0.628
+        ],
+        [
+          0.409,
+          0.458
+        ]
+      ],
+      "duration": 1.0,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 2,
+      "t_call_start_epoch_s": 1789279425.880759,
+      "t_call_end_epoch_s": 1789279427.387127,
+      "t_call_start_monotonic_s": 14551.908278993,
+      "t_call_end_monotonic_s": 14553.414657271,
+      "planned_call_start_s": 12.0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.468,
+          0.471
+        ],
+        [
+          0.635,
+          0.633
+        ]
+      ],
+      "duration": 0.3,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 3,
+      "t_call_start_epoch_s": 1789279431.8827012,
+      "t_call_end_epoch_s": 1789279432.734647,
+      "t_call_start_monotonic_s": 14557.910275939,
+      "t_call_end_monotonic_s": 14558.76222676,
+      "planned_call_start_s": 18.0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.326,
+          0.629
+        ],
+        [
+          0.653,
+          0.446
+        ]
+      ],
+      "duration": 0.3,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 4,
+      "t_call_start_epoch_s": 1789279437.882642,
+      "t_call_end_epoch_s": 1789279438.8870468,
+      "t_call_start_monotonic_s": 14563.910271046,
+      "t_call_end_monotonic_s": 14564.914682476,
+      "planned_call_start_s": 24.0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.538,
+          0.565
+        ],
+        [
+          0.339,
+          0.631
+        ]
+      ],
+      "duration": 0.5,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 5,
+      "t_call_start_epoch_s": 1789279443.880703,
+      "t_call_end_epoch_s": 1789279444.348681,
+      "t_call_start_monotonic_s": 14569.908387245,
+      "t_call_end_monotonic_s": 14570.376366157,
+      "planned_call_start_s": 30.0,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.5,
+          0.55
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    },
+    {
+      "gesture_index": 6,
+      "t_call_start_epoch_s": 1789279449.880588,
+      "t_call_end_epoch_s": 1789279450.9374678,
+      "t_call_start_monotonic_s": 14575.90832701,
+      "t_call_end_monotonic_s": 14576.965210781,
+      "planned_call_start_s": 36.0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.638,
+          0.49
+        ],
+        [
+          0.423,
+          0.505
+        ]
+      ],
+      "duration": 0.5,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 7,
+      "t_call_start_epoch_s": 1789279455.88165,
+      "t_call_end_epoch_s": 1789279457.047947,
+      "t_call_start_monotonic_s": 14581.909442837,
+      "t_call_end_monotonic_s": 14583.075748678,
+      "planned_call_start_s": 42.0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.359,
+          0.524
+        ],
+        [
+          0.508,
+          0.654
+        ]
+      ],
+      "duration": 0.7,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 8,
+      "t_call_start_epoch_s": 1789279461.880599,
+      "t_call_end_epoch_s": 1789279463.199858,
+      "t_call_start_monotonic_s": 14587.908446605,
+      "t_call_end_monotonic_s": 14589.227715558,
+      "planned_call_start_s": 48.0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.659,
+          0.547
+        ],
+        [
+          0.479,
+          0.64
+        ]
+      ],
+      "duration": 0.3,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 9,
+      "t_call_start_epoch_s": 1789279467.880696,
+      "t_call_end_epoch_s": 1789279469.185601,
+      "t_call_start_monotonic_s": 14593.908598177,
+      "t_call_end_monotonic_s": 14595.213512508,
+      "planned_call_start_s": 54.0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.429,
+          0.658
+        ],
+        [
+          0.501,
+          0.48
+        ]
+      ],
+      "duration": 0.3,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 10,
+      "t_call_start_epoch_s": 1789279470.880367,
+      "t_call_end_epoch_s": 1789279471.6033149,
+      "t_call_start_monotonic_s": 14596.908297084,
+      "t_call_end_monotonic_s": 14597.631248649,
+      "planned_call_start_s": 57.0,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.5,
+          0.55
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    }
+  ],
+  "training_admission": "diagnostic only; pending per-recording human calibration",
+  "script_sha256": "d4570831a506499d1c7403790bd2b709f3e1274673e42e3ce7a211e5846b1854"
+}

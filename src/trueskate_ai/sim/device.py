@@ -310,12 +310,13 @@ class DeviceSession:
         self.mjpeg_url = f"http://127.0.0.1:{self._cfg['mjpeg_port']}"
 
         state = self.driver.query_app_state(_BUNDLE_ID)
-        if state == _APP_STATE_FOREGROUND:
+        active_bundle = self._active_bundle_id()
+        if state == _APP_STATE_FOREGROUND and active_bundle in (None, _BUNDLE_ID):
             print(f"[{self.device_id}] True Skate already in foreground — reusing.")
         else:
             print(
                 f"[{self.device_id}] True Skate not in foreground "
-                f"(state={state}) — activating."
+                f"(state={state}, active_bundle={active_bundle!r}) — activating."
             )
             self.driver.activate_app(_BUNDLE_ID)
             time.sleep(1.0)
@@ -346,17 +347,42 @@ class DeviceSession:
 
     # -- foreground check ---------------------------------------------------
 
+    def _active_bundle_id(self) -> str | None:
+        """Return WDA's frontmost bundle, or ``None`` when it cannot be queried.
+
+        ``query_app_state`` continues to report True Skate as foreground while
+        iOS Control Center is covering it. WDA's active-app endpoint reports
+        SpringBoard in that state, which lets collection reject the gesture that
+        opened the overlay instead of recording subsequent touches against iOS.
+        """
+        try:
+            response = requests.get(
+                f"http://127.0.0.1:{self._cfg['wda_port']}/wda/activeAppInfo",
+                timeout=2,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            value = payload.get("value", payload) if isinstance(payload, dict) else None
+            bundle = value.get("bundleId") if isinstance(value, dict) else None
+            return bundle if isinstance(bundle, str) and bundle else None
+        except (requests.exceptions.RequestException, TypeError, ValueError):
+            # Preserve the established query_app_state fallback if this optional
+            # guard is temporarily unavailable; callers still retain screenshot
+            # replay/editor checks.
+            return None
+
     def ensure_foreground(self) -> bool:
         """Verify True Skate is in the foreground; relaunch if not.
 
         Returns True if the app had to be relaunched.
         """
         state = self.driver.query_app_state(_BUNDLE_ID)
-        if state == _APP_STATE_FOREGROUND:
+        active_bundle = self._active_bundle_id()
+        if state == _APP_STATE_FOREGROUND and active_bundle in (None, _BUNDLE_ID):
             return False
         print(
             f"[{self.device_id}] True Skate not in foreground "
-            f"(state={state}) — relaunching."
+            f"(state={state}, active_bundle={active_bundle!r}) — relaunching."
         )
         self.driver.activate_app(_BUNDLE_ID)
         time.sleep(3.0)

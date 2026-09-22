@@ -1,0 +1,168 @@
+{
+  "matching": "Chronological one-to-one correspondence between 19 human starts and 19 linear commands; timing consistency checked, spatial correspondence not yet audited",
+  "stats": {
+    "n": 19,
+    "median_offset_s": -0.36520307540893526,
+    "min_offset_s": -0.3884562528686537,
+    "max_offset_s": -0.3250700818939194,
+    "range_s": 0.06338617097473431,
+    "max_abs_residual_s": 0.04013299351501587,
+    "within_one_30fps_frame": 18,
+    "within_two_30fps_frames": 19,
+    "overhead_correlation": 0.46145369697029925
+  },
+  "rows": [
+    {
+      "gesture_index": 3,
+      "frame": 217,
+      "visible_onset_video_s": 7.348333,
+      "command_start_relative_s": 7.71416711807251,
+      "offset_s": -0.36583411807250954,
+      "call_overhead_s": 0.4737582924828152
+    },
+    {
+      "gesture_index": 4,
+      "frame": 308,
+      "visible_onset_video_s": 10.381667,
+      "command_start_relative_s": 10.713712215423584,
+      "offset_s": -0.3320452154235838,
+      "call_overhead_s": 0.579193438790552
+    },
+    {
+      "gesture_index": 5,
+      "frame": 402,
+      "visible_onset_video_s": 13.515,
+      "command_start_relative_s": 13.864283084869385,
+      "offset_s": -0.3492830848693842,
+      "call_overhead_s": 0.46054555576951217
+    },
+    {
+      "gesture_index": 6,
+      "frame": 498,
+      "visible_onset_video_s": 16.713333,
+      "command_start_relative_s": 17.06245708465576,
+      "offset_s": -0.34912408465576306,
+      "call_overhead_s": 0.5112376543011006
+    },
+    {
+      "gesture_index": 7,
+      "frame": 579,
+      "visible_onset_video_s": 19.413333,
+      "command_start_relative_s": 19.73840308189392,
+      "offset_s": -0.3250700818939194,
+      "call_overhead_s": 0.5513314236861921
+    },
+    {
+      "gesture_index": 8,
+      "frame": 660,
+      "visible_onset_video_s": 22.113333,
+      "command_start_relative_s": 22.4625883102417,
+      "offset_s": -0.3492553102416984,
+      "call_overhead_s": 0.5407817993131996
+    },
+    {
+      "gesture_index": 9,
+      "frame": 739,
+      "visible_onset_video_s": 24.746667,
+      "command_start_relative_s": 25.135123252868652,
+      "offset_s": -0.3884562528686537,
+      "call_overhead_s": 0.47564486083356994
+    },
+    {
+      "gesture_index": 10,
+      "frame": 823,
+      "visible_onset_video_s": 27.546667,
+      "command_start_relative_s": 27.912432193756104,
+      "offset_s": -0.36576519375610417,
+      "call_overhead_s": 0.5178776955450284
+    },
+    {
+      "gesture_index": 11,
+      "frame": 915,
+      "visible_onset_video_s": 30.646667,
+      "command_start_relative_s": 31.012540102005005,
+      "offset_s": -0.3658731020050041,
+      "call_overhead_s": 0.5224854686358802
+    },
+    {
+      "gesture_index": 12,
+      "frame": 1004,
+      "visible_onset_video_s": 33.63,
+      "command_start_relative_s": 33.983559131622314,
+      "offset_s": -0.3535591316223119,
+      "call_overhead_s": 0.5908351515662937
+    },
+    {
+      "gesture_index": 13,
+      "frame": 1085,
+      "visible_onset_video_s": 36.33,
+      "command_start_relative_s": 36.7112922668457,
+      "offset_s": -0.38129226684570483,
+      "call_overhead_s": 0.5189256040613919
+    },
+    {
+      "gesture_index": 14,
+      "frame": 1173,
+      "visible_onset_video_s": 39.263333,
+      "command_start_relative_s": 39.61133909225464,
+      "offset_s": -0.34800609225463575,
+      "call_overhead_s": 0.5411535962011333
+    },
+    {
+      "gesture_index": 15,
+      "frame": 1257,
+      "visible_onset_video_s": 42.061667,
+      "command_start_relative_s": 42.41521096229553,
+      "offset_s": -0.3535439622955323,
+      "call_overhead_s": 0.4630634582279076
+    },
+    {
+      "gesture_index": 16,
+      "frame": 1352,
+      "visible_onset_video_s": 45.245,
+      "command_start_relative_s": 45.61153507232666,
+      "offset_s": -0.3665350723266627,
+      "call_overhead_s": 0.5441804448304499
+    },
+    {
+      "gesture_index": 17,
+      "frame": 1429,
+      "visible_onset_video_s": 47.811667,
+      "command_start_relative_s": 48.18697500228882,
+      "offset_s": -0.37530800228881844,
+      "call_overhead_s": 0.49631239491344936
+    },
+    {
+      "gesture_index": 18,
+      "frame": 1522,
+      "visible_onset_video_s": 50.911667,
+      "command_start_relative_s": 51.282132387161255,
+      "offset_s": -0.37046538716125355,
+      "call_overhead_s": 0.5073512663554998
+    },
+    {
+      "gesture_index": 19,
+      "frame": 1620,
+      "visible_onset_video_s": 54.195,
+      "command_start_relative_s": 54.56198024749756,
+      "offset_s": -0.3669802474975583,
+      "call_overhead_s": 0.491491267437411
+    },
+    {
+      "gesture_index": 20,
+      "frame": 1694,
+      "visible_onset_video_s": 56.661667,
+      "command_start_relative_s": 57.01428413391113,
+      "offset_s": -0.3526171339111315,
+      "call_overhead_s": 0.5389718004183943
+    },
+    {
+      "gesture_index": 21,
+      "frame": 1792,
+      "visible_onset_video_s": 59.945,
+      "command_start_relative_s": 60.310203075408936,
+      "offset_s": -0.36520307540893526,
+      "call_overhead_s": 0.5326783136401512
+    }
+  ]
+}

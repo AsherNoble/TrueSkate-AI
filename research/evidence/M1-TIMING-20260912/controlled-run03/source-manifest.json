@@ -1,0 +1,221 @@
+{
+  "experiment": "isolated-touch-timing",
+  "profile": "duration-repeat",
+  "device": "iPhone_XR2",
+  "park": "Unclassified gameplay; XR2 logging diagnostic",
+  "started_at_epoch_s": 1789218473.482784,
+  "host_start_epoch_s": 1789218473.1071758,
+  "host_stop_epoch_s": 1789218498.991628,
+  "fps": 30,
+  "allow_idle_navigation": true,
+  "appium_port": 4736,
+  "wda_port": 8103,
+  "wait_requested_s": 1.0,
+  "wait_measured_monotonic_s": [
+    1.1393943710718304,
+    1.1407699680421501,
+    1.116914599086158,
+    1.1334578710375354,
+    1.1425355209503323,
+    1.1218470969470218,
+    1.1271666499087587,
+    1.1368641159497201,
+    1.1389040739741176,
+    1.1316945219878107
+  ],
+  "settings_before_recording": {
+    "nativeWebTap": false,
+    "nativeWebTapStrict": false,
+    "useJSONSource": false,
+    "webScreenshotMode": "native",
+    "shouldUseCompactResponses": true,
+    "elementResponseAttributes": "type,label",
+    "mjpegServerScreenshotQuality": 25,
+    "mjpegServerFramerate": 10,
+    "screenshotQuality": 1,
+    "mjpegScalingFactor": 100,
+    "reduceMotion": null,
+    "pageSourceExcludedAttributes": ""
+  },
+  "gestures": [
+    {
+      "gesture_index": 0,
+      "t_call_start_epoch_s": 1789218474.383082,
+      "t_call_end_epoch_s": 1789218475.068924,
+      "t_call_start_monotonic_s": 527891.542642907,
+      "t_call_end_monotonic_s": 527892.228487701,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.4,
+          0.35
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    },
+    {
+      "gesture_index": 1,
+      "t_call_start_epoch_s": 1789218476.209706,
+      "t_call_end_epoch_s": 1789218476.8981261,
+      "t_call_start_monotonic_s": 527893.3692826,
+      "t_call_end_monotonic_s": 527894.057705784,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.6,
+          0.35
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    },
+    {
+      "gesture_index": 2,
+      "t_call_start_epoch_s": 1789218478.0150511,
+      "t_call_end_epoch_s": 1789218478.697671,
+      "t_call_start_monotonic_s": 527895.174643581,
+      "t_call_end_monotonic_s": 527895.857266555,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.5,
+          0.65
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    },
+    {
+      "gesture_index": 3,
+      "t_call_start_epoch_s": 1789218479.831139,
+      "t_call_end_epoch_s": 1789218481.167066,
+      "t_call_start_monotonic_s": 527896.990747819,
+      "t_call_end_monotonic_s": 527898.326683554,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.38,
+          0.65
+        ],
+        [
+          0.62,
+          0.45
+        ]
+      ],
+      "duration": 0.3,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 4,
+      "t_call_start_epoch_s": 1789218482.3096142,
+      "t_call_end_epoch_s": 1789218483.9162502,
+      "t_call_start_monotonic_s": 527899.469243766,
+      "t_call_end_monotonic_s": 527901.075891478,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.62,
+          0.65
+        ],
+        [
+          0.38,
+          0.45
+        ]
+      ],
+      "duration": 0.6,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 5,
+      "t_call_start_epoch_s": 1789218485.038107,
+      "t_call_end_epoch_s": 1789218487.036133,
+      "t_call_start_monotonic_s": 527902.197761056,
+      "t_call_end_monotonic_s": 527904.195800929,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.38,
+          0.55
+        ],
+        [
+          0.62,
+          0.55
+        ]
+      ],
+      "duration": 1.0,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 6,
+      "t_call_start_epoch_s": 1789218488.16331,
+      "t_call_end_epoch_s": 1789218489.481933,
+      "t_call_start_monotonic_s": 527905.322990536,
+      "t_call_end_monotonic_s": 527906.64162287,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.38,
+          0.65
+        ],
+        [
+          0.62,
+          0.45
+        ]
+      ],
+      "duration": 0.3,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 7,
+      "t_call_start_epoch_s": 1789218490.618811,
+      "t_call_end_epoch_s": 1789218492.132514,
+      "t_call_start_monotonic_s": 527907.778513507,
+      "t_call_end_monotonic_s": 527909.29222742,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.62,
+          0.65
+        ],
+        [
+          0.38,
+          0.45
+        ]
+      ],
+      "duration": 0.6,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 8,
+      "t_call_start_epoch_s": 1789218493.271429,
+      "t_call_end_epoch_s": 1789218495.214763,
+      "t_call_start_monotonic_s": 527910.431154323,
+      "t_call_end_monotonic_s": 527912.374502187,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.38,
+          0.55
+        ],
+        [
+          0.62,
+          0.55
+        ]
+      ],
+      "duration": 1.0,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    }
+  ],
+  "training_admission": "diagnostic only; pending per-recording human calibration",
+  "script_sha256": "de0f7101a7b8cd9a302c060d5ad8b552a15158a050c18ba1de35f8ca7a8aacd4"
+}

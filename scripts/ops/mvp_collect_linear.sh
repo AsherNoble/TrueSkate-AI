@@ -20,19 +20,22 @@ REPO=/Users/training-server/trueskate-ai
 # roots and set BASIC_LINEAR_PARK explicitly rather than mislabelling them as
 # The Workshop.
 PARK="${BASIC_LINEAR_PARK:-The Workshop}"
-# The calibration gate itself remains two consistent observed taps.  A delayed
-# recorder can render the first leading clapperboards before its useful window,
-# so callers may increase redundant controls without weakening that gate.
-CALIBRATION_TAPS_PER_SEGMENT="${BASIC_LINEAR_CALIBRATION_TAPS_PER_SEGMENT:-3}"
+# Exactly two centre-screen controls bracket each one-minute recording. Their
+# visible onsets map WDA's internal submitted-to-iOS clock onto video time.
+CALIBRATION_TAPS_PER_SEGMENT=2
 # A 50ms ActionChains press still has ``tap`` provenance (and strict loaders
 # exclude it), but is much more consistently visible to the XCTest timing
 # calibrator than Appium's instantaneous mobile:tap on XR2.
 CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0.05}"
-# Reset after five trainable drags (calibration taps do not count).  This keeps
-# the board out of walls/gaps while the collector still labels only linear drags.
-RESET_EVERY_SAMPLES="${BASIC_LINEAR_RESET_EVERY_SAMPLES:-5}"
+# This is the instrumented WDA revision validated by the timing experiments.
+# Override only when the replacement fork build exposes the same checked schema.
+WDA_TIMING_REVISION="${BASIC_LINEAR_WDA_TIMING_REVISION:-b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6}"
 MENU_GUARD_ARGS=()
-if [ "${BASIC_LINEAR_NO_MENU_GUARD:-0}" = "1" ]; then
+if [ "${BASIC_LINEAR_ALLOW_IDLE_NAVIGATION:-0}" = "1" ]; then
+  # Keep replay/editor detection enabled while accepting the operator-confirmed
+  # neutral five-cell row that appears over idle gameplay.
+  MENU_GUARD_ARGS=(--allow-idle-navigation)
+elif [ "${BASIC_LINEAR_NO_MENU_GUARD:-0}" = "1" ]; then
   # SLS parks can render a persistent five-cell bottom strip that the generic
   # app-hub detector mistakes for a menu. The OS foreground guard stays ON.
   MENU_GUARD_ARGS=(--no-menu-guard)
@@ -42,9 +45,43 @@ fi
 # it and emit identical commands, defeating command-held-out generalisation.
 SEED_FILE="${BASIC_LINEAR_SEED_FILE:-$OUT/.basic_linear_next_seed_${DEVICE}}"
 HEARTBEAT_FILE="${BASIC_LINEAR_HEARTBEAT_FILE:-$OUT/.collector_heartbeat_${DEVICE}.json}"
+# Optional finite-run guard. The baseline lets a new output directory extend a
+# separately preserved admitted tranche without copying it. Target checks happen
+# only between complete segments, before another recorder start.
+ACCEPTED_TARGET="${BASIC_LINEAR_ACCEPTED_TARGET:-0}"
+ACCEPTED_BASE="${BASIC_LINEAR_ACCEPTED_BASE:-0}"
+
+case "$ACCEPTED_TARGET:$ACCEPTED_BASE" in
+  *[!0-9:]*) echo "BASIC_LINEAR_ACCEPTED_TARGET and BASIC_LINEAR_ACCEPTED_BASE must be non-negative integers" >&2; exit 2 ;;
+esac
 
 cd "$REPO" || exit 1
 mkdir -p logs "$OUT"
+
+accepted_total() {
+  PYTHONPATH=src .venv/bin/python - "$OUT" "$DEVICE" "$ACCEPTED_BASE" <<'PY'
+import json
+import sys
+from pathlib import Path
+from trueskate_ai.model1.linear.dataset import discover_basic_linear_samples
+
+root, device, baseline = Path(sys.argv[1]), sys.argv[2], int(sys.argv[3])
+samples, _ = discover_basic_linear_samples(root)
+current = sum(
+    json.loads((sample / "meta.json").read_text()).get("device") == device
+    for sample in samples
+)
+print(baseline + current)
+PY
+}
+
+if [ "$ACCEPTED_TARGET" -gt 0 ]; then
+  total=$(accepted_total)
+  if [ "$total" -ge "$ACCEPTED_TARGET" ]; then
+    echo "[mvp_collect_linear] accepted target already reached: $total/$ACCEPTED_TARGET"
+    exit 0
+  fi
+fi
 if [ -s "$SEED_FILE" ] && grep -Eq '^[0-9]+$' "$SEED_FILE"; then
   next_seed=$(cat "$SEED_FILE")
 else
@@ -74,10 +111,11 @@ while :; do
     --tap-calibrate \
     --calibration-taps-per-segment "$CALIBRATION_TAPS_PER_SEGMENT" \
     --calibration-tap-hold-s "$CALIBRATION_TAP_HOLD_S" \
+    --wda-timing-revision "$WDA_TIMING_REVISION" \
     --wait-for-align \
     --no-reset \
     --reset-before-segment \
-    --reset-every-samples "$RESET_EVERY_SAMPLES" \
+    --reset-every-samples 0 \
     "${MENU_GUARD_ARGS[@]}" \
     --park-label "$PARK" \
     --align-video \
@@ -99,6 +137,14 @@ while :; do
   if [ $rc -ne 0 ]; then
     echo "[mvp_collect_linear] collector exited $rc — STOPPED; recover recorder/tunnel before restart"
     break
+  fi
+  if [ "$ACCEPTED_TARGET" -gt 0 ]; then
+    total=$(accepted_total)
+    echo "[mvp_collect_linear] accepted total=$total target=$ACCEPTED_TARGET"
+    if [ "$total" -ge "$ACCEPTED_TARGET" ]; then
+      echo "[mvp_collect_linear] accepted target reached between segments"
+      break
+    fi
   fi
   sleep 2
 done

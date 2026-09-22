@@ -1,0 +1,92 @@
+{
+  "schema": "linear-corpus-audit-v1",
+  "corpus": "/Users/training-server/trueskate-ai-runtime/tmp/model1-300-exact-pts-data-20260921",
+  "exportedAt": "2026-09-21T14:29:59.288Z",
+  "reviews": {
+    "iPhone_XR2_20260920_195953/skateboard_gb_2024/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:21:38.682Z"
+    },
+    "iPhone_XR2_20260920_195953/skateboard_gb_2024/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:22:19.150Z"
+    },
+    "iPhone_XR2_20260920_195953/skateboard_gb_2024/sample_000003": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:22:48.934Z"
+    },
+    "iPhone_XR2_20260920_195953/skateboard_gb_2024/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:23:20.333Z"
+    },
+    "iPhone_XR2_20260920_195953/skateboard_gb_2024/sample_000005": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:23:42.617Z"
+    },
+    "iPhone_XR2_20260920_195953/skateboard_gb_2024/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:24:12.717Z"
+    },
+    "iPhone_XR2_20260920_195953/skateboard_gb_2024/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:24:38.818Z"
+    },
+    "iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000174": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:25:02.752Z"
+    },
+    "iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000148": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:25:18.119Z"
+    },
+    "iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000106": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:26:40.120Z"
+    },
+    "iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000202": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:26:55.653Z"
+    },
+    "iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000156": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:27:23.286Z"
+    },
+    "iPhone_XR2_20260920_195953/skateboard_gb_2024/sample_000034": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:27:56.871Z"
+    },
+    "iPhone_XR2_20260920_195953/skateboard_gb_2024/sample_000039": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:28:22.487Z"
+    },
+    "iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000087": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:29:00.505Z"
+    },
+    "iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000187": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:29:24.471Z"
+    },
+    "iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000167": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-21T14:29:49.256Z"
+    }
+  }
+}

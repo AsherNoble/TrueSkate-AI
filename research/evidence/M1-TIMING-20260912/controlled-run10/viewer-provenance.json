@@ -1,0 +1,8 @@
+{
+  "recording": "xr2-minute-20260913-run10/segment_00000.mov",
+  "original_video": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/timing-probe-20260912/run10/segment_00000.mov",
+  "sha256": "e5fcfb237558203fe79f4719f12d1a7ccafb87e97639a371bbc17e4cc4ada411",
+  "frame_count": 1771,
+  "status": "Mark all 11 touch starts: calibration, four gestures, calibration, four gestures, calibration. No timing predictions shown.",
+  "extraction": "Every decoded frame, original resolution, JPEG quality 2, actual presentation timestamps"
+}

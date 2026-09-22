@@ -1,0 +1,61 @@
+{
+  "recording": "xr2-duration-repeat-20260912-run03/segment_00000.mov",
+  "frame_numbering": "zero-based",
+  "frame_count": 694,
+  "labels": [
+    {
+      "frame": 45,
+      "time_s": 1.603333,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 100,
+      "time_s": 3.436667,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 154,
+      "time_s": 5.236667,
+      "kind": "calibration",
+      "note": ""
+    },
+    {
+      "frame": 219,
+      "time_s": 7.403333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 292,
+      "time_s": 9.836667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 375,
+      "time_s": 12.603333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 468,
+      "time_s": 15.701667,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 542,
+      "time_s": 18.168333,
+      "kind": "gesture",
+      "note": ""
+    },
+    {
+      "frame": 622,
+      "time_s": 20.835,
+      "kind": "gesture",
+      "note": ""
+    }
+  ]
+}

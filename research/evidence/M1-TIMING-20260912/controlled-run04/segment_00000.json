@@ -1,0 +1,429 @@
+{
+  "experiment": "isolated-touch-timing",
+  "profile": "duration-repeat",
+  "device": "iPhone_XR2",
+  "park": "Unclassified gameplay; XR2 bundled timing diagnostic",
+  "started_at_epoch_s": 1789221487.898323,
+  "host_start_epoch_s": 1789221487.479906,
+  "host_stop_epoch_s": 1789221511.2433338,
+  "fps": 30,
+  "allow_idle_navigation": true,
+  "appium_port": 4726,
+  "wda_port": 8103,
+  "wait_requested_s": 1.0,
+  "wait_measured_monotonic_s": [],
+  "settings_before_recording": {
+    "nativeWebTap": false,
+    "nativeWebTapStrict": false,
+    "useJSONSource": false,
+    "webScreenshotMode": "native",
+    "shouldUseCompactResponses": true,
+    "elementResponseAttributes": "type,label",
+    "mjpegServerScreenshotQuality": 25,
+    "mjpegServerFramerate": 10,
+    "screenshotQuality": 1,
+    "mjpegScalingFactor": 100,
+    "reduceMotion": null,
+    "pageSourceExcludedAttributes": ""
+  },
+  "gestures": [
+    {
+      "gesture_index": 0,
+      "planned_onset_from_batch_start_s": 1.0,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.4,
+          0.35
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    },
+    {
+      "gesture_index": 1,
+      "planned_onset_from_batch_start_s": 2.05,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.6,
+          0.35
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    },
+    {
+      "gesture_index": 2,
+      "planned_onset_from_batch_start_s": 3.0999999999999996,
+      "gesture_distribution": "tap",
+      "waypoints": [
+        [
+          0.5,
+          0.65
+        ]
+      ],
+      "duration": 0.05,
+      "easing_power": 1.0,
+      "calibration_execution": "short_hold"
+    },
+    {
+      "gesture_index": 3,
+      "planned_onset_from_batch_start_s": 4.1499999999999995,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.38,
+          0.65
+        ],
+        [
+          0.62,
+          0.45
+        ]
+      ],
+      "duration": 0.3,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 4,
+      "planned_onset_from_batch_start_s": 5.449999999999999,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.62,
+          0.65
+        ],
+        [
+          0.38,
+          0.45
+        ]
+      ],
+      "duration": 0.6,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 5,
+      "planned_onset_from_batch_start_s": 7.049999999999999,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.38,
+          0.55
+        ],
+        [
+          0.62,
+          0.55
+        ]
+      ],
+      "duration": 1.0,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 6,
+      "planned_onset_from_batch_start_s": 9.049999999999999,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.38,
+          0.65
+        ],
+        [
+          0.62,
+          0.45
+        ]
+      ],
+      "duration": 0.3,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 7,
+      "planned_onset_from_batch_start_s": 10.35,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.62,
+          0.65
+        ],
+        [
+          0.38,
+          0.45
+        ]
+      ],
+      "duration": 0.6,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    },
+    {
+      "gesture_index": 8,
+      "planned_onset_from_batch_start_s": 11.95,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.38,
+          0.55
+        ],
+        [
+          0.62,
+          0.55
+        ]
+      ],
+      "duration": 1.0,
+      "easing_power": 1.0,
+      "calibration_execution": null
+    }
+  ],
+  "training_admission": "diagnostic only; pending per-recording human calibration",
+  "script_sha256": "193f50076b2396b028503dbba017faa470e153624b1e402ca9b5b01d7a041fc0",
+  "execution_mode": "single-bundled-request",
+  "batch_call": {
+    "t_call_start_epoch_s": 1789221487.6152,
+    "t_call_end_epoch_s": 1789221508.8491452,
+    "t_call_start_monotonic_s": 530904.783191028,
+    "t_call_end_monotonic_s": 530926.017536575
+  },
+  "planned_batch_duration_s": 13.95,
+  "encoded_actions": {
+    "type": "pointer",
+    "parameters": {
+      "pointerType": "touch"
+    },
+    "id": "bundle_9",
+    "actions": [
+      {
+        "type": "pointerMove",
+        "duration": 0,
+        "x": 165,
+        "y": 313
+      },
+      {
+        "type": "pause",
+        "duration": 1000
+      },
+      {
+        "type": "pointerMove",
+        "duration": 0,
+        "x": 165,
+        "y": 313
+      },
+      {
+        "type": "pointerDown",
+        "duration": 0
+      },
+      {
+        "type": "pause",
+        "duration": 50
+      },
+      {
+        "type": "pointerUp",
+        "duration": 0,
+        "button": 0
+      },
+      {
+        "type": "pause",
+        "duration": 1000
+      },
+      {
+        "type": "pointerMove",
+        "duration": 0,
+        "x": 248,
+        "y": 313
+      },
+      {
+        "type": "pointerDown",
+        "duration": 0
+      },
+      {
+        "type": "pause",
+        "duration": 50
+      },
+      {
+        "type": "pointerUp",
+        "duration": 0,
+        "button": 0
+      },
+      {
+        "type": "pause",
+        "duration": 1000
+      },
+      {
+        "type": "pointerMove",
+        "duration": 0,
+        "x": 207,
+        "y": 582
+      },
+      {
+        "type": "pointerDown",
+        "duration": 0
+      },
+      {
+        "type": "pause",
+        "duration": 50
+      },
+      {
+        "type": "pointerUp",
+        "duration": 0,
+        "button": 0
+      },
+      {
+        "type": "pause",
+        "duration": 1000
+      },
+      {
+        "type": "pointerMove",
+        "duration": 0,
+        "x": 157,
+        "y": 582
+      },
+      {
+        "type": "pointerDown",
+        "duration": 0
+      },
+      {
+        "type": "pointerMove",
+        "duration": 300,
+        "x": 256,
+        "y": 403
+      },
+      {
+        "type": "pointerUp",
+        "duration": 0,
+        "button": 0
+      },
+      {
+        "type": "pause",
+        "duration": 1000
+      },
+      {
+        "type": "pointerMove",
+        "duration": 0,
+        "x": 256,
+        "y": 582
+      },
+      {
+        "type": "pointerDown",
+        "duration": 0
+      },
+      {
+        "type": "pointerMove",
+        "duration": 600,
+        "x": 157,
+        "y": 403
+      },
+      {
+        "type": "pointerUp",
+        "duration": 0,
+        "button": 0
+      },
+      {
+        "type": "pause",
+        "duration": 1000
+      },
+      {
+        "type": "pointerMove",
+        "duration": 0,
+        "x": 157,
+        "y": 492
+      },
+      {
+        "type": "pointerDown",
+        "duration": 0
+      },
+      {
+        "type": "pointerMove",
+        "duration": 1000,
+        "x": 256,
+        "y": 492
+      },
+      {
+        "type": "pointerUp",
+        "duration": 0,
+        "button": 0
+      },
+      {
+        "type": "pause",
+        "duration": 1000
+      },
+      {
+        "type": "pointerMove",
+        "duration": 0,
+        "x": 157,
+        "y": 582
+      },
+      {
+        "type": "pointerDown",
+        "duration": 0
+      },
+      {
+        "type": "pointerMove",
+        "duration": 300,
+        "x": 256,
+        "y": 403
+      },
+      {
+        "type": "pointerUp",
+        "duration": 0,
+        "button": 0
+      },
+      {
+        "type": "pause",
+        "duration": 1000
+      },
+      {
+        "type": "pointerMove",
+        "duration": 0,
+        "x": 256,
+        "y": 582
+      },
+      {
+        "type": "pointerDown",
+        "duration": 0
+      },
+      {
+        "type": "pointerMove",
+        "duration": 600,
+        "x": 157,
+        "y": 403
+      },
+      {
+        "type": "pointerUp",
+        "duration": 0,
+        "button": 0
+      },
+      {
+        "type": "pause",
+        "duration": 1000
+      },
+      {
+        "type": "pointerMove",
+        "duration": 0,
+        "x": 157,
+        "y": 492
+      },
+      {
+        "type": "pointerDown",
+        "duration": 0
+      },
+      {
+        "type": "pointerMove",
+        "duration": 1000,
+        "x": 256,
+        "y": 492
+      },
+      {
+        "type": "pointerUp",
+        "duration": 0,
+        "button": 0
+      },
+      {
+        "type": "pause",
+        "duration": 1000
+      }
+    ]
+  }
+}

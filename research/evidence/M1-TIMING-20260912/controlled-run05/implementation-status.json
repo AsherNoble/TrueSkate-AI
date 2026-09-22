@@ -1,0 +1,16 @@
+{
+  "wda_branch": "feature/gesture-timing-instrumentation",
+  "wda_sha": "b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6",
+  "github": "https://github.com/AsherNoble/WebDriverAgent/tree/feature/gesture-timing-instrumentation",
+  "remote_checkout": "/Users/training-server/WebDriverAgent-timing",
+  "tests": {
+    "unsigned_iphone_build": "passed, local Xcode 26.6",
+    "simulator_route_tests": "15 passed, iOS 18.2, including timing test with synthetic application",
+    "python_probe_tests": "4 passed"
+  },
+  "remote_signing": "BLOCKED: Xcode 16.2 reports No Accounts, missing com.asher.WebDriverAgentRunner.xctrunner profile, no team BK75JV5YK4 iOS Development certificate/private key",
+  "signed_build_log": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/wda-timing-signed-build-remote.log",
+  "signed_build_log_sha256": "7c09692706d3ce90e2ddcd7fa63dc46eeb46a35818e49bd928978f36ee86151c",
+  "deployment": "not attempted; existing XR2 WDA remains ready on 8103",
+  "recording": "not collected; human labels pending future deployment"
+}

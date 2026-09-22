@@ -33,6 +33,11 @@ from pathlib import Path
 
 import numpy as np
 
+from trueskate_ai.data.control_hitboxes import (
+    move_point_out_of_controls,
+    point_is_safe,
+    segment_is_safe,
+)
 from trueskate_ai.sim.gesture_params import (
     PARAMS_PER_SLOT,
     SPIN_PARAMS,
@@ -59,15 +64,6 @@ _FLICK_START_Y = (Y_BOUND_MIN + _START_INSET, Y_BOUND_MAX - _START_INSET)  # ~0.
 # Every flick must leave a full, clean trace: guarantee this minimum start->end
 # displacement (post-bounds-clip). Edge starts are aimed inward to satisfy it.
 _FLICK_MIN_REACH = 0.15
-
-# A True Skate update added a "Bolt Challenges" indicator (the "(N/M)" circle-
-# exclamation) in the TOP-LEFT corner. A gesture finger that lands on it opens the
-# Bolt Challenges modal, which the collector then blindly fires into — corrupting
-# ~12% of samples. Frame-onset forensics traced every modal-open to a waypoint near
-# (0.14, 0.20-0.24); this corner rect covers the indicator's hit target plus margin,
-# and clamp_in_bounds() keeps ALL waypoints out of it (pushed right, off the strip).
-_BOLT_EXCL_X = (X_BOUND_MIN, 0.20)
-_BOLT_EXCL_Y = (Y_BOUND_MIN, 0.30)
 
 # Stationary-touch ("static") arm — the Model 1 MVP. Hold durations span short to
 # long so the model sees a wide range of touch lifetimes; the floor is above the
@@ -229,6 +225,19 @@ def _flick_end(rng: np.random.Generator, sx: float, sy: float, mag: float) -> tu
     return ex, ey
 
 
+def _sample_safe_start(
+    rng: np.random.Generator,
+    x_bounds: tuple[float, float] = _FLICK_START_X,
+    y_bounds: tuple[float, float] = _FLICK_START_Y,
+) -> tuple[float, float]:
+    """Draw a touch-down outside controls without piling samples on their edges."""
+    for _ in range(256):
+        point = (float(rng.uniform(*x_bounds)), float(rng.uniform(*y_bounds)))
+        if point_is_safe(point):
+            return point
+    raise RuntimeError("could not sample a gesture start outside control regions")
+
+
 def sample_flick(rng: np.random.Generator) -> dict:
     """A flick from a broadly-sampled start point, reaching outward in a random dir.
 
@@ -238,8 +247,7 @@ def sample_flick(rng: np.random.Generator) -> dict:
     Returns the legacy dict {waypoints, duration, easing_power} so the original
     self-labeled-trace collector can import this verbatim.
     """
-    sx = float(rng.uniform(*_FLICK_START_X))
-    sy = float(rng.uniform(*_FLICK_START_Y))
+    sx, sy = _sample_safe_start(rng)
     mag = float(rng.uniform(0.18, 0.45))  # flick reach (normalised)
     ex, ey = _flick_end(rng, sx, sy, mag)
     if int(rng.integers(0, 2)) == 0:
@@ -257,6 +265,13 @@ def sample_nslot(rng: np.random.Generator, num_gestures: int, use_spin: bool) ->
     """A full random gesture vector, uniform within the CMA-ES bounds."""
     bounds = build_param_bounds(num_gestures, use_spin)
     raw = rng.uniform(bounds[:, 0], bounds[:, 1])
+    for slot in range(num_gestures):
+        base = slot * PARAMS_PER_SLOT
+        raw[base], raw[base + 1] = _sample_safe_start(
+            rng,
+            tuple(bounds[base]),
+            tuple(bounds[base + 1]),
+        )
     params = clamp_params(np.asarray(raw, dtype=np.float64), bounds)
     return GestureSample(
         kind="nslot",
@@ -431,19 +446,8 @@ def sample_recipe(
     )
 
 
-def _push_out_bolt_zone(x: float, y: float) -> tuple[float, float]:
-    """Push a waypoint out of the top-left Bolt-Challenges indicator rect by moving
-    it RIGHT to the rect's edge — clearing the whole left-edge button strip in that
-    band (see _BOLT_EXCL_X/Y). Points outside the rect pass through unchanged."""
-    x0, x1 = _BOLT_EXCL_X
-    y0, y1 = _BOLT_EXCL_Y
-    if x0 <= x < x1 and y0 <= y < y1:  # half-open: x==x1 is already outside
-        return x1, y
-    return x, y
-
-
 def _restore_min_reach(sx: float, sy: float, ex: float, ey: float) -> tuple[float, float]:
-    """If the bolt-zone push shrank a flick's start->end displacement below
+    """If start sanitisation shrank a flick's start->end displacement below
     _FLICK_MIN_REACH, push the end point further out along the same direction
     (clipped to bounds) to restore the guarantee _flick_end originally made."""
     dx, dy = ex - sx, ey - sy
@@ -466,8 +470,7 @@ def sample_hold(rng: np.random.Generator, *, min_s: float = _HOLD_MIN_S,
     lasts as long as the finger is down, so onset AND liftoff are both observable
     and the model has to learn touch timing, not just position.
     """
-    x = float(rng.uniform(*_FLICK_START_X))
-    y = float(rng.uniform(*_FLICK_START_Y))
+    x, y = _sample_safe_start(rng)
     return GestureSample(kind="hold", point=(x, y),
                          hold_duration_s=float(rng.uniform(min_s, max_s)))
 
@@ -479,8 +482,7 @@ def sample_tap(rng: np.random.Generator) -> GestureSample:
     renders a ~0.2s mark with a sharp onset, which is what makes it usable as the
     command->pixel (Δ) clapperboard.
     """
-    x = float(rng.uniform(*_FLICK_START_X))
-    y = float(rng.uniform(*_FLICK_START_Y))
+    x, y = _sample_safe_start(rng)
     return GestureSample(kind="tap", point=(x, y), hold_duration_s=0.0)
 
 
@@ -522,8 +524,7 @@ def sample_basic_linear_mixture(
     # Retry instead of clipping a random vector: clipping can turn a legitimate
     # finite slope into a nearly vertical edge path.
     for _ in range(64):
-        sx = float(rng.uniform(*_FLICK_START_X))
-        sy = float(rng.uniform(*_FLICK_START_Y))
+        sx, sy = _sample_safe_start(rng)
         dx = float(rng.uniform(BASIC_LINEAR_MIN_DX, 0.48))
         if bool(rng.integers(0, 2)):
             dx = -dx
@@ -531,62 +532,66 @@ def sample_basic_linear_mixture(
         ex, ey = sx + dx, sy + slope * dx
         if not (X_BOUND_MIN <= ex <= X_BOUND_MAX and Y_BOUND_MIN <= ey <= Y_BOUND_MAX):
             continue
+        if not point_is_safe((ex, ey)):
+            continue
         sample = GestureSample(
             kind="linear", waypoints=[(sx, sy), (float(ex), float(ey))],
             duration=float(rng.uniform(BASIC_LINEAR_MIN_S, BASIC_LINEAR_MAX_S)),
             easing_power=1.0,
         )
-        # The global clamp also protects against the Bolt modal.  It may move an
-        # endpoint, so only return the command if it still obeys the strict
-        # MVP-2 contract that the loader will later enforce.
+        # Endpoint sanitisation may change the line geometry, so only return the
+        # command if it still obeys the strict contract the loader enforces.
         sample = clamp_in_bounds(sample)
         (x0, y0), (x1, y1) = sample.waypoints
         clamped_dx = x1 - x0
         if (abs(clamped_dx) >= BASIC_LINEAR_MIN_DX
-                and abs((y1 - y0) / clamped_dx) <= BASIC_LINEAR_MAX_ABS_SLOPE):
+                and abs((y1 - y0) / clamped_dx) <= BASIC_LINEAR_MAX_ABS_SLOPE
+                and segment_is_safe((x0, y0), (x1, y1))):
             return sample
-    raise RuntimeError("could not sample an in-bounds finite-slope linear drag")
+    raise RuntimeError(
+        "could not sample an in-bounds, control-clear finite-slope linear drag"
+    )
 
 
 def clamp_in_bounds(s: GestureSample) -> GestureSample:
-    """Defensive chokepoint: guarantee a sampled gesture lies within the RL
-    coordinate bounds (X_BOUND_MIN..MAX, Y_BOUND_MIN..MAX) AND outside the top-left
-    Bolt-Challenges indicator rect (_BOLT_EXCL_*), so the collector can never
-    execute — or mislabel — an out-of-bounds action or one that opens the Bolt modal,
-    whatever the sampling path or any future change. Clamps the SAMPLE itself
-    (mutates in place), so the saved label always matches what executes. Normalised
-    coords are absolute (0/1 = screen edges); clamping constrains, it never rescales.
+    """Clamp coordinates and keep gesture endpoints out of UI controls.
+
+    The first and last waypoint of a moving gesture are control-checked. Its
+    intermediate path may still cross a control while the activation conditions
+    remain unresolved. A tap/hold's sole point is checked once. For multi-slot
+    vectors, each slot's x0/y0 and x2/y2 are protected while its middle control
+    waypoint remains untouched. The deliberate, separately labelled spin hold is
+    exempt.
+
+    The SAMPLE itself is mutated, so saved labels match executed coordinates.
     """
     if s.kind in ("flick", "spin_flick", "linear") and s.waypoints is not None:
         pushed = [
-            _push_out_bolt_zone(
-                float(np.clip(x, X_BOUND_MIN, X_BOUND_MAX)),
-                float(np.clip(y, Y_BOUND_MIN, Y_BOUND_MAX)))
+            (float(np.clip(x, X_BOUND_MIN, X_BOUND_MAX)),
+             float(np.clip(y, Y_BOUND_MIN, Y_BOUND_MAX)))
             for x, y in s.waypoints
         ]
-        # The bolt-zone push can move the start point close enough to the end
+        pushed[0] = move_point_out_of_controls(pushed[0])
+        # Moving the start can place it close enough to the end
         # point to violate _FLICK_MIN_REACH (see _restore_min_reach); only the
         # first/last waypoints define that displacement, so re-check just those.
         sx, sy = pushed[0]
         ex, ey = _restore_min_reach(sx, sy, *pushed[-1])
-        # The reach restore extends along start->end, which can land the end
-        # BACK inside the bolt rect (end pushed to the rect's edge with the
-        # start further right → the direction points left). Zone exclusion is
-        # the hard invariant (it opens the Bolt modal), so it gets the last
-        # word — accepting a rare shorter-than-_FLICK_MIN_REACH trace.
-        pushed[-1] = _push_out_bolt_zone(ex, ey)
+        pushed[-1] = move_point_out_of_controls((ex, ey))
         s.waypoints = pushed
     elif s.kind in ("hold", "tap") and s.point is not None:
-        s.point = _push_out_bolt_zone(
+        s.point = move_point_out_of_controls((
             float(np.clip(s.point[0], X_BOUND_MIN, X_BOUND_MAX)),
-            float(np.clip(s.point[1], Y_BOUND_MIN, Y_BOUND_MAX)))
+            float(np.clip(s.point[1], Y_BOUND_MIN, Y_BOUND_MAX))))
     elif s.params is not None and s.num_gestures is not None:
         bounds = build_param_bounds(s.num_gestures, s.use_spin)
         arr = clamp_params(np.asarray(s.params, dtype=np.float64), bounds)
         for slot in range(s.num_gestures):
             b = slot * PARAMS_PER_SLOT
-            for c in (0, 2, 4):  # the slot's 3 waypoint (x, y) pairs
-                arr[b + c], arr[b + c + 1] = _push_out_bolt_zone(float(arr[b + c]), float(arr[b + c + 1]))
+            arr[b], arr[b + 1] = move_point_out_of_controls(
+                (float(arr[b]), float(arr[b + 1])))
+            arr[b + 4], arr[b + 5] = move_point_out_of_controls(
+                (float(arr[b + 4]), float(arr[b + 5])))
         s.params = [float(v) for v in arr]
     return s
 

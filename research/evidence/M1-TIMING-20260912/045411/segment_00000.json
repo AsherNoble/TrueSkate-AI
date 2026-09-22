@@ -1,0 +1,469 @@
+{
+  "device": "iPhone_XR2",
+  "device_logical_w": 414.0,
+  "device_logical_h": 896.0,
+  "segment_index": 0,
+  "park": "SLS 2013 Kansas City",
+  "park_change_index": 0,
+  "started_at_epoch_s": 1788263653.2635798,
+  "host_start_epoch_s": 1788263653.8265321,
+  "host_stop_epoch_s": 1788263742.5737941,
+  "fps": 30,
+  "codec": "?",
+  "capture_offset_s": null,
+  "tail_s": 1.0,
+  "mix": {
+    "flick": 0.6,
+    "nslot": 0.25,
+    "recipe": 0.15,
+    "spin_frac": 0.0,
+    "static_frac": 0.0
+  },
+  "num_gestures": 2,
+  "use_spin": false,
+  "mov": "segment_00000.mov",
+  "n_gestures": 22,
+  "gestures": [
+    {
+      "gesture_index": 0,
+      "t_call_start_epoch_s": 1788263654.4389691,
+      "t_call_end_epoch_s": 1788263654.934593,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "tap",
+      "point": [
+        0.4038407754449557,
+        0.20659025327071984
+      ],
+      "hold_duration_s": 0.0,
+      "payload_total_s": 0.0
+    },
+    {
+      "gesture_index": 1,
+      "t_call_start_epoch_s": 1788263656.576928,
+      "t_call_end_epoch_s": 1788263657.131695,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "tap",
+      "point": [
+        0.9474441007626753,
+        0.22024976826831638
+      ],
+      "hold_duration_s": 0.0,
+      "payload_total_s": 0.0
+    },
+    {
+      "gesture_index": 2,
+      "t_call_start_epoch_s": 1788263658.777028,
+      "t_call_end_epoch_s": 1788263659.331639,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "tap",
+      "point": [
+        0.37700838604185116,
+        0.2845981881426718
+      ],
+      "hold_duration_s": 0.0,
+      "payload_total_s": 0.0
+    },
+    {
+      "gesture_index": 3,
+      "t_call_start_epoch_s": 1788263660.977747,
+      "t_call_end_epoch_s": 1788263662.331517,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.3609052949495595,
+          0.22391665900404373
+        ],
+        [
+          0.16671031593429314,
+          0.5126011088963511
+        ]
+      ],
+      "duration": 0.8800117251410862,
+      "easing_power": 1.0,
+      "payload_total_s": 0.8800117251410862
+    },
+    {
+      "gesture_index": 4,
+      "t_call_start_epoch_s": 1788263663.977292,
+      "t_call_end_epoch_s": 1788263665.480434,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.9226433556477033,
+          0.6232150306985719
+        ],
+        [
+          0.7063179292541903,
+          0.8265603143677867
+        ]
+      ],
+      "duration": 0.9239484412448484,
+      "easing_power": 1.0,
+      "payload_total_s": 0.9239484412448484
+    },
+    {
+      "gesture_index": 5,
+      "t_call_start_epoch_s": 1788263667.127863,
+      "t_call_end_epoch_s": 1788263668.687414,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.7751302311382202,
+          0.27514309917179586
+        ],
+        [
+          0.9445830663718462,
+          0.5972356404442779
+        ]
+      ],
+      "duration": 1.0990054448255806,
+      "easing_power": 1.0,
+      "payload_total_s": 1.0990054448255806
+    },
+    {
+      "gesture_index": 6,
+      "t_call_start_epoch_s": 1788263670.326037,
+      "t_call_end_epoch_s": 1788263671.3848698,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.4813793363820258,
+          0.48241974316391123
+        ],
+        [
+          0.3106546620243137,
+          0.8257379166573928
+        ]
+      ],
+      "duration": 0.5475952295337383,
+      "easing_power": 1.0,
+      "payload_total_s": 0.5475952295337383
+    },
+    {
+      "gesture_index": 7,
+      "t_call_start_epoch_s": 1788263673.001983,
+      "t_call_end_epoch_s": 1788263674.081826,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.7907678733473623,
+          0.3761480035642336
+        ],
+        [
+          0.5255982619206283,
+          0.7617564527877081
+        ]
+      ],
+      "duration": 0.5285116205948137,
+      "easing_power": 1.0,
+      "payload_total_s": 0.5285116205948137
+    },
+    {
+      "gesture_index": 8,
+      "t_call_start_epoch_s": 1788263675.7261682,
+      "t_call_end_epoch_s": 1788263676.782719,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.5225502994323143,
+          0.6958223070366469
+        ],
+        [
+          0.23907102522760826,
+          0.5544836238917058
+        ]
+      ],
+      "duration": 0.5157689418824791,
+      "easing_power": 1.0,
+      "payload_total_s": 0.5157689418824791
+    },
+    {
+      "gesture_index": 9,
+      "t_call_start_epoch_s": 1788263678.398703,
+      "t_call_end_epoch_s": 1788263679.5400221,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.4694032965778739,
+          0.3595613304418205
+        ],
+        [
+          0.7809007191727206,
+          0.48445878107244894
+        ]
+      ],
+      "duration": 0.6656741756501947,
+      "easing_power": 1.0,
+      "payload_total_s": 0.6656741756501947
+    },
+    {
+      "gesture_index": 10,
+      "t_call_start_epoch_s": 1788263681.176012,
+      "t_call_end_epoch_s": 1788263682.631901,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.600781875131077,
+          0.8235981902475099
+        ],
+        [
+          0.3970247272040324,
+          0.4132149760383277
+        ]
+      ],
+      "duration": 0.938011291042496,
+      "easing_power": 1.0,
+      "payload_total_s": 0.938011291042496
+    },
+    {
+      "gesture_index": 11,
+      "t_call_start_epoch_s": 1788263684.27612,
+      "t_call_end_epoch_s": 1788263685.6324632,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.9239988293496875,
+          0.7887538827453928
+        ],
+        [
+          0.559398557202328,
+          0.18683164631455806
+        ]
+      ],
+      "duration": 0.8338578007122643,
+      "easing_power": 1.0,
+      "payload_total_s": 0.8338578007122643
+    },
+    {
+      "gesture_index": 12,
+      "t_call_start_epoch_s": 1788263687.247139,
+      "t_call_end_epoch_s": 1788263688.3294,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.5879001921883498,
+          0.4861751105282779
+        ],
+        [
+          0.24770411397124836,
+          0.8451660125360013
+        ]
+      ],
+      "duration": 0.4914259339439601,
+      "easing_power": 1.0,
+      "payload_total_s": 0.4914259339439601
+    },
+    {
+      "gesture_index": 13,
+      "t_call_start_epoch_s": 1788263689.974872,
+      "t_call_end_epoch_s": 1788263691.240433,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.7694281995729289,
+          0.3021308058142953
+        ],
+        [
+          0.6063588703958306,
+          0.5033102004694194
+        ]
+      ],
+      "duration": 0.7466352613408298,
+      "easing_power": 1.0,
+      "payload_total_s": 0.7466352613408298
+    },
+    {
+      "gesture_index": 14,
+      "t_call_start_epoch_s": 1788263692.874919,
+      "t_call_end_epoch_s": 1788263694.041952,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.398568243673242,
+          0.8277790824595649
+        ],
+        [
+          0.7194400173339779,
+          0.22449286475101127
+        ]
+      ],
+      "duration": 0.625879360875893,
+      "easing_power": 1.0,
+      "payload_total_s": 0.625879360875893
+    },
+    {
+      "gesture_index": 15,
+      "t_call_start_epoch_s": 1788263695.6787908,
+      "t_call_end_epoch_s": 1788263697.2428539,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.9713630028701931,
+          0.18334262886334587
+        ],
+        [
+          0.6734022272135858,
+          0.38813619082155953
+        ]
+      ],
+      "duration": 1.1009996139766822,
+      "easing_power": 1.0,
+      "payload_total_s": 1.1009996139766822
+    },
+    {
+      "gesture_index": 16,
+      "t_call_start_epoch_s": 1788263698.875115,
+      "t_call_end_epoch_s": 1788263699.829673,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.4746250808377381,
+          0.634836192887493
+        ],
+        [
+          0.26547909778683987,
+          0.2680281719083682
+        ]
+      ],
+      "duration": 0.4103776892485296,
+      "easing_power": 1.0,
+      "payload_total_s": 0.4103776892485296
+    },
+    {
+      "gesture_index": 17,
+      "t_call_start_epoch_s": 1788263701.4505548,
+      "t_call_end_epoch_s": 1788263702.929462,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.9621381612452127,
+          0.26983828374724567
+        ],
+        [
+          0.7411295054256839,
+          0.5941213561278471
+        ]
+      ],
+      "duration": 0.9825947133934354,
+      "easing_power": 1.0,
+      "payload_total_s": 0.9825947133934354
+    },
+    {
+      "gesture_index": 18,
+      "t_call_start_epoch_s": 1788263704.5457122,
+      "t_call_end_epoch_s": 1788263706.191713,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.5472327975288538,
+          0.8319241873320077
+        ],
+        [
+          0.9043335730661894,
+          0.29031678389842797
+        ]
+      ],
+      "duration": 1.1386495957660823,
+      "easing_power": 1.0,
+      "payload_total_s": 1.1386495957660823
+    },
+    {
+      "gesture_index": 19,
+      "t_call_start_epoch_s": 1788263707.82556,
+      "t_call_end_epoch_s": 1788263708.779396,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.2,
+          0.14154529973101532
+        ],
+        [
+          0.4666362994174829,
+          0.3914119014941096
+        ]
+      ],
+      "duration": 0.46234469676546985,
+      "easing_power": 1.0,
+      "payload_total_s": 0.46234469676546985
+    },
+    {
+      "gesture_index": 20,
+      "t_call_start_epoch_s": 1788263710.277864,
+      "t_call_end_epoch_s": 1788263711.943851,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.7049624900440622,
+          0.8021297657557199
+        ],
+        [
+          0.25610111220995435,
+          0.5383840225362961
+        ]
+      ],
+      "duration": 1.1270152143521135,
+      "easing_power": 1.0,
+      "payload_total_s": 1.1270152143521135
+    },
+    {
+      "gesture_index": 21,
+      "t_call_start_epoch_s": 1788263713.573783,
+      "t_call_end_epoch_s": 1788263714.527736,
+      "park": "SLS 2013 Kansas City",
+      "park_change_index": 0,
+      "gesture_distribution": "linear",
+      "waypoints": [
+        [
+          0.5819907618465499,
+          0.8003455195823769
+        ],
+        [
+          0.39137825191142883,
+          0.5837426113204511
+        ]
+      ],
+      "duration": 0.42127471408506856,
+      "easing_power": 1.0,
+      "payload_total_s": 0.42127471408506856
+    }
+  ]
+}
