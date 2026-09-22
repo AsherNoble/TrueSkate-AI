@@ -171,7 +171,9 @@ The replacement-corpus plan preserves the historical 13,100-sample device and
 park allocation. Its 310 accepted XR2 Skateboard GB 2024 clips leave 12,790 new
 clips overall. A first explicitly authorized bounded tranche is active from
 release `13554c9`: XR1 stops at 2,000 new strict clips, while XR2 stops at 1,690
-new clips so its audited 310-clip baseline totals 2,000. XR1 uses the honest
-interim label `PENDING OPERATOR CHECK`; XR2 remains on Skateboard GB 2024.
+new clips so its audited 310-clip baseline totals 2,000. The operator confirmed
+XR1 is in SLS 2015 Los Angeles; its first 598 strict records were corrected from
+the explicit placeholder without changing their count or command fingerprint,
+then collection resumed. XR2 remains on Skateboard GB 2024.
 Persisted NTFY monitors announce each newly reached ten-percent milestone.
 See [M1-RECOLLECT-20260922](experiments/M1-RECOLLECT-20260922.md).

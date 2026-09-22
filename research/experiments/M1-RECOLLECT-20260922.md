@@ -1,7 +1,7 @@
 # M1-RECOLLECT-20260922 — Replacement linear corpus park plan
 
-Status: bounded collection active. XR1's currently loaded park awaits operator
-confirmation; its interim provenance label is explicit rather than guessed.
+Status: bounded collection active. The operator confirmed XR1 is loaded into
+SLS 2015 Los Angeles; XR2 remains in Skateboard GB 2024.
 
 ## Objective
 
@@ -60,12 +60,11 @@ Current operator-reported device state:
 
 | Device | Loaded park |
 |---|---|
-| XR1 | **PENDING OPERATOR CHECK** |
+| XR1 | SLS 2015 Los Angeles |
 | XR2 | Skateboard GB 2024 |
 
-When the operator returns, replace the XR1 placeholder with the observed park
-before authorizing collection. A collector park label records provenance; it
-does not navigate the game, so each park change must be confirmed on the device.
+A collector park label records provenance; it does not navigate the game, so
+each later park change must still be confirmed on the device.
 
 Collection stops only at segment boundaries and may slightly overshoot a quota.
 Preserve surplus clips, then create a deterministic 13,100-sample manifest with
@@ -89,7 +88,7 @@ frames, have 32 strictly increasing source-relative timestamps, and report
 
 Production outputs are separate from smoke evidence:
 
-- XR1: `data/model1_linear_replacement_20260922/iPhone_XR/pending_operator_check`;
+- XR1: `data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_los_angeles`;
 - XR2: `data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024`.
 
 Each collector enforces its finite strict-admission target between complete
@@ -98,3 +97,14 @@ one-minute segments. A persisted monitor sends exactly
 crossed ten-percent milestones. XR2 starts with 10% recorded as already reached,
 so its first new notification is 20%; XR1's first is 10%. The first production
 segments admitted 11 clips on each device and both collectors began segment 2.
+
+The operator subsequently confirmed XR1's park as SLS 2015 Los Angeles. XR1
+was stopped at a completed segment boundary while XR2 continued. All 598 strict
+XR1 clips then had the placeholder corrected in clip and segment metadata and
+their park directories renamed. Strict count and the sorted command fingerprint
+were unchanged (`b8da2ae92e7b34a252ccc0441e96e0b698a2028f9ea4b5c4e6c641ba648e1e13`);
+the post-change audit found 598 XR1/SLS 2015 Los Angeles clips, no duplicate
+commands and no contamination markers. Collection resumed with the preserved
+seed, 2,000-clip target and ten-percent notification state. The rollback bundle
+and audit report are retained on the rig under
+`tmp/model1-xr1-park-correction-20260922/`.
