@@ -31,6 +31,10 @@ CALIBRATION_TAP_HOLD_S="${BASIC_LINEAR_CALIBRATION_TAP_HOLD_S:-0.05}"
 # Override only when the replacement fork build exposes the same checked schema.
 WDA_TIMING_REVISION="${BASIC_LINEAR_WDA_TIMING_REVISION:-b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6}"
 MENU_GUARD_ARGS=()
+BATCH_VIDEO_ARGS=()
+if [ "${BASIC_LINEAR_BATCH_DIRECT_VIDEO:-0}" = "1" ]; then
+  BATCH_VIDEO_ARGS=(--batch-direct-video)
+fi
 if [ "${BASIC_LINEAR_ALLOW_IDLE_NAVIGATION:-0}" = "1" ]; then
   # Keep replay/editor detection enabled while accepting the operator-confirmed
   # neutral five-cell row that appears over idle gameplay.
@@ -119,6 +123,7 @@ while :; do
     "${MENU_GUARD_ARGS[@]}" \
     --park-label "$PARK" \
     --align-video \
+    "${BATCH_VIDEO_ARGS[@]}" \
     --align-resize-width 128 \
     --segment-min 1 \
     --max-segments 1 \

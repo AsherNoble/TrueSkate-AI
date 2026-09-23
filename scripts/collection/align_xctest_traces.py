@@ -46,6 +46,7 @@ import sys
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
+from typing import NamedTuple
 
 import cv2
 
@@ -121,26 +122,15 @@ def _decode_calibration_window(
     reference_window_s: float,
     search_after_s: float,
     resize_width: int,
+    source_frame_times: Sequence[float] | None = None,
 ) -> tuple[list, list[float]]:
     """Decode exact source frames and retain their original presentation times."""
     start = max(0.0, command_video_s - reference_window_s)
     stop = command_video_s + search_after_s
-    probe = subprocess.run(
-        ["ffprobe", "-v", "error", "-select_streams", "v:0",
-         "-show_entries", "frame=best_effort_timestamp_time", "-of", "json", str(mov)],
-        capture_output=True, text=True,
+    all_times = (
+        _probe_video_frame_times(mov) if source_frame_times is None
+        else source_frame_times
     )
-    if probe.returncode != 0:
-        return [], []
-    try:
-        payload = json.loads(probe.stdout)
-        all_times = [
-            float(frame["best_effort_timestamp_time"])
-            for frame in payload.get("frames", [])
-            if "best_effort_timestamp_time" in frame
-        ]
-    except (TypeError, ValueError, KeyError, json.JSONDecodeError):
-        return [], []
     selected = [index for index, value in enumerate(all_times) if start <= value <= stop]
     if not selected:
         return [], []
@@ -176,6 +166,7 @@ def _tap_calibration(
     max_mad_s: float,
     search_after_s: float,
     resize_width: int,
+    source_frame_times: Sequence[float] | None = None,
 ) -> tuple[dict, float | None]:
     """Fit a segment timing shift from its manifest-known tap marks.
 
@@ -218,6 +209,7 @@ def _tap_calibration(
             reference_window_s=0.5,
             search_after_s=search_after_s,
             resize_width=resize_width,
+            source_frame_times=source_frame_times,
         )
         onset = detect_tap_onset(
             frames, times, point_xy=point, command_s=command_s,
@@ -261,6 +253,7 @@ def _wda_two_anchor_calibration(
     *, manifest: dict, manifest_path: Path, mov: Path, started_at: float,
     fps: int, search_after_s: float, resize_width: int,
     pre_s: float = 0.5, window_s: float = 1.8,
+    source_frame_times: Sequence[float] | None = None,
 ) -> tuple[dict, TwoAnchorTimingFit]:
     """Detect the two centre controls and fit video time from WDA submit time."""
     report_name = manifest.get("wda_action_timing_report")
@@ -297,6 +290,7 @@ def _wda_two_anchor_calibration(
             reference_window_s=0.75,
             search_after_s=search_after_s,
             resize_width=resize_width,
+            source_frame_times=source_frame_times,
         )
         onset = detect_tap_onset(
             frames, times, point_xy=point, command_s=approximate_video_s,
@@ -394,6 +388,24 @@ def _probe_video_frame_times(path: Path) -> list[float]:
         return []
 
 
+class _DirectVideoJob(NamedTuple):
+    sample_dir: Path
+    start_s: float
+    duration_s: float
+    output_fps: float
+
+
+def _selected_source_indices(source_frame_times: Sequence[float], *, start_s: float,
+                             duration_s: float, max_frames: int) -> list[int] | None:
+    candidates = [
+        index for index, value in enumerate(source_frame_times)
+        if start_s <= value <= start_s + duration_s
+    ]
+    if len(candidates) < max_frames:
+        return None
+    return [candidates[index] for index in _even_indices(len(candidates), max_frames)]
+
+
 def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, duration_s: float,
                           resize_width: int, output_fps: float, max_frames: int,
                           crf: int, source_frame_times: Sequence[float]) -> list[float] | None:
@@ -411,16 +423,13 @@ def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, durati
     """
     sample_dir.mkdir(parents=True, exist_ok=True)
     out = sample_dir / "frames.mp4"
-    stop_s = start_s + duration_s
-    candidates = [
-        index for index, value in enumerate(source_frame_times)
-        if start_s <= value <= stop_s
-    ]
-    if len(candidates) < max_frames:
-        print(f"  {sample_dir.name}: source window has {len(candidates)} frames, "
-              f"needs {max_frames}")
+    selected = _selected_source_indices(
+        source_frame_times, start_s=start_s, duration_s=duration_s,
+        max_frames=max_frames,
+    )
+    if selected is None:
+        print(f"  {sample_dir.name}: source window has fewer than {max_frames} frames")
         return None
-    selected = [candidates[index] for index in _even_indices(len(candidates), max_frames)]
     select_expr = "+".join(f"eq(n\\,{index})" for index in selected)
     # Encoding uses a regular playback clock so OpenCV and browsers decode the
     # same 32-frame sequence. The returned source PTS remain authoritative.
@@ -454,6 +463,79 @@ def _extract_sample_video(mov: Path, sample_dir: Path, *, start_s: float, durati
     return [float(source_frame_times[index]) for index in selected]
 
 
+def _extract_sample_videos_batch(
+    mov: Path, jobs: Sequence[_DirectVideoJob], *, resize_width: int,
+    max_frames: int, crf: int, source_frame_times: Sequence[float],
+) -> dict[Path, list[float] | None]:
+    """Decode the source once; keep the exact per-clip frame selection and PTS.
+
+    A failed batch falls back to the existing per-clip extractor after removing
+    partial outputs. The per-clip path remains the safety reference.
+    """
+    selected_jobs: list[tuple[_DirectVideoJob, list[int]]] = []
+    result: dict[Path, list[float] | None] = {}
+    for job in jobs:
+        selected = _selected_source_indices(
+            source_frame_times, start_s=job.start_s,
+            duration_s=job.duration_s, max_frames=max_frames,
+        )
+        if selected is None:
+            result[job.sample_dir] = None
+            continue
+        selected_jobs.append((job, selected))
+    if not selected_jobs:
+        return result
+    if len(selected_jobs) == 1:
+        job, _ = selected_jobs[0]
+        result[job.sample_dir] = _extract_sample_video(
+            mov, job.sample_dir, start_s=job.start_s, duration_s=job.duration_s,
+            resize_width=resize_width, output_fps=job.output_fps,
+            max_frames=max_frames, crf=crf, source_frame_times=source_frame_times,
+        )
+        return result
+
+    branch_inputs = [f"[v{index}]" for index in range(len(selected_jobs))]
+    filters = [f"[0:v]split={len(selected_jobs)}{''.join(branch_inputs)}"]
+    command = ["ffmpeg", "-y", "-v", "error", "-i", str(mov)]
+    outputs: list[Path] = []
+    for index, (job, selected) in enumerate(selected_jobs):
+        job.sample_dir.mkdir(parents=True, exist_ok=True)
+        select_expr = "+".join(f"eq(n\\,{frame})" for frame in selected)
+        filters.append(
+            f"[v{index}]select={select_expr},scale={resize_width}:-2,"
+            f"setpts=N/({job.output_fps:.8f}*TB)[out{index}]"
+        )
+        outputs.append(job.sample_dir / "frames.mp4")
+    command += ["-filter_complex", ";".join(filters)]
+    for index, output in enumerate(outputs):
+        command += [
+            "-map", f"[out{index}]", "-fps_mode", "passthrough",
+            "-frames:v", str(max_frames), "-c:v", "libx264", "-crf", str(crf),
+            "-pix_fmt", "yuv420p", str(output),
+        ]
+    run = subprocess.run(command, capture_output=True, text=True)
+    valid = run.returncode == 0 and all(
+        output.is_file() and output.stat().st_size > 0
+        and _video_frame_count(output) == max_frames
+        for output in outputs
+    )
+    if valid:
+        for job, selected in selected_jobs:
+            result[job.sample_dir] = [float(source_frame_times[index]) for index in selected]
+        return result
+
+    print(f"[align] batch extraction failed ({run.stderr[:160]}); retrying per clip")
+    for output in outputs:
+        output.unlink(missing_ok=True)
+    for job, _ in selected_jobs:
+        result[job.sample_dir] = _extract_sample_video(
+            mov, job.sample_dir, start_s=job.start_s, duration_s=job.duration_s,
+            resize_width=resize_width, output_fps=job.output_fps,
+            max_frames=max_frames, crf=crf, source_frame_times=source_frame_times,
+        )
+    return result
+
+
 def _video_frame_count(path: Path) -> int:
     """Frames actually decodable from a clip.
 
@@ -485,10 +567,13 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                   delete_mov: bool, anchor: str = "start",
                   video: bool = False, video_crf: int = 20,
                   direct_video: bool = False,
+                  batch_direct_video: bool = False,
                   tap_calibrate: bool = False, tap_calibration_min_taps: int = 2,
                   tap_calibration_max_mad_s: float = 0.10,
                   tap_calibration_search_s: float = 4.0,
                   tap_calibration_width: int = 256) -> int:
+    if batch_direct_video and not direct_video:
+        raise ValueError("batch_direct_video requires direct_video")
     manifest = json.loads(manifest_path.read_text())
     seg_dir = manifest_path.parent
     mov = seg_dir / manifest["mov"]
@@ -517,7 +602,45 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
     calibration_info: dict | None = None
     calibration_shift_s = 0.0
     wda_timeline = None
+    pending: list[tuple[dict, float, float, float | None, Path, float, float]] = []
+
+    def write_sample(ev: dict, gv: float, delta: float,
+                     submitted_monotonic_s: float | None, sample_dir: Path,
+                     frame_times: list[float], frames_format: str) -> None:
+        nonlocal saved
+        meta = {
+            **{k: v for k, v in ev.items()},
+            "device": manifest.get("device"),
+            "device_logical_w": dw, "device_logical_h": dh,
+            "gesture_video_time_s": round(gv, 4),
+            "capture_offset_s": delta,
+            "capture_offset_source": (
+                "wda_submitted_two_anchor" if wda_timeline is not None
+                else "tap_self_calibrated" if calibration_info is not None
+                else "per_kind_fallback"
+            ),
+            "anchor": anchor,
+            "frame_times": frame_times,
+            "n_frames": len(frame_times),
+            "segment_index": manifest.get("segment_index"),
+            "session": seg_dir.name,
+        }
+        if calibration_info is not None:
+            meta["tap_calibration"] = calibration_info
+        if anchor == "start":
+            meta["gesture_start_monotonic"] = (
+                submitted_monotonic_s if submitted_monotonic_s is not None
+                else float(ev["t_call_start_epoch_s"])
+            )
+        if video or direct_video:
+            meta["frames_format"] = frames_format
+        (sample_dir / "meta.json").write_text(json.dumps(meta, indent=2))
+        saved += 1
+
     try:
+        source_frame_times = (
+            _probe_video_frame_times(mov) if direct_video or tap_calibrate else []
+        )
         if tap_calibrate:
             try:
                 if manifest.get("timing_alignment") == "wda_submitted_two_anchor":
@@ -527,6 +650,7 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                         search_after_s=tap_calibration_search_s,
                         resize_width=tap_calibration_width,
                         pre_s=pre_s, window_s=window_s,
+                        source_frame_times=source_frame_times,
                     )
                     shift = 0.0
                 else:
@@ -541,6 +665,7 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                         max_mad_s=tap_calibration_max_mad_s,
                         search_after_s=tap_calibration_search_s,
                         resize_width=tap_calibration_width,
+                        source_frame_times=source_frame_times,
                     )
             except (OSError, KeyError, TypeError, ValueError) as exc:
                 calibration_info = {
@@ -570,7 +695,6 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                       f"shift={calibration_shift_s:+.3f}s, "
                       f"n={len(calibration_info['inlier_offsets_s'])}, "
                       f"MAD={calibration_info['mad_s']}s)")
-        source_frame_times = _probe_video_frame_times(mov) if direct_video else []
         if direct_video and not source_frame_times:
             print(f"[align] {manifest_path.name}: could not probe source frame PTS — preserving MOV")
             return 0
@@ -606,6 +730,9 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
             start = max(0.0, gv - pre_s)
             dur = pre_s + window_s
             sample_dir = seg_dir / _park_tag(ev.get("park", "park")) / f"sample_{ev['gesture_index']:06d}"
+            if batch_direct_video:
+                pending.append((ev, gv, delta, submitted_monotonic_s, sample_dir, start, dur))
+                continue
             if direct_video:
                 # Select exact source frames and retain their real presentation
                 # times. Resampling pixels onto an invented output grid caused a
@@ -650,41 +777,28 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                 shutil.rmtree(raw, ignore_errors=True)
                 frames_format = ("mp4" if video and _encode_sample_video(
                     sample_dir, len(frame_times), fps, video_crf) else "png")
-            meta = {
-                **{k: v for k, v in ev.items()},                     # gesture params + call times + park
-                "device": manifest.get("device"),
-                "device_logical_w": dw, "device_logical_h": dh,
-                "gesture_video_time_s": round(gv, 4),
-                "capture_offset_s": delta,
-                "capture_offset_source": (
-                    "wda_submitted_two_anchor" if wda_timeline is not None
-                    else "tap_self_calibrated" if calibration_info is not None
-                    else "per_kind_fallback"
-                ),
-                "anchor": anchor,
-                "frame_times": frame_times,
-                "n_frames": len(frame_times),
-                "segment_index": manifest.get("segment_index"),
-                "session": seg_dir.name,
-            }
-            if calibration_info is not None:
-                # Keep provenance with every sample; the marker below retains the
-                # full segment report too.  Timing comes from rendered taps, while
-                # the touch coordinates remain the command manifest's labels.
-                meta["tap_calibration"] = calibration_info
-            if anchor == "start":
-                # temporal_trace_dataset._is_end_relative() keys off this: its presence
-                # switches the label scheduler to the START-relative branch, which is what
-                # these frame_times now are. Without it the scheduler would add the payload
-                # duration and place every touch a full stroke too late.
-                meta["gesture_start_monotonic"] = (
-                    submitted_monotonic_s if submitted_monotonic_s is not None
-                    else float(ev["t_call_start_epoch_s"])
+            write_sample(ev, gv, delta, submitted_monotonic_s,
+                         sample_dir, frame_times, frames_format)
+
+        if pending:
+            jobs = [
+                _DirectVideoJob(
+                    sample_dir=sample_dir, start_s=start, duration_s=dur,
+                    output_fps=(max_frames - 1) / max(dur - 1 / fps, 1 / fps),
                 )
-            if video or direct_video:
-                meta["frames_format"] = frames_format
-            (sample_dir / "meta.json").write_text(json.dumps(meta, indent=2))
-            saved += 1
+                for _ev, _gv, _delta, _submitted, sample_dir, start, dur in pending
+            ]
+            batch_result = _extract_sample_videos_batch(
+                mov, jobs, resize_width=resize_width, max_frames=max_frames,
+                crf=video_crf, source_frame_times=source_frame_times,
+            )
+            for ev, gv, delta, submitted, sample_dir, _start, _dur in pending:
+                selected_times = batch_result[sample_dir]
+                if selected_times is None:
+                    shutil.rmtree(sample_dir, ignore_errors=True)
+                    continue
+                frame_times = [round(value - gv, 4) for value in selected_times]
+                write_sample(ev, gv, delta, submitted, sample_dir, frame_times, "mp4")
 
     finally:
         claim.unlink(missing_ok=True)
@@ -746,6 +860,9 @@ def main() -> None:
                     help="Select exact source frame numbers and encode compact videos directly "
                          "from the segment MOV. Retains source PTS in metadata, avoids temporary "
                          "PNGs, and implies --video.")
+    ap.add_argument("--batch-direct-video", action="store_true",
+                    help="Opt-in: decode the source once for all direct-video clips. "
+                         "Falls back to the per-clip extractor if the batch fails.")
     ap.add_argument("--video-crf", type=int, default=20,
                     help="x264 CRF for --video. 20 keeps the orange trace intact "
                          "(measured 4.5%% error in the path-glow statistic).")
@@ -760,6 +877,8 @@ def main() -> None:
         ap.error("--tap-calibration-width must be >= 8")
     if args.direct_video:
         args.video = True
+    if args.batch_direct_video and not args.direct_video:
+        ap.error("--batch-direct-video requires --direct-video")
 
     if args.segment:
         manifests = [args.segment]
@@ -780,6 +899,7 @@ def main() -> None:
                 delta_override=args.delta_s, delete_mov=args.delete_mov,
                 anchor=args.anchor, video=args.video, video_crf=args.video_crf,
                 direct_video=args.direct_video,
+                batch_direct_video=args.batch_direct_video,
                 tap_calibrate=args.tap_calibrate,
                 tap_calibration_min_taps=args.tap_calibration_min_taps,
                 tap_calibration_max_mad_s=args.tap_calibration_max_mad_s,
