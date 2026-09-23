@@ -167,13 +167,14 @@ idle and self-deleted; a final listing found zero attachments on both XRs. The
 fork and rig WDA checkouts now use clean `master` at that SHA. Collection remains
 off until an explicitly authorized workload begins.
 
-The replacement-corpus plan preserves the historical 13,100-sample device and
-park allocation. Its 310 accepted XR2 Skateboard GB 2024 clips leave 12,790 new
-clips overall. A first explicitly authorized bounded tranche is active from
-release `13554c9`: XR1 stops at 2,000 new strict clips, while XR2 stops at 1,690
-new clips so its audited 310-clip baseline totals 2,000. The operator confirmed
-XR1 is in SLS 2015 Los Angeles; its first 598 strict records were corrected from
-the explicit placeholder without changing their count or command fingerprint,
-then collection resumed. XR2 remains on Skateboard GB 2024.
-Persisted NTFY monitors announce each newly reached ten-percent milestone.
+The replacement-corpus plan targets the historical 13,100-sample park mixture.
+The first bounded tranche completed with 2,003 XR1/SLS 2015 Los Angeles clips
+and 1,698 new XR2/Skateboard GB 2024 clips; the latter totals 2,008 with its
+preserved 310-clip baseline. A second explicitly authorized bounded stage is
+active from release `13554c9`: XR1 collects The Workshop to 4,050 strict clips
+and XR2 collects SLS 2013 Kansas City to 3,800. The per-device command seeds
+continue across the park boundary. Initial strict audits admitted 10 and 11
+clips respectively, with correct provenance, 32 increasing source timestamps,
+accepted calibration and zero exact-command duplicates across the replacement
+directory. This stage has no milestone notification process.
 See [M1-RECOLLECT-20260922](experiments/M1-RECOLLECT-20260922.md).
