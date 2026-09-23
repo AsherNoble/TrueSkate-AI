@@ -13,11 +13,14 @@ Put substantial experiments in individual records and current facts in STATUS.
   boundary. Initial audits admitted 10 and 11 clips with correct exact-PTS
   metadata and found no duplicate commands across the replacement directory.
   [Plan and evidence](experiments/M1-RECOLLECT-20260922.md).
-- Exact-PTS clip extraction re-decodes each one-minute recording for every
-  clip. An opt-in one-decode batch path matched all 32 decoded pixels and
-  source timestamps in ten clips from a retained phone recording and took
-  11.2 rather than 42.0 seconds on the rig. Production promotion still requires
-  bounded on-device checks. [Experiment](experiments/M1-BATCH-EXTRACT-20260923.md).
+- The opt-in one-decode exact-PTS extractor matched all 32 decoded pixels and
+  source timestamps in ten retained phone clips. Isolated XR1/XR2 segments then
+  admitted 10/10 and 9/9 strict clips with accepted calibration, and aligned
+  in about 169 seconds versus old-release medians of about 304 seconds. Clean
+  release `1b8497e` was promoted between production segments; both bounded
+  collectors resumed with prior seeds and targets, and release `13554c9` was
+  retained for rollback. Their first production segments admitted 11 XR1 and
+  10 XR2 strict clips without batch fallback. [Experiment](experiments/M1-BATCH-EXTRACT-20260923.md).
 
 ## 2026-09-22 — Exact-PTS tranche passed audit and preserves label controls
 
