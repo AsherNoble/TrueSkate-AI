@@ -4,6 +4,16 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-23 — Replacement collection rotated into two new parks
+
+- The first bounded tranche finished with 2,003 XR1/Los Angeles clips and 2,008
+  XR2/Skateboard GB clips including its 310-clip baseline. The operator moved
+  XR1 to The Workshop and XR2 to SLS 2013 Kansas City and authorized new bounds
+  of 4,050 and 3,800 clips. Their persisted seeds continue across the park
+  boundary. Initial audits admitted 10 and 11 clips with correct exact-PTS
+  metadata and found no duplicate commands across the replacement directory.
+  [Plan and evidence](experiments/M1-RECOLLECT-20260922.md).
+
 ## 2026-09-22 — Exact-PTS tranche passed audit and preserves label controls
 
 - The operator marked 17/17 inspected exact-PTS clips `good`; the review export

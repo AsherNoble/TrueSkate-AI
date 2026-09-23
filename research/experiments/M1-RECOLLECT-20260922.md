@@ -1,7 +1,7 @@
 # M1-RECOLLECT-20260922 — Replacement linear corpus park plan
 
-Status: bounded collection active. The operator confirmed XR1 is loaded into
-SLS 2015 Los Angeles; XR2 remains in Skateboard GB 2024.
+Status: second bounded collection stage active. XR1 is in The Workshop and XR2
+is in SLS 2013 Kansas City, as confirmed by the operator.
 
 ## Objective
 
@@ -60,8 +60,8 @@ Current operator-reported device state:
 
 | Device | Loaded park |
 |---|---|
-| XR1 | SLS 2015 Los Angeles |
-| XR2 | Skateboard GB 2024 |
+| XR1 | The Workshop |
+| XR2 | SLS 2013 Kansas City |
 
 A collector park label records provenance; it does not navigate the game, so
 each later park change must still be confirmed on the device.
@@ -108,3 +108,29 @@ commands and no contamination markers. Collection resumed with the preserved
 seed, 2,000-clip target and ten-percent notification state. The rollback bundle
 and audit report are retained on the rig under
 `tmp/model1-xr1-park-correction-20260922/`.
+
+The first bounded tranche finished at complete segment boundaries with 2,003
+strict XR1/SLS 2015 Los Angeles clips and 1,698 new XR2/Skateboard GB 2024
+clips. Together with the preserved 310-clip XR2 baseline, the latter park has
+2,008 clips. Surplus clips remain available for the final deterministic
+13,100-sample manifest.
+
+## Second bounded tranche launch
+
+On 2026-09-23 the operator moved XR1 to The Workshop and XR2 to SLS 2013 Kansas
+City, then authorized independent park-directory targets of 4,050 and 3,800
+strict clips respectively. Collection continues under release `13554c9` at:
+
+- XR1: `data/model1_linear_replacement_20260922/iPhone_XR/the_workshop`;
+- XR2: `data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city`.
+
+Each new directory inherited its device's persisted next seed from the completed
+park, preventing the gesture stream from restarting at a park boundary. The
+first production audit admitted 10 Workshop clips and 11 Kansas City clips; all
+checked clips had 32 increasing source timestamps and accepted calibration. A
+combined audit of 3,722 replacement-directory clips found zero exact-command
+duplicate groups. XR2's first recording failed during `stop_and_save`, admitted
+zero clips, and the bounded collector recovered on the next seed. No milestone
+notification process was started for this stage. Runtime paths, initial seeds
+and targets are recorded on the rig in
+`tmp/model1_replacement_stage2_20260923.json`.
