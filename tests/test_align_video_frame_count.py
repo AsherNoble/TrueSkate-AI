@@ -290,3 +290,26 @@ def test_batch_failure_retries_the_existing_extractor(source, tmp_path, monkeypa
     assert all(outputs[job.sample_dir] is not None for job in jobs)
     assert all(module._video_frame_count(job.sample_dir / "frames.mp4") == 32
                for job in jobs)
+
+
+def test_shared_pts_preserves_both_calibration_windows(source, monkeypatch):
+    module = _aligner()
+    times = module._probe_video_frame_times(source)
+    kwargs = {"fps": 30, "reference_window_s": 0.75,
+              "search_after_s": 1.0, "resize_width": 128}
+    reference = [module._decode_calibration_window(source, command_video_s=position,
+                                                    **kwargs)
+                 for position in (1.5, 5.0)]
+
+    def forbidden_probe(_path):
+        raise AssertionError("calibration must reuse the supplied source timestamps")
+
+    monkeypatch.setattr(module, "_probe_video_frame_times", forbidden_probe)
+    for position, (expected_frames, expected_times) in zip((1.5, 5.0), reference):
+        frames, window_times = module._decode_calibration_window(
+            source, command_video_s=position, source_frame_times=times, **kwargs,
+        )
+        assert window_times == expected_times
+        assert len(frames) == len(expected_frames) > 0
+        assert all(np.array_equal(actual, expected)
+                   for actual, expected in zip(frames, expected_frames))

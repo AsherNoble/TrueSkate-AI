@@ -9,6 +9,8 @@ recording, admitting roughly ten clips. Recent segment directories show the
 recording and save phase takes about one minute; alignment takes another three
 to four minutes. The existing direct extractor launches one FFmpeg command per
 clip. Each command opens the full recording and selects 32 exact source frames.
+The aligner also probes the full recording's frame timestamps separately for
+each of the two calibration windows and a third time for clip extraction.
 
 The opt-in `--batch-direct-video` path computes the same source frame numbers and
 source timestamps, then uses one FFmpeg decode with separate output branches.
@@ -17,6 +19,10 @@ source PTS metadata and contamination filters. The current per-clip extractor
 remains the default and is the fallback if a batch fails or emits an invalid
 frame count. `BASIC_LINEAR_BATCH_DIRECT_VIDEO=1` selects the new path in the
 bounded linear wrapper.
+
+The candidate probes the source timestamps once and passes that unchanged list
+to both calibration windows and the clip extractor. It does not change the
+detector, window boundaries, selected frame numbers or timestamp calculations.
 
 ## Offline evidence
 
@@ -34,6 +40,13 @@ bounded linear wrapper.
   under concurrent load. The one-minute collector normally produces about ten
   clips, so the ten-clip result is the relevant throughput check. This does not
   yet establish the speedup of a complete recorded/calibrated segment.
+- On the same phone recording, the release took 43.841 seconds for its first
+  full-video PTS probe, then 64.785 and 58.844 seconds for the start/end
+  calibration windows (each of which repeated the probe). The candidate took
+  35.791 seconds for one probe and 17.498 and 22.321 seconds for the two windows
+  using the shared timestamps. Times vary with the concurrent production load;
+  the structural improvement is removing two full-video probes. A regression
+  test confirms both windows receive identical pixel arrays and timestamps.
 
 ## Promotion gate
 

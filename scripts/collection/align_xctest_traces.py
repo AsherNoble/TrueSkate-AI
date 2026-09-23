@@ -122,26 +122,15 @@ def _decode_calibration_window(
     reference_window_s: float,
     search_after_s: float,
     resize_width: int,
+    source_frame_times: Sequence[float] | None = None,
 ) -> tuple[list, list[float]]:
     """Decode exact source frames and retain their original presentation times."""
     start = max(0.0, command_video_s - reference_window_s)
     stop = command_video_s + search_after_s
-    probe = subprocess.run(
-        ["ffprobe", "-v", "error", "-select_streams", "v:0",
-         "-show_entries", "frame=best_effort_timestamp_time", "-of", "json", str(mov)],
-        capture_output=True, text=True,
+    all_times = (
+        _probe_video_frame_times(mov) if source_frame_times is None
+        else source_frame_times
     )
-    if probe.returncode != 0:
-        return [], []
-    try:
-        payload = json.loads(probe.stdout)
-        all_times = [
-            float(frame["best_effort_timestamp_time"])
-            for frame in payload.get("frames", [])
-            if "best_effort_timestamp_time" in frame
-        ]
-    except (TypeError, ValueError, KeyError, json.JSONDecodeError):
-        return [], []
     selected = [index for index, value in enumerate(all_times) if start <= value <= stop]
     if not selected:
         return [], []
@@ -177,6 +166,7 @@ def _tap_calibration(
     max_mad_s: float,
     search_after_s: float,
     resize_width: int,
+    source_frame_times: Sequence[float] | None = None,
 ) -> tuple[dict, float | None]:
     """Fit a segment timing shift from its manifest-known tap marks.
 
@@ -219,6 +209,7 @@ def _tap_calibration(
             reference_window_s=0.5,
             search_after_s=search_after_s,
             resize_width=resize_width,
+            source_frame_times=source_frame_times,
         )
         onset = detect_tap_onset(
             frames, times, point_xy=point, command_s=command_s,
@@ -262,6 +253,7 @@ def _wda_two_anchor_calibration(
     *, manifest: dict, manifest_path: Path, mov: Path, started_at: float,
     fps: int, search_after_s: float, resize_width: int,
     pre_s: float = 0.5, window_s: float = 1.8,
+    source_frame_times: Sequence[float] | None = None,
 ) -> tuple[dict, TwoAnchorTimingFit]:
     """Detect the two centre controls and fit video time from WDA submit time."""
     report_name = manifest.get("wda_action_timing_report")
@@ -298,6 +290,7 @@ def _wda_two_anchor_calibration(
             reference_window_s=0.75,
             search_after_s=search_after_s,
             resize_width=resize_width,
+            source_frame_times=source_frame_times,
         )
         onset = detect_tap_onset(
             frames, times, point_xy=point, command_s=approximate_video_s,
@@ -645,6 +638,9 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
         saved += 1
 
     try:
+        source_frame_times = (
+            _probe_video_frame_times(mov) if direct_video or tap_calibrate else []
+        )
         if tap_calibrate:
             try:
                 if manifest.get("timing_alignment") == "wda_submitted_two_anchor":
@@ -654,6 +650,7 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                         search_after_s=tap_calibration_search_s,
                         resize_width=tap_calibration_width,
                         pre_s=pre_s, window_s=window_s,
+                        source_frame_times=source_frame_times,
                     )
                     shift = 0.0
                 else:
@@ -668,6 +665,7 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                         max_mad_s=tap_calibration_max_mad_s,
                         search_after_s=tap_calibration_search_s,
                         resize_width=tap_calibration_width,
+                        source_frame_times=source_frame_times,
                     )
             except (OSError, KeyError, TypeError, ValueError) as exc:
                 calibration_info = {
@@ -697,7 +695,6 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                       f"shift={calibration_shift_s:+.3f}s, "
                       f"n={len(calibration_info['inlier_offsets_s'])}, "
                       f"MAD={calibration_info['mad_s']}s)")
-        source_frame_times = _probe_video_frame_times(mov) if direct_video else []
         if direct_video and not source_frame_times:
             print(f"[align] {manifest_path.name}: could not probe source frame PTS — preserving MOV")
             return 0
