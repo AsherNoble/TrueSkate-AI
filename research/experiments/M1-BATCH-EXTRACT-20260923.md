@@ -1,6 +1,7 @@
 # M1-BATCH-EXTRACT-20260923 — Decode each recording once
 
-Status: opt-in implementation validated offline; not yet deployed for collection.
+Status: opt-in implementation validated offline and on both XRs; deployed to
+the bounded replacement collection on 2026-09-23.
 
 ## Cause and proposed change
 
@@ -26,7 +27,7 @@ detector, window boundaries, selected frame numbers or timestamp calculations.
 
 ## Offline evidence
 
-- The full test suite passed: 332 passed, 2 skipped. Targeted tests compare
+- The full local test suite passed: 333 passed, 2 skipped. Targeted tests compare
   end-to-end metadata and decoded clip pixels, and force a batch failure to
   exercise the per-clip fallback.
 - A retained 65.445-second XR2 phone recording with 1,962 decoded source frames
@@ -48,11 +49,36 @@ detector, window boundaries, selected frame numbers or timestamp calculations.
   the structural improvement is removing two full-video probes. A regression
   test confirms both windows receive identical pixel arrays and timestamps.
 
-## Promotion gate
+## On-device promotion
 
-Stage a clean committed release and run one isolated one-minute segment on
-each XR in its operator-confirmed park. Require accepted two-anchor calibration,
-strict clip admission, 32 increasing source times per clip, and no regressions in
-foreground or recorder handling. Switch the bounded production collectors only
-between segments, preserving their output directories, next seeds, strict
-targets and previous release for rollback.
+A clean candidate release at `1b8497e66cbde00928eac310b446ceecadf6096a`
+ran one isolated one-minute segment per XR. XR1 in The Workshop admitted 10/10
+strict clips; XR2 in SLS 2013 Kansas City admitted 9/9. Both had accepted
+two-anchor calibration, correct device and park provenance, 32 increasing
+source-relative times and exactly 32 decoded frames per clip. Neither emitted
+`.menu` or `.trace_mismatch` samples or used the per-clip fallback. The strict
+audit passed for both. Logs and outputs are retained under the rig's
+`tmp/model1-batch-validation-20260923/` directory.
+
+The candidate sessions reached `.aligned` in 169.4 seconds on XR1 and 169.0
+seconds on XR2; the last ten old-release production segments had medians of
+304.7 and 303.9 seconds, respectively, from segment start to `.aligned`.
+These are observed comparisons, not a long-run throughput guarantee.
+
+The stable rig link was switched from release `13554c9` to `1b8497e` between
+production segments. The previously authorized bounded XR1 and XR2 collectors
+were resumed with `BASIC_LINEAR_BATCH_DIRECT_VIDEO=1`, preserving their output
+directories, persisted next seeds and strict targets of 4,050 and 3,800.
+Release `13554c9` remains available for rollback. WDA was not restarted.
+
+The first resumed production segments admitted 11 XR1 and 10 XR2 clips. The
+existing strict corpus audit passed each session with correct park/device
+provenance and no exact-command duplicates; all clips had a decodable
+`frames.mp4`. Their aligners accepted two-anchor calibration, and neither
+logged a batch fallback. The next live collection processes included
+`--batch-direct-video` and advanced the persisted seeds to `235779031` (XR1)
+and `58035956` (XR2). Those first production segments reached `.aligned` about
+143–148 seconds after their named session start; the next segments began
+roughly 167–170 seconds after the prior wrapper launch. The Appium disconnect
+warning still appears after successful sessions on both the old and new
+release; it did not stop either bounded wrapper.
