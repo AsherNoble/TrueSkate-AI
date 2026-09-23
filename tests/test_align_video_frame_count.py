@@ -4,6 +4,7 @@ These drive real ffmpeg against a synthetic source, because the defect lives in
 the interaction between `-ss` input-seek quantisation, `-t`, and the `fps`
 filter — none of which a mocked subprocess would reproduce.
 """
+import json
 import shutil
 import subprocess
 import sys
@@ -25,6 +26,18 @@ def _aligner():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _decoded_frames(path):
+    capture = cv2.VideoCapture(str(path))
+    frames = []
+    while True:
+        ok, frame = capture.read()
+        if not ok:
+            break
+        frames.append(frame)
+    capture.release()
+    return frames
 
 
 @pytest.fixture(scope="module")
@@ -177,3 +190,103 @@ def test_direct_extract_preserves_the_selected_source_frame_times(tmp_path):
                        if frame.mean() > 220)
     assert selected_times[onset_index] == pytest.approx(expected_onset_time, abs=1 / source_fps)
     assert selected_times[onset_index - 1] < expected_onset_time
+
+
+def test_batch_extract_matches_the_reference_pixels_and_source_times(source, tmp_path):
+    module = _aligner()
+    source_times = module._probe_video_frame_times(source)
+    jobs = [
+        module._DirectVideoJob(tmp_path / "batch" / f"sample_{index}", start, 2.3, 13.67647059)
+        for index, start in enumerate((0.5, 2.0, 4.0))
+    ]
+    batch = module._extract_sample_videos_batch(
+        source, jobs, resize_width=128, max_frames=32, crf=20,
+        source_frame_times=source_times,
+    )
+    for index, job in enumerate(jobs):
+        reference = tmp_path / "reference" / f"sample_{index}"
+        expected_times = module._extract_sample_video(
+            source, reference, start_s=job.start_s, duration_s=job.duration_s,
+            resize_width=128, output_fps=job.output_fps, max_frames=32, crf=20,
+            source_frame_times=source_times,
+        )
+        assert batch[job.sample_dir] == expected_times
+        assert expected_times is not None
+        actual_frames = _decoded_frames(job.sample_dir / "frames.mp4")
+        expected_frames = _decoded_frames(reference / "frames.mp4")
+        assert len(actual_frames) == len(expected_frames) == 32
+        assert all(np.array_equal(actual, expected)
+                   for actual, expected in zip(actual_frames, expected_frames))
+
+
+def test_batch_segment_writes_the_same_clip_metadata_as_current_path(source, tmp_path):
+    module = _aligner()
+    manifests = []
+    for name in ("reference", "batch"):
+        segment = tmp_path / name
+        segment.mkdir()
+        shutil.copyfile(source, segment / "segment.mov")
+        manifest = segment / "segment_00000.json"
+        manifest.write_text(json.dumps({
+            "mov": "segment.mov",
+            "started_at_epoch_s": 1000.0,
+            "device": "iPhone_XR",
+            "device_logical_w": 414,
+            "device_logical_h": 896,
+            "segment_index": 0,
+            "gestures": [
+                {"gesture_index": index, "park": "The Workshop",
+                 "gesture_distribution": "linear", "duration": 0.5,
+                 "waypoints": [[0.2, 0.4], [0.6, 0.6]],
+                 "t_call_start_epoch_s": 1000.0 + onset}
+                for index, onset in enumerate((1.0, 3.0, 5.0))
+            ],
+        }))
+        manifests.append(manifest)
+
+    for manifest, batch in zip(manifests, (False, True)):
+        assert module.align_segment(
+            manifest, pre_s=0.5, window_s=1.8, fps=30,
+            resize_width=128, max_frames=32, delta_override=0.0,
+            delete_mov=False, direct_video=True,
+            batch_direct_video=batch,
+        ) == 3
+
+    for index in range(3):
+        relative = Path("the_workshop") / f"sample_{index:06d}"
+        old = manifests[0].parent / relative
+        new = manifests[1].parent / relative
+        old_meta = json.loads((old / "meta.json").read_text())
+        new_meta = json.loads((new / "meta.json").read_text())
+        old_meta.pop("session")
+        new_meta.pop("session")
+        assert new_meta == old_meta
+        assert module._video_frame_count(old / "frames.mp4") == 32
+        assert module._video_frame_count(new / "frames.mp4") == 32
+        assert all(np.array_equal(actual, expected) for actual, expected in zip(
+            _decoded_frames(new / "frames.mp4"), _decoded_frames(old / "frames.mp4")
+        ))
+
+
+def test_batch_failure_retries_the_existing_extractor(source, tmp_path, monkeypatch):
+    module = _aligner()
+    original_run = module.subprocess.run
+
+    def fail_batch_only(command, *args, **kwargs):
+        if "-filter_complex" in command:
+            return subprocess.CompletedProcess(command, 1, "", "forced batch failure")
+        return original_run(command, *args, **kwargs)
+
+    monkeypatch.setattr(module.subprocess, "run", fail_batch_only)
+    times = module._probe_video_frame_times(source)
+    jobs = [
+        module._DirectVideoJob(tmp_path / f"sample_{index}", start, 2.3, 13.67647059)
+        for index, start in enumerate((1.0, 3.0))
+    ]
+    outputs = module._extract_sample_videos_batch(
+        source, jobs, resize_width=128, max_frames=32, crf=20,
+        source_frame_times=times,
+    )
+    assert all(outputs[job.sample_dir] is not None for job in jobs)
+    assert all(module._video_frame_count(job.sample_dir / "frames.mp4") == 32
+               for job in jobs)

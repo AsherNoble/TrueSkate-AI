@@ -336,6 +336,9 @@ def main() -> None:
     ap.add_argument("--wait-for-align", action="store_true",
                     help="Run the post-segment aligner in the foreground instead of async. "
                          "Use for a bounded calibration pilot so its go/no-go result is visible.")
+    ap.add_argument("--batch-direct-video", action="store_true",
+                    help="Opt in to one source decode for all exact-PTS clips in a segment. "
+                         "Requires --align-video and --basic-linears.")
     ap.add_argument("--no-caffeinate", action="store_true")
     ap.add_argument("--no-run-notifications", action="store_true",
                     help="Suppress this process's routine start/stop ntfy messages. "
@@ -370,6 +373,8 @@ def main() -> None:
 
     if args.no_align and (args.tap_calibrate or args.wait_for_align):
         ap.error("--no-align cannot be combined with --tap-calibrate or --wait-for-align")
+    if args.batch_direct_video and not (args.align_video and args.basic_linears):
+        ap.error("--batch-direct-video requires --align-video and --basic-linears")
 
     # Validate the gesture mix BEFORE any device contact: a bad value would
     # otherwise surface as a per-gesture ValueError mid-run and crash-loop the
@@ -524,6 +529,8 @@ def main() -> None:
             # and H.264 encode once rather than materialising temporary PNGs.
             if args.basic_holds or args.basic_linears:
                 cmd.append("--direct-video")
+                if args.batch_direct_video:
+                    cmd.append("--batch-direct-video")
         if args.tap_calibrate:
             cmd.append("--tap-calibrate")
         if args.wait_for_align:

@@ -48,6 +48,12 @@ guards remain enabled. No reset is sent while recording. The two controls stay i
 the raw manifest but the aligner emits no training clips for them. Use separate
 outputs for validation.
 
+`BASIC_LINEAR_BATCH_DIRECT_VIDEO=1` opts into decoding each one-minute recording
+once for its exact-PTS clips. The existing per-clip extractor remains the default
+and is retried automatically if a batch fails validation. See the
+[offline comparison](../research/experiments/M1-BATCH-EXTRACT-20260923.md)
+before changing a running collection release.
+
 For mixed/hold collection, inspect the collector's `--help`; preserve its
 guards and metadata. Label `--park-label` honestly. Keep all trainable samples
 separate from calibration controls and exclude contamination markers.
