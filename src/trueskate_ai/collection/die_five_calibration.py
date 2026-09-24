@@ -3,8 +3,9 @@
 Detector B of M1-DIE5-COMPARE-20260925: the unchanged single-point
 ``detect_tap_onset`` runs independently at each of the five marker positions.
 A marker is accepted only when at least ``min_votes`` positions detect an onset
-within ``tolerance_frames`` of one another; the onset is the lower median of
-the agreeing frames. Scenery that falsely triggers one position cannot move
+within ``tolerance_frames`` of one shared candidate frame (so agreeing positions
+may be up to ``2 * tolerance_frames`` apart); the onset is the lower median of
+the agreeing frames. This is the frozen preregistered behaviour. Scenery that falsely triggers one position cannot move
 the result unless it fools most of the pattern on the same frame.
 """
 from __future__ import annotations

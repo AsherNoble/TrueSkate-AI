@@ -507,6 +507,8 @@ def main() -> None:
         if args.start_settle_threshold <= 0 or args.start_settle_max_s < 0:
             raise SystemExit("--start-settle-threshold must be > 0 and --start-settle-max-s >= 0")
     mid_marker_kinds = [k.strip() for k in args.mid_marker_kinds.split(",") if k.strip()]
+    if args.mid_markers < 0 or args.mid_marker_every < 1:
+        raise SystemExit("--mid-markers must be >= 0 and --mid-marker-every >= 1")
     if args.die_five_experiment:
         if not args.basic_linears:
             raise SystemExit("--die-five-experiment requires --basic-linears")
@@ -926,10 +928,11 @@ def main() -> None:
                             t0 = time.time()
                         _execute_marker(worker, kind, args.calibration_tap_hold_s)
                         time.sleep(0.35)
-                        _mid_png = worker.driver.get_screenshot_as_png()
-                        if is_editor_frame(_mid_png) or is_menu_frame(
-                                _mid_png, allow_idle_navigation=args.allow_idle_navigation):
-                            raise RuntimeError("mid marker opened non-gameplay UI")
+                        if not args.no_menu_guard:
+                            _mid_png = worker.driver.get_screenshot_as_png()
+                            if is_editor_frame(_mid_png) or is_menu_frame(
+                                    _mid_png, allow_idle_navigation=args.allow_idle_navigation):
+                                raise RuntimeError("mid marker opened non-gameplay UI")
                     except Exception as exc:  # noqa: BLE001
                         print(f"[seg {segment_idx}] mid marker failed: {exc!r} — discard segment")
                         seg_aborted = True

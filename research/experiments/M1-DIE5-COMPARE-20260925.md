@@ -384,3 +384,13 @@ start+end fit (B's where available). Label-free proxy:
 - **The hybrid adds nothing.** No rejected marker reached 5/5 under B′.
 - **B replicates its Phase 2 pattern:** no wrong frames and no false alarms,
   with ~18% no-result on post-swipe mid markers (Phase 2: 20%).
+
+## Code review note (2026-09-25)
+
+A `/code-review` of `beccf3f..HEAD` found that B's consensus accepts positions
+within ±1 frame of one shared candidate, so agreeing positions may be up to 2
+frames apart. The protocol text said "within ±1 frame". The frozen code was not
+changed after data collection. The docstring now states the actual rule, and
+results are interpreted under it. The review also fixed two collector bugs:
+production mid controls ignored `--no-menu-guard`, and `--mid-marker-every 0`
+was not rejected outside die-five mode.
