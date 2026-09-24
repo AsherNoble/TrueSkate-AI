@@ -312,3 +312,25 @@ labeller stays blind:
 The scoring pipeline was dry-run end to end on the real analysis/key files
 with stand-in labels (values meaningless); it completes in ~20 min because it
 probes every frame timestamp.
+
+## Exploratory: multi-anchor consistency with the single-touch detector
+
+Using only A's detections on all six markers per Phase 2 recording (start,
+four mids, end), with the clock rate fixed at 1 (corpus median about +50 ppm;
+the ±600 ppm spread is anchor quantisation), each anchor's offset
+(video − WDA) was compared with the recording's median offset. Anchors more than
+1.5 frames from the median were flagged:
+
+| Anchor | Flagged |
+|---|---:|
+| Start | 1/30 (the XR2 anomaly start, −9.8 frames) |
+| End | 0/30 |
+| Mid | 6/113 (A's early false triggers after swipes) |
+
+This suggests a cheaper production candidate than five-touch markers. Add one
+or two extra single centre controls per segment, preferably after a settle
+wait, and replace the two-point fit with a robust multi-anchor fit: median
+offset, or Theil–Sen/RANSAC if the rate may drift (ALIGN-20260913 once saw
+−1,900 ppm). Recordings whose anchors disagree would be rejected. This is post hoc and
+exploratory; it needs its own test, and it costs one or two payload slots per
+segment.
