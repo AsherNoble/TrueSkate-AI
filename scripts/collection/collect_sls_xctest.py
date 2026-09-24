@@ -68,6 +68,7 @@ from trueskate_ai.sim.touch_actions import (  # noqa: E402
     perform_pointer_actions, reset_position, skip_loading_screen, tap,
 )
 from trueskate_ai.collection.die_five_calibration import DIE_FIVE_POINTS  # noqa: E402
+from trueskate_ai.collection.scene_settle import wait_for_centre_settle  # noqa: E402
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
 from trueskate_ai.collection.gameplay_filter import is_editor_frame, is_menu_frame  # noqa: E402
 from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder  # noqa: E402
@@ -350,6 +351,12 @@ def main() -> None:
                     help="ntfy-alert if device free storage drops below this.")
     ap.add_argument("--no-align", action="store_true",
                     help="Do NOT auto-spawn the aligner after each segment (save .mov+manifest only).")
+    ap.add_argument("--start-settle-threshold", type=float, default=None,
+                    help="Opt-in: after the pre-segment reset, poll screenshots until the "
+                         "screen-centre mean grey change is below this for two polls "
+                         "(or --start-settle-max-s passes). Off by default. Requires "
+                         "--reset-before-segment. The result is stored in the manifest.")
+    ap.add_argument("--start-settle-max-s", type=float, default=6.0)
     ap.add_argument("--die-five-experiment", action="store_true",
                     help="M1-DIE5-COMPARE research only: start/end controls become five-touch "
                          "die markers, optional mid markers are added, and the aligner is never "
@@ -476,6 +483,11 @@ def main() -> None:
         if not math.isclose(args.segment_min, 1.0):
             raise SystemExit("--basic-linears requires a one-minute --segment-min 1 recording")
 
+    if args.start_settle_threshold is not None:
+        if not args.reset_before_segment:
+            raise SystemExit("--start-settle-threshold requires --reset-before-segment")
+        if args.start_settle_threshold <= 0 or args.start_settle_max_s < 0:
+            raise SystemExit("--start-settle-threshold must be > 0 and --start-settle-max-s >= 0")
     mid_marker_kinds = [k.strip() for k in args.mid_marker_kinds.split(",") if k.strip()]
     if args.die_five_experiment:
         if not args.basic_linears:
@@ -611,6 +623,17 @@ def main() -> None:
                           f"settling {args.segment_reset_settle_s:.1f}s", flush=True)
                     reset_position(worker.driver, dw, dh)
                     time.sleep(args.segment_reset_settle_s)
+                    start_settle = None
+                    if args.start_settle_threshold is not None:
+                        settle = wait_for_centre_settle(
+                            worker.driver.get_screenshot_as_png,
+                            threshold=args.start_settle_threshold,
+                            max_wait_s=args.start_settle_max_s,
+                        )
+                        start_settle = {"threshold": args.start_settle_threshold,
+                                        "max_wait_s": args.start_settle_max_s, **settle.summary()}
+                        print(f"[seg {segment_idx}] centre settle: settled={settle.settled} "
+                              f"after {settle.waited_s:.2f}s", flush=True)
                 except Exception as exc:  # noqa: BLE001 — do not begin an unsafe segment
                     print(f"[seg {segment_idx}] pre-segment reset failed: {exc!r} — skip + recover")
                     if not _recover_session(worker):
@@ -1060,6 +1083,7 @@ def main() -> None:
                         "static_frac": args.static_frac},
                 "num_gestures": args.num_gestures, "use_spin": args.use_spin,
                 "die_five_experiment": args.die_five_experiment,
+                "start_settle": start_settle if args.reset_before_segment else None,
                 "mov": mov_path.name, "n_gestures": len(events), "gestures": events,
             }
             manifest_path.write_text(json.dumps(manifest, indent=2))
