@@ -364,3 +364,23 @@ Replay uses die-five mid markers seen through A's centre point, not production
 single controls with the new gap. A bounded device smoke test of the production
 path is the next step. Operator approval is recommended because it emits
 isolated clips.
+
+## Held-out check of the post-hoc B′ and hybrid (2026-09-25)
+
+The 17 settle-run recordings (M1-SETTLE, M1-MULTIANCHOR tree excluded) were
+captured after B′ and the "B, else B′ at 5/5" hybrid were proposed. They also
+carry die-five markers, so they serve as held-out data. The reference is the
+start+end fit (B's where available). Label-free proxy:
+
+| Detector | Correct (≤1 frame) | No result | Gross (>2 frames) | Null-window alarms |
+|---|---:|---:|---:|---:|
+| A | 32/34 | 0 | 2 | 4/53 |
+| B | 28/34 | 6 | 0 | 0/53 |
+| B′ | 31/34 | 0 | 3 | 2/53 |
+| Hybrid | 28/34 | 6 | 0 | 0/53 |
+
+- **B′ does not hold up.** On held-out data it makes more gross errors than A
+  and fires in no-touch windows. It is dropped as a candidate.
+- **The hybrid adds nothing.** No rejected marker reached 5/5 under B′.
+- **B replicates its Phase 2 pattern:** no wrong frames and no false alarms,
+  with ~18% no-result on post-swipe mid markers (Phase 2: 20%).
