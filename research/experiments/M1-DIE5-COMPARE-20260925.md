@@ -287,3 +287,28 @@ disagreement or no result, 40 mid die-five with agreement (25% floor 40) and
 
 After export, score with
 `scripts/inspect/score_die_five_compare.py --analysis … --key … --labels … --out …`.
+
+## Exploratory label-free mid-marker check (2026-09-25)
+
+Each mid marker's detection was compared with the time predicted from its WDA
+submission by B's start+end fit. That fit is independent of the mid marker's
+own detection; the 28 segments with a B fit were used. Aggregates only, so the
+labeller stays blind:
+
+| Detector | Within ±1 frame | >2 frames off |
+|---|---:|---:|
+| A on die-five mids | 51/56 | 4 (all 18–25 frames early) |
+| A on single mids | 47/49 | 2 (12–23 frames early) |
+| B on accepted die-five mids | 45/45 | 0 |
+| B′ on die-five mids | 53/56 | 2 (≤19 frames) |
+
+- A's early false triggers after swipes occur at similar rates on single and
+  die-five markers. That is consistent with scenery rather than marker
+  geometry (see corner check).
+- B's cost is rejection, not wrong frames; B′ trades rejections for errors.
+- This is a proxy that assumes the start+end fit is correct. Human labels
+  remain primary.
+
+The scoring pipeline was dry-run end to end on the real analysis/key files
+with stand-in labels (values meaningless); it completes in ~20 min because it
+probes every frame timestamp.
