@@ -60,3 +60,11 @@ def test_cohort_manifest_records_screen_and_exclusions(tmp_path):
     assert screened["sample_count"] == 2
     assert screened["timing_screen"]["excluded"] == 2
     assert screened["timing_screen"]["excluded_by_park"] == {"SLS 2015 Los Angeles": 2}
+
+
+def test_error_below_the_rate_threshold_is_treated_as_zero():
+    # Documents the known limit (M1-SCREEN-DRAFT red-team): at 0.002 a segment at
+    # rate 1.0019 keeps its first clip although the formula predicts ~3 frames.
+    meta = _meta(1.0019, 100.0)
+    assert passes(meta, TimingScreen(rate_threshold=0.002, max_error_frames=1.0))
+    assert not passes(meta, TimingScreen(rate_threshold=0.0006, max_error_frames=1.0))

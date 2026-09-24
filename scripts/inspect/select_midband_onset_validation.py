@@ -7,7 +7,8 @@ earlier audit/validation, all six mid_high and the one mid_low recordings availa
 
 - mid_high: 1.0012 < rate <= 1.002 (start anchor implicated),
 - mid_low: 0.998 <= rate < 0.9988 (end anchor implicated),
-- ordinary: abs(rate - 1) < 0.0003,
+- ordinary: abs(rate - 1) < 0.0003, restricted to XR1 SLS 2015 Los Angeles so the
+  park cannot reveal the category (all mid-band recordings are XR1 Los Angeles),
 
 taking each recording's earliest and latest admitted clip. Predicted first
 visible trace frames are written to a separate predictions file (never given to
@@ -76,7 +77,10 @@ def main() -> None:
         if cal.get("method") != "wda-submitted-two-centre-controls-v2":
             continue
         session = str(meta.get("session"))
-        if session in excluded or category(cal["rate"]) is None:
+        cat = category(cal["rate"])
+        if session in excluded or cat is None:
+            continue
+        if cat == "ordinary" and (meta.get("device"), meta.get("park")) != ("iPhone_XR", "SLS 2015 Los Angeles"):
             continue
         sessions[session].append((int(meta["gesture_index"]), meta_path.parent, meta))
 
