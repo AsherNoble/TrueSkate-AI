@@ -357,6 +357,13 @@ def main() -> None:
                          "(or --start-settle-max-s passes). Off by default. Requires "
                          "--reset-before-segment. The result is stored in the manifest.")
     ap.add_argument("--start-settle-max-s", type=float, default=6.0)
+    ap.add_argument("--start-settle-required", action="store_true",
+                    help="With --start-settle-threshold: skip (do not record) a segment whose "
+                         "centre never settled within --start-settle-max-s.")
+    ap.add_argument("--end-settle-threshold", type=float, default=None,
+                    help="Opt-in (--basic-linears): before the end control, poll screenshots until "
+                         "the centre is still, for at most --end-settle-max-s. Stored per segment.")
+    ap.add_argument("--end-settle-max-s", type=float, default=3.5)
     ap.add_argument("--die-five-experiment", action="store_true",
                     help="M1-DIE5-COMPARE research only: start/end controls become five-touch "
                          "die markers, optional mid markers are added, and the aligner is never "
@@ -483,6 +490,14 @@ def main() -> None:
         if not math.isclose(args.segment_min, 1.0):
             raise SystemExit("--basic-linears requires a one-minute --segment-min 1 recording")
 
+    if args.start_settle_required and args.start_settle_threshold is None:
+        raise SystemExit("--start-settle-required requires --start-settle-threshold")
+    if args.end_settle_threshold is not None:
+        if not args.basic_linears:
+            raise SystemExit("--end-settle-threshold requires --basic-linears")
+        if args.end_settle_threshold <= 0 or not 0 <= args.end_settle_max_s < args.end_calibration_reserve_s - 2.0:
+            raise SystemExit("--end-settle-threshold must be > 0 and --end-settle-max-s must leave "
+                             "at least 2 s of --end-calibration-reserve-s")
     if args.start_settle_threshold is not None:
         if not args.reset_before_segment:
             raise SystemExit("--start-settle-threshold requires --reset-before-segment")
@@ -567,6 +582,7 @@ def main() -> None:
     total_gestures = 0
     total_menu_skips = 0
     start_fail_streak = 0
+    unsettled_streak = 0
     global_deadline = (time.monotonic() + args.max_hours * 3600.0) if args.max_hours else None
 
     def _device_aligner_spawn(manifest_path: Path):
@@ -634,6 +650,16 @@ def main() -> None:
                                         "max_wait_s": args.start_settle_max_s, **settle.summary()}
                         print(f"[seg {segment_idx}] centre settle: settled={settle.settled} "
                               f"after {settle.waited_s:.2f}s", flush=True)
+                        if args.start_settle_required and not settle.settled:
+                            unsettled_streak += 1
+                            print(f"[seg {segment_idx}] centre did not settle — skipping segment "
+                                  f"(nothing recorded; streak {unsettled_streak})", flush=True)
+                            if unsettled_streak >= 3:
+                                print("[collect_xctest] centre failed to settle 3 times in a row — stopping.")
+                                recovery_exit = True
+                                break
+                            continue
+                        unsettled_streak = 0
                 except Exception as exc:  # noqa: BLE001 — do not begin an unsafe segment
                     print(f"[seg {segment_idx}] pre-segment reset failed: {exc!r} — skip + recover")
                     if not _recover_session(worker):
@@ -966,6 +992,20 @@ def main() -> None:
 
             if args.basic_linears and _STOP:
                 seg_aborted = True
+            end_settle = None
+            if args.basic_linears and not seg_aborted and args.end_settle_threshold is not None:
+                try:
+                    settle = wait_for_centre_settle(
+                        worker.driver.get_screenshot_as_png,
+                        threshold=args.end_settle_threshold,
+                        max_wait_s=args.end_settle_max_s,
+                    )
+                    end_settle = {"threshold": args.end_settle_threshold,
+                                  "max_wait_s": args.end_settle_max_s, **settle.summary()}
+                    print(f"[seg {segment_idx}] end centre settle: settled={settle.settled} "
+                          f"after {settle.waited_s:.2f}s", flush=True)
+                except Exception as exc:  # noqa: BLE001 — the end control still fires
+                    end_settle = {"error": repr(exc)}
             if args.basic_linears and not seg_aborted:
                 # The end control is a separate WDA request at the same exact
                 # centre point as the start control. It calibrates time only.
@@ -1084,6 +1124,7 @@ def main() -> None:
                 "num_gestures": args.num_gestures, "use_spin": args.use_spin,
                 "die_five_experiment": args.die_five_experiment,
                 "start_settle": start_settle if args.reset_before_segment else None,
+                "end_settle": end_settle,
                 "mov": mov_path.name, "n_gestures": len(events), "gestures": events,
             }
             manifest_path.write_text(json.dumps(manifest, indent=2))
