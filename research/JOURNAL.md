@@ -7,10 +7,11 @@ Put substantial experiments in individual records and current facts in STATUS.
 ## 2026-09-25 — Draft corpus timing screen
 
 - A per-clip anchor-error screen (opt-in in the cohort builder) keeps 12,628 or
-  12,517 of 13,592 replacement clips at rate thresholds 0.002 or 0.0008. Los
-  Angeles falls below its 1,261 target under either, so recollection is needed.
-  A sealed blind check of the unvalidated mid-band is prepared, not labelled.
-  [Record](experiments/M1-SCREEN-DRAFT-20260925.md).
+  12,517 of 13,592 replacement clips at rate thresholds 0.002 or 0.0008.
+  Red-team: 0.002 hides up to ~3-frame errors in 74 kept LA clips, so it is not
+  recommended. Los Angeles falls below its 1,261 target, so ~320 raw LA clips
+  must be recollected. A sealed LA-only blind mid-band check is prepared, not
+  labelled. [Record](experiments/M1-SCREEN-DRAFT-20260925.md).
 
 ## 2026-09-25 — Post-reset settle wait (smoke)
 
