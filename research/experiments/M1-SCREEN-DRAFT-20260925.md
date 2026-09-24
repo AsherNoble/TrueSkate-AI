@@ -86,3 +86,24 @@ using the ONSET-VALIDATION convention of exact stored frame times.
   late frame, and ordinary clips stay at 8.
 - Only extremes matter: mid-high early clips sit at 8 like the ordinary ones.
   Then the 0.002 segment screen is adequate.
+
+## Cohort-builder integration (commit `0e73bd6`)
+
+`build_model1_scaling_manifests.py cohort` has an opt-in timing screen:
+`--timing-screen-rate R --timing-screen-max-frames F`. Its parameters and
+per-park exclusion counts are sealed into the manifest (`timing_screen`). The
+default behaviour and fingerprints of unscreened cohorts are unchanged.
+
+Dry run over `model1_linear_replacement_20260922` only (13,592 clips; the
+310-clip baseline lives in a separate root). Draft manifests were written only
+to the rig tmp directory
+`/Users/training-server/trueskate-ai-runtime/tmp/die5-compare-phase2-20260925/draft-manifests/`:
+
+| Screen | Clips | Excluded | Los Angeles | Kansas City | Super Crown | Skateboard GB | Workshop |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| none | 13,592 | 0 | 2,003 | 3,809 | 2,018 | 1,710 | 4,052 |
+| 0.002, ≤1 frame | 12,628 | 964 | 1,152 | 3,772 | 1,979 | 1,673 | 4,052 |
+| 0.0008, ≤1 frame | 12,517 | 1,075 | 1,089 | 3,760 | 1,964 | 1,663 | 4,041 |
+
+The Los Angeles counts match the standalone screen exactly. None of these
+manifests is a training decision.
