@@ -168,12 +168,14 @@ fork and rig WDA checkouts now use clean `master` at that SHA. Collection remain
 off until an explicitly authorized workload begins.
 
 The replacement-corpus plan targets the historical 13,100-sample aggregate park
-mixture; device-by-park cells are not quotas. Completed strict counts are 4,052
+mixture; device-by-park cells are not quotas. Completed park counts are 4,052
 Workshop, 3,809 Kansas City, 2,020 Skateboard GB 2024 (including the 310-clip
-baseline), 2,003 Los Angeles and zero Super Crown. Total: 11,884. The remaining
-park is Super Crown, with a historical target of 2,009 clips. Both XRs are idle
-after the operator-confirmed bounded Skateboard GB top-up admitted 12 strict
-clips. Final training will use a deterministic 13,100-sample selection that
+baseline), and 2,003 Los Angeles: a subtotal of 11,884. The remaining park is
+Super Crown, with a historical target of 2,009 clips. After an operator-confirmed
+bounded Skateboard GB top-up admitted 12 strict clips, both
+XRs began finite Super Crown runs to 1,150 and 860 clips respectively. Their
+first segments admitted 10 and 12 strict clips with accepted calibration.
+Final training will use a deterministic 13,100-sample selection that
 excludes surplus clips from other parks. On 2026-09-23, the opt-in batch
 exact-PTS extractor was promoted from clean release `1b8497e` after isolated
 one-segment checks on both XRs; previous release `13554c9` remains for rollback.
