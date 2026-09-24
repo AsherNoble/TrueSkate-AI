@@ -4,6 +4,14 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-25 — Multi-anchor consensus calibration (smoke)
+
+- An opt-in consensus fit over ≥3 single centre controls rejects a falsely
+  early anchor. Offline over 44 LA segments, it rejected only the known-bad
+  start and post-swipe mid false triggers. On-device production-path smoke:
+  4/4 segments accepted, 37/37 clips strictly admitted, and one real 17-frame
+  early mid detection rejected. [Record](experiments/M1-MULTIANCHOR-20260925.md).
+
 ## 2026-09-25 — Draft corpus timing screen
 
 - A per-clip anchor-error screen (opt-in in the cohort builder) keeps 12,628 or

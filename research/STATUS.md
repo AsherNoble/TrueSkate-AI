@@ -238,6 +238,9 @@ moving for ~7–8 s after the pre-segment reset. The branch adds:
   validated fix.
 - **Timing screen** ([M1-SCREEN-DRAFT](experiments/M1-SCREEN-DRAFT-20260925.md)):
   an opt-in per-clip screen for cohort manifests.
+- **Multi-anchor calibration** ([M1-MULTIANCHOR](experiments/M1-MULTIANCHOR-20260925.md)):
+  an opt-in consensus fit over extra single centre controls. It is a
+  smoke-tested candidate that needs no multi-touch.
 
 No corpus clip was excluded and no launcher changed. Exclusion, recollection
 and flag adoption await operator decisions.
