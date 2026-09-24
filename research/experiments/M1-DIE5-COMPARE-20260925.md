@@ -121,3 +121,15 @@ faint soft glows on the board in raw frames. Phase 3 labellers should expect
 subtle marks. Originals: rig
 `/Users/training-server/trueskate-ai-runtime/tmp/die5-compare-phase1-20260925/`
 and local `tmp/die5-compare-phase1-20260925/` (not backed up by Git).
+
+## Phase 2 capture method (fixed before recording)
+
+`collect_sls_xctest.py --die-five-experiment` runs the unchanged production
+basic-linear loop (flags from `scripts/ops/mvp_collect_linear.sh`: 50 ms
+controls, reset before segment with 1.5 s settle, one-minute segments, WDA
+timing capture, foreground/menu guards). Only three things differ: start and
+end controls are die-five markers in one WDA request; four mid markers follow
+payload samples 2/4/6/8 after the usual tail, alternating die-five and single
+centre touch (the corner check runs in every recording); the aligner is never
+spawned, so originals are retained and no clips are emitted. A mid marker that
+opens non-gameplay UI discards the segment.

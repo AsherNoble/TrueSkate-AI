@@ -64,3 +64,35 @@ def test_classify_error_and_exact_mcnemar():
     assert mcnemar_exact_p(6, 0) == pytest.approx(2 / 64)
     assert mcnemar_exact_p(5, 0) == pytest.approx(2 / 32)
     assert mcnemar_exact_p(3, 3) == 1.0
+
+
+def test_collector_die_five_marker_is_one_request_with_five_simultaneous_fingers():
+    import importlib.util
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    path = Path(__file__).parents[1] / "scripts" / "collection" / "collect_sls_xctest.py"
+    spec = importlib.util.spec_from_file_location("test_collect_sls_xctest", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    class Driver:
+        def __init__(self):
+            self.payloads = []
+
+        def execute(self, command, payload):
+            self.payloads.append((command, payload))
+
+    for kind, expected in (("die_five", 5), ("single", 1)):
+        driver = Driver()
+        module._execute_marker(SimpleNamespace(driver=driver, device_w=414, device_h=896), kind, 0.05)
+        assert len(driver.payloads) == 1
+        sources = driver.payloads[0][1]["actions"]
+        assert len(sources) == expected
+        downs = [[a["type"] for a in s["actions"]].index("pointerDown") for s in sources]
+        assert len(set(downs)) == 1
+        xy = sorted((s["actions"][0]["x"], s["actions"][0]["y"]) for s in sources)
+        if kind == "die_five":
+            assert xy == [(172, 413), (172, 483), (207, 448), (242, 413), (242, 483)]
+        else:
+            assert xy == [(207, 448)]
