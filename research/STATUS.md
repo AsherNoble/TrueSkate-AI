@@ -199,6 +199,11 @@ four points in a 66-point square. Three bounded recordings stayed in gameplay;
 preliminary inspection shows four visible spots, pending operator review of
 their precise timing. See
 [M1-MULTITAP4-20260925](experiments/M1-MULTITAP4-20260925.md).
+A 7 × 13, 50-point grid sent 91 simultaneous W3C pointer sources on XR2, but
+only five requested positions visibly brightened in each of three recordings;
+command completion took 7.6–30.5 s. Thus the full-grid marker is not yet a
+usable calibration signal despite successful Appium/WDA responses. See
+[M1-MULTITAP91-20260925](experiments/M1-MULTITAP91-20260925.md).
 On 2026-09-23,
 the opt-in batch exact-PTS extractor was promoted from clean release `1b8497e`
 after isolated one-segment checks on both XRs; previous release `13554c9`

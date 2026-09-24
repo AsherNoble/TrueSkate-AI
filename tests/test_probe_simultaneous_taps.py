@@ -2,6 +2,7 @@
 
 from scripts.inspect.probe_simultaneous_taps import send_pair
 from scripts.inspect.probe_four_simultaneous_taps import FOUR_POINTS, send_four
+from scripts.inspect.probe_grid_simultaneous_taps import GRID_POINTS, send_grid
 
 
 class FakeDriver:
@@ -46,6 +47,24 @@ def test_send_four_sends_square_in_one_command():
     assert len({source["id"] for source in sources}) == 4
     assert [(source["actions"][0]["x"], source["actions"][0]["y"])
             for source in sources] == list(FOUR_POINTS)
+    assert all([action["type"] for action in source["actions"]]
+               == ["pointerMove", "pointerDown", "pause", "pointerUp"]
+               for source in sources)
+
+
+def test_send_grid_sends_91_safe_touches_on_same_tick():
+    driver = FakeDriver()
+
+    send_grid(driver)
+
+    assert len(driver.commands) == 1
+    command, payload = driver.commands[0]
+    assert command == "actions"
+    sources = payload["actions"]
+    assert len(sources) == len(GRID_POINTS) == 91
+    assert len({source["id"] for source in sources}) == 91
+    assert [(source["actions"][0]["x"], source["actions"][0]["y"])
+            for source in sources] == list(GRID_POINTS)
     assert all([action["type"] for action in source["actions"]]
                == ["pointerMove", "pointerDown", "pause", "pointerUp"]
                for source in sources)

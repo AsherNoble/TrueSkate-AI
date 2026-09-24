@@ -4,6 +4,14 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-25 — 91-touch XR2 grid probe
+
+- Three isolated recordings captured a 7 × 13, 50-point grid command. WDA
+  returned success and gameplay remained visible, but a frame check found
+  only five requested positions brightening in each recording. The full grid
+  was not delivered visibly; command duration varied from 7.6 to 30.5 s.
+  [Record](experiments/M1-MULTITAP91-20260925.md).
+
 ## 2026-09-25 — Four simultaneous XR2 touches
 
 - Removed the on-film single-touch control; sent four fingers at the corners

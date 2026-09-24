@@ -1,0 +1,113 @@
+{
+  "method": "Exploratory screen-brightness check: resize frames to 414x896, compare grayscale to first frame, subtract 8 intensity units, average positive change over 15x15 around each requested centre; report positions with peak score >5. Visual observation should be verified by the operator.",
+  "trials": [
+    {
+      "repetition": 1,
+      "requested_points": 91,
+      "brightened_requested_positions": [
+        {
+          "x": 400,
+          "y": 160,
+          "peak_score": 40.64,
+          "peak_frame_zero_based": 307
+        },
+        {
+          "x": 400,
+          "y": 210,
+          "peak_score": 40.24,
+          "peak_frame_zero_based": 307
+        },
+        {
+          "x": 400,
+          "y": 310,
+          "peak_score": 39.29,
+          "peak_frame_zero_based": 307
+        },
+        {
+          "x": 400,
+          "y": 360,
+          "peak_score": 40.92,
+          "peak_frame_zero_based": 307
+        },
+        {
+          "x": 400,
+          "y": 710,
+          "peak_score": 22.92,
+          "peak_frame_zero_based": 305
+        }
+      ]
+    },
+    {
+      "repetition": 2,
+      "requested_points": 91,
+      "brightened_requested_positions": [
+        {
+          "x": 400,
+          "y": 160,
+          "peak_score": 40.81,
+          "peak_frame_zero_based": 295
+        },
+        {
+          "x": 400,
+          "y": 260,
+          "peak_score": 40.27,
+          "peak_frame_zero_based": 295
+        },
+        {
+          "x": 400,
+          "y": 310,
+          "peak_score": 39.32,
+          "peak_frame_zero_based": 295
+        },
+        {
+          "x": 400,
+          "y": 360,
+          "peak_score": 40.88,
+          "peak_frame_zero_based": 295
+        },
+        {
+          "x": 200,
+          "y": 410,
+          "peak_score": 22.34,
+          "peak_frame_zero_based": 293
+        }
+      ]
+    },
+    {
+      "repetition": 3,
+      "requested_points": 91,
+      "brightened_requested_positions": [
+        {
+          "x": 400,
+          "y": 160,
+          "peak_score": 45.1,
+          "peak_frame_zero_based": 984
+        },
+        {
+          "x": 400,
+          "y": 260,
+          "peak_score": 44.2,
+          "peak_frame_zero_based": 984
+        },
+        {
+          "x": 400,
+          "y": 360,
+          "peak_score": 45.14,
+          "peak_frame_zero_based": 984
+        },
+        {
+          "x": 200,
+          "y": 410,
+          "peak_score": 20.34,
+          "peak_frame_zero_based": 983
+        },
+        {
+          "x": 400,
+          "y": 760,
+          "peak_score": 20.04,
+          "peak_frame_zero_based": 983
+        }
+      ]
+    }
+  ]
+}
