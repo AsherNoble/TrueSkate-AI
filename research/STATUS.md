@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-24. Behavioural cloning is the development direction.
+Updated 2026-09-25. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -223,3 +223,21 @@ after isolated one-segment checks on both XRs; previous release `13554c9`
 remains for rollback.
 See [batch extraction evidence](experiments/M1-BATCH-EXTRACT-20260923.md).
 See [M1-RECOLLECT-20260922](experiments/M1-RECOLLECT-20260922.md).
+
+## Calibration false detections (2026-09-25, branch `research/model1-five-touch-calibration`)
+
+The weak or early start-control detections behind the Los Angeles rate
+anomalies (90/207 XR1 LA segments) coincide with the board and camera still
+moving for ~7–8 s after the pre-segment reset. The branch adds:
+
+- **Five-touch comparison** ([M1-DIE5-COMPARE](experiments/M1-DIE5-COMPARE-20260925.md)):
+  a preregistered blind five-touch versus single-touch comparison, captured
+  and awaiting human labels.
+- **Settle wait** ([M1-SETTLE](experiments/M1-SETTLE-20260925.md)): an opt-in
+  wait before the controls. It is a manipulation-checked precaution, not a
+  validated fix.
+- **Timing screen** ([M1-SCREEN-DRAFT](experiments/M1-SCREEN-DRAFT-20260925.md)):
+  an opt-in per-clip screen for cohort manifests.
+
+No corpus clip was excluded and no launcher changed. Exclusion, recollection
+and flag adoption await operator decisions.

@@ -4,6 +4,31 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-25 — Draft corpus timing screen
+
+- A per-clip anchor-error screen (opt-in in the cohort builder) keeps 12,628 or
+  12,517 of 13,592 replacement clips at rate thresholds 0.002 or 0.0008. Los
+  Angeles falls below its 1,261 target under either, so recollection is needed.
+  A sealed blind check of the unvalidated mid-band is prepared, not labelled.
+  [Record](experiments/M1-SCREEN-DRAFT-20260925.md).
+
+## 2026-09-25 — Post-reset settle wait (smoke)
+
+- Los Angeles boards move for ~7–8 s after the pre-segment reset, and moving
+  starts coincided with weak start detections. An opt-in settle wait produced
+  still start controls in 17/17 bounded recordings (9/30 moving without).
+  Red-team: its effect on anchor errors is untested. A confirmatory interleaved
+  test is proposed, not run. [Record](experiments/M1-SETTLE-20260925.md).
+
+## 2026-09-25 — Five-touch vs single-touch calibration (labels pending)
+
+- Preregistered and red-teamed the comparison. 30 Los Angeles recordings were
+  captured (20 XR1, 10 XR2). XR1 had no start anomaly, so the gate pauses its
+  extension. One XR2 start anomaly (+6,056 ppm): B declined to anchor. A had 7
+  false alarms in 157.5 s of no-touch footage; B had none. B rejected 12/60 mid
+  markers (post-hoc cause: early upper-corner triggers). The blind 132-item
+  viewer is ready. [Record](experiments/M1-DIE5-COMPARE-20260925.md).
+
 ## 2026-09-25 — Five-touch die calibration pilot
 
 - Twelve markers across three bounded XR2 recordings lit all five requested
