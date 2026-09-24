@@ -1,0 +1,401 @@
+[
+ {
+  "manifest": "XR1_LA_multi/iPhone_XR_20260924_120122/segment_00000.json",
+  "device": "iPhone_XR",
+  "timing_alignment": "wda_submitted_multi_anchor",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 7.343,
+   "differences": [
+    7.357,
+    23.602,
+    52.436,
+    51.83,
+    23.353,
+    8.691,
+    2.391,
+    0.541,
+    0.108
+   ]
+  },
+  "end_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 3.5,
+   "settled": true,
+   "waited_s": 1.865,
+   "differences": [
+    0.203,
+    0.07
+   ]
+  },
+  "pre_segment_reset_epoch_s": 1790276482.1219919,
+  "n_gestures": 14,
+  "roles": [
+   "start",
+   "mid",
+   "mid",
+   "end"
+  ]
+ },
+ {
+  "manifest": "XR1_LA_multi/iPhone_XR_20260924_120429/segment_00000.json",
+  "device": "iPhone_XR",
+  "timing_alignment": "wda_submitted_multi_anchor",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 7.125,
+   "differences": [
+    7.507,
+    25.841,
+    47.66,
+    49.44,
+    20.007,
+    5.924,
+    1.306,
+    0.219
+   ]
+  },
+  "end_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 3.5,
+   "settled": true,
+   "waited_s": 3.266,
+   "differences": [
+    16.26,
+    2.659,
+    0.591,
+    0.268
+   ]
+  },
+  "pre_segment_reset_epoch_s": 1790276669.4743512,
+  "n_gestures": 13,
+  "roles": [
+   "start",
+   "mid",
+   "mid",
+   "end"
+  ]
+ },
+ {
+  "manifest": "XR2_LA_multi/iPhone_XR2_20260924_120122/segment_00000.json",
+  "device": "iPhone_XR2",
+  "timing_alignment": "wda_submitted_multi_anchor",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 7.472,
+   "differences": [
+    6.349,
+    20.031,
+    48.95,
+    48.959,
+    18.765,
+    6.381,
+    1.644,
+    0.35,
+    0.08
+   ]
+  },
+  "end_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 3.5,
+   "settled": true,
+   "waited_s": 1.862,
+   "differences": [
+    0.016,
+    0.014
+   ]
+  },
+  "pre_segment_reset_epoch_s": 1790276482.388493,
+  "n_gestures": 13,
+  "roles": [
+   "start",
+   "mid",
+   "mid",
+   "end"
+  ]
+ },
+ {
+  "manifest": "XR2_LA_multi/iPhone_XR2_20260924_120429/segment_00000.json",
+  "device": "iPhone_XR2",
+  "timing_alignment": "wda_submitted_multi_anchor",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 7.144,
+   "differences": [
+    6.271,
+    21.002,
+    45.152,
+    47.158,
+    16.307,
+    4.478,
+    1.015,
+    0.173
+   ]
+  },
+  "end_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 3.5,
+   "settled": false,
+   "waited_s": 4.124,
+   "differences": [
+    53.519,
+    18.502,
+    6.829,
+    4.405,
+    3.418
+   ]
+  },
+  "pre_segment_reset_epoch_s": 1790276669.474286,
+  "n_gestures": 13,
+  "roles": [
+   "start",
+   "mid",
+   "mid",
+   "end"
+  ]
+ },
+ {
+  "session": "iPhone_XR_20260924_120122",
+  "tap_calibration": {
+   "method": "wda-submitted-multi-centre-controls-v1",
+   "accepted": true,
+   "wda_timing_revision": "b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6",
+   "rate": 1.0004174729498274,
+   "intercept_s": -375639.1115140431,
+   "anchor_span_s": 55.15953991666902,
+   "inliers": 4,
+   "outliers": 0,
+   "detections": [
+    {
+     "role": "start",
+     "gesture_index": 0,
+     "wda_action_sequence": 0,
+     "submitted_to_ios_monotonic_s": 375483.70652345836,
+     "submitted_to_ios_epoch_s": 1790276493.0463781,
+     "onset_video_s": 1.351667,
+     "detector_score": 35.2005,
+     "residual_s": 0.002367,
+     "inlier": true
+    },
+    {
+     "role": "mid",
+     "gesture_index": 4,
+     "wda_action_sequence": 4,
+     "submitted_to_ios_monotonic_s": 375500.23866195837,
+     "submitted_to_ios_epoch_s": 1790276509.578117,
+     "onset_video_s": 17.883333,
+     "detector_score": 35.8509,
+     "residual_s": -0.005007,
+     "inlier": true
+    },
+    {
+     "role": "mid",
+     "gesture_index": 8,
+     "wda_action_sequence": 8,
+     "submitted_to_ios_monotonic_s": 375516.74059191666,
+     "submitted_to_ios_epoch_s": 1790276526.0804071,
+     "onset_video_s": 34.4,
+     "detector_score": 26.6245,
+     "residual_s": 0.002841,
+     "inlier": true
+    },
+    {
+     "role": "end",
+     "gesture_index": 13,
+     "wda_action_sequence": 13,
+     "submitted_to_ios_monotonic_s": 375538.866063375,
+     "submitted_to_ios_epoch_s": 1790276548.206125,
+     "onset_video_s": 56.531667,
+     "detector_score": 42.9353,
+     "residual_s": -0.000201,
+     "inlier": true
+    }
+   ]
+  }
+ },
+ {
+  "session": "iPhone_XR_20260924_120429",
+  "tap_calibration": {
+   "method": "wda-submitted-multi-centre-controls-v1",
+   "accepted": true,
+   "wda_timing_revision": "b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6",
+   "rate": 1.0000090762745126,
+   "intercept_s": -375672.929792504,
+   "anchor_span_s": 56.612447666644584,
+   "inliers": 4,
+   "outliers": 0,
+   "detections": [
+    {
+     "role": "start",
+     "gesture_index": 0,
+     "wda_action_sequence": 0,
+     "submitted_to_ios_monotonic_s": 375671.14228800003,
+     "submitted_to_ios_epoch_s": 1790276680.483221,
+     "onset_video_s": 1.623333,
+     "detector_score": 31.0427,
+     "residual_s": 0.001143,
+     "inlier": true
+    },
+    {
+     "role": "mid",
+     "gesture_index": 4,
+     "wda_action_sequence": 4,
+     "submitted_to_ios_monotonic_s": 375690.992375875,
+     "submitted_to_ios_epoch_s": 1790276700.333435,
+     "onset_video_s": 21.471667,
+     "detector_score": 31.516,
+     "residual_s": -0.000791,
+     "inlier": true
+    },
+    {
+     "role": "mid",
+     "gesture_index": 8,
+     "wda_action_sequence": 8,
+     "submitted_to_ios_monotonic_s": 375708.67495816667,
+     "submitted_to_ios_epoch_s": 1790276718.016129,
+     "onset_video_s": 39.153333,
+     "detector_score": 35.5198,
+     "residual_s": -0.001868,
+     "inlier": true
+    },
+    {
+     "role": "end",
+     "gesture_index": 12,
+     "wda_action_sequence": 12,
+     "submitted_to_ios_monotonic_s": 375727.7547356667,
+     "submitted_to_ios_epoch_s": 1790276737.096027,
+     "onset_video_s": 58.236667,
+     "detector_score": 30.7215,
+     "residual_s": 0.001516,
+     "inlier": true
+    }
+   ]
+  }
+ },
+ {
+  "session": "iPhone_XR2_20260924_120122",
+  "tap_calibration": {
+   "method": "wda-submitted-multi-centre-controls-v1",
+   "accepted": true,
+   "wda_timing_revision": "b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6",
+   "rate": 1.000069950264833,
+   "intercept_s": -629243.9395296895,
+   "anchor_span_s": 56.00828287494369,
+   "inliers": 3,
+   "outliers": 1,
+   "detections": [
+    {
+     "role": "start",
+     "gesture_index": 0,
+     "wda_action_sequence": 0,
+     "submitted_to_ios_monotonic_s": 629201.5424302084,
+     "submitted_to_ios_epoch_s": 1790276495.565362,
+     "onset_video_s": 1.616667,
+     "detector_score": 32.442,
+     "residual_s": 0.000952,
+     "inlier": true
+    },
+    {
+     "role": "mid",
+     "gesture_index": 4,
+     "wda_action_sequence": 4,
+     "submitted_to_ios_monotonic_s": 629220.906578875,
+     "submitted_to_ios_epoch_s": 1790276514.92983,
+     "onset_video_s": 20.415,
+     "detector_score": 11.5144,
+     "residual_s": -0.566218,
+     "inlier": false
+    },
+    {
+     "role": "mid",
+     "gesture_index": 8,
+     "wda_action_sequence": 8,
+     "submitted_to_ios_monotonic_s": 629239.9903949584,
+     "submitted_to_ios_epoch_s": 1790276534.01396,
+     "onset_video_s": 40.063333,
+     "detector_score": 31.6965,
+     "residual_s": -0.003036,
+     "inlier": true
+    },
+    {
+     "role": "end",
+     "gesture_index": 12,
+     "wda_action_sequence": 12,
+     "submitted_to_ios_monotonic_s": 629257.5507130834,
+     "submitted_to_ios_epoch_s": 1790276551.574568,
+     "onset_video_s": 57.63,
+     "detector_score": 36.8707,
+     "residual_s": 0.002084,
+     "inlier": true
+    }
+   ]
+  }
+ },
+ {
+  "session": "iPhone_XR2_20260924_120429",
+  "tap_calibration": {
+   "method": "wda-submitted-multi-centre-controls-v1",
+   "accepted": true,
+   "wda_timing_revision": "b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6",
+   "rate": 1.000198840828618,
+   "intercept_s": -629511.575556131,
+   "anchor_span_s": 56.78495674999431,
+   "inliers": 4,
+   "outliers": 0,
+   "detections": [
+    {
+     "role": "start",
+     "gesture_index": 0,
+     "wda_action_sequence": 0,
+     "submitted_to_ios_monotonic_s": 629387.7349789584,
+     "submitted_to_ios_epoch_s": 1790276681.7609801,
+     "onset_video_s": 1.32,
+     "detector_score": 27.2021,
+     "residual_s": 0.012598,
+     "inlier": true
+    },
+    {
+     "role": "mid",
+     "gesture_index": 4,
+     "wda_action_sequence": 4,
+     "submitted_to_ios_monotonic_s": 629405.117669875,
+     "submitted_to_ios_epoch_s": 1790276699.1439571,
+     "onset_video_s": 18.685,
+     "detector_score": 27.8442,
+     "residual_s": -0.008549,
+     "inlier": true
+    },
+    {
+     "role": "mid",
+     "gesture_index": 8,
+     "wda_action_sequence": 8,
+     "submitted_to_ios_monotonic_s": 629422.3394306668,
+     "submitted_to_ios_epoch_s": 1790276716.366002,
+     "onset_video_s": 35.901667,
+     "detector_score": 41.3151,
+     "residual_s": -0.017067,
+     "inlier": true
+    },
+    {
+     "role": "end",
+     "gesture_index": 12,
+     "wda_action_sequence": 12,
+     "submitted_to_ios_monotonic_s": 629444.5199357084,
+     "submitted_to_ios_epoch_s": 1790276738.546873,
+     "onset_video_s": 58.116667,
+     "detector_score": 27.2606,
+     "residual_s": 0.013018,
+     "inlier": true
+    }
+   ]
+  }
+ }
+]
