@@ -1,0 +1,154 @@
+{
+  "root": "/Users/training-server/trueskate-ai-runtime/tmp/model1-la-originals-20260924",
+  "originals": 7,
+  "attempts_per_device": 4,
+  "rows": [
+    {
+      "device": "iPhone_XR",
+      "segment": 0,
+      "park": "SLS 2015 Los Angeles",
+      "mov": "/Users/training-server/trueskate-ai-runtime/tmp/model1-la-originals-20260924/XR1/iPhone_XR_20260924_050428/segment_00000.mov",
+      "bytes": 52229610,
+      "duration_s": 56.98,
+      "frames": 1706,
+      "resolution": [
+        828,
+        1792
+      ],
+      "n_events": 13,
+      "admitted": 11,
+      "calibration_rate": 1.000037201950478,
+      "scores": [
+        34.1664,
+        27.6625
+      ],
+      "timings_exists": true
+    },
+    {
+      "device": "iPhone_XR",
+      "segment": 1,
+      "park": "SLS 2015 Los Angeles",
+      "mov": "/Users/training-server/trueskate-ai-runtime/tmp/model1-la-originals-20260924/XR1/iPhone_XR_20260924_050428/segment_00001.mov",
+      "bytes": 71246654,
+      "duration_s": 57.113333,
+      "frames": 1710,
+      "resolution": [
+        828,
+        1792
+      ],
+      "n_events": 13,
+      "admitted": 11,
+      "calibration_rate": 0.9999769072869902,
+      "scores": [
+        32.6652,
+        20.564
+      ],
+      "timings_exists": true
+    },
+    {
+      "device": "iPhone_XR",
+      "segment": 2,
+      "park": "SLS 2015 Los Angeles",
+      "mov": "/Users/training-server/trueskate-ai-runtime/tmp/model1-la-originals-20260924/XR1/iPhone_XR_20260924_050428/segment_00002.mov",
+      "bytes": 70431107,
+      "duration_s": 58.28,
+      "frames": 1745,
+      "resolution": [
+        828,
+        1792
+      ],
+      "n_events": 12,
+      "admitted": 10,
+      "calibration_rate": 1.000340758239821,
+      "scores": [
+        26.895,
+        26.0272
+      ],
+      "timings_exists": true
+    },
+    {
+      "device": "iPhone_XR",
+      "segment": 3,
+      "park": "SLS 2015 Los Angeles",
+      "mov": "/Users/training-server/trueskate-ai-runtime/tmp/model1-la-originals-20260924/XR1/iPhone_XR_20260924_050428/segment_00003.mov",
+      "bytes": 53062665,
+      "duration_s": 59.98,
+      "frames": 1797,
+      "resolution": [
+        828,
+        1792
+      ],
+      "n_events": 13,
+      "admitted": 11,
+      "calibration_rate": 1.0005390353556478,
+      "scores": [
+        31.4616,
+        25.9655
+      ],
+      "timings_exists": true
+    },
+    {
+      "device": "iPhone_XR2",
+      "segment": 1,
+      "park": "SLS 2015 Los Angeles",
+      "mov": "/Users/training-server/trueskate-ai-runtime/tmp/model1-la-originals-20260924/XR2/iPhone_XR2_20260924_050427/segment_00001.mov",
+      "bytes": 66796519,
+      "duration_s": 55.18,
+      "frames": 1652,
+      "resolution": [
+        828,
+        1792
+      ],
+      "n_events": 11,
+      "admitted": 9,
+      "calibration_rate": 0.9999030714517345,
+      "scores": [
+        31.8543,
+        28.5013
+      ],
+      "timings_exists": true
+    },
+    {
+      "device": "iPhone_XR2",
+      "segment": 2,
+      "park": "SLS 2015 Los Angeles",
+      "mov": "/Users/training-server/trueskate-ai-runtime/tmp/model1-la-originals-20260924/XR2/iPhone_XR2_20260924_050427/segment_00002.mov",
+      "bytes": 69448318,
+      "duration_s": 57.396667,
+      "frames": 1718,
+      "resolution": [
+        828,
+        1792
+      ],
+      "n_events": 12,
+      "admitted": 10,
+      "calibration_rate": 0.9997407130726055,
+      "scores": [
+        26.335,
+        36.7872
+      ],
+      "timings_exists": true
+    },
+    {
+      "device": "iPhone_XR2",
+      "segment": 3,
+      "park": "SLS 2015 Los Angeles",
+      "mov": "/Users/training-server/trueskate-ai-runtime/tmp/model1-la-originals-20260924/XR2/iPhone_XR2_20260924_050427/segment_00003.mov",
+      "bytes": 71606159,
+      "duration_s": 57.83,
+      "frames": 1731,
+      "resolution": [
+        828,
+        1792
+      ],
+      "n_events": 12,
+      "admitted": 10,
+      "calibration_rate": 1.0017882858236988,
+      "scores": [
+        10.8202,
+        29.8951
+      ],
+      "timings_exists": true
+    }
+  ]
+}

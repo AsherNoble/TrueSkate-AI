@@ -4,6 +4,14 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-24 — Los Angeles originals retained on both XRs
+
+- A bounded four-attempt run per XR preserved seven original one-minute videos
+  with WDA reports and strict alignment. XR2 lost one attempt during save. Six
+  calibration fits were near 1.0; XR2 segment 3 was 1.001788 with a weak start
+  detection (score 10.82). The severe >1.004 case did not recur. All collectors
+  stopped at their bounds. [Record](experiments/M1-LA-ORIGINALS-20260924.md).
+
 ## 2026-09-24 — Balanced audit exposed calibration outliers
 
 - Both finite Super Crown runs stopped at their bounds, bringing the five-park

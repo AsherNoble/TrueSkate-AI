@@ -333,6 +333,8 @@ def main() -> None:
                     help="ntfy-alert if device free storage drops below this.")
     ap.add_argument("--no-align", action="store_true",
                     help="Do NOT auto-spawn the aligner after each segment (save .mov+manifest only).")
+    ap.add_argument("--retain-mov", action="store_true",
+                    help="Keep each source .mov after alignment for timing diagnosis.")
     ap.add_argument("--wait-for-align", action="store_true",
                     help="Run the post-segment aligner in the foreground instead of async. "
                          "Use for a bounded calibration pilot so its go/no-go result is visible.")
@@ -521,8 +523,10 @@ def main() -> None:
         if args.no_align:
             return
         cmd = [sys.executable, str(_HERE / "align_xctest_traces.py"),
-               "--segment", str(manifest_path), "--delete-mov",
+               "--segment", str(manifest_path),
                "--resize-width", str(args.align_resize_width)]
+        if not args.retain_mov:
+            cmd.append("--delete-mov")
         if args.align_video:
             cmd.append("--video")
             # Compact MVP clips are ultimately consumed as MP4.  Do the slice
