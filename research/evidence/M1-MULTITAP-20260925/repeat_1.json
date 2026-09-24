@@ -1,0 +1,49 @@
+{
+  "experiment": "simultaneous-two-tap-visibility-v1",
+  "device": "iPhone_XR2",
+  "park": "SLS 2015 Los Angeles (operator-confirmed; screenshot saved)",
+  "repetition": 1,
+  "hold_s": 0.08,
+  "events": [
+    {
+      "kind": "single_control",
+      "points": [
+        [
+          0.5,
+          0.5
+        ]
+      ],
+      "call_start_epoch_s": 1790258416.68248,
+      "call_end_epoch_s": 1790258417.1772108
+    },
+    {
+      "kind": "simultaneous_pair",
+      "points": [
+        [
+          0.46,
+          0.5
+        ],
+        [
+          0.54,
+          0.5
+        ]
+      ],
+      "call_start_epoch_s": 1790258419.327064,
+      "call_end_epoch_s": 1790258419.802048
+    }
+  ],
+  "gameplay_after": true,
+  "editor_after": false,
+  "menu_after": false,
+  "recording": {
+    "mov": "/Users/training-server/trueskate-ai-runtime/tmp/multitap-xr2-20260924/revised/repeat_1.mov",
+    "started_at_epoch_s": 1790258415.565422,
+    "fps": 30,
+    "codec": "?",
+    "uuid": "921ED14C-6BF5-4DBC-9AE9-7FA3DE527325",
+    "mb": 7.8,
+    "host_start_epoch_s": 1790258413.9000409,
+    "host_stop_epoch_s": 1790258423.9789371,
+    "init_latency_s": 1.665
+  }
+}

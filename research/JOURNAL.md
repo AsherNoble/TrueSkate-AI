@@ -4,6 +4,14 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-25 — Two-finger XR2 visibility probe
+
+- Three corrected isolated originals contain a single-touch control followed
+  by one two-finger WDA command. All commands completed, and gameplay remained
+  visible; whether two marks appeared is pending operator frame review. A
+  browser viewer and exact frame metadata are prepared.
+  [Record](experiments/M1-MULTITAP-20260925.md).
+
 ## 2026-09-24 — Los Angeles originals retained on both XRs
 
 - A bounded four-attempt run per XR preserved seven original one-minute videos
