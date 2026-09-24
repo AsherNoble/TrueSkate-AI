@@ -149,3 +149,43 @@ graphic stripes sweep the detector core; the single-touch detector fired at
 1.647 s, ~30 ms after WDA submission, too early for a rendered touch. The rate
 error implies ~98 ms (~3 frames) early. This suggests a separate candidate
 fix — wait for a static scene before the start control — to test after this study.
+
+## Amendment after design red-team (2026-09-25, before any Phase 2 result was read)
+
+An experiment-red-team review (read-only; verified no file changes) returned
+FIXABLE. Adopted, superseding earlier text where they conflict:
+
+1. **Primary analysis:** Los Angeles *start* markers only, one per recording
+   (the recording is the unit). McNemar on "gross error" (detected >1 frame
+   from the human label). No-result is a separate outcome, never counted as a
+   gross error or as correct. Report exact counts, the rule-of-three bound
+   (0 errors in n ⇒ rate < 3/n), and device/time clustering of discordant pairs.
+2. **Gate and maximum N:** an A-anomaly is an A start+end fit with
+   `abs(rate - 1) > 0.002`. Maximum N is fixed at 40 XR1 LA + 10 XR2 LA
+   recordings; no continuation beyond it to reach significance. If the first
+   20 XR1 recordings have no A-anomaly, pause and discuss.
+3. **Labelling:** 100% of Los Angeles start and end markers are labelled;
+   other die-five mid markers use the disagreement + 25% (min 40) rule, with
+   agreement-stratum rates inverse-probability weighted (len/k). Single mid
+   markers 25% (min 20). The human target is the first frame any touch mark is
+   visible. Record who labelled and confirm they had no access to analysis or
+   key files.
+4. **Rejection criterion** applies to start markers per device (≤5% each),
+   not pooled.
+5. **False alarms:** reported per second of scanned no-touch time. A
+   post-reset null window (video start to 0.1 s before the start marker's WDA
+   submission) is added, since it covers the moving-board fault state.
+6. **Corner check** (corrected geometry: production decodes at 256 px, so the
+   ring is ~16–32 pt, leaving ~17 pt to the 49.5 pt corners; glow radius
+   unmeasured). Pass if, on labelled mid markers, A's within-±1 rate on
+   die-five is no more than 10 points below single, and A's median score ratio
+   die-five/single is 0.8–1.25. It covers post-swipe conditions only.
+7. **Mid-marker residuals** of both fits are scored against human labels, not
+   detector output.
+8. Viewer frame indices use the aligner's own frame-time probe with a length
+   assertion.
+
+Not adopted without operator approval: a forced-motion enrichment arm
+(shortened post-reset settle) — it adds device time and a new condition.
+Scope: a pass shows fewer wrong start anchors on fresh recordings; it does not
+repair the 859 affected clips or compare against a settle-before-start fix.

@@ -113,6 +113,14 @@ def analyze_segment(manifest_path: Path) -> dict:
             t += REFERENCE_S + NULL_WINDOW_AFTER_S
         else:
             t += 0.25
+    # Post-reset null window: recording start to just before the start marker
+    # is submitted. The board may still be moving here (the observed fault state).
+    start_marker = next((m for m in markers if m["role"] == "start"), None)
+    post_reset = None
+    if start_marker is not None and start_marker["approx_video_s"] - 0.1 > all_times[0] + 0.2:
+        span = start_marker["approx_video_s"] - 0.1 - REFERENCE_S
+        post_reset = {"scanned_s": round(start_marker["approx_video_s"] - 0.1 - all_times[0], 3),
+                      **detect_both(mov, all_times, REFERENCE_S, after_s=max(0.05, span))}
     return {
         "segment": str(manifest_path),
         "device": manifest["device"],
@@ -121,6 +129,8 @@ def analyze_segment(manifest_path: Path) -> dict:
         "markers": markers,
         "fits": fits,
         "null_windows": nulls,
+        "null_scanned_s": round(len(nulls) * (REFERENCE_S + NULL_WINDOW_AFTER_S), 3),
+        "post_reset_null": post_reset,
     }
 
 

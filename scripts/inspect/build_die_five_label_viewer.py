@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Select M1-DIE5-COMPARE markers for blind human labelling and build the viewer.
 
-Selection (protocol phase 3): every die-five marker where detectors A and B
-disagree or either has no result, a seeded 25% (min 40) of agreeing die-five
+Selection (protocol phase 3 as amended): every start/end marker, every mid
+die-five marker where detectors A and B disagree or either has no result, a seeded 25% (min 40) of agreeing die-five
 markers, and a seeded 25% (min 20) of single-touch markers for the corner check.
 Each item is a frame-exact native-resolution crop around the screen centre.
 Window placement depends only on WDA submission time plus seeded jitter, never
@@ -32,6 +32,8 @@ def select(analysis: list[dict], rng: random.Random) -> list[dict]:
             item = {"segment": seg["segment"], **m}
             if m["marker"] == "single":
                 single.append(item)
+            elif m["role"] in ("start", "end"):
+                disagree.append(item | {"stratum": "anchor_all_labelled"})
             elif m.get("a_frame") is None or m.get("b_frame") is None or m["a_frame"] != m["b_frame"]:
                 disagree.append(item | {"stratum": "disagree_or_no_result"})
             else:
@@ -45,10 +47,19 @@ def select(analysis: list[dict], rng: random.Random) -> list[dict]:
 
 
 def frame_times(mov: Path) -> list[float]:
-    out = subprocess.check_output([
-        "ffprobe", "-v", "error", "-select_streams", "v:0", "-show_frames",
-        "-show_entries", "frame=best_effort_timestamp_time", "-of", "json", str(mov)])
-    return [float(f["best_effort_timestamp_time"]) for f in json.loads(out)["frames"]]
+    """The aligner's own probe, so global frame indices match the analysis."""
+    import importlib.util
+    path = HERE.parent / "collection" / "align_xctest_traces.py"
+    spec = importlib.util.spec_from_file_location("die5_viewer_aligner", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    times = module._probe_video_frame_times(mov)
+    count = int(subprocess.check_output([
+        "ffprobe", "-v", "error", "-select_streams", "v:0", "-count_frames",
+        "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", str(mov)]).strip())
+    if len(times) != count:
+        raise RuntimeError(f"{mov}: {len(times)} timestamps for {count} decoded frames")
+    return times
 
 
 def extract(mov: Path, first: int, last: int, dest: Path) -> int:
