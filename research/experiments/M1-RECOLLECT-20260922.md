@@ -1,12 +1,14 @@
 # M1-RECOLLECT-20260922 — Replacement linear corpus park plan
 
-Status: second bounded collection stage active. XR1 is in The Workshop and XR2
-is in SLS 2013 Kansas City, as confirmed by the operator.
+Status: second bounded stage and Skateboard GB top-up complete. Both collectors
+are stopped; the next park is SLS 2015 Super Crown on both devices.
 
 ## Objective
 
 Collect an exact-PTS replacement for the 13,100-sample corpus behind the 80.05%
-linear Model 1 result while approximately preserving its device and park mix.
+linear Model 1 result while approximately preserving its aggregate park mix.
+The historical device-by-park table below is descriptive, not a collection quota;
+the operator clarified that matching park totals across the two XRs is the goal.
 The 310 audited XR2 clips from Skateboard GB 2024 count toward that total, so
 12,790 additional accepted clips remain.
 
@@ -40,35 +42,31 @@ XR1 contributed 5,965 samples (45.53%) and XR2 contributed 7,135 (54.47%).
 Historically, XR1 moved from Workshop to Super Crown to Los Angeles; XR2 moved
 from Workshop to Kansas City to Skateboard GB 2024.
 
-## Replacement quotas
+## Aggregate park targets
 
-The quotas preserve the historical device/park allocation. Operational park
-order may begin from whichever park is already loaded; the final admitted mix,
-rather than chronology, is the control variable.
+The aggregate historical park counts are the control variable. The current
+replacement counts include the preserved 310-clip XR2 Skateboard GB audit
+tranche and the bounded top-up completed on 2026-09-24 (Sydney time).
 
-| Device | Park | Final target | Already accepted | Additional target |
-|---|---|---:|---:|---:|
-| XR1 | The Workshop | 2,695 | 0 | 2,695 |
-| XR1 | SLS 2015 Super Crown | 2,009 | 0 | 2,009 |
-| XR1 | SLS 2015 Los Angeles | 1,261 | 0 | 1,261 |
-| XR2 | The Workshop | 1,334 | 0 | 1,334 |
-| XR2 | SLS 2013 Kansas City | 3,784 | 0 | 3,784 |
-| XR2 | Skateboard GB 2024 | 2,017 | 310 | 1,707 |
-| **Total** |  | **13,100** | **310** | **12,790** |
+| Park | Historical target | Accepted | Difference |
+|---|---:|---:|---:|
+| The Workshop | 4,029 | 4,052 | +23 |
+| SLS 2013 Kansas City | 3,784 | 3,809 | +25 |
+| Skateboard GB 2024 | 2,017 | 2,020 | +3 |
+| SLS 2015 Super Crown | 2,009 | 0 | −2,009 |
+| SLS 2015 Los Angeles | 1,261 | 2,003 | +742 |
+| **Total** | **13,100** | **11,884** | **−1,216** |
 
-Current operator-reported device state:
-
-| Device | Loaded park |
-|---|---|
-| XR1 | The Workshop |
-| XR2 | SLS 2013 Kansas City |
+Collect approximately 2,009 Super Crown clips across both XRs, then select a
+deterministic 13,100-sample manifest that excludes the 793 surplus clips in
+other parks. The two devices do not need separate park quotas.
 
 A collector park label records provenance; it does not navigate the game, so
 each later park change must still be confirmed on the device.
 
 Collection stops only at segment boundaries and may slightly overshoot a quota.
 Preserve surplus clips, then create a deterministic 13,100-sample manifest with
-the exact counts above for the controlled training comparison.
+the aggregate historical counts above for the controlled training comparison.
 
 ## First bounded tranche launch
 
@@ -134,3 +132,17 @@ zero clips, and the bounded collector recovered on the next seed. No milestone
 notification process was started for this stage. Runtime paths, initial seeds
 and targets are recorded on the rig in
 `tmp/model1_replacement_stage2_20260923.json`.
+
+## Stage completion and Skateboard GB top-up
+
+Both second-stage collectors stopped automatically at complete segment
+boundaries: XR1 admitted 4,052 Workshop clips and XR2 admitted 3,809 Kansas
+City clips. With XR2 then confirmed by the operator in Skateboard GB 2024, one
+explicitly bounded segment continued XR2's persisted seed stream and admitted
+12 strict clips. The new Skateboard GB directory count is 1,710; with the
+preserved 310-clip baseline, that park has 2,020 clips. The new segment passed
+the strict corpus audit: correct device/park provenance, no duplicate commands,
+32 decodable frames and increasing source timestamps in every clip. Two-anchor
+calibration passed. Both collectors stopped, and both WDA recorders returned
+idle. The rig audit report is
+`tmp/model1-skateboard-gb-topup-20260924-audit.json`.

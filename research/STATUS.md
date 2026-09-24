@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-23. Behavioural cloning is the development direction.
+Updated 2026-09-24. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -167,19 +167,15 @@ idle and self-deleted; a final listing found zero attachments on both XRs. The
 fork and rig WDA checkouts now use clean `master` at that SHA. Collection remains
 off until an explicitly authorized workload begins.
 
-The replacement-corpus plan targets the historical 13,100-sample park mixture.
-The first bounded tranche completed with 2,003 XR1/SLS 2015 Los Angeles clips
-and 1,698 new XR2/Skateboard GB 2024 clips; the latter totals 2,008 with its
-preserved 310-clip baseline. A second explicitly authorized bounded stage is
-active: XR1 collects The Workshop to 4,050 strict clips and XR2 collects SLS
-2013 Kansas City to 3,800. The per-device command seeds continue across the
-park boundary. Initial strict audits admitted 10 and 11 clips respectively,
-with correct provenance, 32 increasing source timestamps, accepted calibration
-and zero exact-command duplicates across the replacement directory. On
-2026-09-23, the opt-in batch exact-PTS extractor was promoted from clean
-release `1b8497e` after isolated one-segment checks on both XRs; the previous
-release `13554c9` is retained for rollback. Both bounded collectors resumed
-with their persisted next seeds and original strict targets. This stage has no
-milestone notification process.
+The replacement-corpus plan targets the historical 13,100-sample aggregate park
+mixture; device-by-park cells are not quotas. Completed strict counts are 4,052
+Workshop, 3,809 Kansas City, 2,020 Skateboard GB 2024 (including the 310-clip
+baseline), 2,003 Los Angeles and zero Super Crown. Total: 11,884. The remaining
+park is Super Crown, with a historical target of 2,009 clips. Both XRs are idle
+after the operator-confirmed bounded Skateboard GB top-up admitted 12 strict
+clips. Final training will use a deterministic 13,100-sample selection that
+excludes surplus clips from other parks. On 2026-09-23, the opt-in batch
+exact-PTS extractor was promoted from clean release `1b8497e` after isolated
+one-segment checks on both XRs; previous release `13554c9` remains for rollback.
 See [batch extraction evidence](experiments/M1-BATCH-EXTRACT-20260923.md).
 See [M1-RECOLLECT-20260922](experiments/M1-RECOLLECT-20260922.md).

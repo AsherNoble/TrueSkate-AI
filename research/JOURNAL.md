@@ -4,6 +4,15 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-24 — Replacement park top-up completed
+
+- The second bounded stage stopped at 4,052 XR1/Workshop and 3,809 XR2/Kansas
+  City strict clips. One operator-confirmed XR2/Skateboard GB segment added 12
+  audited clips, bringing that park to 2,020 including its 310-clip baseline.
+  Both collectors and recorders are idle. The operator clarified that the
+  replacement should match aggregate park totals, not device-by-park cells;
+  Super Crown is the remaining park. [Counts and audit](experiments/M1-RECOLLECT-20260922.md).
+
 ## 2026-09-23 — Replacement collection rotated into two new parks
 
 - The first bounded tranche finished with 2,003 XR1/Los Angeles clips and 2,008
