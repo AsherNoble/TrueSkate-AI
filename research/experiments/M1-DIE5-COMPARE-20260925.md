@@ -244,3 +244,29 @@ off by default) waits after the pre-segment reset until two successive 0.25 s
 screenshot differences are below the threshold. The footage above suggests a
 threshold of 1.5. If the board keeps rolling, the wait will time out; that
 case needs a re-reset or a skip, which is untested.
+
+## Exploratory label-free rate check (2026-09-25)
+
+Fitted start+end rates, using the start/end frames from each detector over
+the 30 Phase 2 recordings:
+
+| Detector | Fitted | Median rate error | Max | Beyond 0.002 |
+|---|---:|---:|---:|---:|
+| A | 30/30 | 311 ppm | 6,056 ppm | 1 |
+| B | 28/30 | 202 ppm | 575 ppm | 0 |
+| B′ | 30/30 | 197 ppm | 575 ppm | 0 |
+
+- **XR2 anomaly recording.** A's start gives +6,056 ppm. B′'s start is 10
+  frames later with 5/5 votes and gives −189 ppm, consistent with A having
+  fired early on the moving board.
+- **Other disagreements.** In the three other A/B start/end disagreements (all
+  moving-board recordings or ends), B's rate is closer to zero: A +421…+765 ppm
+  against B −185…+151 ppm.
+- **B′ false alarms.** B′ fired in 6/90 steady no-touch windows (B: 0), always
+  with exactly 4/5 votes. The contested start had 5/5. A hybrid rule is a
+  hypothesis for a new confirmatory test, not a finding: use B, and fall back
+  to B′ only at 5/5 votes.
+
+Rate plausibility is a proxy; human labels remain the primary evidence. See
+[M1-SETTLE-20260925](M1-SETTLE-20260925.md) for the settle-wait smoke test that
+removed the moving-board start condition in 11/11 recordings.

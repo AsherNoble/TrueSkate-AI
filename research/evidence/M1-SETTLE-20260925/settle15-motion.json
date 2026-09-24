@@ -1,0 +1,74 @@
+[
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/settle15/XR1_LA_settle15/iPhone_XR_20260924_104052/segment_00000.json",
+  "device": "iPhone_XR",
+  "park": "SLS 2015 Los Angeles",
+  "start_approx_video_s": 1.39,
+  "frames": 23,
+  "centre_motion_mean": 0.059,
+  "centre_motion_max": 0.652
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/settle15/XR1_LA_settle15/iPhone_XR_20260924_104211/segment_00000.json",
+  "device": "iPhone_XR",
+  "park": "SLS 2015 Los Angeles",
+  "start_approx_video_s": 2.69,
+  "frames": 23,
+  "centre_motion_mean": 0.044,
+  "centre_motion_max": 0.545
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/settle15/XR1_LA_settle15/iPhone_XR_20260924_104328/segment_00000.json",
+  "device": "iPhone_XR",
+  "park": "SLS 2015 Los Angeles",
+  "start_approx_video_s": 1.487,
+  "frames": 23,
+  "centre_motion_mean": 0.062,
+  "centre_motion_max": 0.655
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/settle15/XR1_LA_settle15/iPhone_XR_20260924_104444/segment_00000.json",
+  "device": "iPhone_XR",
+  "park": "SLS 2015 Los Angeles",
+  "start_approx_video_s": 1.4,
+  "frames": 23,
+  "centre_motion_mean": 0.063,
+  "centre_motion_max": 0.658
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/settle15/XR2_LA_settle15/iPhone_XR2_20260924_104052/segment_00000.json",
+  "device": "iPhone_XR2",
+  "park": "SLS 2015 Los Angeles",
+  "start_approx_video_s": 1.301,
+  "frames": 23,
+  "centre_motion_mean": 0.053,
+  "centre_motion_max": 0.591
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/settle15/XR2_LA_settle15/iPhone_XR2_20260924_104213/segment_00000.json",
+  "device": "iPhone_XR2",
+  "park": "SLS 2015 Los Angeles",
+  "start_approx_video_s": 1.454,
+  "frames": 23,
+  "centre_motion_mean": 0.056,
+  "centre_motion_max": 0.587
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/settle15/XR2_LA_settle15/iPhone_XR2_20260924_104330/segment_00000.json",
+  "device": "iPhone_XR2",
+  "park": "SLS 2015 Los Angeles",
+  "start_approx_video_s": 1.372,
+  "frames": 22,
+  "centre_motion_mean": 0.059,
+  "centre_motion_max": 0.591
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/settle15/XR2_LA_settle15/iPhone_XR2_20260924_104441/segment_00000.json",
+  "device": "iPhone_XR2",
+  "park": "SLS 2015 Los Angeles",
+  "start_approx_video_s": 1.453,
+  "frames": 22,
+  "centre_motion_mean": 0.059,
+  "centre_motion_max": 0.592
+ }
+]
