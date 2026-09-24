@@ -1,0 +1,695 @@
+{
+  "method": "unchanged production centre/ring detector at five positions; chronological search advances after each marker; exploratory consensus requires three onsets within one frame",
+  "recordings": [
+    {
+      "recording": "recording_1",
+      "frame_count": 354,
+      "markers": [
+        {
+          "marker": 1,
+          "command_start_video_s": 1.137231,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 92,
+              "video_s": 3.185,
+              "score": 34.5
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 92,
+              "video_s": 3.185,
+              "score": 34.735
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 92,
+              "video_s": 3.185,
+              "score": 34.608
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 92,
+              "video_s": 3.185,
+              "score": 33.929
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 92,
+              "video_s": 3.185,
+              "score": 33.322
+            }
+          ],
+          "consensus_frame": 92,
+          "consensus_video_s": 3.185,
+          "host_call_start_to_visible_s": 2.047769,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        },
+        {
+          "marker": 2,
+          "command_start_video_s": 3.036908,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 150,
+              "video_s": 5.118333,
+              "score": 25.37
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 150,
+              "video_s": 5.118333,
+              "score": 25.452
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 150,
+              "video_s": 5.118333,
+              "score": 25.689
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 150,
+              "video_s": 5.118333,
+              "score": 25.486
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 150,
+              "video_s": 5.118333,
+              "score": 25.139
+            }
+          ],
+          "consensus_frame": 150,
+          "consensus_video_s": 5.118333,
+          "host_call_start_to_visible_s": 2.081425,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        },
+        {
+          "marker": 3,
+          "command_start_video_s": 4.971762,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 209,
+              "video_s": 7.085,
+              "score": 34.781
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 209,
+              "video_s": 7.085,
+              "score": 34.706
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 209,
+              "video_s": 7.085,
+              "score": 34.544
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 209,
+              "video_s": 7.085,
+              "score": 33.987
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 209,
+              "video_s": 7.085,
+              "score": 33.443
+            }
+          ],
+          "consensus_frame": 209,
+          "consensus_video_s": 7.085,
+          "host_call_start_to_visible_s": 2.113238,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        },
+        {
+          "marker": 4,
+          "command_start_video_s": 6.916395,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 267,
+              "video_s": 9.018333,
+              "score": 34.766
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 267,
+              "video_s": 9.018333,
+              "score": 34.706
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 267,
+              "video_s": 9.018333,
+              "score": 34.373
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 267,
+              "video_s": 9.018333,
+              "score": 34.033
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 267,
+              "video_s": 9.018333,
+              "score": 33.419
+            }
+          ],
+          "consensus_frame": 267,
+          "consensus_video_s": 9.018333,
+          "host_call_start_to_visible_s": 2.101938,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        }
+      ]
+    },
+    {
+      "recording": "recording_2",
+      "frame_count": 353,
+      "markers": [
+        {
+          "marker": 1,
+          "command_start_video_s": 1.137251,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 92,
+              "video_s": 3.176667,
+              "score": 25.208
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 92,
+              "video_s": 3.176667,
+              "score": 25.535
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 92,
+              "video_s": 3.176667,
+              "score": 25.948
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 92,
+              "video_s": 3.176667,
+              "score": 25.516
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 92,
+              "video_s": 3.176667,
+              "score": 24.97
+            }
+          ],
+          "consensus_frame": 92,
+          "consensus_video_s": 3.176667,
+          "host_call_start_to_visible_s": 2.039416,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        },
+        {
+          "marker": 2,
+          "command_start_video_s": 3.036116,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 150,
+              "video_s": 5.11,
+              "score": 41.89
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 150,
+              "video_s": 5.11,
+              "score": 41.637
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 150,
+              "video_s": 5.11,
+              "score": 42.22
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 150,
+              "video_s": 5.11,
+              "score": 40.953
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 150,
+              "video_s": 5.11,
+              "score": 40.547
+            }
+          ],
+          "consensus_frame": 150,
+          "consensus_video_s": 5.11,
+          "host_call_start_to_visible_s": 2.073884,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        },
+        {
+          "marker": 3,
+          "command_start_video_s": 4.961376,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 209,
+              "video_s": 7.076667,
+              "score": 34.781
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 209,
+              "video_s": 7.076667,
+              "score": 34.706
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 209,
+              "video_s": 7.076667,
+              "score": 34.544
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 209,
+              "video_s": 7.076667,
+              "score": 33.987
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 209,
+              "video_s": 7.076667,
+              "score": 33.443
+            }
+          ],
+          "consensus_frame": 209,
+          "consensus_video_s": 7.076667,
+          "host_call_start_to_visible_s": 2.115291,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        },
+        {
+          "marker": 4,
+          "command_start_video_s": 6.910696,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 266,
+              "video_s": 8.976667,
+              "score": 41.869
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 266,
+              "video_s": 8.976667,
+              "score": 41.69
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 266,
+              "video_s": 8.976667,
+              "score": 42.336
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 266,
+              "video_s": 8.976667,
+              "score": 40.934
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 266,
+              "video_s": 8.976667,
+              "score": 40.358
+            }
+          ],
+          "consensus_frame": 266,
+          "consensus_video_s": 8.976667,
+          "host_call_start_to_visible_s": 2.065971,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        }
+      ]
+    },
+    {
+      "recording": "recording_3",
+      "frame_count": 357,
+      "markers": [
+        {
+          "marker": 1,
+          "command_start_video_s": 1.127143,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 93,
+              "video_s": 3.215,
+              "score": 34.465
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 93,
+              "video_s": 3.215,
+              "score": 34.773
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 93,
+              "video_s": 3.215,
+              "score": 34.947
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 93,
+              "video_s": 3.215,
+              "score": 33.895
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 93,
+              "video_s": 3.215,
+              "score": 33.755
+            }
+          ],
+          "consensus_frame": 93,
+          "consensus_video_s": 3.215,
+          "host_call_start_to_visible_s": 2.087857,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        },
+        {
+          "marker": 2,
+          "command_start_video_s": 3.055731,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 151,
+              "video_s": 5.148333,
+              "score": 25.595
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 151,
+              "video_s": 5.148333,
+              "score": 25.41
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 151,
+              "video_s": 5.148333,
+              "score": 25.735
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 151,
+              "video_s": 5.148333,
+              "score": 25.48
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 151,
+              "video_s": 5.148333,
+              "score": 24.776
+            }
+          ],
+          "consensus_frame": 151,
+          "consensus_video_s": 5.148333,
+          "host_call_start_to_visible_s": 2.092602,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        },
+        {
+          "marker": 3,
+          "command_start_video_s": 5.098143,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 211,
+              "video_s": 7.148333,
+              "score": 34.526
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 211,
+              "video_s": 7.148333,
+              "score": 34.819
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 211,
+              "video_s": 7.148333,
+              "score": 34.733
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 211,
+              "video_s": 7.148333,
+              "score": 33.944
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 211,
+              "video_s": 7.148333,
+              "score": 33.438
+            }
+          ],
+          "consensus_frame": 211,
+          "consensus_video_s": 7.148333,
+          "host_call_start_to_visible_s": 2.05019,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        },
+        {
+          "marker": 4,
+          "command_start_video_s": 6.987092,
+          "detections": [
+            {
+              "point": [
+                172,
+                413
+              ],
+              "frame": 269,
+              "video_s": 9.081667,
+              "score": 34.508
+            },
+            {
+              "point": [
+                242,
+                413
+              ],
+              "frame": 269,
+              "video_s": 9.081667,
+              "score": 34.803
+            },
+            {
+              "point": [
+                207,
+                448
+              ],
+              "frame": 269,
+              "video_s": 9.081667,
+              "score": 34.385
+            },
+            {
+              "point": [
+                172,
+                483
+              ],
+              "frame": 269,
+              "video_s": 9.081667,
+              "score": 33.956
+            },
+            {
+              "point": [
+                242,
+                483
+              ],
+              "frame": 269,
+              "video_s": 9.081667,
+              "score": 33.481
+            }
+          ],
+          "consensus_frame": 269,
+          "consensus_video_s": 9.081667,
+          "host_call_start_to_visible_s": 2.094575,
+          "consensus_votes_within_one_frame": 5,
+          "detected_count": 5
+        }
+      ]
+    }
+  ]
+}

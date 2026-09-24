@@ -4,6 +4,7 @@ from scripts.inspect.probe_simultaneous_taps import send_pair
 from scripts.inspect.probe_four_simultaneous_taps import FOUR_POINTS, send_four
 from scripts.inspect.probe_grid_simultaneous_taps import GRID_POINTS, send_grid
 from scripts.inspect.probe_eight_simultaneous_taps import EIGHT_POINTS, ORDER_NAMES, ordered_points, send_eight
+from scripts.inspect.probe_five_simultaneous_taps import FIVE_POINTS, send_five
 
 
 class FakeDriver:
@@ -90,3 +91,21 @@ def test_send_eight_keeps_all_points_under_each_ordering():
         assert all([action["type"] for action in source["actions"]]
                    == ["pointerMove", "pointerDown", "pause", "pointerUp"]
                    for source in sources)
+
+
+def test_send_five_uses_die_pattern_in_one_command():
+    driver = FakeDriver()
+
+    send_five(driver)
+
+    assert len(driver.commands) == 1
+    command, payload = driver.commands[0]
+    assert command == "actions"
+    sources = payload["actions"]
+    assert len(sources) == 5
+    assert len({source["id"] for source in sources}) == 5
+    assert [(source["actions"][0]["x"], source["actions"][0]["y"])
+            for source in sources] == list(FIVE_POINTS)
+    assert all([action["type"] for action in source["actions"]]
+               == ["pointerMove", "pointerDown", "pause", "pointerUp"]
+               for source in sources)

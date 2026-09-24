@@ -210,6 +210,13 @@ per recording. The outgoing payload and deployed WDA construction loop retain
 all eight paths, so the practical limit appears downstream; the exact layer
 is unresolved. A five-point marker remains a candidate. See
 [M1-MULTITAP8-20260925](experiments/M1-MULTITAP8-20260925.md).
+A bounded XR2 die-five pilot then recorded twelve five-point calibration
+markers in three short videos. The existing local onset detector found every
+position on the same first-visible frame for all twelve markers; the existing
+centre-only detector also succeeded in this stationary scene. This establishes
+executability and local onset visibility, not yet a gain in calibration
+accuracy or a fix for the severe two-anchor anomaly. See
+[M1-DIE5-20260925](experiments/M1-DIE5-20260925.md).
 On 2026-09-23,
 the opt-in batch exact-PTS extractor was promoted from clean release `1b8497e`
 after isolated one-segment checks on both XRs; previous release `13554c9`

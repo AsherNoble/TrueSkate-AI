@@ -4,6 +4,13 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-25 — Five-touch die calibration pilot
+
+- Twelve markers across three bounded XR2 recordings lit all five requested
+  positions on the same first-visible frame. The single-centre detector also
+  succeeded in this stationary scene, so no improvement or calibration change
+  is claimed. [Record](experiments/M1-DIE5-20260925.md).
+
 ## 2026-09-25 — Eight-touch XR2 limit probe
 
 - Unity documents five concurrent iPhone touches. Three XR2 recordings sent
