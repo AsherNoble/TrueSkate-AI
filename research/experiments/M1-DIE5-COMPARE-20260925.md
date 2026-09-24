@@ -334,3 +334,33 @@ offset, or Theil–Sen/RANSAC if the rate may drift (ALIGN-20260913 once saw
 −1,900 ppm). Recordings whose anchors disagree would be rejected. This is post hoc and
 exploratory; it needs its own test, and it costs one or two payload slots per
 segment.
+
+### Implemented as an opt-in path (not validated on device)
+
+- `fit_multi_anchor_timeline`: exhaustive pairwise consensus (RANSAC over all
+  anchor pairs within the 0.98–1.02 rate bounds), 1.5-frame inlier tolerance,
+  ≥3 inliers spanning ≥30 s, then least squares on the inliers. Theil–Sen was
+  tried first and rejected: with four anchors, one outlier contaminates half
+  the pairwise slopes.
+- The aligner gets a new `timing_alignment == "wda_submitted_multi_anchor"`
+  path (method `wda-submitted-multi-centre-controls-v1`). The two-anchor path
+  is unchanged.
+- The collector gets single centre mid controls without
+  `--die-five-experiment`: `--mid-markers N --mid-marker-kinds single`, with
+  `--mid-control-gap-s` (default 1 s) so each control lands after the previous
+  clip window. Manifests then declare multi-anchor timing.
+- The timing screen passes multi-anchor clips.
+
+**Offline replay on all 44 recorded Los Angeles segments** (Phase 2 plus both
+settle runs), using A's detections on every marker:
+
+- all 44 fits were accepted;
+- outliers were the XR2 anomaly start (−10.1 frames) and 9 mid markers (A's
+  early post-swipe triggers);
+- the largest fitted rate deviation was 756 ppm, against 6,056 ppm for A's
+  two-anchor fit.
+
+Replay uses die-five mid markers seen through A's centre point, not production
+single controls with the new gap. A bounded device smoke test of the production
+path is the next step. Operator approval is recommended because it emits
+isolated clips.

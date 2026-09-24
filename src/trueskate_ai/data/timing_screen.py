@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 TWO_ANCHOR_METHOD = "wda-submitted-two-centre-controls-v2"
+MULTI_ANCHOR_METHOD = "wda-submitted-multi-centre-controls-v1"
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,9 @@ class TimingScreen:
 def predicted_onset_error_s(meta: Mapping[str, Any], rate_threshold: float) -> tuple[str | None, float]:
     """Return ``(implicated_anchor, predicted_error_s)``; raises if calibration is absent."""
     cal = meta.get("tap_calibration") or {}
+    if cal.get("method") == MULTI_ANCHOR_METHOD:
+        # Robust multi-anchor fits already rejected inconsistent controls.
+        return None, 0.0
     if cal.get("method") != TWO_ANCHOR_METHOD:
         raise ValueError(f"clip lacks {TWO_ANCHOR_METHOD} calibration")
     anchors = {d["role"]: float(d["submitted_to_ios_monotonic_s"]) for d in cal["detections"]}

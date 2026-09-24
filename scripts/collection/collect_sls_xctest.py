@@ -372,6 +372,9 @@ def main() -> None:
                     help="With --die-five-experiment: extra markers after every "
                          "--mid-marker-every payload samples, up to this many per segment.")
     ap.add_argument("--mid-marker-every", type=int, default=2)
+    ap.add_argument("--mid-control-gap-s", type=float, default=1.0,
+                    help="Production mid controls (without --die-five-experiment): extra wait "
+                         "after the payload tail so the control lands after that clip's window.")
     ap.add_argument("--mid-marker-kinds", default="die_five",
                     help="Comma-separated cycle of mid marker kinds: die_five and/or single.")
     ap.add_argument("--retain-mov", action="store_true",
@@ -512,7 +515,13 @@ def main() -> None:
         if not mid_marker_kinds or set(mid_marker_kinds) - {"die_five", "single"}:
             raise SystemExit("--mid-marker-kinds must list die_five and/or single")
     elif args.mid_markers:
-        raise SystemExit("--mid-markers requires --die-five-experiment")
+        # Exploratory production path: extra single centre controls, aligned by the
+        # robust multi-anchor fit (timing_alignment "wda_submitted_multi_anchor").
+        if not args.basic_linears or mid_marker_kinds != ["single"]:
+            raise SystemExit("--mid-markers without --die-five-experiment requires "
+                             "--basic-linears and --mid-marker-kinds single")
+        if args.mid_control_gap_s < 0:
+            raise SystemExit("--mid-control-gap-s must be >= 0")
 
     try:
         devices = resolve_devices(devices_arg=args.devices, personal=args.personal,
@@ -903,7 +912,7 @@ def main() -> None:
                                  state="recording", segment=segment_idx)
                 time.sleep(args.tail_s)  # trick plays out into the recording (response window)
 
-                if (args.die_five_experiment and g.kind != "tap"
+                if (args.basic_linears and g.kind != "tap"
                         and segment_mid_markers < args.mid_markers
                         and segment_payload_samples % args.mid_marker_every == 0
                         and time.monotonic() < payload_deadline):
@@ -912,6 +921,9 @@ def main() -> None:
                     wda_action_sequence = action_attempts
                     action_attempts += 1
                     try:
+                        if not args.die_five_experiment:
+                            time.sleep(args.mid_control_gap_s)
+                            t0 = time.time()
                         _execute_marker(worker, kind, args.calibration_tap_hold_s)
                         time.sleep(0.35)
                         _mid_png = worker.driver.get_screenshot_as_png()
@@ -1107,7 +1119,9 @@ def main() -> None:
                 "fps": res.fps, "codec": res.codec,
                 "capture_offset_s": args.capture_offset_s,
                 "timing_alignment": (
-                    "wda_submitted_two_anchor" if args.basic_linears else None
+                    ("wda_submitted_multi_anchor"
+                     if args.mid_markers and not args.die_five_experiment
+                     else "wda_submitted_two_anchor") if args.basic_linears else None
                 ),
                 "wda_timing_revision": args.wda_timing_revision,
                 "wda_action_count": action_attempts if args.basic_linears else None,

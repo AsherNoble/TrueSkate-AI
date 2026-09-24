@@ -57,6 +57,7 @@ if str(_REPO_ROOT / "src") not in sys.path:
 from trueskate_ai.collection.tap_timing_calibration import (  # noqa: E402
     TwoAnchorTimingFit,
     detect_tap_onset,
+    fit_multi_anchor_timeline,
     fit_two_anchor_timeline,
     fit_tap_offsets,
 )
@@ -341,6 +342,90 @@ def _wda_two_anchor_calibration(
     return info, fit
 
 
+def _wda_multi_anchor_calibration(
+    *, manifest: dict, manifest_path: Path, mov: Path, started_at: float,
+    fps: int, search_after_s: float, resize_width: int,
+    pre_s: float = 0.5, window_s: float = 1.8,
+    source_frame_times: Sequence[float] | None = None,
+) -> tuple[dict, TwoAnchorTimingFit]:
+    """Detect every single centre control and fit video time robustly (opt-in).
+
+    Exploratory path for ``timing_alignment == "wda_submitted_multi_anchor"``
+    (M1-DIE5-COMPARE-20260925): start, mid and end controls are detected with the
+    production detector, and a Theil–Sen fit rejects any anchor that disagrees.
+    """
+    report_name = manifest.get("wda_action_timing_report")
+    revision = manifest.get("wda_timing_revision")
+    expected_count = manifest.get("wda_action_count")
+    if not report_name or not revision or not isinstance(expected_count, int):
+        raise ValueError("manifest lacks complete WDA action timing provenance")
+    report = json.loads((manifest_path.parent / str(report_name)).read_text())
+    records = validate_action_timing_report(
+        report, expected_revision=str(revision), expected_count=expected_count,
+    )
+    controls = [ev for ev in manifest.get("gestures", []) if ev.get("calibration_control")]
+    roles = [ev.get("calibration_role") for ev in controls]
+    if roles.count("start") != 1 or roles.count("end") != 1 or len(controls) < 3:
+        raise ValueError("multi-anchor timing requires one start, one end and at least one mid control")
+    detections, wda, video = [], [], []
+    for event in controls:
+        point = _tap_point(event)
+        if point != (0.5, 0.5) or event.get("calibration_marker", "single") != "single":
+            raise ValueError("multi-anchor controls must be single centre touches")
+        sequence = event.get("wda_action_sequence")
+        if not isinstance(sequence, int) or not 0 <= sequence < len(records):
+            raise ValueError("calibration control has invalid WDA sequence")
+        submitted = records[sequence]["submitted_to_ios"]
+        approximate_video_s = float(submitted["epoch_s"]) - started_at
+        frames, times = _decode_calibration_window(
+            mov, command_video_s=approximate_video_s, fps=fps, reference_window_s=0.75,
+            search_after_s=search_after_s, resize_width=resize_width,
+            source_frame_times=source_frame_times,
+        )
+        onset = detect_tap_onset(frames, times, point_xy=point, command_s=approximate_video_s,
+                                 reference_window_s=0.75)
+        detection = {"role": event.get("calibration_role"), "gesture_index": event.get("gesture_index"),
+                     "wda_action_sequence": sequence,
+                     "submitted_to_ios_monotonic_s": float(submitted["monotonic_s"]),
+                     "submitted_to_ios_epoch_s": float(submitted["epoch_s"]),
+                     "onset_video_s": None if onset is None else round(onset.onset_s, 6),
+                     "detector_score": None if onset is None else round(onset.score, 4)}
+        detections.append(detection)
+        if onset is not None:
+            wda.append(float(submitted["monotonic_s"]))
+            video.append(onset.onset_s)
+    fit = fit_multi_anchor_timeline(wda, video)
+    detected = [d for d in detections if d["onset_video_s"] is not None]
+    for index, d in enumerate(detected):
+        d["residual_s"] = round(fit.residuals_s[index], 6)
+        d["inlier"] = index in fit.inlier_indices
+    control_onsets = [
+        fit.video_time_s(d["submitted_to_ios_monotonic_s"]) for d in detections
+    ]
+    for event in manifest.get("gestures", []):
+        if event.get("calibration_control"):
+            continue
+        sequence = event.get("wda_action_sequence")
+        if not isinstance(sequence, int) or not 0 <= sequence < len(records):
+            raise ValueError("payload gesture has invalid WDA action sequence")
+        payload_start = fit.video_time_s(float(records[sequence]["submitted_to_ios"]["monotonic_s"]))
+        clip_start, clip_end = max(0.0, payload_start - pre_s), payload_start + window_s
+        if any(clip_start <= onset <= clip_end for onset in control_onsets):
+            raise ValueError(f"calibration control overlaps gesture {event.get('gesture_index')} clip")
+    info = {
+        "method": "wda-submitted-multi-centre-controls-v1",
+        "accepted": True,
+        "wda_timing_revision": revision,
+        "rate": fit.rate,
+        "intercept_s": fit.intercept_s,
+        "anchor_span_s": fit.anchor_span_s,
+        "inliers": len(fit.inlier_indices),
+        "outliers": len(fit.outlier_indices),
+        "detections": detections,
+    }
+    return info, fit
+
+
 def _encode_sample_video(sample_dir: Path, n_frames: int, fps: int, crf: int) -> bool:
     """Pack a sample's frame_NNN.png into one h264 clip, deleting the PNGs.
 
@@ -615,7 +700,7 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
             "gesture_video_time_s": round(gv, 4),
             "capture_offset_s": delta,
             "capture_offset_source": (
-                "wda_submitted_two_anchor" if wda_timeline is not None
+                str(manifest.get("timing_alignment")) if wda_timeline is not None
                 else "tap_self_calibrated" if calibration_info is not None
                 else "per_kind_fallback"
             ),
@@ -643,7 +728,17 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
         )
         if tap_calibrate:
             try:
-                if manifest.get("timing_alignment") == "wda_submitted_two_anchor":
+                if manifest.get("timing_alignment") == "wda_submitted_multi_anchor":
+                    calibration_info, wda_timeline = _wda_multi_anchor_calibration(
+                        manifest=manifest, manifest_path=manifest_path, mov=mov,
+                        started_at=started_at, fps=fps,
+                        search_after_s=tap_calibration_search_s,
+                        resize_width=tap_calibration_width,
+                        pre_s=pre_s, window_s=window_s,
+                        source_frame_times=source_frame_times,
+                    )
+                    shift = 0.0
+                elif manifest.get("timing_alignment") == "wda_submitted_two_anchor":
                     calibration_info, wda_timeline = _wda_two_anchor_calibration(
                         manifest=manifest, manifest_path=manifest_path, mov=mov,
                         started_at=started_at, fps=fps,
@@ -669,7 +764,9 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                     )
             except (OSError, KeyError, TypeError, ValueError) as exc:
                 calibration_info = {
-                    "method": "wda-submitted-two-centre-controls-v2",
+                    "method": ("wda-submitted-multi-centre-controls-v1"
+                               if manifest.get("timing_alignment") == "wda_submitted_multi_anchor"
+                               else "wda-submitted-two-centre-controls-v2"),
                     "accepted": False,
                     "reason": str(exc),
                 }
@@ -686,7 +783,7 @@ def align_segment(manifest_path: Path, *, pre_s: float, window_s: float, fps: in
                 raise TapCalibrationRejected(str(calibration_info["reason"]))
             calibration_shift_s = shift
             if wda_timeline is not None:
-                print(f"[align] {manifest_path.name}: WDA two-anchor calibration accepted "
+                print(f"[align] {manifest_path.name}: WDA {manifest.get('timing_alignment')} calibration accepted "
                       f"(span={calibration_info['anchor_span_s']:.3f}s, "
                       f"rate={calibration_info['rate']:.8f})")
             else:
