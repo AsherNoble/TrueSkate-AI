@@ -3,6 +3,7 @@
 from scripts.inspect.probe_simultaneous_taps import send_pair
 from scripts.inspect.probe_four_simultaneous_taps import FOUR_POINTS, send_four
 from scripts.inspect.probe_grid_simultaneous_taps import GRID_POINTS, send_grid
+from scripts.inspect.probe_eight_simultaneous_taps import EIGHT_POINTS, ORDER_NAMES, ordered_points, send_eight
 
 
 class FakeDriver:
@@ -68,3 +69,24 @@ def test_send_grid_sends_91_safe_touches_on_same_tick():
     assert all([action["type"] for action in source["actions"]]
                == ["pointerMove", "pointerDown", "pause", "pointerUp"]
                for source in sources)
+
+
+def test_send_eight_keeps_all_points_under_each_ordering():
+    for name in ORDER_NAMES:
+        driver = FakeDriver()
+
+        send_eight(driver, order=name)
+
+        assert len(driver.commands) == 1
+        command, payload = driver.commands[0]
+        assert command == "actions"
+        sources = payload["actions"]
+        assert len(sources) == len(EIGHT_POINTS) == 8
+        assert len({source["id"] for source in sources}) == 8
+        points = [(source["actions"][0]["x"], source["actions"][0]["y"])
+                  for source in sources]
+        assert points == list(ordered_points(name))
+        assert set(points) == set(EIGHT_POINTS)
+        assert all([action["type"] for action in source["actions"]]
+                   == ["pointerMove", "pointerDown", "pause", "pointerUp"]
+                   for source in sources)

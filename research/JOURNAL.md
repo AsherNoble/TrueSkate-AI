@@ -4,6 +4,14 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-25 — Eight-touch XR2 limit probe
+
+- Unity documents five concurrent iPhone touches. Three XR2 recordings sent
+  eight distinct touch sources in different orders; exactly five requested
+  positions brightened each time. The sender and deployed WDA event builder
+  retain all eight paths; the limiting downstream layer remains unknown.
+  [Record](experiments/M1-MULTITAP8-20260925.md).
+
 ## 2026-09-25 — 91-touch XR2 grid probe
 
 - Three isolated recordings captured a 7 × 13, 50-point grid command. WDA
