@@ -1,7 +1,7 @@
 # M1-RECOLLECT-20260922 — Replacement linear corpus park plan
 
-Status: second bounded stage and Skateboard GB top-up complete. Both collectors
-are stopped; the next park is SLS 2015 Super Crown on both devices.
+Status: second bounded stage and Skateboard GB top-up complete. Both devices
+are collecting SLS 2015 Super Crown under finite targets.
 
 ## Objective
 
@@ -146,3 +146,23 @@ the strict corpus audit: correct device/park provenance, no duplicate commands,
 calibration passed. Both collectors stopped, and both WDA recorders returned
 idle. The rig audit report is
 `tmp/model1-skateboard-gb-topup-20260924-audit.json`.
+
+## Super Crown bounded collection
+
+The operator confirmed both devices were loaded into SLS 2015 Super Crown.
+With the previous wrappers stopped, both WDA recorders idle and the RemoteXPC
+tunnel healthy, collection began from clean release `1b8497e` on 2026-09-24
+(Sydney time). The separate new park directories are
+`data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_super_crown`
+and `data/model1_linear_replacement_20260922/iPhone_XR2/sls_2015_super_crown`.
+XR1 has an automatic 1,150-strict-clip target; XR2 has 860. Their combined
+target is 2,010, one above the historical 2,009, with only segment-boundary
+overshoot possible. Each collector reads and advances its device's persisted
+seed file from the prior park. No milestone notifier was started.
+
+The first XR1 and XR2 production segments admitted 10 and 12 strict clips.
+The existing corpus audit passed both sessions with correct Super Crown and
+device provenance and no exact-command duplicates. Every clip decoded to 32
+frames with 32 increasing source-relative timestamps; two-anchor calibration
+was accepted. Reports are retained on the rig at
+`tmp/model1_super_crown_launch_20260924_{xr1,xr2}.audit.json`.
