@@ -189,3 +189,58 @@ Not adopted without operator approval: a forced-motion enrichment arm
 (shortened post-reset settle) — it adds device time and a new condition.
 Scope: a pass shows fewer wrong start anchors on fresh recordings; it does not
 repair the 859 affected clips or compare against a settle-before-start fix.
+
+## Phase 2 results before human labels (2026-09-25)
+
+Capture: rig code `e6d1436` (staged copy, release `1b8497e` venv, linked
+`.env`). An initial XR1 attempt failed before touching the device because the
+staged copy lacked `.env` (Appium selected a simulator); it was relaunched.
+XR1 Los Angeles: 20/20 segments saved; XR2 Los Angeles: 10/10 (run alongside,
+operator-approved). No guard trips, discards or lost segments. Originals
+retained on the rig and copied locally with `scp -r` (sizes verified).
+
+The analysis JSON is withheld from Git until labelling ends, so the labeller
+stays blind; its SHA-256 is in
+[phase2-analysis-sha256.txt](../evidence/M1-DIE5-COMPARE-20260925/phase2-analysis-sha256.txt).
+
+- **Gate:** none of the 20 XR1 recordings had an A-anomaly (max A rate
+  1.00077). Per the amendment, the remaining 20 XR1 recordings are paused for
+  operator discussion.
+- **Fault reproduced once, on XR2:** one XR2 recording had an A start+end fit
+  rate of 1.00606. It is the recording with the highest pre-start centre
+  motion. There, B's start marker reached only 2/5 votes and B returned no
+  result, so the segment would be rejected rather than mislabelled.
+  Human labels will decide whether A's start was a gross error.
+- **Agreement:** A and B differ on 3/30 start markers and 2/30 end markers;
+  where both detect a mid die-five marker, they never differ.
+- **B no-result:** starts 1/30 (0/20 XR1, 1/10 XR2), ends 1/30, die-five mids
+  12/60. The XR2 start rate of 1/10 exceeds the ≤5% criterion, but n is small.
+- **False alarms (no touch sent):**
+
+  | Condition | Scanned | A alarms | B alarms |
+  |---|---:|---:|---:|
+  | Steady windows | 157.5 s | 7 | 0 |
+  | Post-reset windows | 47.7 s | 1 | 0 |
+
+- **Motion link (exploratory):** 9/30 recordings had a moving board before the
+  start. On 0.25 s screenshot-spaced change, still boards measure ≤0.58 and
+  moving boards ≥2.9, rising to 14–24 by the start marker. All five B start
+  markers with fewer than 5 votes came from moving-board recordings. In the
+  7 M1-LA-ORIGINALS recordings, the only moving one was the only weak/high-rate one.
+
+**Mechanism of B rejections (post-hoc):** in most rejections the two *upper*
+corners fire 10–25 frames before the centre and lower corners, which agree
+with each other. Mid markers follow a swipe, and scenery above centre
+triggers first. The per-point detector keeps only its first onset, so an early
+false trigger hides the marker at that point.
+
+Exploratory **B′** (`earliest_candidate_consensus`) keeps every per-point
+candidate and takes the earliest frame where ≥4 points agree within ±1 frame.
+It is post-hoc and is not substituted for preregistered B. Any adoption needs
+a confirmatory test on new recordings.
+
+**Candidate root-cause fix:** `--start-settle-threshold` (`7b57d4f`, opt-in,
+off by default) waits after the pre-segment reset until two successive 0.25 s
+screenshot differences are below the threshold. The footage above suggests a
+threshold of 1.5. If the board keeps rolling, the wait will time out; that
+case needs a re-reset or a skip, which is untested.

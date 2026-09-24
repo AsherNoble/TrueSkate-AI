@@ -105,3 +105,77 @@ def mcnemar_exact_p(a_only: int, b_only: int) -> float:
         return 1.0
     tail = sum(comb(n, k) for k in range(min(a_only, b_only) + 1)) / 2**n
     return min(1.0, 2 * tail)
+
+
+# --- Exploratory B' (M1-DIE5-COMPARE post-hoc; not the preregistered detector) ---
+
+def tap_onset_candidates(
+    frames: Sequence[np.ndarray],
+    frame_times_s: Sequence[float],
+    *,
+    point_xy: tuple[float, float],
+    command_s: float,
+    reference_window_s: float = 0.5,
+    immediate_threshold: float = 4.0,
+    confirmation_threshold: float = 6.0,
+    history_frames: int = 3,
+    lookahead_frames: int = 3,
+) -> list[int]:
+    """Every frame index passing the production detector's test, not just the first.
+
+    Identical per-frame test to ``detect_tap_onset``. Found in Phase 2 that an
+    early scenery trigger at one position hides the marker's real onset there.
+    """
+    if not frames:
+        return []
+    times = np.asarray(frame_times_s, dtype=np.float64)
+    first = np.asarray(frames[0])
+    height, width = first.shape[:2]
+    cx, cy = point_xy[0] * (width - 1), point_xy[1] * (height - 1)
+    yy, xx = np.ogrid[:height, :width]
+    scale = max(width / 828.0, 0.25)
+    core_radius = max(2.0, 10.0 * scale)
+    ring_inner_radius = max(core_radius + 1.0, 10.0, 20.0 * scale)
+    ring_outer_radius = max(ring_inner_radius + 2.0, 20.0, 40.0 * scale)
+    squared = (xx - cx) ** 2 + (yy - cy) ** 2
+    core = squared <= core_radius**2
+    ring = (squared <= ring_outer_radius**2) & (squared > ring_inner_radius**2)
+    contrast = []
+    for frame in frames:
+        brightness = np.asarray(frame).astype(np.float32)
+        if brightness.ndim == 3:
+            brightness = brightness[..., :3].mean(axis=2)
+        contrast.append(float(brightness[core].mean() - brightness[ring].mean()))
+    contrast = np.asarray(contrast)
+    changes = np.diff(contrast)
+    found = []
+    for index in np.flatnonzero(times[1:] >= command_s - reference_window_s) + 1:
+        if changes[index - 1] < immediate_threshold:
+            continue
+        before = np.median(contrast[max(0, index - history_frames):index])
+        after = np.median(contrast[index:min(len(contrast), index + lookahead_frames)])
+        if after - before >= confirmation_threshold:
+            found.append(int(index))
+    return found
+
+
+def earliest_candidate_consensus(
+    candidates: Sequence[Sequence[int]], *, min_votes: int = 4, tolerance_frames: int = 1,
+) -> tuple[int | None, int]:
+    """Earliest frame where ``min_votes`` positions each have a candidate within tolerance.
+
+    Returns ``(frame, votes)``; the frame is the lower median of the nearest
+    agreeing candidates. ``votes`` is the best support found when rejected.
+    """
+    best_votes = 0
+    for anchor in sorted({f for point in candidates for f in point}):
+        nearest = []
+        for point in candidates:
+            close = [f for f in point if abs(f - anchor) <= tolerance_frames]
+            if close:
+                nearest.append(min(close, key=lambda f: (abs(f - anchor), f)))
+        best_votes = max(best_votes, len(nearest))
+        if len(nearest) >= min_votes:
+            nearest.sort()
+            return nearest[(len(nearest) - 1) // 2], len(nearest)
+    return None, best_votes

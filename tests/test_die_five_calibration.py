@@ -96,3 +96,19 @@ def test_collector_die_five_marker_is_one_request_with_five_simultaneous_fingers
             assert xy == [(172, 413), (172, 483), (207, 448), (242, 413), (242, 483)]
         else:
             assert xy == [(207, 448)]
+
+
+def test_candidate_consensus_recovers_marker_hidden_by_early_corner_triggers():
+    from trueskate_ai.collection.die_five_calibration import earliest_candidate_consensus
+    # Upper corners fire early on scenery (495/496) but also see the marker at 520.
+    candidates = [[521], [496, 520], [495, 521], [520], [520]]
+    assert die_five_consensus([521, 496, 495, 520, 520]) == (None, 3)
+    assert earliest_candidate_consensus(candidates) == (520, 5)
+    assert earliest_candidate_consensus([[10], [30], [50], [70], [90]]) == (None, 1)
+
+
+def test_candidates_include_every_passing_onset():
+    from trueskate_ai.collection.die_five_calibration import tap_onset_candidates
+    frames, times = _marker_window(onset_s=1.0, decoy_s=0.5)
+    found = tap_onset_candidates(frames, times, point_xy=DIE_FIVE_POINTS[0], command_s=0.9)
+    assert 15 in found and 30 in found
