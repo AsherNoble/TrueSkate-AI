@@ -14,6 +14,7 @@ if str(_ROOT / "src") not in sys.path:
 from trueskate_ai.data.cohort_manifest import (  # noqa: E402
     assert_zero_cohort_leakage, read_manifest, write_manifest,
 )
+from trueskate_ai.data.timing_screen import TimingScreen  # noqa: E402
 from trueskate_ai.model1.scaling import (  # noqa: E402
     DEFAULT_LINEAR_RUNGS, assert_deterministic_nesting,
     build_experiment_manifest, build_linear_cohort_manifest,
@@ -45,6 +46,11 @@ def main() -> None:
                         required=True)
     cohort.add_argument("--allowed-park", action="append", default=[])
     cohort.add_argument("--allow-missing-provenance", action="store_true")
+    cohort.add_argument("--timing-screen-rate", type=float,
+                        help="Opt-in calibration timing screen (M1-SCREEN-DRAFT-20260925): "
+                             "rate deviation above which the anchor-error formula applies.")
+    cohort.add_argument("--timing-screen-max-frames", type=float, default=1.0,
+                        help="Maximum predicted onset error in native frames (default 1).")
 
     subsets = commands.add_parser("subsets", help="build deterministic nested training prefixes")
     subsets.add_argument("--cohort", type=Path, required=True)
@@ -68,6 +74,9 @@ def main() -> None:
             args.data, cohort=args.name, role=args.role, corpus_root=args.corpus_root,
             require_provenance=not args.allow_missing_provenance,
             allowed_parks=args.allowed_park,
+            timing_screen=(None if args.timing_screen_rate is None else TimingScreen(
+                rate_threshold=args.timing_screen_rate,
+                max_error_frames=args.timing_screen_max_frames)),
         )
         written = write_manifest(args.out, payload)
         print(json.dumps({"path": str(args.out), "sample_count": written["sample_count"],

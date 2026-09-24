@@ -24,6 +24,7 @@ from trueskate_ai.data.cohort_manifest import (
     seal_manifest,
     validate_manifest,
 )
+from trueskate_ai.data.timing_screen import TimingScreen, passes
 from trueskate_ai.model1.linear.audit import command_key
 from trueskate_ai.model1.linear.dataset import discover_basic_linear_samples
 
@@ -106,8 +107,13 @@ def build_linear_cohort_manifest(
     corpus_root: str | Path | None = None,
     require_provenance: bool = True,
     allowed_parks: Iterable[str] | None = None,
+    timing_screen: TimingScreen | None = None,
 ) -> dict[str, Any]:
-    """Build one content-addressed manifest from strict linear admissions."""
+    """Build one content-addressed manifest from strict linear admissions.
+
+    ``timing_screen`` (opt-in) drops clips whose predicted calibration onset
+    error exceeds its limit; parameters and exclusion counts are sealed in.
+    """
     if role not in COHORT_ROLES:
         raise ValueError(f"role must be one of {sorted(COHORT_ROLES)}, got {role!r}")
     if not cohort.strip():
@@ -119,6 +125,20 @@ def build_linear_cohort_manifest(
     except ValueError as exc:
         raise ValueError("cohort selection root must be inside corpus_root") from exc
     samples, strict_counts = discover_basic_linear_samples(selection_root)
+    screen_record = None
+    if timing_screen is not None:
+        import json
+
+        kept, excluded = [], Counter()
+        for sample in samples:
+            meta = json.loads((Path(sample) / "meta.json").read_text())
+            if passes(meta, timing_screen):
+                kept.append(sample)
+            else:
+                excluded[str(meta.get("park") or "<missing>")] += 1
+        samples = kept
+        screen_record = {**timing_screen.describe(), "excluded": sum(excluded.values()),
+                         "excluded_by_park": dict(sorted(excluded.items()))}
     entries = [_entry(corpus_root, sample, require_provenance=require_provenance) for sample in samples]
     commands = [entry["command_key"] for entry in entries]
     if len(commands) != len(set(commands)):
@@ -142,6 +162,8 @@ def build_linear_cohort_manifest(
         "coverage": cohort_coverage(entries),
         "samples": entries,
     }
+    if screen_record is not None:
+        payload["timing_screen"] = screen_record
     return seal_manifest(payload)
 
 
