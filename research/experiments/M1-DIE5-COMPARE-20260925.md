@@ -268,8 +268,9 @@ the 30 Phase 2 recordings:
   to B′ only at 5/5 votes.
 
 Rate plausibility is a proxy; human labels remain the primary evidence. See
-[M1-SETTLE-20260925](M1-SETTLE-20260925.md) for the settle-wait smoke test that
-removed the moving-board start condition in 11/11 recordings.
+[M1-SETTLE-20260925](M1-SETTLE-20260925.md) for the settle-wait smoke test. It
+produced still start controls (a manipulation check); its effect on anchor
+errors is untested (red-team: CONFOUNDED as originally worded).
 
 ## Phase 3 ready (2026-09-25)
 

@@ -1,0 +1,242 @@
+[
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_092256/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.023,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.065,
+  "screenshot_scale_0p25s_max": 0.518
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_092405/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.093,
+  "screenshot_scale_0p25s_min": 0.107,
+  "screenshot_scale_0p25s_last": 0.538,
+  "screenshot_scale_0p25s_max": 0.545
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_092518/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.087,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.23,
+  "screenshot_scale_0p25s_max": 0.485
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_092629/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.084,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.23,
+  "screenshot_scale_0p25s_max": 0.49
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_092743/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.081,
+  "screenshot_scale_0p25s_min": 0.059,
+  "screenshot_scale_0p25s_last": 0.059,
+  "screenshot_scale_0p25s_max": 0.522
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_092854/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.024,
+  "screenshot_scale_0p25s_min": 0.045,
+  "screenshot_scale_0p25s_last": 0.046,
+  "screenshot_scale_0p25s_max": 0.553
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_093007/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.036,
+  "screenshot_scale_0p25s_min": 0.071,
+  "screenshot_scale_0p25s_last": 0.074,
+  "screenshot_scale_0p25s_max": 0.584
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_093119/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.052,
+  "screenshot_scale_0p25s_min": 0.014,
+  "screenshot_scale_0p25s_last": 0.014,
+  "screenshot_scale_0p25s_max": 0.509
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_093229/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.069,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.041,
+  "screenshot_scale_0p25s_max": 0.486
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_093340/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.069,
+  "screenshot_scale_0p25s_min": 0.001,
+  "screenshot_scale_0p25s_last": 0.142,
+  "screenshot_scale_0p25s_max": 0.487
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_093452/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.081,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.239,
+  "screenshot_scale_0p25s_max": 0.512
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_093600/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.064,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.04,
+  "screenshot_scale_0p25s_max": 0.507
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_093712/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.054,
+  "screenshot_scale_0p25s_min": 0.012,
+  "screenshot_scale_0p25s_last": 0.012,
+  "screenshot_scale_0p25s_max": 0.473
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_093822/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.064,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.037,
+  "screenshot_scale_0p25s_max": 0.508
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_093935/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.049,
+  "screenshot_scale_0p25s_min": 0.029,
+  "screenshot_scale_0p25s_last": 0.029,
+  "screenshot_scale_0p25s_max": 0.547
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_094046/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.063,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.036,
+  "screenshot_scale_0p25s_max": 0.508
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_094158/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 0.071,
+  "screenshot_scale_0p25s_min": 0.022,
+  "screenshot_scale_0p25s_last": 0.051,
+  "screenshot_scale_0p25s_max": 0.516
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_094308/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 2.292,
+  "screenshot_scale_0p25s_min": 3.337,
+  "screenshot_scale_0p25s_last": 18.508,
+  "screenshot_scale_0p25s_max": 18.508
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_094417/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 2.566,
+  "screenshot_scale_0p25s_min": 3.302,
+  "screenshot_scale_0p25s_last": 18.226,
+  "screenshot_scale_0p25s_max": 18.226
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR1_LA/iPhone_XR_20260924_094526/segment_00000.json",
+  "device": "iPhone_XR",
+  "video_scale_motion_mean": 2.629,
+  "screenshot_scale_0p25s_min": 3.347,
+  "screenshot_scale_0p25s_last": 19.068,
+  "screenshot_scale_0p25s_max": 19.068
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA/iPhone_XR2_20260924_092805/segment_00000.json",
+  "device": "iPhone_XR2",
+  "video_scale_motion_mean": 0.041,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.06,
+  "screenshot_scale_0p25s_max": 0.53
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA/iPhone_XR2_20260924_092915/segment_00000.json",
+  "device": "iPhone_XR2",
+  "video_scale_motion_mean": 0.058,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.032,
+  "screenshot_scale_0p25s_max": 0.517
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA/iPhone_XR2_20260924_093028/segment_00000.json",
+  "device": "iPhone_XR2",
+  "video_scale_motion_mean": 0.058,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.03,
+  "screenshot_scale_0p25s_max": 0.517
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA/iPhone_XR2_20260924_093137/segment_00000.json",
+  "device": "iPhone_XR2",
+  "video_scale_motion_mean": 1.584,
+  "screenshot_scale_0p25s_min": 2.909,
+  "screenshot_scale_0p25s_last": 14.371,
+  "screenshot_scale_0p25s_max": 14.371
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA/iPhone_XR2_20260924_093249/segment_00000.json",
+  "device": "iPhone_XR2",
+  "video_scale_motion_mean": 1.61,
+  "screenshot_scale_0p25s_min": 2.886,
+  "screenshot_scale_0p25s_last": 14.341,
+  "screenshot_scale_0p25s_max": 14.341
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA/iPhone_XR2_20260924_093357/segment_00000.json",
+  "device": "iPhone_XR2",
+  "video_scale_motion_mean": 1.58,
+  "screenshot_scale_0p25s_min": 2.886,
+  "screenshot_scale_0p25s_last": 14.841,
+  "screenshot_scale_0p25s_max": 14.841
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA/iPhone_XR2_20260924_093509/segment_00000.json",
+  "device": "iPhone_XR2",
+  "video_scale_motion_mean": 4.663,
+  "screenshot_scale_0p25s_min": 2.939,
+  "screenshot_scale_0p25s_last": 24.268,
+  "screenshot_scale_0p25s_max": 24.268
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA/iPhone_XR2_20260924_093619/segment_00000.json",
+  "device": "iPhone_XR2",
+  "video_scale_motion_mean": 1.896,
+  "screenshot_scale_0p25s_min": 2.929,
+  "screenshot_scale_0p25s_last": 14.649,
+  "screenshot_scale_0p25s_max": 14.649
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA/iPhone_XR2_20260924_093730/segment_00000.json",
+  "device": "iPhone_XR2",
+  "video_scale_motion_mean": 0.057,
+  "screenshot_scale_0p25s_min": 0.0,
+  "screenshot_scale_0p25s_last": 0.034,
+  "screenshot_scale_0p25s_max": 0.52
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA/iPhone_XR2_20260924_093844/segment_00000.json",
+  "device": "iPhone_XR2",
+  "video_scale_motion_mean": 2.158,
+  "screenshot_scale_0p25s_min": 2.928,
+  "screenshot_scale_0p25s_last": 14.657,
+  "screenshot_scale_0p25s_max": 14.657
+ }
+]

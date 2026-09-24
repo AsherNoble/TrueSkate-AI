@@ -637,6 +637,7 @@ def main() -> None:
                                      state="resetting", segment=segment_idx)
                     print(f"[seg {segment_idx}] resetting board before recording; "
                           f"settling {args.segment_reset_settle_s:.1f}s", flush=True)
+                    pre_segment_reset_epoch_s = time.time()
                     reset_position(worker.driver, dw, dh)
                     time.sleep(args.segment_reset_settle_s)
                     start_settle = None
@@ -1124,6 +1125,8 @@ def main() -> None:
                 "num_gestures": args.num_gestures, "use_spin": args.use_spin,
                 "die_five_experiment": args.die_five_experiment,
                 "start_settle": start_settle if args.reset_before_segment else None,
+                "pre_segment_reset_epoch_s": (
+                    pre_segment_reset_epoch_s if args.reset_before_segment else None),
                 "end_settle": end_settle,
                 "mov": mov_path.name, "n_gestures": len(events), "gestures": events,
             }
