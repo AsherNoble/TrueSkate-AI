@@ -111,3 +111,16 @@ scores the Phase 3 labels in two ways:
 
 Run it after the Phase 3 export with the same `--analysis/--key/--labels` as
 `score_die_five_compare.py`.
+
+## Launcher switches (opt-in, default off)
+
+`scripts/ops/mvp_collect_linear.sh` accepts these environment variables. With
+none set, the command is unchanged.
+
+- `BASIC_LINEAR_START_SETTLE=1` → `--start-settle-threshold 1.5 --start-settle-max-s 15 --start-settle-required`
+- `BASIC_LINEAR_END_SETTLE=1` → `--end-settle-threshold 1.5 --end-settle-max-s 3.5`
+- `BASIC_LINEAR_MID_CONTROLS=N` → `--mid-markers N --mid-marker-every 3 --mid-marker-kinds single`
+  (multi-anchor alignment)
+
+The script was checked with the rig's `/bin/bash` 3.2 under `set -u`,
+including the empty-array case. The deployed rig release is unchanged.

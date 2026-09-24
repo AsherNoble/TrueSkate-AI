@@ -44,6 +44,22 @@ elif [ "${BASIC_LINEAR_NO_MENU_GUARD:-0}" = "1" ]; then
   # app-hub detector mistakes for a menu. The OS foreground guard stays ON.
   MENU_GUARD_ARGS=(--no-menu-guard)
 fi
+# Opt-in calibration hardening (M1-SETTLE-20260925, M1-MULTIANCHOR-20260925).
+# All default off; each is a precaution under evaluation, not a validated fix.
+CALIBRATION_ARGS=()
+if [ "${BASIC_LINEAR_START_SETTLE:-0}" = "1" ]; then
+  CALIBRATION_ARGS+=(--start-settle-threshold 1.5 --start-settle-max-s 15 --start-settle-required)
+fi
+if [ "${BASIC_LINEAR_END_SETTLE:-0}" = "1" ]; then
+  CALIBRATION_ARGS+=(--end-settle-threshold 1.5 --end-settle-max-s 3.5)
+fi
+MID_CONTROLS="${BASIC_LINEAR_MID_CONTROLS:-0}"
+case "$MID_CONTROLS" in
+  *[!0-9]*|'') echo "BASIC_LINEAR_MID_CONTROLS must be a non-negative integer" >&2; exit 2 ;;
+esac
+if [ "$MID_CONTROLS" -gt 0 ]; then
+  CALIBRATION_ARGS+=(--mid-markers "$MID_CONTROLS" --mid-marker-every 3 --mid-marker-kinds single)
+fi
 # A shared output directory can be collected by both XRs.  Keep their seed
 # streams independent; otherwise they read the same state before either writes
 # it and emit identical commands, defeating command-held-out generalisation.
@@ -124,6 +140,7 @@ while :; do
     --park-label "$PARK" \
     --align-video \
     "${BATCH_VIDEO_ARGS[@]}" \
+    ${CALIBRATION_ARGS[@]+"${CALIBRATION_ARGS[@]}"} \
     --align-resize-width 128 \
     --segment-min 1 \
     --max-segments 1 \
