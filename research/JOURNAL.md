@@ -15,6 +15,11 @@ Put substantial experiments in individual records and current facts in STATUS.
   exclusion. Human marks and selection are preserved in
   [M1-AUDIT-20260924](experiments/M1-AUDIT-20260924.md). Training selection is
   paused pending independent timing validation.
+- A blinded, held-out 24-clip onset check is prepared from twelve previously
+  unseen recordings, pairing early and late gestures in high-rate Los Angeles,
+  ordinary-rate Los Angeles and low-rate other-park segments. The selection is
+  frozen before human labels; no collection was started.
+  [Protocol](experiments/M1-ONSET-VALIDATION-20260924.md).
 
 ## 2026-09-24 — Replacement park top-up completed
 
