@@ -1,0 +1,707 @@
+{
+  "schema": "linear-corpus-audit-v1",
+  "corpus": "/Users/training-server/trueskate-ai-runtime/tmp/model1-140-balanced-audit-20260924-selection",
+  "exportedAt": "2026-09-24T10:50:29.510Z",
+  "reviews": {
+    "000/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_000905/sls_2015_los_angeles/sample_000001": {
+      "note": "Swipe is not visible until frame 11. There is a large difference between the tip of the overlaid swipe and the actual swipe's tip – approx 3 or 4 frames delta.",
+      "updatedAt": "2026-09-24T08:41:50.671Z",
+      "verdict": "critical_issue"
+    },
+    "001/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_045028/the_workshop/sample_000002": {
+      "note": "Swipe appears in frame 8. This one is good.",
+      "updatedAt": "2026-09-24T08:42:42.755Z",
+      "verdict": "good"
+    },
+    "002/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_102503/sls_2015_los_angeles/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:43:07.954Z"
+    },
+    "003/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_040339/sls_2013_kansas_city/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:43:31.388Z"
+    },
+    "004/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_093004/sls_2015_los_angeles/sample_000006": {
+      "note": "Swipe appears in frame 11.",
+      "updatedAt": "2026-09-24T08:44:11.006Z",
+      "verdict": "critical_issue"
+    },
+    "005/gb_baseline/iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000056": {
+      "note": "Swipe does appear in frame 8, though the tip of the overlaid swipe vector lags behind a slight amount (0.5 to 1 frame delta).",
+      "updatedAt": "2026-09-24T08:45:27.423Z",
+      "verdict": "mild_issue"
+    },
+    "006/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_101626/the_workshop/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:45:43.223Z"
+    },
+    "007/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_094645/sls_2013_kansas_city/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:45:58.289Z"
+    },
+    "008/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_195437/sls_2013_kansas_city/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:46:08.890Z"
+    },
+    "009/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_192249/sls_2015_super_crown/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:46:22.657Z"
+    },
+    "010/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_153001/the_workshop/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:46:33.556Z"
+    },
+    "011/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_180859/the_workshop/sample_000011": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:46:43.957Z"
+    },
+    "012/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_115150/sls_2015_los_angeles/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:46:59.040Z"
+    },
+    "013/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_095832/sls_2013_kansas_city/sample_000003": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:47:10.940Z"
+    },
+    "014/replacement/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_210702/sls_2015_super_crown/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:47:41.207Z"
+    },
+    "015/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_211004/sls_2015_super_crown/sample_000010": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:47:50.707Z"
+    },
+    "016/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_000905/sls_2015_los_angeles/sample_000004": {
+      "note": "The gesture does appear in frame 8, though it lags behind the target by ~0.5 frames.",
+      "updatedAt": "2026-09-24T08:48:29.874Z",
+      "verdict": "mild_issue"
+    },
+    "017/replacement/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_230317/sls_2015_super_crown/sample_000010": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:48:53.158Z"
+    },
+    "018/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_215426/sls_2015_super_crown/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:49:00.158Z"
+    },
+    "019/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_233126/sls_2015_super_crown/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:49:11.158Z"
+    },
+    "020/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_054336/sls_2013_kansas_city/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:49:22.825Z"
+    },
+    "021/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_040312/the_workshop/sample_000009": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:49:32.508Z"
+    },
+    "022/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_165506/the_workshop/sample_000010": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:49:45.192Z"
+    },
+    "023/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_232649/sls_2013_kansas_city/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:50:07.392Z"
+    },
+    "024/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_193544/sls_2015_super_crown/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:50:23.009Z"
+    },
+    "025/gb_baseline/iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000138": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:50:36.926Z"
+    },
+    "026/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_151348/sls_2015_los_angeles/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:50:53.243Z"
+    },
+    "027/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_074942/the_workshop/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:51:04.410Z"
+    },
+    "028/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_060428/skateboard_gb_2024/sample_000005": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:51:17.793Z"
+    },
+    "029/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_053101/the_workshop/sample_000003": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:51:29.860Z"
+    },
+    "030/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_202839/sls_2015_super_crown/sample_000007": {
+      "note": "Gesture appears in frame 10.",
+      "updatedAt": "2026-09-24T08:52:23.762Z",
+      "verdict": "critical_issue"
+    },
+    "031/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_061805/sls_2015_los_angeles/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:52:55.777Z"
+    },
+    "032/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_150925/the_workshop/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:53:14.244Z"
+    },
+    "033/replacement/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_204014/sls_2015_super_crown/sample_000009": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:53:33.578Z"
+    },
+    "034/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_152411/sls_2015_los_angeles/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:53:48.061Z"
+    },
+    "035/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_160413/sls_2015_los_angeles/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:54:00.111Z"
+    },
+    "036/replacement/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_213353/sls_2015_super_crown/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:54:22.995Z"
+    },
+    "037/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_155608/the_workshop/sample_000005": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:54:32.345Z"
+    },
+    "038/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_060428/skateboard_gb_2024/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:54:50.813Z"
+    },
+    "039/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_115253/skateboard_gb_2024/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:55:02.929Z"
+    },
+    "040/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_050741/the_workshop/sample_000009": {
+      "verdict": "mild_issue",
+      "note": "Gesture does begin in frame 8, though it is ahead of the target by ~0.5 frames worth of distance.",
+      "updatedAt": "2026-09-24T08:55:57.083Z"
+    },
+    "041/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_111037/sls_2013_kansas_city/sample_000005": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:56:23.130Z"
+    },
+    "042/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_153325/the_workshop/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:56:46.330Z"
+    },
+    "043/replacement/iPhone_XR/the_workshop/iPhone_XR_20260922_182527/the_workshop/sample_000006": {
+      "verdict": "mild_issue",
+      "note": "Target lags behind actual by a small amount.",
+      "updatedAt": "2026-09-24T08:57:40.304Z"
+    },
+    "044/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_041532/sls_2015_los_angeles/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:58:01.931Z"
+    },
+    "045/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_012336/the_workshop/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:58:19.314Z"
+    },
+    "046/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260921_235942/skateboard_gb_2024/sample_000009": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:58:42.117Z"
+    },
+    "047/replacement/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_191538/sls_2015_super_crown/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:59:00.865Z"
+    },
+    "048/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_110052/skateboard_gb_2024/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:59:18.515Z"
+    },
+    "049/replacement/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_194355/sls_2015_super_crown/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T08:59:33.799Z"
+    },
+    "050/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_234735/sls_2015_super_crown/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:00:03.533Z"
+    },
+    "051/replacement/iPhone_XR/the_workshop/iPhone_XR_20260922_183611/the_workshop/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:00:24.199Z"
+    },
+    "052/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_143520/sls_2015_los_angeles/sample_000010": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:00:47.600Z"
+    },
+    "053/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_201549/sls_2015_super_crown/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:01:10.434Z"
+    },
+    "054/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_210025/sls_2015_super_crown/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:40:29.509Z"
+    },
+    "055/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_012915/the_workshop/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:40:43.443Z"
+    },
+    "056/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_155216/sls_2013_kansas_city/sample_000005": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:41:04.644Z"
+    },
+    "057/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_175726/the_workshop/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:41:17.443Z"
+    },
+    "058/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_070522/sls_2013_kansas_city/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:41:32.844Z"
+    },
+    "059/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_200540/sls_2015_super_crown/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:41:47.745Z"
+    },
+    "060/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_121206/sls_2013_kansas_city/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:42:14.028Z"
+    },
+    "061/replacement/iPhone_XR/the_workshop/iPhone_XR_20260922_212258/the_workshop/sample_000009": {
+      "note": "Target (the overlay – target in regards to the recorded data) lags slightly behind actual (the gesture that actually occurred)",
+      "updatedAt": "2026-09-24T09:43:36.729Z",
+      "verdict": "mild_issue"
+    },
+    "062/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_030027/skateboard_gb_2024/sample_000003": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:43:49.145Z"
+    },
+    "063/replacement/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_192547/sls_2015_super_crown/sample_000005": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:44:01.745Z"
+    },
+    "064/replacement/iPhone_XR/the_workshop/iPhone_XR_20260922_220211/the_workshop/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:44:15.363Z"
+    },
+    "065/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_233321/sls_2015_super_crown/sample_000010": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:44:32.764Z"
+    },
+    "066/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_030006/sls_2015_los_angeles/sample_000002": {
+      "note": "Gesture doesn't appear until frame 15",
+      "updatedAt": "2026-09-24T09:46:14.397Z",
+      "verdict": "critical_issue"
+    },
+    "067/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_060338/sls_2013_kansas_city/sample_000010": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:46:34.281Z"
+    },
+    "068/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_041244/sls_2013_kansas_city/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:46:52.250Z"
+    },
+    "069/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_163034/sls_2015_los_angeles/sample_000010": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:47:12.248Z"
+    },
+    "070/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_093548/skateboard_gb_2024/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:47:31.649Z"
+    },
+    "071/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_193812/sls_2015_super_crown/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:48:06.316Z"
+    },
+    "072/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_204920/sls_2013_kansas_city/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:48:23.749Z"
+    },
+    "073/replacement/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_230317/sls_2015_super_crown/sample_000009": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:49:31.700Z"
+    },
+    "074/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_042635/skateboard_gb_2024/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:50:01.334Z"
+    },
+    "075/replacement/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_230013/sls_2015_super_crown/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:50:16.667Z"
+    },
+    "076/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_025626/sls_2013_kansas_city/sample_000009": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T09:50:39.901Z"
+    },
+    "077/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_082949/skateboard_gb_2024/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:11:48.102Z"
+    },
+    "078/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_144528/sls_2015_los_angeles/sample_000008": {
+      "verdict": "mild_issue",
+      "note": "Gesture doesn't appear until frame 9. Funnily enough, the tip of the overlaid vector still lands right on the tip of the gesture trace.",
+      "updatedAt": "2026-09-24T10:13:44.788Z"
+    },
+    "079/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_152704/sls_2013_kansas_city/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:15:26.103Z"
+    },
+    "080/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_072309/skateboard_gb_2024/sample_000010": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:16:29.238Z"
+    },
+    "081/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_034702/the_workshop/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:16:51.390Z"
+    },
+    "082/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_041532/sls_2015_los_angeles/sample_000001": {
+      "verdict": "mild_issue",
+      "note": "Overlay lags behind trace by a small amount.",
+      "updatedAt": "2026-09-24T10:17:36.548Z"
+    },
+    "083/gb_baseline/iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000230": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:18:12.308Z"
+    },
+    "084/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_051945/sls_2013_kansas_city/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:18:41.521Z"
+    },
+    "085/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_075343/skateboard_gb_2024/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:19:03.704Z"
+    },
+    "086/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_032110/sls_2015_los_angeles/sample_000002": {
+      "verdict": "critical_issue",
+      "note": "Gesture doesn't appear until frame 11.",
+      "updatedAt": "2026-09-24T10:19:32.758Z"
+    },
+    "087/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_114723/skateboard_gb_2024/sample_000010": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:20:22.207Z"
+    },
+    "088/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_002931/skateboard_gb_2024/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:20:57.389Z"
+    },
+    "089/replacement/iPhone_XR/the_workshop/iPhone_XR_20260922_201220/the_workshop/sample_000007": {
+      "note": "Overlay lags behind actual by a small amount",
+      "updatedAt": "2026-09-24T10:21:32.355Z",
+      "verdict": "mild_issue"
+    },
+    "090/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_010610/skateboard_gb_2024/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:29:50.678Z"
+    },
+    "091/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_070724/sls_2015_los_angeles/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:30:06.146Z"
+    },
+    "092/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_113144/skateboard_gb_2024/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:30:26.330Z"
+    },
+    "093/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_072222/sls_2015_los_angeles/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:30:43.212Z"
+    },
+    "094/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_000907/skateboard_gb_2024/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:30:56.512Z"
+    },
+    "095/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_015956/the_workshop/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:31:22.745Z"
+    },
+    "096/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_095029/skateboard_gb_2024/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:31:43.962Z"
+    },
+    "097/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_115401/the_workshop/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:31:56.946Z"
+    },
+    "098/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_125253/skateboard_gb_2024/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:32:29.029Z"
+    },
+    "099/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_150050/sls_2015_los_angeles/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:32:55.447Z"
+    },
+    "100/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_055436/the_workshop/sample_000003": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:33:16.414Z"
+    },
+    "101/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_185753/sls_2013_kansas_city/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:33:34.547Z"
+    },
+    "102/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_020737/sls_2013_kansas_city/sample_000005": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:33:49.381Z"
+    },
+    "103/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_101940/the_workshop/sample_000003": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:34:08.614Z"
+    },
+    "104/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_062707/the_workshop/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:34:25.798Z"
+    },
+    "105/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_014739/sls_2015_los_angeles/sample_000004": {
+      "verdict": "critical_issue",
+      "note": "Gesture doesn't appear until frame 12",
+      "updatedAt": "2026-09-24T10:34:50.938Z"
+    },
+    "106/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_095840/sls_2015_los_angeles/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:36:00.566Z"
+    },
+    "107/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_213956/sls_2015_super_crown/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:36:26.649Z"
+    },
+    "108/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_111547/skateboard_gb_2024/sample_000003": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:36:46.699Z"
+    },
+    "109/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_190541/sls_2015_super_crown/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:37:14.066Z"
+    },
+    "110/replacement/iPhone_XR/the_workshop/iPhone_XR_20260923_114749/the_workshop/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:37:27.469Z"
+    },
+    "111/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_054852/sls_2013_kansas_city/sample_000005": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:37:38.133Z"
+    },
+    "112/replacement/iPhone_XR/the_workshop/iPhone_XR_20260922_232231/the_workshop/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:37:51.200Z"
+    },
+    "113/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_124326/skateboard_gb_2024/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:38:32.234Z"
+    },
+    "114/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_120649/sls_2015_los_angeles/sample_000010": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:38:42.717Z"
+    },
+    "115/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_081319/sls_2015_los_angeles/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:39:22.886Z"
+    },
+    "116/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_112208/sls_2013_kansas_city/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:39:39.037Z"
+    },
+    "117/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_155508/sls_2013_kansas_city/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:39:59.454Z"
+    },
+    "118/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_224755/sls_2015_super_crown/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:40:21.751Z"
+    },
+    "119/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_080846/sls_2015_los_angeles/sample_000003": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:40:36.702Z"
+    },
+    "120/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_130323/skateboard_gb_2024/sample_000009": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:40:51.218Z"
+    },
+    "121/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_072812/skateboard_gb_2024/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:41:06.702Z"
+    },
+    "122/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_222055/sls_2015_super_crown/sample_000008": {
+      "note": "Overlaid vector lags behind actual trace by a small amount (~1 frame worth or less)",
+      "updatedAt": "2026-09-24T10:41:57.551Z",
+      "verdict": "mild_issue"
+    },
+    "123/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_143520/sls_2015_los_angeles/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:42:54.186Z"
+    },
+    "124/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_215713/sls_2015_super_crown/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:43:06.903Z"
+    },
+    "125/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_194919/sls_2013_kansas_city/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:43:24.687Z"
+    },
+    "126/gb_baseline/iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000145": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:43:41.188Z"
+    },
+    "127/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_100128/sls_2013_kansas_city/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:43:56.587Z"
+    },
+    "128/replacement/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_222947/sls_2015_super_crown/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:44:17.107Z"
+    },
+    "129/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_013326/sls_2013_kansas_city/sample_000007": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:44:31.474Z"
+    },
+    "130/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_004002/sls_2015_los_angeles/sample_000006": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:44:46.157Z"
+    },
+    "131/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_115752/skateboard_gb_2024/sample_000001": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:45:02.172Z"
+    },
+    "132/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_070806/sls_2013_kansas_city/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:45:16.222Z"
+    },
+    "133/replacement/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_230317/sls_2015_super_crown/sample_000009": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:45:30.322Z"
+    },
+    "134/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_153121/sls_2015_los_angeles/sample_000005": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:46:17.625Z"
+    },
+    "135/replacement/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_051029/skateboard_gb_2024/sample_000008": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:46:41.206Z"
+    },
+    "136/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_215546/sls_2013_kansas_city/sample_000004": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:47:07.639Z"
+    },
+    "137/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_180117/sls_2013_kansas_city/sample_000002": {
+      "note": "Gesture appears in frame 9. Despite this, the overlaid and the actual trace match very closely.",
+      "updatedAt": "2026-09-24T10:48:26.308Z",
+      "verdict": "good"
+    },
+    "138/replacement/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_051701/sls_2013_kansas_city/sample_000002": {
+      "verdict": "good",
+      "note": "",
+      "updatedAt": "2026-09-24T10:49:07.508Z"
+    },
+    "139/replacement/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_072727/sls_2015_los_angeles/sample_000003": {
+      "note": "Gesture does not appear until frame 11.",
+      "updatedAt": "2026-09-24T10:49:50.209Z",
+      "verdict": "critical_issue"
+    }
+  }
+}

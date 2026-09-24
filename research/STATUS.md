@@ -167,17 +167,19 @@ idle and self-deleted; a final listing found zero attachments on both XRs. The
 fork and rig WDA checkouts now use clean `master` at that SHA. Collection remains
 off until an explicitly authorized workload begins.
 
-The replacement-corpus plan targets the historical 13,100-sample aggregate park
-mixture; device-by-park cells are not quotas. Completed park counts are 4,052
-Workshop, 3,809 Kansas City, 2,020 Skateboard GB 2024 (including the 310-clip
-baseline), and 2,003 Los Angeles: a subtotal of 11,884. The remaining park is
-Super Crown, with a historical target of 2,009 clips. After an operator-confirmed
-bounded Skateboard GB top-up admitted 12 strict clips, both
-XRs began finite Super Crown runs to 1,150 and 860 clips respectively. Their
-first segments admitted 10 and 12 strict clips with accepted calibration.
-Final training will use a deterministic 13,100-sample selection that
-excludes surplus clips from other parks. On 2026-09-23, the opt-in batch
-exact-PTS extractor was promoted from clean release `1b8497e` after isolated
-one-segment checks on both XRs; previous release `13554c9` remains for rollback.
+The linear replacement pool has 13,902 strict clips across five parks: 4,052
+Workshop, 3,809 Kansas City, 2,020 Skateboard GB (including its 310-clip
+baseline), 2,003 Los Angeles, and 2,018 Super Crown. The two bounded Super Crown
+runs stopped at 1,152 XR1 and 866 XR2 clips. Device-by-park cells were not
+quotas. A balanced 140-clip human audit marked 124 good, 9 mild and 7
+critical. Six critical clips were XR1/Los Angeles, where anomalous calibration
+rates closely predict the late visible trace. Across the full pool, 1,063 clips
+are in segments whose two-anchor fit rate differs from `1.0` by more than 0.2%;
+this is a screening count, not a proven error count. The intended deterministic
+13,100-sample training selection is on hold pending independent timing checks.
+See [M1-AUDIT-20260924](experiments/M1-AUDIT-20260924.md). On 2026-09-23,
+the opt-in batch exact-PTS extractor was promoted from clean release `1b8497e`
+after isolated one-segment checks on both XRs; previous release `13554c9`
+remains for rollback.
 See [batch extraction evidence](experiments/M1-BATCH-EXTRACT-20260923.md).
 See [M1-RECOLLECT-20260922](experiments/M1-RECOLLECT-20260922.md).

@@ -4,6 +4,18 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-24 — Balanced audit exposed calibration outliers
+
+- Both finite Super Crown runs stopped at their bounds, bringing the five-park
+  replacement pool to 13,902 strict clips. The operator reviewed 28 random
+  clips per park: 124 good, 9 mild, 7 critical. Six critical Los Angeles clips
+  have anomalously high two-anchor calibration rates that predict their late
+  visible traces; the seventh Super Crown clip has a low-rate anomaly. A
+  corpus-wide rate screen flags 1,063 clips for investigation, not automatic
+  exclusion. Human marks and selection are preserved in
+  [M1-AUDIT-20260924](experiments/M1-AUDIT-20260924.md). Training selection is
+  paused pending independent timing validation.
+
 ## 2026-09-24 — Replacement park top-up completed
 
 - The second bounded stage stopped at 4,052 XR1/Workshop and 3,809 XR2/Kansas
