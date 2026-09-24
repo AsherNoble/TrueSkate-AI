@@ -188,9 +188,11 @@ Seven new Los Angeles source videos from both XRs are retained for direct
 calibration-onset inspection. The bounded run did not reproduce the severe
 high-rate case; one XR2 segment has a weaker start detection. See
 [M1-LA-ORIGINALS-20260924](experiments/M1-LA-ORIGINALS-20260924.md).
-A bounded XR2 two-finger probe delivered three simultaneous-pair WDA commands
-without leaving gameplay. Whether True Skate drew two distinct marks is pending
-human frame review; no timing-calibration change follows yet. See
+A bounded XR2 probe initially sent only one pointer per attempted pair because
+Selenium `ActionChains` discarded the other source. The corrected two-source
+command completed in three XR2 repetitions without leaving gameplay. Whether
+True Skate drew two distinct marks is pending human frame review; no
+timing-calibration change follows yet. See
 [M1-MULTITAP-20260925](experiments/M1-MULTITAP-20260925.md).
 On 2026-09-23,
 the opt-in batch exact-PTS extractor was promoted from clean release `1b8497e`

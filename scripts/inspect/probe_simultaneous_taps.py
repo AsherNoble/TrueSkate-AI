@@ -6,13 +6,17 @@ import json
 import time
 from pathlib import Path
 
-from selenium.webdriver.common.action_chains import ActionChains
-
 from trueskate_ai.collection.gameplay_filter import is_editor_frame, is_menu_frame
 from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder
 from trueskate_ai.data.control_hitboxes import point_is_safe
 from trueskate_ai.sim.device import BUNDLE_ID, DeviceSession, select_devices
-from trueskate_ai.sim.touch_actions import long_press, make_touch_pointer, reset_position, skip_loading_screen
+from trueskate_ai.sim.touch_actions import (
+    long_press,
+    make_touch_pointer,
+    perform_pointer_actions,
+    reset_position,
+    skip_loading_screen,
+)
 
 BASELINE = (0.5, 0.5)
 PAIR = ((0.46, 0.5), (0.54, 0.5))
@@ -33,7 +37,7 @@ def send_pair(driver, *, width: float, height: float) -> None:
         finger.create_pointer_up(0)
         fingers.append(finger)
     # Equal-length pointer chains place both downs on the same W3C action tick.
-    ActionChains(driver, devices=fingers).perform()
+    perform_pointer_actions(driver, fingers)
 
 
 def relaunch_game(worker: DeviceSession) -> None:
