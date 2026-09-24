@@ -352,7 +352,7 @@ def _wda_multi_anchor_calibration(
 
     Exploratory path for ``timing_alignment == "wda_submitted_multi_anchor"``
     (M1-DIE5-COMPARE-20260925): start, mid and end controls are detected with the
-    production detector, and a Theil–Sen fit rejects any anchor that disagrees.
+    production detector, and a pairwise-consensus fit rejects any anchor that disagrees.
     """
     report_name = manifest.get("wda_action_timing_report")
     revision = manifest.get("wda_timing_revision")

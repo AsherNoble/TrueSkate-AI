@@ -35,7 +35,14 @@ def predicted_onset_error_s(meta: Mapping[str, Any], rate_threshold: float) -> t
     """Return ``(implicated_anchor, predicted_error_s)``; raises if calibration is absent."""
     cal = meta.get("tap_calibration") or {}
     if cal.get("method") == MULTI_ANCHOR_METHOD:
-        # Robust multi-anchor fits already rejected inconsistent controls.
+        # Consensus fits are validated only between their inlier anchors; an
+        # extrapolated clip (gesture outside the inlier WDA range) is not.
+        inlier_times = [float(d["submitted_to_ios_monotonic_s"])
+                        for d in cal.get("detections", []) if d.get("inlier")]
+        gesture = float(meta["wda_submitted_monotonic_s"])
+        if (not cal.get("accepted") or len(inlier_times) < 3
+                or not min(inlier_times) <= gesture <= max(inlier_times)):
+            return "multi_anchor_unsupported", float("inf")
         return None, 0.0
     if cal.get("method") != TWO_ANCHOR_METHOD:
         raise ValueError(f"clip lacks {TWO_ANCHOR_METHOD} calibration")

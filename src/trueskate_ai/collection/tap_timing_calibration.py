@@ -209,17 +209,29 @@ def fit_multi_anchor_timeline(
             f"only {len(inliers)} of {len(w)} calibration controls agree within "
             f"{max_residual_s * 1000:.1f} ms"
         )
+    # Refit on the inliers until the inlier set is stable, so inlier/outlier
+    # membership always refers to the final least-squares line.
+    for _ in range(len(w)):
+        rate, intercept = (float(x) for x in np.polyfit(w[inliers], v[inliers], 1))
+        residuals = v - (intercept + rate * w)
+        refreshed = np.flatnonzero(np.abs(residuals) <= max_residual_s)
+        if np.array_equal(refreshed, inliers):
+            break
+        inliers = refreshed
+        if len(inliers) < min_inliers:
+            raise ValueError("multi-anchor inliers fell below the minimum after refitting")
+    else:
+        raise ValueError("multi-anchor inlier set did not stabilise")
     span = float(w[inliers].max() - w[inliers].min())
     if span < min_anchor_span_s:
         raise ValueError(f"inlier WDA span {span:.3f}s is below required {min_anchor_span_s:.3f}s")
-    rate, intercept = (float(x) for x in np.polyfit(w[inliers], v[inliers], 1))
     if not min_rate <= rate <= max_rate:
         raise ValueError(f"multi-anchor clock rate {rate:.6f} is outside [{min_rate}, {max_rate}]")
-    residuals = v - (intercept + rate * w)
+    outliers = np.setdiff1d(np.arange(len(w)), inliers)
     return MultiAnchorTimingFit(
         intercept_s=intercept, rate=rate, anchor_span_s=span,
         inlier_indices=tuple(int(i) for i in inliers),
-        outlier_indices=tuple(int(i) for i in np.flatnonzero(np.abs(residuals) > max_residual_s)),
+        outlier_indices=tuple(int(i) for i in outliers),
         residuals_s=tuple(float(r) for r in residuals),
     )
 

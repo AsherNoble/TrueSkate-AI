@@ -550,3 +550,17 @@ def test_wda_multi_anchor_calibration_rejects_a_false_early_start(monkeypatch, t
     assert [d["inlier"] for d in info["detections"]] == [False, True, True, True]
     assert fit.rate == pytest.approx(1.0, abs=1e-3)
     assert fit.video_time_s(128.003) == pytest.approx(29.103, abs=.02)
+
+
+def test_multi_anchor_inlier_and_outlier_sets_partition_the_anchors():
+    from trueskate_ai.collection.tap_timing_calibration import fit_multi_anchor_timeline
+
+    wda = [100.0, 112.0, 125.0, 138.0, 150.0, 156.0]
+    video = [w - 97.0 for w in wda]
+    video[2] += 0.045   # near the tolerance edge
+    video[4] -= 0.4     # gross outlier
+    fit = fit_multi_anchor_timeline(wda, video)
+    assert set(fit.inlier_indices).isdisjoint(fit.outlier_indices)
+    assert set(fit.inlier_indices) | set(fit.outlier_indices) == set(range(len(wda)))
+    assert 4 in fit.outlier_indices
+    assert all(abs(fit.residuals_s[i]) <= 1.5 / 30 for i in fit.inlier_indices)

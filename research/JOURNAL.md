@@ -6,11 +6,12 @@ Put substantial experiments in individual records and current facts in STATUS.
 
 ## 2026-09-25 — Multi-anchor consensus calibration (smoke)
 
-- An opt-in consensus fit over ≥3 single centre controls rejects a falsely
-  early anchor. Offline over 44 LA segments, it rejected only the known-bad
-  start and post-swipe mid false triggers. On-device production-path smoke:
-  4/4 segments accepted, 37/37 clips strictly admitted, and one real 17-frame
-  early mid detection rejected. [Record](experiments/M1-MULTIANCHOR-20260925.md).
+- An opt-in consensus fit over ≥3 single centre controls rejects anchors that
+  disagree. Offline over 44 LA segments it matched the label-free proxy.
+  Production-path smoke: 4/4 segments accepted, and one 17-frame mid outlier
+  rejected (not human-checked). Red-team: self-consistency only, accuracy
+  unproven; screen and fit gates tightened.
+  [Record](experiments/M1-MULTIANCHOR-20260925.md).
 
 ## 2026-09-25 — Draft corpus timing screen
 

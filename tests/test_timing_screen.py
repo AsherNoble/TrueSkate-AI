@@ -68,3 +68,19 @@ def test_error_below_the_rate_threshold_is_treated_as_zero():
     meta = _meta(1.0019, 100.0)
     assert passes(meta, TimingScreen(rate_threshold=0.002, max_error_frames=1.0))
     assert not passes(meta, TimingScreen(rate_threshold=0.0006, max_error_frames=1.0))
+
+
+def _multi(gesture: float, *, accepted=True, inliers=(100.0, 120.0, 155.0), outliers=(90.0,)):
+    detections = [{"submitted_to_ios_monotonic_s": t, "inlier": True} for t in inliers]
+    detections += [{"submitted_to_ios_monotonic_s": t, "inlier": False} for t in outliers]
+    return {"wda_submitted_monotonic_s": gesture,
+            "tap_calibration": {"method": "wda-submitted-multi-centre-controls-v1",
+                                "accepted": accepted, "detections": detections}}
+
+
+def test_multi_anchor_clips_pass_only_between_accepted_inliers():
+    screen = TimingScreen(rate_threshold=0.0008, max_error_frames=1.0)
+    assert passes(_multi(130.0), screen)
+    assert not passes(_multi(95.0), screen)              # extrapolated before first inlier
+    assert not passes(_multi(130.0, accepted=False), screen)
+    assert not passes(_multi(130.0, inliers=(100.0, 155.0)), screen)

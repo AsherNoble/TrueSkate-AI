@@ -1120,7 +1120,7 @@ def main() -> None:
                 "capture_offset_s": args.capture_offset_s,
                 "timing_alignment": (
                     ("wda_submitted_multi_anchor"
-                     if args.mid_markers and not args.die_five_experiment
+                     if segment_mid_markers and not args.die_five_experiment
                      else "wda_submitted_two_anchor") if args.basic_linears else None
                 ),
                 "wda_timing_revision": args.wda_timing_revision,
