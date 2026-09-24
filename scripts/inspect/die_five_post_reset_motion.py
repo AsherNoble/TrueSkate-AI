@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exploratory: centre-area scene motion just before each start control.
+"""Exploratory: centre-area scene motion just before each start (or end) control.
 
 For every segment manifest under the given roots, decode the 0.75 s before the
 start control's WDA submission (the single-touch detector's reference span) with
@@ -25,9 +25,9 @@ REFERENCE_S = 0.75
 HALF_PT = 90
 
 
-def centre_motion(manifest_path: Path) -> dict | None:
+def centre_motion(manifest_path: Path, role: str = "start") -> dict | None:
     manifest = json.loads(manifest_path.read_text())
-    start = next((e for e in manifest["gestures"] if e.get("calibration_role") == "start"), None)
+    start = next((e for e in manifest["gestures"] if e.get("calibration_role") == role), None)
     mov = manifest_path.with_suffix(".mov")
     if start is None or not mov.exists() or "wda_submitted_epoch_s" not in start:
         return None
@@ -44,7 +44,7 @@ def centre_motion(manifest_path: Path) -> dict | None:
     ry, rx = int(h * HALF_PT / 896), int(w * HALF_PT / 414)
     crops = [g[h // 2 - ry:h // 2 + ry, w // 2 - rx:w // 2 + rx] for g in grey]
     diffs = [float(np.abs(b - a).mean()) for a, b in zip(crops, crops[1:])]
-    return {"segment": str(manifest_path), "device": manifest["device"], "park": manifest["park"],
+    return {"segment": str(manifest_path), "device": manifest["device"], "park": manifest["park"], "role": role,
             "start_approx_video_s": round(approx, 3), "frames": len(frames),
             "centre_motion_mean": round(float(np.mean(diffs)), 3),
             "centre_motion_max": round(float(np.max(diffs)), 3)}
@@ -54,13 +54,14 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("roots", nargs="+", type=Path)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--role", choices=("start", "end"), default="start")
     args = ap.parse_args()
     rows = []
     for root in args.roots:
         for manifest in sorted(root.rglob("segment_*.json")):
             if manifest.name.endswith(".wda-action-timings.json"):
                 continue
-            row = centre_motion(manifest)
+            row = centre_motion(manifest, args.role)
             if row is not None:
                 rows.append(row)
                 print(manifest.parent.name, manifest.stem, row["centre_motion_mean"], row["centre_motion_max"], flush=True)

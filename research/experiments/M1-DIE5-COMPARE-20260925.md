@@ -270,3 +270,19 @@ the 30 Phase 2 recordings:
 Rate plausibility is a proxy; human labels remain the primary evidence. See
 [M1-SETTLE-20260925](M1-SETTLE-20260925.md) for the settle-wait smoke test that
 removed the moving-board start condition in 11/11 recordings.
+
+## Phase 3 ready (2026-09-25)
+
+The blind viewer was built with seed 2509250400 from the sealed Phase 2
+analysis. It has 132 items: 30 start, 30 end, 12 mid die-five with
+disagreement or no result, 40 mid die-five with agreement (25% floor 40) and
+20 single mids (floor 20).
+
+- It is served locally at `http://127.0.0.1:8780/` from
+  `tmp/die5-compare-phase2-20260925/label-viewer/`.
+- The key is `tmp/die5-compare-phase2-20260925/label-key.json`, outside the
+  served directory (404 when requested).
+- The page payload contains only item IDs (`000`…) and frame paths.
+
+After export, score with
+`scripts/inspect/score_die_five_compare.py --analysis … --key … --labels … --out …`.
