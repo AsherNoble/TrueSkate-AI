@@ -1,0 +1,258 @@
+[
+ {
+  "recording": "xr1/recording_1",
+  "hold_s": 0.05,
+  "gameplay_after": true,
+  "frame_count": 355,
+  "markers": [
+   {
+    "marker": 1,
+    "votes": 5,
+    "point_frames": [
+     95,
+     95,
+     95,
+     95,
+     95
+    ],
+    "onset_frame": 95,
+    "motion_after": 0.011,
+    "motion_before": 0.322
+   },
+   {
+    "marker": 2,
+    "votes": 5,
+    "point_frames": [
+     152,
+     152,
+     152,
+     152,
+     152
+    ],
+    "onset_frame": 152,
+    "motion_after": 0.002,
+    "motion_before": 0.249
+   },
+   {
+    "marker": 3,
+    "votes": 5,
+    "point_frames": [
+     209,
+     209,
+     209,
+     209,
+     209
+    ],
+    "onset_frame": 209,
+    "motion_after": 0.009,
+    "motion_before": 0.013
+   },
+   {
+    "marker": 4,
+    "votes": 5,
+    "point_frames": [
+     267,
+     267,
+     267,
+     267,
+     267
+    ],
+    "onset_frame": 267,
+    "motion_after": 0.003,
+    "motion_before": 0.006
+   }
+  ]
+ },
+ {
+  "recording": "xr1/recording_2",
+  "hold_s": 0.05,
+  "gameplay_after": true,
+  "frame_count": 352,
+  "markers": [
+   {
+    "marker": 1,
+    "votes": 5,
+    "point_frames": [
+     93,
+     93,
+     93,
+     93,
+     93
+    ],
+    "onset_frame": 93,
+    "motion_after": 0.01,
+    "motion_before": 0.322
+   },
+   {
+    "marker": 2,
+    "votes": 5,
+    "point_frames": [
+     150,
+     150,
+     150,
+     150,
+     150
+    ],
+    "onset_frame": 150,
+    "motion_after": 0.005,
+    "motion_before": 0.251
+   },
+   {
+    "marker": 3,
+    "votes": 5,
+    "point_frames": [
+     207,
+     207,
+     207,
+     207,
+     207
+    ],
+    "onset_frame": 207,
+    "motion_after": 0.009,
+    "motion_before": 0.014
+   },
+   {
+    "marker": 4,
+    "votes": 5,
+    "point_frames": [
+     264,
+     264,
+     264,
+     264,
+     264
+    ],
+    "onset_frame": 264,
+    "motion_after": 0.014,
+    "motion_before": 0.019
+   }
+  ]
+ },
+ {
+  "recording": "xr2/recording_1",
+  "hold_s": 0.05,
+  "gameplay_after": true,
+  "frame_count": 353,
+  "markers": [
+   {
+    "marker": 1,
+    "votes": 5,
+    "point_frames": [
+     92,
+     92,
+     92,
+     92,
+     92
+    ],
+    "onset_frame": 92,
+    "motion_after": 0.068,
+    "motion_before": 0.344
+   },
+   {
+    "marker": 2,
+    "votes": 5,
+    "point_frames": [
+     150,
+     150,
+     150,
+     150,
+     150
+    ],
+    "onset_frame": 150,
+    "motion_after": 0.069,
+    "motion_before": 0.265
+   },
+   {
+    "marker": 3,
+    "votes": 5,
+    "point_frames": [
+     208,
+     208,
+     208,
+     208,
+     208
+    ],
+    "onset_frame": 208,
+    "motion_after": 0.067,
+    "motion_before": 0.061
+   },
+   {
+    "marker": 4,
+    "votes": 5,
+    "point_frames": [
+     265,
+     265,
+     265,
+     265,
+     265
+    ],
+    "onset_frame": 265,
+    "motion_after": 0.054,
+    "motion_before": 0.085
+   }
+  ]
+ },
+ {
+  "recording": "xr2/recording_2",
+  "hold_s": 0.05,
+  "gameplay_after": true,
+  "frame_count": 354,
+  "markers": [
+   {
+    "marker": 1,
+    "votes": 5,
+    "point_frames": [
+     91,
+     91,
+     91,
+     91,
+     91
+    ],
+    "onset_frame": 91,
+    "motion_after": 0.062,
+    "motion_before": 0.385
+   },
+   {
+    "marker": 2,
+    "votes": 5,
+    "point_frames": [
+     152,
+     152,
+     152,
+     152,
+     152
+    ],
+    "onset_frame": 152,
+    "motion_after": 0.045,
+    "motion_before": 0.31
+   },
+   {
+    "marker": 3,
+    "votes": 5,
+    "point_frames": [
+     209,
+     209,
+     209,
+     209,
+     209
+    ],
+    "onset_frame": 209,
+    "motion_after": 0.018,
+    "motion_before": 0.079
+   },
+   {
+    "marker": 4,
+    "votes": 5,
+    "point_frames": [
+     267,
+     267,
+     267,
+     267,
+     267
+    ],
+    "onset_frame": 267,
+    "motion_after": 0.027,
+    "motion_before": 0.075
+   }
+  ]
+ }
+]

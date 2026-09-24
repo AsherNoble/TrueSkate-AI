@@ -1,4 +1,4 @@
-"""Bounded XR2 die-five calibration probe; never admits training data."""
+"""Bounded die-five calibration probe on one XR; never admits training data."""
 from __future__ import annotations
 
 import argparse
@@ -30,13 +30,13 @@ def gameplay_ok(png: bytes) -> bool:
     return not is_editor_frame(png) and not is_menu_frame(png, allow_idle_navigation=True)
 
 
-def send_five(driver) -> None:
+def send_five(driver, hold_s: float = HOLD_S) -> None:
     fingers = []
     for x, y in FIVE_POINTS:
         finger = make_touch_pointer("calibration_five")
         finger.create_pointer_move(x=x, y=y, duration=0)
         finger.create_pointer_down()
-        finger.create_pause(HOLD_S)
+        finger.create_pause(hold_s)
         finger.create_pointer_up(0)
         fingers.append(finger)
     perform_pointer_actions(driver, fingers)
@@ -55,18 +55,22 @@ def relaunch_game(worker: DeviceSession) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", required=True, type=Path)
+    parser.add_argument("--device", default="iPhone_XR2", choices=("iPhone_XR", "iPhone_XR2"))
+    parser.add_argument("--hold-s", type=float, default=HOLD_S)
+    parser.add_argument("--recordings", type=int, default=RECORDINGS)
+    parser.add_argument("--experiment", default="die-five-calibration-v1")
     args = parser.parse_args()
     if not all(point_is_safe((x / 414, y / 896)) for x, y in FIVE_POINTS):
         parser.error("a calibration point intersects a protected control region")
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
-    worker = DeviceSession(select_devices(names=["iPhone_XR2"])[0])
+    worker = DeviceSession(select_devices(names=[args.device])[0])
     worker.connect()
     driver = worker.driver
     try:
         if (worker.device_w, worker.device_h) != EXPECTED_SIZE:
-            raise RuntimeError(f"XR2 logical size changed: {(worker.device_w, worker.device_h)}")
-        for recording in range(1, RECORDINGS + 1):
+            raise RuntimeError(f"{args.device} logical size changed: {(worker.device_w, worker.device_h)}")
+        for recording in range(1, args.recordings + 1):
             if worker.ensure_foreground():
                 print(f"[recording {recording}] True Skate was reactivated", flush=True)
             before = driver.get_screenshot_as_png()
@@ -91,7 +95,7 @@ def main() -> None:
                     if time.monotonic() - segment_start > MAX_RECORDING_S - 8.0:
                         raise RuntimeError("bounded segment is approaching one minute")
                     call_start = time.time()
-                    send_five(driver)
+                    send_five(driver, args.hold_s)
                     events.append({
                         "kind": "simultaneous_five", "marker": marker,
                         "points_logical": FIVE_POINTS,
@@ -110,11 +114,11 @@ def main() -> None:
                 recorder.abort()
                 raise
             meta = {
-                "experiment": "die-five-calibration-v1",
+                "experiment": args.experiment,
                 "device": worker.device_id,
                 "park": "SLS 2015 Los Angeles (last operator-confirmed; screenshot saved)",
                 "recording_number": recording,
-                "hold_s": HOLD_S,
+                "hold_s": args.hold_s,
                 "events": events,
                 "gameplay_after": gameplay_ok(after),
                 "recording": result.summary(),

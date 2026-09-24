@@ -101,3 +101,23 @@ The alternating single/die-five subset is retained anyway.
 - Controls: XR1 Workshop 8, XR2 Kansas City 8.
 - Six discordant markers with B=0 are needed for two-sided exact McNemar
   p < 0.05 (p = 0.031); five give only p = 0.0625.
+
+## Phase 1 results (2026-09-25) — passed
+
+Operator confirmed both XRs in SLS 2015 Los Angeles. Rig release `1b8497e`,
+both WDAs healthy, tunnel running, no collector active. The generalised
+`probe_five_simultaneous_taps.py` (`--device`, `--hold-s 0.05`) ran two
+sub-minute recordings of four markers per XR, reset before recording. All four
+recordings ended in gameplay.
+
+[Analysis](../evidence/M1-DIE5-COMPARE-20260925/phase1-feasibility.json)
+([script](../../scripts/inspect/analyze_die_five_feasibility.py)): detector B
+accepted 16/16 markers with **5/5 votes on the same frame** every time. Mean
+grey change outside the marker area from onset−1 to onset+15 frames was
+0.002–0.069 levels, no larger than the pre-marker change (0.006–0.385), so the
+50 ms marker does not visibly move the board or camera. Visual crops confirm
+a static board; a difference image shows the five marks clearly, but they are
+faint soft glows on the board in raw frames. Phase 3 labellers should expect
+subtle marks. Originals: rig
+`/Users/training-server/trueskate-ai-runtime/tmp/die5-compare-phase1-20260925/`
+and local `tmp/die5-compare-phase1-20260925/` (not backed up by Git).
