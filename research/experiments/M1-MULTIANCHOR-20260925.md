@@ -100,3 +100,14 @@ against human first-touch frames. The phase 3 set contains die-five
 start/end/mid markers, so anchor correctness can be scored there, but not
 production single-control mids. A labelled production-path run is still
 needed.
+
+Frozen before any label exists:
+[score_multianchor_against_labels.py](../../scripts/inspect/score_multianchor_against_labels.py)
+scores the Phase 3 labels in two ways:
+
+- the outlier decision against A's gross error;
+- leave-one-out multi-anchor prediction error against A's two-anchor
+  prediction error, per labelled marker.
+
+Run it after the Phase 3 export with the same `--analysis/--key/--labels` as
+`score_die_five_compare.py`.
