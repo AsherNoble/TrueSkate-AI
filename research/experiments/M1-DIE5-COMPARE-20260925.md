@@ -61,3 +61,43 @@ segments outside `abs(rate - 1) > 0.002` and mid-marker residuals.
 4. The corner check shows A is unaffected by die-five geometry.
 
 A pass does not certify untested parks or repair the existing corpus.
+
+## Phase 0 results (2026-09-25)
+
+Prevalence, read-only over all 1,409 aligned segments / 13,592 clips of
+`model1_linear_replacement_20260922` ([fit-prevalence.json](../evidence/M1-DIE5-COMPARE-20260925/fit-prevalence.json),
+[script](../../scripts/inspect/calibration_fit_prevalence.py)):
+
+| Device / park | Segments | High rate (start implicated) | Low rate (end implicated) |
+|---|---:|---:|---:|
+| XR1 Los Angeles | 207 | 90 (859 clips) | 8 |
+| XR1 Super Crown | 115 | 0 | 1 |
+| XR1 Workshop | 425 | 0 | 0 |
+| XR2 Kansas City | 393 | 0 | 4 |
+| XR2 Skateboard GB | 182 | 0 | 4 |
+| XR2 Super Crown | 87 | 0 | 3 |
+
+Every high-rate segment is XR1 Los Angeles and implicates the start control
+(median start score 13.3 vs 30.0 for ordinary fits). Failures come in streaks
+across the 17-hour run and thin out after ~15:00; M1-LA-ORIGINALS saw 0/4 XR1
+two days later. The fault is state-dependent, so reproduction is not assured.
+Segments that failed calibration emitted no clips, so these are lower bounds.
+
+Detector B is `trueskate_ai.collection.die_five_calibration` (frozen: ≥4/5
+votes within ±1 frame, lower median, unchanged per-point detector defaults).
+Synthetic tests cover a centre-only early decoy that fools A but not B, and
+rejection below four points. Development replay on the three M1-DIE5 pilot
+recordings: B accepted 12/12 with 5/5 votes, identical frames to the pilot.
+
+Corner check risk is lower than assumed: at native 828 px width the ring's
+outer radius is 40 px = 20 logical points, well inside the 49.5 pt corners.
+The alternating single/die-five subset is retained anyway.
+
+## Sizing amendment (before any Phase 2 recording)
+
+- XR1 Los Angeles: 40 recordings. Gate: if the first 20 show no A start-anchor
+  anomaly, pause and discuss rather than continue.
+- XR2 Los Angeles: 10 recordings (no corpus history; M1-LA-ORIGINALS 0/3).
+- Controls: XR1 Workshop 8, XR2 Kansas City 8.
+- Six discordant markers with B=0 are needed for two-sided exact McNemar
+  p < 0.05 (p = 0.031); five give only p = 0.0625.
