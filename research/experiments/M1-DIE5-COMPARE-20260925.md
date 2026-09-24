@@ -133,3 +133,19 @@ payload samples 2/4/6/8 after the usual tail, alternating die-five and single
 centre touch (the corner check runs in every recording); the aligner is never
 spawned, so originals are retained and no clips are emitted. A mid marker that
 opens non-gameplay UI discards the segment.
+
+## Notes during Phase 2 (2026-09-25)
+
+Protocol clarification before labelling: single-touch mid markers enter the
+blind set at 25% (min 20) for the corner check. Viewer items are frame-exact
+native crops (±90 pt around centre) with seeded ±0.3 s window jitter and a
+difference-view toggle; the key is stored outside the served directory
+([builder](../../scripts/inspect/build_die_five_label_viewer.py)).
+
+Mechanism observation (not a Phase 2 result): the retained M1-LA-ORIGINALS
+XR2 segment 3 (start score 10.8, rate 1.0018) shows the board still rotating
+and sliding under the centre point after the pre-segment reset. Its bright
+graphic stripes sweep the detector core; the single-touch detector fired at
+1.647 s, ~30 ms after WDA submission, too early for a rendered touch. The rate
+error implies ~98 ms (~3 frames) early. This suggests a separate candidate
+fix — wait for a static scene before the start control — to test after this study.
