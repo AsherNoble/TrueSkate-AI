@@ -1,6 +1,7 @@
 """Guard the exact multi-pointer payload used by the bounded XR2 probe."""
 
 from scripts.inspect.probe_simultaneous_taps import send_pair
+from scripts.inspect.probe_four_simultaneous_taps import FOUR_POINTS, send_four
 
 
 class FakeDriver:
@@ -27,6 +28,24 @@ def test_send_pair_sends_both_touch_sources_on_same_tick():
     assert len({source["id"] for source in sources}) == 2
     assert [(source["actions"][0]["x"], source["actions"][0]["y"])
             for source in sources] == [(190, 448), (223, 448)]
+    assert all([action["type"] for action in source["actions"]]
+               == ["pointerMove", "pointerDown", "pause", "pointerUp"]
+               for source in sources)
+
+
+def test_send_four_sends_square_in_one_command():
+    driver = FakeDriver()
+
+    send_four(driver)
+
+    assert len(driver.commands) == 1
+    command, payload = driver.commands[0]
+    assert command == "actions"
+    sources = payload["actions"]
+    assert len(sources) == 4
+    assert len({source["id"] for source in sources}) == 4
+    assert [(source["actions"][0]["x"], source["actions"][0]["y"])
+            for source in sources] == list(FOUR_POINTS)
     assert all([action["type"] for action in source["actions"]]
                == ["pointerMove", "pointerDown", "pause", "pointerUp"]
                for source in sources)

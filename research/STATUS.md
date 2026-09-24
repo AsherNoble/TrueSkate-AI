@@ -190,10 +190,15 @@ high-rate case; one XR2 segment has a weaker start detection. See
 [M1-LA-ORIGINALS-20260924](experiments/M1-LA-ORIGINALS-20260924.md).
 A bounded XR2 probe initially sent only one pointer per attempted pair because
 Selenium `ActionChains` discarded the other source. The corrected two-source
-command completed in three XR2 repetitions without leaving gameplay. Whether
-True Skate drew two distinct marks is pending human frame review; no
-timing-calibration change follows yet. See
+command completed in three XR2 repetitions without leaving gameplay. The
+operator saw two simultaneous visible marks in every corrected repetition;
+no timing-calibration change follows yet. See
 [M1-MULTITAP-20260925](experiments/M1-MULTITAP-20260925.md).
+A follow-up XR2 four-touch probe omitted the single-touch control and sent
+four points in a 66-point square. Three bounded recordings stayed in gameplay;
+preliminary inspection shows four visible spots, pending operator review of
+their precise timing. See
+[M1-MULTITAP4-20260925](experiments/M1-MULTITAP4-20260925.md).
 On 2026-09-23,
 the opt-in batch exact-PTS extractor was promoted from clean release `1b8497e`
 after isolated one-segment checks on both XRs; previous release `13554c9`

@@ -4,13 +4,21 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-25 — Four simultaneous XR2 touches
+
+- Removed the on-film single-touch control; sent four fingers at the corners
+  of a 66-logical-point square in three bounded recordings. All commands
+  completed without leaving gameplay; four spots are visible in a preliminary
+  frame review. Exact timing awaits operator inspection in the new viewer.
+  [Record](experiments/M1-MULTITAP4-20260925.md).
+
 ## 2026-09-25 — Two-finger XR2 visibility probe
 
 - The operator found no pair in the first viewer. Selenium `ActionChains` had
   silently retained only the last pointer source, invalidating those recordings
   as a two-finger test. A corrected two-source payload completed in three new
-  XR2 originals; gameplay remained visible, but distinct marks still need
-  operator frame review in the new viewer. No calibration method was adopted.
+  XR2 originals, and the operator saw two simultaneous marks in each. No
+  calibration method was adopted.
   [Record](experiments/M1-MULTITAP-20260925.md).
 
 ## 2026-09-24 — Los Angeles originals retained on both XRs
