@@ -175,9 +175,16 @@ quotas. A balanced 140-clip human audit marked 124 good, 9 mild and 7
 critical. Six critical clips were XR1/Los Angeles, where anomalous calibration
 rates closely predict the late visible trace. Across the full pool, 1,063 clips
 are in segments whose two-anchor fit rate differs from `1.0` by more than 0.2%;
-this is a screening count, not a proven error count. The intended deterministic
-13,100-sample training selection is on hold pending independent timing checks.
-See [M1-AUDIT-20260924](experiments/M1-AUDIT-20260924.md). On 2026-09-23,
+this is a screening count, not a proven error count. A blinded held-out
+24-clip check then confirmed the predicted error pattern in all twelve paired
+recordings: 22 first-trace frames were predicted exactly from the
+calibration-rate anomaly and two within one frame. This validates the
+extreme-rate timing risk, but not a universal rejection cutoff or the visual
+cause of a mistaken anchor. The intended deterministic 13,100-sample training
+selection remains on hold pending an admission decision. See
+[M1-AUDIT-20260924](experiments/M1-AUDIT-20260924.md) and
+[M1-ONSET-VALIDATION-20260924](experiments/M1-ONSET-VALIDATION-20260924.md).
+On 2026-09-23,
 the opt-in batch exact-PTS extractor was promoted from clean release `1b8497e`
 after isolated one-segment checks on both XRs; previous release `13554c9`
 remains for rollback.

@@ -20,6 +20,13 @@ Put substantial experiments in individual records and current facts in STATUS.
   ordinary-rate Los Angeles and low-rate other-park segments. The selection is
   frozen before human labels; no collection was started.
   [Protocol](experiments/M1-ONSET-VALIDATION-20260924.md).
+- The operator labelled all 24 onsets without uncertainty. High-rate Los
+  Angeles pairs had late early-gesture traces that returned to frames 8–9 near
+  the end; low-rate other-park pairs showed the reverse; ordinary-rate Los
+  Angeles pairs stayed at frame 8. An anchor-error timing model predicted
+  22/24 exact onset frames and the other two within one frame. This validates
+  the extreme-rate risk signal, not a cutoff for automatic exclusion.
+  [Labels and analysis](experiments/M1-ONSET-VALIDATION-20260924.md).
 
 ## 2026-09-24 — Replacement park top-up completed
 

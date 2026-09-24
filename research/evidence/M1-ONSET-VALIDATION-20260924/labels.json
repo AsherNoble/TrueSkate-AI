@@ -1,0 +1,175 @@
+{
+  "schema": "linear-onset-validation-v1",
+  "selection_seed": "6998894493552140267",
+  "exported_at": "2026-09-24T11:33:58.264Z",
+  "labels": {
+    "000/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_223713/sls_2013_kansas_city/sample_000009": {
+      "frame_index_0based": 18,
+      "displayed_frame_1based": 19,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:29:37.295Z"
+    },
+    "001/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_223713/sls_2013_kansas_city/sample_000001": {
+      "frame_index_0based": 8,
+      "displayed_frame_1based": 9,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:29:49.127Z"
+    },
+    "002/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_112049/sls_2015_los_angeles/sample_000010": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:29:59.977Z"
+    },
+    "003/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_114146/sls_2015_los_angeles/sample_000010": {
+      "frame_index_0based": 8,
+      "displayed_frame_1based": 9,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:30:08.244Z"
+    },
+    "004/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_050146/sls_2015_los_angeles/sample_000009": {
+      "frame_index_0based": 8,
+      "displayed_frame_1based": 9,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:30:18.495Z"
+    },
+    "005/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_080326/sls_2015_los_angeles/sample_000010": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:30:34.229Z"
+    },
+    "006/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_054443/skateboard_gb_2024/sample_000009": {
+      "frame_index_0based": 18,
+      "displayed_frame_1based": 19,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:30:54.979Z"
+    },
+    "007/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_014122/skateboard_gb_2024/sample_000010": {
+      "frame_index_0based": 15,
+      "displayed_frame_1based": 16,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:31:08.845Z"
+    },
+    "008/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_164130/sls_2015_los_angeles/sample_000010": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:31:21.829Z"
+    },
+    "009/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_013752/sls_2015_los_angeles/sample_000009": {
+      "frame_index_0based": 8,
+      "displayed_frame_1based": 9,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:31:28.062Z"
+    },
+    "010/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_160017/sls_2015_los_angeles/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:31:33.446Z"
+    },
+    "011/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_014122/skateboard_gb_2024/sample_000001": {
+      "frame_index_0based": 8,
+      "displayed_frame_1based": 9,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:31:38.645Z"
+    },
+    "012/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_112049/sls_2015_los_angeles/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:31:43.129Z"
+    },
+    "013/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_212138/sls_2015_super_crown/sample_000001": {
+      "frame_index_0based": 8,
+      "displayed_frame_1based": 9,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:31:49.512Z"
+    },
+    "014/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_082345/sls_2015_los_angeles/sample_000010": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:31:55.430Z"
+    },
+    "015/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_082345/sls_2015_los_angeles/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:32:06.746Z"
+    },
+    "016/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_054443/skateboard_gb_2024/sample_000001": {
+      "frame_index_0based": 8,
+      "displayed_frame_1based": 9,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:32:13.730Z"
+    },
+    "017/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_114146/sls_2015_los_angeles/sample_000001": {
+      "frame_index_0based": 17,
+      "displayed_frame_1based": 18,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:32:44.897Z"
+    },
+    "018/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_160017/sls_2015_los_angeles/sample_000011": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:32:58.247Z"
+    },
+    "019/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_212138/sls_2015_super_crown/sample_000010": {
+      "frame_index_0based": 15,
+      "displayed_frame_1based": 16,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:33:15.663Z"
+    },
+    "020/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_013752/sls_2015_los_angeles/sample_000001": {
+      "frame_index_0based": 16,
+      "displayed_frame_1based": 17,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:33:28.280Z"
+    },
+    "021/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_050146/sls_2015_los_angeles/sample_000001": {
+      "frame_index_0based": 11,
+      "displayed_frame_1based": 12,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:33:36.880Z"
+    },
+    "022/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_164130/sls_2015_los_angeles/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:33:44.048Z"
+    },
+    "023/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_080326/sls_2015_los_angeles/sample_000001": {
+      "frame_index_0based": 12,
+      "displayed_frame_1based": 13,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-24T11:33:55.681Z"
+    }
+  }
+}
