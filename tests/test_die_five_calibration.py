@@ -97,6 +97,22 @@ def test_collector_die_five_marker_is_one_request_with_five_simultaneous_fingers
         else:
             assert xy == [(207, 448)]
 
+    driver = Driver()
+    module._execute_marker(SimpleNamespace(driver=driver, device_w=414, device_h=896), "die_five", 0.05, 71)
+    xy = sorted((s["actions"][0]["x"], s["actions"][0]["y"]) for s in driver.payloads[0][1]["actions"])
+    assert xy == [(136, 377), (136, 519), (207, 448), (278, 377), (278, 519)]
+
+
+def test_die_five_points_default_is_the_preregistered_geometry_and_scales():
+    from trueskate_ai.collection.die_five_calibration import die_five_points, die_five_points_pt
+    from trueskate_ai.data.control_hitboxes import point_is_safe
+
+    assert die_five_points() == DIE_FIVE_POINTS
+    assert die_five_points_pt() == ((207, 448), (172, 413), (242, 413), (172, 483), (242, 483))
+    wide = die_five_points_pt(71)
+    assert max(((x - 207) ** 2 + (y - 448) ** 2) ** 0.5 for x, y in wide) == pytest.approx(100.4, abs=0.1)
+    assert all(point_is_safe(p) for p in die_five_points(71))
+
 
 def test_candidate_consensus_recovers_marker_hidden_by_early_corner_triggers():
     from trueskate_ai.collection.die_five_calibration import earliest_candidate_consensus

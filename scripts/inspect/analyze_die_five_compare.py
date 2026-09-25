@@ -12,7 +12,12 @@ import importlib.util
 import json
 from pathlib import Path
 
-from trueskate_ai.collection.die_five_calibration import detect_die_five_onset
+from trueskate_ai.collection.die_five_calibration import (
+    DIE_FIVE_OFFSET_PT,
+    DIE_FIVE_POINTS,
+    detect_die_five_onset,
+    die_five_points,
+)
 from trueskate_ai.collection.tap_timing_calibration import (
     detect_tap_onset,
     fit_two_anchor_timeline,
@@ -43,7 +48,8 @@ def _frame(all_times: list[float], onset_s: float | None) -> int | None:
     return min(range(len(all_times)), key=lambda i: abs(all_times[i] - onset_s))
 
 
-def detect_both(mov: Path, all_times: list[float], approx_s: float, *, after_s: float = SEARCH_AFTER_S) -> dict:
+def detect_both(mov: Path, all_times: list[float], approx_s: float, *, after_s: float = SEARCH_AFTER_S,
+                points=DIE_FIVE_POINTS) -> dict:
     frames, times = ALIGN._decode_calibration_window(
         mov, command_video_s=approx_s, fps=30, reference_window_s=REFERENCE_S,
         search_after_s=after_s, resize_width=DECODE_WIDTH, source_frame_times=all_times,
@@ -52,7 +58,8 @@ def detect_both(mov: Path, all_times: list[float], approx_s: float, *, after_s: 
         return {"decoded": False}
     a = detect_tap_onset(frames, times, point_xy=(0.5, 0.5), command_s=approx_s,
                          reference_window_s=REFERENCE_S)
-    b = detect_die_five_onset(frames, times, command_s=approx_s, reference_window_s=REFERENCE_S)
+    b = detect_die_five_onset(frames, times, command_s=approx_s, points=points,
+                              reference_window_s=REFERENCE_S)
     first = all_times.index(times[0])
     return {
         "decoded": True,
@@ -67,6 +74,8 @@ def detect_both(mov: Path, all_times: list[float], approx_s: float, *, after_s: 
 def analyze_segment(manifest_path: Path) -> dict:
     manifest = json.loads(manifest_path.read_text())
     mov = manifest_path.with_suffix(".mov")
+    offset_pt = manifest.get("die_five_offset_pt") or DIE_FIVE_OFFSET_PT
+    points = die_five_points(offset_pt)
     all_times = ALIGN._probe_video_frame_times(mov)
     started = manifest["started_at_epoch_s"]
     submits = [e["wda_submitted_epoch_s"] - started for e in manifest["gestures"]]
@@ -81,7 +90,7 @@ def analyze_segment(manifest_path: Path) -> dict:
             "marker": event.get("calibration_marker", "die_five"),
             "wda_submitted_monotonic_s": event["wda_submitted_monotonic_s"],
             "approx_video_s": round(approx, 4),
-            **detect_both(mov, all_times, approx),
+            **detect_both(mov, all_times, approx, points=points),
         })
 
     fits = {}
@@ -108,7 +117,7 @@ def analyze_segment(manifest_path: Path) -> dict:
     t = REFERENCE_S + 0.1
     while t + NULL_WINDOW_AFTER_S < all_times[-1]:
         if all(not (t - NULL_CLEAR_BEFORE_S <= s <= t + NULL_CLEAR_AFTER_S) for s in submits):
-            result = detect_both(mov, all_times, t, after_s=NULL_WINDOW_AFTER_S)
+            result = detect_both(mov, all_times, t, after_s=NULL_WINDOW_AFTER_S, points=points)
             nulls.append({"anchor_video_s": round(t, 3), **result})
             t += REFERENCE_S + NULL_WINDOW_AFTER_S
         else:
@@ -120,11 +129,13 @@ def analyze_segment(manifest_path: Path) -> dict:
     if start_marker is not None and start_marker["approx_video_s"] - 0.1 > all_times[0] + 0.2:
         span = start_marker["approx_video_s"] - 0.1 - REFERENCE_S
         post_reset = {"scanned_s": round(start_marker["approx_video_s"] - 0.1 - all_times[0], 3),
-                      **detect_both(mov, all_times, REFERENCE_S, after_s=max(0.05, span))}
+                      **detect_both(mov, all_times, REFERENCE_S, after_s=max(0.05, span),
+                                   points=points)}
     return {
         "segment": str(manifest_path),
         "device": manifest["device"],
         "park": manifest["park"],
+        "die_five_offset_pt": offset_pt,
         "frame_count": len(all_times),
         "markers": markers,
         "fits": fits,

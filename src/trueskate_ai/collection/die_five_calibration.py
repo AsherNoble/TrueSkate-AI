@@ -20,14 +20,24 @@ from trueskate_ai.collection.tap_timing_calibration import detect_tap_onset
 
 XR_LOGICAL_SIZE = (414, 896)
 DIE_FIVE_CENTRE_PT = (207, 448)
-DIE_FIVE_OFFSET_PT = 35
-DIE_FIVE_POINTS_PT = (
-    DIE_FIVE_CENTRE_PT,
-    (172, 413), (242, 413), (172, 483), (242, 483),
-)
-DIE_FIVE_POINTS = tuple(
-    (x / XR_LOGICAL_SIZE[0], y / XR_LOGICAL_SIZE[1]) for x, y in DIE_FIVE_POINTS_PT
-)
+DIE_FIVE_OFFSET_PT = 35  # per axis; centre-to-corner "radius" 49.5 pt
+
+
+def die_five_points_pt(offset_pt: int = DIE_FIVE_OFFSET_PT) -> tuple[tuple[int, int], ...]:
+    """Centre first, then corners at ``±offset_pt`` on each axis (logical points)."""
+    cx, cy = DIE_FIVE_CENTRE_PT
+    return ((cx, cy), (cx - offset_pt, cy - offset_pt), (cx + offset_pt, cy - offset_pt),
+            (cx - offset_pt, cy + offset_pt), (cx + offset_pt, cy + offset_pt))
+
+
+def die_five_points(offset_pt: int = DIE_FIVE_OFFSET_PT) -> tuple[tuple[float, float], ...]:
+    """Normalised die-five points for a corner offset of ``offset_pt``."""
+    return tuple((x / XR_LOGICAL_SIZE[0], y / XR_LOGICAL_SIZE[1])
+                 for x, y in die_five_points_pt(offset_pt))
+
+
+DIE_FIVE_POINTS_PT = die_five_points_pt()
+DIE_FIVE_POINTS = die_five_points()
 
 
 @dataclass(frozen=True)

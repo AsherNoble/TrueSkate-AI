@@ -67,7 +67,8 @@ from trueskate_ai.sim.touch_actions import (  # noqa: E402
     curved_drag, curved_drag_with_spin_hold, long_press, make_touch_pointer,
     perform_pointer_actions, reset_position, skip_loading_screen, tap,
 )
-from trueskate_ai.collection.die_five_calibration import DIE_FIVE_POINTS  # noqa: E402
+from trueskate_ai.collection.die_five_calibration import DIE_FIVE_OFFSET_PT, die_five_points  # noqa: E402
+from trueskate_ai.data.control_hitboxes import point_is_safe  # noqa: E402
 from trueskate_ai.collection.scene_settle import wait_for_centre_settle  # noqa: E402
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
 from trueskate_ai.collection.gameplay_filter import is_editor_frame, is_menu_frame  # noqa: E402
@@ -172,10 +173,11 @@ def _execute(worker: DeviceSession, g, *, calibration_tap_hold_s: float = 0.0) -
         )
 
 
-def _execute_marker(worker: DeviceSession, kind: str, hold_s: float) -> None:
+def _execute_marker(worker: DeviceSession, kind: str, hold_s: float,
+                    die_five_offset_pt: int = DIE_FIVE_OFFSET_PT) -> None:
     """M1-DIE5-COMPARE calibration marker: one WDA request, all fingers on one tick."""
     dw, dh = worker.device_w, worker.device_h
-    points = DIE_FIVE_POINTS if kind == "die_five" else ((0.5, 0.5),)
+    points = die_five_points(die_five_offset_pt) if kind == "die_five" else ((0.5, 0.5),)
     fingers = []
     for px, py in points:
         x, y = scale_to_device(px, py, dw, dh)
@@ -368,6 +370,9 @@ def main() -> None:
                     help="M1-DIE5-COMPARE research only: start/end controls become five-touch "
                          "die markers, optional mid markers are added, and the aligner is never "
                          "spawned (original .mov retained, no clips). Requires --basic-linears.")
+    ap.add_argument("--die-five-offset-pt", type=int, default=DIE_FIVE_OFFSET_PT,
+                    help="With --die-five-experiment: corner offset per axis in logical points "
+                         "(35 = 49.5 pt centre-to-corner; 71 = ~100 pt).")
     ap.add_argument("--mid-markers", type=int, default=0,
                     help="With --die-five-experiment: extra markers after every "
                          "--mid-marker-every payload samples, up to this many per segment.")
@@ -516,6 +521,11 @@ def main() -> None:
             raise SystemExit("--mid-markers must be >= 0 and --mid-marker-every >= 1")
         if not mid_marker_kinds or set(mid_marker_kinds) - {"die_five", "single"}:
             raise SystemExit("--mid-marker-kinds must list die_five and/or single")
+        if args.die_five_offset_pt < 1 or not all(
+                point_is_safe(p) for p in die_five_points(args.die_five_offset_pt)):
+            raise SystemExit("--die-five-offset-pt puts a point on a protected control")
+    elif args.die_five_offset_pt != DIE_FIVE_OFFSET_PT:
+        raise SystemExit("--die-five-offset-pt requires --die-five-experiment")
     elif args.mid_markers:
         # Exploratory production path: extra single centre controls, aligned by the
         # robust multi-anchor fit (timing_alignment "wda_submitted_multi_anchor").
@@ -841,7 +851,7 @@ def main() -> None:
                         else 0.0
                     )
                     if args.die_five_experiment and args.basic_linears and segment_events == 0:
-                        _execute_marker(worker, "die_five", calibration_hold_s)
+                        _execute_marker(worker, "die_five", calibration_hold_s, args.die_five_offset_pt)
                     else:
                         _execute(worker, g, calibration_tap_hold_s=calibration_hold_s)
                 except Exception as exc:  # noqa: BLE001
@@ -926,7 +936,7 @@ def main() -> None:
                         if not args.die_five_experiment:
                             time.sleep(args.mid_control_gap_s)
                             t0 = time.time()
-                        _execute_marker(worker, kind, args.calibration_tap_hold_s)
+                        _execute_marker(worker, kind, args.calibration_tap_hold_s, args.die_five_offset_pt)
                         time.sleep(0.35)
                         if not args.no_menu_guard:
                             _mid_png = worker.driver.get_screenshot_as_png()
@@ -1031,7 +1041,7 @@ def main() -> None:
                 action_attempts += 1
                 try:
                     if args.die_five_experiment:
-                        _execute_marker(worker, "die_five", args.calibration_tap_hold_s)
+                        _execute_marker(worker, "die_five", args.calibration_tap_hold_s, args.die_five_offset_pt)
                     else:
                         _execute(worker, g, calibration_tap_hold_s=args.calibration_tap_hold_s)
                 except Exception as exc:  # noqa: BLE001
@@ -1141,6 +1151,8 @@ def main() -> None:
                         "static_frac": args.static_frac},
                 "num_gestures": args.num_gestures, "use_spin": args.use_spin,
                 "die_five_experiment": args.die_five_experiment,
+                "die_five_offset_pt": (
+                    args.die_five_offset_pt if args.die_five_experiment else None),
                 "start_settle": start_settle if args.reset_before_segment else None,
                 "pre_segment_reset_epoch_s": (
                     pre_segment_reset_epoch_s if args.reset_before_segment else None),

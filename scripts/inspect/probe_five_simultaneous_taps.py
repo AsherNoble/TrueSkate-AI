@@ -8,6 +8,7 @@ from pathlib import Path
 
 from trueskate_ai.collection.gameplay_filter import is_editor_frame, is_menu_frame
 from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder
+from trueskate_ai.collection.die_five_calibration import DIE_FIVE_OFFSET_PT, die_five_points_pt
 from trueskate_ai.data.control_hitboxes import point_is_safe
 from trueskate_ai.sim.device import BUNDLE_ID, DeviceSession, select_devices
 from trueskate_ai.sim.touch_actions import (
@@ -30,9 +31,9 @@ def gameplay_ok(png: bytes) -> bool:
     return not is_editor_frame(png) and not is_menu_frame(png, allow_idle_navigation=True)
 
 
-def send_five(driver, hold_s: float = HOLD_S) -> None:
+def send_five(driver, hold_s: float = HOLD_S, points=FIVE_POINTS) -> None:
     fingers = []
-    for x, y in FIVE_POINTS:
+    for x, y in points:
         finger = make_touch_pointer("calibration_five")
         finger.create_pointer_move(x=x, y=y, duration=0)
         finger.create_pointer_down()
@@ -59,8 +60,11 @@ def main() -> None:
     parser.add_argument("--hold-s", type=float, default=HOLD_S)
     parser.add_argument("--recordings", type=int, default=RECORDINGS)
     parser.add_argument("--experiment", default="die-five-calibration-v1")
+    parser.add_argument("--offset-pt", type=int, default=DIE_FIVE_OFFSET_PT,
+                        help="Corner offset per axis in logical points (35 = 49.5 pt radius).")
     args = parser.parse_args()
-    if not all(point_is_safe((x / 414, y / 896)) for x, y in FIVE_POINTS):
+    five_points = FIVE_POINTS if args.offset_pt == DIE_FIVE_OFFSET_PT else die_five_points_pt(args.offset_pt)
+    if not all(point_is_safe((x / 414, y / 896)) for x, y in five_points):
         parser.error("a calibration point intersects a protected control region")
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -95,10 +99,10 @@ def main() -> None:
                     if time.monotonic() - segment_start > MAX_RECORDING_S - 8.0:
                         raise RuntimeError("bounded segment is approaching one minute")
                     call_start = time.time()
-                    send_five(driver, args.hold_s)
+                    send_five(driver, args.hold_s, five_points)
                     events.append({
                         "kind": "simultaneous_five", "marker": marker,
-                        "points_logical": FIVE_POINTS,
+                        "points_logical": five_points,
                         "call_start_epoch_s": call_start,
                         "call_end_epoch_s": time.time(),
                     })
