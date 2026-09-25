@@ -118,7 +118,13 @@ grey change outside the marker area from onset−1 to onset+15 frames was
 50 ms marker does not visibly move the board or camera. Visual crops confirm
 a static board; a difference image shows the five marks clearly, but they are
 faint soft glows on the board in raw frames. Phase 3 labellers should expect
-subtle marks. Originals: rig
+subtle marks.
+
+**Correction (M1-DIE5-R100, 2026-09-25):** searching each marker from its own
+call time shows XR2 markers 1 and 2 resolved to the same frame in both
+recordings. XR2 marker 1 fell before the board settled and was never seen
+separately, so "16/16" is really 14 distinct markers accepted. See
+[M1-DIE5-R100](M1-DIE5-R100-20260925.md#phase-1-results-2026-09-25--passed-with-a-caveat). Originals: rig
 `/Users/training-server/trueskate-ai-runtime/tmp/die5-compare-phase1-20260925/`
 and local `tmp/die5-compare-phase1-20260925/` (not backed up by Git).
 
