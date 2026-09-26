@@ -240,8 +240,9 @@ moving for ~7–8 s after the pre-segment reset. The branch adds:
     (descriptive).
 - **Timing gate** ([M1-TIMING-GATE](experiments/M1-TIMING-GATE-20260926.md)):
   every labelled control appeared 118–174 ms after its WDA submission, and
-  every gross detector error came earlier. A held-out corpus test is
-  preregistered.
+  every gross detector error came earlier. Held-out corpus test
+  **supported**: 90/90 high-rate segments have an early start anchor, and
+  98.7–99.7% of ordinary anchors pass.
 - **Settle wait** ([M1-SETTLE](experiments/M1-SETTLE-20260925.md)): an opt-in
   wait before the controls. It is a manipulation-checked precaution, not a
   validated fix.

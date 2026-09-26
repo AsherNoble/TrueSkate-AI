@@ -84,7 +84,8 @@ All 1,409 segments were readable: 799 ordinary, 90 high-rate, 20 low-rate,
     0.271/0.276 s. That pattern suggests a `started_at` mapping error rather
     than a detector error, which is a limitation of the gate.
 - **Rate screen beyond the gate:** the 0.0008 screen flags 20 segments the gate
-  passes, at rates of roughly 800–2,000 ppm with both anchors inside the window.
+  passes. Their rates are 804–1,075 ppm in magnitude, all within ~1 native
+  frame over the span, with both anchors inside the window.
 
 Clips kept at segment level (replacement corpus only):
 
