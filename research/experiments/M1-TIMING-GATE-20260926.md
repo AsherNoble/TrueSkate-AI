@@ -53,3 +53,62 @@ Also report, descriptively:
 
 [timing_gate_corpus_check.py](../../scripts/inspect/timing_gate_corpus_check.py),
 run read-only on the rig.
+
+## Results (2026-09-26) — supported
+
+Ran read-only on the rig with the committed script (`4a496c5`), release
+`1b8497e`'s Python. Output:
+[timing-gate-corpus.json](../evidence/M1-TIMING-GATE-20260926/timing-gate-corpus.json).
+All 1,409 segments were readable: 799 ordinary, 90 high-rate, 20 low-rate,
+500 other.
+
+| Criterion | Result | Required |
+|---|---|---|
+| 1. Ordinary starts pass | 797/799 (99.7%) | ≥95% |
+| 1. Ordinary ends pass | 789/799 (98.7%) | ≥95% |
+| 2. High-rate starts fail early | **90/90** | ≥80% |
+| 2. High-rate ends pass | **90/90** | ≥90% |
+
+- **Latency in production:** in ordinary segments, the median is 0.141–0.144 s
+  in every device/park group. The 5th–95th percentiles are about 0.124–0.166 s,
+  matching the 118–174 ms of the labelled phase 2 controls. High-rate starts
+  have a median of −0.172 s (range −0.715 to +0.052 s).
+- **Low-rate segments (descriptive):** all 20 have an early end anchor
+  (−0.714 to −0.003 s). Five XR1 Los Angeles ones also have an early start.
+  Low-rate segments occur on both XRs and in four parks.
+- **Beyond the rate screen:** the gate flags 15 segments that the 0.0008
+  screen keeps.
+  - Several have both anchors early by a similar amount. The rate cannot see
+    that fault (red-team point 3 in M1-SCREEN-DRAFT).
+  - A few have both anchors late by ~130 ms, e.g. XR2 Kansas City at
+    0.271/0.276 s. That pattern suggests a `started_at` mapping error rather
+    than a detector error, which is a limitation of the gate.
+- **Rate screen beyond the gate:** the 0.0008 screen flags 20 segments the gate
+  passes, at rates of roughly 800–2,000 ppm with both anchors inside the window.
+
+Clips kept at segment level (replacement corpus only):
+
+| Park | All | Gate | Rate 0.0008 (segment) | Both |
+|---|---:|---:|---:|---:|
+| SLS 2015 Los Angeles | 2,003 | 948 | 957 | 938 |
+| SLS 2015 Super Crown | 2,018 | 1,948 | 1,927 | 1,898 |
+| The Workshop | 4,052 | 3,972 | 4,007 | 3,927 |
+| Skateboard GB 2024 | 1,710 | 1,672 | 1,635 | 1,635 |
+| SLS 2013 Kansas City | 3,809 | 3,761 | 3,724 | 3,715 |
+| **Total** | **13,592** | **12,301** | **12,250** | **12,113** |
+
+Limitations:
+- The proxy is the rate anomaly, not new human labels.
+- Segments that failed calibration are absent.
+- The gate depends on `started_at_epoch_s`, whose own error is small here
+  (98.7–99.7% of ordinary anchors pass) but not zero.
+
+## Implications (not yet acted on)
+
+1. **Corpus screen:** the gate is a label-free, anchor-level check that also
+   catches equal-early anchors. It could be combined with the rate screen.
+2. **Production detector:** searching for the onset only within
+   [0.085, 0.210] s after the command would stop the detector from choosing a
+   pre-command transient. It would then find the real touch instead of
+   rejecting the segment. This needs a code change and a fresh labelled test,
+   since the window came from the Phase 2 labels.
