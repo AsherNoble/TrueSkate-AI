@@ -1,0 +1,24 @@
+{
+ "segments": 30,
+ "multi_anchor_rejected_segments": 0,
+ "outlier_vs_A_gross": {
+  "outlier_and_gross": 5,
+  "outlier_not_gross": 0,
+  "inlier_and_gross": 0,
+  "inlier_not_gross": 127
+ },
+ "prediction_error_frames": {
+  "two_anchor": {
+   "n": 132,
+   "within_1_frame": 128,
+   "gross_gt_1": 4,
+   "max_abs_frames": 10.0
+  },
+  "multi_anchor_loo": {
+   "n": 130,
+   "within_1_frame": 127,
+   "gross_gt_1": 3,
+   "max_abs_frames": 1.74
+  }
+ }
+}

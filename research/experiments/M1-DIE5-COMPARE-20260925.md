@@ -400,3 +400,33 @@ changed after data collection. The docstring now states the actual rule, and
 results are interpreted under it. The review also fixed two collector bugs:
 production mid controls ignored `--no-menu-guard`, and `--mid-marker-every 0`
 was not rejected outside die-five mode.
+
+## Phase 3 results (2026-09-26) — human labels scored
+
+The operator labelled all 132 items (0 uncertain). The sealed analysis hash
+was verified before scoring. Scored with the frozen scripts:
+[score](../evidence/M1-DIE5-COMPARE-20260925/phase3-score.json),
+[multi-anchor score](../evidence/M1-DIE5-COMPARE-20260925/phase3-multianchor-score.json),
+[labels](../evidence/M1-DIE5-COMPARE-20260925/phase3-labels.json),
+[analysis](../evidence/M1-DIE5-COMPARE-20260925/phase2-analysis.json).
+
+| Los Angeles starts (30 recordings) | A | B |
+|---|---:|---:|
+| Gross error (>1 frame) | 1 | 0 |
+| No result | 0 | 1 |
+| Exact | 27 | 29 |
+
+- **Primary:** one discordant recording (the XR2 +6,056 ppm recording: A
+  gross early, B no result). McNemar p = 1.0; criterion 1 not met.
+- **B accepted markers:** 0/98 gross (rule of three < 3.1%).
+- **B start rejection:** XR1 0/20, XR2 1/10.
+- **Mid die-five weighted gross rate:** A 6.7%, B 0%.
+- **Corner check:** passed.
+- **False alarms:** A 8, B 0.
+- **Multi-anchor (A's frames):** flagged 5/5 of A's gross errors and 0/127
+  good anchors. Leave-one-out errors over 1 frame fell from 4 to 3, and the
+  worst from 10 to 1.74 frames.
+
+Every human-labelled start/end control fell 118–174 ms after its WDA
+submission. Every gross detector error was earlier (see
+[M1-TIMING-GATE](M1-TIMING-GATE-20260926.md)).

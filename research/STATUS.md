@@ -230,9 +230,18 @@ The weak or early start-control detections behind the Los Angeles rate
 anomalies (90/207 XR1 LA segments) coincide with the board and camera still
 moving for ~7–8 s after the pre-segment reset. The branch adds:
 
-- **Five-touch comparison** ([M1-DIE5-COMPARE](experiments/M1-DIE5-COMPARE-20260925.md)):
-  a preregistered blind five-touch versus single-touch comparison, captured
-  and awaiting human labels.
+- **Five-touch comparison** ([M1-DIE5-COMPARE](experiments/M1-DIE5-COMPARE-20260925.md),
+  [100 pt repeat](experiments/M1-DIE5-R100-20260925.md)): scored against blind
+  labels.
+  - In the heavy-fault 100 pt run, five-touch had significantly fewer gross
+    start errors than single-touch (0 vs 9 discordant, p = 0.004). It still
+    failed adoption: 3 errors when it answered, and 45% XR1 start rejections.
+  - The 100 pt spacing cut post-swipe mid rejections from 12/60 to 4/60
+    (descriptive).
+- **Timing gate** ([M1-TIMING-GATE](experiments/M1-TIMING-GATE-20260926.md)):
+  every labelled control appeared 118–174 ms after its WDA submission, and
+  every gross detector error came earlier. A held-out corpus test is
+  preregistered.
 - **Settle wait** ([M1-SETTLE](experiments/M1-SETTLE-20260925.md)): an opt-in
   wait before the controls. It is a manipulation-checked precaution, not a
   validated fix.

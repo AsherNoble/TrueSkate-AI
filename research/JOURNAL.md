@@ -4,6 +4,20 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-26 — Five-touch comparisons scored; timing gate proposed
+
+- Blind labels scored for the 49.5 pt and 100 pt five-touch runs.
+  - 49.5 pt: A 1 vs B 0 gross Los Angeles start errors, p = 1.0.
+  - 100 pt, a heavy post-reset-motion session: A 12 vs B 3, 9 discordant for
+    B, p = 0.004. B's 3 errors fired before the command was sent, and it
+    rejected 45% of XR1 starts.
+  - Wider spacing cut post-swipe rejections from 12/60 to 4/60.
+- Multi-anchor fits cut leave-one-out gross errors from 36 to 9 and the worst
+  error from 26 to 2 frames.
+- All 120 labelled controls appeared 118–174 ms after WDA submission, and all
+  gross errors earlier. A latency gate is preregistered for a held-out corpus
+  test. [Record](experiments/M1-DIE5-R100-20260925.md).
+
 ## 2026-09-25 — Multi-anchor consensus calibration (smoke)
 
 - An opt-in consensus fit over ≥3 single centre controls rejects anchors that
