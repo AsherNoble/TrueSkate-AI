@@ -88,3 +88,30 @@ def passes_corpus_screen_v1(meta: Mapping[str, Any], segment_manifest: Mapping[s
     low, high = CORPUS_SCREEN_V1["latency_window_s"]
     latencies = anchor_latencies_s(meta, segment_manifest)
     return {"start", "end"} <= latencies.keys() and all(low <= v <= high for v in latencies.values())
+
+
+def segment_manifest_path(sample_dir, meta: Mapping[str, Any]):
+    """The segment manifest beside the session directory that holds ``sample_dir``."""
+    from pathlib import Path
+
+    sample_dir = Path(sample_dir)
+    session_dir = next(p for p in sample_dir.parents if p.name == meta["session"])
+    return session_dir / f"segment_{int(meta['segment_index']):05d}.json"
+
+
+def count_passing_corpus_screen_v1(sample_dirs, *, device: str | None = None) -> int:
+    """Count samples (optionally for one device) that pass ``corpus-screen-v1``."""
+    import json
+    from pathlib import Path
+
+    manifests: dict = {}
+    total = 0
+    for sample_dir in sample_dirs:
+        meta = json.loads((Path(sample_dir) / "meta.json").read_text())
+        if device is not None and meta.get("device") != device:
+            continue
+        path = segment_manifest_path(sample_dir, meta)
+        if path not in manifests:
+            manifests[path] = json.loads(path.read_text())
+        total += passes_corpus_screen_v1(meta, manifests[path])
+    return total

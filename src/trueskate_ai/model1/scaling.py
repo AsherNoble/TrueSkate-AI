@@ -24,7 +24,13 @@ from trueskate_ai.data.cohort_manifest import (
     seal_manifest,
     validate_manifest,
 )
-from trueskate_ai.data.timing_screen import TimingScreen, passes
+from trueskate_ai.data.timing_screen import (
+    CORPUS_SCREEN_V1,
+    TimingScreen,
+    passes,
+    passes_corpus_screen_v1,
+    segment_manifest_path,
+)
 from trueskate_ai.model1.linear.audit import command_key
 from trueskate_ai.model1.linear.dataset import discover_basic_linear_samples
 
@@ -108,11 +114,15 @@ def build_linear_cohort_manifest(
     require_provenance: bool = True,
     allowed_parks: Iterable[str] | None = None,
     timing_screen: TimingScreen | None = None,
+    corpus_screen: str | None = None,
 ) -> dict[str, Any]:
     """Build one content-addressed manifest from strict linear admissions.
 
     ``timing_screen`` (opt-in) drops clips whose predicted calibration onset
     error exceeds its limit; parameters and exclusion counts are sealed in.
+    ``corpus_screen="corpus-screen-v1"`` (opt-in, exclusive with
+    ``timing_screen``) applies the frozen whole-segment screen of
+    M1-CORPUS-AUDIT-20260927.
     """
     if role not in COHORT_ROLES:
         raise ValueError(f"role must be one of {sorted(COHORT_ROLES)}, got {role!r}")
@@ -124,9 +134,30 @@ def build_linear_cohort_manifest(
         selection_root.relative_to(corpus_root)
     except ValueError as exc:
         raise ValueError("cohort selection root must be inside corpus_root") from exc
+    if corpus_screen not in (None, CORPUS_SCREEN_V1["name"]):
+        raise ValueError(f"unknown corpus screen {corpus_screen!r}")
+    if corpus_screen is not None and timing_screen is not None:
+        raise ValueError("use either timing_screen or corpus_screen, not both")
     samples, strict_counts = discover_basic_linear_samples(selection_root)
     screen_record = None
-    if timing_screen is not None:
+    if corpus_screen is not None:
+        import json
+
+        kept, excluded, manifests = [], Counter(), {}
+        for sample in samples:
+            meta = json.loads((Path(sample) / "meta.json").read_text())
+            path = segment_manifest_path(sample, meta)
+            if path not in manifests:
+                manifests[path] = json.loads(path.read_text())
+            if passes_corpus_screen_v1(meta, manifests[path]):
+                kept.append(sample)
+            else:
+                excluded[str(meta.get("park") or "<missing>")] += 1
+        samples = kept
+        screen_record = {**CORPUS_SCREEN_V1, "latency_window_s": list(CORPUS_SCREEN_V1["latency_window_s"]),
+                         "excluded": sum(excluded.values()),
+                         "excluded_by_park": dict(sorted(excluded.items()))}
+    elif timing_screen is not None:
         import json
 
         kept, excluded = [], Counter()

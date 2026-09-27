@@ -103,3 +103,55 @@ def test_corpus_screen_v1_rate_and_latency_gate():
     assert not passes_corpus_screen_v1(meta(1.0009, 0.14), manifest)
     assert not passes_corpus_screen_v1(meta(1.0002, 0.05), manifest)
     assert not passes_corpus_screen_v1(meta(1.0002, 0.14, 0.25), manifest)
+
+
+def test_count_passing_corpus_screen_v1_reads_segment_manifests(tmp_path):
+    import json
+
+    from trueskate_ai.data.timing_screen import count_passing_corpus_screen_v1
+
+    session = tmp_path / "iPhone_XR" / "park" / "sess"
+    (session / "segment_00000.json").parent.mkdir(parents=True)
+    (session / "segment_00000.json").write_text(json.dumps({"started_at_epoch_s": 0.0, "gestures": [
+        {"calibration_control": True, "wda_action_sequence": 0, "wda_submitted_epoch_s": 2.0},
+        {"calibration_control": True, "wda_action_sequence": 9, "wda_submitted_epoch_s": 55.0}]}))
+    dirs = []
+    for i, (device, latency) in enumerate([("iPhone_XR", 0.14), ("iPhone_XR", 0.02), ("iPhone_XR2", 0.14)]):
+        d = session / "park" / f"sample_{i:06d}"
+        d.mkdir(parents=True)
+        (d / "meta.json").write_text(json.dumps({
+            "session": "sess", "segment_index": 0, "device": device,
+            "tap_calibration": {"method": "wda-submitted-two-centre-controls-v2", "rate": 1.0, "detections": [
+                {"role": "start", "wda_action_sequence": 0, "onset_video_s": 2.0 + latency},
+                {"role": "end", "wda_action_sequence": 9, "onset_video_s": 55.14}]}}))
+        dirs.append(d)
+    assert count_passing_corpus_screen_v1(dirs) == 2
+    assert count_passing_corpus_screen_v1(dirs, device="iPhone_XR") == 1
+
+
+def test_cohort_manifest_applies_frozen_corpus_screen(tmp_path):
+    import pytest
+
+    from tests.test_model1_scaling_protocol import _linear_sample
+    from trueskate_ai.model1.scaling import build_linear_cohort_manifest
+
+    root = tmp_path / "corpus"
+    for i, (rate, start_latency) in enumerate(((1.0002, 0.14), (1.0002, 0.02), (1.0012, 0.14), (1.0, 0.15))):
+        sample = _linear_sample(root, i, device="iPhone_XR", park="SLS 2015 Los Angeles")
+        meta = json.loads((sample / "meta.json").read_text())
+        meta["tap_calibration"] = {"accepted": True, "method": "wda-submitted-two-centre-controls-v2",
+                                   "rate": rate, "detections": [
+                                       {"role": "start", "wda_action_sequence": 0, "onset_video_s": 2.0 + start_latency},
+                                       {"role": "end", "wda_action_sequence": 9, "onset_video_s": 55.14}]}
+        (sample / "meta.json").write_text(json.dumps(meta))
+        (root / meta["session"] / f"segment_{i:05d}.json").write_text(json.dumps({
+            "started_at_epoch_s": 0.0, "gestures": [
+                {"calibration_control": True, "wda_action_sequence": 0, "wda_submitted_epoch_s": 2.0},
+                {"calibration_control": True, "wda_action_sequence": 9, "wda_submitted_epoch_s": 55.0}]}))
+
+    screened = build_linear_cohort_manifest(root, cohort="s", role="training", corpus_screen="corpus-screen-v1")
+    assert screened["sample_count"] == 2
+    assert screened["timing_screen"]["name"] == "corpus-screen-v1"
+    assert screened["timing_screen"]["excluded_by_park"] == {"SLS 2015 Los Angeles": 2}
+    with pytest.raises(ValueError):
+        build_linear_cohort_manifest(root, cohort="s", role="training", corpus_screen="other")

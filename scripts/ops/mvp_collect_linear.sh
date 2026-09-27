@@ -70,6 +70,13 @@ HEARTBEAT_FILE="${BASIC_LINEAR_HEARTBEAT_FILE:-$OUT/.collector_heartbeat_${DEVIC
 # only between complete segments, before another recorder start.
 ACCEPTED_TARGET="${BASIC_LINEAR_ACCEPTED_TARGET:-0}"
 ACCEPTED_BASE="${BASIC_LINEAR_ACCEPTED_BASE:-0}"
+# Optional: count only clips that pass a frozen timing screen toward the target
+# (M1-TOPUP-PLAN-20260927). Empty keeps the strict-admission count.
+ACCEPTED_SCREEN="${BASIC_LINEAR_ACCEPTED_SCREEN:-}"
+case "$ACCEPTED_SCREEN" in
+  ''|corpus-screen-v1) ;;
+  *) echo "BASIC_LINEAR_ACCEPTED_SCREEN must be empty or corpus-screen-v1" >&2; exit 2 ;;
+esac
 
 case "$ACCEPTED_TARGET:$ACCEPTED_BASE" in
   *[!0-9:]*) echo "BASIC_LINEAR_ACCEPTED_TARGET and BASIC_LINEAR_ACCEPTED_BASE must be non-negative integers" >&2; exit 2 ;;
@@ -79,18 +86,22 @@ cd "$REPO" || exit 1
 mkdir -p logs "$OUT"
 
 accepted_total() {
-  PYTHONPATH=src .venv/bin/python - "$OUT" "$DEVICE" "$ACCEPTED_BASE" <<'PY'
+  PYTHONPATH=src .venv/bin/python - "$OUT" "$DEVICE" "$ACCEPTED_BASE" "$ACCEPTED_SCREEN" <<'PY'
 import json
 import sys
 from pathlib import Path
 from trueskate_ai.model1.linear.dataset import discover_basic_linear_samples
 
-root, device, baseline = Path(sys.argv[1]), sys.argv[2], int(sys.argv[3])
+root, device, baseline, screen = Path(sys.argv[1]), sys.argv[2], int(sys.argv[3]), sys.argv[4]
 samples, _ = discover_basic_linear_samples(root)
-current = sum(
-    json.loads((sample / "meta.json").read_text()).get("device") == device
-    for sample in samples
-)
+if screen == "corpus-screen-v1":
+    from trueskate_ai.data.timing_screen import count_passing_corpus_screen_v1
+    current = count_passing_corpus_screen_v1(samples, device=device)
+else:
+    current = sum(
+        json.loads((sample / "meta.json").read_text()).get("device") == device
+        for sample in samples
+    )
 print(baseline + current)
 PY
 }
@@ -162,7 +173,7 @@ while :; do
   fi
   if [ "$ACCEPTED_TARGET" -gt 0 ]; then
     total=$(accepted_total)
-    echo "[mvp_collect_linear] accepted total=$total target=$ACCEPTED_TARGET"
+    echo "[mvp_collect_linear] accepted total=$total target=$ACCEPTED_TARGET screen=${ACCEPTED_SCREEN:-none}"
     if [ "$total" -ge "$ACCEPTED_TARGET" ]; then
       echo "[mvp_collect_linear] accepted target reached between segments"
       break

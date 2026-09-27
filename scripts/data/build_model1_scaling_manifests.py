@@ -51,6 +51,9 @@ def main() -> None:
                              "rate deviation above which the anchor-error formula applies.")
     cohort.add_argument("--timing-screen-max-frames", type=float, default=1.0,
                         help="Maximum predicted onset error in native frames (default 1).")
+    cohort.add_argument("--corpus-screen", choices=("corpus-screen-v1",),
+                        help="Frozen whole-segment screen (M1-CORPUS-AUDIT-20260927); "
+                             "exclusive with --timing-screen-rate.")
 
     subsets = commands.add_parser("subsets", help="build deterministic nested training prefixes")
     subsets.add_argument("--cohort", type=Path, required=True)
@@ -77,6 +80,7 @@ def main() -> None:
             timing_screen=(None if args.timing_screen_rate is None else TimingScreen(
                 rate_threshold=args.timing_screen_rate,
                 max_error_frames=args.timing_screen_max_frames)),
+            corpus_screen=args.corpus_screen,
         )
         written = write_manifest(args.out, payload)
         print(json.dumps({"path": str(args.out), "sample_count": written["sample_count"],
