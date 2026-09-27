@@ -74,3 +74,49 @@ cost about **$33**, running in parallel for about 9 h wall time. Sharded
 loading without a frame cache has not been benchmarked at this size.
 **Approval requested: ceiling $50** (1.5×), for training plus smoke and
 evaluation. Per-epoch resume bounds the loss from any provider retry.
+
+## Approval and preparation (2026-09-27)
+
+The operator approved the plan and a **$50 Modal ceiling**, and asked for a
+red-team code review before any spend. The prior ~$10 loss was the first
+13,100-clip L4 seed: it hit the 8 h function timeout at epoch 38 with no
+checkpoint (fixed afterwards by per-epoch resume and a longer timeout).
+
+Done offline, with no spend:
+- **Code** `d0b0171`:
+  - `command-split`, tested equal to the trainer's `split_by_command` for
+    seeds 0 and 3;
+  - `evaluate_partition_once`, a manifest-partition evaluator writing per-clip
+    results; it refuses to overwrite an existing label.
+- **Split** (rig `tmp/final-manifest-20260927/split/`): train 9,170,
+  validation 1,965, test 1,965, the same sizes as the original. `check`
+  reports zero leakage.
+- **Experiment manifest:**
+  `experiment.model1_retrain_good13100_20260927.json`, `sha256:eb9b022e…`.
+- **Old checkpoint:** the restored 80.05% seed-0 checkpoint loads strictly
+  into the current `BasicLinearRegressor` and runs forward.
+- **Overlap:** 0 of the 9,170/1,965/1,965 new commands appear among the
+  13,100 old corpus commands, so cross-evaluation is valid.
+
+## Runbook (to be reviewed before any spend)
+
+All Modal commands run on the rig from the staged code (`d0b0171`) with
+`MODAL_CORPUS_VOLUME=trueskate-model1-good13100-20260927` and
+`MODAL_TRAIN_GPU=L4`.
+
+1. `modal volume create trueskate-model1-good13100-20260927`.
+2. Shards:
+   `build_model1_shards.py --data <runtime root> --experiment-manifest <exp> --out-dir <F>/shards`,
+   then `modal volume put <vol> <F>/shards /model1_good13100_20260927`.
+3. **Smoke (1 epoch):** `modal run scripts/model1/train_basic_linear_modal.py
+   --data-subdir model1_good13100_20260927 --shard-manifest-name shards.json
+   --no-cache-frames --temporal-mixer --epochs 1 --no-evaluate-test
+   --record-train-metrics --seed 0 --run-label good13100_smoke_e1`.
+   - Record the epoch time and project cost.
+   - **Budget gate:** launch only if 3 seeds × 40 epochs at the measured rate
+     stays under the remaining budget.
+4. **Train:** seeds 0–2, same flags with `--epochs 40`, run labels
+   `good13100_20260927_seed{0,1,2}`, launched detached on the rig.
+5. **Select on validation,** then run
+   `evaluate_partition_once --label test_once` on the chosen checkpoint, and
+   `--label crosseval_good13100` on `basic_linear_model1_recovered_20260903_seed0.pth`.
