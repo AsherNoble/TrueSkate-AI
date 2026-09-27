@@ -84,3 +84,22 @@ def test_multi_anchor_clips_pass_only_between_accepted_inliers():
     assert not passes(_multi(95.0), screen)              # extrapolated before first inlier
     assert not passes(_multi(130.0, accepted=False), screen)
     assert not passes(_multi(130.0, inliers=(100.0, 155.0)), screen)
+
+
+def test_corpus_screen_v1_rate_and_latency_gate():
+    from trueskate_ai.data.timing_screen import passes_corpus_screen_v1
+
+    manifest = {"started_at_epoch_s": 1000.0, "gestures": [
+        {"calibration_control": True, "wda_action_sequence": 0, "wda_submitted_epoch_s": 1002.0},
+        {"calibration_control": True, "wda_action_sequence": 9, "wda_submitted_epoch_s": 1055.0}]}
+
+    def meta(rate, start_latency, end_latency=0.14):
+        return {"tap_calibration": {"method": "wda-submitted-two-centre-controls-v2", "rate": rate,
+                                    "detections": [
+                                        {"role": "start", "wda_action_sequence": 0, "onset_video_s": 2.0 + start_latency},
+                                        {"role": "end", "wda_action_sequence": 9, "onset_video_s": 55.0 + end_latency}]}}
+
+    assert passes_corpus_screen_v1(meta(1.0002, 0.14), manifest)
+    assert not passes_corpus_screen_v1(meta(1.0009, 0.14), manifest)
+    assert not passes_corpus_screen_v1(meta(1.0002, 0.05), manifest)
+    assert not passes_corpus_screen_v1(meta(1.0002, 0.14, 0.25), manifest)

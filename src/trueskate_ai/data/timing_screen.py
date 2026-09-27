@@ -59,3 +59,32 @@ def predicted_onset_error_s(meta: Mapping[str, Any], rate_threshold: float) -> t
 def passes(meta: Mapping[str, Any], screen: TimingScreen) -> bool:
     _, error_s = predicted_onset_error_s(meta, screen.rate_threshold)
     return error_s <= screen.max_error_frames * screen.frame_s + 1e-12
+
+
+# --- Frozen corpus screen v1 (M1-CORPUS-AUDIT-20260927) ---------------------
+# Whole-segment exclusion for two-anchor segments: excluded if the fitted rate
+# is off by more than 0.0008, or if any calibration detection lies outside
+# 85-210 ms after its control's WDA submission (M1-TIMING-GATE-20260926).
+CORPUS_SCREEN_V1 = {"name": "corpus-screen-v1", "rate_threshold": 0.0008,
+                    "latency_window_s": (0.085, 0.210),
+                    "source": "M1-CORPUS-AUDIT-20260927"}
+
+
+def anchor_latencies_s(meta: Mapping[str, Any], segment_manifest: Mapping[str, Any]) -> dict[str, float]:
+    """Detection time minus command video time, per calibration role."""
+    started = float(segment_manifest["started_at_epoch_s"])
+    command_s = {e["wda_action_sequence"]: float(e["wda_submitted_epoch_s"]) - started
+                 for e in segment_manifest["gestures"] if e.get("calibration_control")}
+    return {d["role"]: float(d["onset_video_s"]) - command_s[d["wda_action_sequence"]]
+            for d in meta["tap_calibration"]["detections"]}
+
+
+def passes_corpus_screen_v1(meta: Mapping[str, Any], segment_manifest: Mapping[str, Any]) -> bool:
+    cal = meta.get("tap_calibration") or {}
+    if cal.get("method") != TWO_ANCHOR_METHOD:
+        raise ValueError(f"corpus-screen-v1 applies only to {TWO_ANCHOR_METHOD}")
+    if abs(float(cal["rate"]) - 1.0) > CORPUS_SCREEN_V1["rate_threshold"]:
+        return False
+    low, high = CORPUS_SCREEN_V1["latency_window_s"]
+    latencies = anchor_latencies_s(meta, segment_manifest)
+    return {"start", "end"} <= latencies.keys() and all(low <= v <= high for v in latencies.values())

@@ -33,7 +33,7 @@ textarea{width:100%;min-height:78px;padding:8px;resize:vertical}
 .grid .uncertain{color:#f3c863}.grid .current{outline:2px solid #fff}
 @media(max-width:780px){.layout{grid-template-columns:1fr}video{height:min(60vh,600px)}}
 </style></head><body tabindex="-1"><main>
-<h1>First visible trace · 24-clip check</h1>
+<h1>First visible trace · __COUNT__-clip check</h1>
 <p>Use ← / → to change one frame. At the <b>first frame where a new swipe trace appears</b>,
 press <b>M</b> to mark it and advance. Press <b>U</b> if it is unclear. The clips are
 shuffled, and their timing categories are hidden.</p>
@@ -132,7 +132,7 @@ el('export').onclick=()=>{
     exported_at:new Date().toISOString(),labels:labels};
   const blob=new Blob([JSON.stringify(output,null,2)],{type:'application/json'});
   const link=document.createElement('a');link.href=URL.createObjectURL(blob);
-  link.download='model1-onset-validation-20260924.json';link.click();
+  link.download='__EXPORT__';link.click();
   setTimeout(()=>URL.revokeObjectURL(link.href),1000);
 };
 video.addEventListener('loadedmetadata',seekSelectedFrame);
@@ -159,7 +159,8 @@ updateProgress();load();
 """
 
 
-def build(selection: Path, selected_root: Path, output: Path) -> int:
+def build(selection: Path, selected_root: Path, output: Path, *, expected_count: int = 24,
+          export_name: str = "model1-onset-validation-20260924.json") -> int:
     if output.exists() and any(output.iterdir()):
         raise ValueError(f"output must be empty: {output}")
     manifest = json.loads(selection.read_text())
@@ -183,11 +184,12 @@ def build(selection: Path, selected_root: Path, output: Path) -> int:
             "video": f"assets/{link.name}",
             "n_frames": int(meta["n_frames"]),
         })
-    if len(records) != 24 or any(r["n_frames"] != 32 for r in records):
-        raise ValueError("expected 24 selected 32-frame clips")
+    if len(records) != expected_count or any(r["n_frames"] != 32 for r in records):
+        raise ValueError(f"expected {expected_count} selected 32-frame clips")
     payload = json.dumps({"seed": str(manifest["seed"]), "samples": records},
                          separators=(",", ":")).replace("<", "\\u003c")
-    (output / "index.html").write_text(HTML.replace("__PAYLOAD__", payload))
+    html = HTML.replace("__COUNT__", str(expected_count)).replace("__EXPORT__", export_name)
+    (output / "index.html").write_text(html.replace("__PAYLOAD__", payload))
     return len(records)
 
 
@@ -196,8 +198,11 @@ def main() -> None:
     parser.add_argument("--selection", type=Path, required=True)
     parser.add_argument("--selected-root", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--expected-count", type=int, default=24)
+    parser.add_argument("--export-name", default="model1-onset-validation-20260924.json")
     args = parser.parse_args()
-    count = build(args.selection.resolve(), args.selected_root.resolve(), args.out.resolve())
+    count = build(args.selection.resolve(), args.selected_root.resolve(), args.out.resolve(),
+                  expected_count=args.expected_count, export_name=args.export_name)
     print(f"Wrote {args.out / 'index.html'} with {count} blinded clips")
 
 
