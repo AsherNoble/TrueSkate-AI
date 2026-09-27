@@ -4,6 +4,15 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-27 — 13,100 good-label manifest passes final audit
+
+- A settle-wait top-up on release `080bb97` collected 722 clips (Los Angeles
+  331). All passed `corpus-screen-v1`, against 47% for Los Angeles before.
+- `park-mix` built `model1_linear_good13100_20260927` with the 80.05% corpus's
+  exact park counts.
+- A fresh blind 100-clip audit passed 100/100, all exact.
+  [Record](experiments/M1-CORPUS-AUDIT-20260927.md).
+
 ## 2026-09-27 — Screened corpus passes blind random audit
 
 - `corpus-screen-v1` is frozen as a whole-segment rule: rate within 0.0008 and

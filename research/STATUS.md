@@ -256,10 +256,18 @@ moving for ~7–8 s after the pre-segment reset. The branch adds:
   `corpus-screen-v1` is frozen: whole segments are excluded if the rate is off
   by more than 0.0008 or a control lies outside 85–210 ms after its command.
   It keeps 12,113/13,592 replacement clips (Los Angeles 938). A blind random
-  100-clip audit passed 100/100 within ±1 displayed frame, 97 exact. Next:
-  top up ~1,480 good clips (mostly Los Angeles), then re-audit a fresh 100.
+  100-clip audit passed 100/100 within ±1 displayed frame, 97 exact.
+- **13,100 good labels** ([M1-TOPUP-PLAN](experiments/M1-TOPUP-PLAN-20260927.md)):
+  a settle-wait top-up (release `080bb97`) collected 722 clips, all of which
+  passed the screen, including Los Angeles (previously 47%).
+  `model1_linear_good13100_20260927` (rig
+  `tmp/final-manifest-20260927/`, fingerprint `sha256:9fadddee…`) matches the
+  historical park counts of the 80.05% corpus. A fresh blind 100-clip audit
+  passed 100/100, all exact. It is ready for the controlled retraining
+  comparison.
 
-No corpus clip was excluded and no launcher changed. Exclusion, recollection
+No corpus clip was moved or deleted; exclusion is manifest-only. The rig's stable
+release is `080bb97` (rollback `1b8497e`). Exclusion, recollection
 and flag adoption await operator decisions.
 
 **Rig note (2026-09-27):** with both recorders idle (`/wda/video` null) and no

@@ -93,3 +93,17 @@ audit 1, on a fresh draw.
   `model1-corpus-audit-2509270200.json`.
 
 The corpus is "13,100 good labels" only if all 100 clips are satisfactory.
+
+## Audit 2 result (2026-09-27) — pass
+
+The operator labelled all 100 clips (0 unclear, 0 notes). Both sealed hashes
+were verified before scoring. Evidence:
+[score](../evidence/M1-CORPUS-AUDIT-20260927/audit2-score.json),
+[labels](../evidence/M1-CORPUS-AUDIT-20260927/audit2-labels.json),
+[expected](../evidence/M1-CORPUS-AUDIT-20260927/audit2-expected.json),
+[selection](../evidence/M1-CORPUS-AUDIT-20260927/audit2-selection.json).
+
+- **Satisfactory:** 100/100. **Exact frame:** 100/100.
+- `model1_linear_good13100_20260927` meets the operator's definition of
+  "13,100 good labels": the bad-clip rate is below 3% (95%, rule of three).
+  Across both audits, 200/200 clips were satisfactory and 197 exact.
