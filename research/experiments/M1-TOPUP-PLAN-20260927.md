@@ -4,36 +4,35 @@ Status: plan only. Nothing deployed or collected.
 
 ## Target
 
-Good clips are those passing `corpus-screen-v1`
-([M1-CORPUS-AUDIT](M1-CORPUS-AUDIT-20260927.md)). The target is ~13.6k, in
-the historical park mix ([M1-RECOLLECT](M1-RECOLLECT-20260922.md)), so that a
-deterministic 13,100 manifest can still be drawn for the controlled comparison.
+The 80.05% model was trained on 13,100 clips (M1-20260904: 9,170 train /
+1,965 validation / 1,965 test). The target is therefore 13,100 good clips (those
+passing `corpus-screen-v1`, [M1-CORPUS-AUDIT](M1-CORPUS-AUDIT-20260927.md)),
+in the historical park mix ([M1-RECOLLECT](M1-RECOLLECT-20260922.md)).
 
-| Park | Good now | 13.6k target | Top-up (good) | Current pass rate | Raw clips needed |
+| Park | Good now | Target | Top-up (good) | Current pass rate | Raw clips needed |
 |---|---:|---:|---:|---:|---:|
-| SLS 2015 Los Angeles | 938 | 1,309 | 371 | 47% | ~790 (less if settle helps) |
-| The Workshop | 3,927 | 4,183 | 256 | 97% | ~265 |
-| SLS 2013 Kansas City | 3,715 | 3,929 | 214 | 98% | ~220 |
-| SLS 2015 Super Crown | 1,898 | 2,086 | 188 | 94% | ~200 |
-| Skateboard GB 2024 | 1,936 | 2,094 | 158 | 96% | ~165 |
-| **Total** | **12,414** | **13,600** | **1,187** | | **~1,640** |
+| SLS 2015 Los Angeles | 938 | 1,261 | 323 | 47% | ~690 (less if settle helps) |
+| SLS 2015 Super Crown | 1,898 | 2,009 | 111 | 94% | ~120 |
+| The Workshop | 3,927 | 4,029 | 102 | 97% | ~105 |
+| Skateboard GB 2024 | 1,936 | 2,017 | 81 | 96% | ~85 |
+| SLS 2013 Kansas City | 3,715 | 3,784 | 69 | 98% | ~71 |
+| **Total** | **12,414** | **13,100** | **686** | | **~1,070** |
 
-"Good now" includes the 310-clip exact-PTS baseline for Skateboard GB, of
-which 301 pass the screen. For the historical 13,100 alone, the top-up would
-be 686 good clips.
+"Good now" includes the 310-clip exact-PTS baseline for Skateboard GB, of which
+301 pass the screen.
 
 ## Schedule (both XRs in parallel)
 
-Production pace was ~9.5 clips per one-minute segment and ~3.4 min per
-segment including alignment (~4.9 min in Los Angeles). The settle wait adds
-~8 s.
+Operator-confirmed parks (2026-09-27): XR1 in SLS 2015 Los Angeles, XR2 in
+SLS 2013 Kansas City. Production pace was ~9.5 clips per one-minute segment and
+~3.4 min per segment including alignment (~4.9 min in Los Angeles). The settle
+wait adds ~8 s.
 
-- **XR1:** Los Angeles only, ~84 segments ≈ 5–6 h at today's yield. If the
-  settle wait lifts the yield, XR1 finishes early and takes Workshop or Super
-  Crown.
-- **XR2:** Kansas City → Skateboard GB → Super Crown → The Workshop,
-  ~90 segments ≈ 5 h. Three park changes, each confirmed on the phone by the
-  operator.
+- **XR1:** Los Angeles, ~73 segments ≈ 5–6 h at today's yield.
+- **XR2:** Kansas City (~8 segments) → Skateboard GB (~9) → Super Crown (~13)
+  → The Workshop (~11), ≈ 2.5 h and three operator park changes. It then moves
+  to Los Angeles to share the remaining Los Angeles target, which shortens the
+  run to ~4 h.
 
 ## Configuration
 
@@ -65,8 +64,10 @@ segment including alignment (~4.9 min in Los Angeles). The settle wait adds
 3. **Deploy:** new release worktree; one bounded segment per XR into `tmp/`
    with the settle flags. Check `start_settle` and `end_settle` in the
    manifest, calibration, strict admission and the screen verdict.
-4. **Operator:** confirm each phone's park, then launch. XR1 goes first in
-   Los Angeles.
+4. **Launch:** XR1 in Los Angeles and XR2 in Kansas City (confirmed). Each
+   later XR2 park change is confirmed on the phone by the operator. When XR2
+   joins Los Angeles, split the remaining Los Angeles target between the
+   devices.
 5. **Monitor:** watch the per-park screened counts, the Los Angeles pass rate
    (baseline 47%) and settle skips. The settle wait's effect is observed
    descriptively, not tested: different days are confounded.
