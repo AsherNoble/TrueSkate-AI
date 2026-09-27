@@ -237,3 +237,22 @@ def test_certification_bound_allows_at_most_twenty_failures_at_30000():
         "curved_spin": [True] * 2_999,
     })
     assert too_small["passes"] is False
+
+
+def test_park_mix_merges_cohorts_and_selects_exact_quotas(tmp_path):
+    import pytest
+
+    from trueskate_ai.model1.scaling import build_park_mix_cohort
+
+    a = _cohort(tmp_path, "a", role="training", start=0, count=8)
+    b = _cohort(tmp_path, "b", role="training", start=100, count=6)
+    quotas = {"SLS 2015 Super Crown": 5, "SLS 2013 Kansas City": 6}
+    mixed = build_park_mix_cohort([a, b], quotas, seed=3, cohort="mix")
+    assert mixed["sample_count"] == 11
+    assert mixed["coverage"]["park"] == {"SLS 2013 Kansas City": 6, "SLS 2015 Super Crown": 5}
+    assert mixed == {**build_park_mix_cohort([a, b], quotas, seed=3, cohort="mix"),
+                     "created_at": mixed["created_at"], "fingerprint": mixed["fingerprint"]}
+    with pytest.raises(ValueError, match="only"):
+        build_park_mix_cohort([a], {"SLS 2015 Super Crown": 50}, seed=3, cohort="mix")
+    with pytest.raises(ValueError, match="duplicate"):
+        build_park_mix_cohort([a, a], quotas, seed=3, cohort="mix")

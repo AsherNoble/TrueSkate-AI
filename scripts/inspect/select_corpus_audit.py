@@ -25,7 +25,11 @@ def expected_frame(meta: dict) -> int:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--corpus", type=Path, required=True)
+    source = ap.add_mutually_exclusive_group(required=True)
+    source.add_argument("--corpus", type=Path, help="Screen every two-anchor clip under this root.")
+    source.add_argument("--manifest", type=Path,
+                        help="Draw from a frozen cohort manifest (e.g. the final park mix); every "
+                             "drawn clip is re-checked against corpus-screen-v1.")
     ap.add_argument("--seed", type=int, required=True)
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--out-dir", type=Path, required=True)
@@ -34,7 +38,15 @@ def main() -> None:
     manifests: dict[Path, dict] = {}
     kept, excluded = [], Counter()
     total = Counter()
-    for meta_path in sorted(args.corpus.rglob("meta.json")):
+    if args.manifest is not None:
+        from trueskate_ai.data.cohort_manifest import manifest_entries, read_manifest
+
+        cohort = read_manifest(args.manifest)
+        args.corpus = Path(cohort["root_hint"])
+        meta_paths = [args.corpus / entry["path"] / "meta.json" for entry in manifest_entries(cohort)]
+    else:
+        meta_paths = sorted(args.corpus.rglob("meta.json"))
+    for meta_path in meta_paths:
         meta = json.loads(meta_path.read_text())
         if (meta.get("tap_calibration") or {}).get("method") != TWO_ANCHOR_METHOD:
             raise SystemExit(f"{meta_path}: not a two-anchor clip")
@@ -69,6 +81,8 @@ def main() -> None:
     (args.out_dir / "selection.json").write_text(json.dumps({
         "schema": "model1-onset-validation-selection-v1", "seed": args.seed,
         "source_corpus": str(args.corpus), "purpose": "M1-CORPUS-AUDIT random sample of screened corpus",
+        "source_manifest": None if args.manifest is None else {
+            "path": str(args.manifest), "fingerprint": cohort["fingerprint"]},
         "screen": CORPUS_SCREEN_V1, "counts": counts, "selected_count": len(samples),
         "samples": samples}, indent=1) + "\n")
     (args.out_dir / "expected.json").write_text(json.dumps(expected, indent=1) + "\n")

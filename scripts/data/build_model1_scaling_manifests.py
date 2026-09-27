@@ -17,7 +17,7 @@ from trueskate_ai.data.cohort_manifest import (  # noqa: E402
 from trueskate_ai.data.timing_screen import TimingScreen  # noqa: E402
 from trueskate_ai.model1.scaling import (  # noqa: E402
     DEFAULT_LINEAR_RUNGS, assert_deterministic_nesting,
-    build_experiment_manifest, build_linear_cohort_manifest,
+    build_experiment_manifest, build_linear_cohort_manifest, build_park_mix_cohort,
     build_nested_subset_manifests,
 )
 
@@ -55,6 +55,15 @@ def main() -> None:
                         help="Frozen whole-segment screen (M1-CORPUS-AUDIT-20260927); "
                              "exclusive with --timing-screen-rate.")
 
+    mix = commands.add_parser("park-mix", help="merge frozen cohorts and select exact per-park counts")
+    mix.add_argument("--cohort", type=Path, action="append", required=True)
+    mix.add_argument("--quota", action="append", required=True, help="PARK=COUNT (repeat per park)")
+    mix.add_argument("--seed", type=int, default=0)
+    mix.add_argument("--name", required=True)
+    mix.add_argument("--role", choices=("training", "validation", "challenge", "certification"),
+                     default="training")
+    mix.add_argument("--out", type=Path, required=True)
+
     subsets = commands.add_parser("subsets", help="build deterministic nested training prefixes")
     subsets.add_argument("--cohort", type=Path, required=True)
     subsets.add_argument("--out-dir", type=Path, required=True)
@@ -85,6 +94,21 @@ def main() -> None:
         written = write_manifest(args.out, payload)
         print(json.dumps({"path": str(args.out), "sample_count": written["sample_count"],
                           "fingerprint": written["fingerprint"]}, indent=2))
+    elif args.command == "park-mix":
+        quotas = {}
+        for item in args.quota:
+            park, _, count = item.rpartition("=")
+            if not park or not count.isdigit():
+                parser.error(f"--quota must be PARK=COUNT, got {item!r}")
+            quotas[park] = int(count)
+        payload = build_park_mix_cohort(
+            [read_manifest(path) for path in args.cohort], quotas,
+            seed=args.seed, cohort=args.name, role=args.role,
+        )
+        written = write_manifest(args.out, payload)
+        print(json.dumps({"path": str(args.out), "sample_count": written["sample_count"],
+                          "fingerprint": written["fingerprint"],
+                          "available": payload["park_mix"]["available"]}, indent=2))
     elif args.command == "subsets":
         payloads = build_nested_subset_manifests(
             read_manifest(args.cohort), args.sizes, seed=args.seed,

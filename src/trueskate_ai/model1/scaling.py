@@ -203,6 +203,68 @@ def _stable_rank(seed: int, stratum: tuple[str, ...], entry: Mapping[str, Any]) 
     return hashlib.sha256(identity.encode("utf-8")).digest()
 
 
+def build_park_mix_cohort(
+    cohorts: Sequence[Mapping[str, Any]],
+    quotas: Mapping[str, int],
+    *,
+    seed: int,
+    cohort: str,
+    role: str = "training",
+) -> dict[str, Any]:
+    """Merge frozen cohorts (same root) and select exact per-park counts.
+
+    Each park keeps its ``quota`` lowest stable ranks, so surplus clips drop
+    independently of which source cohort holds them. Exact-command duplicates
+    across sources are rejected. Parks absent from ``quotas`` are excluded.
+    """
+    if role not in COHORT_ROLES:
+        raise ValueError(f"role must be one of {sorted(COHORT_ROLES)}, got {role!r}")
+    if not cohorts:
+        raise ValueError("at least one source cohort is required")
+    roots = {str(source.get("root_hint")) for source in cohorts}
+    if len(roots) != 1:
+        raise ValueError(f"source cohorts must share one root_hint, got {sorted(roots)}")
+    entries: list[dict[str, Any]] = []
+    for source in cohorts:
+        validate_manifest(source)
+        if source.get("kind") != "model1_cohort":
+            raise ValueError("park mix sources must be model1_cohort manifests")
+        entries.extend(manifest_entries(source))
+    for field in ("command_key", "path"):
+        values = [entry[field] for entry in entries]
+        if len(values) != len(set(values)):
+            raise ValueError(f"source cohorts share {len(values) - len(set(values))} duplicate {field} values")
+    by_park: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for entry in entries:
+        by_park[str(entry["park"])].append(entry)
+    selected: list[dict[str, Any]] = []
+    for park, quota in sorted(quotas.items()):
+        pool = sorted(by_park.get(park, []), key=lambda entry: _stable_rank(seed, (park,), entry))
+        if isinstance(quota, bool) or int(quota) <= 0 or len(pool) < int(quota):
+            raise ValueError(f"park {park!r}: quota {quota} but only {len(pool)} available")
+        selected.extend(pool[:int(quota)])
+    selected.sort(key=lambda entry: entry["path"])
+    return seal_manifest({
+        "schema_version": MANIFEST_SCHEMA_VERSION,
+        "kind": "model1_cohort",
+        "cohort": cohort,
+        "role": role,
+        "subtype": "linear",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "root_hint": roots.pop(),
+        "sample_count": len(selected),
+        "park_mix": {
+            "seed": seed, "quotas": dict(sorted((k, int(v)) for k, v in quotas.items())),
+            "available": {park: len(pool) for park, pool in sorted(by_park.items())},
+            "sources": [{"cohort": source["cohort"], "fingerprint": source["fingerprint"],
+                         "sample_count": source["sample_count"],
+                         "timing_screen": source.get("timing_screen")} for source in cohorts],
+        },
+        "coverage": cohort_coverage(selected),
+        "samples": selected,
+    })
+
+
 def balanced_nested_order(
     entries: Sequence[Mapping[str, Any]],
     *,
