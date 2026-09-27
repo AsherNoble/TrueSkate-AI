@@ -262,10 +262,9 @@ moving for ~7–8 s after the pre-segment reset. The branch adds:
 No corpus clip was excluded and no launcher changed. Exclusion, recollection
 and flag adoption await operator decisions.
 
-**Rig note (2026-09-25 ~05:10 AEST):** a read-only
-`scripts/recover_remotexpc_attachments.sh --dry-run all` lists 11 XCTest
-attachments on XR1 and 7 on XR2. There were zero after the 2026-09-22
-recovery. The overnight bounded runs (≈33 XR1 / ≈26 XR2 recordings) all saved
-successfully. Whether they or the earlier Super Crown runs left these is
-unknown. Nothing was deleted; clean up per DEPLOYMENT.md before the next long
-run. Both collectors are stopped.
+**Rig note (2026-09-27):** with both recorders idle (`/wda/video` null) and no
+collector running, `scripts/recover_remotexpc_attachments.sh --delete` removed
+12 XCTest attachments on XR1 (11 from before plus one from the failed
+M1-DIE5-R100 segment) and 7 on XR2. Both phones re-listed 0 remaining. One
+earlier XR2 dry run failed transiently (`tmp/Attachments` not found); a
+repeat succeeded.
