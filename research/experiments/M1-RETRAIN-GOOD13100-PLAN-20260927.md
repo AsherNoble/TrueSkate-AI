@@ -120,3 +120,70 @@ All Modal commands run on the rig from the staged code (`d0b0171`) with
 5. **Select on validation,** then run
    `evaluate_partition_once --label test_once` on the chosen checkpoint, and
    `--label crosseval_good13100` on `basic_linear_model1_recovered_20260903_seed0.pth`.
+
+## Red-team review and changes (2026-09-27)
+
+Three read-only red-team reviews (Modal execution, data/split, evaluation)
+all returned FIXABLE.
+
+**Fixed in `bc291da`/`090011b`:**
+- **Spend guards:**
+  - `max_hours` stops after a committed epoch once the projected run exceeds
+    the cap;
+  - a single provider retry (was 6 × 24 h);
+  - a finished run label is refused (no retrain or overwrite);
+  - a resume at the final epoch finalises;
+  - `--required-gpu L4` is checked in the container before any work.
+- **Pinned image:** torch 2.12.0, opencv-python-headless 4.13.0.92 (an
+  unpinned build now resolves OpenCV 5.x), numpy 2.4.6, scipy 1.17.1. Versions,
+  decode mode and checkpoint SHA-256 are recorded in outputs.
+- **Decode:** exact-PTS clips hold one keyframe, so per-index seeks cost
+  ~1.8 s/clip on the rig, against 0.09 s for a sequential pass, and
+  `CAP_PROP_FRAME_COUNT` can under-report by one.
+  - An explicit `decode_mode="sequential"` is used for this training; the
+    default stays `"seek"`, so old checkpoints evaluate as before.
+  - The frame cache is allowed with shards up to 14,000 samples, restoring
+    the original recipe's cached loading. `record_train_metrics` is off, as in
+    the original run.
+- **Test discipline:** `evaluate_test_once` can no longer overwrite the
+  historical file (a labelled re-score writes its own file).
+  `evaluate_partition_once` requires an explicit partition.
+
+**Scope decision (operator, after debate):**
+- **Primary:** the headline, the new test recovery against 80.05% under the
+  identical split protocol (95% CI for the difference ≈ ±2.5 pp), reported
+  alongside all three seeds' spread.
+- **Dropped as primary:** the old-vs-new cross-evaluation on the new test,
+  because both it and the reverse design are confounded by sessions shared
+  across the command split and by old-clip frame geometry.
+- **Known properties:** the command split shares recordings across partitions
+  (as in the 80.05% run), so absolute recovery overstates performance on
+  unseen recordings; certification should hold out whole sessions. A gain
+  reflects the whole new pipeline (clean timing plus correct frame geometry),
+  not labels alone.
+
+## Smoke and reproduction (2026-09-27)
+
+- **Upload:** 13,100 samples in 26 shards (649 MB,
+  `sha256:4c2bf407…`) on the new volume
+  `trueskate-model1-good13100-20260927`.
+- **Reproduction check** (volume `trueskate-corpus-v2`,
+  `model1_linear_20260902`): the old seed-0 checkpoint scored with
+  `evaluate_test_once --label repro_20260927` in the pinned image gives
+  **0.8005089 test** (validation at training time 0.8000). This is identical
+  to the historical result, so the environment does not move the benchmark.
+- **Smoke** (`good13100_smoke_e2`, 2 epochs, L4, pinned image, sequential
+  decode, cache on): epoch 1 took 881 s (including decode and cache), epoch 2
+  took **561 s**. Projection: 881 + 39 × 561 s ≈ 6.4 h ≈ $8.4 per seed, about
+  $25 for three seeds.
+
+## Training launch (2026-09-27)
+
+Seeds 0, 1 and 2 run as `good13100_20260927_seed{0,1,2}`, detached from the
+rig with code `090011b`. Settings: 40 epochs, `--max-hours 8.5` (≤ $11.2 per
+seed), `--provider-timeout-retries 1`, `--no-evaluate-test`,
+`--no-record-train-metrics`. Logs are on the rig under
+`tmp/final-manifest-20260927/modal-logs/`.
+
+Budget: smoke + reproduction ≈ $1; training ≈ $25 expected and ≤ $34 at the
+caps; evaluation ≈ $1. The worst case stays within the $50 ceiling.
