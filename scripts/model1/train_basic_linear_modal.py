@@ -331,7 +331,7 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
 @app.function(image=image, gpu=TRAIN_GPU, timeout=3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
-                       batch_size: int = 8) -> dict:
+                       batch_size: int = 8, label: str = "") -> dict:
     """Score ONE validation-selected checkpoint on the test split, once.
 
     Deliberately has no grid, no variants and no selection of any kind: a sweep
@@ -345,7 +345,10 @@ def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
     from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset, split_by_command
     from trueskate_ai.model1.linear.training import basic_linear_metrics
 
-    existing = Path("/models") / f"{Path(checkpoint_name).stem}_test_once.json"
+    # ``label`` gives re-scores (e.g. a reproduction check in a new image) their
+    # own file, so the historical ``_test_once.json`` can never be overwritten.
+    suffix = f"_{label}" if label else ""
+    existing = Path("/models") / f"{Path(checkpoint_name).stem}_test_once{suffix}.json"
     if existing.exists():
         raise FileExistsError(f"{existing.name} exists; the test split is scored once")
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
@@ -358,7 +361,8 @@ def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
     model.eval()
     test = basic_linear_metrics(model, DataLoader(Subset(data, test_indices),
                                                   batch_size=batch_size), device)
-    output = {"checkpoint": checkpoint_name,
+    output = {"checkpoint": checkpoint_name, "label": label,
+              "library_versions": _library_versions(),
               "split_sizes": [len(train_indices), len(val_indices), len(test_indices)],
               "split_seed": seed,
               "knots": payload.get("knots"),
@@ -368,8 +372,7 @@ def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
               "test": test}
     # Persist AND print: `modal run module::function` does not surface a remote
     # return value, so a result that only lives in the return is simply lost.
-    (Path("/models") / f"{Path(checkpoint_name).stem}_test_once.json").write_text(
-        json.dumps(output, indent=2, sort_keys=True))
+    existing.write_text(json.dumps(output, indent=2, sort_keys=True))
     models.commit()
     print(json.dumps(output, indent=2, sort_keys=True))
     return output
