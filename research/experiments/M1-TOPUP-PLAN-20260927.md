@@ -117,3 +117,43 @@ only if 100/100 are satisfactory. On any failure, diagnose, fix, and redraw.
     `data/model1_linear_topup_20260927/iPhone_XR2/sls_2013_kansas_city`. Seed
     file: the XR2 Kansas City file (next seed 58036345).
   - Logs: `logs/model1_topup_20260927_{xr1_la,xr2_kc}.log`.
+
+## Collection result (2026-09-27)
+
+| Park (device) | Recordings | Strict | Pass `corpus-screen-v1` | Target |
+|---|---:|---:|---:|---:|
+| Los Angeles (XR1) | 31 | 331 | 331 | 323 |
+| Kansas City (XR2) | 7 | 79 | 79 | 69 |
+| Skateboard GB (XR2) | 9 | 90 | 90 | 81 |
+| The Workshop (XR1) | — | 109 | 109 | 102 |
+| Super Crown (XR2) | — | 113 | 113 | 111 |
+
+- **Every top-up clip passed the screen**, with no calibration rejections.
+  Before the settle wait, Los Angeles passed at 47% (different days, so this
+  is descriptive).
+- **Settle behaviour:** start waits ended at about 2 s, meaning the scene was
+  already still. Some end waits timed out.
+- **Launch incident:** the first Workshop/Super Crown launch failed before
+  touching a device. The remote zsh did not word-split an environment string,
+  so the launcher hit an unbound empty array under bash 3.2. It was relaunched
+  with explicit variables; each device's seed file skipped one value.
+- Both recorders ended idle, with 0 XCTest attachments on either XR.
+
+## Final manifest (2026-09-27)
+
+Code `c0819a2`, staged as a detached worktree under
+`tmp/final-manifest-20260927/`. Screened cohorts (`--corpus-screen
+corpus-screen-v1`, corpus root `trueskate-ai-runtime`):
+- replacement: 12,113;
+- exact-PTS baseline: 301;
+- top-up: 722.
+
+`park-mix`, with seed 20260927 and the historical quotas, produced
+**`model1_linear_good13100_20260927`**: 13,100 clips, fingerprint
+`sha256:9fadddee…6013e`.
+- **By park:** Workshop 4,029, Kansas City 3,784, Skateboard GB 2,017,
+  Super Crown 2,009, Los Angeles 1,261.
+- **By source:** 12,082 replacement, 718 top-up, 300 baseline.
+- **By device:** XR1 6,371, XR2 6,729.
+- No duplicate commands or paths. All 13,100 were re-checked against the
+  screen by the audit selector (0 excluded).

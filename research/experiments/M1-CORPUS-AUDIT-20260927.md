@@ -79,3 +79,17 @@ were verified before scoring. Evidence:
 - **Next, per the decision rule:** top up to ~13.6k good clips in the park
   mix, collect under the same screen, then run a fresh 100-clip audit on the
   final corpus.
+
+## Audit 2: the final 13,100 manifest (2026-09-27)
+
+This is the same frozen task, satisfactory rule, pass rule and scorer as
+audit 1, on a fresh draw.
+- **Draw:** seed 2509270200, from `model1_linear_good13100_20260927`
+  ([M1-TOPUP-PLAN](M1-TOPUP-PLAN-20260927.md)). By park: Kansas City 30,
+  Workshop 26, Skateboard GB 20, Super Crown 14, Los Angeles 10.
+- **Sealed hashes:**
+  [audit2-sealed-sha256.txt](../evidence/M1-CORPUS-AUDIT-20260927/audit2-sealed-sha256.txt).
+- **Viewer:** `http://100.113.165.56:8774/`; the export downloads as
+  `model1-corpus-audit-2509270200.json`.
+
+The corpus is "13,100 good labels" only if all 100 clips are satisfactory.

@@ -1,0 +1,4 @@
+# Audit 2: seed 2509270200, drawn from the final 13,100 manifest, code c0819a2
+a5e56668c7bc34965723cfd379ef675b6a08a37d2aa2c5510d1d35ed61a8a7ca  /Users/training-server/trueskate-ai-runtime/tmp/corpus-audit-20260927/audit2/expected.json
+9247a8173fecaf51e9d586f11ad1297be01489d18fdc2ca1633dec04e9a839a3  /Users/training-server/trueskate-ai-runtime/tmp/corpus-audit-20260927/audit2/selection.json
+ce7acc7a0cdf51e90db1758a1130a40ebb269ae9c41947f7359c55f9b496a2de  /Users/training-server/trueskate-ai-runtime/tmp/final-manifest-20260927/model1_linear_good13100_20260927.json
