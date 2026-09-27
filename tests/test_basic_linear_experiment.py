@@ -223,12 +223,58 @@ def test_train_resumes_from_an_atomic_epoch_checkpoint(tmp_path, monkeypatch):
     assert not resume_path.exists(), "successful completion must clear the stale resume snapshot"
 
 
+def test_train_budget_guard_stops_after_committed_epoch_and_final_snapshot_finalises(tmp_path, monkeypatch):
+    import scripts.model1.train_basic_linear_regressor as trainer
+
+    for index in range(12):
+        _write_sample(tmp_path, f"segment_{index}", f"sample_{index}",
+                      points=[[.20 + index * .01, .35], [.58 + index * .01, .55]])
+    monkeypatch.setattr(trainer, "_device", lambda: torch.device("cpu"))
+    resume_path = tmp_path / "resume.pth"
+    kwargs = dict(data=tmp_path, epochs=3, batch_size=2, lr=1e-3, seed=7,
+                  base_channels=2, image_width=16, image_height=36, evaluate_test=False,
+                  resume_path=resume_path, checkpoint_callback=lambda: None)
+    # A tiny cap trips after epoch 1 (spent > cap) with the snapshot committed.
+    with pytest.raises(trainer.BudgetGuardExceeded):
+        trainer.train(out=tmp_path / "capped.pth", max_hours=1e-9, **kwargs)
+    assert torch.load(resume_path, map_location="cpu", weights_only=False)["completed_epoch"] == 1
+    # Without the cap, the same run resumes from epoch 1 and completes.
+    trainer.train(out=tmp_path / "ignored.pth", **{**kwargs, "epochs": 3})
+    assert not resume_path.exists()
+    snapshot_epochs = 2
+    # A container that dies after the final epoch's snapshot must finalise from
+    # it on retry rather than raising.
+    with pytest.raises(RuntimeError, match="simulated"):
+        def die_on_second():
+            if die_on_second.calls == snapshot_epochs - 1:
+                raise RuntimeError("simulated death after last snapshot")
+            die_on_second.calls += 1
+        die_on_second.calls = 0
+        trainer.train(out=tmp_path / "late.pth", **{**kwargs, "epochs": snapshot_epochs,
+                                                    "checkpoint_callback": die_on_second})
+    assert torch.load(resume_path, map_location="cpu", weights_only=False)["completed_epoch"] == 2
+    final = trainer.train(out=tmp_path / "late.pth", **{**kwargs, "epochs": snapshot_epochs})
+    assert final["validation_is_best_of_n_epochs"] == 2 and not resume_path.exists()
+    assert final["decode_mode"] == "seek" and "torch" in final["library_versions"]
+
+
 def test_modal_training_persists_each_epoch_and_has_timeout_margin():
     source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
     train_body = source[source.index("def train_remote("):source.index("def train_remote_cpu(")]
     assert "timeout=24 * 3600" in source
     assert "resume_path=resume_checkpoint" in train_body
     assert "checkpoint_callback=models.commit" in train_body
+    # M1-RETRAIN-GOOD13100 red-team spend guards.
+    assert "_require_gpu(required_gpu)" in train_body
+    assert "is already complete" in train_body
+    assert "max_hours=max_hours" in train_body
+    assert '"opencv-python-headless==4.13.0.92"' in source and '"torch==2.12.0"' in source
+    main_body = source[source.index("def main("):]
+    assert "provider_timeout_retries: int = 1" in main_body
+    evaluate = source[source.index("def evaluate_partition_once("):source.index("def evaluate_refinement(")]
+    assert "partition: str," in evaluate and "already exists" in evaluate
+    once = source[source.index("def evaluate_test_once("):source.index("def evaluate_partition_once(")]
+    assert "the test split is scored once" in once
 
 
 def test_linear_regressor_accepts_explicit_start_time_prior():
@@ -452,8 +498,8 @@ def test_linear_dataset_decodes_only_selected_video_frames(monkeypatch, tmp_path
     (accepted / "frames.mp4").write_bytes(b"placeholder")
     calls: list[int] = []
 
-    def fake_decode(sample, count):
-        assert sample == accepted and count == 4
+    def fake_decode(sample, count, *, mode="seek"):
+        assert sample == accepted and count == 4 and mode == "seek"
         calls.append(count)
         return [np.full((20, 12, 3), index, np.uint8) for index in range(count)]
 
@@ -855,3 +901,21 @@ def test_seed_matches_shared_weights_across_arms_that_differ_only_in_optional_mo
     source = Path("scripts/model1/train_basic_linear_regressor.py").read_text()
     assert "generator=shuffle_generator" in source, (
         "the training DataLoader must take an explicit seed-derived generator")
+
+
+def test_sequential_decode_returns_every_stored_frame_in_order(tmp_path):
+    import cv2
+    from trueskate_ai.data.clip_frames import _decode_even_frames
+
+    sample = tmp_path / "sample"
+    sample.mkdir()
+    writer = cv2.VideoWriter(str(sample / "frames.mp4"), cv2.VideoWriter_fourcc(*"mp4v"), 30, (16, 16))
+    for index in range(32):
+        writer.write(np.full((16, 16, 3), index * 7, np.uint8))
+    writer.release()
+    frames = _decode_even_frames(sample, 32, mode="sequential")
+    assert len(frames) == 32
+    means = [float(frame.mean()) for frame in frames]
+    assert all(abs(mean - index * 7) < 4 for index, mean in enumerate(means))
+    with pytest.raises(ValueError, match="decode mode"):
+        _decode_even_frames(sample, 32, mode="bogus")

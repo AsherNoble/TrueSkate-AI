@@ -48,6 +48,15 @@ def _device() -> torch.device:
     return torch.device("cpu")
 
 
+class BudgetGuardExceeded(RuntimeError):
+    """Raised by the opt-in ``max_hours`` spend guard after a committed epoch."""
+
+
+def _library_versions() -> dict[str, str]:
+    import cv2
+    return {"torch": torch.__version__, "opencv": cv2.__version__, "numpy": np.__version__}
+
+
 def _accelerator_identity(device: torch.device) -> dict[str, str | int | None]:
     if device.type == "cuda":
         properties = torch.cuda.get_device_properties(device)
@@ -90,7 +99,7 @@ def _resume_config(*, dataset_fingerprint: str, split_sizes: dict[str, int], epo
                    image_height: int, knots: int, max_grad_norm: float | None,
                    cache_frames: bool, evaluate_test: bool,
                    experiment_manifest_fingerprint: str | None,
-                   record_train_metrics: bool) -> dict:
+                   record_train_metrics: bool, decode_mode: str = "seek") -> dict:
     """Everything which must match before an interrupted run may resume."""
     return {
         "dataset_fingerprint": dataset_fingerprint,
@@ -122,6 +131,7 @@ def _resume_config(*, dataset_fingerprint: str, split_sizes: dict[str, int], epo
         "evaluate_test": evaluate_test,
         "experiment_manifest_fingerprint": experiment_manifest_fingerprint,
         "record_train_metrics": record_train_metrics,
+        "decode_mode": decode_mode,
     }
 
 
@@ -309,7 +319,15 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           verify_manifest_content: bool = True,
           record_train_metrics: bool = False,
           resume_path: Path | None = None,
-          checkpoint_callback: Callable[[], None] | None = None) -> dict:
+          checkpoint_callback: Callable[[], None] | None = None,
+          decode_mode: str = "seek",
+          max_hours: float | None = None) -> dict:
+    """Train one model. ``max_hours`` (opt-in) is a spend guard: after each
+    committed epoch, stop if cumulative epoch time, or cumulative time plus the
+    last epoch's time for every remaining epoch, exceeds it. The resume
+    snapshot is already saved, so stopping loses no completed work."""
+    if max_hours is not None and max_hours <= 0:
+        raise ValueError("max_hours must be positive")
     torch.manual_seed(seed)
     # The line fit reads endpoints off the moving-contact map, so that map is
     # the primary evidence path and must be supervised, not left to learn only
@@ -318,7 +336,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         trajectory_track = True
     dataset_kwargs = dict(
         cache_frames=cache_frames, image_width=image_width,
-        image_height=image_height, knots=knots,
+        image_height=image_height, knots=knots, decode_mode=decode_mode,
     )
     splitters = {"segment": split_by_segment, "command": split_by_command}
     if split_strategy not in splitters:
@@ -379,7 +397,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         max_grad_norm=max_grad_norm, cache_frames=cache_frames,
         evaluate_test=evaluate_test,
         experiment_manifest_fingerprint=experiment_fingerprint,
-        record_train_metrics=record_train_metrics,
+        record_train_metrics=record_train_metrics, decode_mode=decode_mode,
     )
     # Explicit generator: with the default, shuffle order is drawn from the GLOBAL
     # RNG, whose position depends on how much randomness model construction happened
@@ -418,7 +436,9 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
                 f"resume checkpoint configuration does not match this run: {resume_path}"
             )
         completed_epoch = int(resume["completed_epoch"])
-        if not 0 < completed_epoch < epochs:
+        # completed_epoch == epochs: the container died after the last snapshot
+        # but before the final checkpoint; finalise from the snapshot.
+        if not 0 < completed_epoch <= epochs:
             raise RuntimeError(
                 f"resume checkpoint completed_epoch={completed_epoch} is invalid for epochs={epochs}"
             )
@@ -531,6 +551,13 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
             }, resume_path)
             if checkpoint_callback is not None:
                 checkpoint_callback()
+        if max_hours is not None and epoch < epochs:
+            spent = sum(float(item["seconds"]) for item in epoch_history)
+            projected = spent + epoch_seconds * (epochs - epoch)
+            if spent > max_hours * 3600 or (epoch >= 2 and projected > max_hours * 3600):
+                raise BudgetGuardExceeded(
+                    f"max_hours={max_hours}: {spent / 3600:.2f} h spent, projected "
+                    f"{projected / 3600:.2f} h after epoch {epoch}/{epochs}; resume snapshot kept")
     assert best is not None
     model.load_state_dict(best["state_dict"])
     # Multi-seed/ensemble protocols must not inspect a prospective test split
@@ -552,6 +579,8 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
         "image_height": dataset.image_height,
         "image_width": dataset.image_width,
         "cache_frames": cache_frames,
+        "decode_mode": decode_mode,
+        "library_versions": _library_versions(),
         "accelerator": _accelerator_identity(device),
         "endpoint_map_weight": map_weight,
         "trajectory_map_weight": trajectory_weight,
@@ -652,6 +681,10 @@ def main() -> None:
                              "all other commands remain train-only.")
     parser.add_argument("--fresh-stratify-by-device", action="store_true",
                         help="Balance validation/test fresh commands by explicit capture device.")
+    parser.add_argument("--decode-mode", choices=("seek", "sequential"), default="seek",
+                        help="Compact-mp4 frame decode: per-index seek (legacy) or one sequential pass.")
+    parser.add_argument("--max-hours", type=float, default=None,
+                        help="Spend guard: stop after a committed epoch once the projected run exceeds this.")
     parser.add_argument("--experiment-manifest", type=Path,
                         help="Sealed model1_experiment manifest with explicit train/validation/test "
                              "partitions. Disables directory-derived splitting.")
@@ -715,7 +748,8 @@ def main() -> None:
                    experiment_manifest=args.experiment_manifest,
                    verify_manifest_content=not args.skip_manifest_content_verification,
                    record_train_metrics=args.record_train_metrics,
-                   resume_path=args.resume_path)
+                   resume_path=args.resume_path,
+                   decode_mode=args.decode_mode, max_hours=args.max_hours)
     print(json.dumps({key: value for key, value in result.items() if key != "state_dict"}, indent=2))
     print(f"checkpoint={out}")
 

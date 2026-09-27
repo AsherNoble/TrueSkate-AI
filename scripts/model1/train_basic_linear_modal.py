@@ -31,7 +31,10 @@ image = (
     # gesture_sampling imports the shared CMA-ES bounds, which transitively
     # imports the device gesture module.  The trainer never opens a WebDriver
     # session, but that module declares Selenium classes at import time.
-    .pip_install("torch", "opencv-python-headless", "numpy", "scipy", "selenium")
+    # Pinned (M1-RETRAIN-GOOD13100 red-team): an unpinned rebuild silently moves
+    # decoder/numerics; opencv-python-headless now resolves to a new major (5.x).
+    .pip_install("torch==2.12.0", "opencv-python-headless==4.13.0.92", "numpy==2.4.6",
+                 "scipy==1.17.1", "selenium==4.43.0")
     .env({"PYTHONPATH": "/root/src"})
     .add_local_dir(str(_ROOT / "src" / "trueskate_ai"), remote_path="/root/src/trueskate_ai")
     .add_local_file(str(_ROOT / "scripts" / "model1" / "train_basic_linear_regressor.py"),
@@ -85,6 +88,36 @@ def _training_inputs(data_subdir: str, experiment_manifest_name: str | None,
     destination = Path("/tmp") / f"model1_shards_{shard_payload['fingerprint'][-16:]}"
     materialize_sequential_shards(shard_path, destination, verify_samples=False)
     return destination, shard_path.parent / shard_payload["experiment_manifest"]
+
+
+# Shard-staged runs may cache decoded frames when the experiment is small enough
+# for the function's RAM (~3.5 MiB of uint8 per 32x288x128 clip; 13.1k ~ 46 GiB).
+SHARD_CACHE_MAX_SAMPLES = 14_000
+
+
+def _require_gpu(required_gpu: str) -> str:
+    """Fail before any paid work if the container is not on the pinned GPU."""
+    import torch
+    name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
+    if required_gpu and required_gpu.lower() not in name.lower():
+        raise RuntimeError(f"required GPU {required_gpu!r} but container has {name!r}")
+    return name
+
+
+def _checkpoint_sha256(path: Path) -> str:
+    import hashlib
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _library_versions() -> dict:
+    import cv2
+    import numpy
+    import torch
+    return {"torch": torch.__version__, "opencv": cv2.__version__, "numpy": numpy.__version__}
 
 
 def _payload_dataset_kwargs(payloads) -> dict:
@@ -157,16 +190,27 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  max_grad_norm: float | None = None,
                  experiment_manifest_name: str | None = None,
                  shard_manifest_name: str | None = None,
-                 record_train_metrics: bool = False) -> dict:
+                 record_train_metrics: bool = False,
+                 decode_mode: str = "seek", max_hours: float | None = None,
+                 required_gpu: str = "") -> dict:
+    gpu_name = _require_gpu(required_gpu)
+    checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
+    resume_checkpoint = Path("/models") / f"basic_linear_{run_label}.resume.pth"
+    if checkpoint.exists() and not resume_checkpoint.exists():
+        # A finished run: a retry or relaunch must never retrain and overwrite it.
+        raise FileExistsError(f"{checkpoint.name} is already complete; choose a new run_label")
     if shard_manifest_name is not None and cache_frames:
-        raise ValueError("sequential shards require cache_frames=False; decode from staged local SSD "
-                         "instead of retaining a >64 GiB large-rung corpus in RAM")
+        from trueskate_ai.data.sequential_shards import read_shard_manifest
+        shard_count = int(read_shard_manifest(Path("/corpus") / data_subdir / shard_manifest_name)["sample_count"])
+        if shard_count > SHARD_CACHE_MAX_SAMPLES:
+            raise ValueError(f"cache_frames with {shard_count} shard samples exceeds "
+                             f"{SHARD_CACHE_MAX_SAMPLES}; use cache_frames=False for large rungs")
     trainer = _trainer()
     training_root, experiment_path = _training_inputs(
         data_subdir, experiment_manifest_name, shard_manifest_name,
     )
-    checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
-    resume_checkpoint = Path("/models") / f"basic_linear_{run_label}.resume.pth"
+    print(f"gpu={gpu_name} versions={_library_versions()} decode_mode={decode_mode} "
+          f"cache_frames={cache_frames} max_hours={max_hours}", flush=True)
     payload = trainer.train(
         data=training_root,
         out=checkpoint,
@@ -199,9 +243,12 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         record_train_metrics=record_train_metrics,
         resume_path=resume_checkpoint,
         checkpoint_callback=models.commit,
+        decode_mode=decode_mode,
+        max_hours=max_hours,
     )
     result = {key: value for key, value in payload.items() if key != "state_dict"}
     result["checkpoint"] = checkpoint.name
+    result["checkpoint_sha256"] = _checkpoint_sha256(checkpoint)
     result["run_label"] = run_label
     (Path("/models") / f"basic_linear_{run_label}.json").write_text(json.dumps(result, indent=2))
     models.commit()
@@ -298,6 +345,9 @@ def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
     from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset, split_by_command
     from trueskate_ai.model1.linear.training import basic_linear_metrics
 
+    existing = Path("/models") / f"{Path(checkpoint_name).stem}_test_once.json"
+    if existing.exists():
+        raise FileExistsError(f"{existing.name} exists; the test split is scored once")
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
                                   **_payload_dataset_kwargs([payload]))
@@ -328,10 +378,10 @@ def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
 @app.function(image=image, gpu=TRAIN_GPU, timeout=3 * 3600, memory=32768,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_partition_once(data_subdir: str, checkpoint_name: str, *, label: str,
-                            partition: str = "test",
+                            partition: str,
                             experiment_manifest_name: str | None = None,
                             shard_manifest_name: str | None = None,
-                            batch_size: int = 8) -> dict:
+                            batch_size: int = 8, required_gpu: str = "") -> dict:
     """Score ONE checkpoint on one partition of a sealed experiment manifest.
 
     Used for the final test exposure and for cross-evaluating an older
@@ -346,6 +396,8 @@ def evaluate_partition_once(data_subdir: str, checkpoint_name: str, *, label: st
 
     if partition not in ("train", "validation", "test"):
         raise ValueError(f"unknown partition {partition!r}")
+    gpu_name = _require_gpu(required_gpu)
+    models.reload()
     out_path = Path("/models") / f"{Path(checkpoint_name).stem}_{label}_{partition}.json"
     if out_path.exists():
         raise FileExistsError(f"{out_path.name} already exists; a partition is scored once per label")
@@ -353,9 +405,10 @@ def evaluate_partition_once(data_subdir: str, checkpoint_name: str, *, label: st
     if experiment_path is None:
         raise ValueError("evaluate_partition_once requires an experiment or shard manifest")
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    decode_mode = str(payload.get("decode_mode") or "seek")
     data = BasicLinearClipDataset(root, manifest=experiment_path, manifest_partition=partition,
                                   cache_frames=False, verify_manifest_content=True,
-                                  **_payload_dataset_kwargs([payload]))
+                                  decode_mode=decode_mode, **_payload_dataset_kwargs([payload]))
     if len(data) < 1:
         raise ValueError(f"partition {partition!r} is empty")
     device = torch.device("cuda")
@@ -374,6 +427,8 @@ def evaluate_partition_once(data_subdir: str, checkpoint_name: str, *, label: st
               "experiment_manifest": str(experiment_path.name),
               "experiment_manifest_fingerprint": data.manifest_fingerprint,
               "model_type": payload.get("model_type"),
+              "checkpoint_sha256": _checkpoint_sha256(Path("/models") / checkpoint_name),
+              "decode_mode": decode_mode, "gpu": gpu_name, "library_versions": _library_versions(),
               "validation_reported_at_train_time": payload.get("validation"),
               "metrics": metrics, "per_sample": rows}
     out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
@@ -2554,9 +2609,15 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          experiment_manifest_name: str | None = None,
          shard_manifest_name: str | None = None,
          record_train_metrics: bool = False,
-         provider_timeout_retries: int = 6) -> None:
+         provider_timeout_retries: int = 1,
+         decode_mode: str = "seek", max_hours: float | None = None,
+         required_gpu: str | None = None) -> None:
     if provider_timeout_retries < 0:
         raise ValueError("provider_timeout_retries must be non-negative")
+    # Default the in-container GPU check to the pinned type, so a pin that fails
+    # open (env var missing -> gpu="any") cannot silently change the hardware.
+    if required_gpu is None:
+        required_gpu = "" if TRAIN_GPU.lower() == "any" else TRAIN_GPU
     kwargs = dict(
         epochs=epochs, batch_size=batch_size, lr=lr, seed=seed,
         base_channels=base_channels, split_strategy=split_strategy,
@@ -2569,7 +2630,10 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
         image_width=image_width, image_height=image_height, knots=knots,
         max_grad_norm=max_grad_norm, experiment_manifest_name=experiment_manifest_name,
         shard_manifest_name=shard_manifest_name, record_train_metrics=record_train_metrics,
+        decode_mode=decode_mode, max_hours=max_hours, required_gpu=required_gpu,
     )
+    print(f"launch gpu={TRAIN_GPU} required_gpu={required_gpu!r} corpus_volume={CORPUS_VOLUME} "
+          f"retries={provider_timeout_retries} max_hours={max_hours}", flush=True)
     for attempt in range(provider_timeout_retries + 1):
         try:
             result = train_remote.remote(data_subdir, run_label, **kwargs)
