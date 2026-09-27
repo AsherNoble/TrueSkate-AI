@@ -60,3 +60,22 @@ On `model1_linear_replacement_20260922` this keeps 12,113 of 13,592 clips
 - **Viewer:** `http://100.113.165.56:8773/`, serving only `viewer/`;
   `expected.json` returns 404. The export downloads as
   `model1-corpus-audit-2509270100.json`.
+
+## Audit 1 result (2026-09-27) — pass
+
+The operator labelled all 100 clips (0 unclear, 0 notes). Both sealed hashes
+were verified before scoring. Evidence:
+[score](../evidence/M1-CORPUS-AUDIT-20260927/audit1-score.json),
+[labels](../evidence/M1-CORPUS-AUDIT-20260927/audit1-labels.json),
+[expected](../evidence/M1-CORPUS-AUDIT-20260927/audit1-expected.json),
+[selection](../evidence/M1-CORPUS-AUDIT-20260927/audit1-selection.json).
+
+- **Satisfactory:** 100/100, so the bad-clip rate among screened clips is
+  below 3% (95%).
+- **Exact frame:** 97/100. The three off-by-one clips:
+  - Los Angeles XR1 at +553 ppm, one frame early;
+  - Super Crown XR1 at −401 ppm, one frame early;
+  - Kansas City XR2 at +19 ppm, one frame late.
+- **Next, per the decision rule:** top up to ~13.6k good clips in the park
+  mix, collect under the same screen, then run a fresh 100-clip audit on the
+  final corpus.

@@ -4,6 +4,17 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-27 — Screened corpus passes blind random audit
+
+- `corpus-screen-v1` is frozen as a whole-segment rule: rate within 0.0008 and
+  controls within 85–210 ms of their commands. The latency gate was supported
+  on the held-out corpus first (90/90 high-rate segments had an early start).
+  The screen keeps 12,113/13,592 clips.
+- A blind uniform 100-clip audit passed 100/100 within one displayed frame
+  (97 exact), bounding bad clips below 3%.
+- Plan: top up ~1,480 good clips and audit a fresh 100.
+  [Record](experiments/M1-CORPUS-AUDIT-20260927.md).
+
 ## 2026-09-26 — Five-touch comparisons scored; timing gate proposed
 
 - Blind labels scored for the 49.5 pt and 100 pt five-touch runs.

@@ -1,0 +1,802 @@
+[
+ {
+  "order": 1,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_023459/sls_2013_kansas_city/sample_000007",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.000415628818783,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 2,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_101933/sls_2013_kansas_city/sample_000009",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0002697527464024,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 3,
+  "source": "iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_034210/skateboard_gb_2024/sample_000006",
+  "park": "Skateboard GB 2024",
+  "device": "iPhone_XR2",
+  "rate": 0.9996259937306747,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 4,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_142316/sls_2013_kansas_city/sample_000003",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.999808679087414,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 5,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_144336/sls_2013_kansas_city/sample_000003",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0005623124133953,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 6,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_074247/sls_2015_los_angeles/sample_000009",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 1.0003743760528538,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 7,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_070242/the_workshop/sample_000010",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0004002806080927,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 8,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_053811/sls_2013_kansas_city/sample_000010",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.000063228624946,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 9,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_211538/sls_2013_kansas_city/sample_000009",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0000509998539768,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 10,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_174232/the_workshop/sample_000001",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.999400418200916,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 11,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_023921/sls_2015_los_angeles/sample_000007",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 1.0005534379731542,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 12,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260922_230146/the_workshop/sample_000008",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0005788991915454,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 13,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_004002/sls_2015_los_angeles/sample_000003",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 1.0001246277493738,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 14,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_005700/sls_2013_kansas_city/sample_000002",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9999542961709098,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 15,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_143341/the_workshop/sample_000005",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9997149528140393,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 16,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_024539/sls_2013_kansas_city/sample_000007",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.00011579769583,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 17,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_000906/sls_2013_kansas_city/sample_000008",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9999156931374591,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 18,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_171034/the_workshop/sample_000002",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0002778497183966,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 19,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_081501/sls_2013_kansas_city/sample_000006",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9998180503506257,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 20,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_033701/sls_2013_kansas_city/sample_000007",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9998498185412457,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 21,
+  "source": "iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_205734/sls_2015_super_crown/sample_000007",
+  "park": "SLS 2015 Super Crown",
+  "device": "iPhone_XR",
+  "rate": 0.9998003943378273,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 22,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_091056/sls_2013_kansas_city/sample_000002",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9997925138717316,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 23,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260922_224511/the_workshop/sample_000004",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9998641820027344,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 24,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_140644/the_workshop/sample_000007",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.000342935347945,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 25,
+  "source": "iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_050625/skateboard_gb_2024/sample_000007",
+  "park": "Skateboard GB 2024",
+  "device": "iPhone_XR2",
+  "rate": 0.9997251256761901,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 26,
+  "source": "iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_214250/sls_2015_super_crown/sample_000009",
+  "park": "SLS 2015 Super Crown",
+  "device": "iPhone_XR",
+  "rate": 1.0004401729268109,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 27,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_223156/sls_2013_kansas_city/sample_000002",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0006543925214595,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 28,
+  "source": "iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_211844/sls_2015_super_crown/sample_000008",
+  "park": "SLS 2015 Super Crown",
+  "device": "iPhone_XR2",
+  "rate": 1.000325021765927,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 29,
+  "source": "iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_233549/sls_2015_super_crown/sample_000005",
+  "park": "SLS 2015 Super Crown",
+  "device": "iPhone_XR",
+  "rate": 0.9995993166423605,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 30,
+  "source": "iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260921_235438/skateboard_gb_2024/sample_000007",
+  "park": "Skateboard GB 2024",
+  "device": "iPhone_XR2",
+  "rate": 0.9999178671452698,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 31,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_150521/sls_2015_los_angeles/sample_000003",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 1.0005593040811935,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 32,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_141601/the_workshop/sample_000008",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0004669121265646,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 33,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_104429/sls_2013_kansas_city/sample_000007",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9997142378274725,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 34,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_103504/sls_2015_los_angeles/sample_000004",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 0.9997793532415894,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 35,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_064119/the_workshop/sample_000010",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.999971339730546,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 36,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_084316/sls_2013_kansas_city/sample_000001",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9997160729608119,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 37,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_143457/sls_2013_kansas_city/sample_000010",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.999754740559169,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 38,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260922_204956/the_workshop/sample_000005",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9997823434530301,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 39,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_044733/sls_2013_kansas_city/sample_000008",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9997313089751124,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 40,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_064258/sls_2015_los_angeles/sample_000003",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 1.0001526587569893,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 41,
+  "source": "iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_193812/sls_2015_super_crown/sample_000003",
+  "park": "SLS 2015 Super Crown",
+  "device": "iPhone_XR",
+  "rate": 0.999723161675652,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 42,
+  "source": "iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_103039/skateboard_gb_2024/sample_000003",
+  "park": "Skateboard GB 2024",
+  "device": "iPhone_XR2",
+  "rate": 0.9999645938033738,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 43,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_175228/the_workshop/sample_000011",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.000292723290207,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 44,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_122121/the_workshop/sample_000005",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9999208438218419,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 45,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260922_193446/the_workshop/sample_000001",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9993968452119147,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 46,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_112638/sls_2015_los_angeles/sample_000001",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 1.0007556401867401,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 47,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_081751/sls_2013_kansas_city/sample_000008",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0001699020220467,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 48,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_150205/sls_2013_kansas_city/sample_000008",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9999929709521354,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 49,
+  "source": "iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_202240/sls_2015_super_crown/sample_000006",
+  "park": "SLS 2015 Super Crown",
+  "device": "iPhone_XR2",
+  "rate": 1.0003875316296496,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 50,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_150050/sls_2015_los_angeles/sample_000008",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 0.9998801451528373,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 51,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_025059/sls_2013_kansas_city/sample_000004",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.999707482543182,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 52,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_042607/sls_2015_los_angeles/sample_000006",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 0.9997188015179891,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 53,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_140043/the_workshop/sample_000008",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9997891257941721,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 54,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_231219/sls_2013_kansas_city/sample_000004",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0000186622867786,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 55,
+  "source": "iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_222040/sls_2015_super_crown/sample_000008",
+  "park": "SLS 2015 Super Crown",
+  "device": "iPhone_XR2",
+  "rate": 1.0000435421345455,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 56,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_050146/the_workshop/sample_000004",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0004679855665817,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 57,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_033509/the_workshop/sample_000003",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9995976058971918,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 58,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_233701/sls_2013_kansas_city/sample_000004",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0006682020918212,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 59,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_100237/the_workshop/sample_000005",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0002430745890345,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 60,
+  "source": "iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_194625/sls_2015_super_crown/sample_000001",
+  "park": "SLS 2015 Super Crown",
+  "device": "iPhone_XR2",
+  "rate": 1.0000697510465721,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 61,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_134412/the_workshop/sample_000004",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9996543951971353,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 62,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_022858/the_workshop/sample_000005",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0002549101117608,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 63,
+  "source": "iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_222947/sls_2015_super_crown/sample_000010",
+  "park": "SLS 2015 Super Crown",
+  "device": "iPhone_XR",
+  "rate": 0.9998707322549361,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 64,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260922_221837/the_workshop/sample_000005",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9998971363753963,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 65,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_024539/sls_2013_kansas_city/sample_000002",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.00011579769583,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 66,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_084316/sls_2013_kansas_city/sample_000005",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9997160729608119,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 67,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_074247/sls_2015_los_angeles/sample_000010",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 1.0003743760528538,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 68,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_094859/sls_2015_los_angeles/sample_000002",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 0.9997459784518067,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 69,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_040026/sls_2013_kansas_city/sample_000006",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0005897100627557,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 70,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_143746/sls_2013_kansas_city/sample_000006",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0001834839256234,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 71,
+  "source": "iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_074822/skateboard_gb_2024/sample_000008",
+  "park": "Skateboard GB 2024",
+  "device": "iPhone_XR2",
+  "rate": 1.0002590085343168,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 72,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_032913/the_workshop/sample_000010",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0000697052360958,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 73,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260922_215116/the_workshop/sample_000009",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9999700050734474,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 74,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_144336/sls_2013_kansas_city/sample_000008",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0005623124133953,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 75,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_024539/sls_2013_kansas_city/sample_000010",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.00011579769583,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 76,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_084645/the_workshop/sample_000006",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9997333820470874,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 77,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_095239/sls_2013_kansas_city/sample_000007",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9999838344247979,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 78,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_162023/the_workshop/sample_000006",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0002200349551909,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 79,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260922_215116/the_workshop/sample_000010",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9999700050734474,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 80,
+  "source": "iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_191538/sls_2015_super_crown/sample_000008",
+  "park": "SLS 2015 Super Crown",
+  "device": "iPhone_XR2",
+  "rate": 0.9999964544790456,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 81,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_021251/sls_2013_kansas_city/sample_000005",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9996945365323419,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 82,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260922_221837/the_workshop/sample_000003",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9998971363753963,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 83,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_115655/sls_2013_kansas_city/sample_000006",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0002419021267284,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 84,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_012239/sls_2013_kansas_city/sample_000006",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0000953856348718,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 85,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_134540/sls_2013_kansas_city/sample_000007",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0004509358841487,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 86,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_201707/sls_2013_kansas_city/sample_000001",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9999548254385467,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 87,
+  "source": "iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_025515/skateboard_gb_2024/sample_000005",
+  "park": "Skateboard GB 2024",
+  "device": "iPhone_XR2",
+  "rate": 0.9999252121051387,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 88,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_152637/the_workshop/sample_000006",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9998811066202965,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 89,
+  "source": "iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_204014/sls_2015_super_crown/sample_000008",
+  "park": "SLS 2015 Super Crown",
+  "device": "iPhone_XR2",
+  "rate": 1.000252921941441,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 90,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260922_200053/the_workshop/sample_000004",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9994231717916329,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 91,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260922_174712/the_workshop/sample_000007",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.000074500554806,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 92,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_112751/sls_2013_kansas_city/sample_000002",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.0000486441398106,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 93,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_055436/the_workshop/sample_000009",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0003148573378446,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 94,
+  "source": "iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_125253/skateboard_gb_2024/sample_000004",
+  "park": "Skateboard GB 2024",
+  "device": "iPhone_XR2",
+  "rate": 1.0002480553767321,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 95,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_145244/the_workshop/sample_000006",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0005836698480806,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 96,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_080721/sls_2013_kansas_city/sample_000010",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 1.000663040701148,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 97,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_091845/the_workshop/sample_000004",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 0.9994617761862451,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 98,
+  "source": "iPhone_XR/the_workshop/iPhone_XR_20260923_093810/the_workshop/sample_000001",
+  "park": "The Workshop",
+  "device": "iPhone_XR",
+  "rate": 1.0003217344320254,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 99,
+  "source": "iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_113030/sls_2013_kansas_city/sample_000003",
+  "park": "SLS 2013 Kansas City",
+  "device": "iPhone_XR2",
+  "rate": 0.9996290807786912,
+  "expected_first_trace_frame_0based": 7
+ },
+ {
+  "order": 100,
+  "source": "iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_103010/sls_2015_los_angeles/sample_000004",
+  "park": "SLS 2015 Los Angeles",
+  "device": "iPhone_XR",
+  "rate": 0.9996642901569968,
+  "expected_first_trace_frame_0based": 7
+ }
+]

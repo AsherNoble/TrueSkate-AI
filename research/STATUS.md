@@ -252,6 +252,13 @@ moving for ~7–8 s after the pre-segment reset. The branch adds:
   an opt-in consensus fit over extra single centre controls. It is a
   smoke-tested candidate that needs no multi-touch.
 
+- **Corpus screen and audit** ([M1-CORPUS-AUDIT](experiments/M1-CORPUS-AUDIT-20260927.md)):
+  `corpus-screen-v1` is frozen: whole segments are excluded if the rate is off
+  by more than 0.0008 or a control lies outside 85–210 ms after its command.
+  It keeps 12,113/13,592 replacement clips (Los Angeles 938). A blind random
+  100-clip audit passed 100/100 within ±1 displayed frame, 97 exact. Next:
+  top up ~1,480 good clips (mostly Los Angeles), then re-audit a fresh 100.
+
 No corpus clip was excluded and no launcher changed. Exclusion, recollection
 and flag adoption await operator decisions.
 
