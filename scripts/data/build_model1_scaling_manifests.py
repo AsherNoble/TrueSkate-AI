@@ -18,6 +18,7 @@ from trueskate_ai.data.timing_screen import TimingScreen  # noqa: E402
 from trueskate_ai.model1.scaling import (  # noqa: E402
     DEFAULT_LINEAR_RUNGS, assert_deterministic_nesting,
     build_experiment_manifest, build_linear_cohort_manifest, build_park_mix_cohort,
+    split_cohort_by_command,
     build_nested_subset_manifests,
 )
 
@@ -54,6 +55,12 @@ def main() -> None:
     cohort.add_argument("--corpus-screen", choices=("corpus-screen-v1",),
                         help="Frozen whole-segment screen (M1-CORPUS-AUDIT-20260927); "
                              "exclusive with --timing-screen-rate.")
+
+    csplit = commands.add_parser("command-split",
+                                 help="split one cohort exactly as the trainer's split_by_command")
+    csplit.add_argument("--cohort", type=Path, required=True)
+    csplit.add_argument("--seed", type=int, default=0)
+    csplit.add_argument("--out-dir", type=Path, required=True)
 
     mix = commands.add_parser("park-mix", help="merge frozen cohorts and select exact per-park counts")
     mix.add_argument("--cohort", type=Path, action="append", required=True)
@@ -94,6 +101,15 @@ def main() -> None:
         written = write_manifest(args.out, payload)
         print(json.dumps({"path": str(args.out), "sample_count": written["sample_count"],
                           "fingerprint": written["fingerprint"]}, indent=2))
+    elif args.command == "command-split":
+        parts = split_cohort_by_command(read_manifest(args.cohort), seed=args.seed)
+        outputs = {}
+        for name, payload in parts.items():
+            path = args.out_dir / f"{args.cohort.stem}.{name}.json"
+            written = write_manifest(path, payload)
+            outputs[name] = {"path": str(path), "sample_count": written["sample_count"],
+                             "fingerprint": written["fingerprint"]}
+        print(json.dumps(outputs, indent=2))
     elif args.command == "park-mix":
         quotas = {}
         for item in args.quota:

@@ -256,3 +256,21 @@ def test_park_mix_merges_cohorts_and_selects_exact_quotas(tmp_path):
         build_park_mix_cohort([a], {"SLS 2015 Super Crown": 50}, seed=3, cohort="mix")
     with pytest.raises(ValueError, match="duplicate"):
         build_park_mix_cohort([a, a], quotas, seed=3, cohort="mix")
+
+
+def test_command_split_matches_trainer_split_by_command(tmp_path):
+    from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset, split_by_command
+    from trueskate_ai.model1.scaling import split_cohort_by_command
+
+    cohort = _cohort(tmp_path, "c", role="training", start=0, count=40)
+    root = Path(cohort["root_hint"])
+    for seed in (0, 3):
+        parts = split_cohort_by_command(cohort, seed=seed)
+        data = BasicLinearClipDataset(root / "c")
+        train, val, test = split_by_command(data, seed=seed)
+        expected = {name: {data.sample_paths[i].relative_to(root).as_posix() for i in idx}
+                    for name, idx in (("train", train), ("validation", val), ("test", test))}
+        for name in ("train", "validation", "test"):
+            assert {e["path"] for e in parts[name]["samples"]} == expected[name]
+        assert parts["test"]["role"] == "certification"
+        assert sum(p["sample_count"] for p in parts.values()) == 40

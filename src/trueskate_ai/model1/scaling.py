@@ -265,6 +265,51 @@ def build_park_mix_cohort(
     })
 
 
+def split_cohort_by_command(
+    source: Mapping[str, Any],
+    *,
+    seed: int = 0,
+    val_fraction: float = .15,
+    test_fraction: float = .15,
+) -> dict[str, dict[str, Any]]:
+    """Split one frozen cohort exactly as the trainer's ``split_by_command`` would.
+
+    ``_split_by_key`` depends only on the set of exact command keys and the
+    seed, and the manifest ``command_key`` is the dataset's command key, so the
+    partitions equal those of an unmanifested ``split_seed`` run on the same
+    clips. Returns training, validation and certification (test) cohorts.
+    """
+    from trueskate_ai.data.clip_frames import _split_by_key
+
+    validate_manifest(source)
+    if source.get("kind") != "model1_cohort":
+        raise ValueError("command split requires a model1_cohort manifest")
+    entries = manifest_entries(source)
+    keys = tuple(str(entry["command_key"]) for entry in entries)
+    train, val, test = _split_by_key(keys, val_fraction=val_fraction,
+                                     test_fraction=test_fraction, seed=seed)
+    split = {"method": "command", "seed": seed, "val_fraction": val_fraction,
+             "test_fraction": test_fraction, "parent_fingerprint": source["fingerprint"]}
+    result = {}
+    for name, role, indices in (("train", "training", train), ("validation", "validation", val),
+                                ("test", "certification", test)):
+        chosen = [entries[i] for i in indices]
+        result[name] = seal_manifest({
+            "schema_version": MANIFEST_SCHEMA_VERSION,
+            "kind": "model1_cohort",
+            "cohort": f"{source['cohort']}__{name}",
+            "role": role,
+            "subtype": source.get("subtype", "linear"),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "root_hint": source["root_hint"],
+            "sample_count": len(chosen),
+            "command_split": split,
+            "coverage": cohort_coverage(chosen),
+            "samples": chosen,
+        })
+    return result
+
+
 def balanced_nested_order(
     entries: Sequence[Mapping[str, Any]],
     *,

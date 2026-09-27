@@ -305,6 +305,12 @@ def test_recovery_metric_requires_every_component_to_be_within_tolerance():
     assert metrics["start_recovery_accuracy"] == pytest.approx(1.0)
     assert metrics["end_recovery_accuracy"] == pytest.approx(.5)
     assert metrics["duration_recovery_accuracy"] == pytest.approx(1.0)
+    per_sample = []
+    again = basic_linear_metrics(ExactThenNearMiss(), DataLoader(loader.dataset, batch_size=2),
+                                 torch.device("cpu"), per_sample=per_sample)
+    assert again["gesture_recovery_accuracy"] == metrics["gesture_recovery_accuracy"]
+    assert [row["recovered"] for row in per_sample] == [True, False]
+    assert per_sample[1]["end_error"] > .03 >= per_sample[1]["start_error"]
 
 
 def test_linear_endpoint_map_auxiliary_requires_maps_and_is_differentiable():
@@ -674,10 +680,10 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
             else:
                 assert "_payload_dataset_kwargs" in call, f"{name} builds a dataset without the helper"
             cursor = found + 1
-    # 18 = 17 checkpoint-backed evaluators plus the one orange-cue exception above.
+    # 19 = 18 checkpoint-backed evaluators plus the one orange-cue exception above.
     # Bumping this deliberately is the point: a new evaluator cannot land without
-    # being seen here.  Last bumped for `evaluate_test_once` (EQ-004, 2026-08-21).
-    assert constructions == 18, f"expected 18 dataset constructions, found {constructions}"
+    # being seen here.  Last bumped for `evaluate_partition_once` (M1-RETRAIN-GOOD13100, 2026-09-27).
+    assert constructions == 19, f"expected 19 dataset constructions, found {constructions}"
 
     # Resolving the shape is not the same as decoding it.  Evaluators whose
     # bodies hardcode the 5-wide start/end/duration layout must refuse a k>2

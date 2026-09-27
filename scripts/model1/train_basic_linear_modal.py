@@ -325,6 +325,63 @@ def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
     return output
 
 
+@app.function(image=image, gpu=TRAIN_GPU, timeout=3 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def evaluate_partition_once(data_subdir: str, checkpoint_name: str, *, label: str,
+                            partition: str = "test",
+                            experiment_manifest_name: str | None = None,
+                            shard_manifest_name: str | None = None,
+                            batch_size: int = 8) -> dict:
+    """Score ONE checkpoint on one partition of a sealed experiment manifest.
+
+    Used for the final test exposure and for cross-evaluating an older
+    checkpoint on the same clips. Writes aggregate metrics and per-clip results
+    (sample path, command key, recovered, errors) for paired comparisons.
+    Nothing is selected here.
+    """
+    import torch
+    from torch.utils.data import DataLoader
+    from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset
+    from trueskate_ai.model1.linear.training import basic_linear_metrics
+
+    if partition not in ("train", "validation", "test"):
+        raise ValueError(f"unknown partition {partition!r}")
+    out_path = Path("/models") / f"{Path(checkpoint_name).stem}_{label}_{partition}.json"
+    if out_path.exists():
+        raise FileExistsError(f"{out_path.name} already exists; a partition is scored once per label")
+    root, experiment_path = _training_inputs(data_subdir, experiment_manifest_name, shard_manifest_name)
+    if experiment_path is None:
+        raise ValueError("evaluate_partition_once requires an experiment or shard manifest")
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    data = BasicLinearClipDataset(root, manifest=experiment_path, manifest_partition=partition,
+                                  cache_frames=False, verify_manifest_content=True,
+                                  **_payload_dataset_kwargs([payload]))
+    if len(data) < 1:
+        raise ValueError(f"partition {partition!r} is empty")
+    device = torch.device("cuda")
+    model = _model_from_payload(payload, torch).to(device)
+    model.load_state_dict(payload["state_dict"])
+    model.eval()
+    per_sample: list = []
+    with torch.no_grad():
+        metrics = basic_linear_metrics(model, DataLoader(data, batch_size=batch_size, shuffle=False),
+                                       device, per_sample=per_sample)
+    if len(per_sample) != len(data):
+        raise RuntimeError("per-sample results do not cover the partition")
+    rows = [{"path": str(path.relative_to(data.root)), "command_key": key, **result}
+            for path, key, result in zip(data.sample_paths, data.command_keys, per_sample)]
+    output = {"checkpoint": checkpoint_name, "label": label, "partition": partition,
+              "experiment_manifest": str(experiment_path.name),
+              "experiment_manifest_fingerprint": data.manifest_fingerprint,
+              "model_type": payload.get("model_type"),
+              "validation_reported_at_train_time": payload.get("validation"),
+              "metrics": metrics, "per_sample": rows}
+    out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
+    models.commit()
+    print(json.dumps({k: v for k, v in output.items() if k != "per_sample"}, indent=2, sort_keys=True))
+    return {k: v for k, v in output.items() if k != "per_sample"}
+
+
 @app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
