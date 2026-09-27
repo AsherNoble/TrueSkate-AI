@@ -49,3 +49,14 @@ On `model1_linear_replacement_20260922` this keeps 12,113 of 13,592 clips
   good clips per park mix and run a fresh 100-clip audit on the final corpus.
 - **Fail:** diagnose the failed clips' cause, fix the screen or collection,
   then draw a **new** 100 (never re-check the same sample).
+
+## Audit 1 ready (2026-09-27)
+
+- **Draw:** rig code `e456e27`. The frozen screen kept 12,113/13,592 clips.
+  The 100-clip draw contains Kansas City 37, The Workshop 33, Los Angeles 12,
+  Super Crown 11 and Skateboard GB 7.
+- **Sealed hashes:**
+  [audit1-sealed-sha256.txt](../evidence/M1-CORPUS-AUDIT-20260927/audit1-sealed-sha256.txt).
+- **Viewer:** `http://100.113.165.56:8773/`, serving only `viewer/`;
+  `expected.json` returns 404. The export downloads as
+  `model1-corpus-audit-2509270100.json`.
