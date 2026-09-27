@@ -1,6 +1,6 @@
 # M1-TOPUP-PLAN-20260927 — Top up the screened corpus with the settle wait
 
-Status: plan only. Nothing deployed or collected.
+Status: launched 2026-09-27 (see Launch record below).
 
 ## Target
 
@@ -77,3 +77,43 @@ wait adds ~8 s.
 Build the final manifest with the screen. Draw a fresh uniform 100-clip audit
 (new seed, same frozen scorer and viewer). The corpus is "13.6k good labels"
 only if 100/100 are satisfactory. On any failure, diagnose, fix, and redraw.
+
+## Launch record (2026-09-27)
+
+- **Push and cleanup:** the operator approved pushing the branch and cleaning
+  up attachments. XR1 had 12 deleted and XR2 had 7; both re-listed 0.
+- **Release:** `080bb97` was created as a detached worktree under
+  `trueskate-ai-releases/`, with the usual runtime links. There were no
+  dependency changes. Import and syntax checks passed on the rig; the runtime
+  venv has no pytest, and the commit passes 369 tests locally.
+- **Smoke:** one segment per XR into `tmp/topup-smoke-20260927`, using the
+  production flags plus settle, and seeds 2509270501/2.
+  - XR1 (Los Angeles): 10/10 strict, both settles settled, calibration
+    accepted at +361 ppm.
+  - XR2 (Kansas City): 12/12 strict, start settled, end settle timed out at
+    4.0 s (the control fired as designed), calibration accepted at −265 ppm.
+  - All clips had 32 frames, no fallbacks or errors, and both recorders were
+    idle afterwards.
+  - **Screen:** XR2 12/12; XR1 0/10. XR1's end latency read −53 ms because
+    the device epoch clock stepped +185 ms during the segment (epoch span
+    55.228 s against a monotonic span of 55.044 s; video matched monotonic
+    within 20 ms).
+  - A clock step makes the epoch-based gate reject good segments, never
+    accept bad ones. It probably explains most of the ~1% of ordinary corpus
+    end anchors that failed. The screen stays frozen for this top-up. A
+    monotonic-referenced gate (v2) is a possible later yield improvement that
+    would need re-validation.
+- **Switch:** the stable link moved from `1b8497e` to `080bb97` with no
+  collectors running. `1b8497e` remains for rollback. WDA was not restarted.
+- **Collectors:** `scripts/ops/mvp_collect_linear.sh` with
+  `BASIC_LINEAR_ALLOW_IDLE_NAVIGATION=1`, `BASIC_LINEAR_BATCH_DIRECT_VIDEO=1`,
+  `BASIC_LINEAR_START_SETTLE=1`, `BASIC_LINEAR_END_SETTLE=1` and
+  `BASIC_LINEAR_ACCEPTED_SCREEN=corpus-screen-v1`:
+  - XR1: Los Angeles, target 323,
+    `data/model1_linear_topup_20260927/iPhone_XR/sls_2015_los_angeles`. Seed
+    file: the replacement corpus's XR1 Workshop file (next seed 235779486,
+    last advanced by Super Crown).
+  - XR2: Kansas City, target 69,
+    `data/model1_linear_topup_20260927/iPhone_XR2/sls_2013_kansas_city`. Seed
+    file: the XR2 Kansas City file (next seed 58036345).
+  - Logs: `logs/model1_topup_20260927_{xr1_la,xr2_kc}.log`.
