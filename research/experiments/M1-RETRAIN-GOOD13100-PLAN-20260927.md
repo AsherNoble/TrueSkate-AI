@@ -187,3 +187,25 @@ seed), `--provider-timeout-retries 1`, `--no-evaluate-test`,
 
 Budget: smoke + reproduction ≈ $1; training ≈ $25 expected and ≤ $34 at the
 caps; evaluation ≈ $1. The worst case stays within the $50 ceiling.
+
+## Training results and selection (2026-09-28), committed before test exposure
+
+Seed 1 hit a false `max_hours` stop after epoch 14. The guard projected the
+remaining 26 epochs at one slow epoch's 997 s (9.35 h > 8.5 h). It resumed
+from the epoch-14 snapshot with `--max-hours 11`; `max_hours` is not part of
+the resume config. All three seeds completed 40 epochs.
+
+| Seed | Best validation (epoch) | Mean of last 10 epochs | Checkpoint SHA-256 |
+|---|---|---:|---|
+| **0** | **0.876336 (30)**, 1,722/1,965 | 0.8532 | `26a6b7df…66fa8a1` |
+| 1 | 0.874300 (39) | 0.8507 | `a6d9f5a5…c30d0b8dd` |
+| 2 | 0.855471 (33) | 0.8364 | `df136427…4dcc0` |
+
+The original recipe's seeds scored 0.8000, 0.7842 and 0.7583 best, with a
+seed-0 last-10 mean of 0.7717. The seed spread is 2.1 pp best and 1.7 pp
+last-10.
+
+**Selected on validation only:** seed 0, epoch 30,
+`basic_linear_good13100_20260927_seed0.pth` (SHA-256
+`26a6b7dfd4a5df61c4ec7d407f54e67b61a2843ac49446c44a12517d366fa8a1`). Next, a
+single `evaluate_partition_once --label test_once --partition test`.
