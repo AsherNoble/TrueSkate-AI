@@ -192,7 +192,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  shard_manifest_name: str | None = None,
                  record_train_metrics: bool = False,
                  decode_mode: str = "seek", max_hours: float | None = None,
-                 required_gpu: str = "") -> dict:
+                 required_gpu: str = "", lr_schedule: str = "constant") -> dict:
     gpu_name = _require_gpu(required_gpu)
     checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
     resume_checkpoint = Path("/models") / f"basic_linear_{run_label}.resume.pth"
@@ -210,7 +210,8 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         data_subdir, experiment_manifest_name, shard_manifest_name,
     )
     print(f"gpu={gpu_name} versions={_library_versions()} decode_mode={decode_mode} "
-          f"cache_frames={cache_frames} max_hours={max_hours}", flush=True)
+          f"cache_frames={cache_frames} max_hours={max_hours} lr_schedule={lr_schedule} "
+          f"image={image_width}x{image_height}", flush=True)
     payload = trainer.train(
         data=training_root,
         out=checkpoint,
@@ -245,6 +246,7 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         checkpoint_callback=models.commit,
         decode_mode=decode_mode,
         max_hours=max_hours,
+        lr_schedule=lr_schedule,
     )
     result = {key: value for key, value in payload.items() if key != "state_dict"}
     result["checkpoint"] = checkpoint.name
@@ -2714,7 +2716,7 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          record_train_metrics: bool = False,
          provider_timeout_retries: int = 1,
          decode_mode: str = "seek", max_hours: float | None = None,
-         required_gpu: str | None = None) -> None:
+         required_gpu: str | None = None, lr_schedule: str = "constant") -> None:
     if provider_timeout_retries < 0:
         raise ValueError("provider_timeout_retries must be non-negative")
     # Default the in-container GPU check to the pinned type, so a pin that fails
@@ -2734,9 +2736,11 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
         max_grad_norm=max_grad_norm, experiment_manifest_name=experiment_manifest_name,
         shard_manifest_name=shard_manifest_name, record_train_metrics=record_train_metrics,
         decode_mode=decode_mode, max_hours=max_hours, required_gpu=required_gpu,
+        lr_schedule=lr_schedule,
     )
     print(f"launch gpu={TRAIN_GPU} required_gpu={required_gpu!r} corpus_volume={CORPUS_VOLUME} "
-          f"retries={provider_timeout_retries} max_hours={max_hours}", flush=True)
+          f"retries={provider_timeout_retries} max_hours={max_hours} lr_schedule={lr_schedule}",
+          flush=True)
     for attempt in range(provider_timeout_retries + 1):
         try:
             result = train_remote.remote(data_subdir, run_label, **kwargs)

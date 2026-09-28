@@ -258,6 +258,58 @@ def test_train_budget_guard_stops_after_committed_epoch_and_final_snapshot_final
     assert final["decode_mode"] == "seek" and "torch" in final["library_versions"]
 
 
+
+def test_lr_for_epoch_cosine_decays_and_constant_is_unchanged():
+    import scripts.model1.train_basic_linear_regressor as trainer
+
+    values = [trainer.lr_for_epoch(1e-3, epoch, 40, "cosine") for epoch in range(1, 41)]
+    assert values[0] == pytest.approx(1e-3)
+    assert all(later < earlier for earlier, later in zip(values, values[1:]))
+    assert 0 < values[-1] < 2e-6
+    assert all(trainer.lr_for_epoch(1e-3, epoch, 40, "constant") == 1e-3 for epoch in range(1, 41))
+    with pytest.raises(ValueError, match="unknown lr schedule"):
+        trainer.lr_for_epoch(1e-3, 1, 40, "step")
+
+
+def test_cosine_schedule_is_recorded_applied_and_bound_to_resume(tmp_path, monkeypatch):
+    import scripts.model1.train_basic_linear_regressor as trainer
+
+    for index in range(12):
+        _write_sample(tmp_path, f"segment_{index}", f"sample_{index}",
+                      points=[[.20 + index * .01, .35], [.58 + index * .01, .55]])
+    monkeypatch.setattr(trainer, "_device", lambda: torch.device("cpu"))
+    resume_path = tmp_path / "resume.pth"
+    kwargs = dict(data=tmp_path, epochs=2, batch_size=2, lr=1e-3, seed=7,
+                  base_channels=2, image_width=16, image_height=36, evaluate_test=False,
+                  resume_path=resume_path)
+
+    def stop_after_first(calls=[]):
+        calls.append(True)
+        if len(calls) == 1:
+            raise RuntimeError("simulated interruption")
+
+    with pytest.raises(RuntimeError, match="simulated interruption"):
+        trainer.train(out=tmp_path / "cosine.pth", lr_schedule="cosine",
+                      checkpoint_callback=stop_after_first, **kwargs)
+    # A constant-lr run must not resume a cosine snapshot.
+    with pytest.raises(RuntimeError, match="configuration does not match"):
+        trainer.train(out=tmp_path / "constant.pth", checkpoint_callback=lambda: None, **kwargs)
+    resumed = trainer.train(out=tmp_path / "cosine.pth", lr_schedule="cosine",
+                            checkpoint_callback=lambda: None, **kwargs)
+    assert resumed["lr_schedule"] == "cosine"
+    assert [item["lr"] for item in resumed["epoch_history"]] == pytest.approx(
+        [trainer.lr_for_epoch(1e-3, epoch, 2, "cosine") for epoch in (1, 2)])
+    with pytest.raises(ValueError, match="unknown lr schedule"):
+        trainer.train(out=tmp_path / "bad.pth", lr_schedule="step", **kwargs)
+
+
+def test_modal_wrapper_forwards_lr_schedule():
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
+    train_body = source[source.index("def train_remote("):source.index("def train_remote_cpu(")]
+    main_body = source[source.index("def main("):]
+    assert 'lr_schedule: str = "constant"' in train_body and "lr_schedule=lr_schedule," in train_body
+    assert 'lr_schedule: str = "constant"' in main_body and "lr_schedule=lr_schedule," in main_body
+
 def test_modal_training_persists_each_epoch_and_has_timeout_margin():
     source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
     train_body = source[source.index("def train_remote("):source.index("def train_remote_cpu(")]

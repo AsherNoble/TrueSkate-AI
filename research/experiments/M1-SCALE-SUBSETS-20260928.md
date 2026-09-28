@@ -91,3 +91,22 @@ six runs go in parallel, about 4 h of wall time.
 4. Run the training-set check on the selected M1-RETRAIN checkpoint.
 5. Apply the decision table and record the results here and in
    STATUS/JOURNAL.
+
+## Amendment (2026-09-28, before launch): 64×144 and the M1-LRDECAY schedule
+
+Operator-approved with M1-LRDECAY ($20 ceiling for both).
+
+- **Resolution:** all rungs run at **64×144**, the development default after
+  [M1-HALFRES](M1-HALFRES-20260928.md).
+- **Schedule:** the winner of [M1-LRDECAY](M1-LRDECAY-20260928.md) (cosine or
+  constant), fixed before these runs launch.
+- **Full rung:** the three existing 64×144 runs with that schedule, so no new
+  cost.
+- **Labels:** `good13100_n{2293,4585}_{schedule}_seed{0,1,2}`, run with
+  `--max-hours 2`. The data go to new volume subdirectories
+  `model1_good13100_n2293/` and `model1_good13100_n4585/` (subset + the same
+  validation partition, no test).
+- **Metric and decision table unchanged,** with per-park failure rates added
+  for each rung's best-validation checkpoint (validation autopsy).
+- **Cost:** ~0.6 h (2,293) and ~1.0 h (4,585) per seed, **≈ $6.3** for all
+  six runs.
