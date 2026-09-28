@@ -1,0 +1,205 @@
+{
+ "seed": 2509280100,
+ "labels": [
+  {
+   "order": 1,
+   "category": "faint",
+   "note": "I can tell that it reaches the end but it is tricky"
+  },
+  {
+   "order": 2,
+   "category": "faint",
+   "note": "The red cross is more accurate as far as I can tell. But it is practically at the same point as the green circle."
+  },
+  {
+   "order": 3,
+   "category": "faint",
+   "note": "Clearly reaches the green end but it is camouflaged by the white stripe on the floor of the park which coincides with the red cross. So this one is error of the network due to a camouflaged trace."
+  },
+  {
+   "order": 4,
+   "category": "faint",
+   "note": "Same as clip 3"
+  },
+  {
+   "order": 5,
+   "category": "reaches",
+   "note": "Same as clip 2 – the red cross is so close to the green circle that the error seems acceptable honestly."
+  },
+  {
+   "order": 6,
+   "category": "reaches",
+   "note": "Same as clip 2 and 5"
+  },
+  {
+   "order": 7,
+   "category": "reaches",
+   "note": "Same as clip 2, 5 and 6"
+  },
+  {
+   "order": 8,
+   "category": "reaches",
+   "note": "Same as clip 2, 5, 6 and 7"
+  },
+  {
+   "order": 9,
+   "category": "reaches",
+   "note": "Same as clip 2, 5, 6, 7 and 8"
+  },
+  {
+   "order": 10,
+   "category": "faint",
+   "note": ""
+  },
+  {
+   "order": 11,
+   "category": "faint",
+   "note": ""
+  },
+  {
+   "order": 12,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 13,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 14,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 15,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 16,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 17,
+   "category": "faint",
+   "note": ""
+  },
+  {
+   "order": 18,
+   "category": "faint",
+   "note": ""
+  },
+  {
+   "order": 19,
+   "category": "faint",
+   "note": ""
+  },
+  {
+   "order": 20,
+   "category": "short",
+   "note": "Ambigious"
+  },
+  {
+   "order": 21,
+   "category": "faint",
+   "note": ""
+  },
+  {
+   "order": 22,
+   "category": "hidden",
+   "note": ""
+  },
+  {
+   "order": 23,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 24,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 25,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 26,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 27,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 28,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 29,
+   "category": "faint",
+   "note": ""
+  },
+  {
+   "order": 30,
+   "category": "faint",
+   "note": ""
+  },
+  {
+   "order": 31,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 32,
+   "category": "faint",
+   "note": ""
+  },
+  {
+   "order": 33,
+   "category": "faint",
+   "note": ""
+  },
+  {
+   "order": 34,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 35,
+   "category": "short",
+   "note": ""
+  },
+  {
+   "order": 36,
+   "category": "reaches",
+   "note": ""
+  },
+  {
+   "order": 37,
+   "category": "hidden",
+   "note": ""
+  },
+  {
+   "order": 38,
+   "category": "hidden",
+   "note": ""
+  },
+  {
+   "order": 39,
+   "category": "faint",
+   "note": ""
+  },
+  {
+   "order": 40,
+   "category": "reaches",
+   "note": ""
+  }
+ ]
+}
