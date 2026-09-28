@@ -4,6 +4,14 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-28 — Half resolution is not worse
+
+- Identical recipe at 64×144 instead of 128×288, seed 0: validation last-10
+  mean 86.99% (against 85.32%), best 88.70% (against 87.63%); paired
+  McNemar p = 0.13. Kansas City and Los Angeles misses are unchanged. At
+  ~4× less compute, resolution is not the bottleneck in this range.
+  [M1-HALFRES](experiments/M1-HALFRES-20260928.md).
+
 ## 2026-09-28 — Clean-label retrain: 88.50% test recovery
 
 - Same recipe, size, park mix and split protocol as the 80.05% model, on
