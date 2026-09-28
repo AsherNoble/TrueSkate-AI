@@ -1,12 +1,19 @@
 # Current research status
 
-Updated 2026-09-25. Behavioural cloning is the development direction.
+Updated 2026-09-28. Behavioural cloning is the development direction.
 
 ## Model 1
 
-Current work is calibrated linear clip regression and scaling. The recorded
-13,100-clip evaluation selected seed 0 on validation (80.00% recovery), then
-exposed the 1,965-command test split once: 80.05% complete-gesture recovery.
+Current work is calibrated linear clip regression and scaling. The current
+best is the clean-label retrain on `model1_linear_good13100_20260927`: seed 0
+(epoch 30) was selected on validation (87.63%), then scored once on the
+1,965-command test split: **88.50%** complete-gesture recovery. The previous
+recipe scored 80.05%; same size, park mix and split protocol
+([M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md)). Remaining
+failures are mostly end points falling short, concentrated in Kansas City,
+Los Angeles and fast gestures ([M1-DIAG](experiments/M1-DIAG-20260928.md)).
+The earlier 80.05% run selected seed 0 on validation (80.00%) and exposed the
+test split once.
 This is command-held-out evidence, not proof of unseen-park generalisation or
 the >99.9% certification target. See [evaluation record](experiments/M1-20260904.md).
 

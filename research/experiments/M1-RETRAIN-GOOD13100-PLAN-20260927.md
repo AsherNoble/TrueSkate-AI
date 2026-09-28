@@ -1,6 +1,6 @@
 # M1-RETRAIN-GOOD13100 — Controlled retraining on the 13,100 good-label corpus
 
-Status: plan only. No Modal spend or upload is authorised by this record.
+Status: complete (2026-09-28). **88.50% test recovery** against 80.05%; see Headline result.
 
 ## Question
 
@@ -209,3 +209,35 @@ last-10.
 `basic_linear_good13100_20260927_seed0.pth` (SHA-256
 `26a6b7dfd4a5df61c4ec7d407f54e67b61a2843ac49446c44a12517d366fa8a1`). Next, a
 single `evaluate_partition_once --label test_once --partition test`.
+
+## Headline result (2026-09-28): 88.50% test recovery
+
+The selected checkpoint (seed 0, epoch 30) was scored once with
+`evaluate_partition_once --label test_once --partition test` (L4, sequential
+decode, code `e9c237c`; the evaluator is unchanged since `090011b`).
+[Summary](../evidence/M1-RETRAIN-GOOD13100-20260927/test-once-seed0.json),
+[per clip](../evidence/M1-RETRAIN-GOOD13100-20260927/test-once-seed0-per-clip.json).
+
+| | Old (M1-20260904) | **New (good13100)** |
+|---|---:|---:|
+| Test recovery | 80.05% (1,573/1,965) | **88.50% (1,739/1,965)** |
+| One-sided 95% lower bound | — | 87.25% |
+| Start / end / duration component | — | 97.0% / 91.3% / 97.9% |
+| Validation at selection | 80.00% | 87.63% |
+
+- **Difference:** +8.45 pp, with a 95% CI (unpaired, independent test sets)
+  of **+6.2 to +10.7 pp**.
+- **Test against validation:** test (88.50%) is in line with validation
+  (87.63%), so selection did not overfit.
+- **All seeds:** every seed beat every seed of the original recipe on both
+  best and last-10 validation.
+
+Caveats (as fixed in the scope decision): the command split shares recordings
+across partitions, as in the 80.05% run, so absolute recovery overstates
+performance on unseen recordings. The gain is due to the whole new pipeline
+(clean timing labels, correct frame geometry and the audited corpus), not
+labels alone.
+
+Approximate Modal spend: ≈ $25 for training (three seeds, including the
+seed-1 resume) plus ≈ $1 for the smoke and reproduction runs, within the
+$50 ceiling.

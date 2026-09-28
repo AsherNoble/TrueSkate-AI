@@ -4,6 +4,21 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-28 — Clean-label retrain: 88.50% test recovery
+
+- Same recipe, size, park mix and split protocol as the 80.05% model, on
+  `model1_linear_good13100_20260927`. All three seeds beat every original
+  seed on validation. Selected on validation only: seed 0, epoch 30 (87.63%).
+  A single test exposure scored **88.50%** (1,739/1,965): +8.45 pp, 95% CI
+  +6.2 to +10.7. [M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md).
+- **Validation autopsy:** 74% of failures involve the end point, almost all
+  falling short along the path. They concentrate in Kansas City and Los
+  Angeles (21–24%, against The Workshop's 2.4% on similar data volume) and on
+  fast gestures. An equal-weight seed ensemble lowered recovery (86.21%) and
+  was not adopted. [M1-DIAG](experiments/M1-DIAG-20260928.md).
+- **Planned, not approved:** learning-rate decay (~$25) and nested subset
+  scaling (~$24). [M1-SCALE-SUBSETS](experiments/M1-SCALE-SUBSETS-20260928.md).
+
 ## 2026-09-27 — 13,100 good-label manifest passes final audit
 
 - A settle-wait top-up on release `080bb97` collected 722 clips (Los Angeles
