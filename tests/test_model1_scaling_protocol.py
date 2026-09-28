@@ -274,3 +274,27 @@ def test_command_split_matches_trainer_split_by_command(tmp_path):
             assert {e["path"] for e in parts[name]["samples"]} == expected[name]
         assert parts["test"]["role"] == "certification"
         assert sum(p["sample_count"] for p in parts.values()) == 40
+
+
+def test_proportional_nesting_keeps_parent_mix_and_prefixes(tmp_path):
+    root = tmp_path / "training"
+    # Skewed parent: 9 Kansas City to 3 Super Crown per device.
+    parks = ["SLS 2013 Kansas City"] * 9 + ["SLS 2015 Super Crown"] * 3
+    for index in range(24):
+        _linear_sample(root, index, device=("iPhone_XR", "iPhone_XR2")[index % 2],
+                       park=parks[(index // 2) % 12])
+    training = build_linear_cohort_manifest(root, corpus_root=tmp_path, cohort="training",
+                                            role="training")
+    subsets = build_nested_subset_manifests(training, [8, 16, 24], seed=3, order="proportional")
+    assert_deterministic_nesting(subsets)
+    assert all(item["nesting_order"] == "proportional" for item in subsets)
+    for subset in subsets:
+        n = subset["sample_count"]
+        parks_seen = subset["coverage"]["park"]
+        assert abs(parks_seen["SLS 2013 Kansas City"] - n * 0.75) <= 1
+        assert abs(parks_seen.get("SLS 2015 Super Crown", 0) - n * 0.25) <= 1
+    balanced = build_nested_subset_manifests(training, [8], seed=3)[0]
+    assert "nesting_order" not in balanced
+    assert balanced["coverage"]["park"]["SLS 2015 Super Crown"] == 4
+    with pytest.raises(ValueError, match="nesting order"):
+        build_nested_subset_manifests(training, [8], order="random")

@@ -334,11 +334,40 @@ def balanced_nested_order(
     return order
 
 
+def proportional_nested_order(
+    entries: Sequence[Mapping[str, Any]],
+    *,
+    seed: int,
+    strata: Sequence[str] = ("device", "park"),
+) -> list[dict[str, Any]]:
+    """Return one stable order whose prefixes keep each stratum's share.
+
+    Each entry is placed at its fractional position ``(rank + 0.5) / size``
+    within its stratum, so every prefix holds each stratum within one sample
+    of its proportional count. Unlike ``balanced_nested_order`` (equal counts
+    per stratum), small rungs keep the parent's device/park mix.
+    """
+    groups: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
+    for source in entries:
+        entry = dict(source)
+        key = tuple(str(entry.get(field, "<missing>")) for field in strata)
+        groups[key].append(entry)
+    keyed = []
+    for key, values in groups.items():
+        ranked = sorted(values, key=lambda entry: _stable_rank(seed, key, entry))
+        keyed.extend(((rank + 0.5) / len(ranked), key, entry) for rank, entry in enumerate(ranked))
+    return [entry for _, _, entry in sorted(keyed, key=lambda item: (item[0], item[1]))]
+
+
+NESTING_ORDERS = ("balanced", "proportional")
+
+
 def build_nested_subset_manifests(
     training_cohort: Mapping[str, Any],
     sizes: Iterable[int] = DEFAULT_LINEAR_RUNGS,
     *,
     seed: int = 0,
+    order: str = "balanced",
 ) -> list[dict[str, Any]]:
     validate_manifest(training_cohort)
     if training_cohort.get("kind") != "model1_cohort" or training_cohort.get("role") != "training":
@@ -351,10 +380,13 @@ def build_nested_subset_manifests(
         raise ValueError("subset sizes must be strictly increasing")
     if requested[-1] > len(entries):
         raise ValueError(f"largest subset {requested[-1]} exceeds cohort size {len(entries)}")
-    order = balanced_nested_order(entries, seed=seed)
+    if order not in NESTING_ORDERS:
+        raise ValueError(f"unknown nesting order {order!r}")
+    ordered = (proportional_nested_order(entries, seed=seed) if order == "proportional"
+               else balanced_nested_order(entries, seed=seed))
     manifests = []
     for size in requested:
-        selected = order[:size]
+        selected = ordered[:size]
         manifests.append(seal_manifest({
             "schema_version": MANIFEST_SCHEMA_VERSION,
             "kind": "model1_subset",
@@ -363,6 +395,7 @@ def build_nested_subset_manifests(
             "subtype": training_cohort.get("subtype", "linear"),
             "parent_fingerprint": training_cohort["fingerprint"],
             "nesting_seed": seed,
+            **({"nesting_order": order} if order != "balanced" else {}),
             "sample_count": size,
             "coverage": cohort_coverage(selected),
             "samples": selected,

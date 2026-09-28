@@ -16,7 +16,7 @@ from trueskate_ai.data.cohort_manifest import (  # noqa: E402
 )
 from trueskate_ai.data.timing_screen import TimingScreen  # noqa: E402
 from trueskate_ai.model1.scaling import (  # noqa: E402
-    DEFAULT_LINEAR_RUNGS, assert_deterministic_nesting,
+    DEFAULT_LINEAR_RUNGS, NESTING_ORDERS, assert_deterministic_nesting,
     build_experiment_manifest, build_linear_cohort_manifest, build_park_mix_cohort,
     split_cohort_by_command,
     build_nested_subset_manifests,
@@ -76,6 +76,9 @@ def main() -> None:
     subsets.add_argument("--out-dir", type=Path, required=True)
     subsets.add_argument("--sizes", type=_sizes, default=list(DEFAULT_LINEAR_RUNGS))
     subsets.add_argument("--seed", type=int, default=0)
+    subsets.add_argument("--order", choices=NESTING_ORDERS, default="balanced",
+                         help="balanced: equal device/park counts per prefix; "
+                              "proportional: each prefix keeps the cohort's device/park mix")
 
     experiment = commands.add_parser("experiment", help="bind explicit trainer partitions")
     experiment.add_argument("--train", type=Path, required=True)
@@ -127,7 +130,7 @@ def main() -> None:
                           "available": payload["park_mix"]["available"]}, indent=2))
     elif args.command == "subsets":
         payloads = build_nested_subset_manifests(
-            read_manifest(args.cohort), args.sizes, seed=args.seed,
+            read_manifest(args.cohort), args.sizes, seed=args.seed, order=args.order,
         )
         assert_deterministic_nesting(payloads)
         outputs = []
