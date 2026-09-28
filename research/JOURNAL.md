@@ -4,6 +4,19 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-28 — Cosine lr adopted; model still data-limited
+
+- **Cosine decay at 64×144:** the three-seed last-10 validation mean went
+  from 87.11% to **89.17%**, and the epoch-to-epoch SD fell 5–12×. Adopted.
+  [M1-LRDECAY](experiments/M1-LRDECAY-20260928.md).
+- **Nested subsets** (2,293 / 4,585 / 9,170; cosine; 64×144): 77.73% →
+  82.05% → 89.17%. Validation error fell 19.4% for the first doubling, then
+  39.7% for the second. By the fixed rule, **collect a doubling.** Kansas City
+  failures fell 32.9% → 22.8% → 16.3%.
+  [M1-SCALE-SUBSETS](experiments/M1-SCALE-SUBSETS-20260928.md).
+- The spend guard now projects from the median epoch time; one stalled epoch
+  had falsely stopped three runs.
+
 ## 2026-09-28 — Half resolution is not worse
 
 - Identical recipe at 64×144 instead of 128×288, seed 0: validation last-10

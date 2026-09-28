@@ -8,8 +8,12 @@ Current work is calibrated linear clip regression and scaling. The current
 best is **91.04%** test recovery: the 64×144 input, seed 2, trained on
 `model1_linear_good13100_20260927` and selected on validation (90.94%)
 ([M1-HALFRES](experiments/M1-HALFRES-20260928.md); this was the second
-exposure of that test partition). Development now runs at 64×144, which is no
-worse and ~4× cheaper. The first clean-label retrain (128×288, seed 0) scored
+exposure of that test partition). Development now runs at 64×144 (no worse, ~4× cheaper) with a
+cosine lr schedule (validation plateau 89.17% against 87.11%
+[M1-LRDECAY](experiments/M1-LRDECAY-20260928.md)). The nested-subset curve
+shows the model is still data-limited: validation error fell 39.7% for the
+last doubling ([M1-SCALE-SUBSETS](experiments/M1-SCALE-SUBSETS-20260928.md)),
+so the next step is to collect ~9.2k more training clips. The first clean-label retrain (128×288, seed 0) scored
 **88.50%** on test. The previous
 recipe scored 80.05%; same size, park mix and split protocol
 ([M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md)). Remaining

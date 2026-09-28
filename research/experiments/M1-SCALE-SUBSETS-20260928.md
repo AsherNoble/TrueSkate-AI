@@ -110,3 +110,55 @@ Operator-approved with M1-LRDECAY ($20 ceiling for both).
   for each rung's best-validation checkpoint (validation autopsy).
 - **Cost:** ~0.6 h (2,293) and ~1.0 h (4,585) per seed, **≈ $6.3** for all
   six runs.
+
+## Result (2026-09-28) — still data-limited: collect a doubling
+
+Code `7a0a7d1`, 64×144, cosine, L4. Two 4,585 runs hit the old last-epoch
+`max_hours` projection after one stalled epoch (287 s and 336 s against
+~70 s). They resumed from their snapshots (epochs 13 and 12) with
+`--max-hours 4`; the guard now projects from the median epoch (`2455667`).
+Test partition untouched.
+
+| Training clips | Last-10 mean validation (seeds 0 / 1 / 2) | **Mean** | Error |
+|---:|---|---:|---:|
+| 2,293 | 79.26 / 76.17 / 77.76 | **77.73%** | 22.27% |
+| 4,585 | 82.38 / 77.77 / 86.01 | **82.05%** | 17.95% |
+| 9,170 | 89.66 / 87.99 / 89.86 (M1-LRDECAY) | **89.17%** | 10.83% |
+
+**Relative error reduction per doubling:**
+- 2.3k → 4.6k: **19.4%**
+- 4.6k → 9.2k: **39.7%**
+
+**Decision (fixed table):** the 4.6k → 9.2k reduction is ≥ 20%, so the model
+is **still data-limited. Collect a doubling:** ~9.2k new clips added to
+training, with validation and test fixed.
+- The latest doubling gave the larger gain, so there is no sign of a plateau
+  yet.
+- The 4,585 rung has a wide seed spread (77.8–86.0), but even its best seed is
+  below the worst full-size seed (88.0).
+
+**Per park, best-validation checkpoint per rung** (validation failure rate;
+[evidence](../evidence/M1-SCALE-SUBSETS-20260928/)):
+
+| Park | 2,293 | 4,585 | 9,170 |
+|---|---:|---:|---:|
+| Kansas City | 32.9% | 22.8% | 16.3% |
+| Los Angeles | 30.2% | 26.4% | 21.4% |
+| Super Crown | 23.8% | 16.2% | 10.3% |
+| Skateboard GB | 15.3% | 6.3% | 5.6% |
+| The Workshop | 5.7% | 2.9% | 2.1% |
+
+**Correction to M1-DIAG:** that record argued that data volume does not
+explain the Kansas City gap. The curve shows Kansas City improving steadily
+with data (32.9 → 22.8 → 16.3%). It is harder, not immune to data. Los Angeles
+improves the slowest; it has the fewest clips in the mix (1,261 of 13,100).
+
+**Caveats:**
+- At a fixed 40 epochs, smaller rungs get fewer optimiser steps. That favours
+  more data, but it affects both doublings, and the second (larger) reduction
+  is the one that decides.
+- One seed per rung for the per-park table.
+- Recordings are shared across partitions.
+
+**Cost:** ≈ $6 for the six runs plus ≈ $0.7 for the three autopsies.
+Together with M1-LRDECAY (≈ $7), the total is ≈ $14 of the $20 ceiling.

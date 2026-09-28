@@ -1,0 +1,57 @@
+{
+ "seeds": {
+  "basic_linear_good13100_n2293_cosine_seed0.pth": {
+   "recovery": "1565/1965 (79.6%)",
+   "failure_components": {
+    "end": 190,
+    "start": 85,
+    "end+duration": 43,
+    "duration": 34,
+    "start+end": 31,
+    "start+end+duration": 11,
+    "start+duration": 6
+   },
+   "end_failures": {
+    "count": 275,
+    "along_short_(<0)": 261,
+    "along_long_(>0)": 14,
+    "along_dominant_(|along|>perp)": 248,
+    "median_abs_along": 0.07107719757558818,
+    "median_perp": 0.00791232448063082,
+    "trail_gap_at_commanded_end": {
+     "median": 0.009113674983382225,
+     "<0.01_(visible)": 146,
+     ">0.03_(no_evidence)": 51
+    },
+    "median_trail_gap_end_recovered_clips": 0.006949187256395817
+   },
+   "by_park": {
+    "SLS 2013 Kansas City": "190/578 (32.9%)",
+    "SLS 2015 Los Angeles": "55/182 (30.2%)",
+    "SLS 2015 Super Crown": "76/320 (23.8%)",
+    "Skateboard GB 2024": "46/301 (15.3%)",
+    "The Workshop": "33/584 (5.7%)"
+   },
+   "by_device": {
+    "iPhone_XR": "131/932 (14.1%)",
+    "iPhone_XR2": "269/1033 (26.0%)"
+   },
+   "by_command_duration": {
+    "<0.45s": "107/322 (33.2%)",
+    "<0.60s": "88/337 (26.1%)",
+    "<0.75s": "65/304 (21.4%)",
+    "<0.90s": "51/351 (14.5%)",
+    "<1.05s": "40/336 (11.9%)",
+    ">=1.05s": "49/315 (15.6%)"
+   },
+   "by_end_position": {
+    "end interior": "374/1855 (20.2%)",
+    "end within 0.05 of edge": "26/110 (23.6%)"
+   }
+  }
+ },
+ "seed_consistency": {
+  "failed_by_1_of_1": 400,
+  "clips": 1965
+ }
+}
