@@ -12,6 +12,9 @@ Put substantial experiments in individual records and current facts in STATUS.
   ~4× less compute, resolution is not the bottleneck in this range.
   Seeds 1–2 confirmed it: the three-seed last-10 mean is 87.11% at 64, against
   84.68% at 128; every seed is no worse. 64×144 is adopted for development.
+  The best-validation checkpoint (64 seed 2, 90.94%) scored **91.04% on test**
+  in the partition's second exposure: McNemar p = 0.0003 against the 88.50%
+  model, and +11.0 pp (+8.8 to +13.2) against 80.05%.
   [M1-HALFRES](experiments/M1-HALFRES-20260928.md).
 
 ## 2026-09-28 — Clean-label retrain: 88.50% test recovery

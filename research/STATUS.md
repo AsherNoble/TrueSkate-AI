@@ -5,9 +5,12 @@ Updated 2026-09-28. Behavioural cloning is the development direction.
 ## Model 1
 
 Current work is calibrated linear clip regression and scaling. The current
-best is the clean-label retrain on `model1_linear_good13100_20260927`: seed 0
-(epoch 30) was selected on validation (87.63%), then scored once on the
-1,965-command test split: **88.50%** complete-gesture recovery. The previous
+best is **91.04%** test recovery: the 64×144 input, seed 2, trained on
+`model1_linear_good13100_20260927` and selected on validation (90.94%)
+([M1-HALFRES](experiments/M1-HALFRES-20260928.md); this was the second
+exposure of that test partition). Development now runs at 64×144, which is no
+worse and ~4× cheaper. The first clean-label retrain (128×288, seed 0) scored
+**88.50%** on test. The previous
 recipe scored 80.05%; same size, park mix and split protocol
 ([M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md)). Remaining
 failures are mostly end points falling short, concentrated in Kansas City,
