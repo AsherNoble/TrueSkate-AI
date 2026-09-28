@@ -728,8 +728,9 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
             cursor = found + 1
     # 19 = 18 checkpoint-backed evaluators plus the one orange-cue exception above.
     # Bumping this deliberately is the point: a new evaluator cannot land without
-    # being seen here.  Last bumped for `evaluate_partition_once` (M1-RETRAIN-GOOD13100, 2026-09-27).
-    assert constructions == 19, f"expected 19 dataset constructions, found {constructions}"
+    # being seen here.  Last bumped for `evaluate_ensemble_validation` and the
+    # manifest-backed `autopsy_failures` path (M1-DIAG, 2026-09-28).
+    assert constructions == 21, f"expected 21 dataset constructions, found {constructions}"
 
     # Resolving the shape is not the same as decoding it.  Evaluators whose
     # bodies hardcode the 5-wide start/end/duration layout must refuse a k>2
@@ -919,3 +920,19 @@ def test_sequential_decode_returns_every_stored_frame_in_order(tmp_path):
     assert all(abs(mean - index * 7) < 4 for index, mean in enumerate(means))
     with pytest.raises(ValueError, match="decode mode"):
         _decode_even_frames(sample, 32, mode="bogus")
+
+
+def test_validation_ensemble_never_loads_test_and_fixes_equal_weights():
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
+    body = source[source.index("def evaluate_ensemble_validation("):]
+    body = body[:body.index("\n@app.")]
+    assert 'manifest_partition="validation"' in body
+    assert '"test"' not in body and "test_indices" not in body
+    assert "equal = score(tuple(1 / len(names) for _ in names), equal_rows)" in body
+    assert "grid_best_optimistic" in body
+    assert "raise FileExistsError" in body and "_require_gpu(required_gpu)" in body
+    autopsy = source[source.index("def autopsy_failures("):]
+    autopsy = autopsy[:autopsy.index("\n@app.") if "\n@app." in autopsy else len(autopsy)]
+    assert "manifest_partition=partition" in autopsy
+    assert 'decode_mode=str(payload.get("decode_mode") or "seek")' in autopsy
+    assert '"park": str(meta.get("park", "unknown"))' in autopsy

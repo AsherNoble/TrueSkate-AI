@@ -440,6 +440,106 @@ def evaluate_partition_once(data_subdir: str, checkpoint_name: str, *, label: st
     return {k: v for k, v in output.items() if k != "per_sample"}
 
 
+@app.function(image=image, gpu=TRAIN_GPU, timeout=3 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def evaluate_ensemble_validation(data_subdir: str, checkpoint_names: str, *, label: str,
+                                 experiment_manifest_name: str | None = None,
+                                 shard_manifest_name: str | None = None,
+                                 batch_size: int = 8, required_gpu: str = "") -> dict:
+    """Score seed checkpoints and their ensembles on the VALIDATION partition only.
+
+    Primary: the equal-weight average, fixed in advance, so its validation score
+    is not selected on validation. Secondary: the best 0.1-grid convex weights,
+    which ARE selected on validation and therefore optimistic. The test
+    partition is never loaded.
+    """
+    import itertools
+    import torch
+    from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset
+    from trueskate_ai.model1.linear.training import basic_linear_metrics
+
+    names = [name.strip() for name in checkpoint_names.split(",") if name.strip()]
+    if len(names) < 2:
+        raise ValueError("need at least two checkpoints")
+    gpu_name = _require_gpu(required_gpu)
+    models.reload()
+    out_path = Path("/models") / f"basic_linear_ensemble_validation_{label}.json"
+    if out_path.exists():
+        raise FileExistsError(f"{out_path.name} already exists")
+    root, experiment_path = _training_inputs(data_subdir, experiment_manifest_name, shard_manifest_name)
+    if experiment_path is None:
+        raise ValueError("evaluate_ensemble_validation requires an experiment or shard manifest")
+    payloads = [torch.load(Path("/models") / name, map_location="cpu", weights_only=False)
+                for name in names]
+    decode_modes = {str(payload.get("decode_mode") or "seek") for payload in payloads}
+    if len(decode_modes) != 1:
+        raise ValueError(f"checkpoints disagree on decode mode: {sorted(decode_modes)}")
+    decode_mode = decode_modes.pop()
+    data = BasicLinearClipDataset(root, manifest=experiment_path, manifest_partition="validation",
+                                  cache_frames=False, verify_manifest_content=True,
+                                  decode_mode=decode_mode, **_payload_dataset_kwargs(payloads))
+    device = torch.device("cuda")
+    models_local = []
+    for payload in payloads:
+        model = _model_from_payload(payload, torch).to(device)
+        model.load_state_dict(payload["state_dict"])
+        model.eval()
+        models_local.append(model)
+    # One decode pass: cache every model's predictions and the targets.
+    predictions: list[list] = [[] for _ in models_local]
+    targets = []
+    with torch.no_grad():
+        for batch in torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=False):
+            frames = batch["frames"].to(device)
+            targets.append(batch["target"].to(device))
+            for index, model in enumerate(models_local):
+                predictions[index].append(model(frames))
+
+    def score(weights, per_sample=None):
+        class Cached(torch.nn.Module):
+            def forward(self, cached):
+                return sum(weight * predictions[m][int(cached)] for m, weight in enumerate(weights))
+        batches = [{"frames": torch.tensor(i), "target": target} for i, target in enumerate(targets)]
+        return basic_linear_metrics(Cached(), batches, device, per_sample=per_sample)
+
+    def rows(per_sample):
+        return [{"path": str(path.relative_to(data.root)), **result}
+                for path, result in zip(data.sample_paths, per_sample)]
+
+    singles, single_rows = {}, {}
+    for index, name in enumerate(names):
+        per_sample: list = []
+        weights = tuple(1.0 if m == index else 0.0 for m in range(len(names)))
+        singles[name] = score(weights, per_sample)
+        single_rows[name] = rows(per_sample)
+    equal_rows: list = []
+    equal = score(tuple(1 / len(names) for _ in names), equal_rows)
+    grid = []
+    for units in itertools.product(range(11), repeat=len(names)):
+        if sum(units) == 10:
+            weights = tuple(unit / 10 for unit in units)
+            grid.append((score(weights)["gesture_recovery_accuracy"], weights))
+    grid.sort(key=lambda item: -item[0])
+    output = {
+        "label": label, "partition": "validation", "checkpoints": names,
+        "checkpoint_sha256": {name: _checkpoint_sha256(Path("/models") / name) for name in names},
+        "experiment_manifest_fingerprint": data.manifest_fingerprint,
+        "decode_mode": decode_mode, "gpu": gpu_name, "library_versions": _library_versions(),
+        "samples": len(data),
+        "validation_reported_at_train_time": {name: payload.get("validation")
+                                              for name, payload in zip(names, payloads)},
+        "single": singles,
+        "equal_weight": equal,
+        "grid_best_optimistic": {"weights": dict(zip(names, grid[0][1])), "recovery": grid[0][0]},
+        "per_sample": {"single": single_rows, "equal_weight": rows(equal_rows)},
+    }
+    out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
+    models.commit()
+    summary = {k: v for k, v in output.items() if k != "per_sample"}
+    print(json.dumps(summary, indent=2, sort_keys=True))
+    return summary
+
+
 @app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
@@ -2649,12 +2749,13 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
     print(json.dumps(result, indent=2, sort_keys=True))
 
 
-@app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
+@app.function(image=image, gpu=TRAIN_GPU, timeout=3 * 3600, memory=32768,
               volumes={"/corpus": corpus, "/models": models})
 def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
                      batch_size: int = 8, fresh_holdout_source: str | None = None,
                      fresh_stratify_by_device: bool = False, label: str = "autopsy",
-                     partition: str = "test") -> dict:
+                     partition: str = "test", experiment_manifest_name: str | None = None,
+                     shard_manifest_name: str | None = None, required_gpu: str = "") -> dict:
     """Classify why individual held-out clips fail, not merely how often.
 
     Recovery percentage cannot distinguish a model that missed visible evidence
@@ -2678,16 +2779,34 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
         decompose_endpoint_error, knot_columns, knot_errors, nearest_trail_gaps, target_knots,
     )
 
+    _require_gpu(required_gpu)
+    models.reload()
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
-    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
-                                  **_payload_dataset_kwargs([payload]))
-    if fresh_holdout_source is None:
-        _train, val_indices, evaluated_indices = split_by_command(data, seed=seed)
+    manifest_backed = experiment_manifest_name is not None or shard_manifest_name is not None
+    if manifest_backed:
+        # A sealed experiment manifest names the partition directly; decode the
+        # clips exactly as the checkpoint was trained to see them.
+        if partition not in ("validation", "test"):
+            raise ValueError("partition must be 'validation' or 'test'")
+        if (Path("/models") / f"basic_linear_{label}.json").exists():
+            raise FileExistsError(f"basic_linear_{label}.json already exists")
+        root, experiment_path = _training_inputs(data_subdir, experiment_manifest_name,
+                                                 shard_manifest_name)
+        data = BasicLinearClipDataset(root, manifest=experiment_path, manifest_partition=partition,
+                                      cache_frames=False, verify_manifest_content=True,
+                                      decode_mode=str(payload.get("decode_mode") or "seek"),
+                                      **_payload_dataset_kwargs([payload]))
+        val_indices = evaluated_indices = list(range(len(data)))
     else:
-        _train, val_indices, evaluated_indices = _trainer().split_with_fresh_command_holdout(
-            data, fresh_source=fresh_holdout_source, seed=seed,
-            stratify_by_device=fresh_stratify_by_device,
-        )
+        data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                      **_payload_dataset_kwargs([payload]))
+        if fresh_holdout_source is None:
+            _train, val_indices, evaluated_indices = split_by_command(data, seed=seed)
+        else:
+            _train, val_indices, evaluated_indices = _trainer().split_with_fresh_command_holdout(
+                data, fresh_source=fresh_holdout_source, seed=seed,
+                stratify_by_device=fresh_stratify_by_device,
+            )
     # Any correction derived from this report has to be fit on validation to be
     # usable; measuring it on test and applying it there would be test-set
     # tuning dressed up as a diagnostic.
@@ -2770,6 +2889,8 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
             records.append({
                 "sample": str(data.sample_paths[index].relative_to(data.root)),
                 "device": str(meta.get("device", "unknown")),
+                "park": str(meta.get("park", "unknown")),
+                "gesture_duration": float(meta.get("duration", float("nan"))),
                 "recovered": recovered,
                 "start_error": start_error, "end_error": end_error,
                 "duration_error": duration_error,
