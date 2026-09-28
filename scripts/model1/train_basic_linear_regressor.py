@@ -52,6 +52,21 @@ def lr_for_epoch(lr: float, epoch: int, epochs: int, schedule: str) -> float:
     raise ValueError(f"unknown lr schedule {schedule!r}; choose from {LR_SCHEDULES}")
 
 
+def projected_run_seconds(epoch_seconds: list[float], epochs: int) -> float:
+    """Spent time plus the remaining epochs at the median committed epoch time.
+
+    The first epoch is excluded from the median when later ones exist (it also
+    decodes and caches every clip). A median, not the last epoch, so that a
+    single slow epoch (a provider stall) cannot trip the spend guard: the last-
+    epoch projection falsely stopped three runs (M1-RETRAIN seed 1, two
+    M1-SCALE-SUBSETS runs)."""
+    spent = sum(epoch_seconds)
+    typical = sorted(epoch_seconds[1:] or epoch_seconds)
+    middle = len(typical) // 2
+    median = typical[middle] if len(typical) % 2 else (typical[middle - 1] + typical[middle]) / 2
+    return spent + median * (epochs - len(epoch_seconds))
+
+
 def _device() -> torch.device:
     if torch.cuda.is_available():
         # Record which accelerator this run actually drew.  Nothing used to log it, so a
@@ -342,7 +357,7 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
           lr_schedule: str = "constant") -> dict:
     """Train one model. ``max_hours`` (opt-in) is a spend guard: after each
     committed epoch, stop if cumulative epoch time, or cumulative time plus the
-    last epoch's time for every remaining epoch, exceeds it. The resume
+    median committed epoch time for every remaining epoch, exceeds it. The resume
     snapshot is already saved, so stopping loses no completed work."""
     if max_hours is not None and max_hours <= 0:
         raise ValueError("max_hours must be positive")
@@ -577,8 +592,9 @@ def train(*, data: Path, out: Path, epochs: int, batch_size: int, lr: float,
             if checkpoint_callback is not None:
                 checkpoint_callback()
         if max_hours is not None and epoch < epochs:
-            spent = sum(float(item["seconds"]) for item in epoch_history)
-            projected = spent + epoch_seconds * (epochs - epoch)
+            seconds = [float(item["seconds"]) for item in epoch_history]
+            spent = sum(seconds)
+            projected = projected_run_seconds(seconds, epochs)
             if spent > max_hours * 3600 or (epoch >= 2 and projected > max_hours * 3600):
                 raise BudgetGuardExceeded(
                     f"max_hours={max_hours}: {spent / 3600:.2f} h spent, projected "

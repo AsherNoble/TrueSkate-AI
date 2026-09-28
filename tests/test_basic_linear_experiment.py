@@ -259,6 +259,19 @@ def test_train_budget_guard_stops_after_committed_epoch_and_final_snapshot_final
 
 
 
+
+def test_budget_projection_ignores_one_slow_epoch():
+    import scripts.model1.train_basic_linear_regressor as trainer
+
+    # Epoch 1 decodes (slow); epoch 13 stalled.  The old last-epoch projection
+    # gave 0.37 h + 27 x 287 s = 2.52 h and falsely tripped a 2 h cap.
+    seconds = [271.0] + [70.0] * 11 + [287.0]
+    projected = trainer.projected_run_seconds(seconds, 40)
+    assert projected == pytest.approx(sum(seconds) + 27 * 70.0)
+    assert projected / 3600 < 2.0
+    assert trainer.projected_run_seconds([500.0], 3) == pytest.approx(1500.0)
+    assert trainer.projected_run_seconds([500.0, 100.0, 300.0], 4) == pytest.approx(900.0 + 200.0)
+
 def test_lr_for_epoch_cosine_decays_and_constant_is_unchanged():
     import scripts.model1.train_basic_linear_regressor as trainer
 
