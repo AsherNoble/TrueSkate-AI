@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calibration marker check</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#101214;color:#edf0f2}
+main{max-width:1150px;margin:auto;padding:16px 22px}
+h1{font-size:1.4rem;margin:0 0 8px}p{color:#b8c3cc;line-height:1.45}
+.layout{display:grid;grid-template-columns:minmax(360px,1fr) 280px;gap:22px}
+.stage{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0}
+.video-shell{max-width:100%;background:#050607;border:1px solid #30363c;border-radius:8px;overflow:hidden}
+canvas{display:block;width:min(68vh,640px);height:auto;max-width:100%;image-rendering:auto}
+button,input,textarea{font:inherit;color:inherit;background:#20252a;border:1px solid #46505a;border-radius:6px}
+button{padding:8px 11px;cursor:pointer}button:hover{background:#2c343b}
+.transport{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+#seek{width:min(100%,620px);padding:0}#frame,#progress{font-variant-numeric:tabular-nums}
+aside{padding:15px;border:1px solid #30363c;border-radius:8px;align-self:start;background:#15191d}
+.actions{display:grid;gap:8px;margin:14px 0}.primary{background:#215d45}.unsure{background:#544521}
+textarea{width:100%;min-height:78px;padding:8px;resize:vertical}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:12px}
+.grid button{padding:5px 0;font-size:.82rem}.grid .marked{color:#70d8a1}
+.grid .uncertain{color:#f3c863}.grid .current{outline:2px solid #fff}
+@media(max-width:780px){.layout{grid-template-columns:1fr}canvas{width:100%}}
+.mode{font-size:.85rem;color:#f3c863}
+</style></head><body tabindex="-1"><main>
+<h1>First visible calibration touch</h1>
+<p>Each item is a crop around the screen centre. Use ← / → (Shift = 5 frames). At the
+<b>first frame where the touch mark(s) appear</b> — one centre mark or a five-point die —
+press <b>M</b>. Press <b>U</b> if unclear. Press <b>D</b> to toggle a difference view (change
+from the previous frame, amplified); ignore sweeping board/floor motion. Items are shuffled
+and no detector output is shown.</p>
+<p id="progress"></p>
+<div class="layout"><section class="stage">
+<div class="video-shell"><canvas id="canvas"></canvas></div><div id="mode" class="mode"></div>
+<div id="frame">Loading…</div><input id="seek" type="range" min="0" value="0" aria-label="Frame position">
+<div class="transport"><button id="backFrame">← Frame</button><button id="diff">D · Difference view</button>
+<button id="nextFrame">Frame →</button></div>
+<div class="transport"><button id="previous">[ Previous clip</button><button id="next">Next clip ]</button></div>
+</section><aside>
+<strong id="clip"></strong><p id="currentMark"></p>
+<div class="actions"><button id="mark" class="primary">M · Mark this frame &amp; next clip</button>
+<button id="unsure" class="unsure">U · Unclear / no visible trace</button>
+<button id="clear">Clear this mark</button></div>
+<label for="note">Optional note</label><textarea id="note" placeholder="What made this item difficult?"></textarea>
+<p>Marks save in this browser. <b>Export the JSON</b> when finished. Press Escape after
+typing a note to return to frame shortcuts.</p>
+<button id="export">Export onset labels</button><div class="grid" id="grid"></div>
+</aside></div></main>
+<script>
+const DATA=__PAYLOAD__;
+const KEY='die5-compare-labels-v1:'+DATA.seed;
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true}),el=id=>document.getElementById(id);
+let labels={};try{labels=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(_){}
+let cursor=0,selectedFrame=0,images=[],diffMode=false,token=0;
+const current=()=>DATA.samples[cursor],frameCount=()=>current().frames.length;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(labels))}catch(_){}updateProgress();updateGrid();}
+function updateProgress(){
+  const v=Object.values(labels),marked=v.filter(x=>Number.isInteger(x.frame_index_0based)).length,unsure=v.filter(x=>x.uncertain).length;
+  el('progress').textContent=(marked+unsure)+' / '+DATA.samples.length+' reviewed · '+marked+' marked · '+unsure+' unclear';
+}
+function updateGrid(){
+  el('grid').replaceChildren();
+  DATA.samples.forEach((s,i)=>{const b=document.createElement('button'),l=labels[s.id];b.textContent=String(i+1);
+    if(l?.uncertain)b.classList.add('uncertain');else if(Number.isInteger(l?.frame_index_0based))b.classList.add('marked');
+    if(i===cursor)b.classList.add('current');b.onclick=()=>{cursor=i;load();};el('grid').append(b);});
+}
+function draw(){
+  const img=images[selectedFrame];if(!img||!img.complete||!img.naturalWidth){el('frame').textContent='Loading frame…';return;}
+  canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;ctx.drawImage(img,0,0);
+  if(diffMode&&selectedFrame>0&&images[selectedFrame-1]?.complete){
+    const cur=ctx.getImageData(0,0,canvas.width,canvas.height);ctx.drawImage(images[selectedFrame-1],0,0);
+    const prev=ctx.getImageData(0,0,canvas.width,canvas.height),o=ctx.createImageData(canvas.width,canvas.height);
+    for(let i=0;i<cur.data.length;i+=4){const d=Math.min(255,4*Math.max(0,(cur.data[i]+cur.data[i+1]+cur.data[i+2]-prev.data[i]-prev.data[i+1]-prev.data[i+2])/3));
+      o.data[i]=o.data[i+1]=o.data[i+2]=d;o.data[i+3]=255;}
+    ctx.putImageData(o,0,0);
+  }
+  el('frame').textContent='Frame '+(selectedFrame+1)+' / '+frameCount();el('seek').value=selectedFrame;
+  el('mode').textContent=diffMode?'Difference view (brightening since previous frame)':'';
+}
+function showFrame(i){selectedFrame=Math.max(0,Math.min(frameCount()-1,Math.round(i)||0));draw();}
+function move(d){cursor=(cursor+d+DATA.samples.length)%DATA.samples.length;load();}
+function load(){
+  const s=current(),t=++token,mark=labels[s.id];selectedFrame=0;
+  images=s.frames.map(src=>{const im=new Image();im.onload=()=>{if(t===token)draw();};im.src=src;return im;});
+  el('clip').textContent='Item '+(cursor+1)+' of '+DATA.samples.length;el('seek').max=frameCount()-1;
+  el('currentMark').textContent=mark?.uncertain?'Marked unclear':Number.isInteger(mark?.frame_index_0based)?'Marked frame '+(mark.frame_index_0based+1):'Not marked yet';
+  el('note').value=mark?.note||'';updateGrid();draw();
+}
+function mark(uncertain){
+  const f=uncertain?null:selectedFrame,s=current();
+  labels[s.id]={frame_index_0based:f,displayed_frame_1based:f===null?null:f+1,uncertain:uncertain,note:el('note').value,updated_at:new Date().toISOString()};
+  save();move(1);
+}
+el('previous').onclick=()=>move(-1);el('next').onclick=()=>move(1);
+el('backFrame').onclick=()=>showFrame(selectedFrame-1);el('nextFrame').onclick=()=>showFrame(selectedFrame+1);
+el('diff').onclick=()=>{diffMode=!diffMode;draw();};el('mark').onclick=()=>mark(false);el('unsure').onclick=()=>mark(true);
+el('clear').onclick=()=>{delete labels[current().id];save();load();};
+el('note').oninput=()=>{const id=current().id;if(labels[id]){labels[id].note=el('note').value;save();}};
+el('seek').oninput=e=>showFrame(Number(e.target.value));
+el('export').onclick=()=>{
+  const out={schema:'die5-compare-labels-v1',selection_seed:DATA.seed,exported_at:new Date().toISOString(),labels:labels};
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='die5-compare-labels-'+DATA.seed+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA'].includes(e.target.tagName)){if(e.key==='Escape'){e.target.blur();document.body.focus();}return;}
+  if(e.key==='ArrowLeft'){e.preventDefault();showFrame(selectedFrame+(e.shiftKey?-5:-1));}
+  else if(e.key==='ArrowRight'){e.preventDefault();showFrame(selectedFrame+(e.shiftKey?5:1));}
+  else if(e.key==='[')move(-1);else if(e.key===']')move(1);
+  else if(e.key.toLowerCase()==='m')mark(false);else if(e.key.toLowerCase()==='u')mark(true);
+  else if(e.key.toLowerCase()==='d'){diffMode=!diffMode;draw();}
+});
+updateProgress();load();
+</script></body></html>

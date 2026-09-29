@@ -1,0 +1,62 @@
+[
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/endsettle/XR1_LA_endsettle/iPhone_XR_20260924_105752/segment_00000.json",
+  "device": "iPhone_XR",
+  "park": "SLS 2015 Los Angeles",
+  "role": "start",
+  "start_approx_video_s": 1.469,
+  "frames": 23,
+  "centre_motion_mean": 0.058,
+  "centre_motion_max": 0.633
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/endsettle/XR1_LA_endsettle/iPhone_XR_20260924_105904/segment_00000.json",
+  "device": "iPhone_XR",
+  "park": "SLS 2015 Los Angeles",
+  "role": "start",
+  "start_approx_video_s": 2.651,
+  "frames": 23,
+  "centre_motion_mean": 0.054,
+  "centre_motion_max": 0.539
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/endsettle/XR1_LA_endsettle/iPhone_XR_20260924_110017/segment_00000.json",
+  "device": "iPhone_XR",
+  "park": "SLS 2015 Los Angeles",
+  "role": "start",
+  "start_approx_video_s": 1.434,
+  "frames": 22,
+  "centre_motion_mean": 0.061,
+  "centre_motion_max": 0.655
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/endsettle/XR2_LA_endsettle/iPhone_XR2_20260924_105752/segment_00000.json",
+  "device": "iPhone_XR2",
+  "park": "SLS 2015 Los Angeles",
+  "role": "start",
+  "start_approx_video_s": 1.453,
+  "frames": 23,
+  "centre_motion_mean": 0.055,
+  "centre_motion_max": 0.591
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/endsettle/XR2_LA_endsettle/iPhone_XR2_20260924_105911/segment_00000.json",
+  "device": "iPhone_XR2",
+  "park": "SLS 2015 Los Angeles",
+  "role": "start",
+  "start_approx_video_s": 1.441,
+  "frames": 22,
+  "centre_motion_mean": 0.059,
+  "centre_motion_max": 0.591
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/endsettle/XR2_LA_endsettle/iPhone_XR2_20260924_110033/segment_00000.json",
+  "device": "iPhone_XR2",
+  "park": "SLS 2015 Los Angeles",
+  "role": "start",
+  "start_approx_video_s": 1.302,
+  "frames": 22,
+  "centre_motion_mean": 0.06,
+  "centre_motion_max": 0.603
+ }
+]

@@ -1,0 +1,617 @@
+[
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA_settle/iPhone_XR2_20260924_103154/segment_00000.json",
+  "device": "iPhone_XR2",
+  "park": "SLS 2015 Los Angeles",
+  "frame_count": 1706,
+  "markers": [
+   {
+    "wda_action_sequence": 0,
+    "role": "start",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 623832.1034602917,
+    "approx_video_s": 1.4421,
+    "decoded": true,
+    "a_frame": 44,
+    "a_score": 28.356,
+    "b_frame": 44,
+    "b_votes": 5,
+    "b_point_frames": [
+     44,
+     44,
+     44,
+     44,
+     44
+    ]
+   },
+   {
+    "wda_action_sequence": 3,
+    "role": "mid",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 623844.0765071667,
+    "approx_video_s": 13.4153,
+    "decoded": true,
+    "a_frame": 403,
+    "a_score": 44.289,
+    "b_frame": 403,
+    "b_votes": 5,
+    "b_point_frames": [
+     403,
+     403,
+     403,
+     403,
+     403
+    ]
+   },
+   {
+    "wda_action_sequence": 6,
+    "role": "mid",
+    "marker": "single",
+    "wda_submitted_monotonic_s": 623854.9792988751,
+    "approx_video_s": 24.3183,
+    "decoded": true,
+    "a_frame": 729,
+    "a_score": 36.936,
+    "b_frame": null,
+    "b_votes": 1,
+    "b_point_frames": [
+     729,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   {
+    "wda_action_sequence": 9,
+    "role": "mid",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 623867.2240283333,
+    "approx_video_s": 36.5632,
+    "decoded": true,
+    "a_frame": 1095,
+    "a_score": 32.243,
+    "b_frame": 1095,
+    "b_votes": 5,
+    "b_point_frames": [
+     1095,
+     1095,
+     1095,
+     1095,
+     1095
+    ]
+   },
+   {
+    "wda_action_sequence": 12,
+    "role": "mid",
+    "marker": "single",
+    "wda_submitted_monotonic_s": 623878.8393501667,
+    "approx_video_s": 48.1788,
+    "decoded": true,
+    "a_frame": 1444,
+    "a_score": 26.745,
+    "b_frame": null,
+    "b_votes": 3,
+    "b_point_frames": [
+     1444,
+     1558,
+     1559,
+     1552,
+     1558
+    ]
+   },
+   {
+    "wda_action_sequence": 14,
+    "role": "end",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 623886.1095513334,
+    "approx_video_s": 55.4491,
+    "decoded": true,
+    "a_frame": 1661,
+    "a_score": 31.661,
+    "b_frame": 1661,
+    "b_votes": 5,
+    "b_point_frames": [
+     1661,
+     1661,
+     1661,
+     1661,
+     1661
+    ]
+   }
+  ],
+  "fits": {
+   "a": {
+    "rate": 0.999825500394028,
+    "intercept_s": -623721.6600040452,
+    "mid_predicted_s": {
+     "3": 13.55595758301206,
+     "6": 24.45684675849043,
+     "9": 36.69943951629102,
+     "12": 48.31273448059801
+    }
+   },
+   "b": {
+    "rate": 0.999825500394028,
+    "intercept_s": -623721.6600040452,
+    "mid_predicted_s": {
+     "3": 13.55595758301206,
+     "6": 24.45684675849043,
+     "9": 36.69943951629102,
+     "12": 48.31273448059801
+    }
+   }
+  },
+  "null_windows": [
+   {
+    "anchor_video_s": 31.1,
+    "decoded": true,
+    "a_frame": null,
+    "a_score": null,
+    "b_frame": null,
+    "b_votes": 1,
+    "b_point_frames": [
+     null,
+     null,
+     909,
+     null,
+     null
+    ]
+   },
+   {
+    "anchor_video_s": 43.35,
+    "decoded": true,
+    "a_frame": null,
+    "a_score": null,
+    "b_frame": null,
+    "b_votes": 0,
+    "b_point_frames": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   }
+  ],
+  "null_scanned_s": 3.5,
+  "post_reset_null": {
+   "scanned_s": 1.274,
+   "decoded": true,
+   "a_frame": null,
+   "a_score": null,
+   "b_frame": null,
+   "b_votes": 0,
+   "b_point_frames": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  }
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA_settle/iPhone_XR2_20260924_103312/segment_00000.json",
+  "device": "iPhone_XR2",
+  "park": "SLS 2015 Los Angeles",
+  "frame_count": 1677,
+  "markers": [
+   {
+    "wda_action_sequence": 0,
+    "role": "start",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 623910.8036832917,
+    "approx_video_s": 1.6152,
+    "decoded": true,
+    "a_frame": 49,
+    "a_score": 31.914,
+    "b_frame": 49,
+    "b_votes": 5,
+    "b_point_frames": [
+     49,
+     49,
+     49,
+     49,
+     49
+    ]
+   },
+   {
+    "wda_action_sequence": 3,
+    "role": "mid",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 623925.2291220417,
+    "approx_video_s": 16.0409,
+    "decoded": true,
+    "a_frame": 456,
+    "a_score": 11.908,
+    "b_frame": null,
+    "b_votes": 3,
+    "b_point_frames": [
+     456,
+     470,
+     460,
+     456,
+     457
+    ]
+   },
+   {
+    "wda_action_sequence": 6,
+    "role": "mid",
+    "marker": "single",
+    "wda_submitted_monotonic_s": 623937.7575421667,
+    "approx_video_s": 28.5695,
+    "decoded": true,
+    "a_frame": 856,
+    "a_score": 31.989,
+    "b_frame": null,
+    "b_votes": 1,
+    "b_point_frames": [
+     856,
+     960,
+     null,
+     915,
+     962
+    ]
+   },
+   {
+    "wda_action_sequence": 9,
+    "role": "mid",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 623952.0393417916,
+    "approx_video_s": 42.8515,
+    "decoded": true,
+    "a_frame": 1284,
+    "a_score": 37.105,
+    "b_frame": 1284,
+    "b_votes": 5,
+    "b_point_frames": [
+     1284,
+     1284,
+     1284,
+     1284,
+     1284
+    ]
+   },
+   {
+    "wda_action_sequence": 12,
+    "role": "end",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 623963.6686600418,
+    "approx_video_s": 54.4811,
+    "decoded": true,
+    "a_frame": 1633,
+    "a_score": 36.966,
+    "b_frame": 1633,
+    "b_votes": 5,
+    "b_point_frames": [
+     1633,
+     1633,
+     1633,
+     1633,
+     1633
+    ]
+   }
+  ],
+  "fits": {
+   "a": {
+    "rate": 1.0002841815284689,
+    "intercept_s": -624086.3559421106,
+    "mid_predicted_s": {
+     "3": 16.18120519327931,
+     "6": 28.713185663917102,
+     "9": 42.99904391239397
+    }
+   },
+   "b": {
+    "rate": 1.0002841815284689,
+    "intercept_s": -624086.3559421106,
+    "mid_predicted_s": {
+     "3": 16.18120519327931,
+     "6": 28.713185663917102,
+     "9": 42.99904391239397
+    }
+   }
+  },
+  "null_windows": [
+   {
+    "anchor_video_s": 9.1,
+    "decoded": true,
+    "a_frame": null,
+    "a_score": null,
+    "b_frame": null,
+    "b_votes": 0,
+    "b_point_frames": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   {
+    "anchor_video_s": 14.1,
+    "decoded": true,
+    "a_frame": null,
+    "a_score": null,
+    "b_frame": null,
+    "b_votes": 1,
+    "b_point_frames": [
+     null,
+     398,
+     null,
+     null,
+     447
+    ]
+   },
+   {
+    "anchor_video_s": 23.35,
+    "decoded": true,
+    "a_frame": 674,
+    "a_score": 23.835,
+    "b_frame": null,
+    "b_votes": 3,
+    "b_point_frames": [
+     674,
+     680,
+     697,
+     675,
+     674
+    ]
+   },
+   {
+    "anchor_video_s": 35.85,
+    "decoded": true,
+    "a_frame": null,
+    "a_score": null,
+    "b_frame": null,
+    "b_votes": 0,
+    "b_point_frames": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   {
+    "anchor_video_s": 41.1,
+    "decoded": true,
+    "a_frame": null,
+    "a_score": null,
+    "b_frame": null,
+    "b_votes": 1,
+    "b_point_frames": [
+     null,
+     1208,
+     null,
+     1211,
+     null
+    ]
+   }
+  ],
+  "null_scanned_s": 8.75,
+  "post_reset_null": {
+   "scanned_s": 1.447,
+   "decoded": true,
+   "a_frame": null,
+   "a_score": null,
+   "b_frame": null,
+   "b_votes": 0,
+   "b_point_frames": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  }
+ },
+ {
+  "segment": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/die5-compare-phase2-20260925/XR2_LA_settle/iPhone_XR2_20260924_103427/segment_00000.json",
+  "device": "iPhone_XR2",
+  "park": "SLS 2015 Los Angeles",
+  "frame_count": 1696,
+  "markers": [
+   {
+    "wda_action_sequence": 0,
+    "role": "start",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 623985.145486125,
+    "approx_video_s": 1.4585,
+    "decoded": true,
+    "a_frame": 45,
+    "a_score": 28.513,
+    "b_frame": 45,
+    "b_votes": 5,
+    "b_point_frames": [
+     45,
+     45,
+     45,
+     45,
+     45
+    ]
+   },
+   {
+    "wda_action_sequence": 3,
+    "role": "mid",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 623997.49758025,
+    "approx_video_s": 13.8108,
+    "decoded": true,
+    "a_frame": 415,
+    "a_score": 31.973,
+    "b_frame": 415,
+    "b_votes": 5,
+    "b_point_frames": [
+     415,
+     415,
+     415,
+     415,
+     415
+    ]
+   },
+   {
+    "wda_action_sequence": 6,
+    "role": "mid",
+    "marker": "single",
+    "wda_submitted_monotonic_s": 624008.9864225,
+    "approx_video_s": 25.2999,
+    "decoded": true,
+    "a_frame": 759,
+    "a_score": 32.045,
+    "b_frame": null,
+    "b_votes": 1,
+    "b_point_frames": [
+     759,
+     null,
+     null,
+     872,
+     null
+    ]
+   },
+   {
+    "wda_action_sequence": 9,
+    "role": "mid",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 624020.593693375,
+    "approx_video_s": 36.9073,
+    "decoded": true,
+    "a_frame": 1107,
+    "a_score": 28.063,
+    "b_frame": 1107,
+    "b_votes": 5,
+    "b_point_frames": [
+     1107,
+     1107,
+     1107,
+     1107,
+     1107
+    ]
+   },
+   {
+    "wda_action_sequence": 12,
+    "role": "mid",
+    "marker": "single",
+    "wda_submitted_monotonic_s": 624031.7707604584,
+    "approx_video_s": 48.0846,
+    "decoded": true,
+    "a_frame": 1442,
+    "a_score": 36.591,
+    "b_frame": null,
+    "b_votes": 1,
+    "b_point_frames": [
+     1442,
+     null,
+     null,
+     1557,
+     null
+    ]
+   },
+   {
+    "wda_action_sequence": 14,
+    "role": "end",
+    "marker": "die_five",
+    "wda_submitted_monotonic_s": 624038.7818586667,
+    "approx_video_s": 55.0958,
+    "decoded": true,
+    "a_frame": 1651,
+    "a_score": 41.318,
+    "b_frame": 1651,
+    "b_votes": 5,
+    "b_point_frames": [
+     1651,
+     1651,
+     1651,
+     1651,
+     1651
+    ]
+   }
+  ],
+  "fits": {
+   "a": {
+    "rate": 0.9998811899209895,
+    "intercept_s": -623909.4047616884,
+    "mid_predicted_s": {
+     "3": 13.955626571783796,
+     "6": 25.443103831494227,
+     "9": 37.048995645716786,
+     "12": 48.2247347808443
+    }
+   },
+   "b": {
+    "rate": 0.9998811899209895,
+    "intercept_s": -623909.4047616884,
+    "mid_predicted_s": {
+     "3": 13.955626571783796,
+     "6": 25.443103831494227,
+     "9": 37.048995645716786,
+     "12": 48.2247347808443
+    }
+   }
+  },
+  "null_windows": [
+   {
+    "anchor_video_s": 8.35,
+    "decoded": true,
+    "a_frame": null,
+    "a_score": null,
+    "b_frame": null,
+    "b_votes": 0,
+    "b_point_frames": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   {
+    "anchor_video_s": 20.6,
+    "decoded": true,
+    "a_frame": null,
+    "a_score": null,
+    "b_frame": null,
+    "b_votes": 0,
+    "b_point_frames": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   {
+    "anchor_video_s": 32.1,
+    "decoded": true,
+    "a_frame": null,
+    "a_score": null,
+    "b_frame": null,
+    "b_votes": 0,
+    "b_point_frames": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   }
+  ],
+  "null_scanned_s": 5.25,
+  "post_reset_null": {
+   "scanned_s": 1.303,
+   "decoded": true,
+   "a_frame": null,
+   "a_score": null,
+   "b_frame": null,
+   "b_votes": 0,
+   "b_point_frames": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  }
+ }
+]

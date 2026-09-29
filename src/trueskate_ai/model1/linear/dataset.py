@@ -122,7 +122,7 @@ class BasicLinearClipDataset(Dataset):
                  image_height: int = DEFAULT_IMAGE_HEIGHT, image_width: int = DEFAULT_IMAGE_WIDTH,
                  cache_frames: bool = False, knots: int = 2,
                  manifest: str | Path | None = None, manifest_partition: str | None = None,
-                 verify_manifest_content: bool = True):
+                 verify_manifest_content: bool = True, decode_mode: str = "seek"):
         if sequence_length < 1 or image_height < 1 or image_width < 1:
             raise ValueError("sequence/image dimensions must be positive")
         if knots < 2:
@@ -132,6 +132,10 @@ class BasicLinearClipDataset(Dataset):
         # strict corpus can serve both — a straight constant-velocity drag is
         # simply the degenerate case whose interior knot is the midpoint.
         self.knots = int(knots)
+        from trueskate_ai.data.clip_frames import DECODE_MODES
+        if decode_mode not in DECODE_MODES:
+            raise ValueError(f"unknown decode mode {decode_mode!r}")
+        self.decode_mode = decode_mode
         self.root = Path(root).resolve()
         self.sequence_length = sequence_length
         self.image_height = image_height
@@ -182,7 +186,7 @@ class BasicLinearClipDataset(Dataset):
         meta = self._meta(sample)
         cached = self._frame_cache.get(sample)
         if cached is None:
-            source = _decode_even_frames(sample, self.sequence_length)
+            source = _decode_even_frames(sample, self.sequence_length, mode=self.decode_mode)
             frames = [cv2.cvtColor(
                 image if image.shape[:2] == (self.image_height, self.image_width)
                 else cv2.resize(image, (self.image_width, self.image_height), interpolation=cv2.INTER_AREA),

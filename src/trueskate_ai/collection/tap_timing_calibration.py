@@ -151,6 +151,91 @@ def fit_two_anchor_timeline(
     return TwoAnchorTimingFit(intercept_s=intercept, rate=rate, anchor_span_s=span)
 
 
+@dataclass(frozen=True)
+class MultiAnchorTimingFit(TwoAnchorTimingFit):
+    """Robust fit over three or more controls, with the anchors it rejected."""
+
+    inlier_indices: tuple[int, ...] = ()
+    outlier_indices: tuple[int, ...] = ()
+    residuals_s: tuple[float, ...] = ()
+
+
+def fit_multi_anchor_timeline(
+    wda_monotonic_s: Sequence[float],
+    video_s: Sequence[float],
+    *,
+    max_residual_s: float = 1.5 / 30,
+    min_inliers: int = 3,
+    min_anchor_span_s: float = 30.0,
+    min_rate: float = 0.98,
+    max_rate: float = 1.02,
+) -> MultiAnchorTimingFit:
+    """Consensus fit of ``video = intercept + rate * WDA`` over many controls.
+
+    Exploratory (M1-DIE5-COMPARE-20260925): one falsely early detection bends a
+    two-anchor fit. With few anchors a median-slope (Theil–Sen) fit is itself
+    pulled by one outlier, so every anchor pair is tried as a candidate line
+    (exhaustive RANSAC). The line agreeing with the most anchors within
+    ``max_residual_s`` wins (ties: smaller total residual), then least squares on
+    those inliers. Raises when fewer than ``min_inliers`` agree, their WDA span is
+    too short, or the rate is implausible, so callers fail closed.
+    """
+    w = np.asarray(wda_monotonic_s, dtype=np.float64)
+    v = np.asarray(video_s, dtype=np.float64)
+    if w.shape != v.shape or w.ndim != 1:
+        raise ValueError("anchor arrays must be one-dimensional and equal length")
+    if len(w) < min_inliers:
+        raise ValueError(f"multi-anchor timing needs at least {min_inliers} controls, got {len(w)}")
+    if not (np.all(np.isfinite(w)) and np.all(np.isfinite(v))):
+        raise ValueError("multi-anchor timestamps must be finite")
+    best: tuple[int, float, np.ndarray] | None = None
+    for i in range(len(w)):
+        for j in range(i + 1, len(w)):
+            if w[j] == w[i]:
+                continue
+            rate = (v[j] - v[i]) / (w[j] - w[i])
+            if not min_rate <= rate <= max_rate:
+                continue
+            residuals = np.abs(v - (v[i] + rate * (w - w[i])))
+            members = np.flatnonzero(residuals <= max_residual_s)
+            score = (len(members), -float(residuals[members].sum()))
+            if best is None or score > best[:2]:
+                best = (score[0], score[1], members)
+    if best is None:
+        raise ValueError("no plausible anchor pair for a multi-anchor fit")
+    inliers = best[2]
+    if len(inliers) < min_inliers:
+        raise ValueError(
+            f"only {len(inliers)} of {len(w)} calibration controls agree within "
+            f"{max_residual_s * 1000:.1f} ms"
+        )
+    # Refit on the inliers until the inlier set is stable, so inlier/outlier
+    # membership always refers to the final least-squares line.
+    for _ in range(len(w)):
+        rate, intercept = (float(x) for x in np.polyfit(w[inliers], v[inliers], 1))
+        residuals = v - (intercept + rate * w)
+        refreshed = np.flatnonzero(np.abs(residuals) <= max_residual_s)
+        if np.array_equal(refreshed, inliers):
+            break
+        inliers = refreshed
+        if len(inliers) < min_inliers:
+            raise ValueError("multi-anchor inliers fell below the minimum after refitting")
+    else:
+        raise ValueError("multi-anchor inlier set did not stabilise")
+    span = float(w[inliers].max() - w[inliers].min())
+    if span < min_anchor_span_s:
+        raise ValueError(f"inlier WDA span {span:.3f}s is below required {min_anchor_span_s:.3f}s")
+    if not min_rate <= rate <= max_rate:
+        raise ValueError(f"multi-anchor clock rate {rate:.6f} is outside [{min_rate}, {max_rate}]")
+    outliers = np.setdiff1d(np.arange(len(w)), inliers)
+    return MultiAnchorTimingFit(
+        intercept_s=intercept, rate=rate, anchor_span_s=span,
+        inlier_indices=tuple(int(i) for i in inliers),
+        outlier_indices=tuple(int(i) for i in outliers),
+        residuals_s=tuple(float(r) for r in residuals),
+    )
+
+
 def fit_tap_offsets(
     offsets_s: Sequence[float],
     *,

@@ -474,3 +474,93 @@ def test_aligner_cli_exits_nonzero_when_requested_calibration_rejects(monkeypatc
 
     assert exit_info.value.code == 2
     assert mov.exists()
+
+
+def test_multi_anchor_fit_ignores_one_false_early_start():
+    from trueskate_ai.collection.tap_timing_calibration import fit_multi_anchor_timeline
+
+    wda = [100.0, 115.0, 128.0, 140.0, 155.0]
+    video = [w - 97.0 for w in wda]
+    video[0] -= 0.33  # start detected ten frames early, as in the XR2 anomaly
+    two = fit_two_anchor_timeline(wda[0], video[0], wda[-1], video[-1])
+    assert abs(two.rate - 1.0) > 0.005
+    fit = fit_multi_anchor_timeline(wda, video)
+    assert fit.rate == pytest.approx(1.0, abs=1e-9)
+    assert fit.outlier_indices == (0,)
+    assert fit.inlier_indices == (1, 2, 3, 4)
+    assert fit.video_time_s(100.0) == pytest.approx(3.0)
+
+
+def test_multi_anchor_fit_fails_closed_without_agreement_or_span():
+    from trueskate_ai.collection.tap_timing_calibration import fit_multi_anchor_timeline
+
+    with pytest.raises(ValueError, match="agree"):
+        fit_multi_anchor_timeline([100.0, 120.0, 140.0], [3.0, 23.2, 43.0])
+    with pytest.raises(ValueError, match="span"):
+        fit_multi_anchor_timeline([100.0, 110.0, 120.0], [3.0, 13.0, 23.0])
+    with pytest.raises(ValueError, match="at least"):
+        fit_multi_anchor_timeline([100.0, 155.0], [3.0, 58.0])
+
+
+def test_wda_multi_anchor_calibration_rejects_a_false_early_start(monkeypatch, tmp_path):
+    aligner = _aligner_module()
+    started_at = 1000.0
+    monotonic = (100.0, 115.0, 128.0, 140.0, 156.0)
+    boundaries = ("request_entered", "preparation_started", "preparation_finished",
+                  "submitted_to_ios", "ios_completion_callback", "stability_wait_started",
+                  "stability_wait_finished", "request_finished")
+    report = {"schema_version": 1, "build_revision": "revision-a", "dropped_records": 0, "records": []}
+    for sequence, monotonic_s in enumerate(monotonic):
+        stamps = {b: {"monotonic_s": monotonic_s + i * .001,
+                      "epoch_s": started_at + (monotonic_s - 99.0) + i * .001}
+                  for i, b in enumerate(boundaries)}
+        report["records"].append({"sequence": sequence, "outcome": "success", "session_id": "s",
+                                  "missing_ios_callback": False, "ios_callback_result": True, **stamps})
+    (tmp_path / "timings.json").write_text(json.dumps(report))
+    control = {"gesture_distribution": "tap", "point": [.5, .5], "calibration_control": True}
+    manifest = {
+        "wda_action_timing_report": "timings.json", "wda_timing_revision": "revision-a",
+        "wda_action_count": 5, "timing_alignment": "wda_submitted_multi_anchor",
+        "gestures": [
+            {**control, "gesture_index": 0, "calibration_role": "start", "wda_action_sequence": 0},
+            {**control, "gesture_index": 1, "calibration_role": "mid", "wda_action_sequence": 1,
+             "calibration_marker": "single"},
+            {"gesture_index": 2, "gesture_distribution": "linear", "wda_action_sequence": 2},
+            {**control, "gesture_index": 3, "calibration_role": "mid", "wda_action_sequence": 3,
+             "calibration_marker": "single"},
+            {**control, "gesture_index": 4, "calibration_role": "end", "wda_action_sequence": 4},
+        ],
+    }
+
+    def fake_decode(_mov, *, command_video_s, **_kwargs):
+        onset = command_video_s + .10 - (.33 if command_video_s < 5 else 0.0)
+        frames, times, _point, _command = _tap_window(onset_s=.9, command_s=.4)
+        frames = [np.roll(frame, -18, axis=0) for frame in frames]
+        return frames, (times - .9 + onset).tolist()
+
+    monkeypatch.setattr(aligner, "_decode_calibration_window", fake_decode)
+    info, fit = aligner._wda_multi_anchor_calibration(
+        manifest=manifest, manifest_path=tmp_path / "segment.json",
+        mov=tmp_path / "segment.mov", started_at=started_at, fps=30,
+        search_after_s=2.0, resize_width=256,
+    )
+
+    assert info["method"] == "wda-submitted-multi-centre-controls-v1"
+    assert (info["inliers"], info["outliers"]) == (3, 1)
+    assert [d["inlier"] for d in info["detections"]] == [False, True, True, True]
+    assert fit.rate == pytest.approx(1.0, abs=1e-3)
+    assert fit.video_time_s(128.003) == pytest.approx(29.103, abs=.02)
+
+
+def test_multi_anchor_inlier_and_outlier_sets_partition_the_anchors():
+    from trueskate_ai.collection.tap_timing_calibration import fit_multi_anchor_timeline
+
+    wda = [100.0, 112.0, 125.0, 138.0, 150.0, 156.0]
+    video = [w - 97.0 for w in wda]
+    video[2] += 0.045   # near the tolerance edge
+    video[4] -= 0.4     # gross outlier
+    fit = fit_multi_anchor_timeline(wda, video)
+    assert set(fit.inlier_indices).isdisjoint(fit.outlier_indices)
+    assert set(fit.inlier_indices) | set(fit.outlier_indices) == set(range(len(wda)))
+    assert 4 in fit.outlier_indices
+    assert all(abs(fit.residuals_s[i]) <= 1.5 / 30 for i in fit.inlier_indices)

@@ -1,12 +1,26 @@
 # Current research status
 
-Updated 2026-09-24. Behavioural cloning is the development direction.
+Updated 2026-09-28. Behavioural cloning is the development direction.
 
 ## Model 1
 
-Current work is calibrated linear clip regression and scaling. The recorded
-13,100-clip evaluation selected seed 0 on validation (80.00% recovery), then
-exposed the 1,965-command test split once: 80.05% complete-gesture recovery.
+Current work is calibrated linear clip regression and scaling. The current
+best is **91.04%** test recovery: the 64×144 input, seed 2, trained on
+`model1_linear_good13100_20260927` and selected on validation (90.94%)
+([M1-HALFRES](experiments/M1-HALFRES-20260928.md); this was the second
+exposure of that test partition). Development now runs at 64×144 (no worse, ~4× cheaper) with a
+cosine lr schedule (validation plateau 89.17% against 87.11%
+[M1-LRDECAY](experiments/M1-LRDECAY-20260928.md)). The nested-subset curve
+shows the model is still data-limited: validation error fell 39.7% for the
+last doubling ([M1-SCALE-SUBSETS](experiments/M1-SCALE-SUBSETS-20260928.md)),
+so the next step is to collect ~9.2k more training clips. The first clean-label retrain (128×288, seed 0) scored
+**88.50%** on test. The previous
+recipe scored 80.05%; same size, park mix and split protocol
+([M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md)). Remaining
+failures are mostly end points falling short, concentrated in Kansas City,
+Los Angeles and fast gestures ([M1-DIAG](experiments/M1-DIAG-20260928.md)).
+The earlier 80.05% run selected seed 0 on validation (80.00%) and exposed the
+test split once.
 This is command-held-out evidence, not proof of unseen-park generalisation or
 the >99.9% certification target. See [evaluation record](experiments/M1-20260904.md).
 
@@ -167,17 +181,112 @@ idle and self-deleted; a final listing found zero attachments on both XRs. The
 fork and rig WDA checkouts now use clean `master` at that SHA. Collection remains
 off until an explicitly authorized workload begins.
 
-The replacement-corpus plan targets the historical 13,100-sample aggregate park
-mixture; device-by-park cells are not quotas. Completed park counts are 4,052
-Workshop, 3,809 Kansas City, 2,020 Skateboard GB 2024 (including the 310-clip
-baseline), and 2,003 Los Angeles: a subtotal of 11,884. The remaining park is
-Super Crown, with a historical target of 2,009 clips. After an operator-confirmed
-bounded Skateboard GB top-up admitted 12 strict clips, both
-XRs began finite Super Crown runs to 1,150 and 860 clips respectively. Their
-first segments admitted 10 and 12 strict clips with accepted calibration.
-Final training will use a deterministic 13,100-sample selection that
-excludes surplus clips from other parks. On 2026-09-23, the opt-in batch
-exact-PTS extractor was promoted from clean release `1b8497e` after isolated
-one-segment checks on both XRs; previous release `13554c9` remains for rollback.
+The linear replacement pool has 13,902 strict clips across five parks: 4,052
+Workshop, 3,809 Kansas City, 2,020 Skateboard GB (including its 310-clip
+baseline), 2,003 Los Angeles, and 2,018 Super Crown. The two bounded Super Crown
+runs stopped at 1,152 XR1 and 866 XR2 clips. Device-by-park cells were not
+quotas. A balanced 140-clip human audit marked 124 good, 9 mild and 7
+critical. Six critical clips were XR1/Los Angeles, where anomalous calibration
+rates closely predict the late visible trace. Across the full pool, 1,063 clips
+are in segments whose two-anchor fit rate differs from `1.0` by more than 0.2%;
+this is a screening count, not a proven error count. A blinded held-out
+24-clip check then confirmed the predicted error pattern in all twelve paired
+recordings: 22 first-trace frames were predicted exactly from the
+calibration-rate anomaly and two within one frame. This validates the
+extreme-rate timing risk, but not a universal rejection cutoff or the visual
+cause of a mistaken anchor. The intended deterministic 13,100-sample training
+selection remains on hold pending an admission decision. See
+[M1-AUDIT-20260924](experiments/M1-AUDIT-20260924.md) and
+[M1-ONSET-VALIDATION-20260924](experiments/M1-ONSET-VALIDATION-20260924.md).
+Seven new Los Angeles source videos from both XRs are retained for direct
+calibration-onset inspection. The bounded run did not reproduce the severe
+high-rate case; one XR2 segment has a weaker start detection. See
+[M1-LA-ORIGINALS-20260924](experiments/M1-LA-ORIGINALS-20260924.md).
+A bounded XR2 probe initially sent only one pointer per attempted pair because
+Selenium `ActionChains` discarded the other source. The corrected two-source
+command completed in three XR2 repetitions without leaving gameplay. The
+operator saw two simultaneous visible marks in every corrected repetition;
+no timing-calibration change follows yet. See
+[M1-MULTITAP-20260925](experiments/M1-MULTITAP-20260925.md).
+A follow-up XR2 four-touch probe omitted the single-touch control and sent
+four points in a 66-point square. Three bounded recordings stayed in gameplay;
+preliminary inspection shows four visible spots, pending operator review of
+their precise timing. See
+[M1-MULTITAP4-20260925](experiments/M1-MULTITAP4-20260925.md).
+A 7 × 13, 50-point grid sent 91 simultaneous W3C pointer sources on XR2, but
+only five requested positions visibly brightened in each of three recordings;
+command completion took 7.6–30.5 s. Thus the full-grid marker is not yet a
+usable calibration signal despite successful Appium/WDA responses. See
+[M1-MULTITAP91-20260925](experiments/M1-MULTITAP91-20260925.md).
+Unity documents five concurrent fingers for iPhone. An XR2 eight-touch probe
+with three different pointer orders also lit up only five requested positions
+per recording. The outgoing payload and deployed WDA construction loop retain
+all eight paths, so the practical limit appears downstream; the exact layer
+is unresolved. A five-point marker remains a candidate. See
+[M1-MULTITAP8-20260925](experiments/M1-MULTITAP8-20260925.md).
+A bounded XR2 die-five pilot then recorded twelve five-point calibration
+markers in three short videos. The existing local onset detector found every
+position on the same first-visible frame for all twelve markers; the existing
+centre-only detector also succeeded in this stationary scene. This establishes
+executability and local onset visibility, not yet a gain in calibration
+accuracy or a fix for the severe two-anchor anomaly. See
+[M1-DIE5-20260925](experiments/M1-DIE5-20260925.md).
+On 2026-09-23,
+the opt-in batch exact-PTS extractor was promoted from clean release `1b8497e`
+after isolated one-segment checks on both XRs; previous release `13554c9`
+remains for rollback.
 See [batch extraction evidence](experiments/M1-BATCH-EXTRACT-20260923.md).
 See [M1-RECOLLECT-20260922](experiments/M1-RECOLLECT-20260922.md).
+
+## Calibration false detections (2026-09-25, branch `research/model1-five-touch-calibration`)
+
+The weak or early start-control detections behind the Los Angeles rate
+anomalies (90/207 XR1 LA segments) coincide with the board and camera still
+moving for ~7–8 s after the pre-segment reset. The branch adds:
+
+- **Five-touch comparison** ([M1-DIE5-COMPARE](experiments/M1-DIE5-COMPARE-20260925.md),
+  [100 pt repeat](experiments/M1-DIE5-R100-20260925.md)): scored against blind
+  labels.
+  - In the heavy-fault 100 pt run, five-touch had significantly fewer gross
+    start errors than single-touch (0 vs 9 discordant, p = 0.004). It still
+    failed adoption: 3 errors when it answered, and 45% XR1 start rejections.
+  - The 100 pt spacing cut post-swipe mid rejections from 12/60 to 4/60
+    (descriptive).
+- **Timing gate** ([M1-TIMING-GATE](experiments/M1-TIMING-GATE-20260926.md)):
+  every labelled control appeared 118–174 ms after its WDA submission, and
+  every gross detector error came earlier. Held-out corpus test
+  **supported**: 90/90 high-rate segments have an early start anchor, and
+  98.7–99.7% of ordinary anchors pass.
+- **Settle wait** ([M1-SETTLE](experiments/M1-SETTLE-20260925.md)): an opt-in
+  wait before the controls. It is a manipulation-checked precaution, not a
+  validated fix.
+- **Timing screen** ([M1-SCREEN-DRAFT](experiments/M1-SCREEN-DRAFT-20260925.md)):
+  an opt-in per-clip screen for cohort manifests.
+- **Multi-anchor calibration** ([M1-MULTIANCHOR](experiments/M1-MULTIANCHOR-20260925.md)):
+  an opt-in consensus fit over extra single centre controls. It is a
+  smoke-tested candidate that needs no multi-touch.
+
+- **Corpus screen and audit** ([M1-CORPUS-AUDIT](experiments/M1-CORPUS-AUDIT-20260927.md)):
+  `corpus-screen-v1` is frozen: whole segments are excluded if the rate is off
+  by more than 0.0008 or a control lies outside 85–210 ms after its command.
+  It keeps 12,113/13,592 replacement clips (Los Angeles 938). A blind random
+  100-clip audit passed 100/100 within ±1 displayed frame, 97 exact.
+- **13,100 good labels** ([M1-TOPUP-PLAN](experiments/M1-TOPUP-PLAN-20260927.md)):
+  a settle-wait top-up (release `080bb97`) collected 722 clips, all of which
+  passed the screen, including Los Angeles (previously 47%).
+  `model1_linear_good13100_20260927` (rig
+  `tmp/final-manifest-20260927/`, fingerprint `sha256:9fadddee…`) matches the
+  historical park counts of the 80.05% corpus. A fresh blind 100-clip audit
+  passed 100/100, all exact. It is ready for the controlled retraining
+  comparison.
+
+No corpus clip was moved or deleted; exclusion is manifest-only. The rig's stable
+release is `080bb97` (rollback `1b8497e`). Exclusion, recollection
+and flag adoption await operator decisions.
+
+**Rig note (2026-09-27):** with both recorders idle (`/wda/video` null) and no
+collector running, `scripts/recover_remotexpc_attachments.sh --delete` removed
+12 XCTest attachments on XR1 (11 from before plus one from the failed
+M1-DIE5-R100 segment) and 7 on XR2. Both phones re-listed 0 remaining. One
+earlier XR2 dry run failed transiently (`tmp/Attachments` not found); a
+repeat succeeded.

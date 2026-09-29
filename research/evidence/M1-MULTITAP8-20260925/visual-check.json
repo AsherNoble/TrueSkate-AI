@@ -1,0 +1,116 @@
+{
+  "method": "Exploratory screen-brightness check: resize frames to 414x896, compare grayscale to first frame, subtract 8 intensity units, average positive change over 15x15 around each requested centre; report positions with peak score >5. Visual observation should be verified by the operator.",
+  "trials": [
+    {
+      "repetition": 1,
+      "pointer_order": "row_major",
+      "requested_points": 8,
+      "brightened_requested_positions": [
+        {
+          "x": 108,
+          "y": 415,
+          "peak_score": 45.2,
+          "peak_frame_zero_based": 158
+        },
+        {
+          "x": 174,
+          "y": 415,
+          "peak_score": 45.0,
+          "peak_frame_zero_based": 158
+        },
+        {
+          "x": 306,
+          "y": 415,
+          "peak_score": 20.35,
+          "peak_frame_zero_based": 157
+        },
+        {
+          "x": 174,
+          "y": 481,
+          "peak_score": 42.98,
+          "peak_frame_zero_based": 158
+        },
+        {
+          "x": 240,
+          "y": 481,
+          "peak_score": 41.26,
+          "peak_frame_zero_based": 158
+        }
+      ]
+    },
+    {
+      "repetition": 2,
+      "pointer_order": "reversed",
+      "requested_points": 8,
+      "brightened_requested_positions": [
+        {
+          "x": 174,
+          "y": 415,
+          "peak_score": 34.87,
+          "peak_frame_zero_based": 158
+        },
+        {
+          "x": 240,
+          "y": 415,
+          "peak_score": 35.06,
+          "peak_frame_zero_based": 158
+        },
+        {
+          "x": 108,
+          "y": 481,
+          "peak_score": 12.68,
+          "peak_frame_zero_based": 156
+        },
+        {
+          "x": 240,
+          "y": 481,
+          "peak_score": 31.74,
+          "peak_frame_zero_based": 158
+        },
+        {
+          "x": 306,
+          "y": 481,
+          "peak_score": 34.67,
+          "peak_frame_zero_based": 158
+        }
+      ]
+    },
+    {
+      "repetition": 3,
+      "pointer_order": "column_major",
+      "requested_points": 8,
+      "brightened_requested_positions": [
+        {
+          "x": 108,
+          "y": 415,
+          "peak_score": 38.2,
+          "peak_frame_zero_based": 164
+        },
+        {
+          "x": 240,
+          "y": 415,
+          "peak_score": 38.18,
+          "peak_frame_zero_based": 164
+        },
+        {
+          "x": 306,
+          "y": 415,
+          "peak_score": 38.51,
+          "peak_frame_zero_based": 164
+        },
+        {
+          "x": 174,
+          "y": 481,
+          "peak_score": 11.04,
+          "peak_frame_zero_based": 163
+        },
+        {
+          "x": 240,
+          "y": 481,
+          "peak_score": 35.02,
+          "peak_frame_zero_based": 164
+        }
+      ]
+    }
+  ]
+}

@@ -24,6 +24,13 @@ from trueskate_ai.data.cohort_manifest import (
     seal_manifest,
     validate_manifest,
 )
+from trueskate_ai.data.timing_screen import (
+    CORPUS_SCREEN_V1,
+    TimingScreen,
+    passes,
+    passes_corpus_screen_v1,
+    segment_manifest_path,
+)
 from trueskate_ai.model1.linear.audit import command_key
 from trueskate_ai.model1.linear.dataset import discover_basic_linear_samples
 
@@ -106,8 +113,17 @@ def build_linear_cohort_manifest(
     corpus_root: str | Path | None = None,
     require_provenance: bool = True,
     allowed_parks: Iterable[str] | None = None,
+    timing_screen: TimingScreen | None = None,
+    corpus_screen: str | None = None,
 ) -> dict[str, Any]:
-    """Build one content-addressed manifest from strict linear admissions."""
+    """Build one content-addressed manifest from strict linear admissions.
+
+    ``timing_screen`` (opt-in) drops clips whose predicted calibration onset
+    error exceeds its limit; parameters and exclusion counts are sealed in.
+    ``corpus_screen="corpus-screen-v1"`` (opt-in, exclusive with
+    ``timing_screen``) applies the frozen whole-segment screen of
+    M1-CORPUS-AUDIT-20260927.
+    """
     if role not in COHORT_ROLES:
         raise ValueError(f"role must be one of {sorted(COHORT_ROLES)}, got {role!r}")
     if not cohort.strip():
@@ -118,7 +134,42 @@ def build_linear_cohort_manifest(
         selection_root.relative_to(corpus_root)
     except ValueError as exc:
         raise ValueError("cohort selection root must be inside corpus_root") from exc
+    if corpus_screen not in (None, CORPUS_SCREEN_V1["name"]):
+        raise ValueError(f"unknown corpus screen {corpus_screen!r}")
+    if corpus_screen is not None and timing_screen is not None:
+        raise ValueError("use either timing_screen or corpus_screen, not both")
     samples, strict_counts = discover_basic_linear_samples(selection_root)
+    screen_record = None
+    if corpus_screen is not None:
+        import json
+
+        kept, excluded, manifests = [], Counter(), {}
+        for sample in samples:
+            meta = json.loads((Path(sample) / "meta.json").read_text())
+            path = segment_manifest_path(sample, meta)
+            if path not in manifests:
+                manifests[path] = json.loads(path.read_text())
+            if passes_corpus_screen_v1(meta, manifests[path]):
+                kept.append(sample)
+            else:
+                excluded[str(meta.get("park") or "<missing>")] += 1
+        samples = kept
+        screen_record = {**CORPUS_SCREEN_V1, "latency_window_s": list(CORPUS_SCREEN_V1["latency_window_s"]),
+                         "excluded": sum(excluded.values()),
+                         "excluded_by_park": dict(sorted(excluded.items()))}
+    elif timing_screen is not None:
+        import json
+
+        kept, excluded = [], Counter()
+        for sample in samples:
+            meta = json.loads((Path(sample) / "meta.json").read_text())
+            if passes(meta, timing_screen):
+                kept.append(sample)
+            else:
+                excluded[str(meta.get("park") or "<missing>")] += 1
+        samples = kept
+        screen_record = {**timing_screen.describe(), "excluded": sum(excluded.values()),
+                         "excluded_by_park": dict(sorted(excluded.items()))}
     entries = [_entry(corpus_root, sample, require_provenance=require_provenance) for sample in samples]
     commands = [entry["command_key"] for entry in entries]
     if len(commands) != len(set(commands)):
@@ -142,12 +193,121 @@ def build_linear_cohort_manifest(
         "coverage": cohort_coverage(entries),
         "samples": entries,
     }
+    if screen_record is not None:
+        payload["timing_screen"] = screen_record
     return seal_manifest(payload)
 
 
 def _stable_rank(seed: int, stratum: tuple[str, ...], entry: Mapping[str, Any]) -> bytes:
     identity = "\0".join((str(seed), *stratum, str(entry["content_sha256"]), str(entry["path"])))
     return hashlib.sha256(identity.encode("utf-8")).digest()
+
+
+def build_park_mix_cohort(
+    cohorts: Sequence[Mapping[str, Any]],
+    quotas: Mapping[str, int],
+    *,
+    seed: int,
+    cohort: str,
+    role: str = "training",
+) -> dict[str, Any]:
+    """Merge frozen cohorts (same root) and select exact per-park counts.
+
+    Each park keeps its ``quota`` lowest stable ranks, so surplus clips drop
+    independently of which source cohort holds them. Exact-command duplicates
+    across sources are rejected. Parks absent from ``quotas`` are excluded.
+    """
+    if role not in COHORT_ROLES:
+        raise ValueError(f"role must be one of {sorted(COHORT_ROLES)}, got {role!r}")
+    if not cohorts:
+        raise ValueError("at least one source cohort is required")
+    roots = {str(source.get("root_hint")) for source in cohorts}
+    if len(roots) != 1:
+        raise ValueError(f"source cohorts must share one root_hint, got {sorted(roots)}")
+    entries: list[dict[str, Any]] = []
+    for source in cohorts:
+        validate_manifest(source)
+        if source.get("kind") != "model1_cohort":
+            raise ValueError("park mix sources must be model1_cohort manifests")
+        entries.extend(manifest_entries(source))
+    for field in ("command_key", "path"):
+        values = [entry[field] for entry in entries]
+        if len(values) != len(set(values)):
+            raise ValueError(f"source cohorts share {len(values) - len(set(values))} duplicate {field} values")
+    by_park: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for entry in entries:
+        by_park[str(entry["park"])].append(entry)
+    selected: list[dict[str, Any]] = []
+    for park, quota in sorted(quotas.items()):
+        pool = sorted(by_park.get(park, []), key=lambda entry: _stable_rank(seed, (park,), entry))
+        if isinstance(quota, bool) or int(quota) <= 0 or len(pool) < int(quota):
+            raise ValueError(f"park {park!r}: quota {quota} but only {len(pool)} available")
+        selected.extend(pool[:int(quota)])
+    selected.sort(key=lambda entry: entry["path"])
+    return seal_manifest({
+        "schema_version": MANIFEST_SCHEMA_VERSION,
+        "kind": "model1_cohort",
+        "cohort": cohort,
+        "role": role,
+        "subtype": "linear",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "root_hint": roots.pop(),
+        "sample_count": len(selected),
+        "park_mix": {
+            "seed": seed, "quotas": dict(sorted((k, int(v)) for k, v in quotas.items())),
+            "available": {park: len(pool) for park, pool in sorted(by_park.items())},
+            "sources": [{"cohort": source["cohort"], "fingerprint": source["fingerprint"],
+                         "sample_count": source["sample_count"],
+                         "timing_screen": source.get("timing_screen")} for source in cohorts],
+        },
+        "coverage": cohort_coverage(selected),
+        "samples": selected,
+    })
+
+
+def split_cohort_by_command(
+    source: Mapping[str, Any],
+    *,
+    seed: int = 0,
+    val_fraction: float = .15,
+    test_fraction: float = .15,
+) -> dict[str, dict[str, Any]]:
+    """Split one frozen cohort exactly as the trainer's ``split_by_command`` would.
+
+    ``_split_by_key`` depends only on the set of exact command keys and the
+    seed, and the manifest ``command_key`` is the dataset's command key, so the
+    partitions equal those of an unmanifested ``split_seed`` run on the same
+    clips. Returns training, validation and certification (test) cohorts.
+    """
+    from trueskate_ai.data.clip_frames import _split_by_key
+
+    validate_manifest(source)
+    if source.get("kind") != "model1_cohort":
+        raise ValueError("command split requires a model1_cohort manifest")
+    entries = manifest_entries(source)
+    keys = tuple(str(entry["command_key"]) for entry in entries)
+    train, val, test = _split_by_key(keys, val_fraction=val_fraction,
+                                     test_fraction=test_fraction, seed=seed)
+    split = {"method": "command", "seed": seed, "val_fraction": val_fraction,
+             "test_fraction": test_fraction, "parent_fingerprint": source["fingerprint"]}
+    result = {}
+    for name, role, indices in (("train", "training", train), ("validation", "validation", val),
+                                ("test", "certification", test)):
+        chosen = [entries[i] for i in indices]
+        result[name] = seal_manifest({
+            "schema_version": MANIFEST_SCHEMA_VERSION,
+            "kind": "model1_cohort",
+            "cohort": f"{source['cohort']}__{name}",
+            "role": role,
+            "subtype": source.get("subtype", "linear"),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "root_hint": source["root_hint"],
+            "sample_count": len(chosen),
+            "command_split": split,
+            "coverage": cohort_coverage(chosen),
+            "samples": chosen,
+        })
+    return result
 
 
 def balanced_nested_order(
@@ -174,11 +334,40 @@ def balanced_nested_order(
     return order
 
 
+def proportional_nested_order(
+    entries: Sequence[Mapping[str, Any]],
+    *,
+    seed: int,
+    strata: Sequence[str] = ("device", "park"),
+) -> list[dict[str, Any]]:
+    """Return one stable order whose prefixes keep each stratum's share.
+
+    Each entry is placed at its fractional position ``(rank + 0.5) / size``
+    within its stratum, so every prefix holds each stratum within one sample
+    of its proportional count. Unlike ``balanced_nested_order`` (equal counts
+    per stratum), small rungs keep the parent's device/park mix.
+    """
+    groups: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
+    for source in entries:
+        entry = dict(source)
+        key = tuple(str(entry.get(field, "<missing>")) for field in strata)
+        groups[key].append(entry)
+    keyed = []
+    for key, values in groups.items():
+        ranked = sorted(values, key=lambda entry: _stable_rank(seed, key, entry))
+        keyed.extend(((rank + 0.5) / len(ranked), key, entry) for rank, entry in enumerate(ranked))
+    return [entry for _, _, entry in sorted(keyed, key=lambda item: (item[0], item[1]))]
+
+
+NESTING_ORDERS = ("balanced", "proportional")
+
+
 def build_nested_subset_manifests(
     training_cohort: Mapping[str, Any],
     sizes: Iterable[int] = DEFAULT_LINEAR_RUNGS,
     *,
     seed: int = 0,
+    order: str = "balanced",
 ) -> list[dict[str, Any]]:
     validate_manifest(training_cohort)
     if training_cohort.get("kind") != "model1_cohort" or training_cohort.get("role") != "training":
@@ -191,10 +380,13 @@ def build_nested_subset_manifests(
         raise ValueError("subset sizes must be strictly increasing")
     if requested[-1] > len(entries):
         raise ValueError(f"largest subset {requested[-1]} exceeds cohort size {len(entries)}")
-    order = balanced_nested_order(entries, seed=seed)
+    if order not in NESTING_ORDERS:
+        raise ValueError(f"unknown nesting order {order!r}")
+    ordered = (proportional_nested_order(entries, seed=seed) if order == "proportional"
+               else balanced_nested_order(entries, seed=seed))
     manifests = []
     for size in requested:
-        selected = order[:size]
+        selected = ordered[:size]
         manifests.append(seal_manifest({
             "schema_version": MANIFEST_SCHEMA_VERSION,
             "kind": "model1_subset",
@@ -203,6 +395,7 @@ def build_nested_subset_manifests(
             "subtype": training_cohort.get("subtype", "linear"),
             "parent_fingerprint": training_cohort["fingerprint"],
             "nesting_seed": seed,
+            **({"nesting_order": order} if order != "balanced" else {}),
             "sample_count": size,
             "coverage": cohort_coverage(selected),
             "samples": selected,

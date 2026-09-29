@@ -1,0 +1,707 @@
+{
+  "schema": "linear-onset-validation-v1",
+  "selection_seed": "2509270200",
+  "exported_at": "2026-09-27T09:26:43.644Z",
+  "labels": {
+    "000/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_233154/sls_2013_kansas_city/sample_000005": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:15:39.785Z"
+    },
+    "001/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_062840/skateboard_gb_2024/sample_000002": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:15:44.236Z"
+    },
+    "002/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260922_201220/the_workshop/sample_000006": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:15:48.202Z"
+    },
+    "003/tmp/model1-300-exact-pts-data-20260921/iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000081": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:15:58.353Z"
+    },
+    "004/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_013933/sls_2013_kansas_city/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:16:04.353Z"
+    },
+    "005/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_080945/skateboard_gb_2024/sample_000005": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:16:10.619Z"
+    },
+    "006/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_195033/sls_2015_super_crown/sample_000005": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:16:14.686Z"
+    },
+    "007/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_160208/the_workshop/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:16:20.037Z"
+    },
+    "008/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_113816/the_workshop/sample_000006": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:16:27.403Z"
+    },
+    "009/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_010808/the_workshop/sample_000005": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:16:52.487Z"
+    },
+    "010/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_123745/sls_2015_los_angeles/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:17:00.520Z"
+    },
+    "011/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_074822/skateboard_gb_2024/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:17:07.703Z"
+    },
+    "012/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_220013/sls_2015_super_crown/sample_000006": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:17:13.121Z"
+    },
+    "013/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_050120/skateboard_gb_2024/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:17:17.104Z"
+    },
+    "014/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_204405/sls_2015_super_crown/sample_000010": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:17:22.820Z"
+    },
+    "015/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_110624/the_workshop/sample_000006": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:17:28.388Z"
+    },
+    "016/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_045658/skateboard_gb_2024/sample_000009": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:17:32.054Z"
+    },
+    "017/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_053529/sls_2013_kansas_city/sample_000003": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:17:39.204Z"
+    },
+    "018/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_191303/sls_2015_super_crown/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:17:44.504Z"
+    },
+    "019/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_141000/sls_2015_los_angeles/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:17:53.154Z"
+    },
+    "020/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_231548/sls_2015_super_crown/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:17:58.154Z"
+    },
+    "021/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_182033/the_workshop/sample_000011": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:18:04.870Z"
+    },
+    "022/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_221453/sls_2015_super_crown/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:18:10.222Z"
+    },
+    "023/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_075913/skateboard_gb_2024/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:18:18.488Z"
+    },
+    "024/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_122758/sls_2015_los_angeles/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:18:25.205Z"
+    },
+    "025/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_230317/sls_2015_super_crown/sample_000006": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:18:30.621Z"
+    },
+    "026/tmp/model1-300-exact-pts-data-20260921/iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000227": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:18:34.571Z"
+    },
+    "027/tmp/model1-300-exact-pts-data-20260921/iPhone_XR2_20260920_203845/skateboard_gb_2024/sample_000047": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:18:38.738Z"
+    },
+    "028/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_130430/sls_2013_kansas_city/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:18:44.621Z"
+    },
+    "029/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_113856/sls_2013_kansas_city/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:18:48.738Z"
+    },
+    "030/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260922_185722/the_workshop/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:18:54.571Z"
+    },
+    "031/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_091954/sls_2013_kansas_city/sample_000006": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:19:00.287Z"
+    },
+    "032/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_204922/sls_2015_super_crown/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:19:04.572Z"
+    },
+    "033/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_052540/skateboard_gb_2024/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:19:08.538Z"
+    },
+    "034/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_151251/the_workshop/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:19:12.921Z"
+    },
+    "035/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_135446/sls_2013_kansas_city/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:19:16.488Z"
+    },
+    "036/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260922_193946/the_workshop/sample_000003": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:19:22.689Z"
+    },
+    "037/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_195639/sls_2015_super_crown/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:19:35.288Z"
+    },
+    "038/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_024934/the_workshop/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:19:39.155Z"
+    },
+    "039/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260923_211545/sls_2015_super_crown/sample_000005": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:19:45.705Z"
+    },
+    "040/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_231548/sls_2015_super_crown/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:20:05.556Z"
+    },
+    "041/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_110451/sls_2013_kansas_city/sample_000002": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:20:46.256Z"
+    },
+    "042/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_194752/sls_2015_super_crown/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:20:51.057Z"
+    },
+    "043/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_051701/sls_2013_kansas_city/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:20:56.507Z"
+    },
+    "044/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_002542/the_workshop/sample_000003": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:21:06.491Z"
+    },
+    "045/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_131829/skateboard_gb_2024/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:21:22.041Z"
+    },
+    "046/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_040934/the_workshop/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:21:50.457Z"
+    },
+    "047/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260922_182045/the_workshop/sample_000006": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:22:00.957Z"
+    },
+    "048/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_134412/the_workshop/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:22:05.741Z"
+    },
+    "049/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_062525/sls_2013_kansas_city/sample_000006": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:22:12.124Z"
+    },
+    "050/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_075550/sls_2013_kansas_city/sample_000010": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:22:19.557Z"
+    },
+    "051/data/model1_linear_topup_20260927/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260926_235833/sls_2013_kansas_city/sample_000002": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:22:27.142Z"
+    },
+    "052/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_130323/skateboard_gb_2024/sample_000010": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:22:34.941Z"
+    },
+    "053/data/model1_linear_topup_20260927/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260927_001638/sls_2015_los_angeles/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:22:40.957Z"
+    },
+    "054/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_115702/the_workshop/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:22:45.558Z"
+    },
+    "055/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_201707/sls_2013_kansas_city/sample_000005": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:22:49.542Z"
+    },
+    "056/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_030813/sls_2013_kansas_city/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:22:54.108Z"
+    },
+    "057/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_101940/the_workshop/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:22:58.391Z"
+    },
+    "058/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_130729/sls_2013_kansas_city/sample_000009": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:02.108Z"
+    },
+    "059/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_015656/sls_2013_kansas_city/sample_000005": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:10.225Z"
+    },
+    "060/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_182511/the_workshop/sample_000005": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:14.257Z"
+    },
+    "061/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_102543/skateboard_gb_2024/sample_000003": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:19.341Z"
+    },
+    "062/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_132208/sls_2013_kansas_city/sample_000002": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:24.010Z"
+    },
+    "063/data/model1_linear_topup_20260927/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260927_015056/sls_2015_super_crown/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:27.507Z"
+    },
+    "064/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_163236/the_workshop/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:31.308Z"
+    },
+    "065/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_180117/sls_2013_kansas_city/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:34.842Z"
+    },
+    "066/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_202832/sls_2013_kansas_city/sample_000002": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:38.959Z"
+    },
+    "067/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_171757/the_workshop/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:46.942Z"
+    },
+    "068/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_123331/skateboard_gb_2024/sample_000003": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:54.743Z"
+    },
+    "069/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_034528/sls_2013_kansas_city/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:23:58.158Z"
+    },
+    "070/data/model1_linear_topup_20260927/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260926_235332/sls_2013_kansas_city/sample_000009": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:03.009Z"
+    },
+    "071/data/model1_linear_topup_20260927/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260927_000619/sls_2013_kansas_city/sample_000009": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:11.509Z"
+    },
+    "072/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_112044/the_workshop/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:15.609Z"
+    },
+    "073/data/model1_linear_topup_20260927/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260927_000338/sls_2015_los_angeles/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:19.226Z"
+    },
+    "074/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_super_crown/iPhone_XR_20260923_220013/sls_2015_super_crown/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:24.109Z"
+    },
+    "075/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_121206/sls_2013_kansas_city/sample_000002": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:28.108Z"
+    },
+    "076/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_125835/sls_2013_kansas_city/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:32.976Z"
+    },
+    "077/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_093916/sls_2015_los_angeles/sample_000010": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:37.825Z"
+    },
+    "078/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260921_234420/skateboard_gb_2024/sample_000005": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:42.843Z"
+    },
+    "079/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_055918/skateboard_gb_2024/sample_000006": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:47.858Z"
+    },
+    "080/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_174006/the_workshop/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:53.925Z"
+    },
+    "081/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_125543/sls_2013_kansas_city/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:24:58.260Z"
+    },
+    "082/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_003534/sls_2013_kansas_city/sample_000009": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:25:02.575Z"
+    },
+    "083/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260922_200053/the_workshop/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:25:07.743Z"
+    },
+    "084/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260922_225320/sls_2013_kansas_city/sample_000006": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:25:15.593Z"
+    },
+    "085/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_093423/sls_2015_los_angeles/sample_000003": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:25:21.110Z"
+    },
+    "086/data/model1_linear_topup_20260927/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260927_000056/sls_2015_los_angeles/sample_000005": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:25:27.226Z"
+    },
+    "087/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_140644/the_workshop/sample_000009": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:25:32.227Z"
+    },
+    "088/data/model1_linear_topup_20260927/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260927_002020/sls_2015_los_angeles/sample_000004": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:25:37.860Z"
+    },
+    "089/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_095029/skateboard_gb_2024/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:25:42.393Z"
+    },
+    "090/data/model1_linear_replacement_20260922/iPhone_XR/sls_2015_los_angeles/iPhone_XR_20260922_102013/sls_2015_los_angeles/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:25:49.461Z"
+    },
+    "091/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260922_195011/the_workshop/sample_000008": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:25:53.443Z"
+    },
+    "092/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260923_015659/the_workshop/sample_000010": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:25:58.009Z"
+    },
+    "093/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_123657/sls_2013_kansas_city/sample_000002": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:26:06.560Z"
+    },
+    "094/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_011632/skateboard_gb_2024/sample_000001": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:26:13.127Z"
+    },
+    "095/data/model1_linear_replacement_20260922/iPhone_XR/the_workshop/iPhone_XR_20260922_232231/the_workshop/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:26:18.811Z"
+    },
+    "096/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_122653/sls_2013_kansas_city/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:26:24.712Z"
+    },
+    "097/data/model1_linear_replacement_20260922/iPhone_XR2/sls_2013_kansas_city/iPhone_XR2_20260923_060338/sls_2013_kansas_city/sample_000006": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:26:29.095Z"
+    },
+    "098/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_030528/skateboard_gb_2024/sample_000009": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:26:34.710Z"
+    },
+    "099/data/model1_linear_replacement_20260922/iPhone_XR2/skateboard_gb_2024/iPhone_XR2_20260922_001406/skateboard_gb_2024/sample_000007": {
+      "frame_index_0based": 7,
+      "displayed_frame_1based": 8,
+      "uncertain": false,
+      "note": "",
+      "updated_at": "2026-09-27T09:26:38.629Z"
+    }
+  }
+}

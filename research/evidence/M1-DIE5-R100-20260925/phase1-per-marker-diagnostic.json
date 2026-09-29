@@ -1,0 +1,485 @@
+{
+ "note": "Diagnostic: each marker searched from its own call time (and +0.5 s if rejected), not chained as in analyze_die_five_feasibility.py.",
+ "markers": [
+  {
+   "recording": "die5-r100-20260925/phase1/xr1/recording_1.json",
+   "offset_pt": 71,
+   "marker": 1,
+   "call_video_s": 2.603,
+   "votes": 5,
+   "point_frames": [
+    92,
+    92,
+    92,
+    92,
+    92
+   ],
+   "onset_frame": 92
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr1/recording_1.json",
+   "offset_pt": 71,
+   "marker": 2,
+   "call_video_s": 4.584,
+   "votes": 5,
+   "point_frames": [
+    147,
+    147,
+    147,
+    147,
+    147
+   ],
+   "onset_frame": 147
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr1/recording_1.json",
+   "offset_pt": 71,
+   "marker": 3,
+   "call_video_s": 6.437,
+   "votes": 5,
+   "point_frames": [
+    205,
+    205,
+    205,
+    205,
+    205
+   ],
+   "onset_frame": 205
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr1/recording_1.json",
+   "offset_pt": 71,
+   "marker": 4,
+   "call_video_s": 8.37,
+   "votes": 5,
+   "point_frames": [
+    261,
+    261,
+    261,
+    261,
+    261
+   ],
+   "onset_frame": 261
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr1/recording_2.json",
+   "offset_pt": 71,
+   "marker": 1,
+   "call_video_s": 2.627,
+   "votes": 5,
+   "point_frames": [
+    94,
+    94,
+    94,
+    94,
+    94
+   ],
+   "onset_frame": 94
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr1/recording_2.json",
+   "offset_pt": 71,
+   "marker": 2,
+   "call_video_s": 4.565,
+   "votes": 5,
+   "point_frames": [
+    154,
+    154,
+    154,
+    154,
+    154
+   ],
+   "onset_frame": 154
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr1/recording_2.json",
+   "offset_pt": 71,
+   "marker": 3,
+   "call_video_s": 6.57,
+   "votes": 5,
+   "point_frames": [
+    210,
+    210,
+    210,
+    210,
+    210
+   ],
+   "onset_frame": 210
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr1/recording_2.json",
+   "offset_pt": 71,
+   "marker": 4,
+   "call_video_s": 8.461,
+   "votes": 5,
+   "point_frames": [
+    267,
+    267,
+    267,
+    267,
+    267
+   ],
+   "onset_frame": 267
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr2/recording_1.json",
+   "offset_pt": 71,
+   "marker": 1,
+   "call_video_s": 0.734,
+   "votes": 1,
+   "point_frames": [
+    46,
+    93,
+    54,
+    65,
+    43
+   ],
+   "onset_frame": null
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr2/recording_1.json",
+   "offset_pt": 71,
+   "marker": 2,
+   "call_video_s": 2.654,
+   "votes": 2,
+   "point_frames": [
+    62,
+    93,
+    71,
+    65,
+    64
+   ],
+   "onset_frame": null
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr2/recording_1.json",
+   "offset_pt": 71,
+   "marker": 3,
+   "call_video_s": 4.552,
+   "votes": 5,
+   "point_frames": [
+    149,
+    149,
+    149,
+    149,
+    149
+   ],
+   "onset_frame": 149
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr2/recording_1.json",
+   "offset_pt": 71,
+   "marker": 4,
+   "call_video_s": 6.429,
+   "votes": 5,
+   "point_frames": [
+    206,
+    206,
+    206,
+    206,
+    206
+   ],
+   "onset_frame": 206
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr2/recording_2.json",
+   "offset_pt": 71,
+   "marker": 1,
+   "call_video_s": 0.74,
+   "votes": 1,
+   "point_frames": [
+    46,
+    92,
+    54,
+    64,
+    42
+   ],
+   "onset_frame": null
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr2/recording_2.json",
+   "offset_pt": 71,
+   "marker": 2,
+   "call_video_s": 2.647,
+   "votes": 2,
+   "point_frames": [
+    61,
+    92,
+    70,
+    64,
+    64
+   ],
+   "onset_frame": null
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr2/recording_2.json",
+   "offset_pt": 71,
+   "marker": 3,
+   "call_video_s": 4.595,
+   "votes": 5,
+   "point_frames": [
+    150,
+    150,
+    150,
+    150,
+    150
+   ],
+   "onset_frame": 150
+  },
+  {
+   "recording": "die5-r100-20260925/phase1/xr2/recording_2.json",
+   "offset_pt": 71,
+   "marker": 4,
+   "call_video_s": 7.798,
+   "votes": 5,
+   "point_frames": [
+    247,
+    247,
+    247,
+    247,
+    247
+   ],
+   "onset_frame": 247
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr1/recording_1.json",
+   "offset_pt": 35,
+   "marker": 1,
+   "call_video_s": 2.628,
+   "votes": 5,
+   "point_frames": [
+    95,
+    95,
+    95,
+    95,
+    95
+   ],
+   "onset_frame": 95
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr1/recording_1.json",
+   "offset_pt": 35,
+   "marker": 2,
+   "call_video_s": 4.66,
+   "votes": 5,
+   "point_frames": [
+    152,
+    152,
+    152,
+    152,
+    152
+   ],
+   "onset_frame": 152
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr1/recording_1.json",
+   "offset_pt": 35,
+   "marker": 3,
+   "call_video_s": 6.555,
+   "votes": 5,
+   "point_frames": [
+    209,
+    209,
+    209,
+    209,
+    209
+   ],
+   "onset_frame": 209
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr1/recording_1.json",
+   "offset_pt": 35,
+   "marker": 4,
+   "call_video_s": 8.455,
+   "votes": 5,
+   "point_frames": [
+    267,
+    267,
+    267,
+    267,
+    267
+   ],
+   "onset_frame": 267
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr1/recording_2.json",
+   "offset_pt": 35,
+   "marker": 1,
+   "call_video_s": 2.619,
+   "votes": 5,
+   "point_frames": [
+    93,
+    93,
+    93,
+    93,
+    93
+   ],
+   "onset_frame": 93
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr1/recording_2.json",
+   "offset_pt": 35,
+   "marker": 2,
+   "call_video_s": 4.538,
+   "votes": 5,
+   "point_frames": [
+    150,
+    150,
+    150,
+    150,
+    150
+   ],
+   "onset_frame": 150
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr1/recording_2.json",
+   "offset_pt": 35,
+   "marker": 3,
+   "call_video_s": 6.433,
+   "votes": 5,
+   "point_frames": [
+    207,
+    207,
+    207,
+    207,
+    207
+   ],
+   "onset_frame": 207
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr1/recording_2.json",
+   "offset_pt": 35,
+   "marker": 4,
+   "call_video_s": 8.328,
+   "votes": 5,
+   "point_frames": [
+    264,
+    264,
+    264,
+    264,
+    264
+   ],
+   "onset_frame": 264
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr2/recording_1.json",
+   "offset_pt": 35,
+   "marker": 1,
+   "call_video_s": 1.126,
+   "votes": 5,
+   "point_frames": [
+    92,
+    92,
+    92,
+    92,
+    92
+   ],
+   "onset_frame": 92
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr2/recording_1.json",
+   "offset_pt": 35,
+   "marker": 2,
+   "call_video_s": 3.038,
+   "votes": 5,
+   "point_frames": [
+    92,
+    92,
+    92,
+    92,
+    92
+   ],
+   "onset_frame": 92
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr2/recording_1.json",
+   "offset_pt": 35,
+   "marker": 3,
+   "call_video_s": 4.951,
+   "votes": 5,
+   "point_frames": [
+    150,
+    150,
+    150,
+    150,
+    150
+   ],
+   "onset_frame": 150
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr2/recording_1.json",
+   "offset_pt": 35,
+   "marker": 4,
+   "call_video_s": 6.861,
+   "votes": 5,
+   "point_frames": [
+    208,
+    208,
+    208,
+    208,
+    208
+   ],
+   "onset_frame": 208
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr2/recording_2.json",
+   "offset_pt": 35,
+   "marker": 1,
+   "call_video_s": 1.103,
+   "votes": 5,
+   "point_frames": [
+    91,
+    91,
+    91,
+    91,
+    91
+   ],
+   "onset_frame": 91
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr2/recording_2.json",
+   "offset_pt": 35,
+   "marker": 2,
+   "call_video_s": 2.99,
+   "votes": 5,
+   "point_frames": [
+    91,
+    91,
+    91,
+    91,
+    91
+   ],
+   "onset_frame": 91
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr2/recording_2.json",
+   "offset_pt": 35,
+   "marker": 3,
+   "call_video_s": 5.009,
+   "votes": 5,
+   "point_frames": [
+    152,
+    152,
+    152,
+    152,
+    152
+   ],
+   "onset_frame": 152
+  },
+  {
+   "recording": "die5-compare-phase1-20260925/xr2/recording_2.json",
+   "offset_pt": 35,
+   "marker": 4,
+   "call_video_s": 6.916,
+   "votes": 5,
+   "point_frames": [
+    209,
+    209,
+    209,
+    209,
+    209
+   ],
+   "onset_frame": 209
+  }
+ ]
+}

@@ -1,0 +1,155 @@
+{
+ "labelled": 124,
+ "uncertain": 0,
+ "unlabelled": 0,
+ "primary_la_start": {
+  "n_recordings": 30,
+  "a_gross": 12,
+  "b_gross": 3,
+  "a_no_result": 0,
+  "b_no_result": 9,
+  "discordant_a_only": 9,
+  "discordant_b_only": 0,
+  "mcnemar_exact_p": 0.00390625,
+  "discordant_recordings": [
+   {
+    "segment": "tmp/die5-r100-20260925/XR1_LA/iPhone_XR_20260924_224336/segment_00000.json",
+    "device": "iPhone_XR",
+    "a": "gross_early",
+    "b": "no_result"
+   },
+   {
+    "segment": "tmp/die5-r100-20260925/XR1_LA/iPhone_XR_20260924_224558/segment_00000.json",
+    "device": "iPhone_XR",
+    "a": "gross_early",
+    "b": "no_result"
+   },
+   {
+    "segment": "tmp/die5-r100-20260925/XR1_LA/iPhone_XR_20260924_223414/segment_00000.json",
+    "device": "iPhone_XR",
+    "a": "gross_early",
+    "b": "no_result"
+   },
+   {
+    "segment": "tmp/die5-r100-20260925/XR1_LA/iPhone_XR_20260924_224118/segment_00000.json",
+    "device": "iPhone_XR",
+    "a": "gross_early",
+    "b": "no_result"
+   },
+   {
+    "segment": "tmp/die5-r100-20260925/XR1_LA/iPhone_XR_20260924_224922/segment_00000.json",
+    "device": "iPhone_XR",
+    "a": "gross_early",
+    "b": "no_result"
+   },
+   {
+    "segment": "tmp/die5-r100-20260925/XR1_LA/iPhone_XR_20260924_225210/segment_00000.json",
+    "device": "iPhone_XR",
+    "a": "gross_early",
+    "b": "no_result"
+   },
+   {
+    "segment": "tmp/die5-r100-20260925/XR1_LA/iPhone_XR_20260924_224009/segment_00000.json",
+    "device": "iPhone_XR",
+    "a": "gross_early",
+    "b": "no_result"
+   },
+   {
+    "segment": "tmp/die5-r100-20260925/XR1_LA/iPhone_XR_20260924_225034/segment_00000.json",
+    "device": "iPhone_XR",
+    "a": "gross_early",
+    "b": "no_result"
+   },
+   {
+    "segment": "tmp/die5-r100-20260925/XR1_LA/iPhone_XR_20260924_223751/segment_00000.json",
+    "device": "iPhone_XR",
+    "a": "gross_early",
+    "b": "no_result"
+   }
+  ],
+  "a_classes": {
+   "gross_early": 12,
+   "exact": 13,
+   "within_tolerance": 5
+  },
+  "b_classes": {
+   "no_result": 9,
+   "exact": 18,
+   "gross_early": 3
+  }
+ },
+ "b_accepted": {
+  "n": 89,
+  "gross": 3,
+  "rule_of_three_upper": null
+ },
+ "b_start_rejection": {
+  "iPhone_XR": {
+   "starts": 20,
+   "b_no_result_rate": 0.45
+  },
+  "iPhone_XR2": {
+   "starts": 10,
+   "b_no_result_rate": 0.0
+  }
+ },
+ "mid_weighted_gross_rate": {
+  "a": 0.0333,
+  "b": 0.0
+ },
+ "mid_stratum_weights": {
+  "agree": 1.4,
+  "disagree_or_no_result": 1.0
+ },
+ "corner_check": {
+  "n_die_five": 44,
+  "n_single": 20,
+  "a_within_die_five": 0.9545,
+  "a_within_single": 0.9,
+  "a_median_score_ratio": 1.1674,
+  "pass": true
+ },
+ "fit_replay": {
+  "human": {
+   "segments": 30,
+   "no_fit": 0,
+   "anomalous": 0
+  },
+  "a": {
+   "segments": 30,
+   "no_fit": 0,
+   "anomalous": 8,
+   "mid_residual_frames_abs_max": 17.589,
+   "mid_residual_within_1": 0.6875
+  },
+  "b": {
+   "segments": 30,
+   "no_fit": 11,
+   "anomalous": 3,
+   "mid_residual_frames_abs_max": 10.425,
+   "mid_residual_within_1": 0.878
+  }
+ },
+ "false_alarms": {
+  "a": {
+   "steady_windows": 80,
+   "steady_alarms": 16,
+   "steady_scanned_s": 140.0,
+   "post_reset_windows": 30,
+   "post_reset_alarms": 5,
+   "post_reset_scanned_s": 46.205,
+   "steady_alarms_per_s": 0.11429,
+   "post_reset_alarms_per_s": 0.10821
+  },
+  "b": {
+   "steady_windows": 80,
+   "steady_alarms": 0,
+   "steady_scanned_s": 140.0,
+   "post_reset_windows": 30,
+   "post_reset_alarms": 0,
+   "post_reset_scanned_s": 46.205,
+   "steady_alarms_per_s": 0.0,
+   "post_reset_alarms_per_s": 0.0
+  }
+ }
+}

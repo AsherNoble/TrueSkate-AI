@@ -4,6 +4,188 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-28 — Cosine lr adopted; model still data-limited
+
+- **Cosine decay at 64×144:** the three-seed last-10 validation mean went
+  from 87.11% to **89.17%**, and the epoch-to-epoch SD fell 5–12×. Adopted.
+  [M1-LRDECAY](experiments/M1-LRDECAY-20260928.md).
+- **Nested subsets** (2,293 / 4,585 / 9,170; cosine; 64×144): 77.73% →
+  82.05% → 89.17%. Validation error fell 19.4% for the first doubling, then
+  39.7% for the second. By the fixed rule, **collect a doubling.** Kansas City
+  failures fell 32.9% → 22.8% → 16.3%.
+  [M1-SCALE-SUBSETS](experiments/M1-SCALE-SUBSETS-20260928.md).
+- The spend guard now projects from the median epoch time; one stalled epoch
+  had falsely stopped three runs.
+
+## 2026-09-28 — Half resolution is not worse
+
+- Identical recipe at 64×144 instead of 128×288, seed 0: validation last-10
+  mean 86.99% (against 85.32%), best 88.70% (against 87.63%); paired
+  McNemar p = 0.13. Kansas City and Los Angeles misses are unchanged. At
+  ~4× less compute, resolution is not the bottleneck in this range.
+  Seeds 1–2 confirmed it: the three-seed last-10 mean is 87.11% at 64, against
+  84.68% at 128; every seed is no worse. 64×144 is adopted for development.
+  The best-validation checkpoint (64 seed 2, 90.94%) scored **91.04% on test**
+  in the partition's second exposure: McNemar p = 0.0003 against the 88.50%
+  model, and +11.0 pp (+8.8 to +13.2) against 80.05%.
+  [M1-HALFRES](experiments/M1-HALFRES-20260928.md).
+
+## 2026-09-28 — Clean-label retrain: 88.50% test recovery
+
+- Same recipe, size, park mix and split protocol as the 80.05% model, on
+  `model1_linear_good13100_20260927`. All three seeds beat every original
+  seed on validation. Selected on validation only: seed 0, epoch 30 (87.63%).
+  A single test exposure scored **88.50%** (1,739/1,965): +8.45 pp, 95% CI
+  +6.2 to +10.7. [M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md).
+- **Validation autopsy:** 74% of failures involve the end point, almost all
+  falling short along the path. They concentrate in Kansas City and Los
+  Angeles (21–24%, against The Workshop's 2.4% on similar data volume) and on
+  fast gestures. An equal-weight seed ensemble lowered recovery (86.21%) and
+  was not adopted. [M1-DIAG](experiments/M1-DIAG-20260928.md).
+- **Planned, not approved:** learning-rate decay (~$25) and nested subset
+  scaling (~$24). [M1-SCALE-SUBSETS](experiments/M1-SCALE-SUBSETS-20260928.md).
+
+## 2026-09-27 — 13,100 good-label manifest passes final audit
+
+- A settle-wait top-up on release `080bb97` collected 722 clips (Los Angeles
+  331). All passed `corpus-screen-v1`, against 47% for Los Angeles before.
+- `park-mix` built `model1_linear_good13100_20260927` with the 80.05% corpus's
+  exact park counts.
+- A fresh blind 100-clip audit passed 100/100, all exact.
+  [Record](experiments/M1-CORPUS-AUDIT-20260927.md).
+
+## 2026-09-27 — Screened corpus passes blind random audit
+
+- `corpus-screen-v1` is frozen as a whole-segment rule: rate within 0.0008 and
+  controls within 85–210 ms of their commands. The latency gate was supported
+  on the held-out corpus first (90/90 high-rate segments had an early start).
+  The screen keeps 12,113/13,592 clips.
+- A blind uniform 100-clip audit passed 100/100 within one displayed frame
+  (97 exact), bounding bad clips below 3%.
+- Plan: top up ~1,480 good clips and audit a fresh 100.
+  [Record](experiments/M1-CORPUS-AUDIT-20260927.md).
+
+## 2026-09-26 — Five-touch comparisons scored; timing gate proposed
+
+- Blind labels scored for the 49.5 pt and 100 pt five-touch runs.
+  - 49.5 pt: A 1 vs B 0 gross Los Angeles start errors, p = 1.0.
+  - 100 pt, a heavy post-reset-motion session: A 12 vs B 3, 9 discordant for
+    B, p = 0.004. B's 3 errors fired before the command was sent, and it
+    rejected 45% of XR1 starts.
+  - Wider spacing cut post-swipe rejections from 12/60 to 4/60.
+- Multi-anchor fits cut leave-one-out gross errors from 36 to 9 and the worst
+  error from 26 to 2 frames.
+- All 120 labelled controls appeared 118–174 ms after WDA submission, and all
+  gross errors earlier. A latency gate is preregistered for a held-out corpus
+  test. [Record](experiments/M1-DIE5-R100-20260925.md).
+
+## 2026-09-25 — Multi-anchor consensus calibration (smoke)
+
+- An opt-in consensus fit over ≥3 single centre controls rejects anchors that
+  disagree. Offline over 44 LA segments it matched the label-free proxy.
+  Production-path smoke: 4/4 segments accepted, and one 17-frame mid outlier
+  rejected (not human-checked). Red-team: self-consistency only, accuracy
+  unproven; screen and fit gates tightened.
+  [Record](experiments/M1-MULTIANCHOR-20260925.md).
+
+## 2026-09-25 — Draft corpus timing screen
+
+- A per-clip anchor-error screen (opt-in in the cohort builder) keeps 12,628 or
+  12,517 of 13,592 replacement clips at rate thresholds 0.002 or 0.0008.
+  Red-team: 0.002 hides up to ~3-frame errors in 74 kept LA clips, so it is not
+  recommended. Los Angeles falls below its 1,261 target, so ~320 raw LA clips
+  must be recollected. A sealed LA-only blind mid-band check is prepared, not
+  labelled. [Record](experiments/M1-SCREEN-DRAFT-20260925.md).
+
+## 2026-09-25 — Post-reset settle wait (smoke)
+
+- Los Angeles boards move for ~7–8 s after the pre-segment reset, and moving
+  starts coincided with weak start detections. An opt-in settle wait produced
+  still start controls in 17/17 bounded recordings (9/30 moving without).
+  Red-team: its effect on anchor errors is untested. A confirmatory interleaved
+  test is proposed, not run. [Record](experiments/M1-SETTLE-20260925.md).
+
+## 2026-09-25 — Five-touch vs single-touch calibration (labels pending)
+
+- Preregistered and red-teamed the comparison. 30 Los Angeles recordings were
+  captured (20 XR1, 10 XR2). XR1 had no start anomaly, so the gate pauses its
+  extension. One XR2 start anomaly (+6,056 ppm): B declined to anchor. A had 7
+  false alarms in 157.5 s of no-touch footage; B had none. B rejected 12/60 mid
+  markers (post-hoc cause: early upper-corner triggers). The blind 132-item
+  viewer is ready. [Record](experiments/M1-DIE5-COMPARE-20260925.md).
+
+## 2026-09-25 — Five-touch die calibration pilot
+
+- Twelve markers across three bounded XR2 recordings lit all five requested
+  positions on the same first-visible frame. The single-centre detector also
+  succeeded in this stationary scene, so no improvement or calibration change
+  is claimed. [Record](experiments/M1-DIE5-20260925.md).
+
+## 2026-09-25 — Eight-touch XR2 limit probe
+
+- Unity documents five concurrent iPhone touches. Three XR2 recordings sent
+  eight distinct touch sources in different orders; exactly five requested
+  positions brightened each time. The sender and deployed WDA event builder
+  retain all eight paths; the limiting downstream layer remains unknown.
+  [Record](experiments/M1-MULTITAP8-20260925.md).
+
+## 2026-09-25 — 91-touch XR2 grid probe
+
+- Three isolated recordings captured a 7 × 13, 50-point grid command. WDA
+  returned success and gameplay remained visible, but a frame check found
+  only five requested positions brightening in each recording. The full grid
+  was not delivered visibly; command duration varied from 7.6 to 30.5 s.
+  [Record](experiments/M1-MULTITAP91-20260925.md).
+
+## 2026-09-25 — Four simultaneous XR2 touches
+
+- Removed the on-film single-touch control; sent four fingers at the corners
+  of a 66-logical-point square in three bounded recordings. All commands
+  completed without leaving gameplay; four spots are visible in a preliminary
+  frame review. Exact timing awaits operator inspection in the new viewer.
+  [Record](experiments/M1-MULTITAP4-20260925.md).
+
+## 2026-09-25 — Two-finger XR2 visibility probe
+
+- The operator found no pair in the first viewer. Selenium `ActionChains` had
+  silently retained only the last pointer source, invalidating those recordings
+  as a two-finger test. A corrected two-source payload completed in three new
+  XR2 originals, and the operator saw two simultaneous marks in each. No
+  calibration method was adopted.
+  [Record](experiments/M1-MULTITAP-20260925.md).
+
+## 2026-09-24 — Los Angeles originals retained on both XRs
+
+- A bounded four-attempt run per XR preserved seven original one-minute videos
+  with WDA reports and strict alignment. XR2 lost one attempt during save. Six
+  calibration fits were near 1.0; XR2 segment 3 was 1.001788 with a weak start
+  detection (score 10.82). The severe >1.004 case did not recur. All collectors
+  stopped at their bounds. [Record](experiments/M1-LA-ORIGINALS-20260924.md).
+
+## 2026-09-24 — Balanced audit exposed calibration outliers
+
+- Both finite Super Crown runs stopped at their bounds, bringing the five-park
+  replacement pool to 13,902 strict clips. The operator reviewed 28 random
+  clips per park: 124 good, 9 mild, 7 critical. Six critical Los Angeles clips
+  have anomalously high two-anchor calibration rates that predict their late
+  visible traces; the seventh Super Crown clip has a low-rate anomaly. A
+  corpus-wide rate screen flags 1,063 clips for investigation, not automatic
+  exclusion. Human marks and selection are preserved in
+  [M1-AUDIT-20260924](experiments/M1-AUDIT-20260924.md). Training selection is
+  paused pending independent timing validation.
+- A blinded, held-out 24-clip onset check is prepared from twelve previously
+  unseen recordings, pairing early and late gestures in high-rate Los Angeles,
+  ordinary-rate Los Angeles and low-rate other-park segments. The selection is
+  frozen before human labels; no collection was started.
+  [Protocol](experiments/M1-ONSET-VALIDATION-20260924.md).
+- The operator labelled all 24 onsets without uncertainty. High-rate Los
+  Angeles pairs had late early-gesture traces that returned to frames 8–9 near
+  the end; low-rate other-park pairs showed the reverse; ordinary-rate Los
+  Angeles pairs stayed at frame 8. An anchor-error timing model predicted
+  22/24 exact onset frames and the other two within one frame. This validates
+  the extreme-rate risk signal, not a cutoff for automatic exclusion.
+  [Labels and analysis](experiments/M1-ONSET-VALIDATION-20260924.md).
+
 ## 2026-09-24 — Replacement park top-up completed
 
 - The second bounded stage stopped at 4,052 XR1/Workshop and 3,809 XR2/Kansas

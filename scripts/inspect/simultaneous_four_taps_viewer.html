@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XR2 four simultaneous touches · three repetitions</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif}*{box-sizing:border-box}
+body{margin:0;background:#101315;color:#f0f3f5}header{padding:17px 23px;border-bottom:1px solid #394147}
+h1{font-size:1.35rem;margin:0 0 7px}p{margin:5px 0;color:#b6c3ca;line-height:1.4}
+main{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:15px}
+.card{min-width:0;background:#1b2024;border:1px solid #424b52;border-radius:9px;padding:12px}
+.card.selected{border-color:#f0be60;box-shadow:0 0 0 1px #f0be60}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px}
+.top strong{font-size:1.05rem}.status{color:#9bcfb2;font-size:.8rem}
+.screen{position:relative;margin:auto;width:min(100%,33vh);min-width:180px;background:#050607}
+video{display:block;width:100%;height:auto;aspect-ratio:828/1792}
+.screen:fullscreen{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
+.screen:fullscreen video{height:100%;width:auto;max-width:100%;aspect-ratio:auto}
+.guides{display:none;position:absolute;inset:0;pointer-events:none}
+body.show-guides .guides{display:block}.dot{position:absolute;width:20px;height:20px;border-radius:50%;border:2px solid;transform:translate(-50%,-50%);box-shadow:0 0 0 1px #000;background:#0003}
+.tl{left:42.029%;top:46.317%;border-color:#60bcff}.tr{left:57.971%;top:46.317%;border-color:#ff87c9}
+.bl{left:42.029%;top:53.683%;border-color:#51df85}.br{left:57.971%;top:53.683%;border-color:#f0be60}
+.controls{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:9px}
+button{background:#2b3339;color:#f0f3f5;border:1px solid #5a6871;border-radius:6px;padding:6px 9px;cursor:pointer;font:inherit;font-size:.84rem}
+button:hover{background:#3b454c}.events button{background:#354c56}
+input[type=range]{width:100%;margin:9px 0 2px}.readout{text-align:center;font-variant-numeric:tabular-nums;color:#d7dfe3;font-size:.87rem}
+.events{margin-top:9px}.source{display:block;text-align:center;margin-top:8px;color:#9fc9e0;font-size:.8rem}
+label{display:inline-flex;gap:7px;align-items:center;cursor:pointer}
+@media(max-width:900px){main{grid-template-columns:1fr}.screen{width:min(100%,45vh)}}
+</style></head><body><header>
+<h1>XR2 · four simultaneous touches · three repetitions</h1>
+<p>One four-finger WDA command per recording; no single-touch control. The four positions form a 66-point square centred at (207, 448) logical points. A reset tap occurred before recording started. Original recordings are rewrapped as MP4 without resampling frames.</p>
+<p>Click a trial, then use <b>← / →</b> for one recorded frame, <b>Space</b> to play or pause, or <b>1 / 2 / 3</b> to select a trial. The marks may appear well after the command begins.</p>
+<label><input type="checkbox" id="guides"> Show target positions</label>
+</header><main id="cards"></main>
+<script>
+let selected=0,cards=[];
+const nearest=(times,value)=>{let lo=0,hi=times.length-1;while(lo<hi){const mid=(lo+hi)>>1;if(times[mid]<value)lo=mid+1;else hi=mid}return lo};
+function choose(i){selected=i;cards.forEach((c,j)=>c.root.classList.toggle('selected',i===j));}
+function card(trial,i){
+ const root=document.createElement('section');root.className='card';
+ root.innerHTML=`<div class="top"><strong>Repetition ${trial.id}</strong><span class="status">Game remained in play</span></div>
+ <div class="screen"><video preload="auto" playsinline src="${trial.video}"></video><div class="guides"><i class="dot tl"></i><i class="dot tr"></i><i class="dot bl"></i><i class="dot br"></i></div></div>
+ <div class="controls"><button class="back">← Frame</button><button class="play">Play / pause</button><button class="forward">Frame →</button><button class="full">Fullscreen</button></div>
+ <input class="seek" type="range" min="0" max="${trial.pts.length-1}" value="0" aria-label="Frame for repetition ${trial.id}">
+ <div class="readout">Frame 1 / ${trial.pts.length}</div>
+ <div class="controls events"><button class="commandjump">Before command</button><button class="marksjump">Near visible marks</button></div>
+ <a class="source" href="${trial.original}">Download original .mov</a>`;
+ const video=root.querySelector('video'),seek=root.querySelector('.seek'),readout=root.querySelector('.readout');
+ let frame=0;
+ const update=()=>{readout.textContent=`Frame ${frame+1} / ${trial.pts.length} · ${trial.pts[frame].toFixed(3)} s`;seek.value=frame};
+ const show=n=>{video.pause();frame=Math.max(0,Math.min(trial.pts.length-1,n));video.currentTime=Math.min((video.duration||100)-.001,trial.pts[frame]+.001);update()};
+ root.addEventListener('click',()=>choose(i));
+ root.querySelector('.back').onclick=()=>show(frame-1);root.querySelector('.forward').onclick=()=>show(frame+1);
+ root.querySelector('.play').onclick=()=>video.paused?video.play():video.pause();
+ root.querySelector('.full').onclick=()=>root.querySelector('.screen').requestFullscreen();
+ seek.oninput=()=>show(Number(seek.value));
+ root.querySelector('.commandjump').onclick=()=>show(nearest(trial.pts,Math.max(0,trial.events[0].relative_call_start_s-.35)));
+ root.querySelector('.marksjump').onclick=()=>show(nearest(trial.pts,Math.max(0,trial.events[0].relative_call_end_s+1.15)));
+ video.addEventListener('timeupdate',()=>{if(!video.paused){frame=nearest(trial.pts,video.currentTime);update()}});
+ video.addEventListener('loadedmetadata',()=>show(nearest(trial.pts,Math.max(0,trial.events[0].relative_call_end_s+1.15))));
+ update();return{root,video,show};
+}
+fetch('viewer-data.json').then(r=>r.json()).then(data=>{
+ const holder=document.getElementById('cards');cards=data.trials.map((t,i)=>card(t,i));cards.forEach(c=>holder.append(c.root));choose(0);
+}).catch(e=>document.getElementById('cards').textContent='Viewer data failed to load: '+e);
+document.getElementById('guides').onchange=e=>document.body.classList.toggle('show-guides',e.target.checked);
+document.addEventListener('keydown',e=>{
+ if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName))return;
+ if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const c=cards[selected];if(c){const slider=c.root.querySelector('.seek');c.show(Number(slider.value)+(e.key==='ArrowRight'?1:-1))}}
+ else if(e.code==='Space'){e.preventDefault();const v=cards[selected]?.video;if(v)v.paused?v.play():v.pause()}
+ else if(['1','2','3'].includes(e.key)){choose(Number(e.key)-1)}
+});
+</script></body></html>

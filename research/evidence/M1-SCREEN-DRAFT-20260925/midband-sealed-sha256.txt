@@ -1,0 +1,9 @@
+# Current sealed mid-band check: draw 4, seed 2509250455, LA ordinary controls
+459e397344b48be4dad9cb9c2471f9e3fc8eeabf2c9120edd3368a4064496e49  /Users/training-server/trueskate-ai-runtime/tmp/model1-midband-onset-validation-20260925/predictions.json
+f9c27441d11dad48424bfd116efdb6b0bb8a9d18da85a966508785d7c4dc7f89  /Users/training-server/trueskate-ai-runtime/tmp/model1-midband-onset-validation-20260925/selection.json
+# Superseded before any viewing or labelling:
+# draw 3, seed 2509250317, bands 1.0012-1.002 / 0.998-0.9988, quotas 6/1/5, other-park ordinary controls
+9af5ec9984a5062a3ec1b003b40c6da2f99114ccf8878840722692bb2ec3affb  predictions.json (draw 3)
+818a13c6c698f3967aa3a51b1b1bf5f90054c2238f47a548907e9c5b09343eeb  selection.json (draw 3)
+# draw 1, seed 2509250317, bands 1.0008-1.002 / 0.998-0.9992, quotas 4/4/4: hashes not recorded (predictions 1.2-1.6 native frames, too weak)
+# two intermediate attempts (quotas 4/4/4 and 7/1/4 on the narrow bands) exited before writing: insufficient recordings

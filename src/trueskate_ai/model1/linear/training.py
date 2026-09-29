@@ -209,12 +209,16 @@ def basic_linear_loss(prediction: torch.Tensor, target: torch.Tensor, *,
 
 @torch.no_grad()
 def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device, *,
-                         correction: AlongPathBias | None = None) -> dict[str, float]:
+                         correction: AlongPathBias | None = None,
+                         per_sample: list | None = None) -> dict[str, float]:
     """Report independent endpoint geometry and duration errors.
 
     ``correction`` is an explicit opt-in: an along-path bias fit on a *different*
     (validation) split.  It is never fit here, so scoring a split with a
     correction cannot tune on that split.
+
+    ``per_sample`` (opt-in) receives one dict per sample in loader order, for
+    paired comparisons of two checkpoints on the same clips.
     """
     model.eval()
     start_errors: list[float] = []
@@ -244,6 +248,12 @@ def basic_linear_metrics(model: torch.nn.Module, loader, device: torch.device, *
         duration_recovered.extend((duration <= RECOVERY_DURATION_TOLERANCE_S).float().cpu().tolist())
         recovered.extend(((errors <= RECOVERY_ENDPOINT_TOLERANCE).all(dim=1)
                           & (duration <= RECOVERY_DURATION_TOLERANCE_S)).float().cpu().tolist())
+        if per_sample is not None:
+            batch_recovered = recovered[-len(start):]
+            for i in range(len(start)):
+                per_sample.append({"recovered": bool(batch_recovered[i]),
+                                   "start_error": float(start[i]), "end_error": float(end[i]),
+                                   "duration_error": float(duration[i])})
     if not start_errors:
         raise ValueError("cannot evaluate an empty loader")
     endpoint_errors = start_errors + end_errors

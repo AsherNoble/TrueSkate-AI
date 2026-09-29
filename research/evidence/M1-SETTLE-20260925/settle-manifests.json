@@ -1,0 +1,215 @@
+[
+ {
+  "manifest": "XR1_LA_settle15/iPhone_XR_20260924_104052/segment_00000.json",
+  "device": "iPhone_XR",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 7.36,
+   "differences": [
+    6.814,
+    22.181,
+    53.998,
+    52.341,
+    25.219,
+    10.047,
+    2.665,
+    0.627,
+    0.121
+   ]
+  }
+ },
+ {
+  "manifest": "XR1_LA_settle15/iPhone_XR_20260924_104211/segment_00000.json",
+  "device": "iPhone_XR",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 7.385,
+   "differences": [
+    7.509,
+    24.117,
+    51.659,
+    51.673,
+    22.551,
+    8.283,
+    2.199,
+    0.498,
+    0.111
+   ]
+  }
+ },
+ {
+  "manifest": "XR1_LA_settle15/iPhone_XR_20260924_104328/segment_00000.json",
+  "device": "iPhone_XR",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 7.539,
+   "differences": [
+    6.816,
+    22.181,
+    52.409,
+    52.121,
+    21.776,
+    6.691,
+    1.693,
+    0.378,
+    0.088
+   ]
+  }
+ },
+ {
+  "manifest": "XR1_LA_settle15/iPhone_XR_20260924_104444/segment_00000.json",
+  "device": "iPhone_XR",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 1.81,
+   "differences": [
+    0.01,
+    0.0
+   ]
+  }
+ },
+ {
+  "manifest": "XR2_LA_settle/iPhone_XR2_20260924_103154/segment_00000.json",
+  "device": "iPhone_XR2",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 6.0,
+   "settled": false,
+   "waited_s": 6.003,
+   "differences": [
+    6.952,
+    22.306,
+    40.488,
+    44.218,
+    16.344,
+    5.317,
+    1.402
+   ]
+  }
+ },
+ {
+  "manifest": "XR2_LA_settle/iPhone_XR2_20260924_103312/segment_00000.json",
+  "device": "iPhone_XR2",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 6.0,
+   "settled": false,
+   "waited_s": 6.65,
+   "differences": [
+    5.946,
+    19.229,
+    50.805,
+    49.755,
+    19.892,
+    6.654,
+    1.838,
+    0.382
+   ]
+  }
+ },
+ {
+  "manifest": "XR2_LA_settle/iPhone_XR2_20260924_103427/segment_00000.json",
+  "device": "iPhone_XR2",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 6.0,
+   "settled": false,
+   "waited_s": 6.627,
+   "differences": [
+    6.2,
+    19.612,
+    50.567,
+    49.957,
+    19.417,
+    6.688,
+    1.79,
+    0.368
+   ]
+  }
+ },
+ {
+  "manifest": "XR2_LA_settle15/iPhone_XR2_20260924_104052/segment_00000.json",
+  "device": "iPhone_XR2",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 7.412,
+   "differences": [
+    6.079,
+    19.653,
+    50.571,
+    49.972,
+    19.502,
+    6.515,
+    1.74,
+    0.365,
+    0.094
+   ]
+  }
+ },
+ {
+  "manifest": "XR2_LA_settle15/iPhone_XR2_20260924_104213/segment_00000.json",
+  "device": "iPhone_XR2",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 7.386,
+   "differences": [
+    6.103,
+    19.646,
+    49.864,
+    49.514,
+    19.1,
+    6.549,
+    1.69,
+    0.35,
+    0.091
+   ]
+  }
+ },
+ {
+  "manifest": "XR2_LA_settle15/iPhone_XR2_20260924_104330/segment_00000.json",
+  "device": "iPhone_XR2",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 2.173,
+   "differences": [
+    0.132,
+    0.059
+   ]
+  }
+ },
+ {
+  "manifest": "XR2_LA_settle15/iPhone_XR2_20260924_104441/segment_00000.json",
+  "device": "iPhone_XR2",
+  "start_settle": {
+   "threshold": 1.5,
+   "max_wait_s": 15.0,
+   "settled": true,
+   "waited_s": 7.233,
+   "differences": [
+    5.819,
+    19.27,
+    45.875,
+    42.299,
+    23.066,
+    8.371,
+    2.441,
+    0.569,
+    0.116
+   ]
+  }
+ }
+]

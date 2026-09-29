@@ -33,7 +33,10 @@ def _decode_frames(sample: Path) -> list[np.ndarray]:
         raise ValueError(f"{sample}: unreadable frames")
     return decoded
 
-def _decode_even_frames(sample: Path, count: int) -> list[np.ndarray]:
+DECODE_MODES = ("seek", "sequential")
+
+
+def _decode_even_frames(sample: Path, count: int, *, mode: str = "seek") -> list[np.ndarray]:
     """Decode only evenly selected frames when the source is a compact video.
 
     Full video decode is correct but wasteful for clip regressors that always
@@ -43,7 +46,17 @@ def _decode_even_frames(sample: Path, count: int) -> list[np.ndarray]:
     """
     if count < 1:
         raise ValueError("count must be positive")
+    if mode not in DECODE_MODES:
+        raise ValueError(f"unknown decode mode {mode!r}; choose from {DECODE_MODES}")
     paths = _frame_paths(sample)
+    if mode == "sequential" and not paths:
+        # Exact-PTS clips carry one keyframe, so per-index seeks re-decode from it
+        # (~2 s per clip on the rig) and CAP_PROP_FRAME_COUNT can under-report by
+        # one.  Decoding every stored frame in order is ~20x faster and keeps
+        # stored frame k at slot k whenever the clip holds ``count`` frames.
+        decoded = _decode_frames(sample)
+        indices = np.linspace(0, len(decoded) - 1, count).round().astype(int)
+        return [decoded[int(index)] for index in indices]
     if paths:
         indices = np.linspace(0, len(paths) - 1, count).round().astype(int)
         decoded = [cv2.imread(str(paths[int(index)]), cv2.IMREAD_COLOR) for index in indices]

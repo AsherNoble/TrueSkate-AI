@@ -1,0 +1,3 @@
+# Audit 1: seed 2509270100, corpus-screen-v1, code e456e27
+b4c42d0841ec15f65e20fc1bc5778a5fbbcb6cb3684b29c7ba718a6de6685fe3  /Users/training-server/trueskate-ai-runtime/tmp/corpus-audit-20260927/audit1/expected.json
+22e515e37e196ffe984d6512c342db824dd11c342161488d558fac5ea98ab80c  /Users/training-server/trueskate-ai-runtime/tmp/corpus-audit-20260927/audit1/selection.json

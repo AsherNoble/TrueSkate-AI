@@ -223,12 +223,123 @@ def test_train_resumes_from_an_atomic_epoch_checkpoint(tmp_path, monkeypatch):
     assert not resume_path.exists(), "successful completion must clear the stale resume snapshot"
 
 
+def test_train_budget_guard_stops_after_committed_epoch_and_final_snapshot_finalises(tmp_path, monkeypatch):
+    import scripts.model1.train_basic_linear_regressor as trainer
+
+    for index in range(12):
+        _write_sample(tmp_path, f"segment_{index}", f"sample_{index}",
+                      points=[[.20 + index * .01, .35], [.58 + index * .01, .55]])
+    monkeypatch.setattr(trainer, "_device", lambda: torch.device("cpu"))
+    resume_path = tmp_path / "resume.pth"
+    kwargs = dict(data=tmp_path, epochs=3, batch_size=2, lr=1e-3, seed=7,
+                  base_channels=2, image_width=16, image_height=36, evaluate_test=False,
+                  resume_path=resume_path, checkpoint_callback=lambda: None)
+    # A tiny cap trips after epoch 1 (spent > cap) with the snapshot committed.
+    with pytest.raises(trainer.BudgetGuardExceeded):
+        trainer.train(out=tmp_path / "capped.pth", max_hours=1e-9, **kwargs)
+    assert torch.load(resume_path, map_location="cpu", weights_only=False)["completed_epoch"] == 1
+    # Without the cap, the same run resumes from epoch 1 and completes.
+    trainer.train(out=tmp_path / "ignored.pth", **{**kwargs, "epochs": 3})
+    assert not resume_path.exists()
+    snapshot_epochs = 2
+    # A container that dies after the final epoch's snapshot must finalise from
+    # it on retry rather than raising.
+    with pytest.raises(RuntimeError, match="simulated"):
+        def die_on_second():
+            if die_on_second.calls == snapshot_epochs - 1:
+                raise RuntimeError("simulated death after last snapshot")
+            die_on_second.calls += 1
+        die_on_second.calls = 0
+        trainer.train(out=tmp_path / "late.pth", **{**kwargs, "epochs": snapshot_epochs,
+                                                    "checkpoint_callback": die_on_second})
+    assert torch.load(resume_path, map_location="cpu", weights_only=False)["completed_epoch"] == 2
+    final = trainer.train(out=tmp_path / "late.pth", **{**kwargs, "epochs": snapshot_epochs})
+    assert final["validation_is_best_of_n_epochs"] == 2 and not resume_path.exists()
+    assert final["decode_mode"] == "seek" and "torch" in final["library_versions"]
+
+
+
+
+def test_budget_projection_ignores_one_slow_epoch():
+    import scripts.model1.train_basic_linear_regressor as trainer
+
+    # Epoch 1 decodes (slow); epoch 13 stalled.  The old last-epoch projection
+    # gave 0.37 h + 27 x 287 s = 2.52 h and falsely tripped a 2 h cap.
+    seconds = [271.0] + [70.0] * 11 + [287.0]
+    projected = trainer.projected_run_seconds(seconds, 40)
+    assert projected == pytest.approx(sum(seconds) + 27 * 70.0)
+    assert projected / 3600 < 2.0
+    assert trainer.projected_run_seconds([500.0], 3) == pytest.approx(1500.0)
+    assert trainer.projected_run_seconds([500.0, 100.0, 300.0], 4) == pytest.approx(900.0 + 200.0)
+
+def test_lr_for_epoch_cosine_decays_and_constant_is_unchanged():
+    import scripts.model1.train_basic_linear_regressor as trainer
+
+    values = [trainer.lr_for_epoch(1e-3, epoch, 40, "cosine") for epoch in range(1, 41)]
+    assert values[0] == pytest.approx(1e-3)
+    assert all(later < earlier for earlier, later in zip(values, values[1:]))
+    assert 0 < values[-1] < 2e-6
+    assert all(trainer.lr_for_epoch(1e-3, epoch, 40, "constant") == 1e-3 for epoch in range(1, 41))
+    with pytest.raises(ValueError, match="unknown lr schedule"):
+        trainer.lr_for_epoch(1e-3, 1, 40, "step")
+
+
+def test_cosine_schedule_is_recorded_applied_and_bound_to_resume(tmp_path, monkeypatch):
+    import scripts.model1.train_basic_linear_regressor as trainer
+
+    for index in range(12):
+        _write_sample(tmp_path, f"segment_{index}", f"sample_{index}",
+                      points=[[.20 + index * .01, .35], [.58 + index * .01, .55]])
+    monkeypatch.setattr(trainer, "_device", lambda: torch.device("cpu"))
+    resume_path = tmp_path / "resume.pth"
+    kwargs = dict(data=tmp_path, epochs=2, batch_size=2, lr=1e-3, seed=7,
+                  base_channels=2, image_width=16, image_height=36, evaluate_test=False,
+                  resume_path=resume_path)
+
+    def stop_after_first(calls=[]):
+        calls.append(True)
+        if len(calls) == 1:
+            raise RuntimeError("simulated interruption")
+
+    with pytest.raises(RuntimeError, match="simulated interruption"):
+        trainer.train(out=tmp_path / "cosine.pth", lr_schedule="cosine",
+                      checkpoint_callback=stop_after_first, **kwargs)
+    # A constant-lr run must not resume a cosine snapshot.
+    with pytest.raises(RuntimeError, match="configuration does not match"):
+        trainer.train(out=tmp_path / "constant.pth", checkpoint_callback=lambda: None, **kwargs)
+    resumed = trainer.train(out=tmp_path / "cosine.pth", lr_schedule="cosine",
+                            checkpoint_callback=lambda: None, **kwargs)
+    assert resumed["lr_schedule"] == "cosine"
+    assert [item["lr"] for item in resumed["epoch_history"]] == pytest.approx(
+        [trainer.lr_for_epoch(1e-3, epoch, 2, "cosine") for epoch in (1, 2)])
+    with pytest.raises(ValueError, match="unknown lr schedule"):
+        trainer.train(out=tmp_path / "bad.pth", lr_schedule="step", **kwargs)
+
+
+def test_modal_wrapper_forwards_lr_schedule():
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
+    train_body = source[source.index("def train_remote("):source.index("def train_remote_cpu(")]
+    main_body = source[source.index("def main("):]
+    assert 'lr_schedule: str = "constant"' in train_body and "lr_schedule=lr_schedule," in train_body
+    assert 'lr_schedule: str = "constant"' in main_body and "lr_schedule=lr_schedule," in main_body
+
 def test_modal_training_persists_each_epoch_and_has_timeout_margin():
     source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
     train_body = source[source.index("def train_remote("):source.index("def train_remote_cpu(")]
     assert "timeout=24 * 3600" in source
     assert "resume_path=resume_checkpoint" in train_body
     assert "checkpoint_callback=models.commit" in train_body
+    # M1-RETRAIN-GOOD13100 red-team spend guards.
+    assert "_require_gpu(required_gpu)" in train_body
+    assert "is already complete" in train_body
+    assert "max_hours=max_hours" in train_body
+    assert '"opencv-python-headless==4.13.0.92"' in source and '"torch==2.12.0"' in source
+    main_body = source[source.index("def main("):]
+    assert "provider_timeout_retries: int = 1" in main_body
+    evaluate = source[source.index("def evaluate_partition_once("):source.index("def evaluate_refinement(")]
+    assert "partition: str," in evaluate and "already exists" in evaluate
+    once = source[source.index("def evaluate_test_once("):source.index("def evaluate_partition_once(")]
+    assert "the test split is scored once" in once
 
 
 def test_linear_regressor_accepts_explicit_start_time_prior():
@@ -305,6 +416,12 @@ def test_recovery_metric_requires_every_component_to_be_within_tolerance():
     assert metrics["start_recovery_accuracy"] == pytest.approx(1.0)
     assert metrics["end_recovery_accuracy"] == pytest.approx(.5)
     assert metrics["duration_recovery_accuracy"] == pytest.approx(1.0)
+    per_sample = []
+    again = basic_linear_metrics(ExactThenNearMiss(), DataLoader(loader.dataset, batch_size=2),
+                                 torch.device("cpu"), per_sample=per_sample)
+    assert again["gesture_recovery_accuracy"] == metrics["gesture_recovery_accuracy"]
+    assert [row["recovered"] for row in per_sample] == [True, False]
+    assert per_sample[1]["end_error"] > .03 >= per_sample[1]["start_error"]
 
 
 def test_linear_endpoint_map_auxiliary_requires_maps_and_is_differentiable():
@@ -446,8 +563,8 @@ def test_linear_dataset_decodes_only_selected_video_frames(monkeypatch, tmp_path
     (accepted / "frames.mp4").write_bytes(b"placeholder")
     calls: list[int] = []
 
-    def fake_decode(sample, count):
-        assert sample == accepted and count == 4
+    def fake_decode(sample, count, *, mode="seek"):
+        assert sample == accepted and count == 4 and mode == "seek"
         calls.append(count)
         return [np.full((20, 12, 3), index, np.uint8) for index in range(count)]
 
@@ -674,10 +791,11 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
             else:
                 assert "_payload_dataset_kwargs" in call, f"{name} builds a dataset without the helper"
             cursor = found + 1
-    # 18 = 17 checkpoint-backed evaluators plus the one orange-cue exception above.
+    # 19 = 18 checkpoint-backed evaluators plus the one orange-cue exception above.
     # Bumping this deliberately is the point: a new evaluator cannot land without
-    # being seen here.  Last bumped for `evaluate_test_once` (EQ-004, 2026-08-21).
-    assert constructions == 18, f"expected 18 dataset constructions, found {constructions}"
+    # being seen here.  Last bumped for `evaluate_ensemble_validation` and the
+    # manifest-backed `autopsy_failures` path (M1-DIAG, 2026-09-28).
+    assert constructions == 21, f"expected 21 dataset constructions, found {constructions}"
 
     # Resolving the shape is not the same as decoding it.  Evaluators whose
     # bodies hardcode the 5-wide start/end/duration layout must refuse a k>2
@@ -849,3 +967,37 @@ def test_seed_matches_shared_weights_across_arms_that_differ_only_in_optional_mo
     source = Path("scripts/model1/train_basic_linear_regressor.py").read_text()
     assert "generator=shuffle_generator" in source, (
         "the training DataLoader must take an explicit seed-derived generator")
+
+
+def test_sequential_decode_returns_every_stored_frame_in_order(tmp_path):
+    import cv2
+    from trueskate_ai.data.clip_frames import _decode_even_frames
+
+    sample = tmp_path / "sample"
+    sample.mkdir()
+    writer = cv2.VideoWriter(str(sample / "frames.mp4"), cv2.VideoWriter_fourcc(*"mp4v"), 30, (16, 16))
+    for index in range(32):
+        writer.write(np.full((16, 16, 3), index * 7, np.uint8))
+    writer.release()
+    frames = _decode_even_frames(sample, 32, mode="sequential")
+    assert len(frames) == 32
+    means = [float(frame.mean()) for frame in frames]
+    assert all(abs(mean - index * 7) < 4 for index, mean in enumerate(means))
+    with pytest.raises(ValueError, match="decode mode"):
+        _decode_even_frames(sample, 32, mode="bogus")
+
+
+def test_validation_ensemble_never_loads_test_and_fixes_equal_weights():
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
+    body = source[source.index("def evaluate_ensemble_validation("):]
+    body = body[:body.index("\n@app.")]
+    assert 'manifest_partition="validation"' in body
+    assert '"test"' not in body and "test_indices" not in body
+    assert "equal = score(tuple(1 / len(names) for _ in names), equal_rows)" in body
+    assert "grid_best_optimistic" in body
+    assert "raise FileExistsError" in body and "_require_gpu(required_gpu)" in body
+    autopsy = source[source.index("def autopsy_failures("):]
+    autopsy = autopsy[:autopsy.index("\n@app.") if "\n@app." in autopsy else len(autopsy)]
+    assert "manifest_partition=partition" in autopsy
+    assert 'decode_mode=str(payload.get("decode_mode") or "seek")' in autopsy
+    assert '"park": str(meta.get("park", "unknown"))' in autopsy

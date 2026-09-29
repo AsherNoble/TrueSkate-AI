@@ -237,3 +237,64 @@ def test_certification_bound_allows_at_most_twenty_failures_at_30000():
         "curved_spin": [True] * 2_999,
     })
     assert too_small["passes"] is False
+
+
+def test_park_mix_merges_cohorts_and_selects_exact_quotas(tmp_path):
+    import pytest
+
+    from trueskate_ai.model1.scaling import build_park_mix_cohort
+
+    a = _cohort(tmp_path, "a", role="training", start=0, count=8)
+    b = _cohort(tmp_path, "b", role="training", start=100, count=6)
+    quotas = {"SLS 2015 Super Crown": 5, "SLS 2013 Kansas City": 6}
+    mixed = build_park_mix_cohort([a, b], quotas, seed=3, cohort="mix")
+    assert mixed["sample_count"] == 11
+    assert mixed["coverage"]["park"] == {"SLS 2013 Kansas City": 6, "SLS 2015 Super Crown": 5}
+    assert mixed == {**build_park_mix_cohort([a, b], quotas, seed=3, cohort="mix"),
+                     "created_at": mixed["created_at"], "fingerprint": mixed["fingerprint"]}
+    with pytest.raises(ValueError, match="only"):
+        build_park_mix_cohort([a], {"SLS 2015 Super Crown": 50}, seed=3, cohort="mix")
+    with pytest.raises(ValueError, match="duplicate"):
+        build_park_mix_cohort([a, a], quotas, seed=3, cohort="mix")
+
+
+def test_command_split_matches_trainer_split_by_command(tmp_path):
+    from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset, split_by_command
+    from trueskate_ai.model1.scaling import split_cohort_by_command
+
+    cohort = _cohort(tmp_path, "c", role="training", start=0, count=40)
+    root = Path(cohort["root_hint"])
+    for seed in (0, 3):
+        parts = split_cohort_by_command(cohort, seed=seed)
+        data = BasicLinearClipDataset(root / "c")
+        train, val, test = split_by_command(data, seed=seed)
+        expected = {name: {data.sample_paths[i].relative_to(root).as_posix() for i in idx}
+                    for name, idx in (("train", train), ("validation", val), ("test", test))}
+        for name in ("train", "validation", "test"):
+            assert {e["path"] for e in parts[name]["samples"]} == expected[name]
+        assert parts["test"]["role"] == "certification"
+        assert sum(p["sample_count"] for p in parts.values()) == 40
+
+
+def test_proportional_nesting_keeps_parent_mix_and_prefixes(tmp_path):
+    root = tmp_path / "training"
+    # Skewed parent: 9 Kansas City to 3 Super Crown per device.
+    parks = ["SLS 2013 Kansas City"] * 9 + ["SLS 2015 Super Crown"] * 3
+    for index in range(24):
+        _linear_sample(root, index, device=("iPhone_XR", "iPhone_XR2")[index % 2],
+                       park=parks[(index // 2) % 12])
+    training = build_linear_cohort_manifest(root, corpus_root=tmp_path, cohort="training",
+                                            role="training")
+    subsets = build_nested_subset_manifests(training, [8, 16, 24], seed=3, order="proportional")
+    assert_deterministic_nesting(subsets)
+    assert all(item["nesting_order"] == "proportional" for item in subsets)
+    for subset in subsets:
+        n = subset["sample_count"]
+        parks_seen = subset["coverage"]["park"]
+        assert abs(parks_seen["SLS 2013 Kansas City"] - n * 0.75) <= 1
+        assert abs(parks_seen.get("SLS 2015 Super Crown", 0) - n * 0.25) <= 1
+    balanced = build_nested_subset_manifests(training, [8], seed=3)[0]
+    assert "nesting_order" not in balanced
+    assert balanced["coverage"]["park"]["SLS 2015 Super Crown"] == 4
+    with pytest.raises(ValueError, match="nesting order"):
+        build_nested_subset_manifests(training, [8], order="random")

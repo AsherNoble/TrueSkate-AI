@@ -31,7 +31,10 @@ image = (
     # gesture_sampling imports the shared CMA-ES bounds, which transitively
     # imports the device gesture module.  The trainer never opens a WebDriver
     # session, but that module declares Selenium classes at import time.
-    .pip_install("torch", "opencv-python-headless", "numpy", "scipy", "selenium")
+    # Pinned (M1-RETRAIN-GOOD13100 red-team): an unpinned rebuild silently moves
+    # decoder/numerics; opencv-python-headless now resolves to a new major (5.x).
+    .pip_install("torch==2.12.0", "opencv-python-headless==4.13.0.92", "numpy==2.4.6",
+                 "scipy==1.17.1", "selenium==4.43.0")
     .env({"PYTHONPATH": "/root/src"})
     .add_local_dir(str(_ROOT / "src" / "trueskate_ai"), remote_path="/root/src/trueskate_ai")
     .add_local_file(str(_ROOT / "scripts" / "model1" / "train_basic_linear_regressor.py"),
@@ -85,6 +88,36 @@ def _training_inputs(data_subdir: str, experiment_manifest_name: str | None,
     destination = Path("/tmp") / f"model1_shards_{shard_payload['fingerprint'][-16:]}"
     materialize_sequential_shards(shard_path, destination, verify_samples=False)
     return destination, shard_path.parent / shard_payload["experiment_manifest"]
+
+
+# Shard-staged runs may cache decoded frames when the experiment is small enough
+# for the function's RAM (~3.5 MiB of uint8 per 32x288x128 clip; 13.1k ~ 46 GiB).
+SHARD_CACHE_MAX_SAMPLES = 14_000
+
+
+def _require_gpu(required_gpu: str) -> str:
+    """Fail before any paid work if the container is not on the pinned GPU."""
+    import torch
+    name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
+    if required_gpu and required_gpu.lower() not in name.lower():
+        raise RuntimeError(f"required GPU {required_gpu!r} but container has {name!r}")
+    return name
+
+
+def _checkpoint_sha256(path: Path) -> str:
+    import hashlib
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _library_versions() -> dict:
+    import cv2
+    import numpy
+    import torch
+    return {"torch": torch.__version__, "opencv": cv2.__version__, "numpy": numpy.__version__}
 
 
 def _payload_dataset_kwargs(payloads) -> dict:
@@ -157,16 +190,28 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
                  max_grad_norm: float | None = None,
                  experiment_manifest_name: str | None = None,
                  shard_manifest_name: str | None = None,
-                 record_train_metrics: bool = False) -> dict:
+                 record_train_metrics: bool = False,
+                 decode_mode: str = "seek", max_hours: float | None = None,
+                 required_gpu: str = "", lr_schedule: str = "constant") -> dict:
+    gpu_name = _require_gpu(required_gpu)
+    checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
+    resume_checkpoint = Path("/models") / f"basic_linear_{run_label}.resume.pth"
+    if checkpoint.exists() and not resume_checkpoint.exists():
+        # A finished run: a retry or relaunch must never retrain and overwrite it.
+        raise FileExistsError(f"{checkpoint.name} is already complete; choose a new run_label")
     if shard_manifest_name is not None and cache_frames:
-        raise ValueError("sequential shards require cache_frames=False; decode from staged local SSD "
-                         "instead of retaining a >64 GiB large-rung corpus in RAM")
+        from trueskate_ai.data.sequential_shards import read_shard_manifest
+        shard_count = int(read_shard_manifest(Path("/corpus") / data_subdir / shard_manifest_name)["sample_count"])
+        if shard_count > SHARD_CACHE_MAX_SAMPLES:
+            raise ValueError(f"cache_frames with {shard_count} shard samples exceeds "
+                             f"{SHARD_CACHE_MAX_SAMPLES}; use cache_frames=False for large rungs")
     trainer = _trainer()
     training_root, experiment_path = _training_inputs(
         data_subdir, experiment_manifest_name, shard_manifest_name,
     )
-    checkpoint = Path("/models") / f"basic_linear_{run_label}.pth"
-    resume_checkpoint = Path("/models") / f"basic_linear_{run_label}.resume.pth"
+    print(f"gpu={gpu_name} versions={_library_versions()} decode_mode={decode_mode} "
+          f"cache_frames={cache_frames} max_hours={max_hours} lr_schedule={lr_schedule} "
+          f"image={image_width}x{image_height}", flush=True)
     payload = trainer.train(
         data=training_root,
         out=checkpoint,
@@ -199,9 +244,13 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
         record_train_metrics=record_train_metrics,
         resume_path=resume_checkpoint,
         checkpoint_callback=models.commit,
+        decode_mode=decode_mode,
+        max_hours=max_hours,
+        lr_schedule=lr_schedule,
     )
     result = {key: value for key, value in payload.items() if key != "state_dict"}
     result["checkpoint"] = checkpoint.name
+    result["checkpoint_sha256"] = _checkpoint_sha256(checkpoint)
     result["run_label"] = run_label
     (Path("/models") / f"basic_linear_{run_label}.json").write_text(json.dumps(result, indent=2))
     models.commit()
@@ -284,7 +333,7 @@ def train_remote_cpu(data_subdir: str, run_label: str, *, epochs: int = 40,
 @app.function(image=image, gpu=TRAIN_GPU, timeout=3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
-                       batch_size: int = 8) -> dict:
+                       batch_size: int = 8, label: str = "") -> dict:
     """Score ONE validation-selected checkpoint on the test split, once.
 
     Deliberately has no grid, no variants and no selection of any kind: a sweep
@@ -298,6 +347,12 @@ def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
     from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset, split_by_command
     from trueskate_ai.model1.linear.training import basic_linear_metrics
 
+    # ``label`` gives re-scores (e.g. a reproduction check in a new image) their
+    # own file, so the historical ``_test_once.json`` can never be overwritten.
+    suffix = f"_{label}" if label else ""
+    existing = Path("/models") / f"{Path(checkpoint_name).stem}_test_once{suffix}.json"
+    if existing.exists():
+        raise FileExistsError(f"{existing.name} exists; the test split is scored once")
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
     data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
                                   **_payload_dataset_kwargs([payload]))
@@ -308,7 +363,8 @@ def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
     model.eval()
     test = basic_linear_metrics(model, DataLoader(Subset(data, test_indices),
                                                   batch_size=batch_size), device)
-    output = {"checkpoint": checkpoint_name,
+    output = {"checkpoint": checkpoint_name, "label": label,
+              "library_versions": _library_versions(),
               "split_sizes": [len(train_indices), len(val_indices), len(test_indices)],
               "split_seed": seed,
               "knots": payload.get("knots"),
@@ -318,11 +374,172 @@ def evaluate_test_once(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
               "test": test}
     # Persist AND print: `modal run module::function` does not surface a remote
     # return value, so a result that only lives in the return is simply lost.
-    (Path("/models") / f"{Path(checkpoint_name).stem}_test_once.json").write_text(
-        json.dumps(output, indent=2, sort_keys=True))
+    existing.write_text(json.dumps(output, indent=2, sort_keys=True))
     models.commit()
     print(json.dumps(output, indent=2, sort_keys=True))
     return output
+
+
+@app.function(image=image, gpu=TRAIN_GPU, timeout=3 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def evaluate_partition_once(data_subdir: str, checkpoint_name: str, *, label: str,
+                            partition: str,
+                            experiment_manifest_name: str | None = None,
+                            shard_manifest_name: str | None = None,
+                            batch_size: int = 8, required_gpu: str = "") -> dict:
+    """Score ONE checkpoint on one partition of a sealed experiment manifest.
+
+    Used for the final test exposure and for cross-evaluating an older
+    checkpoint on the same clips. Writes aggregate metrics and per-clip results
+    (sample path, command key, recovered, errors) for paired comparisons.
+    Nothing is selected here.
+    """
+    import torch
+    from torch.utils.data import DataLoader
+    from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset
+    from trueskate_ai.model1.linear.training import basic_linear_metrics
+
+    if partition not in ("train", "validation", "test"):
+        raise ValueError(f"unknown partition {partition!r}")
+    gpu_name = _require_gpu(required_gpu)
+    models.reload()
+    out_path = Path("/models") / f"{Path(checkpoint_name).stem}_{label}_{partition}.json"
+    if out_path.exists():
+        raise FileExistsError(f"{out_path.name} already exists; a partition is scored once per label")
+    root, experiment_path = _training_inputs(data_subdir, experiment_manifest_name, shard_manifest_name)
+    if experiment_path is None:
+        raise ValueError("evaluate_partition_once requires an experiment or shard manifest")
+    payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
+    decode_mode = str(payload.get("decode_mode") or "seek")
+    data = BasicLinearClipDataset(root, manifest=experiment_path, manifest_partition=partition,
+                                  cache_frames=False, verify_manifest_content=True,
+                                  decode_mode=decode_mode, **_payload_dataset_kwargs([payload]))
+    if len(data) < 1:
+        raise ValueError(f"partition {partition!r} is empty")
+    device = torch.device("cuda")
+    model = _model_from_payload(payload, torch).to(device)
+    model.load_state_dict(payload["state_dict"])
+    model.eval()
+    per_sample: list = []
+    with torch.no_grad():
+        metrics = basic_linear_metrics(model, DataLoader(data, batch_size=batch_size, shuffle=False),
+                                       device, per_sample=per_sample)
+    if len(per_sample) != len(data):
+        raise RuntimeError("per-sample results do not cover the partition")
+    rows = [{"path": str(path.relative_to(data.root)), "command_key": key, **result}
+            for path, key, result in zip(data.sample_paths, data.command_keys, per_sample)]
+    output = {"checkpoint": checkpoint_name, "label": label, "partition": partition,
+              "experiment_manifest": str(experiment_path.name),
+              "experiment_manifest_fingerprint": data.manifest_fingerprint,
+              "model_type": payload.get("model_type"),
+              "checkpoint_sha256": _checkpoint_sha256(Path("/models") / checkpoint_name),
+              "decode_mode": decode_mode, "gpu": gpu_name, "library_versions": _library_versions(),
+              "validation_reported_at_train_time": payload.get("validation"),
+              "metrics": metrics, "per_sample": rows}
+    out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
+    models.commit()
+    print(json.dumps({k: v for k, v in output.items() if k != "per_sample"}, indent=2, sort_keys=True))
+    return {k: v for k, v in output.items() if k != "per_sample"}
+
+
+@app.function(image=image, gpu=TRAIN_GPU, timeout=3 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def evaluate_ensemble_validation(data_subdir: str, checkpoint_names: str, *, label: str,
+                                 experiment_manifest_name: str | None = None,
+                                 shard_manifest_name: str | None = None,
+                                 batch_size: int = 8, required_gpu: str = "") -> dict:
+    """Score seed checkpoints and their ensembles on the VALIDATION partition only.
+
+    Primary: the equal-weight average, fixed in advance, so its validation score
+    is not selected on validation. Secondary: the best 0.1-grid convex weights,
+    which ARE selected on validation and therefore optimistic. The test
+    partition is never loaded.
+    """
+    import itertools
+    import torch
+    from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset
+    from trueskate_ai.model1.linear.training import basic_linear_metrics
+
+    names = [name.strip() for name in checkpoint_names.split(",") if name.strip()]
+    if len(names) < 2:
+        raise ValueError("need at least two checkpoints")
+    gpu_name = _require_gpu(required_gpu)
+    models.reload()
+    out_path = Path("/models") / f"basic_linear_ensemble_validation_{label}.json"
+    if out_path.exists():
+        raise FileExistsError(f"{out_path.name} already exists")
+    root, experiment_path = _training_inputs(data_subdir, experiment_manifest_name, shard_manifest_name)
+    if experiment_path is None:
+        raise ValueError("evaluate_ensemble_validation requires an experiment or shard manifest")
+    payloads = [torch.load(Path("/models") / name, map_location="cpu", weights_only=False)
+                for name in names]
+    decode_modes = {str(payload.get("decode_mode") or "seek") for payload in payloads}
+    if len(decode_modes) != 1:
+        raise ValueError(f"checkpoints disagree on decode mode: {sorted(decode_modes)}")
+    decode_mode = decode_modes.pop()
+    data = BasicLinearClipDataset(root, manifest=experiment_path, manifest_partition="validation",
+                                  cache_frames=False, verify_manifest_content=True,
+                                  decode_mode=decode_mode, **_payload_dataset_kwargs(payloads))
+    device = torch.device("cuda")
+    models_local = []
+    for payload in payloads:
+        model = _model_from_payload(payload, torch).to(device)
+        model.load_state_dict(payload["state_dict"])
+        model.eval()
+        models_local.append(model)
+    # One decode pass: cache every model's predictions and the targets.
+    predictions: list[list] = [[] for _ in models_local]
+    targets = []
+    with torch.no_grad():
+        for batch in torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=False):
+            frames = batch["frames"].to(device)
+            targets.append(batch["target"].to(device))
+            for index, model in enumerate(models_local):
+                predictions[index].append(model(frames))
+
+    def score(weights, per_sample=None):
+        class Cached(torch.nn.Module):
+            def forward(self, cached):
+                return sum(weight * predictions[m][int(cached)] for m, weight in enumerate(weights))
+        batches = [{"frames": torch.tensor(i), "target": target} for i, target in enumerate(targets)]
+        return basic_linear_metrics(Cached(), batches, device, per_sample=per_sample)
+
+    def rows(per_sample):
+        return [{"path": str(path.relative_to(data.root)), **result}
+                for path, result in zip(data.sample_paths, per_sample)]
+
+    singles, single_rows = {}, {}
+    for index, name in enumerate(names):
+        per_sample: list = []
+        weights = tuple(1.0 if m == index else 0.0 for m in range(len(names)))
+        singles[name] = score(weights, per_sample)
+        single_rows[name] = rows(per_sample)
+    equal_rows: list = []
+    equal = score(tuple(1 / len(names) for _ in names), equal_rows)
+    grid = []
+    for units in itertools.product(range(11), repeat=len(names)):
+        if sum(units) == 10:
+            weights = tuple(unit / 10 for unit in units)
+            grid.append((score(weights)["gesture_recovery_accuracy"], weights))
+    grid.sort(key=lambda item: -item[0])
+    output = {
+        "label": label, "partition": "validation", "checkpoints": names,
+        "checkpoint_sha256": {name: _checkpoint_sha256(Path("/models") / name) for name in names},
+        "experiment_manifest_fingerprint": data.manifest_fingerprint,
+        "decode_mode": decode_mode, "gpu": gpu_name, "library_versions": _library_versions(),
+        "samples": len(data),
+        "validation_reported_at_train_time": {name: payload.get("validation")
+                                              for name, payload in zip(names, payloads)},
+        "single": singles,
+        "equal_weight": equal,
+        "grid_best_optimistic": {"weights": dict(zip(names, grid[0][1])), "recovery": grid[0][0]},
+        "per_sample": {"single": single_rows, "equal_weight": rows(equal_rows)},
+    }
+    out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
+    models.commit()
+    summary = {k: v for k, v in output.items() if k != "per_sample"}
+    print(json.dumps(summary, indent=2, sort_keys=True))
+    return summary
 
 
 @app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
@@ -2497,9 +2714,15 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
          experiment_manifest_name: str | None = None,
          shard_manifest_name: str | None = None,
          record_train_metrics: bool = False,
-         provider_timeout_retries: int = 6) -> None:
+         provider_timeout_retries: int = 1,
+         decode_mode: str = "seek", max_hours: float | None = None,
+         required_gpu: str | None = None, lr_schedule: str = "constant") -> None:
     if provider_timeout_retries < 0:
         raise ValueError("provider_timeout_retries must be non-negative")
+    # Default the in-container GPU check to the pinned type, so a pin that fails
+    # open (env var missing -> gpu="any") cannot silently change the hardware.
+    if required_gpu is None:
+        required_gpu = "" if TRAIN_GPU.lower() == "any" else TRAIN_GPU
     kwargs = dict(
         epochs=epochs, batch_size=batch_size, lr=lr, seed=seed,
         base_channels=base_channels, split_strategy=split_strategy,
@@ -2512,7 +2735,12 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
         image_width=image_width, image_height=image_height, knots=knots,
         max_grad_norm=max_grad_norm, experiment_manifest_name=experiment_manifest_name,
         shard_manifest_name=shard_manifest_name, record_train_metrics=record_train_metrics,
+        decode_mode=decode_mode, max_hours=max_hours, required_gpu=required_gpu,
+        lr_schedule=lr_schedule,
     )
+    print(f"launch gpu={TRAIN_GPU} required_gpu={required_gpu!r} corpus_volume={CORPUS_VOLUME} "
+          f"retries={provider_timeout_retries} max_hours={max_hours} lr_schedule={lr_schedule}",
+          flush=True)
     for attempt in range(provider_timeout_retries + 1):
         try:
             result = train_remote.remote(data_subdir, run_label, **kwargs)
@@ -2525,12 +2753,13 @@ def main(data_subdir: str, run_label: str = "baseline", epochs: int = 40,
     print(json.dumps(result, indent=2, sort_keys=True))
 
 
-@app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
+@app.function(image=image, gpu=TRAIN_GPU, timeout=3 * 3600, memory=32768,
               volumes={"/corpus": corpus, "/models": models})
 def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
                      batch_size: int = 8, fresh_holdout_source: str | None = None,
                      fresh_stratify_by_device: bool = False, label: str = "autopsy",
-                     partition: str = "test") -> dict:
+                     partition: str = "test", experiment_manifest_name: str | None = None,
+                     shard_manifest_name: str | None = None, required_gpu: str = "") -> dict:
     """Classify why individual held-out clips fail, not merely how often.
 
     Recovery percentage cannot distinguish a model that missed visible evidence
@@ -2554,16 +2783,34 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
         decompose_endpoint_error, knot_columns, knot_errors, nearest_trail_gaps, target_knots,
     )
 
+    _require_gpu(required_gpu)
+    models.reload()
     payload = torch.load(Path("/models") / checkpoint_name, map_location="cpu", weights_only=False)
-    data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
-                                  **_payload_dataset_kwargs([payload]))
-    if fresh_holdout_source is None:
-        _train, val_indices, evaluated_indices = split_by_command(data, seed=seed)
+    manifest_backed = experiment_manifest_name is not None or shard_manifest_name is not None
+    if manifest_backed:
+        # A sealed experiment manifest names the partition directly; decode the
+        # clips exactly as the checkpoint was trained to see them.
+        if partition not in ("validation", "test"):
+            raise ValueError("partition must be 'validation' or 'test'")
+        if (Path("/models") / f"basic_linear_{label}.json").exists():
+            raise FileExistsError(f"basic_linear_{label}.json already exists")
+        root, experiment_path = _training_inputs(data_subdir, experiment_manifest_name,
+                                                 shard_manifest_name)
+        data = BasicLinearClipDataset(root, manifest=experiment_path, manifest_partition=partition,
+                                      cache_frames=False, verify_manifest_content=True,
+                                      decode_mode=str(payload.get("decode_mode") or "seek"),
+                                      **_payload_dataset_kwargs([payload]))
+        val_indices = evaluated_indices = list(range(len(data)))
     else:
-        _train, val_indices, evaluated_indices = _trainer().split_with_fresh_command_holdout(
-            data, fresh_source=fresh_holdout_source, seed=seed,
-            stratify_by_device=fresh_stratify_by_device,
-        )
+        data = BasicLinearClipDataset(Path("/corpus") / data_subdir, cache_frames=True,
+                                      **_payload_dataset_kwargs([payload]))
+        if fresh_holdout_source is None:
+            _train, val_indices, evaluated_indices = split_by_command(data, seed=seed)
+        else:
+            _train, val_indices, evaluated_indices = _trainer().split_with_fresh_command_holdout(
+                data, fresh_source=fresh_holdout_source, seed=seed,
+                stratify_by_device=fresh_stratify_by_device,
+            )
     # Any correction derived from this report has to be fit on validation to be
     # usable; measuring it on test and applying it there would be test-set
     # tuning dressed up as a diagnostic.
@@ -2646,6 +2893,8 @@ def autopsy_failures(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
             records.append({
                 "sample": str(data.sample_paths[index].relative_to(data.root)),
                 "device": str(meta.get("device", "unknown")),
+                "park": str(meta.get("park", "unknown")),
+                "gesture_duration": float(meta.get("duration", float("nan"))),
                 "recovered": recovered,
                 "start_error": start_error, "end_error": end_error,
                 "duration_error": duration_error,

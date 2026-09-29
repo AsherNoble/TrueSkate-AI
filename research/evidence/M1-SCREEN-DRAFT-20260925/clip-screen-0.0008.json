@@ -1,0 +1,57 @@
+{
+ "threshold": 0.0008,
+ "roots": [
+  "/Users/training-server/trueskate-ai-runtime/data/model1_linear_replacement_20260922",
+  "/Users/training-server/trueskate-ai-runtime/tmp/model1-300-exact-pts-data-20260921"
+ ],
+ "cells": {
+  "ALL": {
+   "clips": 13902,
+   "in_flagged_segments": 1351,
+   "clean_if_segment_excluded": 12551,
+   "flagged_predicted_le_1_frame": 268,
+   "clean_if_clip_screen_1_frame": 12819,
+   "flagged_predicted_le_0_5_frame": 106
+  },
+  "SLS 2013 Kansas City": {
+   "clips": 3809,
+   "in_flagged_segments": 85,
+   "clean_if_segment_excluded": 3724,
+   "flagged_predicted_le_1_frame": 36,
+   "clean_if_clip_screen_1_frame": 3760,
+   "flagged_predicted_le_0_5_frame": 16
+  },
+  "SLS 2015 Los Angeles": {
+   "clips": 2003,
+   "in_flagged_segments": 1046,
+   "flagged_predicted_le_0_5_frame": 43,
+   "flagged_predicted_le_1_frame": 132,
+   "clean_if_segment_excluded": 957,
+   "clean_if_clip_screen_1_frame": 1089
+  },
+  "SLS 2015 Super Crown": {
+   "clips": 2018,
+   "in_flagged_segments": 91,
+   "clean_if_segment_excluded": 1927,
+   "flagged_predicted_le_1_frame": 37,
+   "clean_if_clip_screen_1_frame": 1964,
+   "flagged_predicted_le_0_5_frame": 18
+  },
+  "Skateboard GB 2024": {
+   "clips": 2020,
+   "in_flagged_segments": 84,
+   "clean_if_segment_excluded": 1936,
+   "flagged_predicted_le_1_frame": 29,
+   "clean_if_clip_screen_1_frame": 1965,
+   "flagged_predicted_le_0_5_frame": 14
+  },
+  "The Workshop": {
+   "clips": 4052,
+   "in_flagged_segments": 45,
+   "clean_if_segment_excluded": 4007,
+   "flagged_predicted_le_1_frame": 34,
+   "clean_if_clip_screen_1_frame": 4041,
+   "flagged_predicted_le_0_5_frame": 15
+  }
+ }
+}

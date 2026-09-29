@@ -64,9 +64,12 @@ from trueskate_ai.sim.device import (  # noqa: E402
 )
 from trueskate_ai.sim.gestures import scale_to_device  # noqa: E402
 from trueskate_ai.sim.touch_actions import (  # noqa: E402
-    curved_drag, curved_drag_with_spin_hold, long_press, reset_position,
-    skip_loading_screen, tap,
+    curved_drag, curved_drag_with_spin_hold, long_press, make_touch_pointer,
+    perform_pointer_actions, reset_position, skip_loading_screen, tap,
 )
+from trueskate_ai.collection.die_five_calibration import DIE_FIVE_OFFSET_PT, die_five_points  # noqa: E402
+from trueskate_ai.data.control_hitboxes import point_is_safe  # noqa: E402
+from trueskate_ai.collection.scene_settle import wait_for_centre_settle  # noqa: E402
 from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
 from trueskate_ai.collection.gameplay_filter import is_editor_frame, is_menu_frame  # noqa: E402
 from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder  # noqa: E402
@@ -168,6 +171,23 @@ def _execute(worker: DeviceSession, g, *, calibration_tap_hold_s: float = 0.0) -
             num_gestures=g.num_gestures, use_spin=g.use_spin,
             spin_button_xy=spin_xy, timing_device_key=worker.device_id,
         )
+
+
+def _execute_marker(worker: DeviceSession, kind: str, hold_s: float,
+                    die_five_offset_pt: int = DIE_FIVE_OFFSET_PT) -> None:
+    """M1-DIE5-COMPARE calibration marker: one WDA request, all fingers on one tick."""
+    dw, dh = worker.device_w, worker.device_h
+    points = die_five_points(die_five_offset_pt) if kind == "die_five" else ((0.5, 0.5),)
+    fingers = []
+    for px, py in points:
+        x, y = scale_to_device(px, py, dw, dh)
+        finger = make_touch_pointer("calibration_marker")
+        finger.create_pointer_move(x=x, y=y, duration=0)
+        finger.create_pointer_down()
+        finger.create_pause(hold_s)
+        finger.create_pointer_up(0)
+        fingers.append(finger)
+    perform_pointer_actions(worker.driver, fingers)
 
 
 def _device_free_gb(udid: str) -> float | None:
@@ -333,6 +353,37 @@ def main() -> None:
                     help="ntfy-alert if device free storage drops below this.")
     ap.add_argument("--no-align", action="store_true",
                     help="Do NOT auto-spawn the aligner after each segment (save .mov+manifest only).")
+    ap.add_argument("--start-settle-threshold", type=float, default=None,
+                    help="Opt-in: after the pre-segment reset, poll screenshots until the "
+                         "screen-centre mean grey change is below this for two polls "
+                         "(or --start-settle-max-s passes). Off by default. Requires "
+                         "--reset-before-segment. The result is stored in the manifest.")
+    ap.add_argument("--start-settle-max-s", type=float, default=6.0)
+    ap.add_argument("--start-settle-required", action="store_true",
+                    help="With --start-settle-threshold: skip (do not record) a segment whose "
+                         "centre never settled within --start-settle-max-s.")
+    ap.add_argument("--end-settle-threshold", type=float, default=None,
+                    help="Opt-in (--basic-linears): before the end control, poll screenshots until "
+                         "the centre is still, for at most --end-settle-max-s. Stored per segment.")
+    ap.add_argument("--end-settle-max-s", type=float, default=3.5)
+    ap.add_argument("--die-five-experiment", action="store_true",
+                    help="M1-DIE5-COMPARE research only: start/end controls become five-touch "
+                         "die markers, optional mid markers are added, and the aligner is never "
+                         "spawned (original .mov retained, no clips). Requires --basic-linears.")
+    ap.add_argument("--die-five-offset-pt", type=int, default=DIE_FIVE_OFFSET_PT,
+                    help="With --die-five-experiment: corner offset per axis in logical points "
+                         "(35 = 49.5 pt centre-to-corner; 71 = ~100 pt).")
+    ap.add_argument("--mid-markers", type=int, default=0,
+                    help="With --die-five-experiment: extra markers after every "
+                         "--mid-marker-every payload samples, up to this many per segment.")
+    ap.add_argument("--mid-marker-every", type=int, default=2)
+    ap.add_argument("--mid-control-gap-s", type=float, default=1.0,
+                    help="Production mid controls (without --die-five-experiment): extra wait "
+                         "after the payload tail so the control lands after that clip's window.")
+    ap.add_argument("--mid-marker-kinds", default="die_five",
+                    help="Comma-separated cycle of mid marker kinds: die_five and/or single.")
+    ap.add_argument("--retain-mov", action="store_true",
+                    help="Keep each source .mov after alignment for timing diagnosis.")
     ap.add_argument("--wait-for-align", action="store_true",
                     help="Run the post-segment aligner in the foreground instead of async. "
                          "Use for a bounded calibration pilot so its go/no-go result is visible.")
@@ -447,6 +498,43 @@ def main() -> None:
         if not math.isclose(args.segment_min, 1.0):
             raise SystemExit("--basic-linears requires a one-minute --segment-min 1 recording")
 
+    if args.start_settle_required and args.start_settle_threshold is None:
+        raise SystemExit("--start-settle-required requires --start-settle-threshold")
+    if args.end_settle_threshold is not None:
+        if not args.basic_linears:
+            raise SystemExit("--end-settle-threshold requires --basic-linears")
+        if args.end_settle_threshold <= 0 or not 0 <= args.end_settle_max_s < args.end_calibration_reserve_s - 2.0:
+            raise SystemExit("--end-settle-threshold must be > 0 and --end-settle-max-s must leave "
+                             "at least 2 s of --end-calibration-reserve-s")
+    if args.start_settle_threshold is not None:
+        if not args.reset_before_segment:
+            raise SystemExit("--start-settle-threshold requires --reset-before-segment")
+        if args.start_settle_threshold <= 0 or args.start_settle_max_s < 0:
+            raise SystemExit("--start-settle-threshold must be > 0 and --start-settle-max-s >= 0")
+    mid_marker_kinds = [k.strip() for k in args.mid_marker_kinds.split(",") if k.strip()]
+    if args.mid_markers < 0 or args.mid_marker_every < 1:
+        raise SystemExit("--mid-markers must be >= 0 and --mid-marker-every >= 1")
+    if args.die_five_experiment:
+        if not args.basic_linears:
+            raise SystemExit("--die-five-experiment requires --basic-linears")
+        if args.mid_markers < 0 or args.mid_marker_every < 1:
+            raise SystemExit("--mid-markers must be >= 0 and --mid-marker-every >= 1")
+        if not mid_marker_kinds or set(mid_marker_kinds) - {"die_five", "single"}:
+            raise SystemExit("--mid-marker-kinds must list die_five and/or single")
+        if args.die_five_offset_pt < 1 or not all(
+                point_is_safe(p) for p in die_five_points(args.die_five_offset_pt)):
+            raise SystemExit("--die-five-offset-pt puts a point on a protected control")
+    elif args.die_five_offset_pt != DIE_FIVE_OFFSET_PT:
+        raise SystemExit("--die-five-offset-pt requires --die-five-experiment")
+    elif args.mid_markers:
+        # Exploratory production path: extra single centre controls, aligned by the
+        # robust multi-anchor fit (timing_alignment "wda_submitted_multi_anchor").
+        if not args.basic_linears or mid_marker_kinds != ["single"]:
+            raise SystemExit("--mid-markers without --die-five-experiment requires "
+                             "--basic-linears and --mid-marker-kinds single")
+        if args.mid_control_gap_s < 0:
+            raise SystemExit("--mid-control-gap-s must be >= 0")
+
     try:
         devices = resolve_devices(devices_arg=args.devices, personal=args.personal,
                                   all_devices=args.all_devices)
@@ -515,14 +603,17 @@ def main() -> None:
     total_gestures = 0
     total_menu_skips = 0
     start_fail_streak = 0
+    unsettled_streak = 0
     global_deadline = (time.monotonic() + args.max_hours * 3600.0) if args.max_hours else None
 
     def _device_aligner_spawn(manifest_path: Path):
-        if args.no_align:
+        if args.no_align or args.die_five_experiment:
             return
         cmd = [sys.executable, str(_HERE / "align_xctest_traces.py"),
-               "--segment", str(manifest_path), "--delete-mov",
+               "--segment", str(manifest_path),
                "--resize-width", str(args.align_resize_width)]
+        if not args.retain_mov:
+            cmd.append("--delete-mov")
         if args.align_video:
             cmd.append("--video")
             # Compact MVP clips are ultimately consumed as MP4.  Do the slice
@@ -567,8 +658,30 @@ def main() -> None:
                                      state="resetting", segment=segment_idx)
                     print(f"[seg {segment_idx}] resetting board before recording; "
                           f"settling {args.segment_reset_settle_s:.1f}s", flush=True)
+                    pre_segment_reset_epoch_s = time.time()
                     reset_position(worker.driver, dw, dh)
                     time.sleep(args.segment_reset_settle_s)
+                    start_settle = None
+                    if args.start_settle_threshold is not None:
+                        settle = wait_for_centre_settle(
+                            worker.driver.get_screenshot_as_png,
+                            threshold=args.start_settle_threshold,
+                            max_wait_s=args.start_settle_max_s,
+                        )
+                        start_settle = {"threshold": args.start_settle_threshold,
+                                        "max_wait_s": args.start_settle_max_s, **settle.summary()}
+                        print(f"[seg {segment_idx}] centre settle: settled={settle.settled} "
+                              f"after {settle.waited_s:.2f}s", flush=True)
+                        if args.start_settle_required and not settle.settled:
+                            unsettled_streak += 1
+                            print(f"[seg {segment_idx}] centre did not settle — skipping segment "
+                                  f"(nothing recorded; streak {unsettled_streak})", flush=True)
+                            if unsettled_streak >= 3:
+                                print("[collect_xctest] centre failed to settle 3 times in a row — stopping.")
+                                recovery_exit = True
+                                break
+                            continue
+                        unsettled_streak = 0
                 except Exception as exc:  # noqa: BLE001 — do not begin an unsafe segment
                     print(f"[seg {segment_idx}] pre-segment reset failed: {exc!r} — skip + recover")
                     if not _recover_session(worker):
@@ -638,6 +751,7 @@ def main() -> None:
             seg_iter = 0
             segment_events = 0
             segment_payload_samples = 0
+            segment_mid_markers = 0
             non_gameplay_streak = 0
             action_attempts = 0
 
@@ -736,7 +850,10 @@ def main() -> None:
                         )
                         else 0.0
                     )
-                    _execute(worker, g, calibration_tap_hold_s=calibration_hold_s)
+                    if args.die_five_experiment and args.basic_linears and segment_events == 0:
+                        _execute_marker(worker, "die_five", calibration_hold_s, args.die_five_offset_pt)
+                    else:
+                        _execute(worker, g, calibration_tap_hold_s=calibration_hold_s)
                 except Exception as exc:  # noqa: BLE001
                     print(f"  gesture {total_gestures} failed: {exc}")
                     if timing_capture is not None:
@@ -797,6 +914,8 @@ def main() -> None:
                 if args.basic_linears and segment_events == 0:
                     events[-1]["calibration_control"] = True
                     events[-1]["calibration_role"] = "start"
+                    if args.die_five_experiment:
+                        events[-1]["calibration_marker"] = "die_five"
                 segment_events += 1
                 total_gestures += 1
                 if g.kind != "tap":
@@ -804,6 +923,49 @@ def main() -> None:
                 _write_heartbeat(args.heartbeat_path, device=device,
                                  state="recording", segment=segment_idx)
                 time.sleep(args.tail_s)  # trick plays out into the recording (response window)
+
+                if (args.basic_linears and g.kind != "tap"
+                        and segment_mid_markers < args.mid_markers
+                        and segment_payload_samples % args.mid_marker_every == 0
+                        and time.monotonic() < payload_deadline):
+                    kind = mid_marker_kinds[segment_mid_markers % len(mid_marker_kinds)]
+                    t0 = time.time()
+                    wda_action_sequence = action_attempts
+                    action_attempts += 1
+                    try:
+                        if not args.die_five_experiment:
+                            time.sleep(args.mid_control_gap_s)
+                            t0 = time.time()
+                        _execute_marker(worker, kind, args.calibration_tap_hold_s, args.die_five_offset_pt)
+                        time.sleep(0.35)
+                        if not args.no_menu_guard:
+                            _mid_png = worker.driver.get_screenshot_as_png()
+                            if is_editor_frame(_mid_png) or is_menu_frame(
+                                    _mid_png, allow_idle_navigation=args.allow_idle_navigation):
+                                raise RuntimeError("mid marker opened non-gameplay UI")
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"[seg {segment_idx}] mid marker failed: {exc!r} — discard segment")
+                        seg_aborted = True
+                        break
+                    events.append({
+                        "gesture_index": total_gestures,
+                        "t_call_start_epoch_s": t0,
+                        "t_call_end_epoch_s": time.time(),
+                        "park": cur_park,
+                        "park_change_index": park_idx,
+                        "wda_action_sequence": wda_action_sequence,
+                        "calibration_control": True,
+                        "calibration_role": "mid",
+                        "calibration_marker": kind,
+                        "calibration_execution": "short_hold",
+                        "calibration_tap_hold_s": args.calibration_tap_hold_s,
+                        "kind": "tap",
+                        "point": [0.5, 0.5],
+                    })
+                    segment_mid_markers += 1
+                    segment_events += 1
+                    total_gestures += 1
+                    time.sleep(args.tail_s)
 
                 # Keep the board in an open, repeatable area during linear data
                 # collection.  This is deliberately after the response tail: the
@@ -856,6 +1018,20 @@ def main() -> None:
 
             if args.basic_linears and _STOP:
                 seg_aborted = True
+            end_settle = None
+            if args.basic_linears and not seg_aborted and args.end_settle_threshold is not None:
+                try:
+                    settle = wait_for_centre_settle(
+                        worker.driver.get_screenshot_as_png,
+                        threshold=args.end_settle_threshold,
+                        max_wait_s=args.end_settle_max_s,
+                    )
+                    end_settle = {"threshold": args.end_settle_threshold,
+                                  "max_wait_s": args.end_settle_max_s, **settle.summary()}
+                    print(f"[seg {segment_idx}] end centre settle: settled={settle.settled} "
+                          f"after {settle.waited_s:.2f}s", flush=True)
+                except Exception as exc:  # noqa: BLE001 — the end control still fires
+                    end_settle = {"error": repr(exc)}
             if args.basic_linears and not seg_aborted:
                 # The end control is a separate WDA request at the same exact
                 # centre point as the start control. It calibrates time only.
@@ -864,7 +1040,10 @@ def main() -> None:
                 wda_action_sequence = action_attempts
                 action_attempts += 1
                 try:
-                    _execute(worker, g, calibration_tap_hold_s=args.calibration_tap_hold_s)
+                    if args.die_five_experiment:
+                        _execute_marker(worker, "die_five", args.calibration_tap_hold_s, args.die_five_offset_pt)
+                    else:
+                        _execute(worker, g, calibration_tap_hold_s=args.calibration_tap_hold_s)
                 except Exception as exc:  # noqa: BLE001
                     print(f"[seg {segment_idx}] end calibration failed: {exc!r} — discard segment")
                     seg_aborted = True
@@ -883,6 +1062,8 @@ def main() -> None:
                         "calibration_tap_hold_s": args.calibration_tap_hold_s,
                         **g.meta(),
                     })
+                    if args.die_five_experiment:
+                        events[-1]["calibration_marker"] = "die_five"
                     segment_events += 1
                     total_gestures += 1
                     time.sleep(args.tail_s)
@@ -951,7 +1132,9 @@ def main() -> None:
                 "fps": res.fps, "codec": res.codec,
                 "capture_offset_s": args.capture_offset_s,
                 "timing_alignment": (
-                    "wda_submitted_two_anchor" if args.basic_linears else None
+                    ("wda_submitted_multi_anchor"
+                     if segment_mid_markers and not args.die_five_experiment
+                     else "wda_submitted_two_anchor") if args.basic_linears else None
                 ),
                 "wda_timing_revision": args.wda_timing_revision,
                 "wda_action_count": action_attempts if args.basic_linears else None,
@@ -967,6 +1150,13 @@ def main() -> None:
                         "recipe": args.recipe_frac, "spin_frac": args.spin_frac,
                         "static_frac": args.static_frac},
                 "num_gestures": args.num_gestures, "use_spin": args.use_spin,
+                "die_five_experiment": args.die_five_experiment,
+                "die_five_offset_pt": (
+                    args.die_five_offset_pt if args.die_five_experiment else None),
+                "start_settle": start_settle if args.reset_before_segment else None,
+                "pre_segment_reset_epoch_s": (
+                    pre_segment_reset_epoch_s if args.reset_before_segment else None),
+                "end_settle": end_settle,
                 "mov": mov_path.name, "n_gestures": len(events), "gestures": events,
             }
             manifest_path.write_text(json.dumps(manifest, indent=2))
