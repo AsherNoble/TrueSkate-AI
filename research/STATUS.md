@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-28. Behavioural cloning is the development direction.
+Updated 2026-09-29. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -8,7 +8,8 @@ Current work is calibrated linear clip regression and scaling. The current
 best is **91.04%** test recovery: the 64×144 input, seed 2, trained on
 `model1_linear_good13100_20260927` and selected on validation (90.94%)
 ([M1-HALFRES](experiments/M1-HALFRES-20260928.md); this was the second
-exposure of that test partition). Development now runs at 64×144 (no worse, ~4× cheaper) with a
+exposure of that test partition). Development now runs at 64×144 (no worse, ~4× cheaper; 32×72 lost 7.7 pp,
+[M1-QUARTERRES](experiments/M1-QUARTERRES-20260929.md)) with a
 cosine lr schedule (validation plateau 89.17% against 87.11%
 [M1-LRDECAY](experiments/M1-LRDECAY-20260928.md)). The nested-subset curve
 shows the model is still data-limited: validation error fell 39.7% for the

@@ -38,3 +38,27 @@ cosine seed 0 (**89.66%**).
 
 Also reported (descriptive): best epoch and value, the end component, and
 per-park failure rates if a validation autopsy is run.
+
+## Result (2026-09-29) — floor reached; keep 64×144
+
+`good13100_quarterres_cosine_seed0` (code `7a0a7d1`, L4; the payload
+confirms 32×72 and cosine; checkpoint SHA-256 `39cdeeb8…`). Epoch 1 took
+358 s (decode and cache); later epochs took ~38 s. Total ≈ 0.6 h ≈ **$0.8**.
+Test partition untouched.
+
+| Validation, seed 0, cosine | 64×144 | **32×72** |
+|---|---:|---:|
+| Mean of last 10 epochs | 89.66% | **82.00%** (−7.66 pp) |
+| Best (epoch) | 89.92% (40) | 82.39% (34) |
+| Start / end / duration component at best | — | 95.1% / 86.2% / 97.2% |
+
+- **Decision (fixed rule):** the drop is > 5 pp, so **64×144 stays the
+  development default**, and 32×72 is below the floor. No further seeds.
+- The curve had flattened by epoch 31 (81.98–82.39% over the last 10), so
+  this is not undertraining.
+- Median end error is 0.0138 (start 0.0111), well inside the 0.03 tolerance,
+  so the drop is in the tail. That fits the predicted risk: a 16-cell-wide
+  score map (~0.0625 per cell) makes soft-argmax interpolate across
+  two-tolerance-wide cells.
+- **Reading:** resolution stops being free somewhere between 64 and 32 wide.
+  One seed only, but the gap is about 4× the 64×144 seed spread (1.9 pp).

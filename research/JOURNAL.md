@@ -4,6 +4,13 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-29 — Quarter resolution is the floor
+
+- **32×72** (seed 0, cosine): last-10 validation mean **82.00%**, against
+  89.66% at 64×144 (−7.66 pp). By the fixed rule, 64×144 stays the
+  development default. ≈ $0.8.
+  [M1-QUARTERRES](experiments/M1-QUARTERRES-20260929.md).
+
 ## 2026-09-28 — Cosine lr adopted; model still data-limited
 
 - **Cosine decay at 64×144:** the three-seed last-10 validation mean went
