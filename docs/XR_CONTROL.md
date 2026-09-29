@@ -117,16 +117,42 @@ holds, cancellation, validation limits, routing, busy ownership, timeouts,
 duplicates, stale frames, reconnects and HTTP protections. No corpus or holdout is
 used. The rig was reachable through Tailscale; WDA responded on both ports and
 no collector process was found. Appium 3.3.1 denied session discovery on both
-ports. **On-device connection/navigation/park-load validation remains blocked**
-until discovery is enabled during authorized maintenance. No control service was
-deployed on the rig, no device gesture was sent, and collection was not started.
+ports. The initial on-device validation was blocked by that prerequisite; no
+service or gesture was deployed during that first verification pass. See the
+subsequent authorized launch below.
 
-Once that prerequisite is met, perform a bounded check on each XR: Connect,
+For a complete navigation check on each XR: Connect,
 Open True Skate, open the park menu, drag its list once, select a named installed
 park, visually confirm its loaded scene, and Disconnect. Record the actual park
 and results separately; never claim this checklist has run from offline tests.
 
 Final verification: 367 Python tests passed, 2 skipped; all 3 Node pointer tests
-passed; JavaScript syntax and archive integrity checks passed. Browser visual verification was attempted against a
-synthetic local server but Chrome computer access was not approved; no visual
-layout or real pointer-event integration result is claimed.
+passed; JavaScript syntax and archive integrity checks passed. Automated browser
+visual verification was attempted against a synthetic local server but Chrome
+computer access was not approved.
+
+### Authorized launch (2026-09-29)
+
+The operator requested launch and explicitly approved restarting only the two
+Appium processes to enable touch control. Read-only checks confirmed all logged
+sessions had ended and both recorders were idle. Appium was restarted with
+`--address 127.0.0.1` and
+`--allow-insecure=xcuitest:xctest_screen_record,*:session_discovery`; both discovery
+endpoints then reported no sessions. Existing WDA remained healthy and was not
+restarted. Collection stayed off.
+
+Source revision `4380162` was staged at
+`/Users/training-server/trueskate-ai-runtime/tmp/xr-control-4380162/source`.
+The adjacent directory holds `control.pid`, private `control.log`,
+`appium-XR1.pid`, `appium-XR2.pid`, their logs and `appium-rollback.json` with the
+original Appium arguments/log paths. These runtime files are not source backups.
+The control service and laptop SSH forward were started, the browser was opened,
+and both panels connected. Final status showed each device available, not busy,
+not quarantined, and receiving fresh video (40 ms and 2 ms frame age).
+
+The operator reported the UI looked good and requested merge. No automated live
+gesture or named-park navigation checklist result is claimed. The rig stable
+release symlink was unchanged; the running UI remains on its staged source until
+an explicit control-service restart. Stopping this UI does not undo the approved
+Appium configuration; its saved original arguments are available for a separate
+idle-time rollback if needed.
