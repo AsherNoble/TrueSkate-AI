@@ -54,7 +54,7 @@ Test partition untouched.
 
 - **Decision (fixed rule):** the drop is > 5 pp, so **64×144 stays the
   development default**, and 32×72 is below the floor. No further seeds.
-- The curve had flattened by epoch 31 (81.98–82.39% over the last 10), so
+- The curve had flattened by epoch 31 (81.27–82.39% over the last 10), so
   this is not undertraining.
 - Median end error is 0.0138 (start 0.0111), well inside the 0.03 tolerance,
   so the drop is in the tail. That fits the predicted risk: a 16-cell-wide
