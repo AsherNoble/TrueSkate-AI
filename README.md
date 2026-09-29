@@ -16,6 +16,7 @@ CMA-ES and PPO are retired; their history and useful results remain accessible.
 - [Workflow commands](docs/WORKFLOWS.md)
 - [Gesture and coordinate contract](GESTURES.md)
 - [Rig deployment and rollback](DEPLOYMENT.md)
+- [Private XR remote-control UI](docs/XR_CONTROL.md)
 - [Research archive and recovery](research/ARCHIVE.md)
 - [Rig reconciliation](research/RIG_RECONCILIATION.md)
 

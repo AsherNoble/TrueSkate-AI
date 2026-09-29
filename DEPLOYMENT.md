@@ -130,3 +130,11 @@ The validated XR2 incident and exact evidence are recorded in
 
 Keep `.env`, datasets, cloud volumes and checkpoints independent of source
 deployment. No corpus migration or cloud retraining is required by this refactor.
+
+## Private XR menu control
+
+The independent [XR control service](docs/XR_CONTROL.md) binds loopback port 8401
+and uses laptop SSH forwarding. Stage it separately from the rig release. It
+requires Appium session discovery and existing WDA/MJPEG; it never starts or
+restarts services. Roll back by stopping the control service and its tunnel.
+Navigation checks use no recording or collector smoke segment.

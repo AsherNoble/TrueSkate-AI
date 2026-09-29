@@ -16,6 +16,7 @@ to test a refactor. `--help` on each entrypoint describes its existing flags.
 | Expert clip labelling | Experimental | `scripts/model2/build_bc_clips.py` |
 | Sequence-policy training | Unfinished research | `scripts/model2/train_sequence_model.py` |
 | Device policy replay | Experimental; controls phone | `scripts/model2/run_sequence_policy.py` |
+| Private XR menu control | Standalone; session discovery required | `scripts/control/serve.py` ([guide](XR_CONTROL.md)) |
 | Corpus preview/progress | Supported | `scripts/train_dashboard.py` |
 
 ## Offline verification
