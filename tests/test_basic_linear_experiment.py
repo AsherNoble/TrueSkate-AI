@@ -793,9 +793,9 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
             cursor = found + 1
     # 19 = 18 checkpoint-backed evaluators plus the one orange-cue exception above.
     # Bumping this deliberately is the point: a new evaluator cannot land without
-    # being seen here.  Last bumped for `evaluate_ensemble_validation` and the
-    # manifest-backed `autopsy_failures` path (M1-DIAG, 2026-09-28).
-    assert constructions == 21, f"expected 21 dataset constructions, found {constructions}"
+    # being seen here.  Last bumped for `probe_end_decoding` (M1-ENDPROBE,
+    # 2026-09-30).
+    assert constructions == 22, f"expected 22 dataset constructions, found {constructions}"
 
     # Resolving the shape is not the same as decoding it.  Evaluators whose
     # bodies hardcode the 5-wide start/end/duration layout must refuse a k>2
@@ -803,7 +803,10 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
     # evaluate_refinement still cannot: refine_linear_endpoints hard-requires a
     # [batch,5] prediction, so it refuses rather than misreporting.
     assert '_require_two_knots(_payload_dataset_kwargs([payload]), "evaluate_refinement")' in source
-    assert source.count("_require_two_knots(_payload_dataset_kwargs") == 1
+    # probe_end_decoding (M1-ENDPROBE) re-reads the end of the 5-wide layout by
+    # design, so it refuses k>2 the same way.
+    assert '"probe_end_decoding"))' in source
+    assert source.count("_require_two_knots(_payload_dataset_kwargs") == 2
     # The other two were made knot-general (EQ-012) and must not reintroduce a
     # hardcoded start/end/duration read.
     for evaluator in ("audit_endpoint_residuals", "autopsy_failures"):

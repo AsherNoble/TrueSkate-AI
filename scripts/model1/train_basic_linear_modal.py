@@ -542,6 +542,121 @@ def evaluate_ensemble_validation(data_subdir: str, checkpoint_names: str, *, lab
     return summary
 
 
+@app.function(image=image, gpu=TRAIN_GPU, timeout=3 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def probe_end_decoding(data_subdir: str, checkpoint_names: str, *, label: str,
+                       experiment_manifest_name: str | None = None,
+                       shard_manifest_name: str | None = None,
+                       batch_size: int = 8, required_gpu: str = "") -> dict:
+    """M1-ENDPROBE: frozen score maps, changed end read-out, VALIDATION only.
+
+    Start and duration stay the model's own; only the end point is re-read
+    (see ``trueskate_ai.model1.linear.end_probe``). ``oracle_*`` variants use
+    the target duration and are diagnostics, not inference-feasible. The test
+    partition is never loaded.
+    """
+    import torch
+    from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset
+    from trueskate_ai.model1.linear.end_probe import VARIANTS, along_path_error, end_variants
+    from trueskate_ai.model1.linear.training import (
+        RECOVERY_DURATION_TOLERANCE_S, RECOVERY_ENDPOINT_TOLERANCE,
+    )
+
+    names = [name.strip() for name in checkpoint_names.split(",") if name.strip()]
+    if not names:
+        raise ValueError("need at least one checkpoint")
+    gpu_name = _require_gpu(required_gpu)
+    models.reload()
+    out_path = Path("/models") / f"basic_linear_endprobe_validation_{label}.json"
+    if out_path.exists():
+        raise FileExistsError(f"{out_path.name} already exists")
+    root, experiment_path = _training_inputs(data_subdir, experiment_manifest_name, shard_manifest_name)
+    if experiment_path is None:
+        raise ValueError("probe_end_decoding requires an experiment or shard manifest")
+    payloads = [torch.load(Path("/models") / name, map_location="cpu", weights_only=False)
+                for name in names]
+    decode_modes = {str(payload.get("decode_mode") or "seek") for payload in payloads}
+    if len(decode_modes) != 1:
+        raise ValueError(f"checkpoints disagree on decode mode: {sorted(decode_modes)}")
+    decode_mode = decode_modes.pop()
+    data = BasicLinearClipDataset(root, manifest=experiment_path, manifest_partition="validation",
+                                  cache_frames=False, verify_manifest_content=True,
+                                  decode_mode=decode_mode,
+                                  **_require_two_knots(_payload_dataset_kwargs(payloads),
+                                                       "probe_end_decoding"))
+    device = torch.device("cuda")
+    models_local = []
+    for payload in payloads:
+        model = _model_from_payload(payload, torch).to(device)
+        model.load_state_dict(payload["state_dict"])
+        model.eval()
+        models_local.append(model)
+    rows: dict[str, list] = {name: [] for name in names}
+    max_baseline_drift = 0.0
+    with torch.no_grad():
+        for batch in torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=False):
+            frames = batch["frames"].to(device)
+            target = batch["target"].to(device)
+            for name, model in zip(names, models_local):
+                prediction, ends, diagnostics = end_variants(model, frames, target)
+                max_baseline_drift = max(max_baseline_drift, float(
+                    (ends["baseline"] - prediction[:, 2:4]).abs().max()))
+                start_error = torch.linalg.vector_norm(prediction[:, 0:2] - target[:, 0:2], dim=1)
+                duration_ok = (prediction[:, 4] - target[:, 4]).abs() <= RECOVERY_DURATION_TOLERANCE_S
+                start_ok = start_error <= RECOVERY_ENDPOINT_TOLERANCE
+                per_variant = {}
+                for variant, end in ends.items():
+                    end_error = torch.linalg.vector_norm(end - target[:, 2:4], dim=1)
+                    end_ok = end_error <= RECOVERY_ENDPOINT_TOLERANCE
+                    per_variant[variant] = {
+                        "end_error": end_error, "end_ok": end_ok,
+                        "along": along_path_error(end, target),
+                        "recovered": start_ok & end_ok & duration_ok,
+                    }
+                for i in range(frames.shape[0]):
+                    row = {"start_ok": bool(start_ok[i]), "duration_ok": bool(duration_ok[i]),
+                           "predicted_duration": float(prediction[i, 4]),
+                           "target_duration": float(target[i, 4])}
+                    row.update({key: float(value[i]) for key, value in diagnostics.items()})
+                    for variant, values in per_variant.items():
+                        row[variant] = {key: (bool(value[i]) if value.dtype == torch.bool else float(value[i]))
+                                        for key, value in values.items()}
+                    rows[name].append(row)
+    if max_baseline_drift > 1e-4:
+        raise RuntimeError(f"baseline re-read drifts from the model output by {max_baseline_drift}")
+    summary_by_checkpoint = {}
+    for name in names:
+        checkpoint_rows = rows[name]
+        count = len(checkpoint_rows)
+        summary_by_checkpoint[name] = {
+            variant: {
+                "recovery": sum(row[variant]["recovered"] for row in checkpoint_rows) / count,
+                "end_recovery": sum(row[variant]["end_ok"] for row in checkpoint_rows) / count,
+                "end_short_failures": sum((not row[variant]["end_ok"]) and row[variant]["along"] < 0
+                                          for row in checkpoint_rows),
+                "end_long_failures": sum((not row[variant]["end_ok"]) and row[variant]["along"] >= 0
+                                         for row in checkpoint_rows),
+            } for variant in VARIANTS}
+    output = {
+        "label": label, "partition": "validation", "checkpoints": names,
+        "checkpoint_sha256": {name: _checkpoint_sha256(Path("/models") / name) for name in names},
+        "experiment_manifest_fingerprint": data.manifest_fingerprint,
+        "decode_mode": decode_mode, "gpu": gpu_name, "library_versions": _library_versions(),
+        "samples": len(data), "variants": {k: list(v) for k, v in VARIANTS.items()},
+        "max_baseline_drift": max_baseline_drift,
+        "validation_reported_at_train_time": {name: (payload.get("validation") or {}).get(
+            "gesture_recovery_accuracy") for name, payload in zip(names, payloads)},
+        "summary": summary_by_checkpoint,
+        "per_sample": {name: [{"path": str(path.relative_to(data.root)), **row}
+                              for path, row in zip(data.sample_paths, rows[name])] for name in names},
+    }
+    out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
+    models.commit()
+    summary = {k: v for k, v in output.items() if k != "per_sample"}
+    print(json.dumps(summary, indent=2, sort_keys=True))
+    return summary
+
+
 @app.function(image=image, gpu="any", timeout=3 * 3600, memory=16384,
               volumes={"/corpus": corpus, "/models": models})
 def evaluate_refinement(data_subdir: str, checkpoint_name: str, *, seed: int = 0,
