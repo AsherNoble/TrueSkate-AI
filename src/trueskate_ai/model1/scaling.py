@@ -310,6 +310,73 @@ def split_cohort_by_command(
     return result
 
 
+def split_session_holdout(
+    source: Mapping[str, Any],
+    targets: Mapping[str, int],
+    *,
+    seed: int = 0,
+) -> dict[str, dict[str, Any]]:
+    """Hold out whole recording sessions per park; the rest is training.
+
+    A session is one recording (``meta.session``), so a held-out clip never
+    shares a source video with a training clip. For each park in ``targets``,
+    sessions are taken in seeded stable order until at least the target count
+    is reached (it can overshoot by less than one session). Parks absent from
+    ``targets`` go entirely to training. The holdout has role ``certification``
+    so it can be scored alone; it must never select a model.
+    """
+    validate_manifest(source)
+    if source.get("kind") != "model1_cohort":
+        raise ValueError("session holdout requires a model1_cohort manifest")
+    entries = manifest_entries(source)
+    sessions: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
+    for entry in entries:
+        sessions[str(entry["park"])][str(entry["session"])].append(entry)
+    held: list[dict[str, Any]] = []
+    held_sessions: dict[str, list[str]] = {}
+    for park, target in sorted(targets.items()):
+        if isinstance(target, bool) or int(target) <= 0:
+            raise ValueError(f"park {park!r}: target must be a positive integer, got {target!r}")
+        by_session = sessions.get(park)
+        total = sum(len(clips) for clips in (by_session or {}).values())
+        if not by_session or total < 2 * int(target):
+            raise ValueError(f"park {park!r}: target {target} needs at least {2 * int(target)} clips, has {total}")
+        order = sorted(by_session, key=lambda name: hashlib.sha256(
+            f"{seed}\0{park}\0{name}".encode("utf-8")).digest())
+        chosen, count = [], 0
+        for name in order:
+            if count >= int(target):
+                break
+            chosen.append(name)
+            count += len(by_session[name])
+        held_sessions[park] = sorted(chosen)
+        held.extend(clip for name in chosen for clip in by_session[name])
+    held_paths = {entry["path"] for entry in held}
+    train = [entry for entry in entries if entry["path"] not in held_paths]
+    held.sort(key=lambda entry: entry["path"])
+    if {e["session"] for e in train} & {e["session"] for e in held}:
+        raise AssertionError("a held-out session also appears in training")
+    record = {"method": "session", "seed": seed,
+              "targets": dict(sorted((k, int(v)) for k, v in targets.items())),
+              "held_out_sessions": held_sessions, "parent_fingerprint": source["fingerprint"]}
+    result = {}
+    for name, role, chosen_entries in (("train", "training", train), ("holdout", "certification", held)):
+        result[name] = seal_manifest({
+            "schema_version": MANIFEST_SCHEMA_VERSION,
+            "kind": "model1_cohort",
+            "cohort": f"{source['cohort']}__{name}",
+            "role": role,
+            "subtype": source.get("subtype", "linear"),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "root_hint": source["root_hint"],
+            "sample_count": len(chosen_entries),
+            "session_holdout": record,
+            "coverage": cohort_coverage(chosen_entries),
+            "samples": chosen_entries,
+        })
+    return result
+
+
 def balanced_nested_order(
     entries: Sequence[Mapping[str, Any]],
     *,
