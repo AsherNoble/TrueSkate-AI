@@ -106,7 +106,9 @@ def end_variants(model: BasicLinearRegressor, frames: torch.Tensor, target: torc
     diagnostics = {
         "attention_time": attention_time(scores, baseline_prior),
         "predicted_liftoff": liftoffs["predicted"],
-        "oracle_liftoff": liftoffs["oracle"],
+        # Not "oracle_liftoff": that is a variant name, and per-clip rows hold
+        # diagnostics and variants side by side.
+        "true_liftoff": liftoffs["oracle"],
     }
     return prediction, ends, diagnostics
 

@@ -4,6 +4,16 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-09-30 — End misses: temporal averaging is part of it
+
+- **Frozen-checkpoint probe** (three cosine seeds, validation only): narrowing
+  the end time window from σ 0.15 to 0.05 recovers **+1.09 pp** (89.40 →
+  90.48%), with 68 clips gained against 4 lost across seeds. Using the true
+  liftoff changes nothing, since the duration estimate is already accurate.
+  End-short failures fall only 15%, so most of the shortfall remains
+  unexplained. The single-frame variant was an invalid test.
+  [M1-ENDPROBE](experiments/M1-ENDPROBE-20260930.md).
+
 ## 2026-09-29 — Quarter resolution is the floor
 
 - **32×72** (seed 0, cosine): last-10 validation mean **82.00%**, against

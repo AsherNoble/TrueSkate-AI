@@ -25,6 +25,8 @@ def test_baseline_reread_reproduces_the_model_end_point():
     assert torch.allclose(ends["baseline"], expected[:, 2:4], atol=1e-6)
     assert set(ends) == set(VARIANTS)
     assert diagnostics["attention_time"].shape == (2,)
+    # Per-clip rows store diagnostics beside variants; a shared key overwrites one.
+    assert not set(diagnostics) & set(VARIANTS)
 
 
 def test_oracle_liftoff_equals_baseline_when_durations_agree():

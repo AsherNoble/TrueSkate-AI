@@ -1,0 +1,30 @@
+seed0: end-short fails 128
+   attn time − true liftoff (norm, ×2.27 s): fails -0.128s  ok -0.074s
+   attn earlier than true liftoff: fails 94%  ok 100%
+   pred − true duration: fails -0.013s  ok +0.001s
+   true duration: fails 0.578s  ok 0.769s
+   baseline along-path error of short fails: median -0.0708
+   sigma_0.075                gained   20 lost    1  net +19  McNemar p=2.1e-05
+   sigma_0.05                 gained   28 lost    2  net +26  McNemar p=8.7e-07
+   oracle_liftoff_sigma_0.05  gained   30 lost    3  net +27  McNemar p=1.4e-06
+   oracle_frame               gained   20 lost 1027  net -1007  McNemar p=1.2e-273
+seed1: end-short fails 187
+   attn time − true liftoff (norm, ×2.27 s): fails -0.052s  ok -0.004s
+   attn earlier than true liftoff: fails 76%  ok 55%
+   pred − true duration: fails -0.007s  ok +0.001s
+   true duration: fails 0.555s  ok 0.774s
+   baseline along-path error of short fails: median -0.0539
+   sigma_0.075                gained   14 lost    0  net +14  McNemar p=0.00012
+   sigma_0.05                 gained   21 lost    1  net +20  McNemar p=1.1e-05
+   oracle_liftoff_sigma_0.05  gained   19 lost    1  net +18  McNemar p=4e-05
+   oracle_frame               gained   44 lost   36  net +8  McNemar p=0.43
+seed2: end-short fails 137
+   attn time − true liftoff (norm, ×2.27 s): fails -0.137s  ok -0.075s
+   attn earlier than true liftoff: fails 95%  ok 100%
+   pred − true duration: fails -0.014s  ok +0.003s
+   true duration: fails 0.595s  ok 0.766s
+   baseline along-path error of short fails: median -0.0599
+   sigma_0.075                gained   14 lost    0  net +14  McNemar p=0.00012
+   sigma_0.05                 gained   19 lost    1  net +18  McNemar p=4e-05
+   oracle_liftoff_sigma_0.05  gained   23 lost    1  net +22  McNemar p=3e-06
+   oracle_frame               gained   18 lost  760  net -742  McNemar p=1.8e-198

@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-29. Behavioural cloning is the development direction.
+Updated 2026-09-30. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -20,6 +20,9 @@ recipe scored 80.05%; same size, park mix and split protocol
 ([M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md)). Remaining
 failures are mostly end points falling short, concentrated in Kansas City,
 Los Angeles and fast gestures ([M1-DIAG](experiments/M1-DIAG-20260928.md)).
+Narrowing the end read's time window recovers ~1 pp on frozen checkpoints
+([M1-ENDPROBE](experiments/M1-ENDPROBE-20260930.md)); a retrain with it is
+proposed.
 The earlier 80.05% run selected seed 0 on validation (80.00%) and exposed the
 test split once.
 This is command-held-out evidence, not proof of unseen-park generalisation or
