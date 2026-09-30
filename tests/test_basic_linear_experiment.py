@@ -1004,3 +1004,18 @@ def test_validation_ensemble_never_loads_test_and_fixes_equal_weights():
     assert "manifest_partition=partition" in autopsy
     assert 'decode_mode=str(payload.get("decode_mode") or "seek")' in autopsy
     assert '"park": str(meta.get("park", "unknown"))' in autopsy
+
+
+def test_shard_cache_budget_scales_with_decode_resolution():
+    module = _modal_linear_module()
+    per_clip_128 = module.shard_cache_bytes(1, 128, 288)
+    assert per_clip_128 == 32 * 3 * 128 * 288
+    assert module.shard_cache_bytes(1, 64, 144) * 4 == per_clip_128
+    # The budget keeps the former 14,000-clip cap at 128x288 ...
+    assert module.shard_cache_bytes(14_000, 128, 288) <= module.SHARD_CACHE_MAX_BYTES
+    assert module.shard_cache_bytes(15_000, 128, 288) > module.SHARD_CACHE_MAX_BYTES
+    # ... and admits the M1-EXPAND experiment (18,394 + 2 x 1,965) at 64x144.
+    assert module.shard_cache_bytes(22_324, 64, 144) <= module.SHARD_CACHE_MAX_BYTES
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
+    assert "SHARD_CACHE_MAX_SAMPLES" not in source
+    assert "shard_cache_bytes(shard_count, image_width, image_height)" in source

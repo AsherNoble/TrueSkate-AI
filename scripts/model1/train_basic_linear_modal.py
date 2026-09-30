@@ -90,9 +90,19 @@ def _training_inputs(data_subdir: str, experiment_manifest_name: str | None,
     return destination, shard_path.parent / shard_payload["experiment_manifest"]
 
 
-# Shard-staged runs may cache decoded frames when the experiment is small enough
-# for the function's RAM (~3.5 MiB of uint8 per 32x288x128 clip; 13.1k ~ 46 GiB).
-SHARD_CACHE_MAX_SAMPLES = 14_000
+# Shard-staged runs may cache decoded frames when they fit the function's RAM.
+# The cache holds uint8 frames, so its size depends on the decode resolution:
+# ~3.5 MiB per 32x288x128 clip (13.1k ~ 46 GiB) but ~0.84 MiB at 64x144
+# (22.3k ~ 18 GiB). The budget matches the former 14,000-clip cap at 128x288
+# and leaves headroom in the 64 GiB function.
+SHARD_CACHE_MAX_BYTES = 48 * 2**30
+CACHE_SEQUENCE_LENGTH = 32
+
+
+def shard_cache_bytes(samples: int, image_width: int, image_height: int,
+                      sequence_length: int = CACHE_SEQUENCE_LENGTH) -> int:
+    """Decoded-frame cache size in bytes for ``samples`` clips."""
+    return int(samples) * sequence_length * 3 * int(image_width) * int(image_height)
 
 
 def _require_gpu(required_gpu: str) -> str:
@@ -202,9 +212,11 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
     if shard_manifest_name is not None and cache_frames:
         from trueskate_ai.data.sequential_shards import read_shard_manifest
         shard_count = int(read_shard_manifest(Path("/corpus") / data_subdir / shard_manifest_name)["sample_count"])
-        if shard_count > SHARD_CACHE_MAX_SAMPLES:
-            raise ValueError(f"cache_frames with {shard_count} shard samples exceeds "
-                             f"{SHARD_CACHE_MAX_SAMPLES}; use cache_frames=False for large rungs")
+        cache_bytes = shard_cache_bytes(shard_count, image_width, image_height)
+        if cache_bytes > SHARD_CACHE_MAX_BYTES:
+            raise ValueError(f"cache_frames with {shard_count} shard samples at {image_width}x{image_height} "
+                             f"needs {cache_bytes / 2**30:.1f} GiB, over the "
+                             f"{SHARD_CACHE_MAX_BYTES / 2**30:.0f} GiB budget; use cache_frames=False")
     trainer = _trainer()
     training_root, experiment_path = _training_inputs(
         data_subdir, experiment_manifest_name, shard_manifest_name,
