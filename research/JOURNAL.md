@@ -19,6 +19,13 @@ Put substantial experiments in individual records and current facts in STATUS.
   Crown 2016 and Inbound; best checkpoint, scored once): **87.32%**, against
   92.16% validation in the original parks. Mostly end-point misses. The park
   and stricter-split effects are confounded.
+- **Free analysis of those results:**
+  - Each original park's gain matches its own added data. The new-park
+    clips gave no visible lift; Skateboard GB is a weak exception.
+  - Sharing a recording with training does not help validation clips.
+  - Holdout failures are spread evenly across recordings.
+  - So the new-park gap looks like too little per-park data, not a split
+    artefact.
 
 ## 2026-10-01 — Modal storage audit; deleted the June–July corpus
 
