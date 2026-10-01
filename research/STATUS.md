@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-30. Behavioural cloning is the development direction.
+Updated 2026-10-01. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -14,7 +14,11 @@ cosine lr schedule (validation plateau 89.17% against 87.11%
 [M1-LRDECAY](experiments/M1-LRDECAY-20260928.md)). The nested-subset curve
 shows the model is still data-limited: validation error fell 39.7% for the
 last doubling ([M1-SCALE-SUBSETS](experiments/M1-SCALE-SUBSETS-20260928.md)),
-so the next step is to collect ~9.2k more training clips. The first clean-label retrain (128×288, seed 0) scored
+and the collected doubling (18,394 training clips, weighted to Kansas City
+and Los Angeles, plus three new parks) raised the validation plateau to
+**91.37%**, a 20.3% error reduction: still data-limited by the fixed rule,
+but only just ([M1-EXPAND](experiments/M1-EXPAND-20260929.md)). Its best
+checkpoint (92.16% validation) has not been scored on test. The first clean-label retrain (128×288, seed 0) scored
 **88.50%** on test. The previous
 recipe scored 80.05%; same size, park mix and split protocol
 ([M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md)). Remaining

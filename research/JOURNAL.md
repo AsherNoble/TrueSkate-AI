@@ -4,6 +4,18 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-10-01 — Doubling the data still helps, but less
+
+- **M1-EXPAND:** 10,131 new screened clips (Kansas City and Los Angeles
+  weighted; three new parks), audit 3 passed (99/100 by the frozen scorer,
+  100/100 with an operator-attested entry correction). Training doubled to
+  18,394; validation and test unchanged.
+- **Result** (64×144, cosine, three seeds): last-10 validation **91.37%**
+  against 89.17%, a 20.3% error reduction. That clears the fixed 20%
+  data-limited line by 0.04 pp; the previous doubling gave 39.7%.
+  Los Angeles failures fell 21.4% → 15.4% and Kansas City 16.3% → 12.8%.
+  ≈ $12.8. [M1-EXPAND](experiments/M1-EXPAND-20260929.md).
+
 ## 2026-10-01 — Modal storage audit; deleted the June–July corpus
 
 - The account held ≈ 1,293 GiB of Volumes. Modal charges $0.09/GiB-month
@@ -390,39 +402,3 @@ Put substantial experiments in individual records and current facts in STATUS.
   motivated the WDA experiments. Recorded the user-confirmed spin exclusion.
 - Bounded timing repeats rejected host-call and return-based alignment. Added the
   reusable frame viewer. [M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).
-
-## 2026-09-09 — Unintended collection autostart retired
-
-- Confirmed login-time collector jobs, the historical restart loop, and a loaded
-  laptop agent-based fixer as automatic start/restart paths. Removed the fixer,
-  disabled collector/watchdog jobs, and established collection-off intent.
-  [Evidence and operating rule](COLLECTION_AUTOSTART_20260909.md).
-- XR1 reboot verification is blocked by an Xcode account/provisioning error;
-  no unbounded run or healthy XR2 WDA restart was performed.
-- Closed out stale merge/deployment gates and separated release runtime storage
-  from the retained dirty checkout. Independent backup coverage is not verified;
-  neither same-SSD copy may be deleted. [Storage audit](RIG_STORAGE_20260909.md).
-
-## 2026-09-08 — BC reconciliation and repository reorganisation
-
-- Switched the rig's stable source path to clean merged main, preserved the
-  entire dirty checkout, and reloaded application services without restarting
-  healthy WDA. [Rollout and rollback](RIG_ROLLOUT_20260908.md).
-- Preserved original BC, old main, rig committed history and rig uncommitted
-  source/service definitions on GitHub. [Disposition ledger](RIG_RECONCILIATION.md).
-- Preserved useful dashboard and all BC variants; extracted shared gesture,
-  device and clip utilities, and separated canonical workflow entrypoints.
-- Baseline alignment test exposed FFmpeg 9 removal of `-vsync`; replacing it
-  with `-fps_mode passthrough` restored the original 248-test suite before moves.
-- Local and clean Linux checks pass; staged dashboard HTTP checks pass.
-  Both XRs passed bounded calibrated collection and strict loader/frame-count
-  checks after an explicit operator-confirmed idle-navigation allowance.
-  See [migration validation](MIGRATION_VALIDATION.md)
-  for exact revisions, evidence and remaining rollout gates.
-
-## 2026-09-04 — Model 1 evaluation and scaling protocol
-
-- Recorded 80.05% complete-gesture test recovery after validation-only seed
-  selection. [M1-20260904](experiments/M1-20260904.md).
-- Added frozen manifests, nested subsets, shards, certification and scaling
-  analysis. No new paid tranche was authorized. [Protocol](protocols/model1_scaling.md).
