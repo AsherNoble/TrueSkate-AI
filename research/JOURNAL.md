@@ -4,6 +4,17 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-10-01 — Modal storage audit; deleted the June–July corpus
+
+- The account held ≈ 1,293 GiB of Volumes. Modal charges $0.09/GiB-month
+  above a free 1 TiB, so this cost ≈ $24/month. `trueskate-corpus` alone
+  was 929 GiB (52 June–July sessions, ≈ 95k gestures, collected before tap
+  calibration, so timing is unusable).
+- **Deleted `trueskate-corpus`** (operator-approved). ≈ 364 GiB remain, so
+  storage is now free. The loss is permanent: no other copy existed.
+  Recollect with the calibrated pipeline instead.
+  [MODAL_STORAGE_20261001](MODAL_STORAGE_20261001.md).
+
 ## 2026-09-28 — Cosine lr adopted; model still data-limited
 
 - **Cosine decay at 64×144:** the three-seed last-10 validation mean went
