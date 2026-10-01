@@ -15,6 +15,10 @@ Put substantial experiments in individual records and current facts in STATUS.
   data-limited line by 0.04 pp; the previous doubling gave 39.7%.
   Los Angeles failures fell 21.4% → 15.4% and Kansas City 16.3% → 12.8%.
   ≈ $12.8. [M1-EXPAND](experiments/M1-EXPAND-20260929.md).
+- **New-park holdout** (907 whole held-out recordings in Portland, Super
+  Crown 2016 and Inbound; best checkpoint, scored once): **87.32%**, against
+  92.16% validation in the original parks. Mostly end-point misses. The park
+  and stricter-split effects are confounded.
 
 ## 2026-10-01 — Modal storage audit; deleted the June–July corpus
 
