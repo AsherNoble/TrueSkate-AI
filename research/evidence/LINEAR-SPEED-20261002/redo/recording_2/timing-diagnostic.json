@@ -1,0 +1,22 @@
+{
+  "training_admission": false,
+  "separate_timing_diagnostic": true,
+  "frame_count": 1767,
+  "fit": {
+    "intercept_s": -1044288.0113176858,
+    "rate": 1.0003574809030014,
+    "anchor_span_s": 55.99331745831296
+  },
+  "control_onsets_s": {
+    "start": 1.438333,
+    "middle": 30.47,
+    "end": 57.451667
+  },
+  "control_source_frames": {
+    "start": 39,
+    "middle": 909,
+    "end": 1716
+  },
+  "heldout_middle_error_s": 0.009252706919795628,
+  "timing_checks_pass": true
+}

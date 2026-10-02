@@ -26,6 +26,10 @@ Put substantial experiments in individual records and current facts in STATUS.
 - Frozen duration-only linear sweep (600–10 ms, two reversed repeats) aborted
   on the first sleep overrun before any control/drag. Short video and empty WDA
   report retained; no replacement. [Record](experiments/LINEAR-SPEED-20261002.md).
+- Operator overrode replacements: complete reversed pair now records 16 drags;
+  native-frame Safari viewer works. Timing middle residuals 14/9 ms; original
+  gameplay admissions remain failed (first flags show scenery). Assistant review:
+  trail at ≥50 ms, 20 ms indeterminate, 10 ms tap-like; rendering, not input fidelity.
 
 ## 2026-10-01 — Doubling the data still helps, but less
 

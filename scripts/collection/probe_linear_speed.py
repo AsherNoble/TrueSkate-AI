@@ -1,5 +1,6 @@
 """Freeze or run exactly two bounded XR1/Inbound linear speed recordings."""
 import argparse
+import base64
 import json
 import signal
 import socket
@@ -16,6 +17,8 @@ def main():
     parser.add_argument('--freeze', action='store_true')
     parser.add_argument('--out', type=Path)
     parser.add_argument('--wda-revision')
+    parser.add_argument('--repeat', type=int, choices=(1,2),
+                        help='One explicitly authorized diagnostic repeat; independent admission result')
     args = parser.parse_args()
     if args.freeze:
         save_new(args.manifest, manifest())
@@ -46,15 +49,46 @@ def main():
     try:
         worker.connect()
         driver = worker.driver
+        last_settle_png = None
+        def screenshot():
+            # Same WDA PNG as Appium's screenshot; bypass the proxy round trip.
+            return base64.b64decode(_http_json('http://127.0.0.1:8100/screenshot')['value'])
         def guard():
+            nonlocal last_settle_png
             if driver.query_app_state(BUNDLE_ID) != 4 or worker._active_bundle_id() not in (None, BUNDLE_ID):
                 raise RuntimeError('True Skate foreground lost')
-            png = driver.get_screenshot_as_png()
+            png = last_settle_png if last_settle_png is not None else screenshot()
+            last_settle_png = None
             if is_editor_frame(png) or is_menu_frame(png, allow_idle_navigation=True):
                 raise RuntimeError('gameplay contamination')
         def settle(max_wait_s):
-            return wait_for_centre_settle(driver.get_screenshot_as_png, threshold=2., max_wait_s=max_wait_s)
+            def capture():
+                nonlocal last_settle_png
+                # Read one newly delivered full-resolution frame from the
+                # existing WDA stream; no cached frames or recorder restart.
+                import requests
+                with requests.get('http://127.0.0.1:9100', stream=True, timeout=2) as response:
+                    response.raise_for_status()
+                    buffer = bytearray()
+                    for chunk in response.iter_content(4096):
+                        buffer.extend(chunk)
+                        start = buffer.find(b'\xff\xd8')
+                        end = buffer.find(b'\xff\xd9', start+2)
+                        if start >= 0 and end >= 0:
+                            last_settle_png = bytes(buffer[start:end+2])
+                            # The guard evaluates this just-captured image rather
+                            # than making a redundant screenshot request.
+                            return last_settle_png
+                        if len(buffer) > 4_000_000:
+                            raise RuntimeError('invalid WDA frame stream')
+                raise RuntimeError('WDA stream ended without a frame')
+            return wait_for_centre_settle(capture, threshold=2., max_wait_s=max_wait_s)
         for repeat, commands in enumerate(frozen['recordings'], 1):
+            if args.repeat is not None and repeat != args.repeat:
+                continue
+            if worker.driver is None:
+                worker.connect()
+                driver = worker.driver
             guard()
             if _http_json('http://127.0.0.1:8100/wda/video').get('value') is not None:
                 raise RuntimeError('recorder is not idle; no start attempted')
@@ -68,10 +102,13 @@ def main():
             metadata = dict(experiment=frozen['experiment'], manifest_sha256=frozen['sha256'],
                             device='iPhone_XR', park='Inbound', park_source='operator-confirmed in task',
                             repeat=repeat, allow_idle_navigation=True, initial_settle=initial.summary(),
-                            device_size=[414,896], resets_labelled=True)
+                            device_size=[414,896], resets_labelled=True,
+                            settle_source='fresh full-resolution WDA MJPEG frame; same threshold, interval, consecutive count',
+                            replacement_authorization='operator explicitly overrode no-replacement rule for this sweep')
             run_recording(recorder=XCTestScreenRecorder(driver, fps=30), timing=timing,
                           commands=commands, perform=lambda s: driver.execute('actions', s['payload']),
                           guard=guard, settle=settle, out=out, revision=args.wda_revision, metadata=metadata)
+            worker.disconnect()  # Offline decode must not leave a session to expire.
             # Same source decode, gameplay, start/end fit and held-out middle
             # checks as the existing diagnostic. Resets are labelled requests.
             admit_recording(out, args.wda_revision)

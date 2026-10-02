@@ -17,6 +17,17 @@ SLOTS = (6., 12., 18., 24., 36., 42., 48., 54.)
 LATE_S = .1
 
 
+def deadline_sleep(seconds):
+    """Wake early, then approach the deadline with short sleeps.
+
+    macOS can coalesce a single long sleep beyond the 100 ms schedule limit.
+    The caller still measures and rejects any actual overrun.
+    """
+    target = time.monotonic() + seconds
+    while (remaining := target-time.monotonic()) > 0:
+        time.sleep(remaining-.25 if remaining > .26 else min(.002, remaining))
+
+
 def payload(spec):
     finger = make_touch_pointer('linear_speed')
     finger.name = 'linear_speed'  # Stable ID: freeze payload bytes before execution.
@@ -65,7 +76,7 @@ def verify_manifest(value):
 
 
 def run_recording(*, recorder, timing, commands, perform, guard, settle, out,
-                  revision, metadata, clock=time.monotonic, sleep=time.sleep,
+                  revision, metadata, clock=time.monotonic, sleep=deadline_sleep,
                   epoch=time.time):
     """Reset at slot−3, settle by slot; stop on first failure and retain evidence."""
     out = Path(out)

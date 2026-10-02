@@ -329,3 +329,14 @@ ms in reversed repeats on XR1/Inbound. Its first recording aborted on a sleep
 overrun before any control or drag. The short original and empty WDA report are
 preserved; the second recording was withheld without replacement. **No rendering
 transition range was measured.** Collection remains off.
+
+The operator subsequently authorized replacements and requested a usable viewer.
+Two complete reversed recordings now preserve all sixteen drags, with 1,767
+native frames and nineteen successful WDA requests each. Independent held-out
+middle timing residuals are 14.3/9.3 ms. Both original gameplay admissions remain
+failed; their first flagged frames visibly show normal gameplay scenery. Assistant
+native-frame review finds trails at 50–600 ms, indeterminate feedback at 20 ms
+despite strong gameplay response, and tap-like spots at 10 ms. The visible-trail
+transition repeats between 20 and 50 ms; no input-collapse threshold follows at
+30 fps. The latter half of repeat 2 changes reset location within Inbound.
+See the [redo record](experiments/LINEAR-SPEED-20261002.md#authorized-redo-and-native-frame-viewer).

@@ -5,7 +5,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from trueskate_ai.research.curve_measurement import frame_pts, _decode_source_frames
+from trueskate_ai.research.curve_measurement import frame_pts, _decode_source_frames, read_native_frames
 from trueskate_ai.research.curve_protocol import save_new
 from trueskate_ai.research.linear_speed_probe import verify_manifest
 
@@ -34,11 +34,16 @@ def build(manifest_path, recordings, out):
             video_index = len(videos)
             videos.append(dict(src=destination.name, repeat=repeat, pts=pts.tolist(),
                                error=execution['error'], decoded_frame_count=len(pts),
+                               admission=json.loads((run/'admission.json').read_text()) if (run/'admission.json').exists() else None,
                                source_pts_preserved=True,
                                original_sha256=hashlib.sha256((run/'original.mov').read_bytes()).hexdigest()))
             admission_path = run/'admission.json'
             admission = json.loads(admission_path.read_text()) if admission_path.exists() else {}
             fit = admission.get('fit') if admission.get('accepted') else None
+            timing_only_path = run/'timing-diagnostic.json'
+            timing_only = json.loads(timing_only_path.read_text()) if timing_only_path.exists() else {}
+            if fit is None and timing_only.get('timing_checks_pass'):
+                fit = timing_only['fit']
             for i, event in enumerate(execution['events']):
                 spec = event['spec']
                 if spec['kind'] != 'diagnostic':
@@ -49,7 +54,21 @@ def build(manifest_path, recordings, out):
                              else stamp['epoch_s']-execution['video']['started_at_epoch_s'])
                     executed[spec['command_id']] = dict(onset=onset, start=max(float(pts[0]),onset-.7),
                         end=min(float(pts[-1]),onset+spec['duration_ms']/1000+1.5),
-                        timing='accepted start/end calibration' if fit else 'approximate WDA epoch; calibration not admitted')
+                        timing=('accepted start/end calibration' if admission.get('accepted') else
+                                'start/end and held-out timing checks pass; gameplay admission failed' if fit else
+                                'approximate WDA epoch; calibration not admitted'))
+                    info = executed[spec['command_id']]
+                    frames,times,indices = read_native_frames(run/'original.mov', pts, start=info['start'], end=info['end'])
+                    frame_dir = out/spec['command_id']
+                    frame_dir.mkdir()
+                    import cv2
+                    native = []
+                    for frame, pts_s, source_frame in zip(frames,times,indices):
+                        filename = f'{spec["command_id"]}/{source_frame:06d}.jpg'
+                        if not cv2.imwrite(str(out/filename), frame, [cv2.IMWRITE_JPEG_QUALITY,90]):
+                            raise ValueError('native viewer frame write failed')
+                        native.append(dict(pts_s=pts_s,source_frame=source_frame,path=filename))
+                    info['frames'] = native
         for spec in commands:
             if spec['kind'] == 'diagnostic':
                 info = executed.get(spec['command_id'])

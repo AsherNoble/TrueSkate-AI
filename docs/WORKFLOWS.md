@@ -136,3 +136,12 @@ not authorize another attempt. See [LINEAR-SPEED-20261002](../research/experimen
 adds duration buttons, slow motion, exact source-frame stepping and separate
 visible-feedback/gameplay-response assessments. Unexecuted requests remain
 disabled. Source decode counts and remux PTS must match before publishing.
+
+The operator-authorized redo completed the sixteen-clip comparison. `--repeat 1`
+or `--repeat 2` runs one separately authorized diagnostic recording with its own
+admission result; it is not an admission override or a standing retry policy.
+`scripts/inspect/check_linear_speed_recording.py /absolute/recording-directory`
+preserves a separate start/end and held-out middle timing diagnostic and the
+first gameplay-flag frame, leaving the original admission untouched. Existing
+diagnostic output must be preserved. The viewer plays decoded native frames,
+supports source-frame stepping, and pairs duration buttons across both repeats.

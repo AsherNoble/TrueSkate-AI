@@ -5,6 +5,20 @@ from test_curve_probe import Recorder, Timing
 from trueskate_ai.collection.scene_settle import SettleResult
 
 
+def test_deadline_wait_survives_coalesced_long_sleep(monkeypatch):
+    from trueskate_ai.research import linear_speed_probe as module
+    now = [0.]
+    waits = []
+    def sleep(seconds):
+        waits.append(seconds)
+        now[0] += seconds + (.146 if seconds > .1 else .001)
+    monkeypatch.setattr(module.time, 'monotonic', lambda: now[0])
+    monkeypatch.setattr(module.time, 'sleep', sleep)
+    module.deadline_sleep(1.)
+    assert waits[0] == .75
+    assert 1. <= now[0] < 1.1
+
+
 def test_frozen_payload_and_geometry():
     frozen = manifest()
     verify_manifest(json.loads(json.dumps(frozen)))
