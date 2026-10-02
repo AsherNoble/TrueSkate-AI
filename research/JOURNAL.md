@@ -23,6 +23,9 @@ Put substantial experiments in individual records and current facts in STATUS.
   [Jagged probe](experiments/CURVE-JAGGED-20261002.md).
 - Operator review: 600 ms looked good; 300 ms appeared as a tap yet had a strong
   gameplay effect. Rendering/delivery cause unresolved; spacing also changed.
+- Frozen duration-only linear sweep (600–10 ms, two reversed repeats) aborted
+  on the first sleep overrun before any control/drag. Short video and empty WDA
+  report retained; no replacement. [Record](experiments/LINEAR-SPEED-20261002.md).
 
 ## 2026-10-01 — Doubling the data still helps, but less
 

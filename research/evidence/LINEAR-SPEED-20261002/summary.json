@@ -1,0 +1,241 @@
+{
+  "experiment": "LINEAR-SPEED-20261002",
+  "manifest_sha256": "bc27dd7f64ef943f82b87f71d8ad6d4e29ca49f31657eeac6576db572416781f",
+  "device": "iPhone_XR",
+  "park": "Inbound",
+  "attempted_recordings": 1,
+  "completed_recordings": 0,
+  "executed_drags": 0,
+  "expected_drags": 16,
+  "no_replacements": true,
+  "transition_range_ms": null,
+  "assessment": "unmeasured: aborted before any control or drag",
+  "execution": {
+    "experiment": "LINEAR-SPEED-20261002",
+    "manifest_sha256": "bc27dd7f64ef943f82b87f71d8ad6d4e29ca49f31657eeac6576db572416781f",
+    "device": "iPhone_XR",
+    "park": "Inbound",
+    "park_source": "operator-confirmed in task",
+    "repeat": 1,
+    "allow_idle_navigation": true,
+    "initial_settle": {
+      "settled": true,
+      "waited_s": 2.173,
+      "differences": [
+        1.385,
+        0.228
+      ]
+    },
+    "device_size": [
+      414,
+      896
+    ],
+    "resets_labelled": true,
+    "events": [],
+    "video": {
+      "mov_path": "/Users/training-server/trueskate-ai-runtime/tmp/LINEAR-SPEED-20261002/recordings/recording_1/original.mov",
+      "started_at_epoch_s": 1790943075.2932072,
+      "fps": 30,
+      "codec": "?",
+      "uuid": "F72CD9BA-7E98-44FE-B696-0FEECFBFC36A",
+      "n_bytes": 672304,
+      "host_start_epoch_s": 1790943074.808057,
+      "host_stop_epoch_s": 1790943078.3724658
+    },
+    "error": "RuntimeError: sleep overrun",
+    "training_admission": false
+  },
+  "wda_timing": {
+    "capacity": 256,
+    "records": [],
+    "enabled": 0,
+    "dropped_records": 0,
+    "build_revision": "b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6",
+    "schema_version": 1
+  },
+  "viewer": {
+    "manifest_sha256": "bc27dd7f64ef943f82b87f71d8ad6d4e29ca49f31657eeac6576db572416781f",
+    "videos": [
+      {
+        "src": "recording_1.mp4",
+        "repeat": 1,
+        "pts": [
+          0.071667,
+          0.121667,
+          0.155,
+          0.205,
+          0.255,
+          0.288333,
+          0.321667,
+          0.355,
+          0.388333,
+          0.421667,
+          0.455,
+          0.488333,
+          0.521667,
+          0.555,
+          0.588333,
+          0.621667,
+          0.655,
+          0.688333,
+          0.721667,
+          0.755,
+          0.788333,
+          0.821667,
+          0.855,
+          0.888333,
+          0.921667,
+          0.955,
+          0.988333,
+          1.021667,
+          1.055,
+          1.088333,
+          1.121667,
+          1.155,
+          1.188333,
+          1.221667
+        ],
+        "error": "RuntimeError: sleep overrun",
+        "decoded_frame_count": 34,
+        "source_pts_preserved": true,
+        "original_sha256": "0f067f604de16e9592580c083054637e6bf134b966540e7b42d7e9516a8ccd56"
+      }
+    ],
+    "clips": [
+      {
+        "id": "r1-600ms",
+        "duration_ms": 600,
+        "repeat": 1,
+        "title": "600 ms \u00b7 repeat 1",
+        "video": 0,
+        "executed": false
+      },
+      {
+        "id": "r1-400ms",
+        "duration_ms": 400,
+        "repeat": 1,
+        "title": "400 ms \u00b7 repeat 1",
+        "video": 0,
+        "executed": false
+      },
+      {
+        "id": "r1-300ms",
+        "duration_ms": 300,
+        "repeat": 1,
+        "title": "300 ms \u00b7 repeat 1",
+        "video": 0,
+        "executed": false
+      },
+      {
+        "id": "r1-200ms",
+        "duration_ms": 200,
+        "repeat": 1,
+        "title": "200 ms \u00b7 repeat 1",
+        "video": 0,
+        "executed": false
+      },
+      {
+        "id": "r1-100ms",
+        "duration_ms": 100,
+        "repeat": 1,
+        "title": "100 ms \u00b7 repeat 1",
+        "video": 0,
+        "executed": false
+      },
+      {
+        "id": "r1-50ms",
+        "duration_ms": 50,
+        "repeat": 1,
+        "title": "50 ms \u00b7 repeat 1",
+        "video": 0,
+        "executed": false
+      },
+      {
+        "id": "r1-20ms",
+        "duration_ms": 20,
+        "repeat": 1,
+        "title": "20 ms \u00b7 repeat 1",
+        "video": 0,
+        "executed": false
+      },
+      {
+        "id": "r1-10ms",
+        "duration_ms": 10,
+        "repeat": 1,
+        "title": "10 ms \u00b7 repeat 1",
+        "video": 0,
+        "executed": false
+      },
+      {
+        "id": "r2-10ms",
+        "duration_ms": 10,
+        "repeat": 2,
+        "title": "10 ms \u00b7 repeat 2",
+        "video": null,
+        "executed": false
+      },
+      {
+        "id": "r2-20ms",
+        "duration_ms": 20,
+        "repeat": 2,
+        "title": "20 ms \u00b7 repeat 2",
+        "video": null,
+        "executed": false
+      },
+      {
+        "id": "r2-50ms",
+        "duration_ms": 50,
+        "repeat": 2,
+        "title": "50 ms \u00b7 repeat 2",
+        "video": null,
+        "executed": false
+      },
+      {
+        "id": "r2-100ms",
+        "duration_ms": 100,
+        "repeat": 2,
+        "title": "100 ms \u00b7 repeat 2",
+        "video": null,
+        "executed": false
+      },
+      {
+        "id": "r2-200ms",
+        "duration_ms": 200,
+        "repeat": 2,
+        "title": "200 ms \u00b7 repeat 2",
+        "video": null,
+        "executed": false
+      },
+      {
+        "id": "r2-300ms",
+        "duration_ms": 300,
+        "repeat": 2,
+        "title": "300 ms \u00b7 repeat 2",
+        "video": null,
+        "executed": false
+      },
+      {
+        "id": "r2-400ms",
+        "duration_ms": 400,
+        "repeat": 2,
+        "title": "400 ms \u00b7 repeat 2",
+        "video": null,
+        "executed": false
+      },
+      {
+        "id": "r2-600ms",
+        "duration_ms": 600,
+        "repeat": 2,
+        "title": "600 ms \u00b7 repeat 2",
+        "video": null,
+        "executed": false
+      }
+    ]
+  },
+  "source_bundle_sha256": "50c6841c429b55d2dcbd4ec30d5417b99020ac9d04d74388e192f7a6ecaf4d51",
+  "training_admission": false,
+  "executed_source_sha256": {
+    "src/trueskate_ai/research/linear_speed_probe.py": "f3fab38a417729627dacb2992bf0309f5987d8f6b92d4b2a4ed54a3dd1c7c36f",
+    "scripts/collection/probe_linear_speed.py": "59c5ea931e9b6de0f3db20ce88eb55b33eebb31abd452306a731ce5fe7b81606"
+  }
+}

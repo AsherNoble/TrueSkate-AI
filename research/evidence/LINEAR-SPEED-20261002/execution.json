@@ -1,0 +1,35 @@
+{
+  "experiment": "LINEAR-SPEED-20261002",
+  "manifest_sha256": "bc27dd7f64ef943f82b87f71d8ad6d4e29ca49f31657eeac6576db572416781f",
+  "device": "iPhone_XR",
+  "park": "Inbound",
+  "park_source": "operator-confirmed in task",
+  "repeat": 1,
+  "allow_idle_navigation": true,
+  "initial_settle": {
+    "settled": true,
+    "waited_s": 2.173,
+    "differences": [
+      1.385,
+      0.228
+    ]
+  },
+  "device_size": [
+    414,
+    896
+  ],
+  "resets_labelled": true,
+  "events": [],
+  "video": {
+    "mov_path": "/Users/training-server/trueskate-ai-runtime/tmp/LINEAR-SPEED-20261002/recordings/recording_1/original.mov",
+    "started_at_epoch_s": 1790943075.2932072,
+    "fps": 30,
+    "codec": "?",
+    "uuid": "F72CD9BA-7E98-44FE-B696-0FEECFBFC36A",
+    "n_bytes": 672304,
+    "host_start_epoch_s": 1790943074.808057,
+    "host_stop_epoch_s": 1790943078.3724658
+  },
+  "error": "RuntimeError: sleep overrun",
+  "training_admission": false
+}

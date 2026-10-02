@@ -120,3 +120,19 @@ The initial Inbound pilot is inconclusive (0/8 automatically evaluable); no main
 or confirmation run is authorized by its stop gate. Do not rerun/replace failed
 attempts or route these artifacts into training corpora. The executed manifest
 and corrected implementation manifest are separate, preserved versions.
+
+## Linear drag speed diagnostic
+
+`scripts/collection/probe_linear_speed.py --freeze --manifest /absolute/new.json`
+freezes the XR1/Inbound duration-only sweep. Execution on training-server takes
+`--manifest`, `--wda-revision` and a new isolated `--out` directory, with the
+existing `.venv` and isolated source path. It attempts at most two recordings,
+gates the second on the first's admission and never replaces a failure.
+The authorized attempt aborted before any touch; this command reference does
+not authorize another attempt. See [LINEAR-SPEED-20261002](../research/experiments/LINEAR-SPEED-20261002.md).
+
+`scripts/inspect/build_linear_speed_viewer.py --manifest /absolute/frozen.json
+--recordings /absolute/recordings --out /absolute/existing-viewer/new-child`
+adds duration buttons, slow motion, exact source-frame stepping and separate
+visible-feedback/gameplay-response assessments. Unexecuted requests remain
+disabled. Source decode counts and remux PTS must match before publishing.

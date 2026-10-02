@@ -322,3 +322,10 @@ User-requested [CURVE-SPEED-20261002](experiments/CURVE-SPEED-20261002.md) recor
 [CURVE-JAGGED-20261002](experiments/CURVE-JAGGED-20261002.md) executed a user-requested rounded zigzag at 600/300 ms using five joined cubics in one touch. The isolated recording is available for human viewing; gameplay admission flagged it and no fidelity pass is claimed. This does not change the single-cubic model interface.
 
 Operator review of the jagged clips: 600 ms looked good; 300 ms showed a tap-like mark with a strong gameplay response. Visible trail is therefore insufficient on its own to infer gameplay input fidelity. A rendering/synthesis limit is a hypothesis; duration and segment spacing/count changed together, so no causal threshold is established.
+
+The authorized [LINEAR-SPEED-20261002](experiments/LINEAR-SPEED-20261002.md)
+duration-only sweep froze one linear movement per drag, 600/400/300/200/100/50/20/10
+ms in reversed repeats on XR1/Inbound. Its first recording aborted on a sleep
+overrun before any control or drag. The short original and empty WDA report are
+preserved; the second recording was withheld without replacement. **No rendering
+transition range was measured.** Collection remains off.
