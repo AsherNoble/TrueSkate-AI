@@ -21,6 +21,8 @@ Put substantial experiments in individual records and current facts in STATUS.
 - Requested jagged organic path: five joined cubics in one touch, recorded at
   600/300 ms. Gameplay check flagged the preserved recording; human viewer ready.
   [Jagged probe](experiments/CURVE-JAGGED-20261002.md).
+- Operator review: 600 ms looked good; 300 ms appeared as a tap yet had a strong
+  gameplay effect. Rendering/delivery cause unresolved; spacing also changed.
 
 ## 2026-10-01 — Doubling the data still helps, but less
 

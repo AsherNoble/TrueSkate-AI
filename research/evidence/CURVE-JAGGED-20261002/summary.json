@@ -39,5 +39,12 @@
     "jump_timing": "approximate WDA epoch minus recorder startedAt"
   },
   "artifact_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/curved-gestures-worktree/tmp/curve-jagged-probe/recording",
-  "rig_artifact_path": "/Users/training-server/trueskate-ai-runtime/tmp/CURVE-JAGGED-20261002-e0fd3720/recording"
+  "rig_artifact_path": "/Users/training-server/trueskate-ai-runtime/tmp/CURVE-JAGGED-20261002-e0fd3720/recording",
+  "operator_visual_review": {
+    "source": "operator review of recorded clips in this session",
+    "first_600_ms": "looked good",
+    "second_300_ms": "rendered as a discrete tap while producing a strong gameplay effect",
+    "interpretation": "visible feedback and gameplay response diverged; full-path processing and causal threshold remain unestablished",
+    "confound": "duration and segment spacing/count changed together"
+  }
 }

@@ -13,3 +13,9 @@ The [manifest](../evidence/CURVE-JAGGED-20261002/manifest.json) was frozen befor
 Admission outcome and isolated artifact provenance are recorded in the [summary](../evidence/CURVE-JAGGED-20261002/summary.json). No claim of observed timing accuracy or formal executor fidelity follows from command success or operator visual approval. Curve recovery and generation by the models remain the next tranche.
 
 Post-recording admission failed with a gameplay-contamination flag. The attempt is preserved without replacement and is available for human viewing; no fidelity pass is claimed. The existing heuristic flag does not by itself identify the gameplay state. Appium session cleanup logged an expired session after offline verification; healthy WDA was not restarted.
+
+## Operator visual review
+
+The operator reported that the first (600 ms) gesture looked good. The second (300 ms) rendered as a discrete tap while still producing a strong gameplay response. This is a qualitative observation from the recorded clips, not an annotated trajectory or measured motion duration. The operator suggested a possible True Skate drag-rendering boundary.
+
+The result distinguishes visible feedback from gameplay response. A display/rendering limit, synthesis/touch-delivery behaviour, or their interaction remain hypotheses; a strong gameplay effect alone does not prove that the full requested path was processed. Duration and spacing changed together: 600 ms used 48 movements (minimum 7 ms), while 300 ms used 56 (minimum 3 ms). This comparison cannot identify a duration-only threshold. No additional rig execution follows from this observation.

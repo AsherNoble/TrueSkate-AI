@@ -320,3 +320,5 @@ Curve recovery/generation remains a later tranche, with no training authorized.
 User-requested [CURVE-SPEED-20261002](experiments/CURVE-SPEED-20261002.md) recorded three wide arcs at 300/200/120 ms on XR1 for interactive human viewing. Post-recording gameplay admission failed; the isolated attempt is preserved and is not fidelity evidence.
 
 [CURVE-JAGGED-20261002](experiments/CURVE-JAGGED-20261002.md) executed a user-requested rounded zigzag at 600/300 ms using five joined cubics in one touch. The isolated recording is available for human viewing; gameplay admission flagged it and no fidelity pass is claimed. This does not change the single-cubic model interface.
+
+Operator review of the jagged clips: 600 ms looked good; 300 ms showed a tap-like mark with a strong gameplay response. Visible trail is therefore insufficient on its own to infer gameplay input fidelity. A rendering/synthesis limit is a hypothesis; duration and segment spacing/count changed together, so no causal threshold is established.
