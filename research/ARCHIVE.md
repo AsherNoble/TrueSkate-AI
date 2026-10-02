@@ -66,3 +66,12 @@ To restore a whole historical environment without modifying the active checkout:
 - Paths: [research/JOURNAL.md](https://github.com/AsherNoble/TrueSkate-AI/blob/2cf396f19d7f35560bac8768bb09b0c9efe3a2f5/research/JOURNAL.md)
 - Recovery: `git show 2cf396f19d7f35560bac8768bb09b0c9efe3a2f5esearch/JOURNAL.md`
 - Artifacts: None beyond the journal text; the entries link to experiment records that remain in the active tree.
+
+## ARCH-008 — Research journal before curved execution probe
+
+- Description: Complete 30-entry journal before adding CURVE-EXEC-20261002; the oldest 2026-09-12 human-onset timing audit entry is trimmed. Its experiment record remains active. Preservation tag verified on GitHub before trimming.
+- Commit: `ac74a7fe887bb98a791af6fb2d95b488f31f44f9`
+- Tag: `archive/journal-before-curve-exec-20261002`
+- Paths: [research/JOURNAL.md](https://github.com/AsherNoble/TrueSkate-AI/blob/ac74a7fe887bb98a791af6fb2d95b488f31f44f9/research/JOURNAL.md)
+- Recovery: `git show ac74a7fe887bb98a791af6fb2d95b488f31f44f9:research/JOURNAL.md`
+- Artifacts: Journal text only; videos, checkpoints, corpora and local logs are not backed up by this tag.

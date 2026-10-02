@@ -4,6 +4,18 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-10-02 — Cubic gesture execution gate implemented
+
+- **CURVE-EXEC:** additive nine-number Bernstein cubic, exact-ms compiler and
+  matching command labels; legacy defaults and checkpoint formats unchanged.
+- Offline twelve-curve bounds admit 10/20 ms spacing; 40 ms fails two curves.
+  N=2/4 remain offline. Pilot/main/confirmation ceiling is 204 diagnostics,
+  with automatic orange-trail measurement and blinded audits.
+- Inbound pilot stopped after eight XR1 diagnostics: native FFmpeg reanalysis
+  passes calibration (middle error 5.8 ms), but orange extraction is 0/8
+  evaluable. Fidelity/floor inconclusive; main and confirmation withheld.
+  [Protocol and evidence](experiments/CURVE-EXEC-20261002.md).
+
 ## 2026-10-01 — Doubling the data still helps, but less
 
 - **M1-EXPAND:** 10,131 new screened clips (Kansas City and Los Angeles
@@ -405,11 +417,3 @@ Put substantial experiments in individual records and current facts in STATUS.
   stay in manifests and are never emitted as training clips; in-recording resets
   and incomplete timing reports reject the segment. Offline tests pass.
   [Timing audit](experiments/M1-TIMING-20260912.md).
-
-## 2026-09-12 — Human onset timing audit
-
-- Preserved three original-recording annotation sets, manifests, frame timestamps
-  and findings; false calibration detections and a within-recording timing shift
-  motivated the WDA experiments. Recorded the user-confirmed spin exclusion.
-- Bounded timing repeats rejected host-call and return-based alignment. Added the
-  reusable frame viewer. [M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).

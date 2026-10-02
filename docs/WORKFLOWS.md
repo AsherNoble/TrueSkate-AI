@@ -103,3 +103,20 @@ frame with M, then use Next unmarked gesture. End labels are paired by start fra
 and exported separately. Ambiguous or recording-truncated endings can be marked
 uncertain. Browser storage is separate from onset labels. This measures visible
 trace lifetime, not actual contact duration or finger-up.
+
+## Cubic execution fidelity diagnostic
+
+See [CURVE-EXEC-20261002](../research/experiments/CURVE-EXEC-20261002.md) for the
+frozen protocol, evidence and exact commands. `sim/cubic_curve.py` and
+`touch_labels.cubic_command_label` share rounded cumulative timing and quantized
+coordinates; legacy gesture timing is unchanged. `prepare_curve_exec.py` freezes
+commands and checks offline approximation. `probe_cubic_curves.py` runs one bounded
+recording on training-server. `measure_curve_exec.py`, `build_curve_audit.py` and
+`report_curve_exec.py` provide source-PTS extraction, blinded annotation and
+fail-closed stage decisions. Use explicit `PYTHONPATH=src` in an isolated worktree
+with the existing `.venv`; never install another virtual environment.
+
+The initial Inbound pilot is inconclusive (0/8 automatically evaluable); no main
+or confirmation run is authorized by its stop gate. Do not rerun/replace failed
+attempts or route these artifacts into training corpora. The executed manifest
+and corrected implementation manifest are separate, preserved versions.

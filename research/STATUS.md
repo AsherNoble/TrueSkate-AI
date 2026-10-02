@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-10-01. Behavioural cloning is the development direction.
+Updated 2026-10-02. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -299,3 +299,20 @@ collector running, `scripts/recover_remotexpc_attachments.sh --delete` removed
 M1-DIE5-R100 segment) and 7 on XR2. Both phones re-listed 0 remaining. One
 earlier XR2 dry run failed transiently (`tmp/Attachments` not found); a
 repeat succeeded.
+
+## Curved gesture execution gate
+
+[CURVE-EXEC-20261002](experiments/CURVE-EXEC-20261002.md) introduces an additive
+nine-number Bernstein cubic in time, exact rounded cumulative command boundaries
+and matching quantized labels. No model or checkpoint schema changed. On twelve
+seeded synthetic curves, maximum-duration rules 10/20 ms meet the ≤0.005 command
+approximation bound; 40 ms fails two. This is compilation evidence, not observed
+execution fidelity. The authorized Inbound pilot stopped after eight XR1 diagnostics. Separate
+source-PTS-preserving FFmpeg reanalysis fixes an OpenCV extra-frame mismatch and
+passes timing calibration (held-out middle error 5.8 ms), but the blind orange
+extractor yields 0/8 evaluable gestures because of competing moving scenery/board
+colours and ambiguous centrelines. Execution fidelity and the measurement floor
+remain **inconclusive**; XR2, repeats, dense probes, main and confirmation did not
+run. Retained native frames and a blinded review export support diagnosis. No
+spacing rule is selected; improve measurement before another bounded pilot.
+Curve recovery/generation remains a later tranche, with no training authorized.

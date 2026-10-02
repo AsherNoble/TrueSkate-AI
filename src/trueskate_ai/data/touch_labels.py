@@ -139,3 +139,27 @@ if __name__ == "__main__":
     # latency shifts the spin window on the same time base
     assert label_frames(wps, dur, ep, [0.1], latency_s=0.05, spin_hold=(0.1, 1.5))[0].spin_on is False
     print("self_label tests OK; seg=", [round(s, 3) for s in seg], " mid=", tuple(round(v, 3) for v in mid))
+
+
+def cubic_command_label(compiled, t_s: float) -> TouchLabel:
+    """Label the explicit rounded/quantized command, not the continuous cubic.
+
+    Shared cumulative integer-ms boundaries prevent legacy truncation leaking
+    into future curved labels. Closed final boundary matches legacy labels.
+    """
+    import math
+    from bisect import bisect_right
+    if not math.isfinite(t_s):
+        raise ValueError('label time must be finite')
+    t_ms = t_s * 1000
+    boundaries = compiled.boundaries_ms
+    if t_ms < 0 or t_ms > boundaries[-1]:
+        return TouchLabel(False,-1.,-1.)
+    # Avoid float seconds moving an exact boundary to its preceding interval.
+    nearest = round(t_ms)
+    if abs(t_ms-nearest) < 1e-9:
+        t_ms = nearest
+    k = min(len(boundaries)-2, bisect_right(boundaries,t_ms)-1)
+    a,b = compiled.points_normalized[k:k+2]
+    fraction = (t_ms-boundaries[k])/(boundaries[k+1]-boundaries[k])
+    return TouchLabel(True,a[0]+fraction*(b[0]-a[0]),a[1]+fraction*(b[1]-a[1]))
