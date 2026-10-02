@@ -15,16 +15,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--freeze', action='store_true')
-    parser.add_argument('--profile', choices=('broad','fine'), default='broad', help='Profile to freeze')
+    parser.add_argument('--profile', choices=('broad','fine','length'), default='broad', help='Profile to freeze')
     parser.add_argument('--out', type=Path)
     parser.add_argument('--human-gameplay-review', action='store_true',
                         help='Operator assesses menus/editor; skip automatic image guards and admission scan')
     parser.add_argument('--wda-revision')
-    parser.add_argument('--repeat', type=int, choices=(1,2),
+    parser.add_argument('--repeat', type=int, choices=range(1,16),
                         help='One explicitly authorized diagnostic repeat; independent admission result')
     args = parser.parse_args()
     if args.freeze:
-        save_new(args.manifest, manifest(args.profile))
+        if args.profile == 'length':
+            from trueskate_ai.research.linear_length_probe import manifest as length_manifest
+            save_new(args.manifest, length_manifest())
+        else:
+            save_new(args.manifest, manifest(args.profile))
         return
     if not args.out or not args.wda_revision:
         parser.error('execution requires --out and --wda-revision')
@@ -34,6 +38,10 @@ def main():
         parser.error('preserve attempts; output must be new')
     frozen = json.loads(args.manifest.read_text())
     verify_manifest(frozen)
+    if args.repeat is not None and args.repeat > len(frozen["recordings"]):
+        parser.error("recording index outside frozen workload")
+    if frozen["experiment"] == "LINEAR-LENGTH-20261003" and not args.human_gameplay_review:
+        parser.error("length experiment requires --human-gameplay-review")
     tunnel = subprocess.check_output(['launchctl', 'print', 'system/com.trueskate.remotexpc-tunnel'], text=True)
     if 'state = running' not in tunnel:
         parser.error('root recording tunnel is not running')

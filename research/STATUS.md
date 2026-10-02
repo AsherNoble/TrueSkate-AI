@@ -348,5 +348,17 @@ A requested [50–20 ms fine sweep](experiments/LINEAR-SPEED-FINE-20261002.md)
 uses 50/45/40/35/30/25/20 ms in reversed repeats with the same path and one move.
 The fine sweep completed all fourteen drags; full native decode and timing
 checks pass (middle residuals 11.8/6.4 ms). At operator direction, gameplay
-assessment uses human vision; automated menu/editor scans are skipped. Visual
-transition findings await operator review. Collection remains off.
+assessment uses human vision; automated menu/editor scans are skipped. The operator
+review below supplies the visual findings. Collection remains off.
+
+Fine-sweep operator assessment: trace visible in 13/14, except 20 ms R2; board
+movement in all 14. No consistent duration-only visibility cutoff is established.
+The operator authorized 135 blinded diagnostics: nine durations (50 down to
+10 ms by 5), five lengths, three repetitions per cell, with human gameplay review.
+
+[LINEAR-LENGTH-20261003](experiments/LINEAR-LENGTH-20261003.md) completed all
+135 diagnostics (45 length/duration cells × 3), randomized across fifteen
+recordings. All 315 WDA requests, native decodes and timing checks pass; maximum
+held-out middle residual is 25.2 ms. The anonymous viewer is ready with exactly
+`flicker` / `hold` / `trace`, Board moved default True, and comments. Condition
+keys stay outside the viewer; human assessment is pending. Collection stays off.

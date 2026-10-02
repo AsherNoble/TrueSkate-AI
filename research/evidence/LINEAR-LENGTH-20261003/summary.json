@@ -1,0 +1,219 @@
+{
+  "experiment": "LINEAR-LENGTH-20261003",
+  "manifest_sha256": "1ca788d7b15229c40d9ac3a978961b1e150d8b2494566d5f5c16da794201dec0",
+  "completed_drags": 135,
+  "complete_recordings": 15,
+  "successful_requests": 315,
+  "durations_ms": [
+    50,
+    45,
+    40,
+    35,
+    30,
+    25,
+    20,
+    15,
+    10
+  ],
+  "length_fractions": [
+    0.2,
+    0.4,
+    0.6,
+    0.8,
+    1.0
+  ],
+  "repetitions": 3,
+  "records": [
+    {
+      "recording": 1,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.010479344055056572,
+      "frame_count": 1766,
+      "heldout_middle_error_s": 0.020256484075815706,
+      "timing_checks_pass": true,
+      "sha256": "aa6368e5d8daf8721601ba40e66db2e1e804d0c90843b1431b84623625dc4542"
+    },
+    {
+      "recording": 2,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.013421259820461273,
+      "frame_count": 1767,
+      "heldout_middle_error_s": 0.02523244892303822,
+      "timing_checks_pass": true,
+      "sha256": "68143f84c16076796b85ec6c7ad2717b6943b54d54745be02d2d0eea1ec2618c"
+    },
+    {
+      "recording": 3,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.01252105413004756,
+      "frame_count": 1766,
+      "heldout_middle_error_s": 0.02007140651345196,
+      "timing_checks_pass": true,
+      "sha256": "0acde991be12300b017446833b8b064ab9457eeabb520ce5f934f7c93923bcef"
+    },
+    {
+      "recording": 4,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.014923952985554934,
+      "frame_count": 1766,
+      "heldout_middle_error_s": 0.019103085072710968,
+      "timing_checks_pass": true,
+      "sha256": "2f68c520780b344940e5a4121ce90ed6b060c252f61cb1ede77da17834273e51"
+    },
+    {
+      "recording": 5,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.02017954597249627,
+      "frame_count": 1768,
+      "heldout_middle_error_s": -0.00944977104663991,
+      "timing_checks_pass": true,
+      "sha256": "dbd6e436b092f5d5a1c6d464efcd875d150d81292533d9821af4b388a0d39c43"
+    },
+    {
+      "recording": 6,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.011073541827499866,
+      "frame_count": 1767,
+      "heldout_middle_error_s": -0.0035885368468164813,
+      "timing_checks_pass": true,
+      "sha256": "9dc943c8d30f97c34cb5e19edcf23cf57e827afaed3e316d100d2bf066323585"
+    },
+    {
+      "recording": 7,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.015256450045853853,
+      "frame_count": 1766,
+      "heldout_middle_error_s": 0.00180064209736841,
+      "timing_checks_pass": true,
+      "sha256": "0dd8ab9dfa6aeeb2fccd7c7e9d4dc0123a7072ea55158b9b116fe228b0fa0185"
+    },
+    {
+      "recording": 8,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.01952981692738831,
+      "frame_count": 1766,
+      "heldout_middle_error_s": -0.00337652662825505,
+      "timing_checks_pass": true,
+      "sha256": "4962d4b0a88d1998e6d13ed3a276e7696266c71f5fb108cacfcacd6f1e78e443"
+    },
+    {
+      "recording": 9,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.017381754936650395,
+      "frame_count": 1767,
+      "heldout_middle_error_s": 0.013656647512121367,
+      "timing_checks_pass": true,
+      "sha256": "bd032c4ef545d4d12f59952d2c780eb06f6df6ef91de63c84ba5f2f5633c8d44"
+    },
+    {
+      "recording": 10,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.018458236940205097,
+      "frame_count": 1768,
+      "heldout_middle_error_s": 0.010809612544818492,
+      "timing_checks_pass": true,
+      "sha256": "cf268d46920bc4c57d807cad07684b48cc0e04319d07582dafe5265a5b60c0f0"
+    },
+    {
+      "recording": 11,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.017667196923866868,
+      "frame_count": 1768,
+      "heldout_middle_error_s": 0.004116508346051262,
+      "timing_checks_pass": true,
+      "sha256": "fc3929a518b01a839655101794d7ccee9b8c672b175336657279dbedcae45be5"
+    },
+    {
+      "recording": 12,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.0207760960329324,
+      "frame_count": 1767,
+      "heldout_middle_error_s": -0.012510678982927459,
+      "timing_checks_pass": true,
+      "sha256": "caae5a9e44473d2080f10e095f6e48a1c18ffe749381ccf009dfe0cbae0ab5d4"
+    },
+    {
+      "recording": 13,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.015204209834337234,
+      "frame_count": 1767,
+      "heldout_middle_error_s": -0.011228396929233497,
+      "timing_checks_pass": true,
+      "sha256": "98cf25785b3e20e0d9485faa81a24bc827a1e08b052bf24fcb3d3cc3448e2f11"
+    },
+    {
+      "recording": 14,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.016069452045485377,
+      "frame_count": 1766,
+      "heldout_middle_error_s": -0.021598273300931226,
+      "timing_checks_pass": true,
+      "sha256": "4522c0130575a764ea1f6a7f4bab8fd14a4fca6604228f8d608168b04e0c3dbb"
+    },
+    {
+      "recording": 15,
+      "completed_drags": 9,
+      "successful_requests": 21,
+      "execution_error": null,
+      "max_lateness_s": 0.012061715824529529,
+      "frame_count": 1767,
+      "heldout_middle_error_s": 0.00022122897151177767,
+      "timing_checks_pass": true,
+      "sha256": "a8577adae258921f27b951591880cf6fde3ac0f2571007a3f2b63a6f8a022adb"
+    }
+  ],
+  "training_admission": false,
+  "automated_gameplay_scan": false,
+  "gameplay_review": "operator visual review",
+  "operator_assessment_pending": true,
+  "labels": {
+    "trace_visible": [
+      "flicker",
+      "hold",
+      "trace"
+    ],
+    "board_moved_default": true,
+    "comments": "free text"
+  },
+  "blinded_bundle_sha256": "dc954a013a05531482095bdff5f1e6b5e232051d41d5342b900cfecc62ff1e1e",
+  "viewer": "http://127.0.0.1:8767/blind-length/",
+  "raw_local": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/linear-length-recordings",
+  "raw_rig": "/Users/training-server/trueskate-ai-runtime/tmp/LINEAR-LENGTH-20261003/recordings",
+  "source_bundle_sha256": "9c1d3d035e641c25ba465038faa61e6f4ef5d2af41af0adbb72c9596ebb5b099",
+  "verification": {
+    "offline_tests_passed": 26,
+    "public_clip_count": 135,
+    "native_audit_frame_count": 8864,
+    "safari_default_board_switch": "on",
+    "assessments_at_ui_check": 0,
+    "private_mapping_outside_web_root": true
+  }
+}

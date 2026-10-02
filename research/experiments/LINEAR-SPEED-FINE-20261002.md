@@ -48,3 +48,10 @@ duration buttons, slow playback, exact source-frame stepping and separate
 feedback/gameplay fields. Human review and the transition range are pending
 operator assessment; no automatic trail or gameplay conclusion is claimed.
 Collection stays off and the recorder is idle.
+
+## Operator assessment (2026-10-03)
+
+Trace visible in 13/14 clips; only 20 ms repeat 2 lacks a visible trace. Board
+moved in all clips, including that exception, with the same response as others.
+Thus this pair does not establish a consistent duration-only trace threshold.
+[Operator assessment](../evidence/LINEAR-SPEED-FINE-20261002/operator-review.json).

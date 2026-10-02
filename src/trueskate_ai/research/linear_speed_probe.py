@@ -31,12 +31,13 @@ def deadline_sleep(seconds):
 def payload(spec):
     finger = make_touch_pointer('linear_speed')
     finger.name = 'linear_speed'  # Stable ID: freeze payload bytes before execution.
-    point = PATH[0] if spec['kind'] == 'diagnostic' else (
+    path = spec.get('path', PATH)
+    point = path[0] if spec['kind'] == 'diagnostic' else (
         (.5, .0558) if spec['kind'] == 'reset' else (.5, .5))
     finger.create_pointer_move(x=point[0]*414, y=point[1]*896, duration=0)
     finger.create_pointer_down()
     if spec['kind'] == 'diagnostic':
-        finger.create_pointer_move(x=PATH[1][0]*414, y=PATH[1][1]*896,
+        finger.create_pointer_move(x=path[1][0]*414, y=path[1][1]*896,
                                    duration=spec['duration_ms'])
     else:
         finger.create_pause(.05)
@@ -75,7 +76,11 @@ def manifest(profile="broad"):
 
 
 def verify_manifest(value):
-    expected = manifest("fine" if value.get("experiment") == "LINEAR-SPEED-FINE-20261002" else "broad")
+    if value.get("experiment") == "LINEAR-LENGTH-20261003":
+        from trueskate_ai.research.linear_length_probe import manifest as length_manifest
+        expected = length_manifest()
+    else:
+        expected = manifest("fine" if value.get("experiment") == "LINEAR-SPEED-FINE-20261002" else "broad")
     if digest(value) != digest(expected):
         raise ValueError('frozen manifest changed')
 

@@ -145,3 +145,16 @@ preserves a separate start/end and held-out middle timing diagnostic and the
 first gameplay-flag frame, leaving the original admission untouched. Existing
 diagnostic output must be preserved. The viewer plays decoded native frames,
 supports source-frame stepping, and pairs duration buttons across both repeats.
+
+### Blinded duration × length diagnostic
+
+The frozen [LINEAR-LENGTH-20261003](../research/experiments/LINEAR-LENGTH-20261003.md)
+workload contains 135 gestures, not an open-ended collector. Freeze with
+`probe_linear_speed.py --profile length --freeze --manifest PATH`. On the rig,
+run its verified manifest with `--human-gameplay-review`, isolated `--out` and
+`--wda-revision`; optional `--repeat N` selects one of fifteen recordings.
+Run `check_linear_speed_recording.py RECORDING_DIR --timing-only` locally for
+calibration and full native decode, then `build_linear_length_audit.py` with
+`--manifest`, `--recordings` and fresh `--out`. Keep the private key, source map
+and raw recordings outside the viewer web root. The public labels are
+`flicker` / `hold` / `trace`, a board-movement toggle defaulting True, and comments.

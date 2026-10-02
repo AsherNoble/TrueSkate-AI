@@ -36,6 +36,11 @@ Put substantial experiments in individual records and current facts in STATUS.
   All 14 completed; timing 11.8/6.4 ms. Operator requested human gameplay review.
   [Fine sweep](experiments/LINEAR-SPEED-FINE-20261002.md).
 
+- Follow-up (2026-10-03): fine trace visible in 13/14; board moves in all 14.
+  Completed 135 blinded diagnostics (9 durations × 5 lengths × 3); timing passes.
+  Human labels: flicker/hold/trace, board toggle default True, comments.
+  [Length experiment](experiments/LINEAR-LENGTH-20261003.md).
+
 ## 2026-10-01 — Doubling the data still helps, but less
 
 - **M1-EXPAND:** 10,131 new screened clips (Kansas City and Los Angeles
