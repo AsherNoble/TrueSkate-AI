@@ -1,0 +1,452 @@
+{
+  "experiment": "CURVE-SPEED-20261002",
+  "scope": "one XR1 recording, three user-requested visual diagnostics; not a CURVE-EXEC gate",
+  "park": "Inbound",
+  "park_source": "operator confirmation this session",
+  "geometry_note": "hand-designed wider curve; outside seeded central rectangle, validated against global bounds and expanded controls",
+  "commands": [
+    {
+      "command_id": "long-300ms",
+      "curve_id": "long-0",
+      "family": "long_arc",
+      "repeat": 0,
+      "requested_n": 16,
+      "rule_ms": null,
+      "curve": {
+        "schema": "cubic_in_time_v1",
+        "coefficients": [
+          [
+            0.14,
+            0.82
+          ],
+          [
+            0.4,
+            0.62
+          ],
+          [
+            0.62,
+            0.23
+          ],
+          [
+            0.96,
+            0.38
+          ]
+        ],
+        "duration_s": 0.3
+      },
+      "compiled": {
+        "boundaries_ms": [
+          0,
+          19,
+          38,
+          56,
+          75,
+          94,
+          112,
+          131,
+          150,
+          169,
+          188,
+          206,
+          225,
+          244,
+          262,
+          281,
+          300
+        ],
+        "points_device": [
+          [
+            58,
+            735
+          ],
+          [
+            78,
+            699
+          ],
+          [
+            98,
+            660
+          ],
+          [
+            117,
+            621
+          ],
+          [
+            137,
+            579
+          ],
+          [
+            156,
+            536
+          ],
+          [
+            175,
+            497
+          ],
+          [
+            195,
+            457
+          ],
+          [
+            215,
+            420
+          ],
+          [
+            236,
+            387
+          ],
+          [
+            257,
+            358
+          ],
+          [
+            278,
+            337
+          ],
+          [
+            300,
+            320
+          ],
+          [
+            323,
+            312
+          ],
+          [
+            346,
+            311
+          ],
+          [
+            371,
+            321
+          ],
+          [
+            397,
+            340
+          ]
+        ],
+        "device_size": [
+          414,
+          896
+        ],
+        "approximation_bound": 0.0028543116861120023,
+        "segment_durations_ms": [
+          19,
+          19,
+          18,
+          19,
+          19,
+          18,
+          19,
+          19,
+          19,
+          19,
+          18,
+          19,
+          19,
+          18,
+          19,
+          19
+        ],
+        "n": 16,
+        "min_segment_duration_ms": 18,
+        "max_segment_duration_ms": 19
+      }
+    },
+    {
+      "command_id": "long-200ms",
+      "curve_id": "long-1",
+      "family": "long_arc",
+      "repeat": 0,
+      "requested_n": 16,
+      "rule_ms": null,
+      "curve": {
+        "schema": "cubic_in_time_v1",
+        "coefficients": [
+          [
+            0.14,
+            0.82
+          ],
+          [
+            0.4,
+            0.62
+          ],
+          [
+            0.62,
+            0.23
+          ],
+          [
+            0.96,
+            0.38
+          ]
+        ],
+        "duration_s": 0.2
+      },
+      "compiled": {
+        "boundaries_ms": [
+          0,
+          12,
+          25,
+          38,
+          50,
+          62,
+          75,
+          88,
+          100,
+          112,
+          125,
+          138,
+          150,
+          162,
+          175,
+          188,
+          200
+        ],
+        "points_device": [
+          [
+            58,
+            735
+          ],
+          [
+            77,
+            701
+          ],
+          [
+            98,
+            661
+          ],
+          [
+            118,
+            619
+          ],
+          [
+            137,
+            579
+          ],
+          [
+            155,
+            538
+          ],
+          [
+            176,
+            496
+          ],
+          [
+            196,
+            455
+          ],
+          [
+            215,
+            420
+          ],
+          [
+            235,
+            388
+          ],
+          [
+            257,
+            359
+          ],
+          [
+            279,
+            335
+          ],
+          [
+            300,
+            320
+          ],
+          [
+            322,
+            312
+          ],
+          [
+            347,
+            311
+          ],
+          [
+            373,
+            321
+          ],
+          [
+            397,
+            340
+          ]
+        ],
+        "device_size": [
+          414,
+          896
+        ],
+        "approximation_bound": 0.0028009646074721763,
+        "segment_durations_ms": [
+          12,
+          13,
+          13,
+          12,
+          12,
+          13,
+          13,
+          12,
+          12,
+          13,
+          13,
+          12,
+          12,
+          13,
+          13,
+          12
+        ],
+        "n": 16,
+        "min_segment_duration_ms": 12,
+        "max_segment_duration_ms": 13
+      }
+    },
+    {
+      "command_id": "long-120ms",
+      "curve_id": "long-2",
+      "family": "long_arc",
+      "repeat": 0,
+      "requested_n": 16,
+      "rule_ms": null,
+      "curve": {
+        "schema": "cubic_in_time_v1",
+        "coefficients": [
+          [
+            0.14,
+            0.82
+          ],
+          [
+            0.4,
+            0.62
+          ],
+          [
+            0.62,
+            0.23
+          ],
+          [
+            0.96,
+            0.38
+          ]
+        ],
+        "duration_s": 0.12
+      },
+      "compiled": {
+        "boundaries_ms": [
+          0,
+          8,
+          15,
+          22,
+          30,
+          38,
+          45,
+          52,
+          60,
+          68,
+          75,
+          82,
+          90,
+          98,
+          105,
+          112,
+          120
+        ],
+        "points_device": [
+          [
+            58,
+            735
+          ],
+          [
+            79,
+            697
+          ],
+          [
+            98,
+            661
+          ],
+          [
+            116,
+            623
+          ],
+          [
+            137,
+            579
+          ],
+          [
+            157,
+            534
+          ],
+          [
+            176,
+            496
+          ],
+          [
+            194,
+            459
+          ],
+          [
+            215,
+            420
+          ],
+          [
+            237,
+            385
+          ],
+          [
+            257,
+            359
+          ],
+          [
+            277,
+            338
+          ],
+          [
+            300,
+            320
+          ],
+          [
+            325,
+            311
+          ],
+          [
+            347,
+            311
+          ],
+          [
+            370,
+            320
+          ],
+          [
+            397,
+            340
+          ]
+        ],
+        "device_size": [
+          414,
+          896
+        ],
+        "approximation_bound": 0.003034092803029212,
+        "segment_durations_ms": [
+          8,
+          7,
+          7,
+          8,
+          8,
+          7,
+          7,
+          8,
+          8,
+          7,
+          7,
+          8,
+          8,
+          7,
+          7,
+          8
+        ],
+        "n": 16,
+        "min_segment_duration_ms": 7,
+        "max_segment_duration_ms": 8
+      }
+    }
+  ],
+  "runner_sha256": "32e80e6883ed65b0b86bd6cc5dbb7b067a327a648083067d2668419fa0858f99",
+  "sha256": "15c44bdd291ca1c0e27ad3e818c314131a5cc68e98b4554e32cb30f4c2d4cf94"
+}

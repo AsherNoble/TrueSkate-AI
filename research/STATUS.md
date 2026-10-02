@@ -316,3 +316,5 @@ remain **inconclusive**; XR2, repeats, dense probes, main and confirmation did n
 run. Retained native frames and a blinded review export support diagnosis. No
 spacing rule is selected; improve measurement before another bounded pilot.
 Curve recovery/generation remains a later tranche, with no training authorized.
+
+User-requested [CURVE-SPEED-20261002](experiments/CURVE-SPEED-20261002.md) recorded three wide arcs at 300/200/120 ms on XR1 for interactive human viewing. Post-recording gameplay admission failed; the isolated attempt is preserved and is not fidelity evidence.

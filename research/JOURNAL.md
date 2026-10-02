@@ -15,6 +15,9 @@ Put substantial experiments in individual records and current facts in STATUS.
   passes calibration (middle error 5.8 ms), but orange extraction is 0/8
   evaluable. Fidelity/floor inconclusive; main and confirmation withheld.
   [Protocol and evidence](experiments/CURVE-EXEC-20261002.md).
+- Operator viewed clips and requested a wide fast arc: three XR1 commands at
+  300/200/120 ms recorded for human viewing. Gameplay admission failed; retained
+  without replacement. [Visual speed probe](experiments/CURVE-SPEED-20261002.md).
 
 ## 2026-10-01 — Doubling the data still helps, but less
 
