@@ -20,7 +20,7 @@ from trueskate_ai.model1.scaling import (
     assert_deterministic_nesting, build_experiment_manifest,
     build_linear_cohort_manifest, build_nested_subset_manifests,
     estimate_modal_rungs, fit_error_scaling_law, gradient_clipping_decision,
-    scaling_status,
+    scaling_status, split_session_holdout,
 )
 
 
@@ -298,3 +298,29 @@ def test_proportional_nesting_keeps_parent_mix_and_prefixes(tmp_path):
     assert balanced["coverage"]["park"]["SLS 2015 Super Crown"] == 4
     with pytest.raises(ValueError, match="nesting order"):
         build_nested_subset_manifests(training, [8], order="random")
+
+
+def test_session_holdout_keeps_whole_recordings_out_of_training(tmp_path):
+    root = tmp_path / "expand"
+    for index in range(48):
+        park = ("SLS 2013 Portland", "SLS 2013 Kansas City")[index % 2]
+        sample = _linear_sample(root, index, device="iPhone_XR", park=park)
+        meta = json.loads((sample / "meta.json").read_text())
+        meta["session"] = f"iPhone_XR_20260930_{park[-4:]}_rec{index // 8}"  # 4 clips per park per recording
+        (sample / "meta.json").write_text(json.dumps(meta))
+    cohort = build_linear_cohort_manifest(root, corpus_root=tmp_path, cohort="expand", role="training")
+    parts = split_session_holdout(cohort, {"SLS 2013 Portland": 7}, seed=1)
+    train, holdout = parts["train"], parts["holdout"]
+    assert train["role"] == "training" and holdout["role"] == "certification"
+    assert set(holdout["coverage"]["park"]) == {"SLS 2013 Portland"}
+    assert holdout["sample_count"] == 8  # whole 4-clip sessions: 7 rounds up to 8
+    held_sessions = {entry["session"] for entry in holdout["samples"]}
+    assert held_sessions.isdisjoint(entry["session"] for entry in train["samples"])
+    assert train["sample_count"] + holdout["sample_count"] == 48
+    assert train["coverage"]["park"]["SLS 2013 Kansas City"] == 24
+    assert split_session_holdout(cohort, {"SLS 2013 Portland": 7}, seed=1)["holdout"]["samples"] == holdout["samples"]
+    assert_zero_cohort_leakage([train, holdout])
+    with pytest.raises(ValueError, match="needs at least"):
+        split_session_holdout(cohort, {"SLS 2013 Portland": 13})
+    with pytest.raises(ValueError, match="needs at least"):
+        split_session_holdout(cohort, {"SLS 2016 Munich": 1})

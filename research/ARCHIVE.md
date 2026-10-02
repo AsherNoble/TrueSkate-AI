@@ -57,3 +57,12 @@ To restore a whole historical environment without modifying the active checkout:
 - Paths: [scripts/ops/xr_watchdog_spawn_claude.sh](https://github.com/AsherNoble/TrueSkate-AI/blob/8ff3720a1bfc9873b501459ad97c26dce243cf22/scripts/ops/xr_watchdog_spawn_claude.sh), `scripts/ops/xr_fix_agent_prompt.md`, `scripts/ops/com.trueskate.xrwatchdog.plist` in the same tree.
 - Recovery: `git worktree add --detach /absolute/new/arch-006 8ff3720a1bfc9873b501459ad97c26dce243cf22`; do not reinstall or enable the fixer without new explicit authorization.
 - Artifacts: Existing logs remain at `/Users/ashernoble/.claude/xr_watchdog.log`; the exact installed plist was moved to the laptop repository's ignored `tmp/com.trueskate.xrwatchdog.retired-20260909.plist`. Neither is a corpus backup.
+
+## ARCH-007 — Research journal entries before 2026-09-12
+
+- Description: The complete research journal (32 dated entries) before it was trimmed to its 30-entry cap. The removed entries are 2026-09-04 (Model 1 evaluation and scaling protocol), 2026-09-08 (BC reconciliation and repository reorganisation) and 2026-09-09 (unintended collection autostart retired).
+- Commit: `2cf396f19d7f35560bac8768bb09b0c9efe3a2f5`
+- Tag: `archive/journal-20261001`
+- Paths: [research/JOURNAL.md](https://github.com/AsherNoble/TrueSkate-AI/blob/2cf396f19d7f35560bac8768bb09b0c9efe3a2f5/research/JOURNAL.md)
+- Recovery: `git show 2cf396f19d7f35560bac8768bb09b0c9efe3a2f5esearch/JOURNAL.md`
+- Artifacts: None beyond the journal text; the entries link to experiment records that remain in the active tree.

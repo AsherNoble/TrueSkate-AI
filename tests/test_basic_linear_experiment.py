@@ -793,9 +793,9 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
             cursor = found + 1
     # 19 = 18 checkpoint-backed evaluators plus the one orange-cue exception above.
     # Bumping this deliberately is the point: a new evaluator cannot land without
-    # being seen here.  Last bumped for `evaluate_ensemble_validation` and the
-    # manifest-backed `autopsy_failures` path (M1-DIAG, 2026-09-28).
-    assert constructions == 21, f"expected 21 dataset constructions, found {constructions}"
+    # being seen here.  Last bumped for `probe_end_decoding` (M1-ENDPROBE,
+    # 2026-09-30).
+    assert constructions == 22, f"expected 22 dataset constructions, found {constructions}"
 
     # Resolving the shape is not the same as decoding it.  Evaluators whose
     # bodies hardcode the 5-wide start/end/duration layout must refuse a k>2
@@ -803,7 +803,10 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
     # evaluate_refinement still cannot: refine_linear_endpoints hard-requires a
     # [batch,5] prediction, so it refuses rather than misreporting.
     assert '_require_two_knots(_payload_dataset_kwargs([payload]), "evaluate_refinement")' in source
-    assert source.count("_require_two_knots(_payload_dataset_kwargs") == 1
+    # probe_end_decoding (M1-ENDPROBE) re-reads the end of the 5-wide layout by
+    # design, so it refuses k>2 the same way.
+    assert '"probe_end_decoding"))' in source
+    assert source.count("_require_two_knots(_payload_dataset_kwargs") == 2
     # The other two were made knot-general (EQ-012) and must not reintroduce a
     # hardcoded start/end/duration read.
     for evaluator in ("audit_endpoint_residuals", "autopsy_failures"):
@@ -1001,3 +1004,18 @@ def test_validation_ensemble_never_loads_test_and_fixes_equal_weights():
     assert "manifest_partition=partition" in autopsy
     assert 'decode_mode=str(payload.get("decode_mode") or "seek")' in autopsy
     assert '"park": str(meta.get("park", "unknown"))' in autopsy
+
+
+def test_shard_cache_budget_scales_with_decode_resolution():
+    module = _modal_linear_module()
+    per_clip_128 = module.shard_cache_bytes(1, 128, 288)
+    assert per_clip_128 == 32 * 3 * 128 * 288
+    assert module.shard_cache_bytes(1, 64, 144) * 4 == per_clip_128
+    # The budget keeps the former 14,000-clip cap at 128x288 ...
+    assert module.shard_cache_bytes(14_000, 128, 288) <= module.SHARD_CACHE_MAX_BYTES
+    assert module.shard_cache_bytes(15_000, 128, 288) > module.SHARD_CACHE_MAX_BYTES
+    # ... and admits the M1-EXPAND experiment (18,394 + 2 x 1,965) at 64x144.
+    assert module.shard_cache_bytes(22_324, 64, 144) <= module.SHARD_CACHE_MAX_BYTES
+    source = Path("scripts/model1/train_basic_linear_modal.py").read_text()
+    assert "SHARD_CACHE_MAX_SAMPLES" not in source
+    assert "shard_cache_bytes(shard_count, image_width, image_height)" in source

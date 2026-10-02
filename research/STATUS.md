@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-09-28. Behavioural cloning is the development direction.
+Updated 2026-10-01. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -8,17 +8,26 @@ Current work is calibrated linear clip regression and scaling. The current
 best is **91.04%** test recovery: the 64×144 input, seed 2, trained on
 `model1_linear_good13100_20260927` and selected on validation (90.94%)
 ([M1-HALFRES](experiments/M1-HALFRES-20260928.md); this was the second
-exposure of that test partition). Development now runs at 64×144 (no worse, ~4× cheaper) with a
+exposure of that test partition). Development now runs at 64×144 (no worse, ~4× cheaper; 32×72 lost 7.7 pp,
+[M1-QUARTERRES](experiments/M1-QUARTERRES-20260929.md)) with a
 cosine lr schedule (validation plateau 89.17% against 87.11%
 [M1-LRDECAY](experiments/M1-LRDECAY-20260928.md)). The nested-subset curve
 shows the model is still data-limited: validation error fell 39.7% for the
 last doubling ([M1-SCALE-SUBSETS](experiments/M1-SCALE-SUBSETS-20260928.md)),
-so the next step is to collect ~9.2k more training clips. The first clean-label retrain (128×288, seed 0) scored
+and the collected doubling (18,394 training clips, weighted to Kansas City
+and Los Angeles, plus three new parks) raised the validation plateau to
+**91.37%**, a 20.3% error reduction: still data-limited by the fixed rule,
+but only just ([M1-EXPAND](experiments/M1-EXPAND-20260929.md)). Its best
+checkpoint (92.16% validation) has not been scored on test. On 907 held-out
+recordings in the three new parks it scores 87.32%. The first clean-label retrain (128×288, seed 0) scored
 **88.50%** on test. The previous
 recipe scored 80.05%; same size, park mix and split protocol
 ([M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md)). Remaining
 failures are mostly end points falling short, concentrated in Kansas City,
 Los Angeles and fast gestures ([M1-DIAG](experiments/M1-DIAG-20260928.md)).
+Narrowing the end read's time window recovers ~1 pp on frozen checkpoints
+([M1-ENDPROBE](experiments/M1-ENDPROBE-20260930.md)); a retrain with it is
+proposed.
 The earlier 80.05% run selected seed 0 on validation (80.00%) and exposed the
 test split once.
 This is command-held-out evidence, not proof of unseen-park generalisation or

@@ -15,7 +15,9 @@ import modal
 
 _SCRIPT_PATH = Path(__file__).resolve()
 _ROOT = _SCRIPT_PATH.parents[2] if len(_SCRIPT_PATH.parents) > 2 else _SCRIPT_PATH.parent
-CORPUS_VOLUME = os.environ.get("MODAL_CORPUS_VOLUME", "trueskate-corpus")
+# trueskate-corpus (the pre-calibration PNG corpus) was deleted 2026-10-01
+# (research/MODAL_STORAGE_20261001.md); default to the current Model 1 volume.
+CORPUS_VOLUME = os.environ.get("MODAL_CORPUS_VOLUME", "trueskate-model1-good13100-20260927")
 # `gpu="any"` draws from {T4, L4, A10} and the draw is ~2.7x in epoch time (29 s vs 78 s
 # measured on the same 2k config, 2026-08-21) AND changes the cuDNN algorithm choice, so
 # identical-seed runs stop being bit-comparable.  For a SWEEP, pin this to one type so the
@@ -90,9 +92,19 @@ def _training_inputs(data_subdir: str, experiment_manifest_name: str | None,
     return destination, shard_path.parent / shard_payload["experiment_manifest"]
 
 
-# Shard-staged runs may cache decoded frames when the experiment is small enough
-# for the function's RAM (~3.5 MiB of uint8 per 32x288x128 clip; 13.1k ~ 46 GiB).
-SHARD_CACHE_MAX_SAMPLES = 14_000
+# Shard-staged runs may cache decoded frames when they fit the function's RAM.
+# The cache holds uint8 frames, so its size depends on the decode resolution:
+# ~3.5 MiB per 32x288x128 clip (13.1k ~ 46 GiB) but ~0.84 MiB at 64x144
+# (22.3k ~ 18 GiB). The budget matches the former 14,000-clip cap at 128x288
+# and leaves headroom in the 64 GiB function.
+SHARD_CACHE_MAX_BYTES = 48 * 2**30
+CACHE_SEQUENCE_LENGTH = 32
+
+
+def shard_cache_bytes(samples: int, image_width: int, image_height: int,
+                      sequence_length: int = CACHE_SEQUENCE_LENGTH) -> int:
+    """Decoded-frame cache size in bytes for ``samples`` clips."""
+    return int(samples) * sequence_length * 3 * int(image_width) * int(image_height)
 
 
 def _require_gpu(required_gpu: str) -> str:
@@ -202,9 +214,11 @@ def train_remote(data_subdir: str, run_label: str, *, epochs: int = 40,
     if shard_manifest_name is not None and cache_frames:
         from trueskate_ai.data.sequential_shards import read_shard_manifest
         shard_count = int(read_shard_manifest(Path("/corpus") / data_subdir / shard_manifest_name)["sample_count"])
-        if shard_count > SHARD_CACHE_MAX_SAMPLES:
-            raise ValueError(f"cache_frames with {shard_count} shard samples exceeds "
-                             f"{SHARD_CACHE_MAX_SAMPLES}; use cache_frames=False for large rungs")
+        cache_bytes = shard_cache_bytes(shard_count, image_width, image_height)
+        if cache_bytes > SHARD_CACHE_MAX_BYTES:
+            raise ValueError(f"cache_frames with {shard_count} shard samples at {image_width}x{image_height} "
+                             f"needs {cache_bytes / 2**30:.1f} GiB, over the "
+                             f"{SHARD_CACHE_MAX_BYTES / 2**30:.0f} GiB budget; use cache_frames=False")
     trainer = _trainer()
     training_root, experiment_path = _training_inputs(
         data_subdir, experiment_manifest_name, shard_manifest_name,
@@ -534,6 +548,121 @@ def evaluate_ensemble_validation(data_subdir: str, checkpoint_names: str, *, lab
         "equal_weight": equal,
         "grid_best_optimistic": {"weights": dict(zip(names, grid[0][1])), "recovery": grid[0][0]},
         "per_sample": {"single": single_rows, "equal_weight": rows(equal_rows)},
+    }
+    out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
+    models.commit()
+    summary = {k: v for k, v in output.items() if k != "per_sample"}
+    print(json.dumps(summary, indent=2, sort_keys=True))
+    return summary
+
+
+@app.function(image=image, gpu=TRAIN_GPU, timeout=3 * 3600, memory=32768,
+              volumes={"/corpus": corpus, "/models": models})
+def probe_end_decoding(data_subdir: str, checkpoint_names: str, *, label: str,
+                       experiment_manifest_name: str | None = None,
+                       shard_manifest_name: str | None = None,
+                       batch_size: int = 8, required_gpu: str = "") -> dict:
+    """M1-ENDPROBE: frozen score maps, changed end read-out, VALIDATION only.
+
+    Start and duration stay the model's own; only the end point is re-read
+    (see ``trueskate_ai.model1.linear.end_probe``). ``oracle_*`` variants use
+    the target duration and are diagnostics, not inference-feasible. The test
+    partition is never loaded.
+    """
+    import torch
+    from trueskate_ai.model1.linear.dataset import BasicLinearClipDataset
+    from trueskate_ai.model1.linear.end_probe import VARIANTS, along_path_error, end_variants
+    from trueskate_ai.model1.linear.training import (
+        RECOVERY_DURATION_TOLERANCE_S, RECOVERY_ENDPOINT_TOLERANCE,
+    )
+
+    names = [name.strip() for name in checkpoint_names.split(",") if name.strip()]
+    if not names:
+        raise ValueError("need at least one checkpoint")
+    gpu_name = _require_gpu(required_gpu)
+    models.reload()
+    out_path = Path("/models") / f"basic_linear_endprobe_validation_{label}.json"
+    if out_path.exists():
+        raise FileExistsError(f"{out_path.name} already exists")
+    root, experiment_path = _training_inputs(data_subdir, experiment_manifest_name, shard_manifest_name)
+    if experiment_path is None:
+        raise ValueError("probe_end_decoding requires an experiment or shard manifest")
+    payloads = [torch.load(Path("/models") / name, map_location="cpu", weights_only=False)
+                for name in names]
+    decode_modes = {str(payload.get("decode_mode") or "seek") for payload in payloads}
+    if len(decode_modes) != 1:
+        raise ValueError(f"checkpoints disagree on decode mode: {sorted(decode_modes)}")
+    decode_mode = decode_modes.pop()
+    data = BasicLinearClipDataset(root, manifest=experiment_path, manifest_partition="validation",
+                                  cache_frames=False, verify_manifest_content=True,
+                                  decode_mode=decode_mode,
+                                  **_require_two_knots(_payload_dataset_kwargs(payloads),
+                                                       "probe_end_decoding"))
+    device = torch.device("cuda")
+    models_local = []
+    for payload in payloads:
+        model = _model_from_payload(payload, torch).to(device)
+        model.load_state_dict(payload["state_dict"])
+        model.eval()
+        models_local.append(model)
+    rows: dict[str, list] = {name: [] for name in names}
+    max_baseline_drift = 0.0
+    with torch.no_grad():
+        for batch in torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=False):
+            frames = batch["frames"].to(device)
+            target = batch["target"].to(device)
+            for name, model in zip(names, models_local):
+                prediction, ends, diagnostics = end_variants(model, frames, target)
+                max_baseline_drift = max(max_baseline_drift, float(
+                    (ends["baseline"] - prediction[:, 2:4]).abs().max()))
+                start_error = torch.linalg.vector_norm(prediction[:, 0:2] - target[:, 0:2], dim=1)
+                duration_ok = (prediction[:, 4] - target[:, 4]).abs() <= RECOVERY_DURATION_TOLERANCE_S
+                start_ok = start_error <= RECOVERY_ENDPOINT_TOLERANCE
+                per_variant = {}
+                for variant, end in ends.items():
+                    end_error = torch.linalg.vector_norm(end - target[:, 2:4], dim=1)
+                    end_ok = end_error <= RECOVERY_ENDPOINT_TOLERANCE
+                    per_variant[variant] = {
+                        "end_error": end_error, "end_ok": end_ok,
+                        "along": along_path_error(end, target),
+                        "recovered": start_ok & end_ok & duration_ok,
+                    }
+                for i in range(frames.shape[0]):
+                    row = {"start_ok": bool(start_ok[i]), "duration_ok": bool(duration_ok[i]),
+                           "predicted_duration": float(prediction[i, 4]),
+                           "target_duration": float(target[i, 4])}
+                    row.update({key: float(value[i]) for key, value in diagnostics.items()})
+                    for variant, values in per_variant.items():
+                        row[variant] = {key: (bool(value[i]) if value.dtype == torch.bool else float(value[i]))
+                                        for key, value in values.items()}
+                    rows[name].append(row)
+    if max_baseline_drift > 1e-4:
+        raise RuntimeError(f"baseline re-read drifts from the model output by {max_baseline_drift}")
+    summary_by_checkpoint = {}
+    for name in names:
+        checkpoint_rows = rows[name]
+        count = len(checkpoint_rows)
+        summary_by_checkpoint[name] = {
+            variant: {
+                "recovery": sum(row[variant]["recovered"] for row in checkpoint_rows) / count,
+                "end_recovery": sum(row[variant]["end_ok"] for row in checkpoint_rows) / count,
+                "end_short_failures": sum((not row[variant]["end_ok"]) and row[variant]["along"] < 0
+                                          for row in checkpoint_rows),
+                "end_long_failures": sum((not row[variant]["end_ok"]) and row[variant]["along"] >= 0
+                                         for row in checkpoint_rows),
+            } for variant in VARIANTS}
+    output = {
+        "label": label, "partition": "validation", "checkpoints": names,
+        "checkpoint_sha256": {name: _checkpoint_sha256(Path("/models") / name) for name in names},
+        "experiment_manifest_fingerprint": data.manifest_fingerprint,
+        "decode_mode": decode_mode, "gpu": gpu_name, "library_versions": _library_versions(),
+        "samples": len(data), "variants": {k: list(v) for k, v in VARIANTS.items()},
+        "max_baseline_drift": max_baseline_drift,
+        "validation_reported_at_train_time": {name: (payload.get("validation") or {}).get(
+            "gesture_recovery_accuracy") for name, payload in zip(names, payloads)},
+        "summary": summary_by_checkpoint,
+        "per_sample": {name: [{"path": str(path.relative_to(data.root)), **row}
+                              for path, row in zip(data.sample_paths, rows[name])] for name in names},
     }
     out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
     models.commit()

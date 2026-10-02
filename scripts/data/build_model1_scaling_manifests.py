@@ -18,7 +18,7 @@ from trueskate_ai.data.timing_screen import TimingScreen  # noqa: E402
 from trueskate_ai.model1.scaling import (  # noqa: E402
     DEFAULT_LINEAR_RUNGS, NESTING_ORDERS, assert_deterministic_nesting,
     build_experiment_manifest, build_linear_cohort_manifest, build_park_mix_cohort,
-    split_cohort_by_command,
+    split_cohort_by_command, split_session_holdout,
     build_nested_subset_manifests,
 )
 
@@ -31,6 +31,16 @@ def _sizes(value: str) -> list[int]:
     if not result:
         raise argparse.ArgumentTypeError("at least one size is required")
     return result
+
+
+def _park_counts(parser: argparse.ArgumentParser, items: list[str], flag: str) -> dict[str, int]:
+    counts = {}
+    for item in items:
+        park, _, count = item.rpartition("=")
+        if not park or not count.isdigit():
+            parser.error(f"{flag} must be PARK=COUNT, got {item!r}")
+        counts[park] = int(count)
+    return counts
 
 
 def main() -> None:
@@ -61,6 +71,13 @@ def main() -> None:
     csplit.add_argument("--cohort", type=Path, required=True)
     csplit.add_argument("--seed", type=int, default=0)
     csplit.add_argument("--out-dir", type=Path, required=True)
+
+    hold = commands.add_parser("session-holdout",
+                               help="hold out whole recording sessions per park (role certification)")
+    hold.add_argument("--cohort", type=Path, required=True)
+    hold.add_argument("--target", action="append", required=True, help="PARK=COUNT (repeat per park)")
+    hold.add_argument("--seed", type=int, default=0)
+    hold.add_argument("--out-dir", type=Path, required=True)
 
     mix = commands.add_parser("park-mix", help="merge frozen cohorts and select exact per-park counts")
     mix.add_argument("--cohort", type=Path, action="append", required=True)
@@ -113,13 +130,19 @@ def main() -> None:
             outputs[name] = {"path": str(path), "sample_count": written["sample_count"],
                              "fingerprint": written["fingerprint"]}
         print(json.dumps(outputs, indent=2))
+    elif args.command == "session-holdout":
+        parts = split_session_holdout(read_manifest(args.cohort), _park_counts(parser, args.target, "--target"),
+                                      seed=args.seed)
+        outputs = {}
+        for name, payload in parts.items():
+            path = args.out_dir / f"{args.cohort.stem}.{name}.json"
+            written = write_manifest(path, payload)
+            outputs[name] = {"path": str(path), "sample_count": written["sample_count"],
+                             "fingerprint": written["fingerprint"],
+                             "parks": written["coverage"]["park"]}
+        print(json.dumps(outputs, indent=2))
     elif args.command == "park-mix":
-        quotas = {}
-        for item in args.quota:
-            park, _, count = item.rpartition("=")
-            if not park or not count.isdigit():
-                parser.error(f"--quota must be PARK=COUNT, got {item!r}")
-            quotas[park] = int(count)
+        quotas = _park_counts(parser, args.quota, "--quota")
         payload = build_park_mix_cohort(
             [read_manifest(path) for path in args.cohort], quotas,
             seed=args.seed, cohort=args.name, role=args.role,

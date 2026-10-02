@@ -1,0 +1,6 @@
+# M1-EXPAND audit 3 (seed 2510010100), sealed before viewing; rig code 8683b33
+fc8e0818792d55c2c079179ff0a88c839e7a6ba6fca4d0d686f1ab941a2787ca  expected.json
+3fa4fc181d815c644245ade1dea7a4404b30f349a822f04c382fdd78b5e4273a  selection.json
+107629a962a39308e91949147c22cdd9e1816ecfe7f909c8ddfa0b452f574245  expand.screened.json
+# draw by park: Los Angeles 21, Kansas City 18, Super Crown 2016 15, Inbound 15,
+# Portland 14, Super Crown 2015 7, The Workshop 5, Skateboard GB 5

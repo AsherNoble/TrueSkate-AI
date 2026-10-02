@@ -1,0 +1,437 @@
+{
+ "schema": "model1-onset-validation-selection-v1",
+ "seed": 2510010100,
+ "source_corpus": "/Users/training-server/trueskate-ai-runtime",
+ "purpose": "M1-CORPUS-AUDIT random sample of screened corpus",
+ "source_manifest": {
+  "path": "/Users/training-server/trueskate-ai-runtime/tmp/expand-manifest-20260930/expand.screened.json",
+  "fingerprint": "sha256:4245d3deef8e1966f411a3207b8692afe26eb5a87d2eea927c951835bdd1d59a"
+ },
+ "screen": {
+  "name": "corpus-screen-v1",
+  "rate_threshold": 0.0008,
+  "latency_window_s": [
+   0.085,
+   0.21
+  ],
+  "source": "M1-CORPUS-AUDIT-20260927"
+ },
+ "counts": {
+  "total_by_park": {
+   "Skateboard GB 2024": 201,
+   "Skatepark Inbound": 1313,
+   "SLS 2013 Kansas City": 2507,
+   "SLS 2013 Portland": 1300,
+   "The Workshop": 202,
+   "SLS 2015 Los Angeles": 2500,
+   "SLS 2015 Super Crown": 801,
+   "SLS 2016 Super Crown": 1307
+  },
+  "excluded_by_park": {},
+  "kept": 10131,
+  "total": 10131
+ },
+ "selected_count": 100,
+ "samples": [
+  {
+   "order": 1,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_122029/sls_2013_kansas_city/sample_000003"
+  },
+  {
+   "order": 2,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260929_211736/sls_2016_super_crown/sample_000007"
+  },
+  {
+   "order": 3,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_021556/sls_2015_los_angeles/sample_000009"
+  },
+  {
+   "order": 4,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260930_001224/sls_2013_portland/sample_000006"
+  },
+  {
+   "order": 5,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/skatepark_inbound/iPhone_XR_20260930_055413/skatepark_inbound/sample_000004"
+  },
+  {
+   "order": 6,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260930_023852/sls_2016_super_crown/sample_000006"
+  },
+  {
+   "order": 7,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260928_231323/sls_2015_los_angeles/sample_000006"
+  },
+  {
+   "order": 8,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260928_201739/sls_2015_super_crown/sample_000007"
+  },
+  {
+   "order": 9,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260929_174639/sls_2013_portland/sample_000003"
+  },
+  {
+   "order": 10,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260930_013340/sls_2013_portland/sample_000008"
+  },
+  {
+   "order": 11,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260929_194121/sls_2016_super_crown/sample_000006"
+  },
+  {
+   "order": 12,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_054250/skatepark_inbound/sample_000010"
+  },
+  {
+   "order": 13,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260930_012549/sls_2016_super_crown/sample_000001"
+  },
+  {
+   "order": 14,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_035057/skatepark_inbound/sample_000002"
+  },
+  {
+   "order": 15,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260930_022720/sls_2016_super_crown/sample_000006"
+  },
+  {
+   "order": 16,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260929_192931/sls_2016_super_crown/sample_000001"
+  },
+  {
+   "order": 17,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_010037/sls_2013_kansas_city/sample_000006"
+  },
+  {
+   "order": 18,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_054014/sls_2013_kansas_city/sample_000005"
+  },
+  {
+   "order": 19,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/the_workshop/iPhone_XR_20260928_185736/the_workshop/sample_000002"
+  },
+  {
+   "order": 20,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260928_234354/sls_2013_kansas_city/sample_000007"
+  },
+  {
+   "order": 21,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_030445/sls_2013_kansas_city/sample_000007"
+  },
+  {
+   "order": 22,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260930_001716/sls_2016_super_crown/sample_000005"
+  },
+  {
+   "order": 23,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_033118/sls_2015_los_angeles/sample_000006"
+  },
+  {
+   "order": 24,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/skateboard_gb_2024/iPhone_XR_20260930_035056/skateboard_gb_2024/sample_000005"
+  },
+  {
+   "order": 25,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_042502/sls_2015_los_angeles/sample_000005"
+  },
+  {
+   "order": 26,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260928_221110/sls_2015_los_angeles/sample_000010"
+  },
+  {
+   "order": 27,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_020805/sls_2015_los_angeles/sample_000005"
+  },
+  {
+   "order": 28,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260928_192830/sls_2015_super_crown/sample_000010"
+  },
+  {
+   "order": 29,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260929_201123/sls_2013_portland/sample_000009"
+  },
+  {
+   "order": 30,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/skatepark_inbound/iPhone_XR_20260930_084414/skatepark_inbound/sample_000003"
+  },
+  {
+   "order": 31,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_020014/sls_2013_kansas_city/sample_000008"
+  },
+  {
+   "order": 32,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260929_184218/sls_2013_portland/sample_000003"
+  },
+  {
+   "order": 33,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/skateboard_gb_2024/iPhone_XR_20260930_031625/skateboard_gb_2024/sample_000008"
+  },
+  {
+   "order": 34,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_081749/sls_2015_los_angeles/sample_000010"
+  },
+  {
+   "order": 35,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_052849/sls_2013_kansas_city/sample_000006"
+  },
+  {
+   "order": 36,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_004500/sls_2015_los_angeles/sample_000001"
+  },
+  {
+   "order": 37,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_084037/skatepark_inbound/sample_000006"
+  },
+  {
+   "order": 38,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_072934/skatepark_inbound/sample_000006"
+  },
+  {
+   "order": 39,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_074556/skatepark_inbound/sample_000010"
+  },
+  {
+   "order": 40,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_112048/sls_2013_kansas_city/sample_000007"
+  },
+  {
+   "order": 41,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260929_234928/sls_2013_portland/sample_000006"
+  },
+  {
+   "order": 42,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_034610/sls_2015_los_angeles/sample_000005"
+  },
+  {
+   "order": 43,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_000803/sls_2013_kansas_city/sample_000011"
+  },
+  {
+   "order": 44,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260928_232735/sls_2013_kansas_city/sample_000002"
+  },
+  {
+   "order": 45,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/the_workshop/iPhone_XR_20260928_185736/the_workshop/sample_000006"
+  },
+  {
+   "order": 46,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_122313/sls_2015_los_angeles/sample_000003"
+  },
+  {
+   "order": 47,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_032823/skatepark_inbound/sample_000005"
+  },
+  {
+   "order": 48,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_085741/sls_2013_kansas_city/sample_000007"
+  },
+  {
+   "order": 49,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_101033/sls_2015_los_angeles/sample_000006"
+  },
+  {
+   "order": 50,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/the_workshop/iPhone_XR_20260928_184240/the_workshop/sample_000009"
+  },
+  {
+   "order": 51,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_123106/sls_2013_kansas_city/sample_000010"
+  },
+  {
+   "order": 52,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/skateboard_gb_2024/iPhone_XR_20260930_033233/skateboard_gb_2024/sample_000009"
+  },
+  {
+   "order": 53,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260929_212056/sls_2013_portland/sample_000006"
+  },
+  {
+   "order": 54,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_061026/sls_2013_kansas_city/sample_000010"
+  },
+  {
+   "order": 55,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/skatepark_inbound/iPhone_XR_20260930_084414/skatepark_inbound/sample_000006"
+  },
+  {
+   "order": 56,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_071358/sls_2013_kansas_city/sample_000001"
+  },
+  {
+   "order": 57,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260930_000205/sls_2016_super_crown/sample_000006"
+  },
+  {
+   "order": 58,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_010750/sls_2013_kansas_city/sample_000008"
+  },
+  {
+   "order": 59,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/the_workshop/iPhone_XR_20260928_184528/the_workshop/sample_000002"
+  },
+  {
+   "order": 60,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260928_183258/sls_2015_super_crown/sample_000010"
+  },
+  {
+   "order": 61,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260928_201241/sls_2015_super_crown/sample_000006"
+  },
+  {
+   "order": 62,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/skateboard_gb_2024/iPhone_XR_20260930_035056/skateboard_gb_2024/sample_000006"
+  },
+  {
+   "order": 63,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260929_013341/sls_2013_kansas_city/sample_000008"
+  },
+  {
+   "order": 64,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260929_203231/sls_2016_super_crown/sample_000002"
+  },
+  {
+   "order": 65,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260929_215641/sls_2013_portland/sample_000008"
+  },
+  {
+   "order": 66,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_084846/skatepark_inbound/sample_000009"
+  },
+  {
+   "order": 67,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260929_184557/sls_2016_super_crown/sample_000009"
+  },
+  {
+   "order": 68,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260928_190918/sls_2015_super_crown/sample_000008"
+  },
+  {
+   "order": 69,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260929_232232/sls_2013_portland/sample_000004"
+  },
+  {
+   "order": 70,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260930_003822/sls_2013_portland/sample_000008"
+  },
+  {
+   "order": 71,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_120857/sls_2015_los_angeles/sample_000004"
+  },
+  {
+   "order": 72,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/the_workshop/iPhone_XR_20260928_182917/the_workshop/sample_000001"
+  },
+  {
+   "order": 73,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_010021/sls_2015_los_angeles/sample_000006"
+  },
+  {
+   "order": 74,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_033214/skatepark_inbound/sample_000002"
+  },
+  {
+   "order": 75,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260929_193655/sls_2013_portland/sample_000002"
+  },
+  {
+   "order": 76,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_011120/sls_2015_los_angeles/sample_000007"
+  },
+  {
+   "order": 77,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_073341/skatepark_inbound/sample_000008"
+  },
+  {
+   "order": 78,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_100347/sls_2015_los_angeles/sample_000008"
+  },
+  {
+   "order": 79,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_062802/sls_2015_los_angeles/sample_000001"
+  },
+  {
+   "order": 80,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260929_231401/sls_2016_super_crown/sample_000003"
+  },
+  {
+   "order": 81,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260928_231947/sls_2015_los_angeles/sample_000001"
+  },
+  {
+   "order": 82,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/skateboard_gb_2024/iPhone_XR_20260930_033604/skateboard_gb_2024/sample_000010"
+  },
+  {
+   "order": 83,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260929_213259/sls_2016_super_crown/sample_000008"
+  },
+  {
+   "order": 84,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260929_195705/sls_2016_super_crown/sample_000004"
+  },
+  {
+   "order": 85,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_093943/sls_2015_los_angeles/sample_000006"
+  },
+  {
+   "order": 86,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_062251/skatepark_inbound/sample_000002"
+  },
+  {
+   "order": 87,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260930_000205/sls_2016_super_crown/sample_000009"
+  },
+  {
+   "order": 88,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260929_181617/sls_2013_portland/sample_000007"
+  },
+  {
+   "order": 89,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260928_210951/sls_2015_super_crown/sample_000008"
+  },
+  {
+   "order": 90,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260928_231816/sls_2013_kansas_city/sample_000006"
+  },
+  {
+   "order": 91,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_kansas_city/iPhone_XR_20260928_223656/sls_2013_kansas_city/sample_000006"
+  },
+  {
+   "order": 92,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_011843/sls_2015_los_angeles/sample_000010"
+  },
+  {
+   "order": 93,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2016_super_crown/iPhone_XR2_20260929_230944/sls_2016_super_crown/sample_000003"
+  },
+  {
+   "order": 94,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_123742/sls_2015_los_angeles/sample_000006"
+  },
+  {
+   "order": 95,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_043540/skatepark_inbound/sample_000006"
+  },
+  {
+   "order": 96,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260929_201510/sls_2013_portland/sample_000009"
+  },
+  {
+   "order": 97,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_super_crown/iPhone_XR2_20260928_200739/sls_2015_super_crown/sample_000005"
+  },
+  {
+   "order": 98,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR/sls_2013_portland/iPhone_XR_20260929_191329/sls_2013_portland/sample_000001"
+  },
+  {
+   "order": 99,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/skatepark_inbound/iPhone_XR2_20260930_044304/skatepark_inbound/sample_000004"
+  },
+  {
+   "order": 100,
+   "source": "data/model1_linear_expand_20260929/iPhone_XR2/sls_2015_los_angeles/iPhone_XR2_20260929_065443/sls_2015_los_angeles/sample_000007"
+  }
+ ]
+}

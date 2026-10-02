@@ -1,0 +1,47 @@
+==============================================================================
+A. Per-park validation failure vs that park's own training clips (one seed per rung)
+park                2293              4585              9170             18394
+LA           225:  30.2%       449:  26.4%       898:  21.4%      3398:  15.4%
+KC           655:  32.9%      1311:  22.8%      2622:  16.3%      5129:  12.8%
+SC15         354:  23.8%       709:  16.2%      1417:  10.3%      2218:   8.8%
+GB           354:  15.3%       707:   6.3%      1415:   5.6%      1616:   3.7%
+WS           705:   5.7%      1409:   2.9%      2818:   2.1%      3020:   2.2%
+
+consistency: autopsy n9170 seed2 vs endprobe baseline seed2 agree on 1965 / 1965 clips
+==============================================================================
+B. Is each park's 9,170 -> 18,394 change beyond seed noise? (9,170: three cosine seeds)
+park        own clips           9170 seeds 0/1/2  18394 s1  paired gained/lost vs each 9170 seed
+LA       898->3398         19.8% / 21.4% / 21.4%    15.4%  15/7, 20/9, 18/7
+KC      2622->5129         16.6% / 19.4% / 16.3%    12.8%  37/15, 57/19, 41/21
+SC15    1417->2218         11.2% / 11.9% / 10.3%     8.8%  18/10, 21/11, 17/12
+GB      1415->1616          4.7% /  6.0% /  5.6%     3.7%  7/4, 12/5, 12/6
+WS      2818->3020          2.7% /  4.3% /  2.1%     2.2%  8/5, 18/6, 6/7
+seed-only noise (9170 seed pairs, gained/lost): LA 11/14,12/15,14/14; KC 33/49,29/27,45/27; SC15 17/19,16/13,15/10; GB 6/10,4/7,7/6; WS 9/18,10/6,18/5; 
+==============================================================================
+C. Does sharing a recording with training help? (validation, 18,394 seed1 model)
+   mates          LA          KC        SC15          GB          WS         all
+  0-4     19.0% (21)  17.0% (88)   8.3% (12)   0.0% (28)   2.4% (84)  9.4% (233)
+  5-7    15.3% (111) 11.7% (410)  8.3% (228)  4.8% (187)  2.3% (426) 7.6% (1362)
+  8-9     14.9% (47)  14.3% (77)  10.1% (79)   0.0% (36)   1.4% (73)  8.7% (312)
+ 10-11      0.0% (3)    0.0% (3)    0.0% (1)           -    0.0% (1)    0.0% (8)
+ 12-+              -           -           -   0.0% (18)           -   0.0% (18)
+LA med 7: few-mates 15.9% (n=132) vs many 14.0% (n=50)
+KC med 6: few-mates 12.4% (n=346) vs many 13.4% (n=232)
+SC15 med 7: few-mates 8.3% (n=240) vs many 10.0% (n=80)
+GB med 6: few-mates 4.0% (n=151) vs many 3.3% (n=150)
+WS med 6: few-mates 2.8% (n=357) vs many 1.3% (n=227)
+within-park covariance(mates, failure) = +42.45; one-sided p (more mates -> fewer failures) = 0.639
+==============================================================================
+D. Holdout vs validation at matched gesture duration
+  <0.45  validation  13.7% (n= 322)   holdout  18.9% (n=148)
+  <0.60  validation  11.0% (n= 337)   holdout  12.3% (n=162)
+  <0.75  validation   8.6% (n= 304)   holdout  13.3% (n=158)
+  <0.90  validation   5.4% (n= 351)   holdout  11.4% (n=140)
+  <1.05  validation   3.0% (n= 336)   holdout  14.7% (n=150)
+ >=1.05  validation   5.7% (n= 315)   holdout   5.4% (n=149)
+holdout failure observed 115/907 = 12.7%; expected at validation rates for its duration mix: 7.9%
+==============================================================================
+E. Do holdout failures cluster by recording? (whole sessions, ~9 clips each)
+SLS 2013 Portland      sessions  32  failure 10.5%  dispersion 0.99x binomial (p=0.442); worst 10% of sessions hold 8/32 failures
+SLS 2016 Super Crown   sessions  33  failure 12.7%  dispersion 1.26x binomial (p=0.101); worst 10% of sessions hold 10/38 failures
+Skatepark Inbound      sessions  32  failure 15.0%  dispersion 0.99x binomial (p=0.436); worst 10% of sessions hold 10/45 failures
