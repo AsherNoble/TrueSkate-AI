@@ -1,0 +1,43 @@
+{
+  "experiment": "CURVE-JAGGED-20261002",
+  "manifest_sha256": "e0fd37205477de7475c4556694dac824c236e482b4566cd884a39770ec70bb87",
+  "device": "iPhone_XR",
+  "park": "Inbound",
+  "execution_error": null,
+  "request_count": 5,
+  "outcomes": [
+    "success",
+    "success",
+    "success",
+    "success",
+    "success"
+  ],
+  "admission": {
+    "accepted": false,
+    "error": "original recording contains gameplay contamination",
+    "training_admission": false
+  },
+  "training_admission": false,
+  "recording_sha256": "9e6d8aabbca58d23ce4a296818247092aa8b6e2411edf9edcc925a8a9d7118fb",
+  "viewer": {
+    "source_frames": 1771,
+    "source_pts_preserved": true,
+    "clips": [
+      {
+        "title": "Jagged organic \u00b7 600 ms",
+        "start": 8.125011157989501,
+        "end": 10.7250111579895,
+        "onset": 8.925011157989502
+      },
+      {
+        "title": "Jagged organic \u00b7 300 ms",
+        "start": 49.71233816146851,
+        "end": 52.012338161468506,
+        "onset": 50.512338161468506
+      }
+    ],
+    "jump_timing": "approximate WDA epoch minus recorder startedAt"
+  },
+  "artifact_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/curved-gestures-worktree/tmp/curve-jagged-probe/recording",
+  "rig_artifact_path": "/Users/training-server/trueskate-ai-runtime/tmp/CURVE-JAGGED-20261002-e0fd3720/recording"
+}

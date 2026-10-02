@@ -18,6 +18,9 @@ Put substantial experiments in individual records and current facts in STATUS.
 - Operator viewed clips and requested a wide fast arc: three XR1 commands at
   300/200/120 ms recorded for human viewing. Gameplay admission failed; retained
   without replacement. [Visual speed probe](experiments/CURVE-SPEED-20261002.md).
+- Requested jagged organic path: five joined cubics in one touch, recorded at
+  600/300 ms. Gameplay check flagged the preserved recording; human viewer ready.
+  [Jagged probe](experiments/CURVE-JAGGED-20261002.md).
 
 ## 2026-10-01 — Doubling the data still helps, but less
 
