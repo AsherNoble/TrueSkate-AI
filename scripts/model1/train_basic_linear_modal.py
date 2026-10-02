@@ -15,7 +15,9 @@ import modal
 
 _SCRIPT_PATH = Path(__file__).resolve()
 _ROOT = _SCRIPT_PATH.parents[2] if len(_SCRIPT_PATH.parents) > 2 else _SCRIPT_PATH.parent
-CORPUS_VOLUME = os.environ.get("MODAL_CORPUS_VOLUME", "trueskate-corpus")
+# trueskate-corpus (the pre-calibration PNG corpus) was deleted 2026-10-01
+# (research/MODAL_STORAGE_20261001.md); default to the current Model 1 volume.
+CORPUS_VOLUME = os.environ.get("MODAL_CORPUS_VOLUME", "trueskate-model1-good13100-20260927")
 # `gpu="any"` draws from {T4, L4, A10} and the draw is ~2.7x in epoch time (29 s vs 78 s
 # measured on the same 2k config, 2026-08-21) AND changes the cuDNN algorithm choice, so
 # identical-seed runs stop being bit-comparable.  For a SWEEP, pin this to one type so the
