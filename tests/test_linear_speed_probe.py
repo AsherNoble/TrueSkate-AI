@@ -74,3 +74,21 @@ def test_schedule_failure_retention(tmp_path, mode):
             assert not any(s['kind'] == 'diagnostic' for s,_ in calls)
         if mode == 'sleep':
             assert not calls and execution['schedule'][0]['lateness_s'] == pytest.approx(.2)
+
+
+def test_fine_profile_preserves_original_and_changes_only_durations():
+    assert manifest()['sha256'] == 'bc27dd7f64ef943f82b87f71d8ad6d4e29ca49f31657eeac6576db572416781f'
+    fine = manifest('fine')
+    verify_manifest(json.loads(json.dumps(fine)))
+    for repeat, commands in enumerate(fine['recordings']):
+        drags = [c for c in commands if c['kind'] == 'diagnostic']
+        assert [c['duration_ms'] for c in drags] == ([50,45,40,35,30,25,20] if repeat == 0 else [20,25,30,35,40,45,50])
+        assert len(commands) == 17
+        for c in drags:
+            actions = c['payload']['actions'][0]['actions']
+            baseline = manifest()['recordings'][0][2]['payload']['actions'][0]['actions']
+            assert len(actions) == 4
+            assert actions[0] == baseline[0] and actions[1] == baseline[1] and actions[3] == baseline[3]
+            assert actions[2] == dict(baseline[2], duration=c['duration_ms'])
+    with pytest.raises(ValueError):
+        manifest('unknown')

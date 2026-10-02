@@ -1,6 +1,7 @@
 """Preserve separate timing diagnostics and the first gameplay flag; never override admission.
 
 Run with one absolute recording-directory argument. Outputs must not already exist.
+Use --timing-only to verify timing and full native decode without image classification.
 """
 import json, cv2, numpy as np
 from pathlib import Path
@@ -32,6 +33,9 @@ try:
 except Exception as e:results.update(timing_checks_pass=False,timing_error=str(e))
 (run/"timing-diagnostic.json").write_text(json.dumps(results,indent=2)+"\n")
 print(json.dumps(results),flush=True)
+if '--timing-only' in sys.argv[2:]:
+    _decode_source_frames(run/"original.mov",pts,keep=False)
+    sys.exit(0)
 number=[0];flag={}
 def inspect(image):
     rgb=cv2.cvtColor(image,cv2.COLOR_BGR2RGB)

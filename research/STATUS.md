@@ -340,3 +340,13 @@ despite strong gameplay response, and tap-like spots at 10 ms. The visible-trail
 transition repeats between 20 and 50 ms; no input-collapse threshold follows at
 30 fps. The latter half of repeat 2 changes reset location within Inbound.
 See the [redo record](experiments/LINEAR-SPEED-20261002.md#authorized-redo-and-native-frame-viewer).
+
+Operator follow-up: visible trace and board movement at 600–50 ms; no visible
+trace but board movement at 20 ms; minuscule tap/flicker without board movement
+at 10 ms. This primary assessment replaces the assistant's 20 ms uncertainty.
+A requested [50–20 ms fine sweep](experiments/LINEAR-SPEED-FINE-20261002.md)
+uses 50/45/40/35/30/25/20 ms in reversed repeats with the same path and one move.
+The fine sweep completed all fourteen drags; full native decode and timing
+checks pass (middle residuals 11.8/6.4 ms). At operator direction, gameplay
+assessment uses human vision; automated menu/editor scans are skipped. Visual
+transition findings await operator review. Collection remains off.

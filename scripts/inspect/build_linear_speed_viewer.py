@@ -55,7 +55,8 @@ def build(manifest_path, recordings, out):
                     executed[spec['command_id']] = dict(onset=onset, start=max(float(pts[0]),onset-.7),
                         end=min(float(pts[-1]),onset+spec['duration_ms']/1000+1.5),
                         timing=('accepted start/end calibration' if admission.get('accepted') else
-                                'start/end and held-out timing checks pass; gameplay admission failed' if fit else
+                                ('start/end and held-out timing checks pass; operator gameplay review' if (run/'review-policy.json').exists() else
+                                 'start/end and held-out timing checks pass; separate diagnostic') if fit else
                                 'approximate WDA epoch; calibration not admitted'))
                     info = executed[spec['command_id']]
                     frames,times,indices = read_native_frames(run/'original.mov', pts, start=info['start'], end=info['end'])
@@ -89,4 +90,4 @@ if __name__ == '__main__':
         parser.add_argument('--'+name, type=Path, required=True)
     args = parser.parse_args()
     data = build(args.manifest, args.recordings, args.out)
-    print(f"{sum(c['executed'] for c in data['clips'])}/16 executed clips; {len(data['videos'])} preserved recordings")
+    print(f"{sum(c['executed'] for c in data['clips'])}/{len(data['clips'])} executed clips; {len(data['videos'])} preserved recordings")

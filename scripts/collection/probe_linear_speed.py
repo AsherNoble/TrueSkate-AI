@@ -15,13 +15,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--freeze', action='store_true')
+    parser.add_argument('--profile', choices=('broad','fine'), default='broad', help='Profile to freeze')
     parser.add_argument('--out', type=Path)
+    parser.add_argument('--human-gameplay-review', action='store_true',
+                        help='Operator assesses menus/editor; skip automatic image guards and admission scan')
     parser.add_argument('--wda-revision')
     parser.add_argument('--repeat', type=int, choices=(1,2),
                         help='One explicitly authorized diagnostic repeat; independent admission result')
     args = parser.parse_args()
     if args.freeze:
-        save_new(args.manifest, manifest())
+        save_new(args.manifest, manifest(args.profile))
         return
     if not args.out or not args.wda_revision:
         parser.error('execution requires --out and --wda-revision')
@@ -57,9 +60,9 @@ def main():
             nonlocal last_settle_png
             if driver.query_app_state(BUNDLE_ID) != 4 or worker._active_bundle_id() not in (None, BUNDLE_ID):
                 raise RuntimeError('True Skate foreground lost')
-            png = last_settle_png if last_settle_png is not None else screenshot()
+            png = None if args.human_gameplay_review else (last_settle_png if last_settle_png is not None else screenshot())
             last_settle_png = None
-            if is_editor_frame(png) or is_menu_frame(png, allow_idle_navigation=True):
+            if not args.human_gameplay_review and (is_editor_frame(png) or is_menu_frame(png, allow_idle_navigation=True)):
                 raise RuntimeError('gameplay contamination')
         def settle(max_wait_s):
             def capture():
@@ -104,15 +107,21 @@ def main():
                             repeat=repeat, allow_idle_navigation=True, initial_settle=initial.summary(),
                             device_size=[414,896], resets_labelled=True,
                             settle_source='fresh full-resolution WDA MJPEG frame; same threshold, interval, consecutive count',
-                            replacement_authorization='operator explicitly overrode no-replacement rule for this sweep')
+                            authorization='operator requested this bounded duration sweep; no automatic replacements',
+                            gameplay_review='operator visual review' if args.human_gameplay_review else 'automated')
             run_recording(recorder=XCTestScreenRecorder(driver, fps=30), timing=timing,
                           commands=commands, perform=lambda s: driver.execute('actions', s['payload']),
                           guard=guard, settle=settle, out=out, revision=args.wda_revision, metadata=metadata)
             worker.disconnect()  # Offline decode must not leave a session to expire.
-            # Same source decode, gameplay, start/end fit and held-out middle
-            # checks as the existing diagnostic. Resets are labelled requests.
-            admit_recording(out, args.wda_revision)
-            print(f'recording {repeat} admitted', flush=True)
+            # Human review bypasses the image gate only. Separate offline timing
+            # and native decode checks still apply; this is never training data.
+            if args.human_gameplay_review:
+                save_new(out/'review-policy.json', dict(gameplay_review='operator visual review',
+                         automated_gameplay_scan=False, training_admission=False))
+                print(f'recording {repeat} complete; operator visual review pending', flush=True)
+            else:
+                admit_recording(out, args.wda_revision)
+                print(f'recording {repeat} admitted', flush=True)
     except (Exception, KeyboardInterrupt) as exc:
         save_new(args.out/'failure.json', {'error': f'{type(exc).__name__}: {exc}', 'no_replacements': True})
         raise

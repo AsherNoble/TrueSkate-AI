@@ -137,3 +137,11 @@ and
 `/Users/training-server/trueskate-ai-runtime/tmp/LINEAR-SPEED-20261002-repeat2b/recordings/recording_2/`.
 Local originals and diagnostic flag images are under
 `tmp/linear-speed-worktree/tmp/linear-speed-redo3/recordings/`.
+
+### Operator follow-up
+
+The operator reports visible traces and board movement at 600–50 ms; no visible
+trace but board movement at 20 ms; and a minuscule tap/flicker with no board
+movement at 10 ms. This is the primary viewing assessment and supersedes the
+assistant's indeterminate 20 ms label. It does not establish input path collapse.
+A requested finer 50–20 ms sweep is recorded separately.

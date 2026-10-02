@@ -31,6 +31,11 @@ Put substantial experiments in individual records and current facts in STATUS.
   gameplay admissions remain failed (first flags show scenery). Assistant review:
   trail at ≥50 ms, 20 ms indeterminate, 10 ms tap-like; rendering, not input fidelity.
 
+- Operator assessment: ≥50 ms trace/board movement; 20 ms no trace/board movement;
+  10 ms tiny flicker/no board movement. Requested finer reversed 50–20 ms sweep.
+  All 14 completed; timing 11.8/6.4 ms. Operator requested human gameplay review.
+  [Fine sweep](experiments/LINEAR-SPEED-FINE-20261002.md).
+
 ## 2026-10-01 — Doubling the data still helps, but less
 
 - **M1-EXPAND:** 10,131 new screened clips (Kansas City and Los Angeles

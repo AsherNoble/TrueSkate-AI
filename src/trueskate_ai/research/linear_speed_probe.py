@@ -44,14 +44,19 @@ def payload(spec):
     return {'actions': [finger.encode()]}
 
 
-def manifest():
+def manifest(profile="broad"):
+    if profile not in ("broad", "fine"):
+        raise ValueError("unknown linear speed profile")
+    durations_ms = DURATIONS_MS if profile == "broad" else (50,45,40,35,30,25,20)
+    slots = SLOTS if profile == "broad" else SLOTS[:-1]
+    experiment = EXPERIMENT if profile == "broad" else "LINEAR-SPEED-FINE-20261002"
     if not segment_is_safe(*PATH):
         raise ValueError('whole drag intersects protected controls')
     recordings = []
-    for repeat, durations in enumerate((DURATIONS_MS, DURATIONS_MS[::-1]), 1):
+    for repeat, durations in enumerate((durations_ms, durations_ms[::-1]), 1):
         commands = [dict(kind='control', role=role, slot_s=slot)
                     for role, slot in (('start', 1.), ('middle', 30.), ('end', 57.))]
-        for slot, duration in zip(SLOTS, durations):
+        for slot, duration in zip(slots, durations):
             commands += [dict(kind='reset', slot_s=slot-3., for_duration_ms=duration),
                          dict(kind='diagnostic', slot_s=slot, duration_ms=duration,
                               repeat=repeat, command_id=f'r{repeat}-{duration}ms')]
@@ -59,8 +64,8 @@ def manifest():
         for command in commands:
             command['payload'] = payload(command)
         recordings.append(commands)
-    result = dict(experiment=EXPERIMENT, device='iPhone_XR', park='Inbound',
-                  path=PATH, durations_ms=DURATIONS_MS, recordings=recordings,
+    result = dict(experiment=experiment, device='iPhone_XR', park='Inbound',
+                  path=PATH, durations_ms=durations_ms, recordings=recordings,
                   control_map_version=CONTROL_START_MAP_VERSION, whole_path_safe=True,
                   preparation_lead_s=3., late_tolerance_s=LATE_S, stop_s=59.,
                   settle_threshold=2., settle_consecutive=2,
@@ -70,7 +75,7 @@ def manifest():
 
 
 def verify_manifest(value):
-    expected = manifest()
+    expected = manifest("fine" if value.get("experiment") == "LINEAR-SPEED-FINE-20261002" else "broad")
     if digest(value) != digest(expected):
         raise ValueError('frozen manifest changed')
 

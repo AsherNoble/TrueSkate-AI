@@ -1,0 +1,87 @@
+{
+  "experiment": "LINEAR-SPEED-FINE-20261002",
+  "completed_drags": 14,
+  "durations_ms": [
+    50,
+    45,
+    40,
+    35,
+    30,
+    25,
+    20
+  ],
+  "records": [
+    {
+      "repeat": 1,
+      "execution_error": null,
+      "completed_drags": 7,
+      "request_count": 17,
+      "recording_sha256": "531ff80e66c2d84e0b8602318e8d0e62dbdfb53c23e12fa4c6921d92f340ff9a",
+      "max_lateness_s": 0.014266588957980275,
+      "timing_diagnostic": {
+        "training_admission": false,
+        "separate_timing_diagnostic": true,
+        "frame_count": 1769,
+        "fit": {
+          "intercept_s": -1045359.7038567269,
+          "rate": 1.000137089808555,
+          "anchor_span_s": 55.98732470837422
+        },
+        "control_onsets_s": {
+          "start": 1.235,
+          "middle": 30.25,
+          "end": 57.23
+        },
+        "control_source_frames": {
+          "start": 33,
+          "middle": 903,
+          "end": 1712
+        },
+        "heldout_middle_error_s": 0.011782499495893717,
+        "timing_checks_pass": true
+      },
+      "gameplay_review": "operator visual review pending"
+    },
+    {
+      "repeat": 2,
+      "execution_error": null,
+      "completed_drags": 7,
+      "request_count": 17,
+      "recording_sha256": "dae84ea45106fad4db829394481235e7e61e52b8e65ef6f64ed0df67cc945f2e",
+      "max_lateness_s": 0.01376534893643111,
+      "timing_diagnostic": {
+        "training_admission": false,
+        "separate_timing_diagnostic": true,
+        "frame_count": 1766,
+        "fit": {
+          "intercept_s": -1045666.4477548965,
+          "rate": 0.9999742264198087,
+          "anchor_span_s": 56.13144670834299
+        },
+        "control_onsets_s": {
+          "start": 1.306667,
+          "middle": 30.305,
+          "end": 57.436667
+        },
+        "control_source_frames": {
+          "start": 35,
+          "middle": 903,
+          "end": 1715
+        },
+        "heldout_middle_error_s": 0.0064092864701521535,
+        "timing_checks_pass": true
+      },
+      "gameplay_review": "operator visual review pending"
+    }
+  ],
+  "training_admission": false,
+  "automatic_replacements": false,
+  "automated_gameplay_review_disabled_by_operator": true,
+  "operator_assessment_pending": true,
+  "raw_local": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/linear-fine-recordings",
+  "raw_rig": "/Users/training-server/trueskate-ai-runtime/tmp/LINEAR-SPEED-FINE-20261002",
+  "viewer": "http://127.0.0.1:8767/linear-fine/",
+  "initial_bundle_sha256": "5b2e9df73891115734846f50ed6ee63bb0f4b371a0072dc419233d26b055f821",
+  "reverse_runner_sha256": "38e231350e7c5ed1913d6e3179a3cad8ae969c961beb7df90bed47fbedb445cd",
+  "first_rig_scan": "interrupted on operator request after recording completed; no replacement"
+}
