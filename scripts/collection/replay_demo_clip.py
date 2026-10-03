@@ -67,6 +67,8 @@ def main():
     p.add_argument('--repeats', type=int, default=3)
     p.add_argument('--seed', type=int, default=20261003)
     p.add_argument('--mode', choices=('separate', 'scheduled'), default='scheduled')
+    p.add_argument('--schedule-mode', choices=('records', 'paths'), default='paths',
+                   help="scheduled only: one record per gesture, or one record with indexed paths")
     a = p.parse_args()
     raw = json.loads(a.gestures.read_text())
     gestures = {name: [(r['t'], r['x'], r['y']) for r in rows] for name, rows in raw.items()}
@@ -80,7 +82,7 @@ def main():
     if 'training-server' not in socket.gethostname():
         p.error('run on the rig')
     a.out.mkdir(parents=True)
-    save_new(a.out / 'plan.json', dict(mode=a.mode, gestures=raw, plan=plan, requests=requests, training_admission=False))
+    save_new(a.out / 'plan.json', dict(mode=a.mode, schedule_mode=a.schedule_mode, gestures=raw, plan=plan, requests=requests, training_admission=False))
     from trueskate_ai.sim.device import DeviceSession, DEVICES, BUNDLE_ID
     from trueskate_ai.collection.wda_action_timing import _http_json
     from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder
@@ -106,19 +108,24 @@ def main():
                     _http_json(base + '/wda/perform_trick_gestures', payload)
                     calls.append(dict(gesture=name, intended_start_s=start_s, start_s=begin, end_s=time.monotonic() - t0))
             else:
-                schedule = {'gestures': [dict(start_ms=round(start_s * 1000), waypoints=payload['gestures'][0]['waypoints'])
+                schedule = {'mode': a.schedule_mode,
+                            'gestures': [dict(start_ms=round(start_s * 1000), waypoints=payload['gestures'][0]['waypoints'])
                                          for _, start_s, payload in requests[item['variant']]]}
                 report = _http_json(base + '/wda/perform_gesture_schedule', schedule)['value']
-                if not report.get('complete') or any(g.get('error') for g in report['gestures']):
+                if not report.get('complete') or report.get('error') or any(g.get('error') for g in report.get('gestures', [])):
                     raise RuntimeError(f'schedule incomplete: {report}')
-                for (name, start_s, _), g in zip(requests[item['variant']], report['gestures']):
-                    calls.append(dict(gesture=name, intended_start_s=start_s, start_s=g['submitted_s'], end_s=g['completed_s']))
+                if a.schedule_mode == 'records':
+                    for (name, start_s, _), g in zip(requests[item['variant']], report['gestures']):
+                        calls.append(dict(gesture=name, intended_start_s=start_s, start_s=g['submitted_s'], end_s=g['completed_s']))
+                else:  # one record: timing is the record's, starts are as scheduled on device
+                    calls = [dict(gesture=name, intended_start_s=start_s, start_s=start_s, record_completed_s=report['completed_s'])
+                             for name, start_s, _ in requests[item['variant']]]
             time.sleep(3)
             name = f"{k:02d}_{item['variant']}_r{item['repeat'] + 1}.mov"
             recorder.stop_and_save(a.out / name)
             log.append(dict(**item, file=name, calls=calls))
             late = max(c['start_s'] - c['intended_start_s'] for c in calls)
-            print(f'{k}/{len(plan)} {name} worst start delay {late * 1000:.0f} ms', flush=True)
+            print(f'{k}/{len(plan)} {name} worst start delay {late * 1000:.0f} ms', flush=True)  # 0 by construction in paths mode
     finally:
         worker.disconnect()
         save_new(a.out / 'runs.json', dict(runs=log))
