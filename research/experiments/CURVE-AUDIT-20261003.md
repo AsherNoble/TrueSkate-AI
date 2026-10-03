@@ -287,8 +287,20 @@ the extraction against a moving-dot overlay
   finger indices do not prevent joining. The leading but unverified explanation
   is that multi-path records drop idle time between paths, playing gestures back
   to back. The bundled W3C replays also completed in about 2 s.
-- **Status:** XCTest synthesis offers either separate contacts at least ~0.25 s
-  apart, or a single record that appears to collapse the gaps. Neither reproduces
-  the demo's 118–170 ms inter-gesture timing. An untested idea is an anchor
-  finger held throughout, so that no idle time is dropped; it needs a touch
-  location True Skate ignores.
+- **WDA idle-wait settings** (`waitForIdleTimeout`, `animationCoolOffTimeout`
+  set to 0): no effect. A 100 ms push call still took 0.42–0.45 s.
+- **Anchor finger:** a still finger held through the whole indexed-path record
+  at (0.96, 0.60) or (0.04, 0.70), 3 replays each. Records now completed in
+  4.13–4.22 s, so the gaps were no longer collapsed. The operator still rated
+  6/6 Major. True Skate draws the anchor as a touch. Once a gesture finger lifts
+  while the anchor is down, the trail gains a line toward the anchor, so the
+  trick flicks became a zig-zag. The game scored POP SHOVE-IT NOSE MANUAL, not
+  the 360 flip
+  ([grades](../evidence/CURVE-AUDIT-20261003/demo-replay/anchor-grades.json),
+  [frames](../evidence/CURVE-AUDIT-20261003/demo-replay/anchor-replay1-sheet.png)).
+- **Status:** via XCTest synthesis, sequential gestures are either at least
+  ~0.25 s apart (separate records), gap-collapsed (one record), or linked to any
+  concurrently held finger (one record with an anchor). None reproduces the
+  demo's 118–170 ms sequence. Lower-level options (a jailbreak plus system-wide
+  touch injection, or a single-pointer HID through AssistiveTouch) are outside
+  XCTest.
