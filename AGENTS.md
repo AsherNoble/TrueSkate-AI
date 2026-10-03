@@ -50,6 +50,8 @@ Model 2 is unfinished. PPO/CMA-ES implementations are retired in tagged history.
 - Human-review viewer servers on the rig are temporary. Once the reviewer has
   returned the exported report's path, shut that viewer's server down. Do not
   leave old viewer servers running.
+- Open pages for the user (viewers, dashboards, links) in Google Chrome, the
+  user's preferred browser: `open -a "Google Chrome" <url>`.
 - No paid cloud training or new research tranche without explicit authorization.
 
 ## Research hygiene
