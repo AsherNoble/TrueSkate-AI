@@ -4,6 +4,24 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+## 2026-10-03 — Blinded linear gesture duration × length audit
+
+- Reviewed all 135 XR1/Inbound clips: nine durations from 10 to 50 ms in
+  **5 ms increments**, five lengths and three repetitions per combination.
+- **Board response:** movement in 120/120 clips at ≥15 ms, versus 0/15 at
+  10 ms. The observed transition lies between 10 and 15 ms in this session.
+- **Visible trace:** 75/75 at 30–50 ms; 12/15 at 25 ms; 7/15 at both 20 and
+  15 ms; 0/15 at 10 ms. Remaining labels were Flicker.
+- **Trace visibility is not a reliable proxy for board response:** 19
+  Flicker-labelled gestures still moved the board. These observations do not
+  establish input-path collapse.
+- Length effects were inconsistent across durations. Three repeats per
+  combination do not establish a universal threshold. Both comments about
+  unusually short traces corresponded to the shortest length at 45 ms.
+- Results are explicitly saved human assessments; the viewer preselected Trace
+  and Board moved. Full labels, mappings and results are preserved in
+  [LINEAR-LENGTH-20261003](experiments/LINEAR-LENGTH-20261003.md).
+
 ## 2026-10-01 — Doubling the data still helps, but less
 
 - **M1-EXPAND:** 10,131 new screened clips (Kansas City and Los Angeles
@@ -405,11 +423,3 @@ Put substantial experiments in individual records and current facts in STATUS.
   stay in manifests and are never emitted as training clips; in-recording resets
   and incomplete timing reports reject the segment. Offline tests pass.
   [Timing audit](experiments/M1-TIMING-20260912.md).
-
-## 2026-09-12 — Human onset timing audit
-
-- Preserved three original-recording annotation sets, manifests, frame timestamps
-  and findings; false calibration detections and a within-recording timing shift
-  motivated the WDA experiments. Recorded the user-confirmed spin exclusion.
-- Bounded timing repeats rejected host-call and return-based alignment. Added the
-  reusable frame viewer. [M1-TIMING-20260912](experiments/M1-TIMING-20260912.md).
