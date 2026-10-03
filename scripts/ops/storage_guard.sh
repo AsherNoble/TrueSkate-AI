@@ -13,12 +13,16 @@
 #
 # Env overrides:
 #   LOCAL_MIN_GB   stop collection when local free < this (default 25)
+#   LOCAL_CLEAR_GB once low, report clear only when local free >= this (default
+#                  LOCAL_MIN_GB + 10), so a disk hovering at the threshold
+#                  cannot alternate LOW/clear alerts
 #   MODAL_MAX_GB   warn when Modal volume usage > this (default 950 of the 1024 free-tier TiB)
 #   MODAL_VOLUME   Modal volume name (default trueskate-corpus)
 set -u
 
 REPO=/Users/training-server/trueskate-ai
 LOCAL_MIN_GB="${LOCAL_MIN_GB:-25}"
+LOCAL_CLEAR_GB="${LOCAL_CLEAR_GB:-$((LOCAL_MIN_GB + 10))}"
 MODAL_MAX_GB="${MODAL_MAX_GB:-950}"
 MODAL_VOLUME="${MODAL_VOLUME:-trueskate-corpus}"
 STATE="$HOME/.trueskate_storage_guard.state"   # last alert state, to de-dupe ntfy
@@ -29,7 +33,7 @@ log(){ echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG" 2>/dev/null; }
 notify(){  # $1 message  $2 priority(default urgent)
   PYTHONPATH="$REPO/src" "$REPO/.venv/bin/python" -c "
 from trueskate_ai.utils.notify import notify
-notify('''$1''', title='TrueSkate storage guard', priority='${2:-urgent}')" 2>/dev/null || true
+notify('''$1''', title='TrueSkate storage guard', priority='${2:-urgent}', block=True)" 2>/dev/null || true
 }
 stop_collection(){ for j in collect.xr1 collect.xr2; do launchctl bootout "gui/$U/com.trueskate.$j" 2>/dev/null; done; }
 set_state(){ echo "$1" > "$STATE"; }
@@ -43,6 +47,10 @@ if [ "${FREE_GB:-0}" -lt "$LOCAL_MIN_GB" ]; then
   [ "$(get_state)" != "LOCAL_LOW" ] && notify "$MSG"        # alert once per transition
   set_state LOCAL_LOW
   log "LOCAL LOW ${FREE_GB}GB (<${LOCAL_MIN_GB}) -> collection stopped"
+  exit 0
+fi
+if [ "$(get_state)" = "LOCAL_LOW" ] && [ "${FREE_GB:-0}" -lt "$LOCAL_CLEAR_GB" ]; then
+  log "LOCAL RECOVERING ${FREE_GB}GB (clear at ${LOCAL_CLEAR_GB})"   # no alert either way
   exit 0
 fi
 

@@ -8,18 +8,31 @@ Design rules:
   * Never raise. A notification problem must not crash or stall training.
   * Non-blocking by default (fires on a daemon thread).
   * No-op with a debug log when ``NTFY_TOPIC`` is unset, so dev runs stay quiet.
+  * Never repeat. A notification whose title and text match one sent within the
+    last hour (standalone numbers ignored, so "7.9GB" and "7.8GB" match but
+    "XR1" and "XR2" do not) is suppressed across
+    all processes; the next one that does go out reports how many were dropped.
+  * Every send and suppression is appended to ``sent.log`` in the state dir
+    (``NTFY_STATE_DIR``, default ``~/.trueskate-notify``).
 
 Only the standard library is used (urllib) to avoid a new dependency.
 """
+import fcntl
+import hashlib
+import json
 import logging
 import os
+import re
 import threading
+import time
 from pathlib import Path
 from urllib import request
 
 _TIMEOUT_S = 5.0
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _dotenv_loaded = False
+DEDUPE_S = 3600.0
+_STATE_RETENTION_S = 7 * 86400.0
 
 
 def _ssl_context():
@@ -66,6 +79,64 @@ def _server() -> str:
     return os.environ.get("NTFY_SERVER", "https://ntfy.sh").rstrip("/")
 
 
+def _state_dir() -> Path:
+    return Path(os.environ.get("NTFY_STATE_DIR") or Path.home() / ".trueskate-notify")
+
+
+def _repeat_key(title: str | None, message: str) -> str:
+    """Same title and text with standalone numbers masked: a repeat, whatever it
+    counts. Digits inside names (XR1 vs XR2) still distinguish alerts."""
+    text = f"{title or ''}\n{re.sub(r'(?<![A-Za-z_])[0-9]+(?:[.][0-9]+)?', '#', message)}"
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def _admit(key: str, dedupe_s: float) -> tuple[bool, int]:
+    """Decide under a cross-process lock whether a send may go out.
+
+    Returns (send, repeats suppressed since the last send of this key). Any state
+    error admits the send: a broken state file must not silence real alerts.
+    """
+    try:
+        state_dir = _state_dir()
+        state_dir.mkdir(parents=True, exist_ok=True)
+        with open(state_dir / "state.lock", "w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            path = state_dir / "state.json"
+            try:
+                state = json.loads(path.read_text())
+            except (OSError, ValueError):
+                state = {}
+            now = time.time()
+            entry = state.get(key)
+            if entry and now - entry["last_sent"] < dedupe_s:
+                entry["suppressed"] += 1
+                admitted, suppressed = False, entry["suppressed"]
+            else:
+                suppressed = entry["suppressed"] if entry else 0
+                state[key] = {"last_sent": now, "suppressed": 0}
+                admitted = True
+            state = {k: v for k, v in state.items() if now - v["last_sent"] < _STATE_RETENTION_S}
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(state))
+            tmp.replace(path)
+            return admitted, suppressed
+    except Exception as exc:
+        logging.warning("ntfy dedupe state unavailable (%s); sending anyway", exc)
+        return True, 0
+
+
+def _log_event(event: str, title: str | None, message: str, priority, repeats: int) -> None:
+    try:
+        line = json.dumps({"time": time.strftime("%Y-%m-%d %H:%M:%S"), "event": event,
+                           "title": title, "priority": priority, "message": message,
+                           "repeats": repeats})
+        _state_dir().mkdir(parents=True, exist_ok=True)
+        with open(_state_dir() / "sent.log", "a") as log:
+            log.write(line + "\n")
+    except Exception:
+        pass
+
+
 def notify(
     message: str,
     *,
@@ -74,6 +145,7 @@ def notify(
     tags: list[str] | str | None = None,
     actions: str | None = None,
     block: bool = False,
+    dedupe_s: float = DEDUPE_S,
 ) -> None:
     """Push a notification to the configured ntfy topic.
 
@@ -86,12 +158,22 @@ def notify(
                   ``confirm_button_action``) to add a tappable button.
         block:    Send synchronously (use for final shutdown messages where the
                   process may exit before a daemon thread flushes).
+        dedupe_s: Suppress repeats of this title/text within this many seconds
+                  (0 disables, e.g. for a deliberate re-prompt).
     """
     _ensure_env()
     topic = os.environ.get("NTFY_TOPIC")
     if not topic:
         logging.debug("ntfy: NTFY_TOPIC unset; dropping notification: %s", message)
         return
+
+    admitted, repeats = _admit(_repeat_key(title, message), dedupe_s) if dedupe_s > 0 else (True, 0)
+    if not admitted:
+        _log_event("suppressed", title, message, priority, repeats)
+        return
+    if repeats:
+        message = f"{message}\n(+{repeats} identical alert{'s' if repeats > 1 else ''} suppressed)"
+    _log_event("sent", title, message, priority, repeats)
 
     # HTTP headers are latin-1; drop any non-encodable chars (e.g. an emoji in a
     # title/label) so it can never break the whole notification. The body is utf-8.
@@ -121,6 +203,39 @@ def notify(
         _send()
     else:
         threading.Thread(target=_send, daemon=True).start()
+
+
+def _latch_path(latch: str) -> Path:
+    return _state_dir() / "latches" / re.sub(r"[^A-Za-z0-9_.-]", "_", latch)
+
+
+def notify_once(latch: str, message: str, **kwargs) -> bool:
+    """Notify only when ``latch`` is not already set, then set it.
+
+    For conditions that persist across processes (a collector restarted per
+    segment): one alert per incident until :func:`clear_latch` marks it resolved.
+    Returns True if this call raised the alert.
+    """
+    path = _latch_path(latch)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "x") as f:
+            f.write(time.strftime("%Y-%m-%d %H:%M:%S"))
+    except FileExistsError:
+        return False
+    except OSError as exc:
+        logging.warning("ntfy latch %s unavailable (%s); sending anyway", latch, exc)
+    notify(message, **kwargs)
+    return True
+
+
+def clear_latch(latch: str) -> bool:
+    """Mark a latched condition resolved. Returns True if it was set."""
+    try:
+        _latch_path(latch).unlink()
+        return True
+    except OSError:
+        return False
 
 
 # ---------------------------------------------------------------------------

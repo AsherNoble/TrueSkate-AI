@@ -69,6 +69,10 @@ WDA_STARTUP_TIMEOUT = 240  # first WDA build compiles ~2-3 min
 _RESTART_BACKOFF_S = [5, 15, 30, 60, 120]
 _RESTART_DECAY_S = 600
 _DEVICE_USB_WAIT_S = 60  # how long to wait for a browned-out device to reappear
+# An incident closes (one "recovered" alert) only after this long healthy. A
+# fault that returns within it stays the same incident, so a restart loop that
+# "recovers" every cycle cannot alert every cycle.
+_INCIDENT_STABLE_S = 300
 
 # Per-device process tracking:
 # {device_name: {"wda": Process|None, "appium": Process|None, "appium_was_running": bool}}
@@ -460,6 +464,28 @@ def _start_device(device: dict) -> bool:
     )
 
 
+def _incident_failure(procs: dict) -> bool:
+    """Record a failure. True only when it opens a new incident (alert once)."""
+    procs.pop("healthy_since", None)
+    if procs.get("incident_open"):
+        return False
+    procs["incident_open"] = True
+    return True
+
+
+def _incident_healthy_tick(procs: dict, now: float) -> bool:
+    """Record a healthy check. True when an open incident has now been healthy
+    for _INCIDENT_STABLE_S and closes (alert once)."""
+    if not procs.get("incident_open"):
+        return False
+    since = procs.setdefault("healthy_since", now)
+    if now - since < _INCIDENT_STABLE_S:
+        return False
+    procs.pop("incident_open")
+    procs.pop("healthy_since")
+    return True
+
+
 def _restart_device(device: dict) -> bool:
     """Tear down and restart one device's service stack, with decaying backoff.
 
@@ -488,13 +514,8 @@ def _restart_device(device: dict) -> bool:
         procs["restart_count"] = 0  # full recovery; clear escalation
         _launch_trueskate_on_devices([device])
         print(f"[{name}] Recovered.")
-        # One incident produces one failure alert and one recovery alert.  The
-        # monitor can retry many times while a phone is unplugged or WDA is
-        # unhealthy; emitting an alert for every retry turns one actionable
-        # incident into hundreds of ntfy notifications.
-        if procs.pop("incident_open", False):
-            notify(f"{name} recovered and back collecting.",
-                   title="TrueSkate rig", tags=["white_check_mark"])
+        # The recovery alert waits until the device stays healthy for
+        # _INCIDENT_STABLE_S (see _incident_healthy_tick in the monitor loop).
         return True
 
     print(f"[{name}] Restart failed (attempt {attempt + 1}).")
@@ -703,7 +724,12 @@ def main():
                     wda_url = f"http://localhost:{device['wda_port']}/status"
                     if _is_service_responding(wda_url, timeout=3):
                         procs["wda_health_fails"] = 0
+                        if _incident_healthy_tick(procs, time.time()):
+                            notify(f"{name} recovered: healthy for "
+                                   f"{_INCIDENT_STABLE_S // 60} min.",
+                                   title="TrueSkate rig", tags=["white_check_mark"])
                     else:
+                        procs.pop("healthy_since", None)
                         procs["wda_health_fails"] = procs.get("wda_health_fails", 0) + 1
                         if procs["wda_health_fails"] >= _WDA_HEALTH_FAIL_LIMIT:
                             died = "WebDriverAgent (wedged: alive but not serving)"
@@ -712,8 +738,7 @@ def main():
                 if died:
                     msg = f"{name}: {died} died — restarting device services."
                     print(f"\n[{name}] {died} — restarting")
-                    if not procs.get("incident_open", False):
-                        procs["incident_open"] = True
+                    if _incident_failure(procs):
                         notify(msg, title="TrueSkate rig", priority="high", tags=["warning"])
                     _restart_device(device)
                     procs["wda_health_fails"] = 0  # fresh stack; don't carry stale fails
