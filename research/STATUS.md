@@ -290,8 +290,11 @@ moving for ~7–8 s after the pre-segment reset. The branch adds:
   comparison.
 
 No corpus clip was moved or deleted; exclusion is manifest-only. The rig's stable
-release is `080bb97` (rollback `1b8497e`). Exclusion, recollection
-and flag adoption await operator decisions.
+release is `189dfde` (rollback `080bb97`), deployed 2026-10-03 for the
+notification fixes (PRs #30, #31). `com.trueskate.services` was restarted onto
+it and owns its iproxies; the storage guard loads it on each run. The dashboard
+still runs the code it loaded earlier, which is unchanged in this release.
+Exclusion, recollection and flag adoption await operator decisions.
 
 **Rig note (2026-09-27):** with both recorders idle (`/wda/video` null) and no
 collector running, `scripts/recover_remotexpc_attachments.sh --delete` removed
