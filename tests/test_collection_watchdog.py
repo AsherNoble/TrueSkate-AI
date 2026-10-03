@@ -58,11 +58,31 @@ def test_fleet_watchdog_notifies_only_on_persistent_state_transitions(tmp_path):
     assert len(messages) == 2
     assert "Rig degraded: XR2" in messages[-1]
 
+    # Recovery is announced only after two consecutive healthy checks.
     _fresh_segment(tmp_path, "iPhone_XR2")
+    assert len(_run_watchdog(tmp_path, push_log, "iPhone_XR2", "8103", "XR2")) == 2
     messages = _run_watchdog(tmp_path, push_log, "iPhone_XR2", "8103", "XR2")
     assert len(messages) == 3
     assert "Rig recovered" in messages[-1]
     assert _run_watchdog(tmp_path, push_log, "iPhone_XR", "8100", "XR1") == messages
+
+
+def test_watchdog_hovering_at_threshold_does_not_alternate_alerts(tmp_path):
+    push_log = tmp_path / "notifications.log"
+    _run_watchdog(tmp_path, push_log)  # both down
+    segments = list((tmp_path / "data" / "sls_xctest").rglob("*.json"))
+    assert segments == []
+    # Healthy once, stale again, healthy once again: never two healthy checks
+    # in a row, so no recovery alert and no repeated "down" alert.
+    for _ in range(3):
+        _fresh_segment(tmp_path, "iPhone_XR")
+        _fresh_segment(tmp_path, "iPhone_XR2")
+        _run_watchdog(tmp_path, push_log)
+        for segment in (tmp_path / "data" / "sls_xctest").rglob("*.json"):
+            os.utime(segment, (time.time() - 3600, time.time() - 3600))
+        messages = _run_watchdog(tmp_path, push_log)
+    assert len(messages) == 1
+    assert "Rig down" in messages[0]
 
 
 def test_watchdog_finds_segments_in_device_bucketed_stage_layout(tmp_path):

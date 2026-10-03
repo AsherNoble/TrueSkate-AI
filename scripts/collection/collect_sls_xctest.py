@@ -70,7 +70,9 @@ from trueskate_ai.sim.touch_actions import (  # noqa: E402
 from trueskate_ai.collection.die_five_calibration import DIE_FIVE_OFFSET_PT, die_five_points  # noqa: E402
 from trueskate_ai.data.control_hitboxes import point_is_safe  # noqa: E402
 from trueskate_ai.collection.scene_settle import wait_for_centre_settle  # noqa: E402
-from trueskate_ai.utils.notify import confirm_button_action, notify, poll_confirmation  # noqa: E402
+from trueskate_ai.utils.notify import (  # noqa: E402
+    clear_latch, confirm_button_action, notify, notify_once, poll_confirmation,
+)
 from trueskate_ai.collection.gameplay_filter import is_editor_frame, is_menu_frame  # noqa: E402
 from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder  # noqa: E402
 from trueskate_ai.collection.wda_action_timing import (  # noqa: E402
@@ -713,10 +715,13 @@ def main() -> None:
                 # stuck even across a reboot. After a few fails, EXIT so the supervisor
                 # restarts us after a pause, giving the daemon a real break instead.
                 if start_fail_streak >= args.max_start_fails:
-                    notify(f"[{device}] {start_fail_streak} consecutive recording-start failures "
-                           f"— exiting for a clean restart (likely a wedged XCTest daemon; "
-                           f"a device reboot may be needed).",
-                           title="TrueSkate SLS collect", priority="high", tags=["warning"])
+                    # The supervisor restarts us after each exit; alert once per
+                    # incident, until a recording starts again.
+                    notify_once(f"recording_start_fail_{device}",
+                                f"[{device}] {start_fail_streak} consecutive recording-start failures "
+                                f"— exiting for a clean restart (likely a wedged XCTest daemon; "
+                                f"a device reboot may be needed).",
+                                title="TrueSkate SLS collect", priority="high", tags=["warning"])
                     print(f"[collect_xctest] {start_fail_streak} start-fails — exit for supervisor restart.")
                     recovery_exit = True
                     break
@@ -727,6 +732,7 @@ def main() -> None:
                 time.sleep(3.0)
                 continue
             start_fail_streak = 0  # rec.start() succeeded
+            clear_latch(f"recording_start_fail_{device}")
             timing_capture = None
             if args.basic_linears:
                 timing_capture = WDAActionTimingCapture(
@@ -1166,9 +1172,13 @@ def main() -> None:
             print(f"[seg {segment_idx}] saved {res.summary()['mb']}MB, {len(events)} gestures, "
                   f"park={cur_park}, device_free={free_gb}GB"
                   f"{' (PARK SWITCH)' if park_switched else ''}", flush=True)
+            # One alert per low-storage incident, not one per segment.
             if free_gb is not None and free_gb < args.min_free_gb:
-                notify(f"[{device}] device free storage low: {free_gb}GB (< {args.min_free_gb}).",
-                       title="TrueSkate SLS collect", priority="high", tags=["warning"])
+                notify_once(f"device_storage_low_{device}",
+                            f"[{device}] device free storage low: {free_gb}GB (< {args.min_free_gb}).",
+                            title="TrueSkate SLS collect", priority="high", tags=["warning"])
+            elif free_gb is not None:
+                clear_latch(f"device_storage_low_{device}")
             _device_aligner_spawn(manifest_path)
             _write_heartbeat(args.heartbeat_path, device=device,
                              state="segment_complete", segment=segment_idx)

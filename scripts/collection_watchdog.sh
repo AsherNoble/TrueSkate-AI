@@ -26,6 +26,9 @@ STATE_FILE="$STATE_DIR/collection_fleet.state"
 LOCK_DIR="$STATE_DIR/collection_fleet.lock"
 CHECK_INTERVAL="${CHECK_INTERVAL:-120}"
 STALL_SECONDS="${STALL_SECONDS:-600}"
+# Consecutive healthy checks before an incident is announced as recovered, so a
+# phone hovering at the stall threshold cannot alternate down/recovered alerts.
+RECOVERY_CHECKS="${RECOVERY_CHECKS:-2}"
 NEVER_ARMED_ALERT_SECONDS="${NEVER_ARMED_ALERT_SECONDS:-1800}"
 LOCK_STALE_SECONDS="${LOCK_STALE_SECONDS:-600}"
 WDA_STATUS_TIMEOUT="${WDA_STATUS_TIMEOUT:-4}"
@@ -83,6 +86,7 @@ stack_status() {  # $1=device tag $2=WDA port
 read_state() {
   PREVIOUS_STATE=""
   PREVIOUS_FAILED=""
+  PREVIOUS_CLEAR=0
   PREVIOUS_SINCE=0
   [ -f "$STATE_FILE" ] || return 0
   PREVIOUS_STATE=$(sed -n 's/^state=//p' "$STATE_FILE" | head -1)
@@ -91,12 +95,16 @@ read_state() {
   case "$PREVIOUS_SINCE" in
     ''|*[!0-9]*) PREVIOUS_SINCE=0 ;;
   esac
+  PREVIOUS_CLEAR=$(sed -n 's/^clear_checks=//p' "$STATE_FILE" | head -1)
+  case "$PREVIOUS_CLEAR" in
+    ''|*[!0-9]*) PREVIOUS_CLEAR=0 ;;
+  esac
 }
 
-write_state() {  # $1=state $2=failed labels $3=since epoch
+write_state() {  # $1=state $2=failed labels $3=since epoch $4=healthy checks during an incident
   local tmp
   tmp=$(mktemp "$STATE_DIR/collection_fleet.XXXXXX")
-  printf 'state=%s\nfailed=%s\nsince=%s\n' "$1" "$2" "$3" > "$tmp"
+  printf 'state=%s\nfailed=%s\nsince=%s\nclear_checks=%s\n' "$1" "$2" "$3" "${4:-0}" > "$tmp"
   mv "$tmp" "$STATE_FILE"
 }
 
@@ -173,6 +181,11 @@ update_fleet_state() {
 
   if [ "$CURRENT_STATE" = healthy ]; then
     if [ "$PREVIOUS_STATE" = down ] || [ "$PREVIOUS_STATE" = degraded ]; then
+      if [ "$((PREVIOUS_CLEAR + 1))" -lt "$RECOVERY_CHECKS" ]; then
+        # Healthy, but not for long enough: the incident stays open, silently.
+        write_state "$PREVIOUS_STATE" "$PREVIOUS_FAILED" "$PREVIOUS_SINCE" "$((PREVIOUS_CLEAR + 1))"
+        return
+      fi
       publish_transition healthy "" "" "$PREVIOUS_SINCE" "$now"
     fi
     write_state healthy "" "$now"
@@ -205,6 +218,10 @@ update_fleet_state() {
   if [ "$PREVIOUS_STATE" = "$CURRENT_STATE" ] && [ "$PREVIOUS_FAILED" = "$FAILED_CSV" ]; then
     # The incident is unchanged.  This is intentionally the only no-op path:
     # there are no reminder notifications, regardless of outage duration.
+    # A failed check ends any healthy run counted towards recovery.
+    if [ "$PREVIOUS_CLEAR" -ne 0 ]; then
+      write_state "$PREVIOUS_STATE" "$PREVIOUS_FAILED" "$PREVIOUS_SINCE" 0
+    fi
     return
   fi
 
