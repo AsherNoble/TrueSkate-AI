@@ -304,3 +304,10 @@ the extraction against a moving-dot overlay
   demo's 118–170 ms sequence. Lower-level options (a jailbreak plus system-wide
   touch injection, or a single-pointer HID through AssistiveTouch) are outside
   XCTest.
+- **Device iOS versions** (read with `ideviceinfo`, 2026-10-04): XR1 iOS 18.7.6
+  (22H320), XR2 iOS 18.7.10 (22H374). The `iphoneos18.2` in WDA xctestrun names
+  is the build SDK, not the device OS. Public A12 jailbreaks (Dopamine 3.x) stop
+  at iOS 18.7.1, so neither phone can be jailbroken, and neither can be
+  downgraded. The next route under test is a hardware pointer: a microcontroller
+  acting as an AssistiveTouch HID mouse, with the gesture schedule timed on the
+  board, plus a capacitive pad for the spin button on the same clock.
