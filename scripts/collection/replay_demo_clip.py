@@ -1,10 +1,12 @@
 """Replay timed gestures extracted from an expert demo clip on one XR; raw recordings only.
 
-The whole sequence is one W3C request with one pointer per gesture, so the
-inter-gesture timing (e.g. ~120 ms between trick flicks) survives. Each
-pointer's opening zero-contact move carries its start offset: WDA requires a
-pointer source to begin with a move, and that move's duration places the
-touch-down. Variants resample each gesture so points are at least N ms apart.
+One touch contact per request (GESTURES.md): each gesture is its own
+POST /wda/perform_trick_gestures call, fired from Python at its scheduled start.
+Bundling several contacts into one request makes True Skate join them into a
+single chain (May 2026, and again in the 2026-10-03 bundled replay).
+Calls block until the gesture finishes, so a gesture starts late when the
+previous call has not returned yet; intended vs. actual times are logged.
+Variants resample each gesture so points are at least N ms apart.
 No training admission; output goes to a new directory.
 """
 import argparse, json, math, random, socket, time
@@ -35,11 +37,11 @@ def resample(samples, spacing_ms):
     return out
 
 
-def sequence_payload(gestures, spacing_ms):
-    """gestures: {name: [(t_s, x, y)]} in clip seconds and normalised coordinates."""
+def gesture_requests(gestures, spacing_ms):
+    """gestures: {name: [(t_s, x, y)]} in clip seconds, normalised. Returns [(name, start_s, payload)]."""
     origin = min(s[0][0] for s in gestures.values())
-    sources = []
-    for i, (name, rows) in enumerate(gestures.items()):
+    out = []
+    for name, rows in gestures.items():
         samples = [(round((t - origin) * 1000), x, y) for t, x, y in rows]
         points = resample(samples, spacing_ms)
         times = [round(t) for t, _, _ in points]
@@ -48,14 +50,10 @@ def sequence_payload(gestures, spacing_ms):
             raise ValueError(f'{name}: non-increasing times {times}')
         if any(not segment_is_safe((a[0] / W, a[1] / H), (b[0] / W, b[1] / H)) for a, b in zip(q, q[1:])):
             raise ValueError(f'{name}: path crosses a protected control')
-        actions = [dict(type='pointerMove', duration=times[0], x=q[0][0], y=q[0][1], origin='viewport'),
-                   dict(type='pointerDown', button=0)]
-        actions += [dict(type='pointerMove', duration=b - a, x=p[0], y=p[1], origin='viewport')
-                    for p, a, b in zip(q[1:], times, times[1:])]
-        actions.append(dict(type='pointerUp', button=0))
-        sources.append(dict(type='pointer', id=f'g{i}_{name.replace(" ", "_")}',
-                            parameters={'pointerType': 'touch'}, actions=actions))
-    return {'actions': sources}
+        waypoints = [dict(x=q[0][0], y=q[0][1], duration_ms=0)]
+        waypoints += [dict(x=p[0], y=p[1], duration_ms=b - a) for p, a, b in zip(q[1:], times, times[1:])]
+        out.append((name, times[0] / 1000, {'gestures': [{'waypoints': waypoints}]}))
+    return out
 
 
 def main():
@@ -72,13 +70,13 @@ def main():
     rng = random.Random(a.seed)
     for start in range(0, len(plan), len(SPACINGS)):  # shuffle within each repeat block
         block = plan[start:start + len(SPACINGS)]; rng.shuffle(block); plan[start:start + len(SPACINGS)] = block
-    payloads = {v: sequence_payload(gestures, s) for v, s in SPACINGS.items()}
+    requests = {v: gesture_requests(gestures, s) for v, s in SPACINGS.items()}
     if a.out.exists():
         raise SystemExit('output directory must be new')
     if 'training-server' not in socket.gethostname():
         p.error('run on the rig')
     a.out.mkdir(parents=True)
-    save_new(a.out / 'plan.json', dict(gestures=raw, plan=plan, payloads=payloads, training_admission=False))
+    save_new(a.out / 'plan.json', dict(gestures=raw, plan=plan, requests=requests, training_admission=False))
     from trueskate_ai.sim.device import DeviceSession, DEVICES, BUNDLE_ID
     from trueskate_ai.collection.wda_action_timing import _http_json
     from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder
@@ -96,11 +94,18 @@ def main():
                 raise RuntimeError('foreground lost')
             driver.execute('actions', reset_payload()); time.sleep(3)
             recorder = XCTestScreenRecorder(driver, fps=30); recorder.start(); time.sleep(1)
-            t0 = time.monotonic(); driver.execute('actions', payloads[item['variant']]); call_s = time.monotonic() - t0
+            calls = []; t0 = time.monotonic()
+            for name, start_s, payload in requests[item['variant']]:
+                time.sleep(max(0., t0 + start_s - time.monotonic()))
+                begin = time.monotonic() - t0
+                _http_json(base + '/wda/perform_trick_gestures', payload)
+                calls.append(dict(gesture=name, intended_start_s=start_s, start_s=begin, end_s=time.monotonic() - t0))
             time.sleep(3)
             name = f"{k:02d}_{item['variant']}_r{item['repeat'] + 1}.mov"
             recorder.stop_and_save(a.out / name)
-            log.append(dict(**item, file=name, call_s=call_s)); print(f'{k}/{len(plan)} {name} call {call_s:.2f}s', flush=True)
+            log.append(dict(**item, file=name, calls=calls))
+            late = max(c['start_s'] - c['intended_start_s'] for c in calls)
+            print(f'{k}/{len(plan)} {name} worst start delay {late * 1000:.0f} ms', flush=True)
     finally:
         worker.disconnect()
         save_new(a.out / 'runs.json', dict(runs=log))
