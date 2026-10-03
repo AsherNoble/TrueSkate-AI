@@ -69,3 +69,37 @@ assets are unchanged. A compact review panel keeps Save & next prominent, hides
 the full grid behind an expandable section, and resumes at the first unreviewed
 clip. Synthetic restoration checks cover existing Hold/False/comments without
 rewriting storage; Safari confirms Trace selected and Board moved on by default.
+
+## Completed blinded operator assessment
+
+All 135 exported labels match the frozen bundle and private key; no missing,
+unknown or duplicate labels. The export is preserved byte-for-byte at
+[operator-assessments.json](../evidence/LINEAR-LENGTH-20261003/operator-review/operator-assessments.json).
+[Full tables and comments](../evidence/LINEAR-LENGTH-20261003/operator-review/results.md),
+[unblinded CSV](../evidence/LINEAR-LENGTH-20261003/operator-review/unblinded-assessments.csv),
+and [machine-readable results](../evidence/LINEAR-LENGTH-20261003/operator-review/results.json).
+
+| Duration | Trace | Flicker | Board moved |
+|---:|---:|---:|---:|
+| 50/45/40/35/30 ms | 75/75 | 0/75 | 75/75 |
+| 25 ms | 12/15 | 3/15 | 15/15 |
+| 20 ms | 7/15 | 8/15 | 15/15 |
+| 15 ms | 7/15 | 8/15 | 15/15 |
+| 10 ms | 0/15 | 15/15 | 0/15 |
+
+No Hold labels were used. At all five lengths and all three repeats, 10 ms has
+no board movement and every ≥15 ms clip has movement: the observed response
+transition lies between 10 and 15 ms. Thirty ms is the lowest tested duration
+with trace in every length/repeat. Visible trace is mixed at 15–25 ms; 19 flicker
+clips still move the board. Rendering and gameplay response are distinct.
+
+Intermediate-duration length patterns are not consistently monotonic: at 15 ms
+the shortest length has 0/3 traces and the three longest lengths each 2/3; at
+20 ms the longest has 0/3 while most shorter lengths have 2/3. Three repeats per
+cell do not establish a universal threshold or rule out subtler length effects.
+Input path collapse is not established by these 30 fps viewing labels.
+
+Both comments about remarkably short traces unblind to the shortest (20%)
+gesture at 45 ms, consistent with the operator's suggested length explanation.
+These conclusions use the saved human labels; the UI defaults were Trace and
+Board moved True after its update. No automatic classifier was used.

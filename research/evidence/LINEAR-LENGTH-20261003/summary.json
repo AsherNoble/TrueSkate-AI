@@ -193,7 +193,7 @@
   "training_admission": false,
   "automated_gameplay_scan": false,
   "gameplay_review": "operator visual review",
-  "operator_assessment_pending": true,
+  "operator_assessment_pending": false,
   "labels": {
     "trace_visible": [
       "flicker",
@@ -215,5 +215,11 @@
     "safari_default_board_switch": "on",
     "assessments_at_ui_check": 0,
     "private_mapping_outside_web_root": true
+  },
+  "operator_review": {
+    "reviewed": 135,
+    "assessment_sha256": "21541d9ed957505903c9e8d2f5c9424835679362177bf93e74f5bfd4fc3fcd36",
+    "results": "operator-review/results.json",
+    "source": "operator blinded viewing labels"
   }
 }

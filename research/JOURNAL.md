@@ -38,7 +38,8 @@ Put substantial experiments in individual records and current facts in STATUS.
 
 - Follow-up (2026-10-03): fine trace visible in 13/14; board moves in all 14.
   Completed 135 blinded diagnostics (9 durations × 5 lengths × 3); timing passes.
-  Human labels: flicker/hold/trace, board toggle default True, comments.
+  Blind labels complete: board 120/120 at ≥15 ms, 0/15 at 10 ms; trace 75/75
+  at 30–50 ms, mixed 15–25 ms. Length pattern nonmonotonic; collapse unproven.
   [Length experiment](experiments/LINEAR-LENGTH-20261003.md).
 
 ## 2026-10-01 — Doubling the data still helps, but less

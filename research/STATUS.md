@@ -361,4 +361,12 @@ The operator authorized 135 blinded diagnostics: nine durations (50 down to
 recordings. All 315 WDA requests, native decodes and timing checks pass; maximum
 held-out middle residual is 25.2 ms. The anonymous viewer is ready with exactly
 `flicker` / `hold` / `trace`, Board moved default True, and comments. Condition
-keys stay outside the viewer; human assessment is pending. Collection stays off.
+keys stay outside the viewer. The completed human assessment follows. Collection stays off.
+
+Blinded operator labels are complete and validated (135/135): trace in all 75
+clips at 30–50 ms; 12/15 at 25 ms, 7/15 at both 20 and 15 ms, 0/15 at 10 ms.
+Board movement is 120/120 at 15–50 ms and 0/15 at 10 ms, across all lengths.
+Observed response transition: 10–15 ms; consistent trace starts at tested 30 ms.
+Nineteen flicker clips still move the board. Intermediate-duration length effects
+are not consistently monotonic; three repeats/cell do not establish a universal
+threshold or input path collapse. [Results](evidence/LINEAR-LENGTH-20261003/operator-review/results.md).
