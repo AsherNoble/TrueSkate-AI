@@ -2,12 +2,12 @@
 import argparse,json,random,hashlib
 from pathlib import Path
 import cv2
-from trueskate_ai.research.curved_audit import verify_manifest,SEED,IDENTITY,digest,save_new
+from trueskate_ai.research.curved_audit import verify_manifest,SEED,digest,save_new
 from trueskate_ai.research.audit_video import frame_pts,_decode_source_frames
 from trueskate_ai.sim.timed_waypoints import TimedWaypoints
 
 def build(manifest_path,recordings,out):
-    frozen=json.loads(manifest_path.read_text());verify_manifest(frozen)
+    frozen=json.loads(manifest_path.read_text());verify_manifest(frozen);IDENTITY=frozen['identity']
     if recordings.resolve().is_relative_to(out.resolve()):raise ValueError('private recordings must be outside web root')
     out.mkdir(parents=True,exist_ok=False)
     paths={p['path_id']:p for p in frozen['paths']};clips=[];private=[]

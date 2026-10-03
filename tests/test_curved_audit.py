@@ -71,3 +71,21 @@ def test_native_decode_requires_exact_count(tmp_path):
     frames,times,indices=_decode_source_frames(video,pts)
     assert len(frames)==len(times)==len(indices)==len(pts)==15
     with pytest.raises(ValueError):_decode_source_frames(video,np.append(pts,pts[-1]+1/30),keep=False)
+
+def test_v1_bytes_unchanged_and_v2_settles_before_markers():
+    assert manifest()['sha256'].startswith('db5c843c9a4f741e')
+    v1,v2=manifest(),manifest('v2');verify_manifest(json.loads(json.dumps(v2)))
+    assert v2['paths']==v1['paths'] and v2['identity']!=v1['identity'] and v2['pre_roll_reset_settle_s']==3
+    for r1,r2 in zip(v1['recordings'],v2['recordings']):
+        ids=lambda r:[c['path_id'] for c in r['commands'] if c['kind']=='sample']
+        assert ids(r1)==ids(r2)
+        cs=r2['commands'];slots=[c['slot_s'] for c in cs];assert slots==sorted(slots) and max(slots)<v2['stop_s']
+        markers={c['role']:c['slot_s'] for c in cs if c['kind']=='control'};resets=[c['slot_s'] for c in cs if c['kind']=='reset']
+        assert markers=={'start':1,'middle':30,'end':58} and resets==[27,55]
+        for reset in resets:  # 3 s settle; nothing else between reset and marker
+            assert reset+3 in markers.values() and not [s for s in slots if reset<s<reset+3]
+        for a,b in zip(cs,cs[1:]):  # longest sample + ~0.5 s WDA overhead fits its slot
+            if a['kind']=='sample':
+                d=next(p['duration_ms'] for p in v2['paths'] if p['path_id']==a['path_id'])
+                assert a['slot_s']+d/1000+.5<b['slot_s']
+        assert markers['end']-markers['start']>=55

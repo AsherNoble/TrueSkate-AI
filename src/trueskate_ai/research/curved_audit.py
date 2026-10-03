@@ -14,6 +14,14 @@ FAMILIES=('arcs','s_curves','multiple_bends','loops','reversals')
 PROFILES=('constant','accelerating','decelerating','slow_fast_slow','pause')
 SLOTS=(5,10,15,20,25,35,40,45,50,54)
 DEVICES=('iPhone_XR','iPhone_XR2')
+# v2 resets the board 3 s before the middle and end markers (and before recording,
+# ahead of the start marker): in v1 the board drifted under the die-five points and
+# its motion out-voted the touches (run 2, XR1 segment 1, end marker 2/5 votes).
+# The last sample moves 54->53 s and the end marker 57->58 s to keep that 3 s settle.
+SCHEDULES={'v1':dict(identity=IDENTITY,slots=SLOTS,markers=(('start',1),('middle',30),('end',57)),resets=()),
+           'v2':dict(identity='curved-execution-20261003-v2-reset-before-markers',slots=(5,10,15,20,25,35,40,45,50,53),
+                     markers=(('start',1),('middle',30),('end',58)),resets=(27,55))}
+PRE_ROLL_SETTLE_S=3
 PARKS=('Inbound','Skateboard GB 2024')
 
 def digest(value):
@@ -36,7 +44,14 @@ def marker_payload():
         dict(type='pointerMove',duration=0,x=x,y=y,origin='viewport'),dict(type='pointerDown',button=0),
         dict(type='pause',duration=50),dict(type='pointerUp',button=0)]) for i,(x,y) in enumerate(die_five_points_pt(71))]}
 
-def manifest():
+def reset_payload():
+    """Tap True Skate's reset button, as in the linear speed sweep."""
+    return {'actions':[dict(type='pointer',id='reset',parameters={'pointerType':'touch'},actions=[
+        dict(type='pointerMove',duration=0,x=207,y=49,origin='viewport'),dict(type='pointerDown',button=0),
+        dict(type='pause',duration=50),dict(type='pointerUp',button=0)])]}
+
+def manifest(schedule='v1'):
+    plan=SCHEDULES[schedule]
     rng=random.Random(SEED);paths=[]
     for family_i,family in enumerate(FAMILIES):
         for d_i,duration in enumerate((150,300,600,900,1200)):
@@ -81,12 +96,15 @@ def manifest():
     recordings=[]
     for segment in range(5):
         for device_i in range(2):
-            commands=[dict(kind='control',role=role,slot_s=slot,payload=marker_payload()) for role,slot in [('start',1),('middle',30),('end',57)]]
-            for slot,index in zip(SLOTS,orders[device_i][segment*10:segment*10+10]):
+            commands=[dict(kind='control',role=role,slot_s=slot,payload=marker_payload()) for role,slot in plan['markers']]
+            commands+=[dict(kind='reset',slot_s=slot,payload=reset_payload()) for slot in plan['resets']]
+            for slot,index in zip(plan['slots'],orders[device_i][segment*10:segment*10+10]):
                 commands.append(dict(kind='sample',slot_s=slot,path_id=paths[index]['path_id'],payload=paths[index]['payload']))
             recordings.append(dict(device=DEVICES[device_i],park=PARKS[device_i],commands=sorted(commands,key=lambda c:c['slot_s'])))
-    value=dict(identity=IDENTITY,seed=SEED,paths=paths,recordings=recordings,stop_s=59,
+    value=dict(identity=plan['identity'],seed=SEED,paths=paths,recordings=recordings,stop_s=59,
                control_map=CONTROL_START_MAP_VERSION,training_admission=False)
+    if schedule!='v1':  # v1 bytes stay identical to the frozen db5c843c manifest
+        value.update(schedule=schedule,pre_roll_reset_settle_s=PRE_ROLL_SETTLE_S)
     value['sha256']=digest(value)
     return value
 
@@ -95,7 +113,7 @@ def verify_manifest(value):
     # libm differs by a few ulps across Intel/ARM hosts. Frozen bytes stay
     # authoritative; permit that difference only in abstract floating positions.
     # Exact integer payloads, times, order, conditions and quantization must match.
-    expected=manifest()
+    expected=manifest(value.get('schedule','v1'))
     normalized=json.loads(json.dumps(value))
     for actual,wanted in zip(normalized['paths'],expected['paths']):
         if len(actual['points'])!=len(wanted['points']) or any(

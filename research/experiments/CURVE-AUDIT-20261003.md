@@ -159,3 +159,30 @@ reported to make XCTest compress paths. The five-touch marker still succeeds
 
 The audit can be re-run with `--wda-revision ae50404aac12d9f8c41f6c3fa8776e97975eaef5`
 once the user authorizes it; this record does not re-open the stopped batch.
+
+## Run 2 stop and protocol amendment v2 (frozen before run 3)
+
+Run 2 (`ae50404a`, same frozen v1 manifest) executed XR1 segment 1 completely:
+13/13 requests on schedule, 0.4–1.6 s each. Calibration then rejected it. Start
+and middle markers had 5/5 agreeing onsets, but the end marker had 2 votes:
+per-point onsets C/TL/TR/BL/BR = 13/13/26/25/17 window frames. With no resets the
+board had drifted onto the quarter-pipe and sat under the C/TL points. It began
+sliding about 0.4 s before the marker, so board motion, not touches, fired C, TL
+and BR; TR/BL at 25–26 match the start/middle onsets (26–27).
+[Annotated frames](../evidence/CURVE-AUDIT-20261003/run2-end-marker-frames.png).
+The stop rule held: no replacements, and XR2 did not run.
+
+User-approved amendment (schedule `v2`, identity
+`curved-execution-20261003-v2-reset-before-markers`):
+
+- Reset the board before recording and wait 3 s, then start the segment
+  (start marker at 1 s).
+- Reset at 27 s before the 30 s middle marker, and at 55 s before the end
+  marker, which moves 57 → 58 s. The last sample slot moves 54 → 53 s so the
+  longest (1.2 s) sample finishes before the reset. Start–end span is 57 s.
+- Reset tap: (207, 49) pt, 50 ms hold, as in the linear speed sweep.
+- Paths, payloads, device/park assignment, per-device order, the 2-frame
+  middle check and the stop rule are unchanged. Samples still run in whatever
+  state the board is in; resets touch only the calibration lead-ins.
+
+Run 3 uses a fresh output directory with the v2 manifest frozen on the rig.
