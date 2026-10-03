@@ -66,11 +66,56 @@ static bool subscribed() {
   return cccd != nullptr && static_cast<BLE2902 *>(cccd)->getNotifications();
 }
 
+// Handshake log: every GATT access iOS makes, so a stalled enumeration shows
+// the last step it completed.
+class LogCharacteristic : public BLECharacteristicCallbacks {
+ public:
+  explicit LogCharacteristic(const char *name) : name_(name) {}
+  void onRead(BLECharacteristic *) override { Serial.printf("GATT %lu read %s\n", millis(), name_); }
+  void onWrite(BLECharacteristic *c) override {
+    Serial.printf("GATT %lu write %s len=%u\n", millis(), name_, static_cast<unsigned>(c->getLength()));
+  }
+ private:
+  const char *name_;
+};
+
+class LogDescriptor : public BLEDescriptorCallbacks {
+ public:
+  explicit LogDescriptor(const char *name) : name_(name) {}
+  void onRead(BLEDescriptor *) override { Serial.printf("GATT %lu read %s\n", millis(), name_); }
+  void onWrite(BLEDescriptor *d) override {
+    uint8_t *v = d->getValue();
+    Serial.printf("GATT %lu write %s len=%u first=%u\n", millis(), name_, static_cast<unsigned>(d->getLength()),
+                  d->getLength() ? v[0] : 0);
+  }
+ private:
+  const char *name_;
+};
+
+static void logCharacteristic(BLEService *service, uint16_t uuid, const char *name) {
+  BLECharacteristic *c = service ? service->getCharacteristic(BLEUUID(uuid)) : nullptr;
+  if (c) c->setCallbacks(new LogCharacteristic(name));
+  else Serial.printf("GATT missing %s\n", name);
+}
+
+static void logDescriptor(BLECharacteristic *c, uint16_t uuid, const char *name) {
+  BLEDescriptor *d = c ? c->getDescriptorByUUID(BLEUUID(uuid)) : nullptr;
+  if (d) d->setCallbacks(new LogDescriptor(name));
+  else Serial.printf("GATT missing %s\n", name);
+}
+
 class ServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer *) override { connected = true; }
-  void onDisconnect(BLEServer *server) override {
+  void onConnect(BLEServer *, esp_ble_gatts_cb_param_t *param) override {
+    connected = true;
+    Serial.printf("GATT %lu connect conn_id=%u\n", millis(), param->connect.conn_id);
+  }
+  void onDisconnect(BLEServer *server, esp_ble_gatts_cb_param_t *param) override {
     connected = false;
+    Serial.printf("GATT %lu disconnect reason=0x%02x\n", millis(), param->disconnect.reason);
     server->getAdvertising()->start();  // stay pairable after a drop
+  }
+  void onMtuChanged(BLEServer *, esp_ble_gatts_cb_param_t *param) override {
+    Serial.printf("GATT %lu mtu=%u\n", millis(), param->mtu.mtu);
   }
 };
 
@@ -133,13 +178,26 @@ void setup() {
   hid->manufacturer()->setValue("TrueSkate-AI");
   hid->pnp(0x02, 0xe502, 0xa111, 0x0210);
   hid->hidInfo(0x00, 0x02);
-  BLESecurity *security = new BLESecurity();
-  security->setAuthenticationMode(ESP_LE_AUTH_REQ_SC_BOND);
+  // Use the (bonding, mitm, sc) overload: on esp32 core 3.3.x the uint8_t overload
+  // stores the flags but leaves security disabled, so the board never requests
+  // encryption on connect and iOS stalls the HID device on an unencrypted link.
+  BLESecurity::setAuthenticationMode(true, false, true);
+  BLESecurity::setForceAuthentication(true);
   BLESecurity::setCapability(ESP_IO_CAP_NONE);  // "Just Works" pairing, no PIN
   BLESecurity::setInitEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
   BLESecurity::setRespEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
   hid->reportMap(const_cast<uint8_t *>(kReportMap), sizeof(kReportMap));
   hid->startServices();
+  logCharacteristic(hid->hidService(), 0x2a4a, "hid_info");
+  logCharacteristic(hid->hidService(), 0x2a4b, "report_map");
+  logCharacteristic(hid->hidService(), 0x2a4c, "control_point");
+  logCharacteristic(hid->hidService(), 0x2a4e, "protocol_mode");
+  logCharacteristic(hid->deviceInfo(), 0x2a50, "pnp_id");
+  logCharacteristic(hid->deviceInfo(), 0x2a29, "manufacturer");
+  logCharacteristic(hid->batteryService(), 0x2a19, "battery_level");
+  input->setCallbacks(new LogCharacteristic("input_report"));
+  logDescriptor(input, 0x2902, "input_cccd");
+  logDescriptor(input, 0x2908, "input_report_ref");
   BLEAdvertising *advertising = server->getAdvertising();
   advertising->setAppearance(HID_MOUSE);
   advertising->addServiceUUID(hid->hidService()->getUUID());
