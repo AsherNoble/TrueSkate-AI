@@ -56,8 +56,12 @@ or public hosting is provided.
 Click **Connect** separately for each device, then **Open True Skate** if needed.
 Connect attaches to running WDA with app launch, reset, force launch and app
 termination disabled ([WDA attach guide](https://appium.github.io/appium-xcuitest-driver/latest/guides/attach-to-running-wda/)).
-Only Open True Skate activates the game. Enlarge is optional. Drag paths appear
-before release. Escape, blur, resizing, pointer cancellation, leaving the screen,
+Only Open True Skate activates the game. **Home** presses the native home button
+(exits the current app). **App Switcher** swipes up from the home indicator and
+pauses; drag a card up on the screen to close that app. **Control Centre** swipes
+down from the top-right edge. These are fixed system gestures with the same
+fresh-video, ownership and no-retry guards as drawn gestures. Enlarge is
+optional. Drag paths appear before release. Escape, blur, resizing, pointer cancellation, leaving the screen,
 or exceeding five seconds discards a captured path. Multitouch is unsupported.
 
 One upstream reader feeds authenticated latest-frame responses to all browser

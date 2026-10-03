@@ -143,7 +143,7 @@ def test_timeout_quarantines_and_never_replays(device):
     with pytest.raises(ControlError,match='unknown'): device.command('gesture',body(device,points=PATH))
     assert device.status()['uncertain']
     count=len(device.transport.calls)
-    for kind in ['connect','disconnect','gesture','activate']:
+    for kind in ['connect','disconnect','gesture','activate','home','app_switcher','control_center']:
         with pytest.raises(ControlError,match='unknown'): device.command(kind,body(device,points=PATH))
     assert len(device.transport.calls)==count
 
@@ -286,3 +286,32 @@ def test_status_detects_outage_and_session_expiry(device):
     device.last_probe=0
     device.poll_status()
     assert not device.status()['connected']
+
+
+def test_home_presses_native_button(device):
+    device.command('connect',{})
+    device.command('home',body(device))
+    assert device.transport.calls[-1][2]=={'script':'mobile: pressButton','args':[{'name':'home'}]}
+    assert device.message=='Connected — command complete'
+
+
+def test_system_swipes_use_screen_edges(device):
+    device.command('connect',{})
+    device.command('control_center',body(device))
+    steps=device.transport.calls[-1][2]['actions'][0]['actions']
+    assert device.transport.calls[-1][1].endswith('/actions')
+    assert (steps[0]['x'],steps[0]['y'])==(373,0) and steps[-2]['y']==448
+    device.command('app_switcher',body(device))
+    steps=device.transport.calls[-1][2]['actions'][0]['actions']
+    assert (steps[0]['x'],steps[0]['y'])==(207,892)
+    assert steps[-2]=={'type':'pause','duration':800}
+
+
+def test_system_commands_require_fresh_frame_and_ownership(device):
+    device.command('connect',{})
+    count=len(device.transport.calls)
+    for kind in ['home','app_switcher','control_center']:
+        with pytest.raises(ControlError,match='stale'): device.command(kind,body(device,frame=999))
+    device.transport.active=['foreign-session']
+    with pytest.raises(ControlError,match='ownership'): device.command('home',body(device))
+    assert not any(c[0]=='POST' for c in device.transport.calls[count:])
