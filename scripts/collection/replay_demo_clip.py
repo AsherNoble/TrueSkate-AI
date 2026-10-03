@@ -4,8 +4,11 @@ One touch contact per request (GESTURES.md): each gesture is its own
 POST /wda/perform_trick_gestures call, fired from Python at its scheduled start.
 Bundling several contacts into one request makes True Skate join them into a
 single chain (May 2026, and again in the 2026-10-03 bundled replay).
-Calls block until the gesture finishes, so a gesture starts late when the
-previous call has not returned yet; intended vs. actual times are logged.
+--mode separate: one HTTP call per gesture, fired from Python. Calls block until
+the gesture finishes plus ~0.3 s, so later gestures start late.
+--mode scheduled: one POST /wda/perform_gesture_schedule; WDA submits each
+gesture as its own record at its start time on the device.
+Intended vs. actual times are logged in both modes.
 Variants resample each gesture so points are at least N ms apart.
 No training admission; output goes to a new directory.
 """
@@ -63,6 +66,7 @@ def main():
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--repeats', type=int, default=3)
     p.add_argument('--seed', type=int, default=20261003)
+    p.add_argument('--mode', choices=('separate', 'scheduled'), default='scheduled')
     a = p.parse_args()
     raw = json.loads(a.gestures.read_text())
     gestures = {name: [(r['t'], r['x'], r['y']) for r in rows] for name, rows in raw.items()}
@@ -76,7 +80,7 @@ def main():
     if 'training-server' not in socket.gethostname():
         p.error('run on the rig')
     a.out.mkdir(parents=True)
-    save_new(a.out / 'plan.json', dict(gestures=raw, plan=plan, requests=requests, training_admission=False))
+    save_new(a.out / 'plan.json', dict(mode=a.mode, gestures=raw, plan=plan, requests=requests, training_admission=False))
     from trueskate_ai.sim.device import DeviceSession, DEVICES, BUNDLE_ID
     from trueskate_ai.collection.wda_action_timing import _http_json
     from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder
@@ -95,11 +99,20 @@ def main():
             driver.execute('actions', reset_payload()); time.sleep(3)
             recorder = XCTestScreenRecorder(driver, fps=30); recorder.start(); time.sleep(1)
             calls = []; t0 = time.monotonic()
-            for name, start_s, payload in requests[item['variant']]:
-                time.sleep(max(0., t0 + start_s - time.monotonic()))
-                begin = time.monotonic() - t0
-                _http_json(base + '/wda/perform_trick_gestures', payload)
-                calls.append(dict(gesture=name, intended_start_s=start_s, start_s=begin, end_s=time.monotonic() - t0))
+            if a.mode == 'separate':
+                for name, start_s, payload in requests[item['variant']]:
+                    time.sleep(max(0., t0 + start_s - time.monotonic()))
+                    begin = time.monotonic() - t0
+                    _http_json(base + '/wda/perform_trick_gestures', payload)
+                    calls.append(dict(gesture=name, intended_start_s=start_s, start_s=begin, end_s=time.monotonic() - t0))
+            else:
+                schedule = {'gestures': [dict(start_ms=round(start_s * 1000), waypoints=payload['gestures'][0]['waypoints'])
+                                         for _, start_s, payload in requests[item['variant']]]}
+                report = _http_json(base + '/wda/perform_gesture_schedule', schedule)['value']
+                if not report.get('complete') or any(g.get('error') for g in report['gestures']):
+                    raise RuntimeError(f'schedule incomplete: {report}')
+                for (name, start_s, _), g in zip(requests[item['variant']], report['gestures']):
+                    calls.append(dict(gesture=name, intended_start_s=start_s, start_s=g['submitted_s'], end_s=g['completed_s']))
             time.sleep(3)
             name = f"{k:02d}_{item['variant']}_r{item['repeat'] + 1}.mov"
             recorder.stop_and_save(a.out / name)
