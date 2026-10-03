@@ -272,3 +272,23 @@ the extraction against a moving-dot overlay
   ([grades](../evidence/CURVE-AUDIT-20261003/demo-replay/separate-grades.json),
   [key](../evidence/CURVE-AUDIT-20261003/demo-replay/separate-key.json)).
   Expert sequences need on-device scheduling of one touch record per gesture.
+- **On-device schedule, one record per gesture** (WDA `feature/gesture-schedule`
+  `1a1589c7`): XCTest rejected the second record, submitted 333 ms after the
+  first, with "only one gesture can be performed at a time". The first record
+  (a 100 ms push) completed 0.341 s after submission. Separate records therefore
+  cannot start within about 0.25 s of the previous gesture's end, whatever
+  schedules them.
+- **One record, one path per gesture with distinct finger indices** (`243c2cb0`):
+  XCTest accepted it, but each 3.23 s sequence reported completion after
+  1.54–1.87 s, and the operator rated 9/9 Major: conjoined again and much faster
+  than the demo ([grades](../evidence/CURVE-AUDIT-20261003/demo-replay/paths-grades.json),
+  [key](../evidence/CURVE-AUDIT-20261003/demo-replay/paths-key.json),
+  [runs](../evidence/CURVE-AUDIT-20261003/demo-replay/paths-runs.json)). Distinct
+  finger indices do not prevent joining. The leading but unverified explanation
+  is that multi-path records drop idle time between paths, playing gestures back
+  to back. The bundled W3C replays also completed in about 2 s.
+- **Status:** XCTest synthesis offers either separate contacts at least ~0.25 s
+  apart, or a single record that appears to collapse the gaps. Neither reproduces
+  the demo's 118–170 ms inter-gesture timing. An untested idea is an anchor
+  finger held throughout, so that no idle time is dropped; it needs a touch
+  location True Skate ignores.
