@@ -17,6 +17,8 @@
 
 #include <BLEDevice.h>
 #include <BLEHIDDevice.h>
+#include <BLE2902.h>
+#include <BLESecurity.h>
 #include <BLEServer.h>
 #include <HIDTypes.h>
 
@@ -44,6 +46,25 @@ static size_t eventCount = 0;
 static BLEHIDDevice *hid = nullptr;
 static BLECharacteristic *input = nullptr;
 static volatile bool connected = false;
+static volatile int authStatus = -1;  // -1 none yet, 1 bonded, 0 failed
+
+// iOS reads HID reports only over an encrypted, bonded link (the report
+// characteristic is READ_ENCRYPTED), so pairing must actually complete.
+class SecurityCallbacks : public BLESecurityCallbacks {
+  uint32_t onPassKeyRequest() override { return 0; }
+  void onPassKeyNotify(uint32_t) override {}
+  bool onSecurityRequest() override { return true; }
+  bool onConfirmPIN(uint32_t) override { return true; }
+  void onAuthenticationComplete(esp_ble_auth_cmpl_t desc) override {
+    authStatus = desc.success ? 1 : 0;
+    Serial.printf("AUTH success=%d reason=%d\n", desc.success ? 1 : 0, desc.fail_reason);
+  }
+};
+
+static bool subscribed() {
+  BLEDescriptor *cccd = input ? input->getDescriptorByUUID(BLEUUID(static_cast<uint16_t>(0x2902))) : nullptr;
+  return cccd != nullptr && static_cast<BLE2902 *>(cccd)->getNotifications();
+}
 
 class ServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *) override { connected = true; }
@@ -64,7 +85,8 @@ static int8_t clampByte(long v) { return static_cast<int8_t>(v < -127 ? -127 : (
 
 static void handleLine(char *line) {
   if (strcmp(line, "STATUS") == 0) {
-    Serial.printf("STATUS connected=%d events=%u\n", connected ? 1 : 0, static_cast<unsigned>(eventCount));
+    Serial.printf("STATUS connected=%d auth=%d subscribed=%d events=%u\n", connected ? 1 : 0, authStatus,
+                  subscribed() ? 1 : 0, static_cast<unsigned>(eventCount));
   } else if (strcmp(line, "CLEAR") == 0) {
     eventCount = 0;
     Serial.println("OK");
@@ -103,6 +125,7 @@ static void handleLine(char *line) {
 void setup() {
   Serial.begin(115200);
   BLEDevice::init("TrueSkate Pointer");
+  BLEDevice::setSecurityCallbacks(new SecurityCallbacks());
   BLEServer *server = BLEDevice::createServer();
   server->setCallbacks(new ServerCallbacks());
   hid = new BLEHIDDevice(server);
@@ -111,7 +134,10 @@ void setup() {
   hid->pnp(0x02, 0xe502, 0xa111, 0x0210);
   hid->hidInfo(0x00, 0x02);
   BLESecurity *security = new BLESecurity();
-  security->setAuthenticationMode(ESP_LE_AUTH_BOND);
+  security->setAuthenticationMode(ESP_LE_AUTH_REQ_SC_BOND);
+  BLESecurity::setCapability(ESP_IO_CAP_NONE);  // "Just Works" pairing, no PIN
+  BLESecurity::setInitEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
+  BLESecurity::setRespEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
   hid->reportMap(const_cast<uint8_t *>(kReportMap), sizeof(kReportMap));
   hid->startServices();
   BLEAdvertising *advertising = server->getAdvertising();
