@@ -66,3 +66,21 @@ To restore a whole historical environment without modifying the active checkout:
 - Paths: [research/JOURNAL.md](https://github.com/AsherNoble/TrueSkate-AI/blob/2cf396f19d7f35560bac8768bb09b0c9efe3a2f5/research/JOURNAL.md)
 - Recovery: `git show 2cf396f19d7f35560bac8768bb09b0c9efe3a2f5esearch/JOURNAL.md`
 - Artifacts: None beyond the journal text; the entries link to experiment records that remain in the active tree.
+
+## ARCH-008 — Research journal entry 2026-09-12
+
+- Description: The complete research journal (30 dated entries) before it was trimmed to make room for the 2026-10-03 conjoined-gesture entry. The removed entry is 2026-09-12 (human onset timing audit), which links to M1-TIMING-20260912 in the active tree.
+- Commit: `db979a08ddbea24c4430f2e9e8de07e7162e4abf`
+- Tag: `archive/journal-20261003`
+- Paths: [research/JOURNAL.md](https://github.com/AsherNoble/TrueSkate-AI/blob/db979a08ddbea24c4430f2e9e8de07e7162e4abf/research/JOURNAL.md)
+- Recovery: `git show db979a08ddbea24c4430f2e9e8de07e7162e4abf:research/JOURNAL.md`
+- Artifacts: None beyond the journal text.
+
+## ARCH-009 — Correction to ARCH-007 recovery command
+
+- Description: ARCH-007's recovery command lost its `:r` separator to a zsh path modifier when written. The correct command is below; ARCH-007 itself is unchanged (append-only).
+- Commit: `2cf396f19d7f35560bac8768bb09b0c9efe3a2f5`
+- Tag: `archive/journal-20261001`
+- Paths: [research/JOURNAL.md](https://github.com/AsherNoble/TrueSkate-AI/blob/2cf396f19d7f35560bac8768bb09b0c9efe3a2f5/research/JOURNAL.md)
+- Recovery: `git show 2cf396f19d7f35560bac8768bb09b0c9efe3a2f5:research/JOURNAL.md`
+- Artifacts: None.

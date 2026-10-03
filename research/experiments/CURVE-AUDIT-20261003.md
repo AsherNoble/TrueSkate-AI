@@ -247,3 +247,24 @@ frame). Below ~16 ms it degrades, consistent with the reported XCTest
 behaviour of compressing densely spaced waypoints. A curve executor should cap
 the point count at about duration/33 ms + 1, rather than sending fixed dense
 polylines; a 150 ms flick then gets ~5 points.
+
+## Expert demo replay (XR2, The Workshop)
+
+The operator recorded a 360 flip on flat ground: 5 pushes (85–115 ms each), two
+trick flicks (~50 ms each, starts 168 ms apart) and a 550 ms catch. Timed paths
+were extracted deterministically: new orange trail pixels per 60 fps frame,
+with motion ending at the last frame adding ≥1,000 pixels. The operator checked
+the extraction against a moving-dot overlay
+([gestures](../evidence/CURVE-AUDIT-20261003/demo-replay/extracted-gestures.json)).
+
+- **Bundled (one W3C request, one pointer per gesture):** 9/9 replays rated
+  Major. Every one was drawn as a single conjoined chain at native (~16 ms),
+  33 ms and 50 ms spacing
+  ([grades](../evidence/CURVE-AUDIT-20261003/demo-replay/bundled-grades.json),
+  [key](../evidence/CURVE-AUDIT-20261003/demo-replay/bundled-key.json)). This
+  repeats the May 2026 finding, now a hard rule in GESTURES.md.
+- **One `perform_trick_gestures` request per gesture:** each call returns about
+  270–330 ms after its gesture ends, so starts drift late. Push 5 started
+  +447 ms late, and flick B started 315–343 ms after flick A instead of 168 ms
+  ([timings](../evidence/CURVE-AUDIT-20261003/demo-replay/separate-runs.json)).
+  Operator grading of these replays is pending.

@@ -1,0 +1,499 @@
+{
+  "runs": [
+    {
+      "variant": "min33ms",
+      "repeat": 0,
+      "file": "01_min33ms_r1.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 2.9101967811584473e-05,
+          "end_s": 0.43888229690492153
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.4389094419311732,
+          "end_s": 0.8605545349419117
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.8605695278383791,
+          "end_s": 1.310744056943804
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 1.310762916924432,
+          "end_s": 1.7492111308965832
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.749244469916448,
+          "end_s": 2.1886355408933014
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 2.1886602588929236,
+          "end_s": 2.505267499946058
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 2.5052836569957435,
+          "end_s": 2.838014013832435
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.8380343769676983,
+          "end_s": 3.788463444914669
+        }
+      ]
+    },
+    {
+      "variant": "min50ms",
+      "repeat": 0,
+      "file": "02_min50ms_r1.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 6.533507257699966e-05,
+          "end_s": 0.44821498519741
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.44822780904360116,
+          "end_s": 0.8798267971724272
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.8798495312221348,
+          "end_s": 1.2966164511162788
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 1.2966315632220358,
+          "end_s": 1.6298522430006415
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.6298673890996724,
+          "end_s": 2.0475168770644814
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 2.047530469018966,
+          "end_s": 2.3802307180594653
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 2.3802593040745705,
+          "end_s": 2.6993677210994065
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.6993850541766733,
+          "end_s": 3.551684738136828
+        }
+      ]
+    },
+    {
+      "variant": "native",
+      "repeat": 0,
+      "file": "03_native_r1.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 3.340817056596279e-05,
+          "end_s": 0.44738507317379117
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.44740617414936423,
+          "end_s": 0.8705452419817448
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.8705577631480992,
+          "end_s": 1.3157535640057176
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 1.315804755082354,
+          "end_s": 1.7471188101917505
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.747142378007993,
+          "end_s": 2.1969999701250345
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 2.1970254089683294,
+          "end_s": 2.515388770028949
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 2.5154031170532107,
+          "end_s": 2.8468642281368375
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.8468846660107374,
+          "end_s": 3.8967148480005562
+        }
+      ]
+    },
+    {
+      "variant": "min50ms",
+      "repeat": 1,
+      "file": "04_min50ms_r2.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 3.237207420170307e-05,
+          "end_s": 0.4193944139406085
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.4194733719341457,
+          "end_s": 0.8513252551201731
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.8513885110151023,
+          "end_s": 1.3011103649623692
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 1.301133992150426,
+          "end_s": 1.615327242994681
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.6153420410118997,
+          "end_s": 2.051360188052058
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 2.0513816671445966,
+          "end_s": 2.3660528759937733
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 2.366073956945911,
+          "end_s": 2.7017972860485315
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.7018249849788845,
+          "end_s": 3.5516392500139773
+        }
+      ]
+    },
+    {
+      "variant": "native",
+      "repeat": 1,
+      "file": "05_native_r2.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 2.7722911909222603e-05,
+          "end_s": 0.4464947360102087
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.44651426700875163,
+          "end_s": 0.8674013658892363
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.8674206358846277,
+          "end_s": 1.3115052010398358
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 1.3115810269955546,
+          "end_s": 1.746625930070877
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.746691359905526,
+          "end_s": 2.196311359992251
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 2.1964158709160984,
+          "end_s": 2.5148512590676546
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 2.514870316023007,
+          "end_s": 2.846201073843986
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.8462207978591323,
+          "end_s": 3.8972065600100905
+        }
+      ]
+    },
+    {
+      "variant": "min33ms",
+      "repeat": 1,
+      "file": "06_min33ms_r2.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 3.7602148950099945e-05,
+          "end_s": 0.4217373230494559
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.42175012500956655,
+          "end_s": 0.8586852990556508
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.8587031192146242,
+          "end_s": 1.3008081801235676
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 1.3008354150224477,
+          "end_s": 1.7496593070682138
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.7496795621700585,
+          "end_s": 2.16792742209509
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 2.1679429979994893,
+          "end_s": 2.500097641022876
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 2.5001169932074845,
+          "end_s": 2.817567797144875
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.8176267431117594,
+          "end_s": 3.7517114870715886
+        }
+      ]
+    },
+    {
+      "variant": "native",
+      "repeat": 2,
+      "file": "07_native_r3.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 3.21781262755394e-05,
+          "end_s": 0.44731899118050933
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.447394710034132,
+          "end_s": 0.883550567086786
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.8835683821234852,
+          "end_s": 1.2994554629549384
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 1.299470904050395,
+          "end_s": 1.7446004091762006
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.7446160081308335,
+          "end_s": 2.178488376084715
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 2.1785174480173737,
+          "end_s": 2.497233795002103
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 2.497247276129201,
+          "end_s": 2.8271500719711185
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.827165473951027,
+          "end_s": 3.8784703640267253
+        }
+      ]
+    },
+    {
+      "variant": "min50ms",
+      "repeat": 2,
+      "file": "08_min50ms_r3.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 3.262399695813656e-05,
+          "end_s": 0.4343504849821329
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.43437367188744247,
+          "end_s": 0.8571687140502036
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.8571840319782495,
+          "end_s": 1.302509075962007
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 1.3025228299666196,
+          "end_s": 1.634106334997341
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.6341269619297236,
+          "end_s": 2.0547977548558265
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 2.054809777997434,
+          "end_s": 2.3978212759830058
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 2.397840396966785,
+          "end_s": 2.7342550419270992
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.734274518908933,
+          "end_s": 3.5842519789002836
+        }
+      ]
+    },
+    {
+      "variant": "min33ms",
+      "repeat": 2,
+      "file": "09_min33ms_r3.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 4.9979193136096e-05,
+          "end_s": 0.41919640521518886
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.4192153171170503,
+          "end_s": 0.8517200711648911
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.8518137761857361,
+          "end_s": 1.3011488851625472
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 1.3011755121406168,
+          "end_s": 1.7511439500376582
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.751167519018054,
+          "end_s": 2.165487552061677
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 2.165503156138584,
+          "end_s": 2.5013790410012007
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 2.5014020330272615,
+          "end_s": 2.8224866872187704
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.8225074890069664,
+          "end_s": 3.8023073421791196
+        }
+      ]
+    }
+  ]
+}

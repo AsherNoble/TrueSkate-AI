@@ -1,0 +1,60 @@
+{
+  "schema": "demo-replay-compare-v1",
+  "grades": {
+    "1": {
+      "grade": "major",
+      "comments": "It executed all the gestures as one continuous gesture – basically the end of one was joined with the start of the next.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:23:50.977Z"
+    },
+    "2": {
+      "grade": "major",
+      "comments": "It executed all the gestures as one conjoined chain. End of gesture n is linked to the start of gesture n + 1.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:24:43.745Z"
+    },
+    "3": {
+      "grade": "major",
+      "comments": "Same conjoined issue.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:25:07.413Z"
+    },
+    "4": {
+      "grade": "major",
+      "comments": "Same conjoined issue.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:25:27.396Z"
+    },
+    "5": {
+      "grade": "major",
+      "comments": "Same conjoined issue.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:26:16.363Z"
+    },
+    "6": {
+      "grade": "major",
+      "comments": "Same conjoined issue.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:26:40.580Z"
+    },
+    "7": {
+      "grade": "major",
+      "comments": "Same conjoined issue.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:27:25.447Z"
+    },
+    "8": {
+      "grade": "major",
+      "comments": "Same conjoined issue.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:27:37.431Z"
+    },
+    "9": {
+      "grade": "major",
+      "comments": "Same conjoined issue.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:27:52.531Z"
+    }
+  },
+  "offsets": {}
+}

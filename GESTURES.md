@@ -249,6 +249,31 @@ Libraries mined by `scripts/data/mine_all_tricks.py` also carry `num_gestures` (
    to return the board to its starting position.
 ```
 
+### One touch contact per request (hard rule)
+
+Send each **sequential** touch contact (press → moves → lift) as its own request.
+Never bundle sequential, non-overlapping gestures into one W3C `perform()` or one
+`perform_trick_gestures` call. True Skate then joins them into one continuous
+chain: the end of gesture *n* is drawn connected to the start of gesture *n + 1*.
+
+- Several `XCPointerEventPath`s in one `XCSynthesizedEventRecord` run as parallel
+  finger tracks from t = 0, even when a later path's press is scheduled far ahead.
+  This is also how WDA translates a multi-pointer W3C request.
+- One path that hover-moves between a lift and the next press still emits real
+  touch events, which the game draws as a phantom swipe.
+- Found in May 2026 (archived `wda_trick_gestures_plan.md`, tag
+  `archive/research-pre-cleanup`), seen again as "joined gestures" in the
+  September bundled timing run04b, and **repeated on 2026-10-03**: 9/9 bundled
+  demo replays were conjoined at every point spacing
+  ([CURVE-AUDIT-20261003](research/experiments/CURVE-AUDIT-20261003.md)).
+- Genuinely **simultaneous** contacts are a different case. For example, the
+  spin button is held by a second finger while the flick runs. Those still
+  share one payload. The `execute_n_slot_gestures` combined path that bundles
+  sequential slots for short or negative delays predates this rule and is suspect.
+- Cost: each request returns about 0.27–0.33 s after its gesture ends (measured
+  2026-10-03 on `ae50404a`). Sequential gestures sent this way cannot start closer
+  together than that; tighter timing needs on-device scheduling of separate records.
+
 Push constants are defined in `src/trueskate_ai/sim/gestures.py`. Both replay (`src/trueskate_ai/sim/gesture_recipe.py::execute_gesture_recipe`) and the CMA-ES eval path (`src/trueskate_ai/sim/gesture_params.py::execute_gesture_params`) call the **same** canonical pair: `execute_static_push` (`sim/gestures.py`) then `execute_n_slot_gestures` (`sim/touch_actions.py`). The replay path additionally resets the board afterward.
 
 ---
