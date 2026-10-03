@@ -48,6 +48,7 @@ class Element {
  constructor(){this.style={};this.value='';this.checked=false;this.children=[];this.disabled=false;}
  set src(v){this._src=v;if(this.onload)queueMicrotask(()=>this.onload());}
  get src(){return this._src;}
+ setAttribute(k,v){this[k]=v} getAttribute(k){return this[k]}
  append(v){this.children.push(v)} replaceChildren(){this.children=[]} click(){if(this.onclick)this.onclick()}
 }
 const elements=new Map();
@@ -59,16 +60,38 @@ const DATA={bundle_sha256:'fixture',clips:[0,1,2].map(i=>({id:'opaque'+i,frames:
 (async()=>{
  await new Promise(setImmediate);
  assert.equal($('board').checked,true);
- assert.equal($('mark').disabled,true);
- $('feedback').value='flicker';$('feedback').onchange();$('board').checked=false;$('note').value='comment';$('mark').click();
+ assert.equal($('mark').disabled,false);
+ assert.equal(feedback,'trace');
+ $('feedback-flicker').click();$('board').checked=false;$('note').value='comment';$('mark').click();
  assert.equal(marks.opaque0.board_moved,false);assert.equal(marks.opaque0.trace_visible,'flicker');assert.equal(marks.opaque0.comments,'comment');
  assert.equal($('board').checked,true);
  // A new clip cannot save against an image which has not loaded yet.
- $('feedback').value='hold';save();assert.equal(marks.opaque1,undefined);
+ $('feedback-hold').click();save();assert.equal(marks.opaque1,undefined);
  await new Promise(setImmediate);$('mark').click();assert.equal(marks.opaque1.board_moved,true);
- choose(0);assert.equal($('board').checked,false);assert.equal($('feedback').value,'flicker');
+ choose(0);assert.equal($('board').checked,false);assert.equal(feedback,'flicker');
+ assert.equal($('feedback-flicker').getAttribute('aria-checked'),'true');
+ assert.equal($('feedback-hold').getAttribute('aria-checked'),'false');
+ assert.equal($('feedback-trace').getAttribute('aria-checked'),'false');
  await new Promise(setImmediate);$('forward').click();await new Promise(setImmediate);assert.equal($('stamp').textContent,'Frame 2 / 3');
+ const existing=JSON.stringify(marks);choose(2);choose(0);assert.equal(JSON.stringify(marks),existing);
  assert.deepEqual(Object.keys(marks.opaque0).sort(),['board_moved','comments','trace_visible','updated_at']);
 })().catch(e=>{console.error(e);process.exitCode=1});
 '''
     subprocess.run([node,'-'],input=harness+script+checks,text=True,capture_output=True,check=True)
+
+    preserved=r"""
+const before=JSON.stringify({opaque0:{trace_visible:'hold',board_moved:false,comments:'saved comment',updated_at:'old'}});
+storage.set('blind-linear-length:fixture',before);
+"""
+    restore_checks=r"""
+(async()=>{
+ await new Promise(setImmediate);
+ assert.equal(cursor,1);assert.equal(feedback,'trace');assert.equal($('board').checked,true);
+ choose(0);assert.equal(feedback,'hold');assert.equal($('board').checked,false);assert.equal($('note').value,'saved comment');
+ assert.equal(storage.get(KEY),before);assert.equal(JSON.stringify(marks),before);
+ assert.equal($('feedback-hold').getAttribute('aria-checked'),'true');
+ choose(2);assert.equal(feedback,'trace');assert.equal($('board').checked,true);
+ assert.equal(storage.get(KEY),before);
+})().catch(e=>{console.error(e);process.exitCode=1});
+"""
+    subprocess.run([node,'-'],input=harness+preserved+script+restore_checks,text=True,capture_output=True,check=True)

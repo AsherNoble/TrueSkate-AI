@@ -58,3 +58,14 @@ numbered clips, the comments field and the Board moved switch initially on.
 Offline checks cover balance, frozen-payload tampering, label leaks, native
 frame stepping, default True and preservation of saved False (26 tests pass).
 Human assessments are pending; no automatic visibility or board labels exist.
+
+### Review UI update
+
+The operator requested easier controls while preserving existing assessments.
+Trace defaults to `trace` only for unreviewed clips; three adjacent, exclusive
+buttons replace the dropdown. Saved labels, boolean board values and comments
+retain the same schema and browser storage key. Clip IDs, order, bundle and frame
+assets are unchanged. A compact review panel keeps Save & next prominent, hides
+the full grid behind an expandable section, and resumes at the first unreviewed
+clip. Synthetic restoration checks cover existing Hold/False/comments without
+rewriting storage; Safari confirms Trace selected and Board moved on by default.
