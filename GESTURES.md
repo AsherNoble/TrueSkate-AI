@@ -268,3 +268,16 @@ Push constants are defined in `src/trueskate_ai/sim/gestures.py`. Both replay (`
 | Library recipe replay | `scripts/inspect/execute_trick.py` |
 | Build trick library from JSONL log | `scripts/data/build_trick_library.py` |
 | Device configs (`DEVICES`, `logical_w`, `logical_h`) | `src/trueskate_ai/sim/device.py` |
+
+### Timed waypoint execution audit
+
+`sim/timed_waypoints.py::TimedWaypoints` is an additive interface: 2–15 normalized
+positions with strictly increasing integer millisecond timestamps starting at
+zero. Intervals interpolate linearly. Repeated positions represent pauses.
+Existing linear, recipe and cubic interfaces are unchanged. Compilation truncates
+normalized coordinates to integer device points and validates **every quantized
+segment** against the expanded control map. One request contains an initial
+zero-duration positioning move, one pointer-down, one positive-duration move per
+interval and one pointer-up. No extra subdivisions or contact gaps are inserted.
+The curved execution audit freezes 5/8/11/15-point paths and their exact payloads;
+its overlay follows those quantized positions and times, never the observed trace.

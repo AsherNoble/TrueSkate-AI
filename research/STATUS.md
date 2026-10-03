@@ -299,3 +299,14 @@ collector running, `scripts/recover_remotexpc_attachments.sh --delete` removed
 M1-DIE5-R100 segment) and 7 on XR2. Both phones re-listed 0 remaining. One
 earlier XR2 dry run failed transiently (`tmp/Attachments` not found); a
 repeat succeeded.
+
+## Curved execution pilot (2026-10-03)
+
+The authorized 50-path paired direct-waypoint audit stopped after its first XR1
+sample request exceeded the next fixed slot: a 900 ms, 15-waypoint request took
+5.045 s, including 3.751 s of WDA preparation. The partial recording and complete
+timing records for both attempted requests are preserved; all 301 native frames
+decode. Missing middle/end controls prevent calibration, leaving **0/100 audit
+clips**. No replacements or service restarts occurred. The viewer/importer are
+implemented and offline-tested; there are no human curve-fidelity findings yet.
+See [CURVE-AUDIT-20261003](experiments/CURVE-AUDIT-20261003.md).

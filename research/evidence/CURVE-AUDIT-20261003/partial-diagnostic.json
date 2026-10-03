@@ -1,0 +1,60 @@
+{
+  "native_frame_count": 301,
+  "native_decoded_count": 301,
+  "first_pts_s": 0.108333,
+  "last_pts_s": 10.158333,
+  "timing_records": 2,
+  "planned_timing_records": 13,
+  "timing_complete_for_attempted_requests": true,
+  "sample_requests": 1,
+  "accepted_clips": 0,
+  "shortfall": 100,
+  "calibration": "unavailable: middle and end markers never executed",
+  "timings": [
+    {
+      "sequence": 0,
+      "boundary_seconds": {
+        "submitted_to_ios": 1092482.1311717918,
+        "preparation_started": 1092481.8195191668,
+        "stability_wait_started": 1092482.4437412084,
+        "preparation_finished": 1092482.1304595834,
+        "stability_wait_finished": 1092482.4838534168,
+        "request_entered": 1092481.8190257084,
+        "ios_completion_callback": 1092482.4225525835,
+        "request_finished": 1092482.4838635002
+      },
+      "intervals_s": {
+        "request_entered_to_preparation_started": 0.0004934584721922874,
+        "preparation_started_to_preparation_finished": 0.31094041652977467,
+        "preparation_finished_to_submitted_to_ios": 0.0007122084498405457,
+        "submitted_to_ios_to_ios_completion_callback": 0.2913807916920632,
+        "ios_completion_callback_to_stability_wait_started": 0.02118862490169704,
+        "stability_wait_started_to_stability_wait_finished": 0.040112208342179656,
+        "stability_wait_finished_to_request_finished": 1.0083429515361786e-05
+      }
+    },
+    {
+      "sequence": 1,
+      "boundary_seconds": {
+        "submitted_to_ios": 1092489.5700072916,
+        "preparation_started": 1092485.8190356668,
+        "stability_wait_started": 1092490.81383225,
+        "preparation_finished": 1092489.5699931667,
+        "stability_wait_finished": 1092490.8501798334,
+        "request_entered": 1092485.818996,
+        "ios_completion_callback": 1092490.7695652917,
+        "request_finished": 1092490.8501923333
+      },
+      "intervals_s": {
+        "request_entered_to_preparation_started": 3.966665826737881e-05,
+        "preparation_started_to_preparation_finished": 3.750957499956712,
+        "preparation_finished_to_submitted_to_ios": 1.4124903827905655e-05,
+        "submitted_to_ios_to_ios_completion_callback": 1.1995580000802875,
+        "ios_completion_callback_to_stability_wait_started": 0.04426695825532079,
+        "stability_wait_started_to_stability_wait_finished": 0.036347583401948214,
+        "stability_wait_finished_to_request_finished": 1.2499978765845299e-05
+      }
+    }
+  ],
+  "original_sha256": "1663ec93391b09f0bc15515ce5ba65119b2c75169f9ec2f44ae50050a7ed59ac"
+}

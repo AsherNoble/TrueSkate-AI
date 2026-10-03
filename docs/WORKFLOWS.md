@@ -103,3 +103,24 @@ frame with M, then use Next unmarked gesture. End labels are paired by start fra
 and exported separately. Ambiguous or recording-truncated endings can be marked
 uncertain. Browser storage is separate from onset labels. This measures visible
 trace lifetime, not actual contact duration or finger-up.
+
+## Bounded curved execution audit
+
+This diagnostic is separate from collection and training. Freeze with
+`python scripts/collection/run_curved_audit.py --freeze --manifest /absolute/new/manifest.json`.
+On the rig, execute with the same script, `--manifest`, a new isolated `--out`
+and `--wda-revision b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6`.
+It requires XR1/Inbound and XR2/Skateboard GB 2024, sends 50 paired paths in ten
+alternating segments, and stops on the first failure without replacements.
+Do not rerun a failed batch as maintenance. Raw complete/partial recordings and
+execution/timing/calibration diagnostics are retained. No reset, settle gate,
+automated gameplay-image rejection, notification or training admission runs.
+
+After all ten segments pass, build with
+`python scripts/inspect/build_curved_audit.py --manifest /absolute/manifest.json --recordings /absolute/recordings --out /absolute/new/viewer`.
+Serve only the viewer directory; the source mapping lives under recordings.
+The viewer uses a separate `blind-curved-execution:` localStorage namespace.
+Explicitly saved ratings are exported as JSON. Import with
+`python scripts/inspect/report_curved_audit.py --mapping /absolute/recordings/audit-private-source-map.json --assessments /absolute/export.json --out /absolute/new/results.json`.
+Unreviewed default Good selections are not results. Reports group human ratings
+by shape, duration and waypoint count; device and park remain confounded.
