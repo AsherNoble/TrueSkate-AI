@@ -67,15 +67,24 @@ def main():
     p.add_argument('--repeats', type=int, default=3)
     p.add_argument('--seed', type=int, default=20261003)
     p.add_argument('--mode', choices=('separate', 'scheduled'), default='scheduled')
+    p.add_argument('--variants', default=','.join(SPACINGS), help='comma-separated subset of ' + ','.join(SPACINGS))
+    p.add_argument('--anchor', action='append', default=[], metavar='X,Y',
+                   help='paths mode: also hold a still finger at normalised X,Y from 100 ms before the first gesture '
+                        'to 100 ms after the last (repeatable: each value is its own condition)')
     p.add_argument('--schedule-mode', choices=('records', 'paths'), default='paths',
                    help="scheduled only: one record per gesture, or one record with indexed paths")
     a = p.parse_args()
     raw = json.loads(a.gestures.read_text())
     gestures = {name: [(r['t'], r['x'], r['y']) for r in rows] for name, rows in raw.items()}
-    plan = [dict(variant=v, repeat=r) for r in range(a.repeats) for v in SPACINGS]
+    variants = a.variants.split(',')
+    anchors = [None] if not a.anchor else [tuple(float(v) for v in x.split(',')) for x in a.anchor]
+    if a.anchor and (a.mode != 'scheduled' or a.schedule_mode != 'paths'):
+        p.error('--anchor needs --mode scheduled --schedule-mode paths')
+    conditions = [(v, anc) for v in variants for anc in anchors]
+    plan = [dict(variant=v, anchor=anc, repeat=r) for r in range(a.repeats) for v, anc in conditions]
     rng = random.Random(a.seed)
-    for start in range(0, len(plan), len(SPACINGS)):  # shuffle within each repeat block
-        block = plan[start:start + len(SPACINGS)]; rng.shuffle(block); plan[start:start + len(SPACINGS)] = block
+    for start in range(0, len(plan), len(conditions)):  # shuffle within each repeat block
+        block = plan[start:start + len(conditions)]; rng.shuffle(block); plan[start:start + len(conditions)] = block
     requests = {v: gesture_requests(gestures, s) for v, s in SPACINGS.items()}
     if a.out.exists():
         raise SystemExit('output directory must be new')
@@ -108,9 +117,14 @@ def main():
                     _http_json(base + '/wda/perform_trick_gestures', payload)
                     calls.append(dict(gesture=name, intended_start_s=start_s, start_s=begin, end_s=time.monotonic() - t0))
             else:
-                schedule = {'mode': a.schedule_mode,
-                            'gestures': [dict(start_ms=round(start_s * 1000), waypoints=payload['gestures'][0]['waypoints'])
-                                         for _, start_s, payload in requests[item['variant']]]}
+                lead = 100 if item['anchor'] else 0
+                gs = [dict(start_ms=round(start_s * 1000) + lead, waypoints=payload['gestures'][0]['waypoints'])
+                      for _, start_s, payload in requests[item['variant']]]
+                if item['anchor']:
+                    ax, ay = round(item['anchor'][0] * W), round(item['anchor'][1] * H)
+                    end_ms = max(g['start_ms'] + sum(w['duration_ms'] for w in g['waypoints']) for g in gs) + 100
+                    gs.append(dict(start_ms=0, waypoints=[dict(x=ax, y=ay, duration_ms=0), dict(x=ax, y=ay, duration_ms=end_ms)]))
+                schedule = {'mode': a.schedule_mode, 'gestures': gs}
                 report = _http_json(base + '/wda/perform_gesture_schedule', schedule)['value']
                 if not report.get('complete') or report.get('error') or any(g.get('error') for g in report.get('gestures', [])):
                     raise RuntimeError(f'schedule incomplete: {report}')
@@ -121,7 +135,8 @@ def main():
                     calls = [dict(gesture=name, intended_start_s=start_s, start_s=start_s, record_completed_s=report['completed_s'])
                              for name, start_s, _ in requests[item['variant']]]
             time.sleep(3)
-            name = f"{k:02d}_{item['variant']}_r{item['repeat'] + 1}.mov"
+            tag = '' if not item['anchor'] else '_anchor{:.2f}-{:.2f}'.format(*item['anchor'])
+            name = f"{k:02d}_{item['variant']}{tag}_r{item['repeat'] + 1}.mov"
             recorder.stop_and_save(a.out / name)
             log.append(dict(**item, file=name, calls=calls))
             late = max(c['start_s'] - c['intended_start_s'] for c in calls)
