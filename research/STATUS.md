@@ -380,3 +380,10 @@ current design candidate. Next execution review uses a moving circle only,
 aligned using five-contact calibration. Model accuracy is position error at
 matched frame times, with continued approximately 100-clip held-out human
 audits. [Requirements and remaining decisions](protocols/model1_curved_mvp2.md).
+
+MVP refinements: provisional maximum 15 timed waypoints including endpoints;
+10-logical-point-radius hollow target ring; broad shape/state coverage; initial
+error targets inherited from linear (0.03 normalized position, 0.10 s duration).
+Practical test: infer a single-contact expert trick and replay it in Workshop,
+checking trick reproduction alongside trajectory accuracy. Model 2 is not
+needed for that test. Initial speed/heading/contact state should be comparable.

@@ -43,6 +43,8 @@ Put substantial experiments in individual records and current facts in STATUS.
   [Length experiment](experiments/LINEAR-LENGTH-20261003.md).
 - MVP 2.0 direction: arbitrary timed single-drag paths, any initial board state,
   five-touch-aligned moving-circle review and frame-position accuracy.
+  Provisional 15-point cap, hollow 10 pt ring, linear-equivalent tolerances;
+  practical check is expert single-drag trick inference/replay in Workshop.
   [Requirements](protocols/model1_curved_mvp2.md).
 
 ## 2026-10-01 — Doubling the data still helps, but less
