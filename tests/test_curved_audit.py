@@ -89,3 +89,18 @@ def test_v1_bytes_unchanged_and_v2_settles_before_markers():
                 d=next(p['duration_ms'] for p in v2['paths'] if p['path_id']==a['path_id'])
                 assert a['slot_s']+d/1000+.5<b['slot_s']
         assert markers['end']-markers['start']>=55
+
+def test_v3_leaves_overhead_and_guard_margin_before_next_command():
+    v2,v3=manifest('v2'),manifest('v3');verify_manifest(json.loads(json.dumps(v3)))
+    assert v3['paths']==v2['paths']
+    durations={p['path_id']:p['duration_ms'] for p in v3['paths']}
+    def worst_slack(m):
+        slack=[]
+        for r in m['recordings']:
+            cs=r['commands']
+            slack+=[b['slot_s']-(a['slot_s']+durations[a['path_id']]/1000) for a,b in zip(cs,cs[1:]) if a['kind']=='sample']
+        return min(slack)
+    # Observed in run 3: up to 0.65 s WDA overhead beyond the gesture, plus the foreground guard.
+    assert worst_slack(v2)<0.65+0.5<=worst_slack(v3)
+    for r2,r3 in zip(v2['recordings'],v3['recordings']):
+        assert [c['path_id'] for c in r2['commands'] if c['kind']=='sample']==[c['path_id'] for c in r3['commands'] if c['kind']=='sample']

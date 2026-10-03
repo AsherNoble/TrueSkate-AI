@@ -186,3 +186,21 @@ User-approved amendment (schedule `v2`, identity
   state the board is in; resets touch only the calibration lead-ins.
 
 Run 3 uses a fresh output directory with the v2 manifest frozen on the rig.
+
+## Run 3 and amendment v3 (frozen before run 4)
+
+Run 3 (v2 manifest `d7f4e164…`, `ae50404a`) verified segments 1–9: all 50 XR1
+paths and 40 XR2 paths, with every start/middle/end marker accepted. XR2 segment
+10 executed all ten samples, but its last sample (`p09`, 1.2 s at 53 s) returned
+at 54.86 s; the post-request foreground guard then passed the 55 s reset slot
+and the runner stopped on "overrun after guard". The reset and end marker never
+ran, so segment 10 is uncalibrated and preserved, not used. The v2 margin test
+had assumed 0.5 s of WDA overhead; run 3 shows up to 0.65 s plus the guard.
+
+User-authorized replacement (run 4): re-run only XR2 segment 10 under schedule
+`v3` (identity `curved-execution-20261003-v3-reset-before-markers`). Sample slots
+25→24, 50→49 and 53→52 s give every sample at least 1.8 s after a 1.2 s gesture
+before the next command. Markers, resets, paths, order and the stop rule are
+unchanged. The viewer takes segments 1–9 from run 3 and segment 10 from run 4,
+and only if paths, device, park and sample order match. The private map records
+each clip's source manifest.

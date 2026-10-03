@@ -36,6 +36,37 @@ def test_blinded_export_has_no_condition_or_source_leaks(tmp_path,monkeypatch):
 
 
 
+def test_replacement_segment_must_match_conditions(tmp_path,monkeypatch):
+    script=Path(__file__).resolve().parents[1]/'scripts/inspect/build_curved_audit.py'
+    spec=importlib.util.spec_from_file_location('length_audit_r',script);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    pts=np.arange(0,59,1/30)
+    monkeypatch.setattr(module,'frame_pts',lambda _:pts)
+    def decode(video,times,keep,inspect):
+        for _ in times:inspect(np.zeros((2,2,3),dtype=np.uint8))
+    monkeypatch.setattr(module,'_decode_source_frames',decode)
+    monkeypatch.setattr(module.cv2,'imwrite',lambda path,image,options:Path(path).write_bytes(b'x') or True)
+    def runs(frozen,root,segments):
+        root.mkdir()
+        for n in segments:
+            commands=frozen['recordings'][n-1]['commands'];run=root/f'recording_{n}';run.mkdir()
+            (run/'execution.json').write_text(json.dumps(dict(error=None,manifest_sha256=frozen['sha256'])))
+            (run/'calibration.json').write_text(json.dumps(dict(accepted=True,fit=dict(intercept_s=0.,rate=1.))))
+            (run/'wda-timing.json').write_text(json.dumps(dict(records=[dict(submitted_to_ios=dict(monotonic_s=c['slot_s'])) for c in commands])))
+    v2,v3=manifest('v2'),manifest('v3')
+    m2=tmp_path/'v2.json';m2.write_text(json.dumps(v2));m3=tmp_path/'v3.json';m3.write_text(json.dumps(v3))
+    runs(v2,tmp_path/'run3',range(1,10));runs(v3,tmp_path/'run4',[10])
+    data=module.build(m2,tmp_path/'run3',tmp_path/'public',(m3,tmp_path/'run4',[10]))
+    assert len(data['clips'])==100
+    items=json.loads((tmp_path/'run3'/'audit-private-source-map.json').read_text())['items']
+    assert {i['source_manifest'] for i in items if i['segment']==10}=={v3['identity']}
+    tampered=json.loads(json.dumps(v3));tampered['recordings'][9]['park']='Other'
+    from trueskate_ai.research.curved_audit import digest
+    tampered['sha256']=digest({k:v for k,v in tampered.items() if k!='sha256'})
+    mt=tmp_path/'bad.json';mt.write_text(json.dumps(tampered))
+    import pytest
+    with pytest.raises(ValueError):module.build(m2,tmp_path/'run3',tmp_path/'public2',(mt,tmp_path/'run4',[10]))
+
+
 def test_player():
     import re,subprocess
     template=Path(__file__).resolve().parents[1]/'scripts/inspect/templates/curved_audit.html'

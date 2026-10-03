@@ -8,7 +8,8 @@ from trueskate_ai.research.audit_calibration import verify_recording
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--manifest',type=Path,required=True);p.add_argument('--freeze',action='store_true')
-    p.add_argument('--out',type=Path);p.add_argument('--schedule',default='v1',choices=('v1','v2'))
+    p.add_argument('--out',type=Path);p.add_argument('--schedule',default='v1',choices=('v1','v2','v3'))
+    p.add_argument('--segments',help='comma-separated 1-based segments to run (default all)')
     p.add_argument('--wda-revision')
     a=p.parse_args()
     if a.freeze:save_new(a.manifest,manifest(a.schedule));return
@@ -22,7 +23,9 @@ def main():
     from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder
     worker=None
     try:
+        selected={int(x) for x in a.segments.split(',')} if a.segments else None
         for n,segment in enumerate(frozen['recordings'],1):
+            if selected and n not in selected:continue
             tunnel=subprocess.check_output(['launchctl','print','system/com.trueskate.remotexpc-tunnel'],text=True)
             if 'state = running' not in tunnel:raise RuntimeError('root recording tunnel unavailable')
             cfg=next(d for d in DEVICES if d['name']==segment['device']);port=cfg['wda_port']

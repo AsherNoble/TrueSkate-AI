@@ -20,6 +20,11 @@ DEVICES=('iPhone_XR','iPhone_XR2')
 # The last sample moves 54->53 s and the end marker 57->58 s to keep that 3 s settle.
 SCHEDULES={'v1':dict(identity=IDENTITY,slots=SLOTS,markers=(('start',1),('middle',30),('end',57)),resets=()),
            'v2':dict(identity='curved-execution-20261003-v2-reset-before-markers',slots=(5,10,15,20,25,35,40,45,50,53),
+                     markers=(('start',1),('middle',30),('end',58)),resets=(27,55)),
+           # v3: run 3's segment 10 overran because a 1.2 s sample at 53 s plus WDA
+           # overhead (0.65 s) and the foreground guard passed the 55 s reset. Samples before each reset or
+           # sample get >=1.8 s after a 1.2 s gesture: 25->24, 50->49, 53->52.
+           'v3':dict(identity='curved-execution-20261003-v3-reset-before-markers',slots=(5,10,15,20,24,35,40,45,49,52),
                      markers=(('start',1),('middle',30),('end',58)),resets=(27,55))}
 PRE_ROLL_SETTLE_S=3
 PARKS=('Inbound','Skateboard GB 2024')
