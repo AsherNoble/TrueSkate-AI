@@ -1,0 +1,153 @@
+{
+  "identity": "curved-execution-20261003-v2-reset-before-markers",
+  "expected": 100,
+  "reviewed": 100,
+  "missing": 0,
+  "overall": {
+    "n": 100,
+    "good": 66,
+    "minor": 21,
+    "major": 2,
+    "unclear": 11
+  },
+  "source": "human blinded assessments only",
+  "device_park_interpretation": "device and park are confounded",
+  "comments": [
+    {
+      "id": "0514d533264076f63317",
+      "comment": "The circle overlay discernibly lags behind the tip of the trace"
+    },
+    {
+      "id": "77f7959b1a64e1535cbc",
+      "comment": "Trace appears in frame 21, circle appears in frame 22. Effect is non-discernable."
+    },
+    {
+      "id": "7bed843784e5afc6a5b7",
+      "comment": "Trace appears in frame 21"
+    },
+    {
+      "id": "1b63bc4c3feb899cd9b9",
+      "comment": "trace appears in frame 21"
+    }
+  ],
+  "by_family": {
+    "arcs": {
+      "n": 20,
+      "good": 14,
+      "minor": 6,
+      "major": 0,
+      "unclear": 0
+    },
+    "loops": {
+      "n": 20,
+      "good": 14,
+      "minor": 4,
+      "major": 1,
+      "unclear": 1
+    },
+    "multiple_bends": {
+      "n": 20,
+      "good": 9,
+      "minor": 3,
+      "major": 0,
+      "unclear": 8
+    },
+    "reversals": {
+      "n": 20,
+      "good": 17,
+      "minor": 1,
+      "major": 0,
+      "unclear": 2
+    },
+    "s_curves": {
+      "n": 20,
+      "good": 12,
+      "minor": 7,
+      "major": 1,
+      "unclear": 0
+    }
+  },
+  "by_duration_ms": {
+    "150": {
+      "n": 20,
+      "good": 7,
+      "minor": 9,
+      "major": 2,
+      "unclear": 2
+    },
+    "300": {
+      "n": 20,
+      "good": 8,
+      "minor": 7,
+      "major": 0,
+      "unclear": 5
+    },
+    "600": {
+      "n": 20,
+      "good": 17,
+      "minor": 3,
+      "major": 0,
+      "unclear": 0
+    },
+    "900": {
+      "n": 20,
+      "good": 15,
+      "minor": 1,
+      "major": 0,
+      "unclear": 4
+    },
+    "1200": {
+      "n": 20,
+      "good": 19,
+      "minor": 1,
+      "major": 0,
+      "unclear": 0
+    }
+  },
+  "by_waypoint_count": {
+    "5": {
+      "n": 26,
+      "good": 21,
+      "minor": 5,
+      "major": 0,
+      "unclear": 0
+    },
+    "8": {
+      "n": 26,
+      "good": 18,
+      "minor": 5,
+      "major": 0,
+      "unclear": 3
+    },
+    "11": {
+      "n": 24,
+      "good": 14,
+      "minor": 6,
+      "major": 0,
+      "unclear": 4
+    },
+    "15": {
+      "n": 24,
+      "good": 13,
+      "minor": 5,
+      "major": 2,
+      "unclear": 4
+    }
+  },
+  "by_device_park": {
+    "iPhone_XR / Inbound": {
+      "n": 50,
+      "good": 32,
+      "minor": 10,
+      "major": 2,
+      "unclear": 6
+    },
+    "iPhone_XR2 / Skateboard GB 2024": {
+      "n": 50,
+      "good": 34,
+      "minor": 11,
+      "major": 0,
+      "unclear": 5
+    }
+  }
+}

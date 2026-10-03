@@ -1,0 +1,506 @@
+{
+  "schema": "blind-curved-execution-v1",
+  "bundle_sha256": "b4347c3ff8d75adf26bc9328e91768c1021f75b1ef12d892bec7c9f2429e8ad2",
+  "assessments": {
+    "f95e6575f30ada4715b6": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:30:10.098Z"
+    },
+    "840acf92705d1728b1aa": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:30:27.743Z"
+    },
+    "0514d533264076f63317": {
+      "rating": "minor",
+      "comments": "The circle overlay discernibly lags behind the tip of the trace",
+      "updated_at": "2026-10-03T10:32:09.764Z"
+    },
+    "8d0934e3123a972f1b71": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:33:56.171Z"
+    },
+    "55475655cc1757b98264": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:34:06.035Z"
+    },
+    "b396a48d9394610fb98e": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:34:27.262Z"
+    },
+    "77f7959b1a64e1535cbc": {
+      "rating": "good",
+      "comments": "Trace appears in frame 21, circle appears in frame 22. Effect is non-discernable.",
+      "updated_at": "2026-10-03T10:35:32.908Z"
+    },
+    "7bed843784e5afc6a5b7": {
+      "rating": "good",
+      "comments": "Trace appears in frame 21",
+      "updated_at": "2026-10-03T10:36:14.948Z"
+    },
+    "1b63bc4c3feb899cd9b9": {
+      "rating": "minor",
+      "comments": "trace appears in frame 21",
+      "updated_at": "2026-10-03T10:36:57.541Z"
+    },
+    "f8182aaf669810916319": {
+      "rating": "unclear",
+      "comments": "",
+      "updated_at": "2026-10-03T10:37:25.347Z"
+    },
+    "3202a5a5d5c72cda6e1b": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:38:08.688Z"
+    },
+    "01f95d5c185fbe643c56": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:38:17.787Z"
+    },
+    "89e1e81826d7498f1b36": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:38:26.819Z"
+    },
+    "2b7c952f615170a8871d": {
+      "rating": "unclear",
+      "comments": "",
+      "updated_at": "2026-10-03T10:38:38.815Z"
+    },
+    "58e7a76ccbe7024d952c": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:38:44.755Z"
+    },
+    "ac54b25e6bd78be8498c": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:39:03.717Z"
+    },
+    "99f9b2eab9ab16002f71": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:39:12.668Z"
+    },
+    "5d3d8fb54f308dd430c1": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:39:31.094Z"
+    },
+    "8ded91d1c6b43ad159b5": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:39:51.318Z"
+    },
+    "1e3c45c2df40ad32897f": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:40:06.659Z"
+    },
+    "d83e0b515a39dedd370b": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:40:21.350Z"
+    },
+    "d8a82475d3b278e046a5": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:40:32.286Z"
+    },
+    "dd4435f4ce032297692d": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:40:50.915Z"
+    },
+    "43a7707d249f6b285f6c": {
+      "rating": "unclear",
+      "comments": "",
+      "updated_at": "2026-10-03T10:41:01.039Z"
+    },
+    "aefc6bdb3b0403274b0a": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:41:18.319Z"
+    },
+    "35b1c6787718ab25e71a": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:41:33.873Z"
+    },
+    "865ef87f585537fe8688": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:41:50.431Z"
+    },
+    "1a06e9fcdb8df2683ec5": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:41:58.845Z"
+    },
+    "b25fd826706d37ad9b97": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:42:07.667Z"
+    },
+    "f4f1b53e5f5ee3aafca9": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:42:12.757Z"
+    },
+    "8edf9361b99e5cafa1ae": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:42:21.811Z"
+    },
+    "21f59749a88835676fce": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:42:29.711Z"
+    },
+    "77d433e0e4fa01dddf4a": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:42:36.616Z"
+    },
+    "7257244903da4c45cb8f": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:42:43.601Z"
+    },
+    "bf5a67d70dda2bd5d38d": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:42:49.711Z"
+    },
+    "de237695dc81d6714a73": {
+      "rating": "unclear",
+      "comments": "",
+      "updated_at": "2026-10-03T10:42:58.133Z"
+    },
+    "15a74eec9457e3d2af39": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:43:18.866Z"
+    },
+    "24fec710a2a1a6e3ec61": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:43:31.369Z"
+    },
+    "a56e19ffd4844dd3eb56": {
+      "rating": "unclear",
+      "comments": "",
+      "updated_at": "2026-10-03T10:43:42.288Z"
+    },
+    "e65c2c1ff6f9007e1b6f": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:44:01.449Z"
+    },
+    "7f13538b97665a39b4c0": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:44:11.104Z"
+    },
+    "f019550ff646dd08efe4": {
+      "rating": "major",
+      "comments": "",
+      "updated_at": "2026-10-03T10:44:21.266Z"
+    },
+    "9f0a5ac25d42dffb616f": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:44:27.639Z"
+    },
+    "fac1c434e517f0c83ccf": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:44:38.035Z"
+    },
+    "cf5a4c8223850fb12456": {
+      "rating": "unclear",
+      "comments": "",
+      "updated_at": "2026-10-03T10:44:47.500Z"
+    },
+    "6dfb75bc15f97079ce5c": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:45:01.449Z"
+    },
+    "fb129024676c0061877d": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:45:18.584Z"
+    },
+    "4981a837b3376ac01f8a": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:45:30.839Z"
+    },
+    "1fc4a277077cbf2524df": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:45:40.965Z"
+    },
+    "24926473d4b35edc33c2": {
+      "rating": "unclear",
+      "comments": "",
+      "updated_at": "2026-10-03T10:45:48.598Z"
+    },
+    "cb78b75f2ce57eaf17cd": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:45:55.194Z"
+    },
+    "68d7f1f2954c620cbeaf": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:46:04.422Z"
+    },
+    "d58b831c4ecb8d2fdd44": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:46:16.468Z"
+    },
+    "13ebb5c8685e1d724972": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:46:37.852Z"
+    },
+    "9f4d69c6d02399564e20": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:46:43.759Z"
+    },
+    "68ee546324b8158ccb92": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:46:51.483Z"
+    },
+    "a53500aa57d2b9acb3ae": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:46:58.431Z"
+    },
+    "38e3da62f63bcc5a9944": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:47:06.575Z"
+    },
+    "a4a3ba58ec8532c60107": {
+      "rating": "unclear",
+      "comments": "",
+      "updated_at": "2026-10-03T10:47:15.219Z"
+    },
+    "82f3fec236a180c01204": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:47:22.095Z"
+    },
+    "6462de3eec1a234c25a2": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:47:29.188Z"
+    },
+    "63101baae3ae4b694756": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:47:38.101Z"
+    },
+    "54c5c5236fe1dd2ecc45": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:48:16.156Z"
+    },
+    "e3f7cd97b033a65547e7": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:48:23.326Z"
+    },
+    "0d97598803eaa7f86037": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:48:30.320Z"
+    },
+    "013302952640fcdf9a76": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:48:39.711Z"
+    },
+    "4ed9aae0e43e36829627": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:48:50.090Z"
+    },
+    "d1192611a127e4ccb8a6": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:48:59.112Z"
+    },
+    "c5c43557430c64c009c5": {
+      "rating": "unclear",
+      "comments": "",
+      "updated_at": "2026-10-03T10:49:08.613Z"
+    },
+    "1b4357810f7ab697979d": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:49:21.707Z"
+    },
+    "de2263a79fe4ea594bbb": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:49:27.243Z"
+    },
+    "8bd6b1529b3c818e1ada": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:49:41.904Z"
+    },
+    "2e79454a38dd454f01be": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:49:49.322Z"
+    },
+    "b9d235f8bb6b0c13bcfe": {
+      "rating": "major",
+      "comments": "",
+      "updated_at": "2026-10-03T10:50:03.482Z"
+    },
+    "88f70224fdba9a19de1f": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:50:13.804Z"
+    },
+    "61967a3c02be3019beb9": {
+      "rating": "unclear",
+      "comments": "",
+      "updated_at": "2026-10-03T10:50:22.557Z"
+    },
+    "1fc7b2c79d164d76d04a": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:50:33.023Z"
+    },
+    "6d1106330e688d0790ff": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:50:46.719Z"
+    },
+    "3fed4f58a2f4e2762ad7": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:50:53.228Z"
+    },
+    "59898035e4b2923fdbdf": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:50:59.451Z"
+    },
+    "57952cd4cad2d18274ff": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:51:08.815Z"
+    },
+    "21a171c9796e76889b95": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:51:16.769Z"
+    },
+    "eacbb264d1bd0f225a19": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:51:21.774Z"
+    },
+    "ecd9a01cd605ade12214": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:51:29.682Z"
+    },
+    "56a1ced2a5cd99513ac6": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:51:34.813Z"
+    },
+    "c04434febe0e46593258": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:51:45.195Z"
+    },
+    "ef0c97f8e524be9903dd": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:51:53.454Z"
+    },
+    "fefb3e5ce69aa99e8aff": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:52:02.240Z"
+    },
+    "e388143cc1ef62449581": {
+      "rating": "unclear",
+      "comments": "",
+      "updated_at": "2026-10-03T10:52:08.516Z"
+    },
+    "ef41d97a713283fda730": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:52:16.802Z"
+    },
+    "c401c1d6e62e62fda4e6": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:52:22.985Z"
+    },
+    "c95f4355ef31de83d66c": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:52:29.529Z"
+    },
+    "0ac21203d70c07ce450b": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:52:35.973Z"
+    },
+    "bf587c0c637f4c8bf119": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:52:44.098Z"
+    },
+    "63434ba639046d325fb2": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:52:50.582Z"
+    },
+    "4728884f61a457f616f1": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:52:58.447Z"
+    },
+    "37cc321d2e1ba36655d3": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:53:06.609Z"
+    },
+    "d3f8f399296eb5bb8ff1": {
+      "rating": "minor",
+      "comments": "",
+      "updated_at": "2026-10-03T10:53:22.285Z"
+    },
+    "4df87f03e3f6b2cf8d99": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:53:29.546Z"
+    },
+    "119016d7bced79afde78": {
+      "rating": "good",
+      "comments": "",
+      "updated_at": "2026-10-03T10:53:38.027Z"
+    }
+  }
+}

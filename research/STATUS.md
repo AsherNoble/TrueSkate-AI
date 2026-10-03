@@ -316,3 +316,8 @@ move. Fork commit `ae50404a` resolves the app origin once per request; both XRs
 now run it (signing renewed to 2026-10-10 and trusted). Preparation is flat at
 ~0.07 s (XR1) and 0.10–0.24 s (XR2) for 2–57 waypoints, down from 0.9–14 s.
 Rerunning the 100-sample audit with this revision needs authorization.
+The curved execution audit then completed: 100/100 blinded clips (runs 3+4,
+reset-before-marker schedules v2/v3), rated 66 Good / 21 Minor / 2 Major / 11
+Unclear. Fidelity tracks spacing between points: 88–91% Good among judged clips
+when points are ≥67 ms apart, 76% at 33–67 ms, 50% at 16–33 ms, 12% below 16 ms.
+Curved executors should keep points ≥~33 ms apart.

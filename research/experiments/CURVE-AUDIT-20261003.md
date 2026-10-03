@@ -204,3 +204,46 @@ before the next command. Markers, resets, paths, order and the stop rule are
 unchanged. The viewer takes segments 1–9 from run 3 and segment 10 from run 4,
 and only if paths, device, park and sample order match. The private map records
 each clip's source manifest.
+
+## Run 4 and human assessment results
+
+Run 4 (v3 manifest `7680e3be…`) re-ran only XR2 segment 10. All three markers
+had 5/5 votes, and the held-out middle error was −17.7 ms. The 100-clip blinded
+viewer combined run 3 segments 1–9 (v2) with run 4 segment 10 (v3); conditions
+matched, and the private map records each clip's source manifest.
+
+The operator rated all 100 clips with no missing ratings: **66 Good, 21 Minor,
+2 Major, 11 Unclear**
+([results](../evidence/CURVE-AUDIT-20261003/curved-audit-results-20261003.json),
+[export](../evidence/CURVE-AUDIT-20261003/blind-gesture-assessments-20261003.json)).
+The viewer server was shut down when the report was returned.
+
+| Mean time between points | n | Good | Minor | Major | Unclear | Good / judged |
+|---|---:|---:|---:|---:|---:|---:|
+| < 16 ms | 8 | 1 | 5 | 2 | 0 | 12% |
+| 16–33 ms | 18 | 6 | 6 | 0 | 6 | 50% |
+| 33–67 ms | 24 | 16 | 5 | 0 | 3 | 76% |
+| 67–150 ms | 28 | 23 | 3 | 0 | 2 | 88% |
+| ≥ 150 ms | 22 | 20 | 2 | 0 | 0 | 91% |
+
+- **Duration:** 150 ms paths 7/20 Good (both Majors), 300 ms 8/20, then 600 ms
+  17/20, 900 ms 15/20, 1200 ms 19/20. Within a duration, more waypoints did
+  worse at 150 ms (5/8/11/15 points: 4/6, 2/6, 1/4, 0/4 Good). This points to
+  spacing between points, not point count itself; both Majors had ≈6–7 ms
+  segments (150 ms, 15 points).
+- **Timing profile:** pause-containing paths were weakest (11/20 Good, 9
+  Minor). Shape families differed less, except multiple bends: 8 Unclear, all
+  four clips of each of its 300 ms and 900 ms path pairs.
+- **Device/park (confounded):** XR1/Inbound 32 Good, 2 Major; XR2/Skateboard GB
+  34 Good, 0 Major. 36/50 paths received the same rating on both phones.
+- **Overlay timing caveat:** three comments note the trace appearing one frame
+  before the ring (frame 21 vs 22); one notes the ring visibly lagging the
+  trace tip. A ~1-frame calibration offset is within the 2-frame alignment
+  limit, but it may have pushed some ratings toward Minor.
+
+Interpretation (exploratory, single rater, n=100): direct timed-waypoint
+execution is faithful when points are at least ~33 ms apart (about one 30 fps
+frame). Below ~16 ms it degrades, consistent with the reported XCTest
+behaviour of compressing densely spaced waypoints. A curve executor should cap
+the point count at about duration/33 ms + 1, rather than sending fixed dense
+polylines; a 150 ms flick then gets ~5 points.
