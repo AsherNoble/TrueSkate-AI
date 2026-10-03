@@ -370,3 +370,13 @@ Observed response transition: 10–15 ms; consistent trace starts at tested 30 m
 Nineteen flicker clips still move the board. Intermediate-duration length effects
 are not consistently monotonic; three repeats/cell do not establish a universal
 threshold or input path collapse. [Results](evidence/LINEAR-LENGTH-20261003/operator-review/results.md).
+
+## Curved Model 1 MVP 2.0 requirements
+
+The operator requires arbitrary single-finger paths without spin, with variable
+speed and unrestricted gameplay state at gesture start. A single cubic is not
+the model's representation limit; an extensible timed piecewise path is the
+current design candidate. Next execution review uses a moving circle only,
+aligned using five-contact calibration. Model accuracy is position error at
+matched frame times, with continued approximately 100-clip held-out human
+audits. [Requirements and remaining decisions](protocols/model1_curved_mvp2.md).

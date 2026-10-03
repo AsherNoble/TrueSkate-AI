@@ -41,6 +41,9 @@ Put substantial experiments in individual records and current facts in STATUS.
   Blind labels complete: board 120/120 at ≥15 ms, 0/15 at 10 ms; trace 75/75
   at 30–50 ms, mixed 15–25 ms. Length pattern nonmonotonic; collapse unproven.
   [Length experiment](experiments/LINEAR-LENGTH-20261003.md).
+- MVP 2.0 direction: arbitrary timed single-drag paths, any initial board state,
+  five-touch-aligned moving-circle review and frame-position accuracy.
+  [Requirements](protocols/model1_curved_mvp2.md).
 
 ## 2026-10-01 — Doubling the data still helps, but less
 
