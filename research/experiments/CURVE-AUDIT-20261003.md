@@ -267,4 +267,8 @@ the extraction against a moving-dot overlay
   270–330 ms after its gesture ends, so starts drift late. Push 5 started
   +447 ms late, and flick B started 315–343 ms after flick A instead of 168 ms
   ([timings](../evidence/CURVE-AUDIT-20261003/demo-replay/separate-runs.json)).
-  Operator grading of these replays is pending.
+  Operator grades: 9/9 Major. The conjoining is gone, but the added delay
+  between gestures is obvious and ruins the outcome at every spacing
+  ([grades](../evidence/CURVE-AUDIT-20261003/demo-replay/separate-grades.json),
+  [key](../evidence/CURVE-AUDIT-20261003/demo-replay/separate-key.json)).
+  Expert sequences need on-device scheduling of one touch record per gesture.
