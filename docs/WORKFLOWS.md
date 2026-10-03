@@ -109,7 +109,7 @@ trace lifetime, not actual contact duration or finger-up.
 This diagnostic is separate from collection and training. Freeze with
 `python scripts/collection/run_curved_audit.py --freeze --manifest /absolute/new/manifest.json`.
 On the rig, execute with the same script, `--manifest`, a new isolated `--out`
-and `--wda-revision b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6`.
+and `--wda-revision ae50404aac12d9f8c41f6c3fa8776e97975eaef5`.
 It requires XR1/Inbound and XR2/Skateboard GB 2024, sends 50 paired paths in ten
 alternating segments, and stops on the first failure without replacements.
 Do not rerun a failed batch as maintenance. Raw complete/partial recordings and

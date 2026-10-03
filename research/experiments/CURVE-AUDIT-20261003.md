@@ -115,3 +115,47 @@ the fixed 5 s sample spacing cannot absorb multi-second preparation. Options
 are (a) a schedule with slack sized to observed preparation, or (b) removing the
 per-move cost in the project's own WDA build, then verifying with a no-recording
 timing probe across 2/5/8/11/15 waypoints before any audit run.
+
+## WDA fix: one app snapshot per request (2026-10-03)
+
+The XR1 WDA log confirmed the hypothesis above: every viewport-origin
+`pointerMove` resolved an `XCUICoordinate`, and each resolution requested an
+accessibility snapshot of True Skate. The five-finger marker took 10 snapshots
+(~30 ms each); `p27` took 31 (~125 ms each, the first stalling 3.3 s).
+
+Fork commit `ae50404a` (AsherNoble/WebDriverAgent `master`) resolves the app
+origin once per request in portrait and computes viewport/pointer points
+arithmetically. Element origins and other orientations are unchanged. A new
+simulator integration test checks synthesized points against per-item
+`XCUICoordinate` resolution; 123 unit tests pass. Four existing tap/long-press
+integration tests are flaky on Xcode 26.6 simulators with and without the patch
+(4/20 failures each over five iterations).
+
+Both XRs now run builds of `ae50404a`; the signing profiles were renewed
+(expire 2026-10-10) and trusted on each phone. No-recording probe
+(`scripts/inspect/probe_wda_preparation.py`, seed 20261003; evidence in
+`../evidence/CURVE-AUDIT-20261003/wda-probe/`), WDA preparation in seconds:
+
+| Waypoints | XR1 median / max (n=5) | XR2 median / max (n=2) |
+|---:|---:|---:|
+| 2 | 0.073 / 0.248 | 0.129 / 0.131 |
+| 5 | 0.079 / 0.083 | 0.110 / 0.111 |
+| 8 | 0.076 / 0.275 | 0.099 / 0.118 |
+| 11 | 0.074 / 0.254 | 0.226 / 0.347 |
+| 15 | 0.070 / 0.245 | 0.240 / 0.357 |
+| 17 | 0.077 / 0.107 | 0.110 / 0.120 |
+| 33 | 0.067 / 0.078 | 0.197 / 0.301 |
+| 57 | 0.066 / 0.081 | 0.194 / 0.291 |
+
+All 56 requests succeeded. Preparation no longer grows with move count. XR1
+meets every planned limit (median ≤0.15 s, max ≤0.5 s). XR2 meets the maximum
+but its median exceeds 0.15 s at 11/15/33/57 waypoints; with n=2 this is not
+separated from park/game-state noise. WDA logged two snapshots per request
+regardless of size (the second is the per-request orientation query). iOS
+submission→callback stayed at duration + 0.22–0.32 s except 33 waypoints on both
+phones (+0.44/+0.47 s); at 300 ms those segments are ~9 ms, the sub-16 ms regime
+reported to make XCTest compress paths. The five-touch marker still succeeds
+(preparation 0.06–0.13 s, iOS 0.29 s).
+
+The audit can be re-run with `--wda-revision ae50404aac12d9f8c41f6c3fa8776e97975eaef5`
+once the user authorizes it; this record does not re-open the stopped batch.

@@ -310,3 +310,9 @@ decode. Missing middle/end controls prevent calibration, leaving **0/100 audit
 clips**. No replacements or service restarts occurred. The viewer/importer are
 implemented and offline-tested; there are no human curve-fidelity findings yet.
 See [CURVE-AUDIT-20261003](experiments/CURVE-AUDIT-20261003.md).
+
+The delay was WDA requesting an app accessibility snapshot for every pointer
+move. Fork commit `ae50404a` resolves the app origin once per request; both XRs
+now run it (signing renewed to 2026-10-10 and trusted). Preparation is flat at
+~0.07 s (XR1) and 0.10–0.24 s (XR2) for 2–57 waypoints, down from 0.9–14 s.
+Rerunning the 100-sample audit with this revision needs authorization.

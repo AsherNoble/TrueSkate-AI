@@ -1,0 +1,2054 @@
+{
+  "device": "iPhone_XR",
+  "wda_revision": "ae50404aac12d9f8c41f6c3fa8776e97975eaef5",
+  "seed": 20261003,
+  "reps": 5,
+  "error": null,
+  "items": [
+    {
+      "waypoints": 33,
+      "duration_ms": 600,
+      "phase": 4.401157,
+      "index": 0
+    },
+    {
+      "waypoints": 8,
+      "duration_ms": 300,
+      "phase": 2.367139,
+      "index": 1
+    },
+    {
+      "waypoints": 15,
+      "duration_ms": 600,
+      "phase": 2.091368,
+      "index": 2
+    },
+    {
+      "waypoints": 2,
+      "duration_ms": 300,
+      "phase": 0.901043,
+      "index": 3
+    },
+    {
+      "waypoints": 8,
+      "duration_ms": 900,
+      "phase": 3.983026,
+      "index": 4
+    },
+    {
+      "waypoints": 11,
+      "duration_ms": 600,
+      "phase": 4.240072,
+      "index": 5
+    },
+    {
+      "waypoints": 8,
+      "duration_ms": 600,
+      "phase": 5.200787,
+      "index": 6
+    },
+    {
+      "waypoints": 17,
+      "duration_ms": 300,
+      "phase": 0.243784,
+      "index": 7
+    },
+    {
+      "waypoints": 15,
+      "duration_ms": 300,
+      "phase": 2.140335,
+      "index": 8
+    },
+    {
+      "waypoints": 11,
+      "duration_ms": 300,
+      "phase": 3.085037,
+      "index": 9
+    },
+    {
+      "waypoints": 2,
+      "duration_ms": 600,
+      "phase": 3.127696,
+      "index": 10
+    },
+    {
+      "waypoints": 5,
+      "duration_ms": 600,
+      "phase": 3.897222,
+      "index": 11
+    },
+    {
+      "waypoints": 17,
+      "duration_ms": 300,
+      "phase": 1.194268,
+      "index": 12
+    },
+    {
+      "waypoints": 33,
+      "duration_ms": 900,
+      "phase": 5.14802,
+      "index": 13
+    },
+    {
+      "waypoints": 5,
+      "duration_ms": 300,
+      "phase": 0.319662,
+      "index": 14
+    },
+    {
+      "waypoints": 17,
+      "duration_ms": 900,
+      "phase": 0.198662,
+      "index": 15
+    },
+    {
+      "waypoints": 57,
+      "duration_ms": 600,
+      "phase": 3.248691,
+      "index": 16
+    },
+    {
+      "waypoints": 33,
+      "duration_ms": 300,
+      "phase": 2.033224,
+      "index": 17
+    },
+    {
+      "waypoints": 2,
+      "duration_ms": 600,
+      "phase": 5.791592,
+      "index": 18
+    },
+    {
+      "waypoints": 57,
+      "duration_ms": 300,
+      "phase": 6.24016,
+      "index": 19
+    },
+    {
+      "waypoints": 57,
+      "duration_ms": 300,
+      "phase": 0.788409,
+      "index": 20
+    },
+    {
+      "waypoints": 11,
+      "duration_ms": 900,
+      "phase": 3.525948,
+      "index": 21
+    },
+    {
+      "waypoints": 15,
+      "duration_ms": 300,
+      "phase": 3.197798,
+      "index": 22
+    },
+    {
+      "waypoints": 57,
+      "duration_ms": 600,
+      "phase": 1.96938,
+      "index": 23
+    },
+    {
+      "waypoints": 15,
+      "duration_ms": 900,
+      "phase": 1.583475,
+      "index": 24
+    },
+    {
+      "waypoints": 17,
+      "duration_ms": 600,
+      "phase": 4.275898,
+      "index": 25
+    },
+    {
+      "waypoints": 15,
+      "duration_ms": 600,
+      "phase": 4.340852,
+      "index": 26
+    },
+    {
+      "waypoints": 17,
+      "duration_ms": 600,
+      "phase": 2.839269,
+      "index": 27
+    },
+    {
+      "waypoints": 5,
+      "duration_ms": 600,
+      "phase": 4.174402,
+      "index": 28
+    },
+    {
+      "waypoints": 2,
+      "duration_ms": 300,
+      "phase": 0.176963,
+      "index": 29
+    },
+    {
+      "waypoints": 8,
+      "duration_ms": 300,
+      "phase": 4.754167,
+      "index": 30
+    },
+    {
+      "waypoints": 57,
+      "duration_ms": 900,
+      "phase": 4.149018,
+      "index": 31
+    },
+    {
+      "waypoints": 5,
+      "duration_ms": 300,
+      "phase": 3.296058,
+      "index": 32
+    },
+    {
+      "waypoints": 2,
+      "duration_ms": 900,
+      "phase": 2.128985,
+      "index": 33
+    },
+    {
+      "waypoints": 33,
+      "duration_ms": 600,
+      "phase": 1.35001,
+      "index": 34
+    },
+    {
+      "waypoints": 33,
+      "duration_ms": 300,
+      "phase": 1.891678,
+      "index": 35
+    },
+    {
+      "waypoints": 5,
+      "duration_ms": 900,
+      "phase": 3.242758,
+      "index": 36
+    },
+    {
+      "waypoints": 8,
+      "duration_ms": 600,
+      "phase": 4.979936,
+      "index": 37
+    },
+    {
+      "waypoints": 11,
+      "duration_ms": 300,
+      "phase": 3.2147,
+      "index": 38
+    },
+    {
+      "waypoints": 11,
+      "duration_ms": 600,
+      "phase": 1.451934,
+      "index": 39
+    }
+  ],
+  "calls": [
+    {
+      "index": 0,
+      "client_s": 1.2229995890520513
+    },
+    {
+      "index": 1,
+      "client_s": 0.7370279219467193
+    },
+    {
+      "index": 2,
+      "client_s": 1.350938901072368
+    },
+    {
+      "index": 3,
+      "client_s": 0.9109019059687853
+    },
+    {
+      "index": 4,
+      "client_s": 1.5565660919528455
+    },
+    {
+      "index": 5,
+      "client_s": 1.2423676680773497
+    },
+    {
+      "index": 6,
+      "client_s": 1.0556396530009806
+    },
+    {
+      "index": 7,
+      "client_s": 0.8492026408202946
+    },
+    {
+      "index": 8,
+      "client_s": 0.7183066098950803
+    },
+    {
+      "index": 9,
+      "client_s": 0.6994811038020998
+    },
+    {
+      "index": 10,
+      "client_s": 0.9427657490596175
+    },
+    {
+      "index": 11,
+      "client_s": 1.0190135759767145
+    },
+    {
+      "index": 12,
+      "client_s": 0.8421111211646348
+    },
+    {
+      "index": 13,
+      "client_s": 1.4523504939861596
+    },
+    {
+      "index": 14,
+      "client_s": 0.7002324098721147
+    },
+    {
+      "index": 15,
+      "client_s": 1.3495105758775026
+    },
+    {
+      "index": 16,
+      "client_s": 1.3514497389551252
+    },
+    {
+      "index": 17,
+      "client_s": 0.9078700661193579
+    },
+    {
+      "index": 18,
+      "client_s": 0.941664885962382
+    },
+    {
+      "index": 19,
+      "client_s": 0.406410203082487
+    },
+    {
+      "index": 20,
+      "client_s": 0.4168716329149902
+    },
+    {
+      "index": 21,
+      "client_s": 1.3499035290442407
+    },
+    {
+      "index": 22,
+      "client_s": 0.7447675808798522
+    },
+    {
+      "index": 23,
+      "client_s": 1.3446160070598125
+    },
+    {
+      "index": 24,
+      "client_s": 1.3142630588263273
+    },
+    {
+      "index": 25,
+      "client_s": 1.0024618599563837
+    },
+    {
+      "index": 26,
+      "client_s": 1.1443104690406471
+    },
+    {
+      "index": 27,
+      "client_s": 1.0490732651669532
+    },
+    {
+      "index": 28,
+      "client_s": 1.0563488309271634
+    },
+    {
+      "index": 29,
+      "client_s": 0.7024814211763442
+    },
+    {
+      "index": 30,
+      "client_s": 0.7110063021536916
+    },
+    {
+      "index": 31,
+      "client_s": 1.340321432100609
+    },
+    {
+      "index": 32,
+      "client_s": 0.7492966479621828
+    },
+    {
+      "index": 33,
+      "client_s": 1.254545132862404
+    },
+    {
+      "index": 34,
+      "client_s": 1.1525887770112604
+    },
+    {
+      "index": 35,
+      "client_s": 0.9134055911563337
+    },
+    {
+      "index": 36,
+      "client_s": 1.3425577820744365
+    },
+    {
+      "index": 37,
+      "client_s": 1.0193223939277232
+    },
+    {
+      "index": 38,
+      "client_s": 0.7096184729598463
+    },
+    {
+      "index": 39,
+      "client_s": 1.0834349149372429
+    }
+  ],
+  "report": {
+    "capacity": 256,
+    "records": [
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005299.2856379,
+          "monotonic_s": 1104276.9394609167
+        },
+        "preparation_started": {
+          "epoch_s": 1791005299.217526,
+          "monotonic_s": 1104276.8713507918
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005300.418509,
+          "monotonic_s": 1104278.0723143334
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005299.284699,
+          "monotonic_s": 1104276.9385226667
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005300.424522,
+          "monotonic_s": 1104278.0783275
+        },
+        "request_entered": {
+          "epoch_s": 1791005299.216537,
+          "monotonic_s": 1104276.8703612918
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005300.328621,
+          "monotonic_s": 1104277.9824283752
+        },
+        "request_finished": {
+          "epoch_s": 1791005300.424532,
+          "monotonic_s": 1104278.0783379166
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 0,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005302.1521869,
+          "monotonic_s": 1104279.8059653752
+        },
+        "preparation_started": {
+          "epoch_s": 1791005302.082498,
+          "monotonic_s": 1104279.7362779167
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005302.77489,
+          "monotonic_s": 1104280.4286578335
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005302.152179,
+          "monotonic_s": 1104279.8059570417
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005302.7801251,
+          "monotonic_s": 1104280.4338932917
+        },
+        "request_entered": {
+          "epoch_s": 1791005302.0824509,
+          "monotonic_s": 1104279.7362300002
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005302.728368,
+          "monotonic_s": 1104280.3821369584
+        },
+        "request_finished": {
+          "epoch_s": 1791005302.780133,
+          "monotonic_s": 1104280.433902
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 1,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005304.714673,
+          "monotonic_s": 1104282.3684114583
+        },
+        "preparation_started": {
+          "epoch_s": 1791005304.4698482,
+          "monotonic_s": 1104282.1235898752
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005305.7531428,
+          "monotonic_s": 1104283.4068636668
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005304.714668,
+          "monotonic_s": 1104282.3684057083
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005305.778802,
+          "monotonic_s": 1104283.4325232084
+        },
+        "request_entered": {
+          "epoch_s": 1791005304.469816,
+          "monotonic_s": 1104282.1235577085
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005305.652491,
+          "monotonic_s": 1104283.3062146667
+        },
+        "request_finished": {
+          "epoch_s": 1791005305.778811,
+          "monotonic_s": 1104283.4325320418
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 2,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005307.715128,
+          "monotonic_s": 1104285.3688187501
+        },
+        "preparation_started": {
+          "epoch_s": 1791005307.4666781,
+          "monotonic_s": 1104285.1203733333
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005308.335688,
+          "monotonic_s": 1104285.989369
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005307.715119,
+          "monotonic_s": 1104285.3688095834
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005308.3641,
+          "monotonic_s": 1104286.017780875
+        },
+        "request_entered": {
+          "epoch_s": 1791005307.4666429,
+          "monotonic_s": 1104285.1203375834
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005308.233357,
+          "monotonic_s": 1104285.887039625
+        },
+        "request_finished": {
+          "epoch_s": 1791005308.364111,
+          "monotonic_s": 1104286.0177914584
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 3,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005310.297745,
+          "monotonic_s": 1104287.951395375
+        },
+        "preparation_started": {
+          "epoch_s": 1791005310.022265,
+          "monotonic_s": 1104287.67591975
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005311.53506,
+          "monotonic_s": 1104289.1886899583
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005310.2977362,
+          "monotonic_s": 1104287.951385875
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005311.564104,
+          "monotonic_s": 1104289.2177347501
+        },
+        "request_entered": {
+          "epoch_s": 1791005310.022229,
+          "monotonic_s": 1104287.6758838333
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005311.460446,
+          "monotonic_s": 1104289.1140776668
+        },
+        "request_finished": {
+          "epoch_s": 1791005311.5641131,
+          "monotonic_s": 1104289.2177440417
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 4,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005313.4789891,
+          "monotonic_s": 1104291.1325890834
+        },
+        "preparation_started": {
+          "epoch_s": 1791005313.225383,
+          "monotonic_s": 1104290.878987625
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005314.40758,
+          "monotonic_s": 1104292.0611654168
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005313.478982,
+          "monotonic_s": 1104291.132582125
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005314.444586,
+          "monotonic_s": 1104292.0981710835
+        },
+        "request_entered": {
+          "epoch_s": 1791005313.225354,
+          "monotonic_s": 1104290.8789587084
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005314.36587,
+          "monotonic_s": 1104292.0194567083
+        },
+        "request_finished": {
+          "epoch_s": 1791005314.444596,
+          "monotonic_s": 1104292.0981809166
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 5,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005316.200098,
+          "monotonic_s": 1104293.8536558333
+        },
+        "preparation_started": {
+          "epoch_s": 1791005316.118798,
+          "monotonic_s": 1104293.7723570417
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005317.12845,
+          "monotonic_s": 1104294.7819924168
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005316.200089,
+          "monotonic_s": 1104293.8536461666
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005317.13375,
+          "monotonic_s": 1104294.7872931666
+        },
+        "request_entered": {
+          "epoch_s": 1791005316.118753,
+          "monotonic_s": 1104293.7723115
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005317.065743,
+          "monotonic_s": 1104294.7192867084
+        },
+        "request_finished": {
+          "epoch_s": 1791005317.133759,
+          "monotonic_s": 1104294.7873019583
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 6,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005318.9254909,
+          "monotonic_s": 1104296.5790057918
+        },
+        "preparation_started": {
+          "epoch_s": 1791005318.818424,
+          "monotonic_s": 1104296.471940625
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005319.648291,
+          "monotonic_s": 1104297.3017937501
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005318.925482,
+          "monotonic_s": 1104296.5789967917
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005319.6532931,
+          "monotonic_s": 1104297.3067962085
+        },
+        "request_entered": {
+          "epoch_s": 1791005318.818372,
+          "monotonic_s": 1104296.471887625
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005319.5659208,
+          "monotonic_s": 1104297.2194256668
+        },
+        "request_finished": {
+          "epoch_s": 1791005319.6533031,
+          "monotonic_s": 1104297.3068062917
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 7,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005321.407435,
+          "monotonic_s": 1104299.0609105835
+        },
+        "preparation_started": {
+          "epoch_s": 1791005321.3193269,
+          "monotonic_s": 1104298.9728042083
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005322.0159922,
+          "monotonic_s": 1104299.6694582917
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005321.4074259,
+          "monotonic_s": 1104299.060901375
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005322.021513,
+          "monotonic_s": 1104299.6749789168
+        },
+        "request_entered": {
+          "epoch_s": 1791005321.319262,
+          "monotonic_s": 1104298.97273875
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005321.9999108,
+          "monotonic_s": 1104299.6533779167
+        },
+        "request_finished": {
+          "epoch_s": 1791005322.021522,
+          "monotonic_s": 1104299.6749877918
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 8,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005323.738678,
+          "monotonic_s": 1104301.3921172917
+        },
+        "preparation_started": {
+          "epoch_s": 1791005323.680561,
+          "monotonic_s": 1104301.3340015002
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005324.3570662,
+          "monotonic_s": 1104302.01049425
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005323.7386708,
+          "monotonic_s": 1104301.3921099168
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005324.363628,
+          "monotonic_s": 1104302.0170577501
+        },
+        "request_entered": {
+          "epoch_s": 1791005323.6805239,
+          "monotonic_s": 1104301.3339637918
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005324.299325,
+          "monotonic_s": 1104301.952755125
+        },
+        "request_finished": {
+          "epoch_s": 1791005324.363638,
+          "monotonic_s": 1104302.0170675835
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 9,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005326.102826,
+          "monotonic_s": 1104303.7562278751
+        },
+        "preparation_started": {
+          "epoch_s": 1791005326.029465,
+          "monotonic_s": 1104303.6828680835
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005326.927141,
+          "monotonic_s": 1104304.5805299168
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005326.102816,
+          "monotonic_s": 1104303.7562180418
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005326.932094,
+          "monotonic_s": 1104304.5854832083
+        },
+        "request_entered": {
+          "epoch_s": 1791005326.029402,
+          "monotonic_s": 1104303.6828042085
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005326.926612,
+          "monotonic_s": 1104304.5800005416
+        },
+        "request_finished": {
+          "epoch_s": 1791005326.932102,
+          "monotonic_s": 1104304.58549125
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 10,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005328.696501,
+          "monotonic_s": 1104306.3498621667
+        },
+        "preparation_started": {
+          "epoch_s": 1791005328.614197,
+          "monotonic_s": 1104306.267559625
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005329.614304,
+          "monotonic_s": 1104307.2676506666
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005328.696494,
+          "monotonic_s": 1104306.3498555
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005329.621067,
+          "monotonic_s": 1104307.2744132918
+        },
+        "request_entered": {
+          "epoch_s": 1791005328.614167,
+          "monotonic_s": 1104306.2675292084
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005329.526945,
+          "monotonic_s": 1104307.1802932501
+        },
+        "request_finished": {
+          "epoch_s": 1791005329.621077,
+          "monotonic_s": 1104307.2744237918
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 11,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005331.3547869,
+          "monotonic_s": 1104309.0081061667
+        },
+        "preparation_started": {
+          "epoch_s": 1791005331.2774901,
+          "monotonic_s": 1104308.9308110417
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005332.076021,
+          "monotonic_s": 1104309.7293287918
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005331.3547769,
+          "monotonic_s": 1104309.0080965834
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005332.08082,
+          "monotonic_s": 1104309.7341277918
+        },
+        "request_entered": {
+          "epoch_s": 1791005331.277456,
+          "monotonic_s": 1104308.9307770417
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005331.991637,
+          "monotonic_s": 1104309.6449464168
+        },
+        "request_finished": {
+          "epoch_s": 1791005332.080827,
+          "monotonic_s": 1104309.7341355835
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 12,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005333.849585,
+          "monotonic_s": 1104311.5028649585
+        },
+        "preparation_started": {
+          "epoch_s": 1791005333.7717319,
+          "monotonic_s": 1104311.4250131666
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005335.177325,
+          "monotonic_s": 1104312.8305844166
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005333.849577,
+          "monotonic_s": 1104311.5028576667
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005335.183588,
+          "monotonic_s": 1104312.836847
+        },
+        "request_entered": {
+          "epoch_s": 1791005333.771702,
+          "monotonic_s": 1104311.4249831666
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005335.1621928,
+          "monotonic_s": 1104312.8154515417
+        },
+        "request_finished": {
+          "epoch_s": 1791005335.183598,
+          "monotonic_s": 1104312.8368578334
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 13,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005336.930637,
+          "monotonic_s": 1104314.5838690833
+        },
+        "preparation_started": {
+          "epoch_s": 1791005336.872786,
+          "monotonic_s": 1104314.5260185418
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005337.54704,
+          "monotonic_s": 1104315.2002609584
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005336.93063,
+          "monotonic_s": 1104314.5838620835
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005337.551723,
+          "monotonic_s": 1104315.2049452502
+        },
+        "request_entered": {
+          "epoch_s": 1791005336.872741,
+          "monotonic_s": 1104314.5259733335
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005337.456223,
+          "monotonic_s": 1104315.1094462085
+        },
+        "request_finished": {
+          "epoch_s": 1791005337.551731,
+          "monotonic_s": 1104315.2049530416
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 14,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005339.2907882,
+          "monotonic_s": 1104316.943983
+        },
+        "preparation_started": {
+          "epoch_s": 1791005339.221555,
+          "monotonic_s": 1104316.8747507501
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005340.531687,
+          "monotonic_s": 1104318.1848617084
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005339.290779,
+          "monotonic_s": 1104316.943973375
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005340.5370011,
+          "monotonic_s": 1104318.1901760418
+        },
+        "request_entered": {
+          "epoch_s": 1791005339.22151,
+          "monotonic_s": 1104316.8747052501
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005340.455133,
+          "monotonic_s": 1104318.1083095418
+        },
+        "request_finished": {
+          "epoch_s": 1791005340.53701,
+          "monotonic_s": 1104318.1901855
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 15,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005342.302321,
+          "monotonic_s": 1104319.9554688334
+        },
+        "preparation_started": {
+          "epoch_s": 1791005342.226015,
+          "monotonic_s": 1104319.8791631667
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005343.539366,
+          "monotonic_s": 1104321.1924935
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005342.302312,
+          "monotonic_s": 1104319.9554593335
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005343.545023,
+          "monotonic_s": 1104321.198150625
+        },
+        "request_entered": {
+          "epoch_s": 1791005342.22597,
+          "monotonic_s": 1104319.8791178335
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005343.507112,
+          "monotonic_s": 1104321.16023875
+        },
+        "request_finished": {
+          "epoch_s": 1791005343.545033,
+          "monotonic_s": 1104321.1981605834
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 16,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005345.279978,
+          "monotonic_s": 1104322.9330787917
+        },
+        "preparation_started": {
+          "epoch_s": 1791005345.222321,
+          "monotonic_s": 1104322.875422375
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005346.105942,
+          "monotonic_s": 1104323.759029625
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005345.2799711,
+          "monotonic_s": 1104322.9330716666
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005346.115248,
+          "monotonic_s": 1104323.7683355834
+        },
+        "request_entered": {
+          "epoch_s": 1791005345.2222872,
+          "monotonic_s": 1104322.8753878751
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005346.052217,
+          "monotonic_s": 1104323.7053055416
+        },
+        "request_finished": {
+          "epoch_s": 1791005346.115257,
+          "monotonic_s": 1104323.768344875
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 17,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005347.8463058,
+          "monotonic_s": 1104325.499366625
+        },
+        "preparation_started": {
+          "epoch_s": 1791005347.7805228,
+          "monotonic_s": 1104325.4335844584
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005348.6698852,
+          "monotonic_s": 1104326.322931875
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005347.8463001,
+          "monotonic_s": 1104325.4993599167
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005348.678483,
+          "monotonic_s": 1104326.3315305833
+        },
+        "request_entered": {
+          "epoch_s": 1791005347.780489,
+          "monotonic_s": 1104325.4335498752
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005348.6616778,
+          "monotonic_s": 1104326.3147247918
+        },
+        "request_finished": {
+          "epoch_s": 1791005348.678494,
+          "monotonic_s": 1104326.331541125
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 18,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005350.439197,
+          "monotonic_s": 1104328.0922163334
+        },
+        "preparation_started": {
+          "epoch_s": 1791005350.3737779,
+          "monotonic_s": 1104328.0267985417
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005350.750438,
+          "monotonic_s": 1104328.4034522085
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005350.439188,
+          "monotonic_s": 1104328.0922072085
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005350.756445,
+          "monotonic_s": 1104328.4094600833
+        },
+        "request_entered": {
+          "epoch_s": 1791005350.373732,
+          "monotonic_s": 1104328.0267525418
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005350.708812,
+          "monotonic_s": 1104328.3618273751
+        },
+        "request_finished": {
+          "epoch_s": 1791005350.756455,
+          "monotonic_s": 1104328.40946975
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 19,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005352.5045109,
+          "monotonic_s": 1104330.1574976668
+        },
+        "preparation_started": {
+          "epoch_s": 1791005352.4238858,
+          "monotonic_s": 1104330.0768739167
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005352.8156838,
+          "monotonic_s": 1104330.4686659167
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005352.5045009,
+          "monotonic_s": 1104330.1574875833
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005352.8223472,
+          "monotonic_s": 1104330.47532925
+        },
+        "request_entered": {
+          "epoch_s": 1791005352.423842,
+          "monotonic_s": 1104330.0768298334
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005352.764529,
+          "monotonic_s": 1104330.4175110834
+        },
+        "request_finished": {
+          "epoch_s": 1791005352.8223572,
+          "monotonic_s": 1104330.475338875
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 20,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005354.584471,
+          "monotonic_s": 1104332.2374252083
+        },
+        "preparation_started": {
+          "epoch_s": 1791005354.5109072,
+          "monotonic_s": 1104332.1638629166
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005355.812954,
+          "monotonic_s": 1104333.4658881668
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005354.58446,
+          "monotonic_s": 1104332.2374148334
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005355.818743,
+          "monotonic_s": 1104333.4716782917
+        },
+        "request_entered": {
+          "epoch_s": 1791005354.510872,
+          "monotonic_s": 1104332.1638277085
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005355.7252321,
+          "monotonic_s": 1104333.3781680001
+        },
+        "request_finished": {
+          "epoch_s": 1791005355.818752,
+          "monotonic_s": 1104333.4716872084
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 21,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005357.5792131,
+          "monotonic_s": 1104335.2321200834
+        },
+        "preparation_started": {
+          "epoch_s": 1791005357.51124,
+          "monotonic_s": 1104335.164148125
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005358.204176,
+          "monotonic_s": 1104335.8570730418
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005357.5792031,
+          "monotonic_s": 1104335.2321104167
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005358.210165,
+          "monotonic_s": 1104335.8630626667
+        },
+        "request_entered": {
+          "epoch_s": 1791005357.511197,
+          "monotonic_s": 1104335.1641048335
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005358.158375,
+          "monotonic_s": 1104335.811273125
+        },
+        "request_finished": {
+          "epoch_s": 1791005358.210174,
+          "monotonic_s": 1104335.8630712917
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 22,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005359.94704,
+          "monotonic_s": 1104337.5999101668
+        },
+        "preparation_started": {
+          "epoch_s": 1791005359.880615,
+          "monotonic_s": 1104337.5334859584
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005361.1839762,
+          "monotonic_s": 1104338.8368255
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005359.94703,
+          "monotonic_s": 1104337.5999001667
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005361.189025,
+          "monotonic_s": 1104338.8418755417
+        },
+        "request_entered": {
+          "epoch_s": 1791005359.88058,
+          "monotonic_s": 1104337.5334506668
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005361.1423578,
+          "monotonic_s": 1104338.7952090835
+        },
+        "request_finished": {
+          "epoch_s": 1791005361.189034,
+          "monotonic_s": 1104338.8418844584
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 23,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005362.9231281,
+          "monotonic_s": 1104340.575951875
+        },
+        "preparation_started": {
+          "epoch_s": 1791005362.869267,
+          "monotonic_s": 1104340.5220911668
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005364.162242,
+          "monotonic_s": 1104341.8150447083
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005362.923121,
+          "monotonic_s": 1104340.5759447918
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005364.167381,
+          "monotonic_s": 1104341.820185
+        },
+        "request_entered": {
+          "epoch_s": 1791005362.86922,
+          "monotonic_s": 1104340.5220438335
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005364.090938,
+          "monotonic_s": 1104341.7437425
+        },
+        "request_finished": {
+          "epoch_s": 1791005364.1673899,
+          "monotonic_s": 1104341.8201935
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 24,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005365.886621,
+          "monotonic_s": 1104343.539397875
+        },
+        "preparation_started": {
+          "epoch_s": 1791005365.8293118,
+          "monotonic_s": 1104343.4820893335
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005366.8130221,
+          "monotonic_s": 1104344.4657844168
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005365.8866138,
+          "monotonic_s": 1104343.5393909584
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005366.817923,
+          "monotonic_s": 1104344.4706850834
+        },
+        "request_entered": {
+          "epoch_s": 1791005365.829268,
+          "monotonic_s": 1104343.4820458335
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005366.780329,
+          "monotonic_s": 1104344.4330910833
+        },
+        "request_finished": {
+          "epoch_s": 1791005366.8179312,
+          "monotonic_s": 1104344.4706934167
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 25,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005368.547287,
+          "monotonic_s": 1104346.2000219584
+        },
+        "preparation_started": {
+          "epoch_s": 1791005368.4768271,
+          "monotonic_s": 1104346.1295634585
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005369.575537,
+          "monotonic_s": 1104347.228255125
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005368.547277,
+          "monotonic_s": 1104346.20001225
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005369.5825791,
+          "monotonic_s": 1104347.2352972918
+        },
+        "request_entered": {
+          "epoch_s": 1791005368.4767818,
+          "monotonic_s": 1104346.1295176668
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005369.4759731,
+          "monotonic_s": 1104347.1286927501
+        },
+        "request_finished": {
+          "epoch_s": 1791005369.5825891,
+          "monotonic_s": 1104347.23530775
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 26,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005371.348372,
+          "monotonic_s": 1104349.001063125
+        },
+        "preparation_started": {
+          "epoch_s": 1791005371.2669458,
+          "monotonic_s": 1104348.9196379168
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005372.2730541,
+          "monotonic_s": 1104349.92573025
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005371.3483639,
+          "monotonic_s": 1104349.0010555
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005372.2776709,
+          "monotonic_s": 1104349.9303476668
+        },
+        "request_entered": {
+          "epoch_s": 1791005371.266911,
+          "monotonic_s": 1104348.9196032083
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005372.246496,
+          "monotonic_s": 1104349.8991725834
+        },
+        "request_finished": {
+          "epoch_s": 1791005372.277679,
+          "monotonic_s": 1104349.9303557083
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 27,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005374.0451531,
+          "monotonic_s": 1104351.6978014167
+        },
+        "preparation_started": {
+          "epoch_s": 1791005373.966634,
+          "monotonic_s": 1104351.619283875
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005374.97083,
+          "monotonic_s": 1104352.6234631666
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005374.0451431,
+          "monotonic_s": 1104351.6977919585
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005374.981903,
+          "monotonic_s": 1104352.6345366251
+        },
+        "request_entered": {
+          "epoch_s": 1791005373.966589,
+          "monotonic_s": 1104351.6192381668
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005374.8827472,
+          "monotonic_s": 1104352.5353816666
+        },
+        "request_finished": {
+          "epoch_s": 1791005374.981914,
+          "monotonic_s": 1104352.6345477083
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 28,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005376.714714,
+          "monotonic_s": 1104354.3673207085
+        },
+        "preparation_started": {
+          "epoch_s": 1791005376.6698499,
+          "monotonic_s": 1104354.32245725
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005377.331596,
+          "monotonic_s": 1104354.984191375
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005376.714707,
+          "monotonic_s": 1104354.3673134584
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005377.338222,
+          "monotonic_s": 1104354.9908192083
+        },
+        "request_entered": {
+          "epoch_s": 1791005376.6698132,
+          "monotonic_s": 1104354.3224200418
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005377.236899,
+          "monotonic_s": 1104354.88949725
+        },
+        "request_finished": {
+          "epoch_s": 1791005377.338233,
+          "monotonic_s": 1104354.99083
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 29,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005379.095899,
+          "monotonic_s": 1104356.7484684584
+        },
+        "preparation_started": {
+          "epoch_s": 1791005379.019392,
+          "monotonic_s": 1104356.6719625418
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005379.711203,
+          "monotonic_s": 1104357.3637628334
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005379.09589,
+          "monotonic_s": 1104356.7484590418
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005379.7164068,
+          "monotonic_s": 1104357.368966375
+        },
+        "request_entered": {
+          "epoch_s": 1791005379.019357,
+          "monotonic_s": 1104356.6719269168
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005379.674026,
+          "monotonic_s": 1104357.326586375
+        },
+        "request_finished": {
+          "epoch_s": 1791005379.716415,
+          "monotonic_s": 1104357.3689749583
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 30,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005381.436276,
+          "monotonic_s": 1104359.0888082918
+        },
+        "preparation_started": {
+          "epoch_s": 1791005381.376954,
+          "monotonic_s": 1104359.0294873752
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005382.670332,
+          "monotonic_s": 1104360.3228447917
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005381.436269,
+          "monotonic_s": 1104359.0888012084
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005382.677926,
+          "monotonic_s": 1104360.3304394167
+        },
+        "request_entered": {
+          "epoch_s": 1791005381.37691,
+          "monotonic_s": 1104359.0294428752
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005382.6573858,
+          "monotonic_s": 1104360.3098987085
+        },
+        "request_finished": {
+          "epoch_s": 1791005382.6779342,
+          "monotonic_s": 1104360.3304469583
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 31,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005384.452004,
+          "monotonic_s": 1104362.1044893335
+        },
+        "preparation_started": {
+          "epoch_s": 1791005384.368968,
+          "monotonic_s": 1104362.0214545417
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005385.0701962,
+          "monotonic_s": 1104362.722671
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005384.451994,
+          "monotonic_s": 1104362.104479375
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005385.077639,
+          "monotonic_s": 1104362.7301145834
+        },
+        "request_entered": {
+          "epoch_s": 1791005384.3689198,
+          "monotonic_s": 1104362.0214058333
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005384.984139,
+          "monotonic_s": 1104362.6366145834
+        },
+        "request_finished": {
+          "epoch_s": 1791005385.077649,
+          "monotonic_s": 1104362.730123875
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 32,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005386.848466,
+          "monotonic_s": 1104364.500913125
+        },
+        "preparation_started": {
+          "epoch_s": 1791005386.7667341,
+          "monotonic_s": 1104364.4191825835
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005387.998393,
+          "monotonic_s": 1104365.6508218334
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005386.848456,
+          "monotonic_s": 1104364.5009036667
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005388.003067,
+          "monotonic_s": 1104365.6554959167
+        },
+        "request_entered": {
+          "epoch_s": 1791005386.7666888,
+          "monotonic_s": 1104364.4191374166
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005387.9736671,
+          "monotonic_s": 1104365.6260953334
+        },
+        "request_finished": {
+          "epoch_s": 1791005388.0030742,
+          "monotonic_s": 1104365.65550375
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 33,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005389.736627,
+          "monotonic_s": 1104367.3890292917
+        },
+        "preparation_started": {
+          "epoch_s": 1791005389.671704,
+          "monotonic_s": 1104367.3241067918
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005390.777048,
+          "monotonic_s": 1104368.42943375
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005389.736618,
+          "monotonic_s": 1104367.3890200418
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005390.783591,
+          "monotonic_s": 1104368.4359764168
+        },
+        "request_entered": {
+          "epoch_s": 1791005389.67166,
+          "monotonic_s": 1104367.3240622084
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005390.77444,
+          "monotonic_s": 1104368.4268248335
+        },
+        "request_finished": {
+          "epoch_s": 1791005390.783601,
+          "monotonic_s": 1104368.4359870418
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 34,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005392.5409799,
+          "monotonic_s": 1104370.1933375
+        },
+        "preparation_started": {
+          "epoch_s": 1791005392.4680061,
+          "monotonic_s": 1104370.1203648334
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005393.360303,
+          "monotonic_s": 1104371.0126481666
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005392.5409698,
+          "monotonic_s": 1104370.1933281668
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005393.365216,
+          "monotonic_s": 1104371.0175614168
+        },
+        "request_entered": {
+          "epoch_s": 1791005392.4679608,
+          "monotonic_s": 1104370.1203197502
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005393.322222,
+          "monotonic_s": 1104370.9745673751
+        },
+        "request_finished": {
+          "epoch_s": 1791005393.365224,
+          "monotonic_s": 1104371.0175694167
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 35,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005395.0967798,
+          "monotonic_s": 1104372.7490982502
+        },
+        "preparation_started": {
+          "epoch_s": 1791005395.032154,
+          "monotonic_s": 1104372.6844729583
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005396.3435612,
+          "monotonic_s": 1104373.995858625
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005395.096771,
+          "monotonic_s": 1104372.7490885418
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005396.3495212,
+          "monotonic_s": 1104374.0018192502
+        },
+        "request_entered": {
+          "epoch_s": 1791005395.0320911,
+          "monotonic_s": 1104372.684409125
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005396.240893,
+          "monotonic_s": 1104373.8931926251
+        },
+        "request_finished": {
+          "epoch_s": 1791005396.34953,
+          "monotonic_s": 1104374.0018280833
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 36,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005398.087152,
+          "monotonic_s": 1104375.73942275
+        },
+        "preparation_started": {
+          "epoch_s": 1791005398.016276,
+          "monotonic_s": 1104375.6685475418
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005399.014013,
+          "monotonic_s": 1104376.6662685834
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005398.0871449,
+          "monotonic_s": 1104375.7394154584
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005399.019294,
+          "monotonic_s": 1104376.671550625
+        },
+        "request_entered": {
+          "epoch_s": 1791005398.016244,
+          "monotonic_s": 1104375.6685154168
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005398.956043,
+          "monotonic_s": 1104376.6083004167
+        },
+        "request_finished": {
+          "epoch_s": 1791005399.0193028,
+          "monotonic_s": 1104376.671559375
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 37,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005400.751559,
+          "monotonic_s": 1104378.4037884166
+        },
+        "preparation_started": {
+          "epoch_s": 1791005400.6763291,
+          "monotonic_s": 1104378.3285587917
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005401.366477,
+          "monotonic_s": 1104379.0186962502
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005400.751549,
+          "monotonic_s": 1104378.4037780417
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005401.372711,
+          "monotonic_s": 1104379.0249305
+        },
+        "request_entered": {
+          "epoch_s": 1791005400.676282,
+          "monotonic_s": 1104378.3285123333
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005401.320753,
+          "monotonic_s": 1104378.9729725835
+        },
+        "request_finished": {
+          "epoch_s": 1791005401.3727221,
+          "monotonic_s": 1104379.024941125
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 38,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      },
+      {
+        "submitted_to_ios": {
+          "epoch_s": 1791005403.136465,
+          "monotonic_s": 1104380.7886561668
+        },
+        "preparation_started": {
+          "epoch_s": 1791005403.066952,
+          "monotonic_s": 1104380.7191442084
+        },
+        "stability_wait_started": {
+          "epoch_s": 1791005404.071261,
+          "monotonic_s": 1104381.723437125
+        },
+        "preparation_finished": {
+          "epoch_s": 1791005403.136455,
+          "monotonic_s": 1104380.7886465834
+        },
+        "stability_wait_finished": {
+          "epoch_s": 1791005404.076339,
+          "monotonic_s": 1104381.7285158334
+        },
+        "request_entered": {
+          "epoch_s": 1791005403.066829,
+          "monotonic_s": 1104380.719020125
+        },
+        "ios_completion_callback": {
+          "epoch_s": 1791005404.030404,
+          "monotonic_s": 1104381.6825795835
+        },
+        "request_finished": {
+          "epoch_s": 1791005404.0763478,
+          "monotonic_s": 1104381.7285247084
+        },
+        "ios_callback_result": true,
+        "session_id": "67F94100-6446-4894-BA99-8A8BC3C9E69D",
+        "sequence": 39,
+        "outcome": "success",
+        "missing_ios_callback": 0
+      }
+    ],
+    "enabled": 0,
+    "dropped_records": 0,
+    "build_revision": "ae50404aac12d9f8c41f6c3fa8776e97975eaef5",
+    "schema_version": 1
+  },
+  "summary": {
+    "2": {
+      "n": 5,
+      "prep_median_s": 0.07334995828568935,
+      "prep_max_s": 0.24843625002540648,
+      "ios_minus_duration_median_s": 0.22217654162086548,
+      "outcomes": [
+        "success"
+      ]
+    },
+    "5": {
+      "n": 5,
+      "prep_median_s": 0.07850808347575366,
+      "prep_max_s": 0.08302483335137367,
+      "ios_minus_duration_median_s": 0.23212524997070433,
+      "outcomes": [
+        "success"
+      ]
+    },
+    "8": {
+      "n": 5,
+      "prep_median_s": 0.07649650005623698,
+      "prep_max_s": 0.27546612499281764,
+      "ios_minus_duration_median_s": 0.2688776667695493,
+      "outcomes": [
+        "success"
+      ]
+    },
+    "11": {
+      "n": 5,
+      "prep_median_s": 0.07355191675014794,
+      "prep_max_s": 0.2535945000126958,
+      "ios_minus_duration_median_s": 0.26918416684493424,
+      "outcomes": [
+        "success"
+      ]
+    },
+    "15": {
+      "n": 5,
+      "prep_median_s": 0.07044879160821438,
+      "prep_max_s": 0.2448158331681043,
+      "ios_minus_duration_median_s": 0.2924673331901431,
+      "outcomes": [
+        "success"
+      ]
+    },
+    "17": {
+      "n": 5,
+      "prep_median_s": 0.07728554168716073,
+      "prep_max_s": 0.10705616674385965,
+      "ios_minus_duration_median_s": 0.29810945838689806,
+      "outcomes": [
+        "success"
+      ]
+    },
+    "33": {
+      "n": 5,
+      "prep_median_s": 0.0671718749217689,
+      "prep_max_s": 0.07784450007602572,
+      "ios_minus_duration_median_s": 0.4429674584884197,
+      "outcomes": [
+        "success"
+      ]
+    },
+    "57": {
+      "n": 5,
+      "prep_median_s": 0.06641420838423073,
+      "prep_max_s": 0.08061366667971015,
+      "ios_minus_duration_median_s": 0.32109041665680704,
+      "outcomes": [
+        "success"
+      ]
+    }
+  }
+}
