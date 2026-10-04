@@ -56,8 +56,12 @@ or public hosting is provided.
 Click **Connect** separately for each device, then **Open True Skate** if needed.
 Connect attaches to running WDA with app launch, reset, force launch and app
 termination disabled ([WDA attach guide](https://appium.github.io/appium-xcuitest-driver/latest/guides/attach-to-running-wda/)).
-Only Open True Skate activates the game. Enlarge is optional. Drag paths appear
-before release. Escape, blur, resizing, pointer cancellation, leaving the screen,
+Only Open True Skate activates the game. **Home** presses the native home button
+(exits the current app). **App Switcher** swipes up from the home indicator and
+pauses; drag a card up on the screen to close that app. **Control Centre** swipes
+down from the top-right edge. These are fixed system gestures with the same
+fresh-video, ownership and no-retry guards as drawn gestures. Enlarge is
+optional. Drag paths appear before release. Escape, blur, resizing, pointer cancellation, leaving the screen,
 or exceeding five seconds discards a captured path. Multitouch is unsupported.
 
 One upstream reader feeds authenticated latest-frame responses to all browser
@@ -156,3 +160,15 @@ release symlink was unchanged; the running UI remains on its staged source until
 an explicit control-service restart. Stopping this UI does not undo the approved
 Appium configuration; its saved original arguments are available for a separate
 idle-time rollback if needed.
+
+### System buttons release (2026-10-04)
+
+Home, App Switcher and Control Centre were added in `4e6a130b` and staged at
+`/Users/training-server/trueskate-ai-runtime/tmp/xr-control-4e6a130b/source`.
+Read-only checks first confirmed the staged code imported with the rig venv and
+neither XR had an Appium session. The `4380162` service was then stopped with
+SIGINT and replaced; that directory's `control.pid` and private `control.log`
+belong to the new launch. Appium, WDA, True Skate and the dashboard were not
+restarted. The laptop `launch_log` now points at the new `control.log`. The
+operator confirmed all three buttons work on device. Rollback: stop that service,
+start `serve.py` from the `4380162` source, and point `launch_log` back.

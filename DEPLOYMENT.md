@@ -83,6 +83,17 @@ segment in progress.
 the process. It does not endlessly restart a wedged recorder or send repeated
 notifications; resolve the tunnel/attachment incident before restarting it.
 
+Notifications never repeat. `notify()` suppresses an alert whose title and
+text (standalone numbers ignored) match one sent within the hour, across all
+processes, and the next send reports how many were dropped. Every send and
+suppression is logged to `~/.trueskate-notify/sent.log`; that file is the
+notification history (ntfy keeps only ~12 h). Persistent per-device conditions
+(collector storage low, repeated recording-start failures) alert once until they
+clear, via latches in `~/.trueskate-notify/latches/`. The services agent alerts
+once when a device fails and once when it has been healthy for five minutes; a
+fault that returns within that window stays one incident. Delete a latch file to
+re-arm its alert manually.
+
 ## Recovery
 
 For a code regression, stop only the affected collector/dashboard at a safe
