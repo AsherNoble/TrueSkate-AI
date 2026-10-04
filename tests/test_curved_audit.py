@@ -1,7 +1,10 @@
 import json
+import hashlib
+import math
+from pathlib import Path
 from collections import Counter
 import pytest
-from trueskate_ai.research.curved_audit import manifest,verify_manifest,intervals
+from trueskate_ai.research.curved_audit import manifest,verify_manifest,intervals,digest
 from trueskate_ai.sim.timed_waypoints import TimedWaypoints
 from trueskate_ai.data.control_hitboxes import segment_is_safe
 from trueskate_ai.research.audit_calibration import fit_markers
@@ -75,7 +78,14 @@ def test_native_decode_requires_exact_count(tmp_path):
     with pytest.raises(ValueError):_decode_source_frames(video,np.append(pts,pts[-1]+1/30),keep=False)
 
 def test_v1_bytes_unchanged_and_v2_settles_before_markers():
-    assert manifest()['sha256'].startswith('db5c843c9a4f741e')
+    # These are synthetic protocol specifications, not research holdout clips.
+    # libm may change abstract positions by ulps; frozen bytes and integer
+    # payload/timing contracts must still validate identically on every host.
+    frozen=(Path(__file__).with_name('fixtures')/'curved-audit-v1-manifest.json').read_bytes()
+    assert hashlib.sha256(frozen).hexdigest()=='f4a2edf11ae78181aa3cd71cc95860d1794b8b7f9d3a8f3cdcab0d1edc7121ba'
+    original=json.loads(frozen)
+    assert original['sha256']=='db5c843c9a4f741e50948d7939fd601415bea0a8261da65d5b621b4358359670'
+    verify_manifest(original)
     v1,v2=manifest(),manifest('v2');verify_manifest(json.loads(json.dumps(v2)))
     assert v2['paths']==v1['paths'] and v2['identity']!=v1['identity'] and v2['pre_roll_reset_settle_s']==3
     for r1,r2 in zip(v1['recordings'],v2['recordings']):
@@ -91,6 +101,20 @@ def test_v1_bytes_unchanged_and_v2_settles_before_markers():
                 d=next(p['duration_ms'] for p in v2['paths'] if p['path_id']==a['path_id'])
                 assert a['slot_s']+d/1000+.5<b['slot_s']
         assert markers['end']-markers['start']>=55
+
+
+@pytest.mark.parametrize('field', ['time','payload','order','quantized'])
+def test_libm_tolerance_never_allows_integer_contract_changes(field):
+    value=json.loads(json.dumps(manifest()))
+    value['paths'][0]['points'][0][0]=math.nextafter(value['paths'][0]['points'][0][0],math.inf)
+    def rehash():value['sha256']=digest({k:v for k,v in value.items() if k!='sha256'})
+    rehash();verify_manifest(value)
+    if field=='time':value['paths'][0]['times_ms'][1]+=1
+    elif field=='payload':value['paths'][0]['payload']['actions'][0]['actions'][0]['x']+=1
+    elif field=='order':value['recordings'][0]['commands'].reverse()
+    else:value['paths'][0]['quantized_points'][0][0]+=1
+    rehash()
+    with pytest.raises(ValueError,match='frozen generation'):verify_manifest(value)
 
 def test_v3_leaves_overhead_and_guard_margin_before_next_command():
     v2,v3=manifest('v2'),manifest('v3');verify_manifest(json.loads(json.dumps(v3)))

@@ -79,10 +79,19 @@ receipts, calibration/source provenance and JPEG bytes; v1 requires explicit
 compatibility. The duplicate length summary is removed from the shortened journal;
 its complete combined pre-trim bytes remain available in ARCH-018.
 
-Final candidate validation: **621 passed, 2 skipped** using the root sole `.venv`;
+Final candidate validation: **625 passed, 2 skipped** using the root sole `.venv`;
 the skips are the existing absent local visual-regression fixtures. Six expected
 v1 compatibility warnings were emitted. Native C++ HID parser tests and localhost
 ownership/disconnect tests pass; earlier ESP32 compilation succeeded without upload.
 Archive checking and exact docs evidence/narrative/CRLF checks pass, and the archive
 checker/workflow remain unchanged. No rig, firmware or production collection
 settings were changed. Preservation refs, retained artifacts and M1-01 remain.
+
+
+Portability verification: Linux CI exposed an inherited test that equated the
+local regenerated floating-point manifest hash with the Mac frozen hash. The test
+now verifies the byte-exact original synthetic v1 protocol fixture and validates
+it against the current generator. Adjacent-float perturbations are admitted by
+the existing 1e-12 abstract-coordinate tolerance; integer payloads, timestamps,
+quantization and order changes remain rejected. No validator or evidence bytes
+were relaxed or changed. This fixture contains planned commands, not holdout data.
