@@ -4,7 +4,29 @@ XR2 (iOS 18.7.10), Freenove ESP32-WROVER-E, esp32 core 3.3.12, AssistiveTouch on
 "Perform Touch Gestures", default Tracking Speed. Record:
 [HID-POINTER-20261004](../../research/experiments/HID-POINTER-20261004.md).
 
-## Status (2026-10-04)
+## Source safety revision (2026-10-05)
+
+The supported measured runner is restricted to XR2. Source now requires protocol
+v2 (`HELLO 2`), an exclusive bridge owner and an explicit `NEUTRAL` acknowledgement
+before each schedule. `CANCEL` emits `ABORT`; Bluetooth loss, failed authentication
+or lost subscription aborts playback and requires neutral recovery. Serial command
+lines are at most 63 ASCII bytes; invalid values, overflow and malformed/truncated
+lines are rejected. Playback is nonblocking so cancellation is processed while waiting.
+
+The host requires both WDA foreground and Appium state immediately before reset
+and GO. It enforces a one-minute monotonic recording budget including lead, serial
+receipt drain and tail. Every post-start failure makes one retrieval attempt, retains
+partial video and failure details, and does not retry recorder start or a failed stop.
+Ordered unique SENT records and exact DONE count mean **notification attempts**,
+not successful BLE delivery or physical game response.
+
+These are source changes only. Deployed firmware has not been flashed or certified;
+the updated host intentionally rejects older firmware. Historical calibration/rate
+and spin harnesses retain their original protocol as evidence and are not supported
+launchers for v2. USB/Pico transport and physical-pad findings remain unvalidated
+proposals. No collection or rig deployment is authorized by this revision.
+
+## Historical pilot status (2026-10-04)
 
 Working. The board is a bonded Bluetooth mouse that AssistiveTouch turns into one touch.
 It plays whole gesture schedules from its own clock, and the demo replays as separate

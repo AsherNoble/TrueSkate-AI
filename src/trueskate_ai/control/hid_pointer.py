@@ -160,6 +160,19 @@ def build_schedule(strokes: list[Stroke], lead_s: float = 1.0, lift: str = 'imme
         raise ValueError('no strokes')
     if lift not in LIFT_MODES or any(s.lift not in (None,) + LIFT_MODES for s in strokes):
         raise ValueError(f'lift must be one of {LIFT_MODES}')
+    if not math.isfinite(lead_s) or not 0 <= lead_s <= 60:
+        raise ValueError('invalid schedule lead time')
+    for stroke in strokes:
+        if len(stroke.samples) < 2:
+            raise ValueError('each stroke requires at least two samples')
+        previous = -1.0
+        for sample in stroke.samples:
+            if len(sample) != 3 or not all(math.isfinite(v) for v in sample):
+                raise ValueError('finite stroke samples required')
+            t, x, y = sample
+            if not 0 <= t <= 60 or t <= previous or not 0 <= x <= 414 or not 0 <= y <= 896:
+                raise ValueError('invalid stroke time or XR2 coordinates')
+            previous = t
     strokes = sorted(strokes, key=lambda s: s.samples[0][0])
     events: list[tuple[int, int, int, int]] = []
     slot = 0

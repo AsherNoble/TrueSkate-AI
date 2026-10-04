@@ -333,3 +333,12 @@ sampling decision: the exact-PTS extractor still supplies 32 frames across
 input sequence length. Collection remains off. See
 [HID-REVIEW-20261004](experiments/HID-REVIEW-20261004.md) and the prior
 [HID-POINTER-20261004](experiments/HID-POINTER-20261004.md).
+
+
+The consolidated HID host/firmware source uses protocol v2 with exclusive ownership,
+cancellation, fail-closed foreground checks, a one-minute recording budget, neutral
+recovery and exact ordered notification-attempt receipts. This source revision is
+not deployed; older deployed firmware is intentionally rejected by the new host.
+Only XR2 has a measured profile. Historical spin harnesses remain evidence, with no
+curved/spin certification or physical-pad validation. See
+[HID source operating notes](../hardware/hid_pointer/NOTES.md).

@@ -1,65 +1,107 @@
-"""Own the pointer's serial port for good: log its output and relay commands over TCP.
+"""Persistent serial bridge with one exclusive TCP control owner.
 
-Opening or closing the CH340 port pulses the ESP32's auto-reset line, which
-drops the Bluetooth connection. This bridge opens the port once and keeps it.
-Clients connect to 127.0.0.1:<tcp_port>, send command lines, and receive every
-line the board prints until they disconnect.
 Usage: hid_bridge.py <serial_port> <logfile> [tcp_port=8765]
+Owner disconnect, malformed input or output failure sends CANCEL. Opening the
+serial port resets the board, so it remains open for the life of the bridge.
 """
-import socket, sys, threading, time
-import serial
+import socket
+import sys
+import threading
+import time
 
-serial_port, log_path = sys.argv[1], sys.argv[2]
-tcp_port = int(sys.argv[3]) if len(sys.argv) > 3 else 8765
-s = serial.Serial()
-s.port, s.baudrate, s.timeout = serial_port, 115200, 0.1
-s.dtr = False
-s.rts = False
-s.open()
-clients, lock = [], threading.Lock()
-log = open(log_path, 'a', buffering=1)
-log.write(f'--- bridge start {time.strftime("%Y-%m-%d %H:%M:%S")} ---\n')
+MAX_COMMAND_BYTES = 63
 
 
-def pump_serial():
-    while True:
-        line = s.readline()
-        if not line:
-            continue
-        log.write(f'{time.time():.3f} {line.decode(errors="replace")}')
-        with lock:
-            for c in list(clients):
+class Bridge:
+    def __init__(self, serial_port, log):
+        self.serial = serial_port
+        self.log = log
+        self.owner = None
+        self.lock = threading.RLock()
+
+    def claim(self, conn):
+        with self.lock:
+            if self.owner is not None:
+                conn.sendall(b'ERR busy\n')
+                conn.close()
+                return False
+            conn.settimeout(1)
+            self.owner = conn
+            return True
+
+    def release(self, conn):
+        with self.lock:
+            if self.owner is conn:
                 try:
-                    c.sendall(line)
+                    self.serial.write(b'CANCEL\n')
+                finally:
+                    self.owner = None
+            conn.close()
+
+    def relay(self, line):
+        with self.lock:
+            if self.owner is not None:
+                conn = self.owner
+                try:
+                    conn.sendall(line)
                 except OSError:
-                    clients.remove(c)
+                    self.release(conn)
 
-
-def serve(conn):
-    with lock:
-        clients.append(conn)
-    buffer = b''
-    try:
+    def pump_serial(self):
         while True:
-            data = conn.recv(4096)
-            if not data:
-                break
-            buffer += data
-            while b'\n' in buffer:
-                line, buffer = buffer.split(b'\n', 1)
-                s.write(line + b'\n')
-    finally:
-        with lock:
-            if conn in clients:
-                clients.remove(conn)
-        conn.close()
+            line = self.serial.readline(4096)
+            if line:
+                self.log.write(f'{time.time():.3f} {line.decode(errors="replace")}')
+                self.relay(line)
+
+    def serve(self, conn):
+        buffer = b''
+        try:
+            while True:
+                try:
+                    data = conn.recv(4096)
+                except socket.timeout:
+                    continue
+                if not data:
+                    break
+                buffer += data
+                while b'\n' in buffer:
+                    line, buffer = buffer.split(b'\n', 1)
+                    if not line or len(line) > MAX_COMMAND_BYTES or any(c < 32 or c > 126 for c in line):
+                        raise ValueError('malformed or overlong command')
+                    with self.lock:
+                        if self.owner is not conn:
+                            return
+                        self.serial.write(line + b'\n')
+                if len(buffer) > MAX_COMMAND_BYTES:
+                    raise ValueError('overlong command')
+        except (OSError, ValueError):
+            pass
+        finally:
+            self.release(conn)
 
 
-threading.Thread(target=pump_serial, daemon=True).start()
-server = socket.socket()
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server.bind(('127.0.0.1', tcp_port))
-server.listen()
-while True:
-    conn, _ = server.accept()
-    threading.Thread(target=serve, args=(conn,), daemon=True).start()
+def main():
+    import serial
+    serial_port, log_path = sys.argv[1:3]
+    tcp_port = int(sys.argv[3]) if len(sys.argv) > 3 else 8765
+    port = serial.Serial()
+    port.port, port.baudrate, port.timeout, port.write_timeout = serial_port, 115200, 0.1, 2
+    port.dtr = port.rts = False
+    port.open()
+    with open(log_path, 'a', buffering=1) as log, socket.socket() as server:
+        bridge = Bridge(port, log)
+        log.write(f'--- bridge start {time.strftime("%Y-%m-%d %H:%M:%S")} ---\n')
+        threading.Thread(target=bridge.pump_serial, daemon=True).start()
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(('127.0.0.1', tcp_port))
+        server.listen()
+        while True:
+            conn, _ = server.accept()
+            conn.settimeout(1)
+            if bridge.claim(conn):
+                threading.Thread(target=bridge.serve, args=(conn,), daemon=True).start()
+
+
+if __name__ == '__main__':
+    main()

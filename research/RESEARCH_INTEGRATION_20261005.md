@@ -35,3 +35,11 @@ fixtures are absent; their established offline skips are legitimate and remain e
 
 The complete combined journal is committed and tagged before trimming to 30 entries.
 Original experiment IDs and unique docs audit interpretation are preserved.
+
+
+HID integration: shared portable firmware parser/abort engine is exercised with native
+C++ synthetic tests; host tests cover foreground changes during sleeps, disconnects,
+exclusive ownership, malformed/overflowing events, sparse overlong schedules,
+corrupted receipts and partial-video retrieval failures. The ESP32 source is compiled
+locally without upload. No rig session, firmware flashing or production collection
+settings were changed.

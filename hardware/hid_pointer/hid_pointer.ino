@@ -5,12 +5,16 @@
 // latency only shifts the start of a schedule, never the gaps inside it.
 //
 // Serial protocol (115200 baud, one command per line):
+//   HELLO 2                -> "HELLO 2"; older hosts/firmware are rejected
+//   CANCEL                 -> "ABORT <attempt-count> <reason>"; cancels playback
+//   NEUTRAL                -> attempt released buttons; required before another run
 //   STATUS                 -> "STATUS connected=<0|1> auth=<-1|0|1> subscribed=<0|1>
 //                             interval_us=<connection interval> events=<n>"
 //   CLEAR                  -> "OK"
 //   E <t_us> <dx> <dy> <b> -> append event: at t_us after GO send a report with
 //                             relative move (dx, dy in -127..127) and button state b (0/1)
-//   GO                     -> play; then "SENT <i> <actual_us>" per event and "DONE <n>"
+//   GO                     -> cancellable play; SENT records are notification attempts
+//                             ordered "SENT <i> <actual_us>" then "DONE <n>" or ABORT
 //   NOW <dx> <dy> <b>      -> send one report immediately (calibration, homing)
 //   PARAMS <min> <max> <latency> <timeout>
 //                          -> ask the phone for new connection parameters (interval in
@@ -27,6 +31,7 @@
 #include <BLESecurity.h>
 #include <BLEServer.h>
 #include <HIDTypes.h>
+#include "schedule_protocol.h"
 
 static const uint8_t kReportMap[] = {
   USAGE_PAGE(1), 0x01, USAGE(1), 0x02,          // Generic Desktop, Mouse
@@ -43,11 +48,11 @@ static const uint8_t kReportMap[] = {
   END_COLLECTION(0), END_COLLECTION(0)
 };
 
-struct Event { uint32_t t_us; int8_t dx; int8_t dy; uint8_t buttons; };
-static const size_t kMaxEvents = 2048;
-static Event events[kMaxEvents];
-static uint32_t sentAt[kMaxEvents];
-static size_t eventCount = 0;
+using namespace pointer_protocol;
+static Schedule schedule;
+static uint8_t manualButtons = 0;
+static volatile bool linkFault = false;
+static volatile bool protocolReady = false;
 
 static BLEHIDDevice *hid = nullptr;
 static BLECharacteristic *input = nullptr;
@@ -65,6 +70,7 @@ class SecurityCallbacks : public BLESecurityCallbacks {
   bool onConfirmPIN(uint32_t) override { return true; }
   void onAuthenticationComplete(esp_ble_auth_cmpl_t desc) override {
     authStatus = desc.success ? 1 : 0;
+    if (!desc.success) linkFault = true;
     Serial.printf("AUTH success=%d reason=%d\n", desc.success ? 1 : 0, desc.fail_reason);
   }
 };
@@ -93,6 +99,7 @@ class LogDescriptor : public BLEDescriptorCallbacks {
   void onRead(BLEDescriptor *) override { Serial.printf("GATT %lu read %s\n", millis(), name_); }
   void onWrite(BLEDescriptor *d) override {
     uint8_t *v = d->getValue();
+    if (strcmp(name_, "input_cccd") == 0 && (!d->getLength() || !(v[0] & 1))) linkFault = true;
     Serial.printf("GATT %lu write %s len=%u first=%u\n", millis(), name_, static_cast<unsigned>(d->getLength()),
                   d->getLength() ? v[0] : 0);
   }
@@ -115,6 +122,7 @@ static void logDescriptor(BLECharacteristic *c, uint16_t uuid, const char *name)
 class ServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *, esp_ble_gatts_cb_param_t *param) override {
     connected = true;
+    authStatus = -1;
     memcpy(peer, param->connect.remote_bda, sizeof(peer));
     connInterval = param->connect.conn_params.interval;
     Serial.printf("GATT %lu connect conn_id=%u\n", millis(), param->connect.conn_id);
@@ -124,6 +132,9 @@ class ServerCallbacks : public BLEServerCallbacks {
   }
   void onDisconnect(BLEServer *server, esp_ble_gatts_cb_param_t *param) override {
     connected = false;
+    authStatus = -1;
+    linkFault = true;
+    protocolReady = false;
     Serial.printf("GATT %lu disconnect reason=0x%02x\n", millis(), param->disconnect.reason);
     server->getAdvertising()->start();  // stay pairable after a drop
   }
@@ -132,11 +143,21 @@ class ServerCallbacks : public BLEServerCallbacks {
   }
 };
 
-static void sendReport(int8_t dx, int8_t dy, uint8_t buttons) {
-  if (!connected) return;
-  uint8_t report[3] = {static_cast<uint8_t>(buttons & 0x07), static_cast<uint8_t>(dx), static_cast<uint8_t>(dy)};
+static bool ready() { return connected && authStatus == 1 && subscribed(); }
+
+// An attempt to notify is not proof that iOS received or acted on a report.
+static bool sendReport(int8_t dx, int8_t dy, uint8_t buttons) {
+  if (!ready() || linkFault) return false;
+  uint8_t report[3] = {buttons, static_cast<uint8_t>(dx), static_cast<uint8_t>(dy)};
   input->setValue(report, sizeof(report));
   input->notify();
+  return ready() && !linkFault;
+}
+
+static void abortPlayback(const char *reason) {
+  schedule.abort();
+  sendReport(0, 0, 0); // best effort only; NEUTRAL remains mandatory after recovery
+  Serial.printf("ABORT %u %s\n", static_cast<unsigned>(schedule.next), reason);
 }
 
 // Connection parameter updates arrive as GAP events, whichever side asked for them.
@@ -148,56 +169,53 @@ static void onGapEvent(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                 u.conn_int * 1250u, u.latency, u.timeout * 10u);
 }
 
-static int8_t clampByte(long v) { return static_cast<int8_t>(v < -127 ? -127 : (v > 127 ? 127 : v)); }
-
 static void handleLine(char *line) {
+  if (strcmp(line, "HELLO 2") == 0) {
+    if (schedule.playing) { Serial.println("ERR busy"); return; }
+    protocolReady = true;
+    Serial.printf("HELLO %u\n", kVersion);
+    return;
+  }
+  if (strcmp(line, "CANCEL") == 0) { abortPlayback("cancel"); return; }
+  if (!protocolReady) { Serial.println("ERR protocol requires HELLO 2"); return; }
   if (strcmp(line, "STATUS") == 0) {
-    Serial.printf("STATUS connected=%d auth=%d subscribed=%d interval_us=%u events=%u\n", connected ? 1 : 0,
-                  authStatus, subscribed() ? 1 : 0, connInterval * 1250u, static_cast<unsigned>(eventCount));
+    Serial.printf("STATUS protocol=%u connected=%d auth=%d subscribed=%d interval_us=%u events=%u neutral_required=%d\n",
+                  kVersion, connected ? 1 : 0, authStatus, subscribed() ? 1 : 0,
+                  connInterval * 1250u, static_cast<unsigned>(schedule.count), schedule.needsNeutral ? 1 : 0);
+    return;
+  }
+  if (schedule.playing) { Serial.println("ERR busy"); return; }
+  if (strcmp(line, "NEUTRAL") == 0) {
+    schedule.neutral(sendReport(0, 0, 0));
+    if (!schedule.needsNeutral) manualButtons = 0;
+    Serial.println(schedule.needsNeutral ? "ERR neutral unavailable" : "OK");
   } else if (strcmp(line, "CLEAR") == 0) {
-    eventCount = 0;
+    schedule.count = schedule.next = 0;
     Serial.println("OK");
-  } else if (line[0] == 'E' && line[1] == ' ') {
-    unsigned long t; long dx, dy, b;
-    if (sscanf(line + 2, "%lu %ld %ld %ld", &t, &dx, &dy, &b) != 4 || eventCount >= kMaxEvents) {
-      Serial.println("ERR event");
-      return;
-    }
-    if (eventCount > 0 && t < events[eventCount - 1].t_us) {
-      Serial.println("ERR order");
-      return;
-    }
-    events[eventCount++] = {static_cast<uint32_t>(t), clampByte(dx), clampByte(dy), static_cast<uint8_t>(b ? 1 : 0)};
-    Serial.println("OK");
+  } else if (strncmp(line, "E ", 2) == 0) {
+    int64_t values[4];
+    Serial.println(numbers(line + 2, values, 4) && schedule.add(values) ? "OK" : "ERR event");
   } else if (strncmp(line, "NOW ", 4) == 0) {
-    long dx, dy, b;
-    if (sscanf(line + 4, "%ld %ld %ld", &dx, &dy, &b) != 3) { Serial.println("ERR now"); return; }
-    sendReport(clampByte(dx), clampByte(dy), b ? 1 : 0);
+    int64_t values[3];
+    if (!numbers(line + 4, values, 3) || !reportValues(values[0], values[1], values[2]) ||
+        schedule.needsNeutral || !sendReport(values[0], values[1], values[2])) {
+      Serial.println("ERR now"); return;
+    }
+    manualButtons = values[2];
     Serial.println("OK");
   } else if (strncmp(line, "PARAMS ", 7) == 0) {
-    unsigned minInt, maxInt, latency, timeout;
-    if (sscanf(line + 7, "%u %u %u %u", &minInt, &maxInt, &latency, &timeout) != 4 || !connected) {
-      Serial.println("ERR params");
-      return;
+    int64_t v[4];
+    if (!numbers(line + 7, v, 4) || !connected || v[0] < 6 || v[1] < v[0] || v[1] > 3200 ||
+        v[2] < 0 || v[2] > 499 || v[3] < 10 || v[3] > 3200 || v[3] * 4 <= (1 + v[2]) * v[1]) {
+      Serial.println("ERR params"); return;
     }
     esp_ble_conn_update_params_t params = {};
     memcpy(params.bda, peer, sizeof(peer));
-    params.min_int = minInt;
-    params.max_int = maxInt;
-    params.latency = latency;
-    params.timeout = timeout;
+    params.min_int = v[0]; params.max_int = v[1]; params.latency = v[2]; params.timeout = v[3];
     Serial.println(esp_ble_gap_update_conn_params(&params) == ESP_OK ? "OK" : "ERR params");
   } else if (strcmp(line, "GO") == 0) {
-    if (!connected) { Serial.println("ERR not connected"); return; }
-    const uint32_t start = micros();
-    for (size_t i = 0; i < eventCount; i++) {
-      while (static_cast<uint32_t>(micros() - start) < events[i].t_us) { }
-      sentAt[i] = micros() - start;
-      sendReport(events[i].dx, events[i].dy, events[i].buttons);
-    }
-    for (size_t i = 0; i < eventCount; i++) Serial.printf("SENT %u %lu\n", static_cast<unsigned>(i), static_cast<unsigned long>(sentAt[i]));
-    Serial.printf("DONE %u\n", static_cast<unsigned>(eventCount));
-  } else if (line[0] != '\0') {
+    if (linkFault || manualButtons != 0 || !schedule.begin(micros(), ready())) Serial.println("ERR unsafe schedule or link; NEUTRAL required");
+  } else {
     Serial.println("ERR unknown");
   }
 }
@@ -242,17 +260,27 @@ void setup() {
 }
 
 void loop() {
-  static char buffer[64];
-  static size_t length = 0;
-  while (Serial.available()) {
-    char c = static_cast<char>(Serial.read());
-    if (c == '\r') continue;
-    if (c == '\n' || length == sizeof(buffer) - 1) {
-      buffer[length] = '\0';
-      handleLine(buffer);
-      length = 0;
-    } else {
-      buffer[length++] = c;
+  static LineBuffer line;
+  // Bounded serial work allows cancellation and link checks even under a flood.
+  for (unsigned budget = 0; Serial.available() && budget < 1024; ++budget) {
+    LineResult result = line.push(static_cast<unsigned char>(Serial.read()));
+    if (result == LineResult::invalid) {
+      abortPlayback("malformed-line");
+      Serial.println("ERR malformed or overlong line");
+    } else if (result == LineResult::complete) {
+      handleLine(line.text);
     }
+  }
+  bool fault = linkFault;
+  linkFault = false;
+  Tick result = schedule.tick(micros(), ready(), fault, [](const Event &e) {
+    return sendReport(e.dx, e.dy, e.buttons);
+  });
+  if (result == Tick::aborted) abortPlayback("link-or-deadline");
+  if (result == Tick::done && (!ready() || linkFault)) { abortPlayback("link-lost-at-completion"); return; }
+  if (result == Tick::done) {
+    for (size_t i = 0; i < schedule.next; ++i)
+      Serial.printf("SENT %u %lu\n", static_cast<unsigned>(i), static_cast<unsigned long>(schedule.attemptedAt[i]));
+    Serial.printf("DONE %u\n", static_cast<unsigned>(schedule.next));
   }
 }
