@@ -1,0 +1,8 @@
+{
+  "capacity": 256,
+  "records": [],
+  "enabled": 0,
+  "dropped_records": 0,
+  "build_revision": "b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6",
+  "schema_version": 1
+}

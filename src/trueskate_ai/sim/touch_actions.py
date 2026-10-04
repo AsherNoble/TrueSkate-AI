@@ -199,6 +199,7 @@ def build_curved_drag(
     total_duration=0.5,
     easing=None,
     include_start_move=True,
+    segment_durations_ms=None,
 ):
     """Append curved-drag pointer actions to an existing PointerInput.
 
@@ -214,6 +215,9 @@ def build_curved_drag(
         include_start_move: when True, prepend a zero-duration move to
             points[0]. Set False if caller already positioned this finger
             (e.g., to satisfy WDA before a pause).
+        segment_durations_ms: optional positive integer durations, one per
+            movement. Authoritative when supplied; incompatible with easing.
+            Legacy total_duration truncation remains unchanged when omitted.
     """
     if len(points) < 2:
         raise ValueError("build_curved_drag needs at least 2 points")
@@ -221,7 +225,15 @@ def build_curved_drag(
     n_segments = len(points) - 1
     total_ms = int(total_duration * 1000)
 
-    if easing is None:
+    if segment_durations_ms is not None:
+        if easing is not None:
+            raise ValueError("explicit segment durations cannot be combined with easing")
+        durations = list(segment_durations_ms)
+        if len(durations) != n_segments or any(
+            isinstance(d, bool) or not isinstance(d, int) or d <= 0 for d in durations
+        ):
+            raise ValueError("explicit durations must be one positive integer ms per segment")
+    elif easing is None:
         durations = [max(1, total_ms // n_segments)] * n_segments
     else:
         durations = easing_to_segment_durations(n_segments, total_ms, easing)

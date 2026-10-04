@@ -1,0 +1,26 @@
+{
+  "experiment": "CURVE-SPEED-20261002",
+  "manifest_sha256": "15c44bdd291ca1c0e27ad3e818c314131a5cc68e98b4554e32cb30f4c2d4cf94",
+  "device": "iPhone_XR",
+  "park": "Inbound",
+  "execution_error": null,
+  "request_count": 6,
+  "outcomes": [
+    "success",
+    "success",
+    "success",
+    "success",
+    "success",
+    "success"
+  ],
+  "admission": {
+    "accepted": false,
+    "error": "original recording contains gameplay contamination",
+    "training_admission": false
+  },
+  "training_admission": false,
+  "recording_sha256": "f081b03f528319805ff1f7341d3cff3a9cc629e86cc501117bbbc3b9b1add6a6",
+  "source_frames": 1768,
+  "artifact_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/curved-gestures-worktree/tmp/curve-speed-probe/recording",
+  "rig_artifact_path": "/Users/training-server/trueskate-ai-runtime/tmp/CURVE-SPEED-20261002-15c44bdd/recording"
+}

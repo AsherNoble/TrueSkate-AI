@@ -43,3 +43,25 @@ exclusive ownership, malformed/overflowing events, sparse overlong schedules,
 corrupted receipts and partial-video retrieval failures. The ESP32 source is compiled
 locally without upload. No rig session, firmware flashing or production collection
 settings were changed.
+
+
+Curve/speed/length integration preserves the inherited commits once, historical
+manifests/evidence and the standalone length audit's exact narrative. Scheduled
+foreground guards run after sleeps and immediately before submission; lateness is
+rechecked after the guard. Version 2 bundles bind complete frozen specifications,
+payload receipts, execution provenance and JPEG bytes. New builds and importers
+reject changed conditions or media; legacy v1 imports require explicit compatibility
+and report weaker provenance. Cubic closed endpoint labels snap near integer-ms
+boundaries before range rejection. Model, checkpoint and dataset schemas are unchanged.
+
+
+Retention symlink supplement: `tmp/worktree-retention-20261005/symlink-resolution.json`
+records eight analysis aliases, their original absolute targets and the retained
+relative targets, sizes and SHA-256. Target files were already regular retained copies;
+each alias was independently hashed after redirection. The original retention manifest
+bytes/hash are unchanged. Retained aliases remain usable after original worktree removal.
+
+Validation for the curve/speed/length candidate: 572 offline tests passed, two existing
+visual-fixture skips; v1 compatibility warnings are expected. Synthetic coverage includes
+foreground changes during sleeps, guard lateness, frozen conditions with unchanged IDs,
+ordered receipt corruption, mutated JPEGs, browser byte verification and closed endpoints.

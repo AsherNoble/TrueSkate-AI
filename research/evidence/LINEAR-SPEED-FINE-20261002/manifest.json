@@ -1,0 +1,1353 @@
+{
+  "experiment": "LINEAR-SPEED-FINE-20261002",
+  "device": "iPhone_XR",
+  "park": "Inbound",
+  "path": [
+    [
+      0.27,
+      0.78
+    ],
+    [
+      0.91,
+      0.3
+    ]
+  ],
+  "durations_ms": [
+    50,
+    45,
+    40,
+    35,
+    30,
+    25,
+    20
+  ],
+  "recordings": [
+    [
+      {
+        "kind": "control",
+        "role": "start",
+        "slot_s": 1.0,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 448
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 3.0,
+        "for_duration_ms": 50,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 6.0,
+        "duration_ms": 50,
+        "repeat": 1,
+        "command_id": "r1-50ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 50,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 9.0,
+        "for_duration_ms": 45,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 12.0,
+        "duration_ms": 45,
+        "repeat": 1,
+        "command_id": "r1-45ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 45,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 15.0,
+        "for_duration_ms": 40,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 18.0,
+        "duration_ms": 40,
+        "repeat": 1,
+        "command_id": "r1-40ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 40,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 21.0,
+        "for_duration_ms": 35,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 24.0,
+        "duration_ms": 35,
+        "repeat": 1,
+        "command_id": "r1-35ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 35,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "control",
+        "role": "middle",
+        "slot_s": 30.0,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 448
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 33.0,
+        "for_duration_ms": 30,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 36.0,
+        "duration_ms": 30,
+        "repeat": 1,
+        "command_id": "r1-30ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 30,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 39.0,
+        "for_duration_ms": 25,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 42.0,
+        "duration_ms": 25,
+        "repeat": 1,
+        "command_id": "r1-25ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 25,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 45.0,
+        "for_duration_ms": 20,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 48.0,
+        "duration_ms": 20,
+        "repeat": 1,
+        "command_id": "r1-20ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 20,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "control",
+        "role": "end",
+        "slot_s": 57.0,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 448
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    [
+      {
+        "kind": "control",
+        "role": "start",
+        "slot_s": 1.0,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 448
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 3.0,
+        "for_duration_ms": 20,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 6.0,
+        "duration_ms": 20,
+        "repeat": 2,
+        "command_id": "r2-20ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 20,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 9.0,
+        "for_duration_ms": 25,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 12.0,
+        "duration_ms": 25,
+        "repeat": 2,
+        "command_id": "r2-25ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 25,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 15.0,
+        "for_duration_ms": 30,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 18.0,
+        "duration_ms": 30,
+        "repeat": 2,
+        "command_id": "r2-30ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 30,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 21.0,
+        "for_duration_ms": 35,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 24.0,
+        "duration_ms": 35,
+        "repeat": 2,
+        "command_id": "r2-35ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 35,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "control",
+        "role": "middle",
+        "slot_s": 30.0,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 448
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 33.0,
+        "for_duration_ms": 40,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 36.0,
+        "duration_ms": 40,
+        "repeat": 2,
+        "command_id": "r2-40ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 40,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 39.0,
+        "for_duration_ms": 45,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 42.0,
+        "duration_ms": 45,
+        "repeat": 2,
+        "command_id": "r2-45ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 45,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "reset",
+        "slot_s": 45.0,
+        "for_duration_ms": 50,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "diagnostic",
+        "slot_s": 48.0,
+        "duration_ms": 50,
+        "repeat": 2,
+        "command_id": "r2-50ms",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 111,
+                  "y": 698
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pointerMove",
+                  "duration": 50,
+                  "x": 376,
+                  "y": 268
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "control",
+        "role": "end",
+        "slot_s": 57.0,
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "id": "linear_speed",
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 448
+                },
+                {
+                  "type": "pointerDown",
+                  "duration": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "duration": 0,
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  ],
+  "control_map_version": "xr-414x896-20260914-v1",
+  "whole_path_safe": true,
+  "preparation_lead_s": 3.0,
+  "late_tolerance_s": 0.1,
+  "stop_s": 59.0,
+  "settle_threshold": 2.0,
+  "settle_consecutive": 2,
+  "training_admission": false,
+  "sha256": "b5f1ecfbb5dd420896fe768df2dd892162521bbead03a2b34622a38cd05c58ea"
+}

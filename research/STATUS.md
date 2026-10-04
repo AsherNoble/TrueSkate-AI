@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-10-04. Behavioural cloning is the development direction.
+Updated 2026-10-05. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -342,3 +342,98 @@ not deployed; older deployed firmware is intentionally rejected by the new host.
 Only XR2 has a measured profile. Historical spin harnesses remain evidence, with no
 curved/spin certification or physical-pad validation. See
 [HID source operating notes](../hardware/hid_pointer/NOTES.md).
+
+## Curved gesture execution gate
+
+[CURVE-EXEC-20261002](experiments/CURVE-EXEC-20261002.md) introduces an additive
+nine-number Bernstein cubic in time, exact rounded cumulative command boundaries
+and matching quantized labels. No model or checkpoint schema changed. On twelve
+seeded synthetic curves, maximum-duration rules 10/20 ms meet the ≤0.005 command
+approximation bound; 40 ms fails two. This is compilation evidence, not observed
+execution fidelity. The authorized Inbound pilot stopped after eight XR1 diagnostics. Separate
+source-PTS-preserving FFmpeg reanalysis fixes an OpenCV extra-frame mismatch and
+passes timing calibration (held-out middle error 5.8 ms), but the blind orange
+extractor yields 0/8 evaluable gestures because of competing moving scenery/board
+colours and ambiguous centrelines. Execution fidelity and the measurement floor
+remain **inconclusive**; XR2, repeats, dense probes, main and confirmation did not
+run. Retained native frames and a blinded review export support diagnosis. No
+spacing rule is selected; improve measurement before another bounded pilot.
+Curve recovery/generation remains a later tranche, with no training authorized.
+
+User-requested [CURVE-SPEED-20261002](experiments/CURVE-SPEED-20261002.md) recorded three wide arcs at 300/200/120 ms on XR1 for interactive human viewing. Post-recording gameplay admission failed; the isolated attempt is preserved and is not fidelity evidence.
+
+[CURVE-JAGGED-20261002](experiments/CURVE-JAGGED-20261002.md) executed a user-requested rounded zigzag at 600/300 ms using five joined cubics in one touch. The isolated recording is available for human viewing; gameplay admission flagged it and no fidelity pass is claimed. This does not change the single-cubic model interface.
+
+Operator review of the jagged clips: 600 ms looked good; 300 ms showed a tap-like mark with a strong gameplay response. Visible trail is therefore insufficient on its own to infer gameplay input fidelity. A rendering/synthesis limit is a hypothesis; duration and segment spacing/count changed together, so no causal threshold is established.
+
+The authorized [LINEAR-SPEED-20261002](experiments/LINEAR-SPEED-20261002.md)
+duration-only sweep froze one linear movement per drag, 600/400/300/200/100/50/20/10
+ms in reversed repeats on XR1/Inbound. Its first recording aborted on a sleep
+overrun before any control or drag. The short original and empty WDA report are
+preserved; the second recording was withheld without replacement. **No rendering
+transition range was measured.** Collection remains off.
+
+The operator subsequently authorized replacements and requested a usable viewer.
+Two complete reversed recordings now preserve all sixteen drags, with 1,767
+native frames and nineteen successful WDA requests each. Independent held-out
+middle timing residuals are 14.3/9.3 ms. Both original gameplay admissions remain
+failed; their first flagged frames visibly show normal gameplay scenery. Assistant
+native-frame review finds trails at 50–600 ms, indeterminate feedback at 20 ms
+despite strong gameplay response, and tap-like spots at 10 ms. The visible-trail
+transition repeats between 20 and 50 ms; no input-collapse threshold follows at
+30 fps. The latter half of repeat 2 changes reset location within Inbound.
+See the [redo record](experiments/LINEAR-SPEED-20261002.md#authorized-redo-and-native-frame-viewer).
+
+Operator follow-up: visible trace and board movement at 600–50 ms; no visible
+trace but board movement at 20 ms; minuscule tap/flicker without board movement
+at 10 ms. This primary assessment replaces the assistant's 20 ms uncertainty.
+A requested [50–20 ms fine sweep](experiments/LINEAR-SPEED-FINE-20261002.md)
+uses 50/45/40/35/30/25/20 ms in reversed repeats with the same path and one move.
+The fine sweep completed all fourteen drags; full native decode and timing
+checks pass (middle residuals 11.8/6.4 ms). At operator direction, gameplay
+assessment uses human vision; automated menu/editor scans are skipped. The operator
+review below supplies the visual findings. Collection remains off.
+
+Fine-sweep operator assessment: trace visible in 13/14, except 20 ms R2; board
+movement in all 14. No consistent duration-only visibility cutoff is established.
+The operator authorized 135 blinded diagnostics: nine durations (50 down to
+10 ms by 5), five lengths, three repetitions per cell, with human gameplay review.
+
+[LINEAR-LENGTH-20261003](experiments/LINEAR-LENGTH-20261003.md) completed all
+135 diagnostics (45 length/duration cells × 3), randomized across fifteen
+recordings. All 315 WDA requests, native decodes and timing checks pass; maximum
+held-out middle residual is 25.2 ms. The anonymous viewer is ready with exactly
+`flicker` / `hold` / `trace`, Board moved default True, and comments. Condition
+keys stay outside the viewer. The completed human assessment follows. Collection stays off.
+
+Blinded operator labels are complete and validated (135/135): trace in all 75
+clips at 30–50 ms; 12/15 at 25 ms, 7/15 at both 20 and 15 ms, 0/15 at 10 ms.
+Board movement is 120/120 at 15–50 ms and 0/15 at 10 ms, across all lengths.
+Observed response transition: 10–15 ms; consistent trace starts at tested 30 ms.
+Nineteen flicker clips still move the board. Intermediate-duration length effects
+are not consistently monotonic; three repeats/cell do not establish a universal
+threshold or input path collapse. [Results](evidence/LINEAR-LENGTH-20261003/operator-review/results.md).
+
+## Curved Model 1 MVP 2.0 requirements
+
+The operator requires arbitrary single-finger paths without spin, with variable
+speed and unrestricted gameplay state at gesture start. A single cubic is not
+the model's representation limit; an extensible timed piecewise path is the
+current design candidate. Next execution review uses a moving circle only,
+aligned using five-contact calibration. Model accuracy is position error at
+matched frame times, with continued approximately 100-clip held-out human
+audits. [Requirements and remaining decisions](protocols/model1_curved_mvp2.md).
+
+MVP refinements: provisional maximum 15 timed waypoints including endpoints;
+10-logical-point-radius hollow target ring; broad shape/state coverage; initial
+error targets inherited from linear (0.03 normalized position, 0.10 s duration).
+Practical test: infer a single-contact expert trick and replay it in Workshop,
+checking trick reproduction alongside trajectory accuracy. Model 2 is not
+needed for that test. Initial speed/heading/contact state should be comparable.
+
+
+Research execution/viewer source now emits version 2 content-bound review bundles
+and checks foreground/lateness immediately before each scheduled submission. These
+synthetic/source checks do not replace human execution fidelity evidence, select a
+spacing rule or certify curved/spin collection. Historical v1 reviews retain weaker
+provenance and require explicit compatibility when imported by current readers.

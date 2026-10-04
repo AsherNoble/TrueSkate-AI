@@ -1,0 +1,270 @@
+{
+  "experiment": "LINEAR-SPEED-20261002",
+  "authorization": "operator explicitly overrode no-replacement rule and requested the unexecuted 16 again",
+  "completed_drags": 16,
+  "complete_recordings": 2,
+  "records": [
+    {
+      "repeat": 1,
+      "execution_error": null,
+      "request_count": 19,
+      "recording_sha256": "ad0dadb359a3dfe2d654cabce52699a93543d9f12fe0b06a696b0ccc192610cf",
+      "admission": {
+        "accepted": false,
+        "error": "original recording contains gameplay contamination",
+        "training_admission": false
+      },
+      "timing_diagnostic": {
+        "training_admission": false,
+        "separate_timing_diagnostic": true,
+        "frame_count": 1767,
+        "fit": {
+          "intercept_s": -1043151.4365499427,
+          "rate": 0.9998609610661435,
+          "anchor_span_s": 55.98611725005321
+        },
+        "control_onsets_s": {
+          "start": 1.255,
+          "middle": 30.27,
+          "end": 57.233333
+        },
+        "control_source_frames": {
+          "start": 34,
+          "middle": 903,
+          "end": 1710
+        },
+        "heldout_middle_error_s": 0.014299995363689533,
+        "timing_checks_pass": true
+      },
+      "flag_diagnostic": {
+        "source_frame": 569,
+        "pts_s": 19.12,
+        "menu": true,
+        "editor": false
+      },
+      "rig_artifact": "/Users/training-server/trueskate-ai-runtime/tmp/LINEAR-SPEED-20261002-redo3/recordings/recording_1/original.mov"
+    },
+    {
+      "repeat": 2,
+      "execution_error": null,
+      "request_count": 19,
+      "recording_sha256": "481d834cc6b87c841c8a3e36a33a862355b3c9336e4494db66d44cf07f7fa0a2",
+      "admission": {
+        "accepted": false,
+        "error": "original recording contains gameplay contamination",
+        "training_admission": false
+      },
+      "timing_diagnostic": {
+        "training_admission": false,
+        "separate_timing_diagnostic": true,
+        "frame_count": 1767,
+        "fit": {
+          "intercept_s": -1044288.0113176858,
+          "rate": 1.0003574809030014,
+          "anchor_span_s": 55.99331745831296
+        },
+        "control_onsets_s": {
+          "start": 1.438333,
+          "middle": 30.47,
+          "end": 57.451667
+        },
+        "control_source_frames": {
+          "start": 39,
+          "middle": 909,
+          "end": 1716
+        },
+        "heldout_middle_error_s": 0.009252706919795628,
+        "timing_checks_pass": true
+      },
+      "flag_diagnostic": {
+        "source_frame": 414,
+        "pts_s": 13.936667,
+        "menu": true,
+        "editor": false
+      },
+      "rig_artifact": "/Users/training-server/trueskate-ai-runtime/tmp/LINEAR-SPEED-20261002-repeat2b/recordings/recording_2/original.mov"
+    }
+  ],
+  "assessments": [
+    {
+      "command_id": "r1-600ms",
+      "duration_ms": 600,
+      "repeat": 1,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": ""
+    },
+    {
+      "command_id": "r1-400ms",
+      "duration_ms": 400,
+      "repeat": 1,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": ""
+    },
+    {
+      "command_id": "r1-300ms",
+      "duration_ms": 300,
+      "repeat": 1,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": ""
+    },
+    {
+      "command_id": "r1-200ms",
+      "duration_ms": 200,
+      "repeat": 1,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": ""
+    },
+    {
+      "command_id": "r1-100ms",
+      "duration_ms": 100,
+      "repeat": 1,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": ""
+    },
+    {
+      "command_id": "r1-50ms",
+      "duration_ms": 50,
+      "repeat": 1,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": "Trail is visible; 50 ms motion sampling differs between repeats"
+    },
+    {
+      "command_id": "r1-20ms",
+      "duration_ms": 20,
+      "repeat": 1,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "indeterminate",
+      "gameplay_response": "strong rotation and airborne board despite absent discernible trail",
+      "note": "No confident moving trail or contact identification at 30 fps"
+    },
+    {
+      "command_id": "r1-10ms",
+      "duration_ms": 10,
+      "repeat": 1,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "tap-like appearance",
+      "gameplay_response": "small scene/camera displacement; no comparable large rotation observed",
+      "note": "stationary spot at touch start; does not establish path collapse"
+    },
+    {
+      "command_id": "r2-10ms",
+      "duration_ms": 10,
+      "repeat": 2,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "tap-like appearance",
+      "gameplay_response": "small scene/camera displacement; no comparable large rotation observed",
+      "note": "stationary spot at touch start; does not establish path collapse"
+    },
+    {
+      "command_id": "r2-20ms",
+      "duration_ms": 20,
+      "repeat": 2,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "indeterminate",
+      "gameplay_response": "strong rotation and airborne board despite absent discernible trail",
+      "note": "No confident moving trail or contact identification at 30 fps"
+    },
+    {
+      "command_id": "r2-50ms",
+      "duration_ms": 50,
+      "repeat": 2,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": "Trail is visible; 50 ms motion sampling differs between repeats"
+    },
+    {
+      "command_id": "r2-100ms",
+      "duration_ms": 100,
+      "repeat": 2,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": ""
+    },
+    {
+      "command_id": "r2-200ms",
+      "duration_ms": 200,
+      "repeat": 2,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": ""
+    },
+    {
+      "command_id": "r2-300ms",
+      "duration_ms": 300,
+      "repeat": 2,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": ""
+    },
+    {
+      "command_id": "r2-400ms",
+      "duration_ms": 400,
+      "repeat": 2,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": ""
+    },
+    {
+      "command_id": "r2-600ms",
+      "duration_ms": 600,
+      "repeat": 2,
+      "assessor": "assistant visual inspection of native-frame review sheets",
+      "visible_feedback": "visible moving contact/trail",
+      "gameplay_response": "board turns/rotates; camera/scene changes",
+      "note": ""
+    }
+  ],
+  "visual_transition_range_ms": [
+    20,
+    50
+  ],
+  "transition_definition": "visible moving trail present at 50 ms and longer; not confidently discernible at 20 ms; tap-like at 10 ms",
+  "limitations": [
+    "30 fps cannot resolve sub-frame commands",
+    "Different scene/reset location in the latter half of repeat 2",
+    "Both original gameplay admission results remain failed; first flagged frames show normal gameplay, not menu UI",
+    "No full-input-path fidelity claim or training admission"
+  ],
+  "partial_attempts": [
+    {
+      "rig_dir": "LINEAR-SPEED-20261002-redo1",
+      "executed_drags": 5,
+      "error": "preparation overrun",
+      "local_dir": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/linear-speed-worktree/tmp/linear-speed-redo1"
+    },
+    {
+      "rig_dir": "LINEAR-SPEED-20261002-redo2",
+      "executed_drags": 5,
+      "error": "preparation overrun",
+      "local_dir": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/linear-speed-worktree/tmp/linear-speed-redo2"
+    },
+    {
+      "rig_dir": "LINEAR-SPEED-20261002-repeat2",
+      "executed_drags": 3,
+      "error": "preparation overrun",
+      "preserved_on_rig": true
+    }
+  ],
+  "viewer": "http://127.0.0.1:8767/linear-redone/",
+  "source_bundle_hashes": {
+    "linear-speed-redo3-bundle.tgz": "c27109c19acd584c7e2ee6f968d9f3deab86ea342314e0fb8b420c388bc9f6bc",
+    "linear-speed-repeat2b-bundle.tgz": "92e12c24aa31c2dd59ae8dfdfdf4904cedc0ef46bab415c0fb5ce20994e9da37"
+  }
+}
