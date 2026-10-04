@@ -86,6 +86,7 @@ def main():
     p.add_argument('--lift-for', action='append', default=[], metavar='STROKE=MODE',
                    help='per-stroke lift mode override (repeatable)')
     p.add_argument('--bridge-port', type=int, default=8765)
+    p.add_argument('--fps', type=int, default=30, help='XCTest recording frame rate')
     a = p.parse_args()
     if 'training-server' not in socket.gethostname():
         p.error('run on the rig')
@@ -121,7 +122,7 @@ def main():
             tap = {'gestures': [{'waypoints': [dict(x=RESET_POINT[0], y=RESET_POINT[1], duration_ms=0),
                                                dict(x=RESET_POINT[0], y=RESET_POINT[1], duration_ms=50)]}]}
             http_json(base + '/wda/perform_trick_gestures', tap); time.sleep(3)
-            recorder = XCTestScreenRecorder(driver, fps=30); recorder.start(); time.sleep(1)
+            recorder = XCTestScreenRecorder(driver, fps=a.fps); recorder.start(); time.sleep(1)
             try:
                 timing = play(client, events)
                 time.sleep(1.5)

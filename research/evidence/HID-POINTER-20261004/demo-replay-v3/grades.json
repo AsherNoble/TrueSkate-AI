@@ -1,0 +1,24 @@
+{
+  "schema": "demo-replay-compare-v1",
+  "grades": {
+    "1": {
+      "grade": "minor",
+      "comments": "SO SO close. It 360 pop shoved and did half of a kickflip – landed upside down.",
+      "offset_s": 3.032,
+      "updated_at": "2026-10-04T03:29:05.509Z"
+    },
+    "2": {
+      "grade": "major",
+      "comments": "Not particurlarly  close. The scoop was a frame or two too early and wasn't quite right. Still making good progress though.",
+      "offset_s": 3.098,
+      "updated_at": "2026-10-04T03:30:41.995Z"
+    },
+    "3": {
+      "grade": "major",
+      "comments": "Same as replay 2.",
+      "offset_s": 3.065,
+      "updated_at": "2026-10-04T03:31:04.123Z"
+    }
+  },
+  "offsets": {}
+}

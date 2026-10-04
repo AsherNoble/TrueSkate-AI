@@ -153,7 +153,19 @@ The corrected points span each visible trail from end to end
   game samples touches once per 16.7 ms frame. One frame in nine receives two updates,
   which changes the per-frame movement the game sees in a ~50 ms flick. Which frame
   that is depends on each run's random Bluetooth phase.
-- **Grades.** Pending.
+- **Grades: 1 Minor, 2 Major**
+  ([grades](../evidence/HID-POINTER-20261004/demo-replay-v3/grades.json)).
+  - **Minor** (the upside-down run): "SO SO close. It 360 pop shoved and did half of a
+    kickflip". This is the first replay with a flip component.
+  - **Major** (the other two): "The scoop was a frame or two too early and wasn't
+    quite right."
+  - **Caveat: likely viewer sync.** The viewer synced each replay on its first push,
+    detected in a ~30 fps recording. The two Major replays got offsets 66 and 33 ms
+    larger than the Minor one, which displays them that much early.
+  - **Board timing inside a replay.** The scoop is placed within ±7 ms of the clip
+    relative to push 1.
+  - **Conclusion.** With n = 3 per condition, the corrected strokes can't be called
+    better or worse than the old ones.
 
 ## Conclusions so far
 
