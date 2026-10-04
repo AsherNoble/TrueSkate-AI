@@ -1,7 +1,8 @@
 # HID-POINTER-20261004 — Can a Bluetooth pointer replay an expert's gesture sequence?
 
-Status: calibrated and validated; demo replay graded 3/3 Minor; corrected-stroke
-replays recorded, grades pending.
+Status: calibrated and validated. Demo replay graded 3/3 Minor; corrected strokes
+graded 1 Minor, 2 Major. A 20-run repeatability test shows identical schedules
+ending in different tricks.
 XR2 only. No collection, no training admission.
 
 ## Question
@@ -167,6 +168,29 @@ The corrected points span each visible trail from end to end
   - **Conclusion.** With n = 3 per condition, the corrected strokes can't be called
     better or worse than the old ones.
 
+### 7. Repeatability: identical schedules, different tricks
+
+- **Run.** 20 replays at 60 fps, alternating the centroid strokes (v2) and the
+  leading-edge strokes (v3), 10 each. Board timing was within 2 µs on every run.
+- **Scoring.** The outcome is True Skate's own trick banner at the end of each
+  recording ([outcomes](../evidence/HID-POINTER-20261004/repeatability/outcomes.json),
+  banner sheets alongside). The demo's trick is a 360 Flip.
+
+| | v2 (centroid strokes) | v3 (leading-edge strokes) |
+| --- | --- | --- |
+| 360 Flip family | 4: 360 Triple Flip ×2 landed, 360 Flip ×2 failed | 1: 360 Flip + Manual, landed |
+| Other | Inward Heelflip ×4; Pop Shove-It combos ×2 (failed) | FS Pop Shove-It ×5; 360 Pop Shove-It ×1; no trick, board upside down ×3 |
+
+- **The same board schedule gives very different tricks.** Run-to-run variance
+  dominates any single replay.
+- **The extractions differ systematically.** v3 never produced an Inward Heelflip and
+  v2 never an FS Pop Shove-It. So the stroke ends matter, but v3 is not closer to the
+  demo; it may even be worse.
+- **Unconfirmed: the timing-phase test.** A vernier read of each run's Bluetooth-to-frame
+  phase (trail onsets against the known schedule) was consistent in only 5 of 20 runs.
+  The cause is stray orange: pushes move the board's own graphic. So whether the
+  15 ms / 16.7 ms phase drives the outcome is not yet shown.
+
 ## Conclusions so far
 
 The pointer route solves what XCTest could not: separate touches with short, exact
@@ -178,16 +202,24 @@ Extracting strokes from trail centroids shortens fast strokes. Read the leading
 edge instead (`extract_demo_strokes.py`). This also affects any Model 1 labels made
 the old way.
 
-Identical schedules can end in different tricks, so a single replay is not a
-measurement of fidelity.
+Identical schedules end in different tricks: 4 or more distinct outcomes per 10
+runs. A single replay therefore does not measure fidelity; compare outcome
+distributions. Finding the source of this variance comes before more fidelity
+work.
 
 ## Next
 
-- Operator grading of the corrected-stroke replays.
-- Measure run-to-run variance before more fidelity work: about 10 identical repeats
-  and their trick outcomes. If the Bluetooth/frame beat explains it, test whether
-  True Skate uses touch timestamps or per-frame deltas, for example by scheduling the
-  same flick at controlled phases.
-- Spin (planned step 6): a capacitive pad on the spin button, driven by a board GPIO on
-  the same schedule, so spin shares the board's clock with the gestures.
-- Re-measure the gain if iOS updates or the AssistiveTouch Tracking Speed changes.
+- **Find where the variance comes from**, in cheap runs scored by trick banner:
+  1. Trick only (scoop, flick, catch) from a standing board. This tells whether the
+     pushes (board speed and heading) or the trick strokes carry the variance.
+  2. Align the board's start to the Bluetooth connection events: timestamp the
+     notification-sent events and start GO on that grid. Whatever variance remains then
+     comes from the phone's side.
+  3. If phase matters, measure the display's frame timing live. A light sensor on the
+     screen, which the hovering cursor crosses, would let the board place each frame's
+     position on the right frame.
+- **Decide the scoop start with the operator.** The press is on the board's tail edge
+  in v3 and ~15 pt off it in v2.
+- **Spin (planned step 6):** a capacitive pad on the spin button, driven by a board GPIO
+  on the same schedule.
+- **Re-measure the gain** if iOS updates or the AssistiveTouch Tracking Speed changes.
