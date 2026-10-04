@@ -1,0 +1,28 @@
+{
+ "runs": [
+  {
+   "repeat": 1,
+   "file": "01_pointer_immediate_r1.mov",
+   "recording_started_at": 1791084285.9979892,
+   "go_epoch": 1791084284.327652,
+   "max_late_us": 1,
+   "min_late_us": 0
+  },
+  {
+   "repeat": 2,
+   "file": "02_pointer_immediate_r2.mov",
+   "recording_started_at": 1791084302.535277,
+   "go_epoch": 1791084300.838529,
+   "max_late_us": 1,
+   "min_late_us": 0
+  },
+  {
+   "repeat": 3,
+   "file": "03_pointer_immediate_r3.mov",
+   "recording_started_at": 1791084318.836643,
+   "go_epoch": 1791084317.14114,
+   "max_late_us": 1,
+   "min_late_us": 0
+  }
+ ]
+}

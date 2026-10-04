@@ -13,14 +13,19 @@
 #
 # Env overrides:
 #   LOCAL_MIN_GB   stop collection when local free < this (default 25)
+#   LOCAL_CLEAR_GB once low, report clear only when local free >= this (default
+#                  LOCAL_MIN_GB + 10), so a disk hovering at the threshold
+#                  cannot alternate LOW/clear alerts
 #   MODAL_MAX_GB   warn when Modal volume usage > this (default 950 of the 1024 free-tier TiB)
-#   MODAL_VOLUME   Modal volume name (default trueskate-corpus)
+#   MODAL_VOLUME   Modal volume name (default trueskate-model1-good13100-20260927,
+#                  the current Model 1 corpus; trueskate-corpus was deleted)
 set -u
 
 REPO=/Users/training-server/trueskate-ai
 LOCAL_MIN_GB="${LOCAL_MIN_GB:-25}"
+LOCAL_CLEAR_GB="${LOCAL_CLEAR_GB:-$((LOCAL_MIN_GB + 10))}"
 MODAL_MAX_GB="${MODAL_MAX_GB:-950}"
-MODAL_VOLUME="${MODAL_VOLUME:-trueskate-corpus}"
+MODAL_VOLUME="${MODAL_VOLUME:-trueskate-model1-good13100-20260927}"
 STATE="$HOME/.trueskate_storage_guard.state"   # last alert state, to de-dupe ntfy
 LOG="$REPO/logs/storage_guard.log"
 U=$(id -u)
@@ -29,7 +34,7 @@ log(){ echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG" 2>/dev/null; }
 notify(){  # $1 message  $2 priority(default urgent)
   PYTHONPATH="$REPO/src" "$REPO/.venv/bin/python" -c "
 from trueskate_ai.utils.notify import notify
-notify('''$1''', title='TrueSkate storage guard', priority='${2:-urgent}')" 2>/dev/null || true
+notify('''$1''', title='TrueSkate storage guard', priority='${2:-urgent}', block=True)" 2>/dev/null || true
 }
 stop_collection(){ for j in collect.xr1 collect.xr2; do launchctl bootout "gui/$U/com.trueskate.$j" 2>/dev/null; done; }
 set_state(){ echo "$1" > "$STATE"; }
@@ -45,17 +50,24 @@ if [ "${FREE_GB:-0}" -lt "$LOCAL_MIN_GB" ]; then
   log "LOCAL LOW ${FREE_GB}GB (<${LOCAL_MIN_GB}) -> collection stopped"
   exit 0
 fi
+if [ "$(get_state)" = "LOCAL_LOW" ] && [ "${FREE_GB:-0}" -lt "$LOCAL_CLEAR_GB" ]; then
+  log "LOCAL RECOVERING ${FREE_GB}GB (clear at ${LOCAL_CLEAR_GB})"   # no alert either way
+  exit 0
+fi
 
 # --- 2. MODAL volume usage (once Modal is set up) ------------------------
-if command -v modal >/dev/null 2>&1 && [ -f "$HOME/.modal.toml" ]; then
-  # `modal volume` has no direct byte total; sum the listing. Best-effort, but a
-  # failed check must stay VISIBLE, not silently read as "usage is fine": expired
-  # Modal auth / a CLI or JSON-schema change previously collapsed to a bare `-1`,
-  # which never exceeds MODAL_MAX_GB and fell straight through to the healthy path.
-  USED_GB=$(modal volume ls "$MODAL_VOLUME" --json 2>/dev/null \
-    | "$REPO/.venv/bin/python" -c "import sys,json;
+# Modal is installed in the repo venv, not on launchd's PATH; testing `command -v
+# modal` silently skipped this whole check.
+if [ -x "$REPO/.venv/bin/modal" ] && [ -f "$HOME/.modal.toml" ]; then
+  # Sum file sizes from a recursive listing via the Python API: the CLI's JSON
+  # reports human-readable sizes ("4.0 KiB") and only the top level. A failed
+  # check must stay VISIBLE, not silently read as "usage is fine".
+  USED_GB=$(MODAL_VOLUME="$MODAL_VOLUME" "$REPO/.venv/bin/python" -c "import os
 try:
-    d=json.load(sys.stdin); print(int(sum(f.get('size',0) for f in d)/1e9))
+    import modal
+    v = modal.Volume.from_name(os.environ['MODAL_VOLUME'])
+    files = [e for e in v.listdir('/', recursive=True) if e.type == modal.volume.FileEntryType.FILE]
+    print(int(sum(e.size for e in files) / 1e9))
 except Exception: print('ERROR')" 2>/dev/null || echo ERROR)
   if ! [[ "$USED_GB" =~ ^[0-9]+$ ]]; then
     [ "$(get_state)" != "MODAL_CHECK_FAILED" ] && notify "Modal volume usage check failed (CLI/auth/schema issue) — guard is blind to Modal usage until this is fixed." high

@@ -1,0 +1,36 @@
+{
+  "decoded_frames": 553,
+  "source_pts_first": 0.08,
+  "source_pts_last": 9.346667,
+  "source_frame_step_median": 0.016666999999999987,
+  "source_step_min": 0.01666599999999896,
+  "source_step_max": 0.033334,
+  "source_gaps_gt_1_5_frame": 4,
+  "completed": true,
+  "release": [
+    "OK"
+  ],
+  "pointer_late_us": [
+    null,
+    null
+  ],
+  "hold": {
+    "host_call_epoch": 1791102212.868552,
+    "host_return_epoch": 1791102217.122686,
+    "response": {
+      "value": null,
+      "sessionId": "9A621EBE-A10B-4552-9B67-404AB85472DD"
+    }
+  },
+  "streams": [
+    {
+      "width": 828,
+      "height": 1792,
+      "r_frame_rate": "60/1",
+      "avg_frame_rate": "33180/557",
+      "duration": "9.283333",
+      "nb_frames": "553",
+      "nb_read_frames": "553"
+    }
+  ]
+}

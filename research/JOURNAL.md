@@ -4,6 +4,41 @@ Keep at most 30 dated entries. Before trimming, tag the complete version and
 append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
+
+## 2026-10-03 — Repeated finding: bundled gestures are conjoined
+
+- **Do not bundle sequential gestures into one request.** A replay of an expert
+  demo sent all eight gestures (pushes, two trick flicks, catch) as one W3C
+  request with one pointer each. In 9/9 replays, at native, 33 ms and 50 ms point
+  spacing, True Skate drew one continuous chain, with each gesture joined to the
+  next.
+- This was already solved in May 2026, when the `perform_trick_gestures` WDA
+  endpoint work found that multi-path records and hover moves both leak touch
+  events. It resurfaced as "joined gestures" in September's run04b. The knowledge
+  had survived only in archived files; it is now a hard rule in GESTURES.md.
+- The one-request-per-gesture replay works, but each request returns about 0.3 s
+  after its gesture ends. Flick B started 315–343 ms after flick A instead of
+  168 ms. Tighter sequences need on-device scheduling.
+  [CURVE-AUDIT-20261003](experiments/CURVE-AUDIT-20261003.md).
+
+## 2026-10-03 — Blinded linear gesture duration × length audit
+
+- Reviewed all 135 XR1/Inbound clips: nine durations from 10 to 50 ms in
+  **5 ms increments**, five lengths and three repetitions per combination.
+- **Board response:** movement in 120/120 clips at ≥15 ms, versus 0/15 at
+  10 ms. The observed transition lies between 10 and 15 ms in this session.
+- **Visible trace:** 75/75 at 30–50 ms; 12/15 at 25 ms; 7/15 at both 20 and
+  15 ms; 0/15 at 10 ms. Remaining labels were Flicker.
+- **Trace visibility is not a reliable proxy for board response:** 19
+  Flicker-labelled gestures still moved the board. These observations do not
+  establish input-path collapse.
+- Length effects were inconsistent across durations. Three repeats per
+  combination do not establish a universal threshold. Both comments about
+  unusually short traces corresponded to the shortest length at 45 ms.
+- Results are explicitly saved human assessments; the viewer preselected Trace
+  and Board moved. Full labels, mappings and results are preserved in
+  [LINEAR-LENGTH-20261003](experiments/LINEAR-LENGTH-20261003.md).
+
 ## 2026-10-02 — Cubic gesture execution gate implemented
 
 - **CURVE-EXEC:** additive nine-number Bernstein cubic, exact-ms compiler and
@@ -14,7 +49,7 @@ Put substantial experiments in individual records and current facts in STATUS.
 - Inbound pilot stopped after eight XR1 diagnostics: native FFmpeg reanalysis
   passes calibration (middle error 5.8 ms), but orange extraction is 0/8
   evaluable. Fidelity/floor inconclusive; main and confirmation withheld.
-  [Protocol and evidence](experiments/CURVE-EXEC-20261002.md).
+  [Protocol and evidence](https://github.com/AsherNoble/TrueSkate-AI/blob/3f6709ebeeee42d3acbae0a732b87eec1580382e/research/experiments/CURVE-EXEC-20261002.md).
 - Operator viewed clips and requested a wide fast arc: three XR1 commands at
   300/200/120 ms recorded for human viewing. Gameplay admission failed; retained
   without replacement. [Visual speed probe](experiments/CURVE-SPEED-20261002.md).
@@ -47,6 +82,17 @@ Put substantial experiments in individual records and current facts in STATUS.
   practical check is expert single-drag trick inference/replay in Workshop.
   [Requirements](protocols/model1_curved_mvp2.md).
 
+## 2026-10-01 — Modal storage audit; deleted the June–July corpus
+
+- The account held ≈ 1,293 GiB of Volumes. Modal charges $0.09/GiB-month
+  above a free 1 TiB, so this cost ≈ $24/month. `trueskate-corpus` alone
+  was 929 GiB (52 June–July sessions, ≈ 95k gestures, collected before tap
+  calibration, so timing is unusable).
+- **Deleted `trueskate-corpus`** (operator-approved). ≈ 364 GiB remain, so
+  storage is now free. The loss is permanent: no other copy existed.
+  Recollect with the calibrated pipeline instead.
+  [MODAL_STORAGE_20261001](MODAL_STORAGE_20261001.md).
+
 ## 2026-10-01 — Doubling the data still helps, but less
 
 - **M1-EXPAND:** 10,131 new screened clips (Kansas City and Los Angeles
@@ -58,28 +104,17 @@ Put substantial experiments in individual records and current facts in STATUS.
   data-limited line by 0.04 pp; the previous doubling gave 39.7%.
   Los Angeles failures fell 21.4% → 15.4% and Kansas City 16.3% → 12.8%.
   ≈ $12.8. [M1-EXPAND](experiments/M1-EXPAND-20260929.md).
-- **New-park holdout** (907 whole held-out recordings in Portland, Super
+- **New-park holdout** (907 clips selected in whole recording sessions in Portland, Super
   Crown 2016 and Inbound; best checkpoint, scored once): **87.32%**, against
   92.16% validation in the original parks. Mostly end-point misses. The park
   and stricter-split effects are confounded.
 - **Free analysis of those results:**
   - Each original park's gain matches its own added data. The new-park
     clips gave no visible lift; Skateboard GB is a weak exception.
-  - Sharing a recording with training does not help validation clips.
+  - No detected dose-response with the number of training clips sharing a recording; a step between any sharing and none remains untested.
   - Holdout failures are spread evenly across recordings.
   - So the new-park gap looks like too little per-park data, not a split
     artefact.
-
-## 2026-10-01 — Modal storage audit; deleted the June–July corpus
-
-- The account held ≈ 1,293 GiB of Volumes. Modal charges $0.09/GiB-month
-  above a free 1 TiB, so this cost ≈ $24/month. `trueskate-corpus` alone
-  was 929 GiB (52 June–July sessions, ≈ 95k gestures, collected before tap
-  calibration, so timing is unusable).
-- **Deleted `trueskate-corpus`** (operator-approved). ≈ 364 GiB remain, so
-  storage is now free. The loss is permanent: no other copy existed.
-  Recollect with the calibrated pipeline instead.
-  [MODAL_STORAGE_20261001](MODAL_STORAGE_20261001.md).
 
 ## 2026-09-30 — End misses: temporal averaging is part of it
 
@@ -98,19 +133,6 @@ Put substantial experiments in individual records and current facts in STATUS.
   development default. ≈ $0.8.
   [M1-QUARTERRES](experiments/M1-QUARTERRES-20260929.md).
 
-## 2026-09-28 — Cosine lr adopted; model still data-limited
-
-- **Cosine decay at 64×144:** the three-seed last-10 validation mean went
-  from 87.11% to **89.17%**, and the epoch-to-epoch SD fell 5–12×. Adopted.
-  [M1-LRDECAY](experiments/M1-LRDECAY-20260928.md).
-- **Nested subsets** (2,293 / 4,585 / 9,170; cosine; 64×144): 77.73% →
-  82.05% → 89.17%. Validation error fell 19.4% for the first doubling, then
-  39.7% for the second. By the fixed rule, **collect a doubling.** Kansas City
-  failures fell 32.9% → 22.8% → 16.3%.
-  [M1-SCALE-SUBSETS](experiments/M1-SCALE-SUBSETS-20260928.md).
-- The spend guard now projects from the median epoch time; one stalled epoch
-  had falsely stopped three runs.
-
 ## 2026-09-28 — Half resolution is not worse
 
 - Identical recipe at 64×144 instead of 128×288, seed 0: validation last-10
@@ -123,6 +145,19 @@ Put substantial experiments in individual records and current facts in STATUS.
   in the partition's second exposure: McNemar p = 0.0003 against the 88.50%
   model, and +11.0 pp (+8.8 to +13.2) against 80.05%.
   [M1-HALFRES](experiments/M1-HALFRES-20260928.md).
+
+## 2026-09-28 — Cosine lr adopted; model still data-limited
+
+- **Cosine decay at 64×144:** the three-seed last-10 validation mean went
+  from 87.11% to **89.17%**, and the epoch-to-epoch SD fell 5–12×. Adopted.
+  [M1-LRDECAY](experiments/M1-LRDECAY-20260928.md).
+- **Nested subsets** (2,293 / 4,585 / 9,170; cosine; 64×144): 77.73% →
+  82.05% → 89.17%. Validation error fell 19.4% for the first doubling, then
+  39.7% for the second. By the fixed rule, **collect a doubling.** Kansas City
+  failures fell 32.9% → 22.8% → 16.3%.
+  [M1-SCALE-SUBSETS](experiments/M1-SCALE-SUBSETS-20260928.md).
+- The spend guard now projects from the median epoch time; one stalled epoch
+  had falsely stopped three runs.
 
 ## 2026-09-28 — Clean-label retrain: 88.50% test recovery
 
@@ -139,15 +174,6 @@ Put substantial experiments in individual records and current facts in STATUS.
 - **Planned, not approved:** learning-rate decay (~$25) and nested subset
   scaling (~$24). [M1-SCALE-SUBSETS](experiments/M1-SCALE-SUBSETS-20260928.md).
 
-## 2026-09-27 — 13,100 good-label manifest passes final audit
-
-- A settle-wait top-up on release `080bb97` collected 722 clips (Los Angeles
-  331). All passed `corpus-screen-v1`, against 47% for Los Angeles before.
-- `park-mix` built `model1_linear_good13100_20260927` with the 80.05% corpus's
-  exact park counts.
-- A fresh blind 100-clip audit passed 100/100, all exact.
-  [Record](experiments/M1-CORPUS-AUDIT-20260927.md).
-
 ## 2026-09-27 — Screened corpus passes blind random audit
 
 - `corpus-screen-v1` is frozen as a whole-segment rule: rate within 0.0008 and
@@ -157,6 +183,15 @@ Put substantial experiments in individual records and current facts in STATUS.
 - A blind uniform 100-clip audit passed 100/100 within one displayed frame
   (97 exact), bounding bad clips below 3%.
 - Plan: top up ~1,480 good clips and audit a fresh 100.
+  [Record](experiments/M1-CORPUS-AUDIT-20260927.md).
+
+## 2026-09-27 — 13,100 good-label manifest passes final audit
+
+- A settle-wait top-up on release `080bb97` collected 722 clips (Los Angeles
+  331). All passed `corpus-screen-v1`, against 47% for Los Angeles before.
+- `park-mix` built `model1_linear_good13100_20260927` with the 80.05% corpus's
+  exact park counts.
+- A fresh blind 100-clip audit passed 100/100, all exact.
   [Record](experiments/M1-CORPUS-AUDIT-20260927.md).
 
 ## 2026-09-26 — Five-touch comparisons scored; timing gate proposed
@@ -173,6 +208,23 @@ Put substantial experiments in individual records and current facts in STATUS.
   gross errors earlier. A latency gate is preregistered for a held-out corpus
   test. [Record](experiments/M1-DIE5-R100-20260925.md).
 
+## 2026-09-25 — Two-finger XR2 visibility probe
+
+- The operator found no pair in the first viewer. Selenium `ActionChains` had
+  silently retained only the last pointer source, invalidating those recordings
+  as a two-finger test. A corrected two-source payload completed in three new
+  XR2 originals, and the operator saw two simultaneous marks in each. No
+  calibration method was adopted.
+  [Record](experiments/M1-MULTITAP-20260925.md).
+
+## 2026-09-25 — Post-reset settle wait (smoke)
+
+- Los Angeles boards move for ~7–8 s after the pre-segment reset, and moving
+  starts coincided with weak start detections. An opt-in settle wait produced
+  still start controls in 17/17 bounded recordings (9/30 moving without).
+  Red-team: its effect on anchor errors is untested. A confirmatory interleaved
+  test is proposed, not run. [Record](experiments/M1-SETTLE-20260925.md).
+
 ## 2026-09-25 — Multi-anchor consensus calibration (smoke)
 
 - An opt-in consensus fit over ≥3 single centre controls rejects anchors that
@@ -182,22 +234,13 @@ Put substantial experiments in individual records and current facts in STATUS.
   unproven; screen and fit gates tightened.
   [Record](experiments/M1-MULTIANCHOR-20260925.md).
 
-## 2026-09-25 — Draft corpus timing screen
+## 2026-09-25 — Four simultaneous XR2 touches
 
-- A per-clip anchor-error screen (opt-in in the cohort builder) keeps 12,628 or
-  12,517 of 13,592 replacement clips at rate thresholds 0.002 or 0.0008.
-  Red-team: 0.002 hides up to ~3-frame errors in 74 kept LA clips, so it is not
-  recommended. Los Angeles falls below its 1,261 target, so ~320 raw LA clips
-  must be recollected. A sealed LA-only blind mid-band check is prepared, not
-  labelled. [Record](experiments/M1-SCREEN-DRAFT-20260925.md).
-
-## 2026-09-25 — Post-reset settle wait (smoke)
-
-- Los Angeles boards move for ~7–8 s after the pre-segment reset, and moving
-  starts coincided with weak start detections. An opt-in settle wait produced
-  still start controls in 17/17 bounded recordings (9/30 moving without).
-  Red-team: its effect on anchor errors is untested. A confirmatory interleaved
-  test is proposed, not run. [Record](experiments/M1-SETTLE-20260925.md).
+- Removed the on-film single-touch control; sent four fingers at the corners
+  of a 66-logical-point square in three bounded recordings. All commands
+  completed without leaving gameplay; four spots are visible in a preliminary
+  frame review. Exact timing awaits operator inspection in the new viewer.
+  [Record](experiments/M1-MULTITAP4-20260925.md).
 
 ## 2026-09-25 — Five-touch vs single-touch calibration (labels pending)
 
@@ -223,6 +266,15 @@ Put substantial experiments in individual records and current facts in STATUS.
   retain all eight paths; the limiting downstream layer remains unknown.
   [Record](experiments/M1-MULTITAP8-20260925.md).
 
+## 2026-09-25 — Draft corpus timing screen
+
+- A per-clip anchor-error screen (opt-in in the cohort builder) keeps 12,628 or
+  12,517 of 13,592 replacement clips at rate thresholds 0.002 or 0.0008.
+  Red-team: 0.002 hides up to ~3-frame errors in 74 kept LA clips, so it is not
+  recommended. Los Angeles falls below its 1,261 target, so ~320 raw LA clips
+  must be recollected. A sealed LA-only blind mid-band check is prepared, not
+  labelled. [Record](experiments/M1-SCREEN-DRAFT-20260925.md).
+
 ## 2026-09-25 — 91-touch XR2 grid probe
 
 - Three isolated recordings captured a 7 × 13, 50-point grid command. WDA
@@ -231,22 +283,17 @@ Put substantial experiments in individual records and current facts in STATUS.
   was not delivered visibly; command duration varied from 7.6 to 30.5 s.
   [Record](experiments/M1-MULTITAP91-20260925.md).
 
-## 2026-09-25 — Four simultaneous XR2 touches
+## 2026-09-24 — Replacement park top-up completed
 
-- Removed the on-film single-touch control; sent four fingers at the corners
-  of a 66-logical-point square in three bounded recordings. All commands
-  completed without leaving gameplay; four spots are visible in a preliminary
-  frame review. Exact timing awaits operator inspection in the new viewer.
-  [Record](experiments/M1-MULTITAP4-20260925.md).
-
-## 2026-09-25 — Two-finger XR2 visibility probe
-
-- The operator found no pair in the first viewer. Selenium `ActionChains` had
-  silently retained only the last pointer source, invalidating those recordings
-  as a two-finger test. A corrected two-source payload completed in three new
-  XR2 originals, and the operator saw two simultaneous marks in each. No
-  calibration method was adopted.
-  [Record](experiments/M1-MULTITAP-20260925.md).
+- The second bounded stage stopped at 4,052 XR1/Workshop and 3,809 XR2/Kansas
+  City strict clips. One operator-confirmed XR2/Skateboard GB segment added 12
+  audited clips, bringing that park to 2,020 including its 310-clip baseline.
+  Both recorders returned idle. The operator clarified that the
+  replacement should match aggregate park totals, not device-by-park cells;
+  Super Crown is the remaining park. After the operator loaded both XRs there,
+  two finite collectors started with separate targets of 1,150 and 860. Their
+  first segments passed strict audits with 10 and 12 accepted clips.
+  [Counts and audit](experiments/M1-RECOLLECT-20260922.md).
 
 ## 2026-09-24 — Los Angeles originals retained on both XRs
 
@@ -279,18 +326,6 @@ Put substantial experiments in individual records and current facts in STATUS.
   22/24 exact onset frames and the other two within one frame. This validates
   the extreme-rate risk signal, not a cutoff for automatic exclusion.
   [Labels and analysis](experiments/M1-ONSET-VALIDATION-20260924.md).
-
-## 2026-09-24 — Replacement park top-up completed
-
-- The second bounded stage stopped at 4,052 XR1/Workshop and 3,809 XR2/Kansas
-  City strict clips. One operator-confirmed XR2/Skateboard GB segment added 12
-  audited clips, bringing that park to 2,020 including its 310-clip baseline.
-  Both recorders returned idle. The operator clarified that the
-  replacement should match aggregate park totals, not device-by-park cells;
-  Super Crown is the remaining park. After the operator loaded both XRs there,
-  two finite collectors started with separate targets of 1,150 and 860. Their
-  first segments passed strict audits with 10 and 12 accepted clips.
-  [Counts and audit](experiments/M1-RECOLLECT-20260922.md).
 
 ## 2026-09-23 — Replacement collection rotated into two new parks
 
@@ -404,47 +439,3 @@ Put substantial experiments in individual records and current facts in STATUS.
   `basic_linear_v2_20260918` corpus, with idle-navigation allowance but all
   replay/editor and foreground guards retained. The first production segment
   admitted 10 clips; a strict watcher stops at 1,100. XR1 was unavailable.
-
-## 2026-09-17 — Gesture starts protected from XR controls
-
-- XR2 mapping produced a versioned 414×896 control-start exclusion profile with
-  a 16-point margin. Only moving gestures' touch-down positions are excluded;
-  their paths and endpoints may cross controls. Taps and holds remain excluded.
-- The bottom Me–Settings row is transient: it appears about one second after the
-  stationary board, a reset or a new park, and disappears or stays absent during
-  motion. The current profile deliberately blocks it at all times. Its exclusion
-  may become state-dependent later only if the lost sampling area matters.
-- The preregistered XR2 contamination run failed after 2/300 swipes: a Camera
-  probe began outside the 16-point exclusion but opened Replay as it moved into
-  the control. The start-only rule is not ready for collection; evidence is
-  preserved in [M1-CONTROL-20260917](experiments/M1-CONTROL-20260917.md).
-- Follow-up decision (2026-09-18): control activation may depend on path, speed
-  and/or drag-recognition distance. That mechanism is deferred but remains
-  important. For the new linear corpus, both gesture start and end points must
-  clear the expanded hitboxes; intermediate crossings remain provisionally
-  allowed and require later research.
-
-## 2026-09-13 — Instrumented-WDA onset alignment validated
-
-- WDA's internal `submitted_to_ios` timestamp aligns gesture onsets to the video
-  within one frame (28/28 across four short XR2 recordings; true jitter ≤ ~13 ms,
-  the 30 fps labelling floor) and beats the uninstrumented host send-clock by up
-  to ~7 frames. Red-team CONFIRMED.
-  [ALIGN-20260913](experiments/ALIGN-20260913-wda-onset.md).
-- A multi-anchor recording (run09) then showed one anchor does NOT hold over a
-  ~23 s clip: a per-recording linear timebase drift (~−1900 ppm) reaches 1.28
-  frames by +22.6 s. A ≥2-anchor offset+rate fit collapses it back to ≤ 0.58
-  frame — so long recordings need two anchors (start and end), re-fit per clip.
-- Scope: one device, park and session. Not yet certified: cross-park/session/
-  device generalisation or the drift-rate distribution across recordings.
-- Run10 extended the test to 59.10 s. All eight held-out gestures pass one frame;
-  the held-out middle calibration misses by 38.24 ms. The user accepted this
-  practical result for rebuilding the linear corpus.
-- The local-background V2 onset detector matches 23/24 sampled swipe starts
-  exactly on reused development labels. Fixed centre controls avoid its observed
-  moving red-floor edge case.
-- Canonical linear collection now uses separate start/end 50 ms controls at exact
-  screen centre, WDA submission timestamps and an affine video-time fit. Controls
-  stay in manifests and are never emitted as training clips; in-recording resets
-  and incomplete timing reports reject the segment. Offline tests pass.
-  [Timing audit](experiments/M1-TIMING-20260912.md).

@@ -1,0 +1,60 @@
+E (   1,   0) x150  m=  1.000  D=   0.203  D/m=0.203  angle err -0.94 deg
+J (   1,   0) x100  m=  1.000  D=   0.205  D/m=0.205  angle err +0.00 deg
+J (   1,   1) x100  m=  1.414  D=   0.283  D/m=0.200  angle err +0.00 deg
+E (   2,   0) x120  m=  2.000  D=   0.406  D/m=0.203  angle err +0.59 deg
+J (   2,   0) x 60  m=  2.000  D=   0.400  D/m=0.200  angle err +1.19 deg
+J (   2,   1) x 60  m=  2.236  D=   0.449  D/m=0.201  angle err +0.48 deg
+J (   2,   2) x 60  m=  2.828  D=   0.572  D/m=0.202  angle err -0.59 deg
+E (   3,   0) x100  m=  3.000  D=   0.900  D/m=0.300  angle err +0.32 deg
+J (   3,   0) x 60  m=  3.000  D=   0.900  D/m=0.300  angle err +0.00 deg
+E (   4,   0) x 80  m=  4.000  D=   1.894  D/m=0.473  angle err +0.00 deg
+E (   5,   0) x 60  m=  5.000  D=   2.892  D/m=0.578  angle err +0.00 deg
+H (  -3,   4) x 40  m=  5.000  D=   2.900  D/m=0.580  angle err +0.25 deg
+E (   6,   0) x 50  m=  6.000  D=   3.905  D/m=0.651  angle err +0.00 deg
+H (   0,   6) x 30  m=  6.000  D=   3.867  D/m=0.644  angle err +0.25 deg
+E (   8,   0) x 35  m=  8.000  D=   5.900  D/m=0.738  angle err +0.28 deg
+G (   8,   0) x 35  m=  8.000  D=   5.914  D/m=0.739  angle err +0.14 deg
+H (  -6,   8) x 15  m= 10.000  D=   7.920  D/m=0.792  angle err +0.43 deg
+F (  11,   0) x 25  m= 11.000  D=   8.900  D/m=0.809  angle err +0.00 deg
+F (  16,   0) x 16  m= 16.000  D=  13.906  D/m=0.869  angle err +0.13 deg
+G (  16,   0) x  1  m= 16.000  D=  14.009  D/m=0.876  angle err +2.05 deg
+G (  16,   0) x  2  m= 16.000  D=  13.759  D/m=0.860  angle err +2.08 deg
+G (  16,   0) x  4  m= 16.000  D=  14.001  D/m=0.875  angle err -0.51 deg
+H (   0,  16) x 12  m= 16.000  D=  13.875  D/m=0.867  angle err +0.17 deg
+H ( -12,  16) x  6  m= 20.000  D=  17.900  D/m=0.895  angle err +0.37 deg
+F (  22,   0) x  7  m= 22.000  D=  19.857  D/m=0.903  angle err -0.21 deg
+I (  24,   0) x  6  m= 24.000  D=  21.958  D/m=0.915  angle err -0.11 deg
+I (  27,   0) x  4  m= 27.000  D=  26.875  D/m=0.995  angle err +0.27 deg
+I (  30,   0) x  4  m= 30.000  D=  34.000  D/m=1.133  angle err +0.00 deg
+F (  32,   0) x  5  m= 32.000  D=  39.000  D/m=1.219  angle err +0.15 deg
+G (  32,   0) x  1  m= 32.000  D=  38.503  D/m=1.203  angle err +0.74 deg
+G (  32,   0) x  2  m= 32.000  D=  39.125  D/m=1.223  angle err +0.18 deg
+H (   0,  32) x  4  m= 32.000  D=  38.875  D/m=1.215  angle err +0.18 deg
+I (  36,   0) x  3  m= 36.000  D=  48.750  D/m=1.354  angle err +0.10 deg
+I (  40,   0) x  3  m= 40.000  D=  58.500  D/m=1.462  angle err +0.00 deg
+F (  45,   0) x  2  m= 45.000  D=  70.750  D/m=1.572  angle err -0.20 deg
+G (  45,   0) x  1  m= 45.000  D=  71.000  D/m=1.578  angle err +0.00 deg
+G (  45,   0) x  3  m= 45.000  D=  70.833  D/m=1.574  angle err +0.00 deg
+I (  50,   0) x  2  m= 50.000  D=  83.000  D/m=1.660  angle err -0.17 deg
+I (  56,   0) x  2  m= 56.000  D=  97.750  D/m=1.746  angle err +0.15 deg
+F (  64,   0) x  1  m= 64.000  D= 117.252  D/m=1.832  angle err +0.37 deg
+G (  64,   0) x  2  m= 64.000  D= 117.250  D/m=1.832  angle err +0.12 deg
+I (  72,   0) x  2  m= 72.000  D= 136.250  D/m=1.892  angle err -0.11 deg
+I (  80,   0) x  1  m= 80.000  D= 144.501  D/m=1.806  angle err +0.20 deg
+F (  90,   0) x  1  m= 90.000  D= 153.501  D/m=1.706  angle err +0.19 deg
+I ( 100,   0) x  1  m=100.000  D= 163.751  D/m=1.638  angle err +0.17 deg
+I ( 110,   0) x  1  m=110.000  D= 173.501  D/m=1.577  angle err +0.17 deg
+I ( 120,   0) x  1  m=120.000  D= 182.502  D/m=1.521  angle err +0.24 deg
+F ( 127,   0) x  1  m=127.000  D= 189.501  D/m=1.492  angle err +0.15 deg
+slow gain 0.2017
+L1 D = 1.0009 m -2.107  (to m=25.77)
+L2 D = 2.4485 m -39.405  (to m=71.72)
+L3 D = 0.9650 m +66.997
+per-report residual: rms 0.139 pt, max 0.443 pt
+drag-total residual (x n): max 0.95 pt
+  larger residual m=32.00 D=38.503 res -0.443 (n=1)
+  larger residual m=80.00 D=144.501 res +0.305 (n=1)
+  larger residual m=90.00 D=153.501 res -0.345 (n=1)
+  larger residual m=100.00 D=163.751 res +0.255 (n=1)
+  larger residual m=110.00 D=173.501 res +0.355 (n=1)
+  larger residual m=120.00 D=182.502 res -0.294 (n=1)

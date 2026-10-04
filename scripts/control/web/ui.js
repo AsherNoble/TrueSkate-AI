@@ -2,11 +2,13 @@ import {mapPoint, Capture} from './pointer.js';
 const token = location.hash.slice(1) || sessionStorage.getItem('xr-control-token') || '';
 if (token) sessionStorage.setItem('xr-control-token', token);
 history.replaceState(null, '', location.pathname);
+const LABELS = {gesture:'Executing gesture', activate:'Opening True Skate', home:'Going to Home Screen', app_switcher:'Opening App Switcher', control_center:'Opening Control Centre'};
+const NEEDS_VIDEO = new Set(['activate', 'home', 'app_switcher', 'control_center']);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 for (const name of ['XR1', 'XR2']) mount(name);
 function mount(name) {
   const card = document.createElement('section'); card.className = 'device';
-  card.innerHTML = `<div class="heading"><h2>${name}</h2><button class="enlarge">Enlarge</button></div><div class="controls"><button data-command="connect">Connect</button><button data-command="disconnect">Disconnect</button><button data-command="activate">Open True Skate</button></div><div class="screen blocked"><img alt="${name} live screen" draggable="false"><canvas aria-label="${name} touch input"></canvas></div><div class="status" role="status">Disconnected</div><div class="freshness stale">Waiting for video</div>`;
+  card.innerHTML = `<div class="heading"><h2>${name}</h2><button class="enlarge">Enlarge</button></div><div class="controls"><button data-command="connect">Connect</button><button data-command="disconnect">Disconnect</button><button data-command="activate">Open True Skate</button><button data-command="home" title="Go to the Home Screen (exits the current app)">Home</button><button data-command="app_switcher" title="Show backgrounded apps; drag a card up to close it">App Switcher</button><button data-command="control_center">Control Centre</button></div><div class="screen blocked"><img alt="${name} live screen" draggable="false"><canvas aria-label="${name} touch input"></canvas></div><div class="status" role="status">Disconnected</div><div class="freshness stale">Waiting for video</div>`;
   document.querySelector('#devices').append(card);
   const screen = card.querySelector('.screen'), img = card.querySelector('img');
   const canvas = card.querySelector('canvas'), ctx = canvas.getContext('2d');
@@ -38,7 +40,7 @@ function mount(name) {
   async function command(kind, points) {
     if(localBusy) return;
     localBusy=true; localError=''; cancel();
-    status.textContent=kind==='gesture' ? 'Executing gesture…' : `${kind}…`;
+    status.textContent=`${LABELS[kind] || kind}…`;
     const body=kind==='connect' ? {} : {epoch:state.epoch, sequence:state.next_sequence, frame, ...(points?{points}:{})};
     render();
     try { state=await (await api(kind, body)).json(); statusAt=performance.now(); }
@@ -50,7 +52,7 @@ function mount(name) {
     if(!allowed && capture.id!==null) cancel();
     for(const button of card.querySelectorAll('[data-command]')) {
       const kind=button.dataset.command;
-      button.disabled=localBusy || state.busy || state.uncertain || (kind==='connect' ? state.connected : !state.connected) || (kind==='activate' && !allowed);
+      button.disabled=localBusy || state.busy || state.uncertain || (kind==='connect' ? state.connected : !state.connected) || (NEEDS_VIDEO.has(kind) && !allowed);
     }
     if(!localBusy) status.textContent=localError || state.message || 'Disconnected';
     freshness.textContent=fresh() ? `Live · frame ${frame}` : 'Video stale / unavailable — input disabled';

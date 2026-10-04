@@ -1,0 +1,96 @@
+{
+  "machine": "arm64",
+  "system": "macOS-26.2-arm64-arm-64bit",
+  "ffmpeg": "ffmpeg version 9.0.1 Copyright (c) 2000-2026 the FFmpeg developers",
+  "threads": 2,
+  "rows": [
+    {
+      "rate": "30",
+      "mode": "decode",
+      "source": "/Users/ashernoble/.claude/jobs/4e7efedf/tmp/agent-fps/rec/demo-replay-20261004-pointer-v3/01_pointer_immediate_r1.mov",
+      "elapsed_s": [
+        1.0781672080047429,
+        1.049907875014469
+      ],
+      "median_s": 1.064037541509606,
+      "bytes": null
+    },
+    {
+      "rate": "60",
+      "mode": "decode",
+      "source": "/Users/ashernoble/.claude/jobs/4e7efedf/tmp/agent-fps/rec/demo-replay-20261004-variance/v3_01/01_pointer_immediate_r1.mov",
+      "elapsed_s": [
+        1.1937971669249237,
+        1.170757291954942
+      ],
+      "median_s": 1.1822772294399329,
+      "bytes": null
+    },
+    {
+      "rate": "30",
+      "mode": "scale512",
+      "source": "/Users/ashernoble/.claude/jobs/4e7efedf/tmp/agent-fps/rec/demo-replay-20261004-pointer-v3/01_pointer_immediate_r1.mov",
+      "elapsed_s": [
+        1.1296197909396142,
+        1.0873874169774354
+      ],
+      "median_s": 1.1085036039585248,
+      "bytes": null
+    },
+    {
+      "rate": "60",
+      "mode": "scale512",
+      "source": "/Users/ashernoble/.claude/jobs/4e7efedf/tmp/agent-fps/rec/demo-replay-20261004-variance/v3_01/01_pointer_immediate_r1.mov",
+      "elapsed_s": [
+        1.1517361670266837,
+        1.146102458005771
+      ],
+      "median_s": 1.1489193125162274,
+      "bytes": null
+    },
+    {
+      "rate": "30",
+      "mode": "encode512",
+      "source": "/Users/ashernoble/.claude/jobs/4e7efedf/tmp/agent-fps/rec/demo-replay-20261004-pointer-v3/01_pointer_immediate_r1.mov",
+      "elapsed_s": [
+        3.3715376670006663,
+        3.4211964160203934
+      ],
+      "median_s": 3.39636704151053,
+      "bytes": 2825982
+    },
+    {
+      "rate": "60",
+      "mode": "encode512",
+      "source": "/Users/ashernoble/.claude/jobs/4e7efedf/tmp/agent-fps/rec/demo-replay-20261004-variance/v3_01/01_pointer_immediate_r1.mov",
+      "elapsed_s": [
+        5.297893499955535,
+        5.05350462498609
+      ],
+      "median_s": 5.175699062470812,
+      "bytes": 3042116
+    },
+    {
+      "rate": "30",
+      "mode": "encode64",
+      "source": "/Users/ashernoble/.claude/jobs/4e7efedf/tmp/agent-fps/rec/demo-replay-20261004-pointer-v3/01_pointer_immediate_r1.mov",
+      "elapsed_s": [
+        0.9867383330129087,
+        0.9203797079389915
+      ],
+      "median_s": 0.9535590204759501,
+      "bytes": 59817
+    },
+    {
+      "rate": "60",
+      "mode": "encode64",
+      "source": "/Users/ashernoble/.claude/jobs/4e7efedf/tmp/agent-fps/rec/demo-replay-20261004-variance/v3_01/01_pointer_immediate_r1.mov",
+      "elapsed_s": [
+        1.2101169159868732,
+        1.1879724999889731
+      ],
+      "median_s": 1.1990447079879232,
+      "bytes": 70397
+    }
+  ]
+}

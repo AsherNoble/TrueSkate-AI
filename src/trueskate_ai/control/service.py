@@ -23,6 +23,18 @@ MAX_POINTS = 512
 MAX_DURATION_MS = 5000
 STALE_SECONDS = 2.0
 BUNDLE = "com.trueaxis.skate"
+# Fixed system-edge swipes (normalized x, y, ms). Control Centre starts at the
+# top-right status-bar edge; App Switcher swipes up from the home indicator and
+# pauses mid-screen before release. Home uses WDA's native home-button press.
+SYSTEM_PATHS = {
+    "control_center": ((0.9, 0.0, 0), (0.9, 0.15, 100), (0.9, 0.35, 250), (0.9, 0.5, 400)),
+    "app_switcher": ((0.5, 0.995, 0), (0.5, 0.85, 120), (0.5, 0.7, 300),
+                     (0.5, 0.62, 450), (0.5, 0.62, 1250)),
+}
+SYSTEM_COMMANDS = ("home", *SYSTEM_PATHS)
+COMMAND_MESSAGES = {"gesture": "Executing gesture", "activate": "Opening True Skate",
+                    "home": "Going to Home Screen", "control_center": "Opening Control Centre",
+                    "app_switcher": "Opening App Switcher"}
 
 
 class ControlError(Exception):
@@ -292,8 +304,13 @@ class Device:
                 self.rpc("DELETE", path)
                 self.session, self.epoch = None, None
                 self.message = "Disconnected"
-            elif kind in ("gesture", "activate"):
-                actions = gesture_actions(body.get("points")) if kind == "gesture" else None
+            elif kind in ("gesture", "activate", *SYSTEM_COMMANDS):
+                if kind == "gesture":
+                    actions = gesture_actions(body.get("points"))
+                elif kind in SYSTEM_PATHS:
+                    actions = gesture_actions([{"x": x, "y": y, "t": t} for x, y, t in SYSTEM_PATHS[kind]])
+                else:
+                    actions = None
                 if not self.relay.fresh(body.get("frame")):
                     raise ControlError("Displayed video is stale; command discarded")
                 size = self.rpc("GET", path + "/window/rect")
@@ -301,10 +318,13 @@ class Device:
                     raise ControlError("Device geometry changed; command discarded")
                 if not self.relay.fresh(body.get("frame")):
                     raise ControlError("Displayed video became stale; command discarded")
-                self.message = "Executing gesture" if actions else "Opening True Skate"
+                self.message = COMMAND_MESSAGES[kind]
                 mutating = True
                 if actions:
                     self.rpc("POST", path + "/actions", actions)
+                elif kind == "home":
+                    self.rpc("POST", path + "/execute/sync",
+                             {"script": "mobile: pressButton", "args": [{"name": "home"}]})
                 else:
                     self.rpc("POST", path + "/execute/sync",
                              {"script": "mobile: activateApp", "args": [{"bundleId": BUNDLE}]})
@@ -435,7 +455,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             self.check(mutation=True)
             device, endpoint = self.route()
-            if endpoint not in ("connect", "disconnect", "gesture", "activate"):
+            if endpoint not in ("connect", "disconnect", "gesture", "activate", *SYSTEM_COMMANDS):
                 raise ControlError("Unknown endpoint", 404)
             if self.headers.get("Transfer-Encoding") or self.headers.get("Content-Type") != "application/json":
                 raise ControlError("JSON with Content-Length required", 400)

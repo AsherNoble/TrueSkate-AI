@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-10-02. Behavioural cloning is the development direction.
+Updated 2026-10-05. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -18,8 +18,7 @@ and the collected doubling (18,394 training clips, weighted to Kansas City
 and Los Angeles, plus three new parks) raised the validation plateau to
 **91.37%**, a 20.3% error reduction: still data-limited by the fixed rule,
 but only just ([M1-EXPAND](experiments/M1-EXPAND-20260929.md)). Its best
-checkpoint (92.16% validation) has not been scored on test. On 907 held-out
-recordings in the three new parks it scores 87.32%. The first clean-label retrain (128×288, seed 0) scored
+checkpoint (92.16% validation) has not been scored on test. On 907 clips selected in whole recording sessions in the three new parks it scores 87.32%. The first clean-label retrain (128×288, seed 0) scored
 **88.50%** on test. The previous
 recipe scored 80.05%; same size, park mix and split protocol
 ([M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md)). Remaining
@@ -290,8 +289,11 @@ moving for ~7–8 s after the pre-segment reset. The branch adds:
   comparison.
 
 No corpus clip was moved or deleted; exclusion is manifest-only. The rig's stable
-release is `080bb97` (rollback `1b8497e`). Exclusion, recollection
-and flag adoption await operator decisions.
+release is `189dfde` (rollback `080bb97`), deployed 2026-10-03 for the
+notification fixes (PRs #30, #31). `com.trueskate.services` was restarted onto
+it and owns its iproxies; the storage guard loads it on each run. The dashboard
+still runs the code it loaded earlier, which is unchanged in this release.
+Exclusion, recollection and flag adoption await operator decisions.
 
 **Rig note (2026-09-27):** with both recorders idle (`/wda/video` null) and no
 collector running, `scripts/recover_remotexpc_attachments.sh --delete` removed
@@ -299,6 +301,47 @@ collector running, `scripts/recover_remotexpc_attachments.sh --delete` removed
 M1-DIE5-R100 segment) and 7 on XR2. Both phones re-listed 0 remaining. One
 earlier XR2 dry run failed transiently (`tmp/Attachments` not found); a
 repeat succeeded.
+
+
+## HID gesture execution and recording review
+
+The ESP32 Bluetooth pointer pilot supports separate strokes with short gaps,
+but XR2 forces a 15 ms connection interval and approximately 6% of the measured
+reports landed a visible frame early or late. A wired Pico mouse is a proposed
+next transport, not a validated 1 ms game-input path. The powered Lightning hub,
+Ethernet, WDA network transport and RemoteXPC recording-cleanup chain still need
+a bounded hardware pilot. Adapter confidence figures in the review are
+subjective engineering priors, not measured reliability.
+
+AssistiveTouch supports preset and recorded multi-finger gestures. Independent
+live control of two mouse-driven contacts remains unverified. In three short
+XR2 diagnostic recordings, the pointer-only and WDA spin-hold controls worked;
+the combined condition showed the moving pointer trail while the separate spin
+button remained held. This establishes coexistence for that WDA/AssistiveTouch
+condition, not physical-pad operation, accurate spin angles or microsecond
+touch delivery. A human-finger/pad coexistence test remains necessary.
+
+Existing 60 fps pointer replays contain distinct gameplay changes in all 3,364
+audited moving-frame pairs after overlay/compression controls. Effective capture
+was 59.30–59.65 fps with approximately 0.9% absent nominal 60 Hz slots, mostly
+near startup. Raw size was 75.19 MB/min against 74.75 MB/min for the compared
+30 fps recordings; equal bitrate does not establish equal image fidelity.
+Use 60 fps for replay diagnostics. Preserve the current collection recipe until
+separately authorized one-minute capture/alignment validation and a temporal
+sampling decision: the exact-PTS extractor still supplies 32 frames across
+2.3 seconds, so raising raw capture rate alone does not increase Model 1's
+input sequence length. Collection remains off. See
+[HID-REVIEW-20261004](experiments/HID-REVIEW-20261004.md) and the prior
+[HID-POINTER-20261004](experiments/HID-POINTER-20261004.md).
+
+
+The consolidated HID host/firmware source uses protocol v2 with exclusive ownership,
+cancellation, fail-closed foreground checks, a one-minute recording budget, neutral
+recovery and exact ordered notification-attempt receipts. This source revision is
+not deployed; older deployed firmware is intentionally rejected by the new host.
+Only XR2 has a measured profile. Historical spin harnesses remain evidence, with no
+curved/spin certification or physical-pad validation. See
+[HID source operating notes](../hardware/hid_pointer/NOTES.md).
 
 ## Curved gesture execution gate
 
