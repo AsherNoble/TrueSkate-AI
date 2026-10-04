@@ -1,0 +1,13 @@
+2026-10-04 XR2, run_pointer_schedule.py --strokes validation-lift-strokes.json --lift immediate
+  --lift-for sep_700=separate --lift-for sep_760=separate (recording val2/01_pointer_immediate_r1.mov on the rig).
+Each flick: press at x=60, three reports to x=140/220/300 at 15 ms, then the lift.
+"trail reaches" = furthest orange trail pixel on the flick's row (trail glow adds ~8 pt);
+"cursor after lift" = median hovering-cursor centre 0.27-0.8 s after the trail ends.
+
+imm_760: trail frames 5, row y 758, trail reaches x 309.5; cursor after lift [300.2 757.8]
+sep_700: trail frames 5, row y 697, trail reaches x 310.5; cursor after lift [301.2 698.2]
+imm_700: trail frames 5, row y 698, trail reaches x 302.5; cursor after lift [300.8 698.2]
+sep_760: trail frames 6, row y 756, trail reaches x 311.0; cursor after lift [302.2 758.2]
+
+Earlier run (validation-taps-and-combined-lift.txt): a lift carried on the last move
+report ("flick_with_move") lost that move: trail to x 228, cursor rests at (219, 700).

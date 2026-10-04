@@ -1,0 +1,306 @@
+[
+ {
+  "dx": 11,
+  "dy": 0,
+  "reports": 25,
+  "interval_us": 15000,
+  "spot": "C",
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081554.802845,
+  "n_events": 92,
+  "max_late_us": 1,
+  "counts": [
+   275,
+   0
+  ],
+  "start": [
+   109.25,
+   368.25
+  ],
+  "end": [
+   331.75,
+   368.25
+  ],
+  "moved_pt": [
+   222.5,
+   0.0
+  ],
+  "gain": [
+   0.8091,
+   NaN
+  ],
+  "n_pre": 8,
+  "n_post": 9,
+  "spread_pt": [
+   0.5,
+   0.5
+  ]
+ },
+ {
+  "dx": 16,
+  "dy": 0,
+  "reports": 16,
+  "interval_us": 15000,
+  "spot": "C",
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081558.510516,
+  "n_events": 83,
+  "max_late_us": 1,
+  "counts": [
+   256,
+   0
+  ],
+  "start": [
+   109.25,
+   367.75
+  ],
+  "end": [
+   331.75,
+   368.25
+  ],
+  "moved_pt": [
+   222.5,
+   0.5
+  ],
+  "gain": [
+   0.8691,
+   NaN
+  ],
+  "n_pre": 8,
+  "n_post": 10,
+  "spread_pt": [
+   1.0,
+   0.0
+  ]
+ },
+ {
+  "dx": 22,
+  "dy": 0,
+  "reports": 7,
+  "interval_us": 15000,
+  "spot": "C",
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081562.010386,
+  "n_events": 74,
+  "max_late_us": 5,
+  "counts": [
+   154,
+   0
+  ],
+  "start": [
+   109.25,
+   368.75
+  ],
+  "end": [
+   248.25,
+   368.25
+  ],
+  "moved_pt": [
+   139.0,
+   -0.5
+  ],
+  "gain": [
+   0.9026,
+   NaN
+  ],
+  "n_pre": 8,
+  "n_post": 9,
+  "spread_pt": [
+   0.5,
+   0.0
+  ]
+ },
+ {
+  "dx": 32,
+  "dy": 0,
+  "reports": 5,
+  "interval_us": 15000,
+  "spot": "C",
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081565.411189,
+  "n_events": 72,
+  "max_late_us": 2,
+  "counts": [
+   160,
+   0
+  ],
+  "start": [
+   109.25,
+   367.75
+  ],
+  "end": [
+   304.25,
+   368.25
+  ],
+  "moved_pt": [
+   195.0,
+   0.5
+  ],
+  "gain": [
+   1.2188,
+   NaN
+  ],
+  "n_pre": 8,
+  "n_post": 9,
+  "spread_pt": [
+   0.5,
+   0.5
+  ]
+ },
+ {
+  "dx": 45,
+  "dy": 0,
+  "reports": 2,
+  "interval_us": 15000,
+  "spot": "C",
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081568.72545,
+  "n_events": 69,
+  "max_late_us": 1,
+  "counts": [
+   90,
+   0
+  ],
+  "start": [
+   109.25,
+   368.75
+  ],
+  "end": [
+   250.75,
+   368.25
+  ],
+  "moved_pt": [
+   141.5,
+   -0.5
+  ],
+  "gain": [
+   1.5722,
+   NaN
+  ],
+  "n_pre": 8,
+  "n_post": 10,
+  "spread_pt": [
+   0.5,
+   0.5
+  ]
+ },
+ {
+  "dx": 64,
+  "dy": 0,
+  "reports": 1,
+  "interval_us": 15000,
+  "spot": "C",
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081572.0564969,
+  "n_events": 68,
+  "max_late_us": 1,
+  "counts": [
+   64,
+   0
+  ],
+  "start": [
+   109.0,
+   367.75
+  ],
+  "end": [
+   226.25,
+   368.5
+  ],
+  "moved_pt": [
+   117.25,
+   0.75
+  ],
+  "gain": [
+   1.832,
+   NaN
+  ],
+  "n_pre": 8,
+  "n_post": 10,
+  "spread_pt": [
+   10.0,
+   1.0
+  ]
+ },
+ {
+  "dx": 90,
+  "dy": 0,
+  "reports": 1,
+  "interval_us": 15000,
+  "spot": "C",
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081575.3567622,
+  "n_events": 68,
+  "max_late_us": 1,
+  "counts": [
+   90,
+   0
+  ],
+  "start": [
+   109.25,
+   368.25
+  ],
+  "end": [
+   262.75,
+   368.75
+  ],
+  "moved_pt": [
+   153.5,
+   0.5
+  ],
+  "gain": [
+   1.7056,
+   NaN
+  ],
+  "n_pre": 8,
+  "n_post": 10,
+  "spread_pt": [
+   9.5,
+   1.0
+  ]
+ },
+ {
+  "dx": 127,
+  "dy": 0,
+  "reports": 1,
+  "interval_us": 15000,
+  "spot": "C",
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081578.655499,
+  "n_events": 68,
+  "max_late_us": 1,
+  "counts": [
+   127,
+   0
+  ],
+  "start": [
+   109.25,
+   368.25
+  ],
+  "end": [
+   298.75,
+   368.75
+  ],
+  "moved_pt": [
+   189.5,
+   0.5
+  ],
+  "gain": [
+   1.4921,
+   NaN
+  ],
+  "n_pre": 8,
+  "n_post": 10,
+  "spread_pt": [
+   9.0,
+   1.0
+  ]
+ }
+]
