@@ -18,8 +18,7 @@ and the collected doubling (18,394 training clips, weighted to Kansas City
 and Los Angeles, plus three new parks) raised the validation plateau to
 **91.37%**, a 20.3% error reduction: still data-limited by the fixed rule,
 but only just ([M1-EXPAND](experiments/M1-EXPAND-20260929.md)). Its best
-checkpoint (92.16% validation) has not been scored on test. On 907 held-out
-recordings in the three new parks it scores 87.32%. The first clean-label retrain (128×288, seed 0) scored
+checkpoint (92.16% validation) has not been scored on test. On 907 clips selected in whole recording sessions in the three new parks it scores 87.32%. The first clean-label retrain (128×288, seed 0) scored
 **88.50%** on test. The previous
 recipe scored 80.05%; same size, park mix and split protocol
 ([M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md)). Remaining
