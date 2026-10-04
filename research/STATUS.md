@@ -430,3 +430,10 @@ error targets inherited from linear (0.03 normalized position, 0.10 s duration).
 Practical test: infer a single-contact expert trick and replay it in Workshop,
 checking trick reproduction alongside trajectory accuracy. Model 2 is not
 needed for that test. Initial speed/heading/contact state should be comparable.
+
+
+Research execution/viewer source now emits version 2 content-bound review bundles
+and checks foreground/lateness immediately before each scheduled submission. These
+synthetic/source checks do not replace human execution fidelity evidence, select a
+spacing rule or certify curved/spin collection. Historical v1 reviews retain weaker
+provenance and require explicit compatibility when imported by current readers.

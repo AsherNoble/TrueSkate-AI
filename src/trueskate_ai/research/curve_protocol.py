@@ -114,6 +114,7 @@ def command_manifest():
         'scripts/collection/probe_cubic_curves.py', 'scripts/inspect/prepare_curve_exec.py',
         'scripts/inspect/measure_curve_exec.py', 'scripts/inspect/report_curve_exec.py',
         'scripts/inspect/build_curve_audit.py', 'scripts/inspect/templates/curve_audit.html',
+        'src/trueskate_ai/research/review_provenance.py', 'scripts/inspect/templates/review_integrity.js',
     ]
     manifest = dict(protocol=copy.deepcopy(PROTOCOL),devices=stages,
                     source_sha256={path:hashlib.sha256((root/path).read_bytes()).hexdigest() for path in sources})

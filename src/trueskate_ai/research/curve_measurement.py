@@ -272,12 +272,18 @@ def score_observation(observation,compiled,curve,*,onset_s,frame_s,uncertainty=0
                           and observation.get('interruption') is not None)
 
 
-def measure_recording(out):
+def measure_recording(out, manifest_path):
     out=Path(out)
     admission=json.loads((out/'admission.json').read_text())
     if not admission['accepted']:raise ValueError('recording not admitted')
     planned=json.loads((out/'planned.json').read_text())
-    records=json.loads((out/'wda-timing.json').read_text())['records']
+    from trueskate_ai.research.review_provenance import curve_execution,file_sha256
+    frozen=json.loads(Path(manifest_path).read_text())
+    execution=json.loads((out/'execution.json').read_text())
+    report=json.loads((out/'wda-timing.json').read_text())
+    proof=curve_execution(frozen,planned,execution,report)
+    proof.update(frozen_manifest=frozen,original_sha256=file_sha256(out/'original.mov'),calibration=admission)
+    records=report['records']
     pts=np.asarray(admission['original_pts_s'])
     result=[]
     from trueskate_ai.sim.cubic_curve import CubicInTime,compile_curve
@@ -301,7 +307,7 @@ def measure_recording(out):
                            offline_eligible=spec['offline_eligible'],observation=observation,metrics=scored,
                            request_overhead_s=records[i]['request_finished']['monotonic_s']-records[i]['submitted_to_ios']['monotonic_s']-total,
                            submission_to_completion_s=records[i]['ios_completion_callback']['monotonic_s']-records[i]['submitted_to_ios']['monotonic_s'],
-                           original_video=str(out/'original.mov'),onset_s=onset))
+                           original_video=str(out/'original.mov'),onset_s=onset,execution_provenance=proof))
     save_new(out/'measurement.json',dict(rows=result,extractor_parameters=PROTOCOL['orange_hsv'],
                                         automated_evaluable=sum(r['metrics']['evaluable'] for r in result)))
     return result

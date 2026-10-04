@@ -80,6 +80,17 @@ def test_spacing_constraints_and_floor():
     with pytest.raises(ValueError):compile_curve(c,n=16,max_segment_duration_ms=20)
 
 
+def test_closed_endpoint_snaps_before_range_rejection():
+    compiled=compile_curve(cubic(.301),n=8)
+    end=compiled.boundaries_ms[-1]/1000
+    label=cubic_command_label(compiled,np.nextafter(end,np.inf))
+    assert label.active
+    assert (label.x,label.y)==pytest.approx(compiled.points_normalized[-1])
+    assert cubic_command_label(compiled,-1e-13).active
+    assert not cubic_command_label(compiled,end+1e-6).active
+    assert not cubic_command_label(compiled,-1e-6).active
+
+
 def test_bound_covers_dense_time_aligned_error_and_device_scaling():
     c=cubic();compiled=compile_curve(c,n=8,device_size=(375,812))
     errors=[]

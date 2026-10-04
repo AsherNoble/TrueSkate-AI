@@ -7,7 +7,7 @@ import socket
 import signal
 import subprocess
 from trueskate_ai.research.curve_protocol import verify_manifest,save_new,EXPERIMENT,DEVICES
-from trueskate_ai.research.curve_probe import scheduled_commands,pointer_for,run_recording
+from trueskate_ai.research.curve_probe import scheduled_commands,command_payload,run_recording
 
 
 def main():
@@ -52,7 +52,7 @@ def main():
         worker.connect()
         driver=worker.driver
         def guard():
-            if driver.query_app_state(BUNDLE_ID)!=4 or worker._active_bundle_id() not in (None,BUNDLE_ID):
+            if driver.query_app_state(BUNDLE_ID)!=4 or worker._active_bundle_id()!=BUNDLE_ID:
                 raise RuntimeError('True Skate foreground lost')
             png=driver.get_screenshot_as_png()
             if is_editor_frame(png) or is_menu_frame(png,allow_idle_navigation=True):
@@ -64,15 +64,15 @@ def main():
         guard()
         size=(int(worker.device_w),int(worker.device_h))
         commands=scheduled_commands(rows[a.segment_index*8:(a.segment_index+1)*8])
-        pointers=[pointer_for(s,size) for s in commands]
-        pointer_map={id(spec):finger for spec,finger in zip(commands,pointers)}
+        payloads=[command_payload(s,size) for s in commands]
+        payload_map={id(spec):payload for spec,payload in zip(commands,payloads)}
         # One W3C request per curve/control; no release requests inside timing capture.
-        def perform(spec):driver.execute('actions',{'actions':[pointer_map[id(spec)].encode()]})
+        def perform(spec):return driver.execute('actions',payload_map[id(spec)])
         timing=WDAActionTimingCapture(wda_port=worker._cfg['wda_port'],expected_revision=a.wda_revision)
         metadata=dict(experiment=EXPERIMENT,manifest_sha256=manifest['sha256'],device=a.device,
                       stage=a.stage,segment_index=a.segment_index,park=a.park,park_source='operator observation',
                       allow_idle_navigation=True,settle=settle.summary(),device_size=list(size),
-                      encoded_actions=[f.encode() for f in pointers],script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
+                      encoded_actions=[p['actions'][0] for p in payloads],script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
         run_recording(recorder=XCTestScreenRecorder(driver,fps=30),timing=timing,commands=commands,
                       perform=perform,guard=guard,out=a.out,revision=a.wda_revision,metadata=metadata)
         from trueskate_ai.research.curve_measurement import admit_recording

@@ -63,11 +63,12 @@ def test_bounded_schedule(tmp_path):
 def test_failure_is_preserved_cleaned_and_never_replaced(tmp_path,mode):
     kwargs,recorder,timing,calls=harness(tmp_path,mode)
     with pytest.raises((RuntimeError,ValueError)):run_recording(**kwargs)
-    assert recorder.starts==1 and not recorder.is_recording and not timing.active
+    assert recorder.starts==1 and not timing.active
+    assert recorder.is_recording == (mode=='stop')  # stop failure leaves state unknown
     assert (tmp_path/'recording'/'execution.json').exists()
     if mode=='start':assert not calls and recorder.stops==0
     else:assert recorder.stops==1
-    if mode=='stop':assert recorder.aborts==1
+    assert recorder.aborts==0  # never send a second stop RPC
 
 
 def test_partial_recordings_keep_spread_controls():
@@ -75,3 +76,16 @@ def test_partial_recordings_keep_spread_controls():
     for n in range(1,9):
         specs=scheduled_commands(rows[:n]);assert len(specs)==n+3
         assert [s['role'] for s in specs if s['kind']=='control']==['start','middle','end']
+
+
+@pytest.mark.parametrize('mode',['lost_during_sleep','guard_late'])
+def test_guard_after_sleep_prevents_submission(tmp_path,mode):
+    kwargs,recorder,timing,calls=harness(tmp_path)
+    now=[0.]
+    def guard():
+        if now[0]>=1:
+            if mode=='lost_during_sleep':raise RuntimeError('foreground changed while asleep')
+            now[0]+=.6
+    kwargs.update(clock=lambda:now[0],sleep=lambda d:now.__setitem__(0,now[0]+d),guard=guard)
+    with pytest.raises(RuntimeError):run_recording(**kwargs)
+    assert not calls and recorder.starts==recorder.stops==1 and recorder.aborts==0

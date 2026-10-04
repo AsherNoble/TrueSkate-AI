@@ -18,7 +18,7 @@ def fixture(tmp_path):
 
 
 def test_counts_and_exact_preservation(tmp_path):
-    evidence,p,export=fixture(tmp_path);out=tmp_path/'out';raw=p.read_bytes();r=load_module().report(p,evidence,out)
+    evidence,p,export=fixture(tmp_path);out=tmp_path/'out';raw=p.read_bytes();r=load_module().report(p,evidence,out,allow_legacy=True)
     assert r['overall']==dict(n=135,trace=120,hold=0,flicker=15,board_moved=120)
     assert (out/'operator-assessments.json').read_bytes()==raw
     assert all(c['n']==3 for c in r['by_cell'])
@@ -33,9 +33,18 @@ def test_bad_export_does_not_write_output(tmp_path,mode):
     elif mode=='board':export['assessments'][token]['board_moved']='true'
     else:export['assessments'][token]['duration_ms']=999
     p.write_text(json.dumps(export));out=tmp_path/'out'
-    with pytest.raises(ValueError):load_module().report(p,evidence,out)
+    with pytest.raises(ValueError):load_module().report(p,evidence,out,allow_legacy=True)
     assert not out.exists()
 
 
 def test_duplicate_keys_rejected():
     with pytest.raises(ValueError):json.loads('{"a":1,"a":2}',object_pairs_hook=load_module().unique_object)
+
+
+def test_legacy_requires_explicit_compatibility_and_reports_limit(tmp_path):
+    evidence,p,export=fixture(tmp_path)
+    with pytest.raises(ValueError,match='--allow-legacy'):
+        load_module().report(p,evidence,tmp_path/'rejected')
+    with pytest.warns(UserWarning,match='weaker provenance'):
+        result=load_module().report(p,evidence,tmp_path/'accepted',allow_legacy=True)
+    assert 'weaker provenance' in result['provenance']

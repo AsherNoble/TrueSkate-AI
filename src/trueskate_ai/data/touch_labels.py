@@ -153,12 +153,12 @@ def cubic_command_label(compiled, t_s: float) -> TouchLabel:
         raise ValueError('label time must be finite')
     t_ms = t_s * 1000
     boundaries = compiled.boundaries_ms
-    if t_ms < 0 or t_ms > boundaries[-1]:
-        return TouchLabel(False,-1.,-1.)
     # Avoid float seconds moving an exact boundary to its preceding interval.
     nearest = round(t_ms)
     if abs(t_ms-nearest) < 1e-9:
         t_ms = nearest
+    if t_ms < 0 or t_ms > boundaries[-1]:
+        return TouchLabel(False,-1.,-1.)
     k = min(len(boundaries)-2, bisect_right(boundaries,t_ms)-1)
     a,b = compiled.points_normalized[k:k+2]
     fraction = (t_ms-boundaries[k])/(boundaries[k+1]-boundaries[k])

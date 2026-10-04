@@ -89,6 +89,7 @@ def run_recording(*, recorder, timing, commands, perform, guard, settle, out,
                   revision, metadata, clock=time.monotonic, sleep=deadline_sleep,
                   epoch=time.time):
     """Reset at slot−3, settle by slot; stop on first failure and retain evidence."""
+    metadata = dict(metadata, wda_revision=revision)
     out = Path(out)
     out.mkdir(parents=True, exist_ok=False)
     save_new(out/'planned.json', dict(**metadata, commands=commands, training_admission=False))
@@ -113,10 +114,13 @@ def run_recording(*, recorder, timing, commands, perform, guard, settle, out,
                                  woke_monotonic_s=woke, lateness_s=woke-target))
             if woke > target + LATE_S:
                 raise RuntimeError('sleep overrun')
-            event = dict(spec=spec, call_start_monotonic_s=clock(), call_start_epoch_s=epoch())
+            guard()
+            if clock() > target + LATE_S:
+                raise RuntimeError('preparation/execution schedule overrun after foreground guard')
+            event = dict(spec=spec, payload=spec['payload'], payload_sha256=digest(spec['payload']), call_start_monotonic_s=clock(), call_start_epoch_s=epoch())
             events.append(event)
-            perform(spec)
-            event.update(call_end_monotonic_s=clock(), call_end_epoch_s=epoch())
+            response = perform(spec)
+            event.update(response=response, success=True,call_end_monotonic_s=clock(), call_end_epoch_s=epoch())
             deadline = origin + (commands[index+1]['slot_s'] if index+1 < len(commands) else 59.)
             if clock() >= deadline:
                 raise RuntimeError('execution overrun')
@@ -159,7 +163,7 @@ def run_recording(*, recorder, timing, commands, perform, guard, settle, out,
             except Exception as exc:
                 error = f'timing validation failed: {exc}'
         save_new(out/'execution.json', dict(**metadata, events=events, video=video,
-                                          schedule=schedule, error=error, training_admission=False))
+                                          schedule=schedule, error=error, execution_schema='research-execution-v2', training_admission=False))
     if error:
         raise RuntimeError(error)
     return video, report

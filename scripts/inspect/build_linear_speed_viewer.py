@@ -8,13 +8,14 @@ from pathlib import Path
 from trueskate_ai.research.curve_measurement import frame_pts, _decode_source_frames, read_native_frames
 from trueskate_ai.research.curve_protocol import save_new
 from trueskate_ai.research.linear_speed_probe import verify_manifest
+from trueskate_ai.research.review_provenance import verify_execution,bundle,file_sha256
 
 
 def build(manifest_path, recordings, out):
     frozen = json.loads(manifest_path.read_text())
     verify_manifest(frozen)
     out.mkdir(parents=True, exist_ok=False)
-    videos, clips = [], []
+    videos, clips, proofs = [], [], {}
     for repeat, commands in enumerate(frozen['recordings'], 1):
         run = recordings/f'recording_{repeat}'
         video_index = None
@@ -22,6 +23,10 @@ def build(manifest_path, recordings, out):
         if (run/'original.mov').exists():
             execution = json.loads((run/'execution.json').read_text())
             report = json.loads((run/'wda-timing.json').read_text())
+            planned = json.loads((run/'planned.json').read_text())
+            proof = verify_execution(frozen, commands, planned, execution, report, [c['payload'] for c in commands])
+            proof['original_sha256'] = file_sha256(run/'original.mov')
+            proofs[str(repeat)] = proof
             pts = frame_pts(run/'original.mov')
             _decode_source_frames(run/'original.mov', pts, keep=False)
             destination = out/f'recording_{repeat}.mp4'
@@ -68,7 +73,7 @@ def build(manifest_path, recordings, out):
                         filename = f'{spec["command_id"]}/{source_frame:06d}.jpg'
                         if not cv2.imwrite(str(out/filename), frame, [cv2.IMWRITE_JPEG_QUALITY,90]):
                             raise ValueError('native viewer frame write failed')
-                        native.append(dict(pts_s=pts_s,source_frame=source_frame,path=filename))
+                        native.append(dict(pts_s=pts_s,source_frame=source_frame,path=filename,sha256=file_sha256(out/filename)))
                     info['frames'] = native
         for spec in commands:
             if spec['kind'] == 'diagnostic':
@@ -76,11 +81,14 @@ def build(manifest_path, recordings, out):
                 clips.append(dict(id=spec['command_id'], duration_ms=spec['duration_ms'], repeat=repeat,
                                   title=f"{spec['duration_ms']} ms · repeat {repeat}", video=video_index,
                                   executed=info is not None, **(info or {})))
-    data = dict(manifest_sha256=frozen['sha256'], videos=videos, clips=clips)
+    private_bundle = bundle('linear-speed-v2',clips,dict(frozen_manifest=frozen,executions=proofs,videos=videos),dict(command_ids=[c['id'] for c in clips]))
+    save_new(out.parent/(out.name+'-private-v2.json'),private_bundle)
+    data = dict(schema=private_bundle['schema'],version=2,bundle_sha256=private_bundle['bundle_sha256'],manifest_sha256=frozen['sha256'], videos=videos, clips=clips)
     save_new(out/'provenance.json', data)
     (out/'data.js').write_text('const DATA='+json.dumps(data).replace('<','\\u003c')+';\n')
     template = Path(__file__).with_name('templates')/'linear_speed.html'
     (out/'index.html').write_text(template.read_text())
+    (out/'review_integrity.js').write_bytes((Path(__file__).with_name('templates')/'review_integrity.js').read_bytes())
     return data
 
 

@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import numpy as np
 from trueskate_ai.research.linear_length_probe import manifest,blind_key
+from trueskate_ai.research.curve_protocol import digest
+from trueskate_ai.collection.wda_action_timing import BOUNDARIES
 
 
 def test_blinded_export_has_no_condition_or_source_leaks(tmp_path,monkeypatch):
@@ -20,19 +22,48 @@ def test_blinded_export_has_no_condition_or_source_leaks(tmp_path,monkeypatch):
     monkeypatch.setattr(module.cv2,'imwrite',write)
     for n,commands in enumerate(frozen['recordings'],1):
         run=recordings/f'recording_{n}';run.mkdir()
-        (run/'execution.json').write_text(json.dumps(dict(error=None,events=[dict(spec=c) for c in commands])))
+        metadata=dict(manifest_sha256=frozen['sha256'],device=frozen['device'],park=frozen['park'],experiment=frozen['experiment'],wda_revision='fixture')
+        (run/'original.mov').write_bytes(b'synthetic original')
+        (run/'planned.json').write_text(json.dumps(dict(**metadata,commands=commands)))
+        events=[dict(spec=c,payload=c['payload'],payload_sha256=digest(c['payload']),success=True,
+                     call_start_monotonic_s=c['slot_s'],call_end_monotonic_s=c['slot_s']+.1) for c in commands]
+        (run/'execution.json').write_text(json.dumps(dict(**metadata,execution_schema='research-execution-v2',error=None,events=events)))
         (run/'timing-diagnostic.json').write_text(json.dumps(dict(timing_checks_pass=True,fit=dict(intercept_s=0.,rate=1.))))
-        (run/'wda-timing.json').write_text(json.dumps(dict(records=[dict(submitted_to_ios=dict(monotonic_s=c['slot_s'])) for c in commands])))
+        records=[]
+        for i,c in enumerate(commands):
+            row=dict(sequence=i,outcome='success',session_id='fixture',missing_ios_callback=False,ios_callback_result=True)
+            row.update({name:dict(monotonic_s=c['slot_s']+k*.001,epoch_s=1000+c['slot_s']+k*.001) for k,name in enumerate(BOUNDARIES)})
+            records.append(row)
+        (run/'wda-timing.json').write_text(json.dumps(dict(schema_version=1,build_revision='fixture',dropped_records=0,records=records)))
     data=module.build(mp,recordings,out)
+    assert data['schema']=='blind-linear-length-v2'
     assert len(data['clips'])==135
     assert [c['id'] for c in data['clips']]==[x['token'] for x in blind_key(frozen)['items']]
     payload=(out/'data.js').read_text()
     for forbidden in ('duration_ms','length_fraction','repetition','recording','command_id','source_frame','onset_s'):assert forbidden not in payload
     assert not (out/'private-key.json').exists()
-    assert (recordings/'audit-private-source-map.json').exists()
+    assert (recordings/'audit-private-source-map-v2.json').exists()
     for clip in data['clips']:
         assert clip['frames'][0]['time_s']==0.
         assert all((out/f['path']).exists() for f in clip['frames'])
+    # Import the actual new bundle with full receipts, then mutate a displayed JPEG.
+    import pytest
+    report_script=script.with_name('report_linear_length_audit.py')
+    report_spec=importlib.util.spec_from_file_location('length_v2_report',report_script)
+    reporter=importlib.util.module_from_spec(report_spec);report_spec.loader.exec_module(reporter)
+    evidence=tmp_path/'evidence';evidence.mkdir()
+    (evidence/'manifest.json').write_text(json.dumps(frozen))
+    (evidence/'private-key.json').write_text(json.dumps(blind_key(frozen)))
+    (evidence/'summary.json').write_text(json.dumps(dict(blinded_bundle_sha256=data['bundle_sha256'])))
+    marks={c['id']:dict(trace_visible='trace',board_moved=True,comments='',updated_at='fixture') for c in data['clips']}
+    export=tmp_path/'export.json';export.write_text(json.dumps(dict(schema=data['schema'],bundle_sha256=data['bundle_sha256'],assessments=marks)))
+    kwargs=dict(bundle_map=recordings/'audit-private-source-map-v2.json',media_root=out)
+    result=reporter.report(export,evidence,tmp_path/'result',**kwargs)
+    assert result['overall']['n']==135 and result['provenance'].startswith('v2')
+    (out/data['clips'][0]['frames'][0]['path']).write_bytes(b'mutated JPEG')
+    with pytest.raises(ValueError,match='bytes changed'):
+        reporter.report(export,evidence,tmp_path/'invalid-result',**kwargs)
+    assert not (tmp_path/'invalid-result').exists()
 
 
 def test_review_defaults_and_saved_false_survive_navigation():
@@ -53,7 +84,7 @@ class Element {
 }
 const elements=new Map();
 global.document={getElementById(id){if(!elements.has(id))elements.set(id,new Element());return elements.get(id)},createElement(){return new Element()},addEventListener(){}};
-global.Image=Element;const storage=new Map();global.localStorage={getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)};
+global.reviewFrameUrl=async f=>f.path;global.Image=Element;const storage=new Map();global.localStorage={getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)};
 const DATA={bundle_sha256:'fixture',clips:[0,1,2].map(i=>({id:'opaque'+i,frames:[0,1,2].map(j=>({path:'opaque'+i+'/'+j+'.jpg',time_s:j/30}))}))};
 '''
     checks=r'''

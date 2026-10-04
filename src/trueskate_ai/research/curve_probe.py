@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict
 import time
 from pathlib import Path
-from trueskate_ai.research.curve_protocol import PROTOCOL,save_new,equivalent_commands
+from trueskate_ai.research.curve_protocol import PROTOCOL,save_new,equivalent_commands,digest
 from trueskate_ai.sim.cubic_curve import CubicInTime,compile_curve,curve_pointer
 from trueskate_ai.sim.touch_actions import make_touch_pointer
 from trueskate_ai.collection.wda_action_timing import validate_action_timing_report
@@ -35,9 +35,16 @@ def pointer_for(spec,device_size):
     return finger
 
 
+def command_payload(spec, device_size=(414,896)):
+    finger = pointer_for(spec, device_size)
+    finger.name = spec.get('command_id', 'control-' + spec.get('role', 'unknown'))
+    return {'actions': [finger.encode()]}
+
+
 def run_recording(*,recorder,timing,commands,perform,guard,out,revision,metadata,
                   clock=time.monotonic,sleep=time.sleep,epoch=time.time):
     """Always retain partial evidence and stop after any single failed attempt."""
+    metadata=dict(metadata,wda_revision=revision)
     out=Path(out)
     out.mkdir(parents=True,exist_ok=False)
     events=[]; timing_report=None; video=None; error=None; started=False
@@ -55,10 +62,14 @@ def run_recording(*,recorder,timing,commands,perform,guard,out,revision,metadata
             if now>target+PROTOCOL['late_tolerance_s']:
                 raise RuntimeError('Late command; schedule overrun')
             sleep(max(0,target-now))
-            event=dict(spec=spec,call_start_monotonic_s=clock(),call_start_epoch_s=epoch())
+            payload=command_payload(spec,metadata.get('device_size',(414,896)))
+            guard()
+            if clock()>target+PROTOCOL['late_tolerance_s']:
+                raise RuntimeError('Late command after foreground guard; schedule overrun')
+            event=dict(spec=spec,payload=payload,payload_sha256=digest(payload),call_start_monotonic_s=clock(),call_start_epoch_s=epoch())
             events.append(event)
-            perform(spec)
-            event.update(call_end_monotonic_s=clock(),call_end_epoch_s=epoch())
+            response=perform(spec)
+            event.update(response=response,success=True,call_end_monotonic_s=clock(),call_end_epoch_s=epoch())
             if clock()>origin+59.:
                 raise RuntimeError('Recording schedule overrun')
             guard()
@@ -81,18 +92,14 @@ def run_recording(*,recorder,timing,commands,perform,guard,out,revision,metadata
             except Exception as exc:
                 error=error or f'timing stop failed: {exc}'
         timing.cleanup()
-        if recorder.is_recording:
-            try:
-                recorder.abort()
-            except Exception as exc:
-                error=error or f'recorder cleanup failed: {exc}'
+        # A failed retrieval leaves recorder state unknown; never issue a second stop.
         if not error:
             try:
                 validate_action_timing_report(timing_report,expected_revision=revision,expected_count=len(commands))
             except Exception as exc:
                 error=f'timing validation failed: {exc}'
         save_new(out/'execution.json',dict(**metadata,events=events,video=video,error=error,
-                                         training_admission=False))
+                                         execution_schema='research-execution-v2',training_admission=False))
     if error:
         raise RuntimeError(error)
     return video,timing_report

@@ -66,7 +66,7 @@ def main():
             return base64.b64decode(_http_json('http://127.0.0.1:8100/screenshot')['value'])
         def guard():
             nonlocal last_settle_png
-            if driver.query_app_state(BUNDLE_ID) != 4 or worker._active_bundle_id() not in (None, BUNDLE_ID):
+            if driver.query_app_state(BUNDLE_ID) != 4 or worker._active_bundle_id() != BUNDLE_ID:
                 raise RuntimeError('True Skate foreground lost')
             png = None if args.human_gameplay_review else (last_settle_png if last_settle_png is not None else screenshot())
             last_settle_png = None

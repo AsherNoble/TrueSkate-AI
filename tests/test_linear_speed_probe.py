@@ -92,3 +92,18 @@ def test_fine_profile_preserves_original_and_changes_only_durations():
             assert actions[2] == dict(baseline[2], duration=c['duration_ms'])
     with pytest.raises(ValueError):
         manifest('unknown')
+
+
+@pytest.mark.parametrize('mode',['lost_during_sleep','guard_late'])
+def test_guard_after_sleep_prevents_submission(tmp_path,mode):
+    now=[0.];recorder,timing=Recorder(),Timing();calls=[]
+    def guard():
+        if now[0]>=1:
+            if mode=='lost_during_sleep':raise RuntimeError('foreground changed while asleep')
+            now[0]+=.2
+    with pytest.raises(RuntimeError):
+        run_recording(recorder=recorder,timing=timing,commands=manifest()['recordings'][0],
+                      perform=lambda s:calls.append(s),guard=guard,settle=lambda _:None,
+                      out=tmp_path/'run',revision='test',metadata={},clock=lambda:now[0],
+                      sleep=lambda d:now.__setitem__(0,now[0]+d))
+    assert not calls and recorder.starts==recorder.stops==1 and recorder.aborts==0
