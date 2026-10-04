@@ -2,7 +2,8 @@
 
 Status: calibrated and validated. Demo replay graded 3/3 Minor; corrected strokes
 graded 1 Minor, 2 Major. A 20-run repeatability test shows identical schedules
-ending in different tricks.
+ending in different tricks. Bluetooth LE carries one useful report per 15 ms, and
+~6% of them land a frame early or late; a USB pointer is next.
 XR2 only. No collection, no training admission.
 
 ## Question
@@ -191,6 +192,54 @@ The corrected points span each visible trail from end to end
   The cause is stray orange: pushes move the board's own graphic. So whether the
   15 ms / 16.7 ms phase drives the outcome is not yet shown.
 
+### 8. Bluetooth update rate and delivery jitter
+
+- **Method.** `hover_rate_probe.py` hovers the cursor (no button, so no touches) with
+  4-count horizontal reports at a fixed spacing, recorded at 60 fps. `hover_rate_measure.py`
+  tracks the cursor each frame. Reports are whole, so it rounds the cumulative travel to
+  whole reports, which absorbs the tracker's ~0.5 pt jitter
+  ([measurements](../evidence/HID-POINTER-20261004/update-rate)). Board timing was within
+  2 µs. The recorder dropped 4 frames per recording, none inside a pass.
+- **Throughput is about two reports per 15 ms connection event; the rest are lost.**
+
+  | spacing | sent | delivered | sending took (per pass) | delivery took |
+  | --- | --- | --- | --- | --- |
+  | 1 ms | 2 × 60 | 33, 34 | 60 ms | 250, 283 ms |
+  | 3 ms | 2 × 100 | 60, 61 | 300 ms | 533 ms each |
+  | 15 ms | 2 × 30 | 30, 30 | 450 ms | 450 ms each |
+
+  - Reports are queued and drained at ~2 per event; the overflow is dropped without any
+    error on the board.
+  - Sending faster cannot add timing resolution over Bluetooth LE: one report per 15 ms,
+    the replay rate, is the useful maximum.
+- **Delivery at the replay rate is irregular.**
+  - **Setup.** 10 passes of 30 reports, one per 15 ms, once with XR2's Wi-Fi on and once
+    with it off. Every report arrived.
+  - **Measure.** Each report's frame is compared with the frame a perfectly regular link
+    would give it, with one constant latency fitted per pass.
+
+  | XR2 Wi-Fi | reports | on their frame | 1 frame late | 2 frames late | 1 frame early | frames with 0 / 3 reports |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | on | 300 | 283 (94.3%) | 11 | 2 | 4 | 10 / 4 |
+  | off | 300 | 281 (93.7%) | 14 | 0 | 6 | 9 / 0 |
+
+  - A regular link would show one report per frame, two in about one frame in nine.
+  - The run with Wi-Fi on had longer stalls, with late reports arriving three to a frame.
+  - The run with Wi-Fi off had none of those, but just as many reports a frame off.
+  - The Wi-Fi comparison is one run each.
+- **What it means for replays.**
+  - A ~50 ms flick is 3–4 reports. At ~6% displaced per report, roughly one flick in five
+    has a report in the wrong frame.
+  - This adds to the run's random 15 ms / 16.7 ms phase.
+  - Both vary between runs of one schedule. They fit section 7's spread of tricks but are
+    not shown to cause it.
+- **Implication.** Over Bluetooth LE, each report carries a whole frame's motion, so a
+  report that crosses a frame boundary moves all of it.
+  - A USB mouse polled every 1 ms would carry 1/16 of a frame's motion per report, so a
+    boundary crossing would shift ~6% of it.
+  - That assumes iOS reads a USB mouse at 1 ms and AssistiveTouch applies the gain per
+    report. Both need measuring with the same probe.
+
 ## Conclusions so far
 
 The pointer route solves what XCTest could not: separate touches with short, exact
@@ -207,19 +256,31 @@ runs. A single replay therefore does not measure fidelity; compare outcome
 distributions. Finding the source of this variance comes before more fidelity
 work.
 
+Bluetooth LE limits timing at the source. It carries at most one useful report per
+15 ms, and ~6% of those reach the screen a frame early or late, whether Wi-Fi is on or
+off. Both change between runs of the same schedule. The precision target
+needs a link that is finer than a frame and regular.
+
 ## Next
 
-- **Find where the variance comes from**, in cheap runs scored by trick banner:
-  1. Trick only (scoop, flick, catch) from a standing board. This tells whether the
-     pushes (board speed and heading) or the trick strokes carry the variance.
-  2. Align the board's start to the Bluetooth connection events: timestamp the
-     notification-sent events and start GO on that grid. Whatever variance remains then
-     comes from the phone's side.
-  3. If phase matters, measure the display's frame timing live. A light sensor on the
-     screen, which the hovering cursor crosses, would let the board place each frame's
-     position on the right frame.
+- **USB pointer on XR2.**
+  - **Hardware.**
+    - A Raspberry Pi Pico acts as a USB HID mouse, through a Lightning OTG adapter that
+      has a charging port.
+    - A USB Ethernet adapter in the adapter's second port gives WDA and recording a
+      wired network link.
+    - The WROVER passes schedules to the Pico over UART.
+  - **Measure first.**
+    - Run `hover_rate_probe.py` with reports 1 ms apart: are all delivered, and is each
+      frame regular?
+    - Re-measure the gain.
+  - **Then** repeat section 7's 20 runs and compare the spread of tricks.
+  - **Fallback:** Bluetooth Classic. It needs an ESP-IDF build, and iOS's read rate
+    for Classic mice is unknown.
+- **Frame timing, if per-frame phase still matters.** A light sensor on the screen, which
+  the hovering cursor crosses, would give the board the display's frame times.
 - **Decide the scoop start with the operator.** The press is on the board's tail edge
   in v3 and ~15 pt off it in v2.
-- **Spin (planned step 6):** a capacitive pad on the spin button, driven by a board GPIO
-  on the same schedule.
+- **Spin (planned step 6):** a capacitive pad on the spin button, switched by a GPIO
+  on whichever board plays the schedule, on the same clock.
 - **Re-measure the gain** if iOS updates or the AssistiveTouch Tracking Speed changes.

@@ -34,6 +34,10 @@ strokes. Plan schedules with `trueskate_ai.control.hid_pointer` and play them wi
   peripheral latency 4. `PARAMS 12 12 0 400` (15 ms, latency 0) is accepted. Anything
   allowing 11.25 ms is refused (status 15). Reports leave on the next connection
   event, so planners use a 15 ms grid.
+- **At most ~2 reports per connection event.** Faster reports are queued, then dropped
+  with no error: 60 reports sent 1 ms apart delivered 33–34 over ~250 ms. Send at most
+  one per 15 ms. Even then ~6% of reports reach the screen a frame early or late
+  (`hover_rate_probe.py` / `hover_rate_measure.py`, record section 8).
 
 ## Pointer gain (measured 2026-10-04, 49 drags)
 
