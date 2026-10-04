@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-10-01. Behavioural cloning is the development direction.
+Updated 2026-10-04. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -302,3 +302,35 @@ collector running, `scripts/recover_remotexpc_attachments.sh --delete` removed
 M1-DIE5-R100 segment) and 7 on XR2. Both phones re-listed 0 remaining. One
 earlier XR2 dry run failed transiently (`tmp/Attachments` not found); a
 repeat succeeded.
+
+
+## HID gesture execution and recording review
+
+The ESP32 Bluetooth pointer pilot supports separate strokes with short gaps,
+but XR2 forces a 15 ms connection interval and approximately 6% of the measured
+reports landed a visible frame early or late. A wired Pico mouse is a proposed
+next transport, not a validated 1 ms game-input path. The powered Lightning hub,
+Ethernet, WDA network transport and RemoteXPC recording-cleanup chain still need
+a bounded hardware pilot. Adapter confidence figures in the review are
+subjective engineering priors, not measured reliability.
+
+AssistiveTouch supports preset and recorded multi-finger gestures. Independent
+live control of two mouse-driven contacts remains unverified. In three short
+XR2 diagnostic recordings, the pointer-only and WDA spin-hold controls worked;
+the combined condition showed the moving pointer trail while the separate spin
+button remained held. This establishes coexistence for that WDA/AssistiveTouch
+condition, not physical-pad operation, accurate spin angles or microsecond
+touch delivery. A human-finger/pad coexistence test remains necessary.
+
+Existing 60 fps pointer replays contain distinct gameplay changes in all 3,364
+audited moving-frame pairs after overlay/compression controls. Effective capture
+was 59.30–59.65 fps with approximately 0.9% absent nominal 60 Hz slots, mostly
+near startup. Raw size was 75.19 MB/min against 74.75 MB/min for the compared
+30 fps recordings; equal bitrate does not establish equal image fidelity.
+Use 60 fps for replay diagnostics. Preserve the current collection recipe until
+separately authorized one-minute capture/alignment validation and a temporal
+sampling decision: the exact-PTS extractor still supplies 32 frames across
+2.3 seconds, so raising raw capture rate alone does not increase Model 1's
+input sequence length. Collection remains off. See
+[HID-REVIEW-20261004](experiments/HID-REVIEW-20261004.md) and the prior
+[HID-POINTER-20261004](experiments/HID-POINTER-20261004.md).

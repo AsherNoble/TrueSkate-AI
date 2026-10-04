@@ -1,0 +1,25 @@
+[
+  {
+    "backend_requested": 0,
+    "backend": "AVFOUNDATION",
+    "decoded": 447,
+    "last_hashes": [
+      "6d0aa6764390ba110b3c0ae89ab0d84440759f581505ab63d2af16ace80d8091",
+      "3d66d9b8751127c110bcc01023fa3095c5bf25685f6834c74dba0ee98a83f8c3",
+      "7afcff3ecfa292df162e5e89ea8e741b8953d051de65fb7365290198e73f3eec",
+      "7bc2e6fcb367263a7529b39d69542ae4f56e779ef5629a9df5fe3672b3e55aa9",
+      "57e24e0ef253962363220586992bf3d63c57f9c96324a5e883362a688b126359"
+    ],
+    "last_pts_ms": [
+      7521.666666666667,
+      7538.333333333333,
+      7555.0,
+      7571.666666666667,
+      7588.333333333333
+    ]
+  },
+  {
+    "backend_requested": 1900,
+    "opened": false
+  }
+]

@@ -1,0 +1,29 @@
+{
+  "checked_epoch": 1791102634.590786,
+  "device": "iPhone_XR2",
+  "ios_version": "18.7.10",
+  "button_release_command": "NOW 0 0 0",
+  "button_release_ack": [
+    "OK"
+  ],
+  "pointer_status": [
+    "STATUS connected=1 auth=1 subscribed=1 interval_us=15000 events=75"
+  ],
+  "wda_ready": true,
+  "wda_build": {
+    "version": "12.2.0",
+    "time": "Oct  3 2026 06:15:26",
+    "productBundleIdentifier": "com.facebook.WebDriverAgentRunner"
+  },
+  "foreground_bundle": "com.trueaxis.skate",
+  "recorder": null,
+  "root_tunnel_running": true,
+  "xr2_attachment_count": 0,
+  "bridge_pid": 30867,
+  "collection_started": false,
+  "test_runs": 3,
+  "park_provenance": "unverified indoor gameplay scene",
+  "training_admission": false,
+  "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/claude-review-resume-20261004/spin/final-state.json",
+  "scope": "Guard summary; full raw diagnostics remain in the source artifact. Device identifiers and network addresses omitted."
+}

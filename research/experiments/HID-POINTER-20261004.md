@@ -11,7 +11,7 @@ XR2 only. No collection, no training admission.
 XCTest could not replay the expert Workshop demo. Five pushes, two flicks and a
 catch need several separate touches with short gaps between them, and XCTest
 failed in every mode across four rounds
-([CURVE-AUDIT-20261003](CURVE-AUDIT-20261003.md), on `research/curved-execution-audit`):
+([CURVE-AUDIT-20261003](https://github.com/AsherNoble/TrueSkate-AI/blob/ecac1ddccf328f8efcdf9cce8147693ac0f67870/research/experiments/CURVE-AUDIT-20261003.md), on `research/curved-execution-audit`):
 - separate records waited ≥ ~0.25 s between gestures;
 - one record joined the gestures together ("conjoined");
 - holding an anchor finger linked the strokes to it.
@@ -284,3 +284,12 @@ needs a link that is finer than a frame and regular.
 - **Spin (planned step 6):** a capacitive pad on the spin button, switched by a GPIO
   on whichever board plays the schedule, on the same clock.
 - **Re-measure the gain** if iOS updates or the AssistiveTouch Tracking Speed changes.
+
+
+## Follow-up review
+
+[HID-REVIEW-20261004](HID-REVIEW-20261004.md) completes the interrupted
+adapter-confidence, independent-touch/spin and recording-rate reviews. It
+separates USB polling from app touch delivery, records a bounded XR2
+WDA-hold/pointer coexistence probe, and audits the existing 60 fps recordings.
+The wired hardware and physical spin pad remain untested.

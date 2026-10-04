@@ -1,0 +1,185 @@
+{
+  "60-game": {
+    "videos": 20,
+    "duration_s": 173.66666899999996,
+    "frames": 10326,
+    "bytes": 217626208,
+    "mb_min": 75.18755645621327,
+    "range": {
+      "dur": [
+        8.6,
+        8.766667
+      ],
+      "mbmin": [
+        73.9739177142857,
+        75.92812323353373
+      ],
+      "eff": [
+        59.300973176736825,
+        59.65451284662238
+      ],
+      "dmax": [
+        33.333000000000055,
+        50.00000000000004
+      ],
+      "ngap": [
+        3,
+        6
+      ]
+    }
+  },
+  "30-game": {
+    "videos": 6,
+    "duration_s": 52.066666,
+    "frames": 1552,
+    "bytes": 64862392,
+    "mb_min": 74.74539506716255,
+    "range": {
+      "dur": [
+        8.633333,
+        8.716667
+      ],
+      "mbmin": [
+        73.41639640706167,
+        75.50343168919125
+      ],
+      "eff": [
+        29.767441860465116,
+        29.82725642331119
+      ],
+      "dmax": [
+        50.0,
+        50.000000000000014
+      ],
+      "ngap": [
+        3,
+        4
+      ]
+    }
+  },
+  "60-hover": {
+    "videos": 3,
+    "duration_s": 38.93,
+    "frames": 2324,
+    "bytes": 41155585,
+    "mb_min": 63.43013357307989,
+    "range": {
+      "dur": [
+        9.583333,
+        14.681667
+      ],
+      "mbmin": [
+        58.31482428921128,
+        65.31284555063075
+      ],
+      "eff": [
+        59.58187945707738,
+        59.73406068871463
+      ],
+      "dmax": [
+        33.334,
+        33.334
+      ],
+      "ngap": [
+        4,
+        4
+      ]
+    }
+  },
+  "motion_audit": {
+    "fixed_window_s": [
+      4.0,
+      6.8
+    ],
+    "pairs": 3364,
+    "robust_changed_fraction_quantiles": [
+      0.3740831295843521,
+      0.47368421052631576,
+      0.5149253731343284,
+      0.6557288996000411,
+      0.8818897637795275
+    ],
+    "candidates_lt_0_1": 0,
+    "hover_raw_fraction_quantiles": [
+      0.0,
+      0.021372606409924468,
+      0.07582938388625593,
+      0.08333333333333333
+    ]
+  },
+  "replay_gaps": {
+    "count": 93,
+    "missed_60hz_slots": 94,
+    "bins": {
+      "0-1s": 72,
+      "1-3.5s": 13,
+      "3.5s-end": 8
+    },
+    "gameplay": [
+      {
+        "file": "dup_demo-replay-20261004-variance__v2_03__01_pointer_immediate_r1.mov.npz",
+        "fps_requested": 60,
+        "before_s": 7.75,
+        "after_s": 7.783333,
+        "delta_ms": 33.332999999999835,
+        "missed_60hz_slots": 1
+      },
+      {
+        "file": "dup_demo-replay-20261004-variance__v2_04__01_pointer_immediate_r1.mov.npz",
+        "fps_requested": 60,
+        "before_s": 7.658333,
+        "after_s": 7.691667,
+        "delta_ms": 33.333999999999975,
+        "missed_60hz_slots": 1
+      },
+      {
+        "file": "dup_demo-replay-20261004-variance__v2_04__01_pointer_immediate_r1.mov.npz",
+        "fps_requested": 60,
+        "before_s": 8.108333,
+        "after_s": 8.141667,
+        "delta_ms": 33.333999999999975,
+        "missed_60hz_slots": 1
+      },
+      {
+        "file": "dup_demo-replay-20261004-variance__v2_08__01_pointer_immediate_r1.mov.npz",
+        "fps_requested": 60,
+        "before_s": 7.84,
+        "after_s": 7.873333,
+        "delta_ms": 33.332999999999835,
+        "missed_60hz_slots": 1
+      },
+      {
+        "file": "dup_demo-replay-20261004-variance__v2_10__01_pointer_immediate_r1.mov.npz",
+        "fps_requested": 60,
+        "before_s": 8.051667,
+        "after_s": 8.085,
+        "delta_ms": 33.33300000000072,
+        "missed_60hz_slots": 1
+      },
+      {
+        "file": "dup_demo-replay-20261004-variance__v3_02__01_pointer_immediate_r1.mov.npz",
+        "fps_requested": 60,
+        "before_s": 8.366667,
+        "after_s": 8.4,
+        "delta_ms": 33.33300000000072,
+        "missed_60hz_slots": 1
+      },
+      {
+        "file": "dup_demo-replay-20261004-variance__v3_03__01_pointer_immediate_r1.mov.npz",
+        "fps_requested": 60,
+        "before_s": 7.881667,
+        "after_s": 7.915,
+        "delta_ms": 33.332999999999835,
+        "missed_60hz_slots": 1
+      },
+      {
+        "file": "dup_demo-replay-20261004-variance__v3_10__01_pointer_immediate_r1.mov.npz",
+        "fps_requested": 60,
+        "before_s": 8.236667,
+        "after_s": 8.27,
+        "delta_ms": 33.33299999999895,
+        "missed_60hz_slots": 1
+      }
+    ]
+  }
+}
