@@ -1,0 +1,358 @@
+{
+  "runs": [
+    {
+      "variant": "native",
+      "anchor": [
+        0.96,
+        0.6
+      ],
+      "repeat": 0,
+      "file": "01_native_anchor0.96-0.60_r1.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 0.0,
+          "record_completed_s": 4.1580059584230185
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.333,
+          "record_completed_s": 4.1580059584230185
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.65,
+          "record_completed_s": 4.1580059584230185
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 0.982,
+          "record_completed_s": 4.1580059584230185
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.3,
+          "record_completed_s": 4.1580059584230185
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 1.815,
+          "record_completed_s": 4.1580059584230185
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 1.983,
+          "record_completed_s": 4.1580059584230185
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.682,
+          "record_completed_s": 4.1580059584230185
+        }
+      ]
+    },
+    {
+      "variant": "native",
+      "anchor": [
+        0.04,
+        0.7
+      ],
+      "repeat": 0,
+      "file": "02_native_anchor0.04-0.70_r1.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 0.0,
+          "record_completed_s": 4.127542499918491
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.333,
+          "record_completed_s": 4.127542499918491
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.65,
+          "record_completed_s": 4.127542499918491
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 0.982,
+          "record_completed_s": 4.127542499918491
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.3,
+          "record_completed_s": 4.127542499918491
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 1.815,
+          "record_completed_s": 4.127542499918491
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 1.983,
+          "record_completed_s": 4.127542499918491
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.682,
+          "record_completed_s": 4.127542499918491
+        }
+      ]
+    },
+    {
+      "variant": "native",
+      "anchor": [
+        0.96,
+        0.6
+      ],
+      "repeat": 1,
+      "file": "03_native_anchor0.96-0.60_r2.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 0.0,
+          "record_completed_s": 4.132349999854341
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.333,
+          "record_completed_s": 4.132349999854341
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.65,
+          "record_completed_s": 4.132349999854341
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 0.982,
+          "record_completed_s": 4.132349999854341
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.3,
+          "record_completed_s": 4.132349999854341
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 1.815,
+          "record_completed_s": 4.132349999854341
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 1.983,
+          "record_completed_s": 4.132349999854341
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.682,
+          "record_completed_s": 4.132349999854341
+        }
+      ]
+    },
+    {
+      "variant": "native",
+      "anchor": [
+        0.04,
+        0.7
+      ],
+      "repeat": 1,
+      "file": "04_native_anchor0.04-0.70_r2.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 0.0,
+          "record_completed_s": 4.132225041743368
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.333,
+          "record_completed_s": 4.132225041743368
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.65,
+          "record_completed_s": 4.132225041743368
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 0.982,
+          "record_completed_s": 4.132225041743368
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.3,
+          "record_completed_s": 4.132225041743368
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 1.815,
+          "record_completed_s": 4.132225041743368
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 1.983,
+          "record_completed_s": 4.132225041743368
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.682,
+          "record_completed_s": 4.132225041743368
+        }
+      ]
+    },
+    {
+      "variant": "native",
+      "anchor": [
+        0.04,
+        0.7
+      ],
+      "repeat": 2,
+      "file": "05_native_anchor0.04-0.70_r3.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 0.0,
+          "record_completed_s": 4.216018041595817
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.333,
+          "record_completed_s": 4.216018041595817
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.65,
+          "record_completed_s": 4.216018041595817
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 0.982,
+          "record_completed_s": 4.216018041595817
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.3,
+          "record_completed_s": 4.216018041595817
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 1.815,
+          "record_completed_s": 4.216018041595817
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 1.983,
+          "record_completed_s": 4.216018041595817
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.682,
+          "record_completed_s": 4.216018041595817
+        }
+      ]
+    },
+    {
+      "variant": "native",
+      "anchor": [
+        0.96,
+        0.6
+      ],
+      "repeat": 2,
+      "file": "06_native_anchor0.96-0.60_r3.mov",
+      "calls": [
+        {
+          "gesture": "push 1",
+          "intended_start_s": 0.0,
+          "start_s": 0.0,
+          "record_completed_s": 4.206184666603804
+        },
+        {
+          "gesture": "push 2",
+          "intended_start_s": 0.333,
+          "start_s": 0.333,
+          "record_completed_s": 4.206184666603804
+        },
+        {
+          "gesture": "push 3",
+          "intended_start_s": 0.65,
+          "start_s": 0.65,
+          "record_completed_s": 4.206184666603804
+        },
+        {
+          "gesture": "push 4",
+          "intended_start_s": 0.982,
+          "start_s": 0.982,
+          "record_completed_s": 4.206184666603804
+        },
+        {
+          "gesture": "push 5",
+          "intended_start_s": 1.3,
+          "start_s": 1.3,
+          "record_completed_s": 4.206184666603804
+        },
+        {
+          "gesture": "flick A",
+          "intended_start_s": 1.815,
+          "start_s": 1.815,
+          "record_completed_s": 4.206184666603804
+        },
+        {
+          "gesture": "flick B",
+          "intended_start_s": 1.983,
+          "start_s": 1.983,
+          "record_completed_s": 4.206184666603804
+        },
+        {
+          "gesture": "catch",
+          "intended_start_s": 2.682,
+          "start_s": 2.682,
+          "record_completed_s": 4.206184666603804
+        }
+      ]
+    }
+  ]
+}

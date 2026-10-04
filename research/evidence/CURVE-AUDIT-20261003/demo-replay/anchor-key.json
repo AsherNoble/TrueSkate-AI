@@ -1,0 +1,56 @@
+[
+ {
+  "replay": 1,
+  "file": "01_native_anchor0.96-0.60_r1.mov",
+  "anchor": [
+   0.96,
+   0.6
+  ],
+  "repeat": 1
+ },
+ {
+  "replay": 2,
+  "file": "06_native_anchor0.96-0.60_r3.mov",
+  "anchor": [
+   0.96,
+   0.6
+  ],
+  "repeat": 3
+ },
+ {
+  "replay": 3,
+  "file": "02_native_anchor0.04-0.70_r1.mov",
+  "anchor": [
+   0.04,
+   0.7
+  ],
+  "repeat": 1
+ },
+ {
+  "replay": 4,
+  "file": "05_native_anchor0.04-0.70_r3.mov",
+  "anchor": [
+   0.04,
+   0.7
+  ],
+  "repeat": 3
+ },
+ {
+  "replay": 5,
+  "file": "04_native_anchor0.04-0.70_r2.mov",
+  "anchor": [
+   0.04,
+   0.7
+  ],
+  "repeat": 2
+ },
+ {
+  "replay": 6,
+  "file": "03_native_anchor0.96-0.60_r2.mov",
+  "anchor": [
+   0.96,
+   0.6
+  ],
+  "repeat": 2
+ }
+]

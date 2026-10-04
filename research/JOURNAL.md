@@ -72,10 +72,8 @@ Put substantial experiments in individual records and current facts in STATUS.
   [Fine sweep](experiments/LINEAR-SPEED-FINE-20261002.md).
 
 - Follow-up (2026-10-03): fine trace visible in 13/14; board moves in all 14.
-  Completed 135 blinded diagnostics (9 durations × 5 lengths × 3); timing passes.
-  Blind labels complete: board 120/120 at ≥15 ms, 0/15 at 10 ms; trace 75/75
-  at 30–50 ms, mixed 15–25 ms. Length pattern nonmonotonic; collapse unproven.
-  [Length experiment](experiments/LINEAR-LENGTH-20261003.md).
+  The separate 135-clip length experiment and its complete human findings are
+  recorded once in the 2026-10-03 entry above.
 - MVP 2.0 direction: arbitrary timed single-drag paths, any initial board state,
   five-touch-aligned moving-circle review and frame-position accuracy.
   Provisional 15-point cap, hollow 10 pt ring, linear-equivalent tolerances;
@@ -113,8 +111,8 @@ Put substantial experiments in individual records and current facts in STATUS.
     clips gave no visible lift; Skateboard GB is a weak exception.
   - No detected dose-response with the number of training clips sharing a recording; a step between any sharing and none remains untested.
   - Holdout failures are spread evenly across recordings.
-  - So the new-park gap looks like too little per-park data, not a split
-    artefact.
+  - The gap is compatible with insufficient per-park data; a shared-recording
+    step effect remains unresolved.
 
 ## 2026-09-30 — End misses: temporal averaging is part of it
 

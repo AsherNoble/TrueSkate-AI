@@ -1,0 +1,60 @@
+{
+  "schema": "demo-replay-compare-v1",
+  "grades": {
+    "1": {
+      "grade": "major",
+      "comments": "The conjoinment issue is removed but the additional delay between gestures is obvious and resulted in a poor outcome.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:39:45.325Z"
+    },
+    "2": {
+      "grade": "major",
+      "comments": "Inter-gesture delay is significant",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:40:31.925Z"
+    },
+    "3": {
+      "grade": "major",
+      "comments": "Inter-gesture delay is significant",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:40:50.975Z"
+    },
+    "4": {
+      "grade": "major",
+      "comments": "Inter-gesture delay is significant",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:41:08.909Z"
+    },
+    "5": {
+      "grade": "major",
+      "comments": "Inter-gesture delay is significant",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:41:28.842Z"
+    },
+    "6": {
+      "grade": "major",
+      "comments": "Inter-gesture delay is significant",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:41:47.759Z"
+    },
+    "7": {
+      "grade": "major",
+      "comments": "Inter-gesture delay is significant",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:42:03.243Z"
+    },
+    "8": {
+      "grade": "major",
+      "comments": "Inter-gesture delay is significant",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:42:36.626Z"
+    },
+    "9": {
+      "grade": "major",
+      "comments": "Inter-gesture delay is significant",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T12:42:56.594Z"
+    }
+  },
+  "offsets": {}
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "demo-replay-compare-v1",
+  "grades": {
+    "1": {
+      "grade": "major",
+      "comments": "I don't really know how to describe it but you should check for yourself. There is some conjoinment... and weird stuff.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:54:34.654Z"
+    },
+    "2": {
+      "grade": "major",
+      "comments": "",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:54:58.819Z"
+    },
+    "3": {
+      "grade": "major",
+      "comments": "",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:55:21.220Z"
+    },
+    "4": {
+      "grade": "major",
+      "comments": "",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:55:46.820Z"
+    },
+    "5": {
+      "grade": "major",
+      "comments": "",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:56:10.337Z"
+    },
+    "6": {
+      "grade": "major",
+      "comments": "",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:57:01.854Z"
+    }
+  },
+  "offsets": {}
+}

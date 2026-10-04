@@ -1,0 +1,60 @@
+{
+  "schema": "demo-replay-compare-v1",
+  "grades": {
+    "1": {
+      "grade": "major",
+      "comments": "Two issues: the conjoinment has returned and the gestures are executed much faster than my original demo.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:22:44.428Z"
+    },
+    "2": {
+      "grade": "major",
+      "comments": "Two issues: the conjoinment has returned and the gestures are executed much faster than my original demo.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:23:00.878Z"
+    },
+    "3": {
+      "grade": "major",
+      "comments": "Two issues: the conjoinment has returned and the gestures are executed much faster than my original demo.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:23:27.962Z"
+    },
+    "4": {
+      "grade": "major",
+      "comments": "Two issues: the conjoinment has returned and the gestures are executed much faster than my original demo.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:23:36.095Z"
+    },
+    "5": {
+      "grade": "major",
+      "comments": "Two issues: the conjoinment has returned and the gestures are executed much faster than my original demo.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:23:47.495Z"
+    },
+    "6": {
+      "grade": "major",
+      "comments": "Two issues: the conjoinment has returned and the gestures are executed much faster than my original demo.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:23:57.745Z"
+    },
+    "7": {
+      "grade": "major",
+      "comments": "Two issues: the conjoinment has returned and the gestures are executed much faster than my original demo.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:24:09.196Z"
+    },
+    "8": {
+      "grade": "major",
+      "comments": "Two issues: the conjoinment has returned and the gestures are executed much faster than my original demo.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:24:19.346Z"
+    },
+    "9": {
+      "grade": "major",
+      "comments": "Two issues: the conjoinment has returned and the gestures are executed much faster than my original demo.",
+      "offset_s": 0.6,
+      "updated_at": "2026-10-03T13:24:35.929Z"
+    }
+  },
+  "offsets": {}
+}

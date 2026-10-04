@@ -181,3 +181,37 @@ Historical v1 files stay unchanged. Reading a v1 curve or length export requires
 `--allow-legacy`; the reader warns and reports that execution content and displayed
 frame bytes are not bound. This option does not upgrade historical evidence.
 These commands inspect isolated research artifacts and do not authorize collection.
+
+## Bounded curved execution audit and demo replay
+
+These are isolated diagnostics; running them requires separate bounded authorization.
+Freeze an explicit schedule, for example
+`python scripts/collection/run_curved_audit.py --freeze --schedule v3 --manifest /absolute/new/manifest.json`.
+Execution uses that frozen schedule; an explicitly supplied `--schedule` must match.
+On the rig, provide the manifest, new `--out`, pinned `--wda-revision` and optionally
+`--segments 10` for an explicitly authorized replacement. v1 is the historical
+no-reset schedule; v2/v3 reset before the markers, with v3 adding sample slack.
+All retain one-minute recordings, strict foreground guards, native decode checks,
+five-point consensus and the independent middle check. Stop failures are recorded
+without a second stop RPC; use the documented recovery process before another run.
+
+New builds use full successful v2 execution receipts, not historical v1 logs:
+`python scripts/inspect/build_curved_audit.py --manifest /absolute/manifest.json --recordings /absolute/recordings --out /absolute/new/viewer`.
+An authorized replacement uses `--replacement /absolute/replacement-manifest.json
+/absolute/replacement-recordings 10`. Its complete sample conditions and payloads
+must match; schedule slack and calibration resets may differ. Serve only the viewer.
+Import with `python scripts/inspect/report_curved_audit.py --mapping
+/absolute/recordings/audit-private-source-map-v2.json --assessments
+/absolute/export.json --media-root /absolute/viewer --out /absolute/new/results.json`.
+The importer verifies JPEG bytes. Historical v1 imports require `--allow-legacy`
+and report weaker provenance. Only explicitly saved ratings count; device and park
+remain confounded. Shut the temporary viewer server down after the report is returned.
+
+`replay_demo_clip.py` defaults to `--mode scheduled --schedule-mode paths`:
+a single indexed-path record. Choose `--mode scheduled --schedule-mode records`
+explicitly for separate on-device records, or `--mode separate` for serial HTTP
+requests. `--anchor X,Y` requires scheduled paths. These modes retain the negative
+replay findings in CURVE-AUDIT-20261003; none certifies curved/spin collection.
+Scheduled path starts are intended device offsets, not measured physical delivery.
+Every post-start exit attempts one retrieval, saving partial video, request/response
+and failure details before disconnecting. No recorder-start or stop retries occur.

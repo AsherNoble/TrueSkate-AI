@@ -1,0 +1,56 @@
+[
+ {
+  "replay": 1,
+  "file": "04_min50ms_r2.mov",
+  "variant": "min50ms",
+  "repeat": 2
+ },
+ {
+  "replay": 2,
+  "file": "03_native_r1.mov",
+  "variant": "native",
+  "repeat": 1
+ },
+ {
+  "replay": 3,
+  "file": "09_min33ms_r3.mov",
+  "variant": "min33ms",
+  "repeat": 3
+ },
+ {
+  "replay": 4,
+  "file": "01_min33ms_r1.mov",
+  "variant": "min33ms",
+  "repeat": 1
+ },
+ {
+  "replay": 5,
+  "file": "08_min50ms_r3.mov",
+  "variant": "min50ms",
+  "repeat": 3
+ },
+ {
+  "replay": 6,
+  "file": "07_native_r3.mov",
+  "variant": "native",
+  "repeat": 3
+ },
+ {
+  "replay": 7,
+  "file": "02_min50ms_r1.mov",
+  "variant": "min50ms",
+  "repeat": 1
+ },
+ {
+  "replay": 8,
+  "file": "06_min33ms_r2.mov",
+  "variant": "min33ms",
+  "repeat": 2
+ },
+ {
+  "replay": 9,
+  "file": "05_native_r2.mov",
+  "variant": "native",
+  "repeat": 2
+ }
+]

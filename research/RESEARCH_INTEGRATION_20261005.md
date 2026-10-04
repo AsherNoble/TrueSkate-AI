@@ -65,3 +65,33 @@ Validation for the curve/speed/length candidate: 572 offline tests passed, two e
 visual-fixture skips; v1 compatibility warnings are expected. Synthetic coverage includes
 foreground changes during sleeps, guard lateness, frozen conditions with unchanged IDs,
 ordered receipt corruption, mutated JPEGs, browser byte verification and closed endpoints.
+
+
+Curved audit integration retains the original feature history, all historical v1
+manifests/evidence and negative demo replay results. The pilot's pending wording
+is reconciled with the completed 100-clip assessment, without curved/spin
+certification. Explicit execution schedule selection must match the frozen manifest.
+Audit and replay lifecycles retrieve once on every post-start exit, keep partial
+video, raw responses and primary/secondary failures before disconnect, and never
+retry failed recorder starts or stops. Monotonic budgets include start latency.
+The new curved viewer/importer also binds full specifications, successful ordered
+receipts, calibration/source provenance and JPEG bytes; v1 requires explicit
+compatibility. The duplicate length summary is removed from the shortened journal;
+its complete combined pre-trim bytes remain available in ARCH-018.
+
+Final candidate validation: **625 passed, 2 skipped** using the root sole `.venv`;
+the skips are the existing absent local visual-regression fixtures. Six expected
+v1 compatibility warnings were emitted. Native C++ HID parser tests and localhost
+ownership/disconnect tests pass; earlier ESP32 compilation succeeded without upload.
+Archive checking and exact docs evidence/narrative/CRLF checks pass, and the archive
+checker/workflow remain unchanged. No rig, firmware or production collection
+settings were changed. Preservation refs, retained artifacts and M1-01 remain.
+
+
+Portability verification: Linux CI exposed an inherited test that equated the
+local regenerated floating-point manifest hash with the Mac frozen hash. The test
+now verifies the byte-exact original synthetic v1 protocol fixture and validates
+it against the current generator. Adjacent-float perturbations are admitted by
+the existing 1e-12 abstract-coordinate tolerance; integer payloads, timestamps,
+quantization and order changes remain rejected. No validator or evidence bytes
+were relaxed or changed. This fixture contains planned commands, not holdout data.

@@ -437,3 +437,28 @@ and checks foreground/lateness immediately before each scheduled submission. The
 synthetic/source checks do not replace human execution fidelity evidence, select a
 spacing rule or certify curved/spin collection. Historical v1 reviews retain weaker
 provenance and require explicit compatibility when imported by current readers.
+
+
+## Curved execution audit and replay evidence (2026-10-03–04)
+
+The original direct-waypoint pilot stopped at 0/100 calibrated clips after a
+900 ms request took 5.045 s, including 3.751 s of preparation. Its partial video
+and timing evidence remain preserved. A subsequent WDA snapshot fix and separately
+authorized v2/v3 runs completed the audit: **100/100 human assessments, 66 Good /
+21 Minor / 2 Major / 11 Unclear**. See
+[CURVE-AUDIT-20261003](experiments/CURVE-AUDIT-20261003.md) for the successive runs
+and amendments. Historical statements about pending reruns apply to the pilot.
+
+Exploratory single-rater evidence suggests spacing of about 33 ms or more performs
+better; it does not certify a spacing rule, curved executors or spin collection.
+Device and park are confounded, and some overlays may be about one frame late.
+Bundled, serial, scheduled indexed-path and anchor-finger demo replays all failed
+human review; separate scheduled records also hit XCTest's overlapping-record
+restriction. Preserve these negative results when considering future executors.
+USB HID and physical spin-pad approaches remain unvalidated proposals.
+
+Current audit/replay source retrieves partial recordings on every post-start exit
+and retains failures without retrying failed stop RPCs. New review bundles bind
+frozen specifications, successful ordered execution receipts and JPEG bytes;
+legacy evidence stays unchanged and requires explicit compatibility. These source
+checks authorize no new device run or deployment. Collection remains OFF.
