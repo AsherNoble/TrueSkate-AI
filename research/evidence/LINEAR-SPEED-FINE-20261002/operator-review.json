@@ -1,0 +1,11 @@
+{
+  "source": "operator direct viewing report",
+  "visible_trace": "all clips except 20 ms repeat 2",
+  "no_trace": [
+    {
+      "duration_ms": 20,
+      "repeat": 2
+    }
+  ],
+  "board_movement": "all clips, including 20 ms repeat 2; same as others"
+}

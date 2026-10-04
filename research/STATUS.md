@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-10-01. Behavioural cloning is the development direction.
+Updated 2026-10-05. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -18,8 +18,7 @@ and the collected doubling (18,394 training clips, weighted to Kansas City
 and Los Angeles, plus three new parks) raised the validation plateau to
 **91.37%**, a 20.3% error reduction: still data-limited by the fixed rule,
 but only just ([M1-EXPAND](experiments/M1-EXPAND-20260929.md)). Its best
-checkpoint (92.16% validation) has not been scored on test. On 907 held-out
-recordings in the three new parks it scores 87.32%. The first clean-label retrain (128×288, seed 0) scored
+checkpoint (92.16% validation) has not been scored on test. On 907 clips selected in whole recording sessions in the three new parks it scores 87.32%. The first clean-label retrain (128×288, seed 0) scored
 **88.50%** on test. The previous
 recipe scored 80.05%; same size, park mix and split protocol
 ([M1-RETRAIN](experiments/M1-RETRAIN-GOOD13100-PLAN-20260927.md)). Remaining
@@ -290,8 +289,11 @@ moving for ~7–8 s after the pre-segment reset. The branch adds:
   comparison.
 
 No corpus clip was moved or deleted; exclusion is manifest-only. The rig's stable
-release is `080bb97` (rollback `1b8497e`). Exclusion, recollection
-and flag adoption await operator decisions.
+release is `189dfde` (rollback `080bb97`), deployed 2026-10-03 for the
+notification fixes (PRs #30, #31). `com.trueskate.services` was restarted onto
+it and owns its iproxies; the storage guard loads it on each run. The dashboard
+still runs the code it loaded earlier, which is unchanged in this release.
+Exclusion, recollection and flag adoption await operator decisions.
 
 **Rig note (2026-09-27):** with both recorders idle (`/wda/video` null) and no
 collector running, `scripts/recover_remotexpc_attachments.sh --delete` removed
@@ -300,24 +302,163 @@ M1-DIE5-R100 segment) and 7 on XR2. Both phones re-listed 0 remaining. One
 earlier XR2 dry run failed transiently (`tmp/Attachments` not found); a
 repeat succeeded.
 
-## Curved execution pilot (2026-10-03)
 
-The authorized 50-path paired direct-waypoint audit stopped after its first XR1
-sample request exceeded the next fixed slot: a 900 ms, 15-waypoint request took
-5.045 s, including 3.751 s of WDA preparation. The partial recording and complete
-timing records for both attempted requests are preserved; all 301 native frames
-decode. Missing middle/end controls prevent calibration, leaving **0/100 audit
-clips**. No replacements or service restarts occurred. The viewer/importer are
-implemented and offline-tested; there are no human curve-fidelity findings yet.
-See [CURVE-AUDIT-20261003](experiments/CURVE-AUDIT-20261003.md).
+## HID gesture execution and recording review
 
-The delay was WDA requesting an app accessibility snapshot for every pointer
-move. Fork commit `ae50404a` resolves the app origin once per request; both XRs
-now run it (signing renewed to 2026-10-10 and trusted). Preparation is flat at
-~0.07 s (XR1) and 0.10–0.24 s (XR2) for 2–57 waypoints, down from 0.9–14 s.
-Rerunning the 100-sample audit with this revision needs authorization.
-The curved execution audit then completed: 100/100 blinded clips (runs 3+4,
-reset-before-marker schedules v2/v3), rated 66 Good / 21 Minor / 2 Major / 11
-Unclear. Fidelity tracks spacing between points: 88–91% Good among judged clips
-when points are ≥67 ms apart, 76% at 33–67 ms, 50% at 16–33 ms, 12% below 16 ms.
-Curved executors should keep points ≥~33 ms apart.
+The ESP32 Bluetooth pointer pilot supports separate strokes with short gaps,
+but XR2 forces a 15 ms connection interval and approximately 6% of the measured
+reports landed a visible frame early or late. A wired Pico mouse is a proposed
+next transport, not a validated 1 ms game-input path. The powered Lightning hub,
+Ethernet, WDA network transport and RemoteXPC recording-cleanup chain still need
+a bounded hardware pilot. Adapter confidence figures in the review are
+subjective engineering priors, not measured reliability.
+
+AssistiveTouch supports preset and recorded multi-finger gestures. Independent
+live control of two mouse-driven contacts remains unverified. In three short
+XR2 diagnostic recordings, the pointer-only and WDA spin-hold controls worked;
+the combined condition showed the moving pointer trail while the separate spin
+button remained held. This establishes coexistence for that WDA/AssistiveTouch
+condition, not physical-pad operation, accurate spin angles or microsecond
+touch delivery. A human-finger/pad coexistence test remains necessary.
+
+Existing 60 fps pointer replays contain distinct gameplay changes in all 3,364
+audited moving-frame pairs after overlay/compression controls. Effective capture
+was 59.30–59.65 fps with approximately 0.9% absent nominal 60 Hz slots, mostly
+near startup. Raw size was 75.19 MB/min against 74.75 MB/min for the compared
+30 fps recordings; equal bitrate does not establish equal image fidelity.
+Use 60 fps for replay diagnostics. Preserve the current collection recipe until
+separately authorized one-minute capture/alignment validation and a temporal
+sampling decision: the exact-PTS extractor still supplies 32 frames across
+2.3 seconds, so raising raw capture rate alone does not increase Model 1's
+input sequence length. Collection remains off. See
+[HID-REVIEW-20261004](experiments/HID-REVIEW-20261004.md) and the prior
+[HID-POINTER-20261004](experiments/HID-POINTER-20261004.md).
+
+
+The consolidated HID host/firmware source uses protocol v2 with exclusive ownership,
+cancellation, fail-closed foreground checks, a one-minute recording budget, neutral
+recovery and exact ordered notification-attempt receipts. This source revision is
+not deployed; older deployed firmware is intentionally rejected by the new host.
+Only XR2 has a measured profile. Historical spin harnesses remain evidence, with no
+curved/spin certification or physical-pad validation. See
+[HID source operating notes](../hardware/hid_pointer/NOTES.md).
+
+## Curved gesture execution gate
+
+[CURVE-EXEC-20261002](experiments/CURVE-EXEC-20261002.md) introduces an additive
+nine-number Bernstein cubic in time, exact rounded cumulative command boundaries
+and matching quantized labels. No model or checkpoint schema changed. On twelve
+seeded synthetic curves, maximum-duration rules 10/20 ms meet the ≤0.005 command
+approximation bound; 40 ms fails two. This is compilation evidence, not observed
+execution fidelity. The authorized Inbound pilot stopped after eight XR1 diagnostics. Separate
+source-PTS-preserving FFmpeg reanalysis fixes an OpenCV extra-frame mismatch and
+passes timing calibration (held-out middle error 5.8 ms), but the blind orange
+extractor yields 0/8 evaluable gestures because of competing moving scenery/board
+colours and ambiguous centrelines. Execution fidelity and the measurement floor
+remain **inconclusive**; XR2, repeats, dense probes, main and confirmation did not
+run. Retained native frames and a blinded review export support diagnosis. No
+spacing rule is selected; improve measurement before another bounded pilot.
+Curve recovery/generation remains a later tranche, with no training authorized.
+
+User-requested [CURVE-SPEED-20261002](experiments/CURVE-SPEED-20261002.md) recorded three wide arcs at 300/200/120 ms on XR1 for interactive human viewing. Post-recording gameplay admission failed; the isolated attempt is preserved and is not fidelity evidence.
+
+[CURVE-JAGGED-20261002](experiments/CURVE-JAGGED-20261002.md) executed a user-requested rounded zigzag at 600/300 ms using five joined cubics in one touch. The isolated recording is available for human viewing; gameplay admission flagged it and no fidelity pass is claimed. This does not change the single-cubic model interface.
+
+Operator review of the jagged clips: 600 ms looked good; 300 ms showed a tap-like mark with a strong gameplay response. Visible trail is therefore insufficient on its own to infer gameplay input fidelity. A rendering/synthesis limit is a hypothesis; duration and segment spacing/count changed together, so no causal threshold is established.
+
+The authorized [LINEAR-SPEED-20261002](experiments/LINEAR-SPEED-20261002.md)
+duration-only sweep froze one linear movement per drag, 600/400/300/200/100/50/20/10
+ms in reversed repeats on XR1/Inbound. Its first recording aborted on a sleep
+overrun before any control or drag. The short original and empty WDA report are
+preserved; the second recording was withheld without replacement. **No rendering
+transition range was measured.** Collection remains off.
+
+The operator subsequently authorized replacements and requested a usable viewer.
+Two complete reversed recordings now preserve all sixteen drags, with 1,767
+native frames and nineteen successful WDA requests each. Independent held-out
+middle timing residuals are 14.3/9.3 ms. Both original gameplay admissions remain
+failed; their first flagged frames visibly show normal gameplay scenery. Assistant
+native-frame review finds trails at 50–600 ms, indeterminate feedback at 20 ms
+despite strong gameplay response, and tap-like spots at 10 ms. The visible-trail
+transition repeats between 20 and 50 ms; no input-collapse threshold follows at
+30 fps. The latter half of repeat 2 changes reset location within Inbound.
+See the [redo record](experiments/LINEAR-SPEED-20261002.md#authorized-redo-and-native-frame-viewer).
+
+Operator follow-up: visible trace and board movement at 600–50 ms; no visible
+trace but board movement at 20 ms; minuscule tap/flicker without board movement
+at 10 ms. This primary assessment replaces the assistant's 20 ms uncertainty.
+A requested [50–20 ms fine sweep](experiments/LINEAR-SPEED-FINE-20261002.md)
+uses 50/45/40/35/30/25/20 ms in reversed repeats with the same path and one move.
+The fine sweep completed all fourteen drags; full native decode and timing
+checks pass (middle residuals 11.8/6.4 ms). At operator direction, gameplay
+assessment uses human vision; automated menu/editor scans are skipped. The operator
+review below supplies the visual findings. Collection remains off.
+
+Fine-sweep operator assessment: trace visible in 13/14, except 20 ms R2; board
+movement in all 14. No consistent duration-only visibility cutoff is established.
+The operator authorized 135 blinded diagnostics: nine durations (50 down to
+10 ms by 5), five lengths, three repetitions per cell, with human gameplay review.
+
+[LINEAR-LENGTH-20261003](experiments/LINEAR-LENGTH-20261003.md) completed all
+135 diagnostics (45 length/duration cells × 3), randomized across fifteen
+recordings. All 315 WDA requests, native decodes and timing checks pass; maximum
+held-out middle residual is 25.2 ms. The anonymous viewer is ready with exactly
+`flicker` / `hold` / `trace`, Board moved default True, and comments. Condition
+keys stay outside the viewer. The completed human assessment follows. Collection stays off.
+
+Blinded operator labels are complete and validated (135/135): trace in all 75
+clips at 30–50 ms; 12/15 at 25 ms, 7/15 at both 20 and 15 ms, 0/15 at 10 ms.
+Board movement is 120/120 at 15–50 ms and 0/15 at 10 ms, across all lengths.
+Observed response transition: 10–15 ms; consistent trace starts at tested 30 ms.
+Nineteen flicker clips still move the board. Intermediate-duration length effects
+are not consistently monotonic; three repeats/cell do not establish a universal
+threshold or input path collapse. [Results](evidence/LINEAR-LENGTH-20261003/operator-review/results.md).
+
+## Curved Model 1 MVP 2.0 requirements
+
+The operator requires arbitrary single-finger paths without spin, with variable
+speed and unrestricted gameplay state at gesture start. A single cubic is not
+the model's representation limit; an extensible timed piecewise path is the
+current design candidate. Next execution review uses a moving circle only,
+aligned using five-contact calibration. Model accuracy is position error at
+matched frame times, with continued approximately 100-clip held-out human
+audits. [Requirements and remaining decisions](protocols/model1_curved_mvp2.md).
+
+MVP refinements: provisional maximum 15 timed waypoints including endpoints;
+10-logical-point-radius hollow target ring; broad shape/state coverage; initial
+error targets inherited from linear (0.03 normalized position, 0.10 s duration).
+Practical test: infer a single-contact expert trick and replay it in Workshop,
+checking trick reproduction alongside trajectory accuracy. Model 2 is not
+needed for that test. Initial speed/heading/contact state should be comparable.
+
+
+Research execution/viewer source now emits version 2 content-bound review bundles
+and checks foreground/lateness immediately before each scheduled submission. These
+synthetic/source checks do not replace human execution fidelity evidence, select a
+spacing rule or certify curved/spin collection. Historical v1 reviews retain weaker
+provenance and require explicit compatibility when imported by current readers.
+
+
+## Curved execution audit and replay evidence (2026-10-03–04)
+
+The original direct-waypoint pilot stopped at 0/100 calibrated clips after a
+900 ms request took 5.045 s, including 3.751 s of preparation. Its partial video
+and timing evidence remain preserved. A subsequent WDA snapshot fix and separately
+authorized v2/v3 runs completed the audit: **100/100 human assessments, 66 Good /
+21 Minor / 2 Major / 11 Unclear**. See
+[CURVE-AUDIT-20261003](experiments/CURVE-AUDIT-20261003.md) for the successive runs
+and amendments. Historical statements about pending reruns apply to the pilot.
+
+Exploratory single-rater evidence suggests spacing of about 33 ms or more performs
+better; it does not certify a spacing rule, curved executors or spin collection.
+Device and park are confounded, and some overlays may be about one frame late.
+Bundled, serial, scheduled indexed-path and anchor-finger demo replays all failed
+human review; separate scheduled records also hit XCTest's overlapping-record
+restriction. Preserve these negative results when considering future executors.
+USB HID and physical spin-pad approaches remain unvalidated proposals.
+
+Current audit/replay source retrieves partial recordings on every post-start exit
+and retains failures without retrying failed stop RPCs. New review bundles bind
+frozen specifications, successful ordered execution receipts and JPEG bytes;
+legacy evidence stays unchanged and requires explicit compatibility. These source
+checks authorize no new device run or deployment. Collection remains OFF.

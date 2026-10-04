@@ -19,6 +19,9 @@ Model 2 is unfinished. PPO/CMA-ES implementations are retired in tagged history.
 - Prefer terse factual updates: what changed, evidence, next step.
 - Preserve dirty work. Make agent changes in separate worktrees/branches;
   treat the rig checkout as deployment state, not an untracked development line.
+- Once a feature branch is merged into the default branch, delete it: local
+  branch, remote branch and worktree. This applies here and to the WDA fork.
+  Preserve/archive refs (`preserve/*`, `archive/*` tags) are exempt.
 
 ## Rig invariants
 
@@ -44,6 +47,11 @@ Model 2 is unfinished. PPO/CMA-ES implementations are retired in tagged history.
 - Notifications belong to the fleet incident/recovery mechanism. No periodic
   failure reminders or agent-generated messages without explicit authorization.
 - Collection smoke output must use an isolated directory and honest park provenance.
+- Human-review viewer servers on the rig are temporary. Once the reviewer has
+  returned the exported report's path, shut that viewer's server down. Do not
+  leave old viewer servers running.
+- Open pages for the user (viewers, dashboards, links) in Google Chrome, the
+  user's preferred browser: `open -a "Google Chrome" <url>`.
 - No paid cloud training or new research tranche without explicit authorization.
 
 ## Research hygiene

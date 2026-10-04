@@ -306,3 +306,26 @@ zero-duration positioning move, one pointer-down, one positive-duration move per
 interval and one pointer-up. No extra subdivisions or contact gaps are inserted.
 The curved execution audit freezes 5/8/11/15-point paths and their exact payloads;
 its overlay follows those quantized positions and times, never the observed trace.
+
+## Experimental cubic in time (`cubic_in_time_v1`)
+
+`sim/cubic_curve.py` introduces an additive nine-number description:
+`{"schema":"cubic_in_time_v1","coefficients":[[x0,y0],[x1,y1],[x2,y2],[x3,y3]],"duration_s":0.6}`.
+Coefficients use the Bernstein basis at normalized time; there is no easing.
+Eight evenly timed positions fit with exact endpoints. One cubic cannot represent
+all trajectories. Fitting does not certify safety: compilation rejects unsafe
+coefficient hulls and every unsafe quantized movement against expanded controls.
+
+The compiler accepts maximum segment duration or explicit N with a minimum
+segment-duration floor. It rounds total milliseconds once, rounds cumulative
+boundaries, evaluates at those actual times and quantizes to device logical
+points. `build_curved_drag(segment_durations_ms=...)` sends one continuous touch.
+`touch_labels.cubic_command_label` shares its exact boundaries and quantized
+points, avoiding label/executor truncation mismatch. Legacy defaults and labels
+are unchanged. Original cubic and executed command remain separate error sources.
+
+This path is diagnostic, not a curved training schema or model certification.
+[CURVE-EXEC-20261002](research/experiments/CURVE-EXEC-20261002.md) tests temporal
+spacing and visibility before any model recovery/generation tranche. Its primary
+0.01 normalized Euclidean metric is anisotropic: 4.14 horizontal or 8.96 vertical
+points on an XR. A pilot measurement floor determines whether it is measurable.

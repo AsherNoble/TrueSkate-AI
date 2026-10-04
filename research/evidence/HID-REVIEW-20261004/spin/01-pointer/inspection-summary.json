@@ -1,0 +1,28 @@
+{
+  "decoded_frames": 446,
+  "source_pts_first": 0.105,
+  "source_pts_last": 7.588333,
+  "source_frame_step_median": 0.016666999999999987,
+  "source_step_min": 0.016665999999999848,
+  "source_step_max": 0.033334,
+  "source_gaps_gt_1_5_frame": 4,
+  "completed": false,
+  "release": [
+    "OK"
+  ],
+  "pointer_late_us": [
+    0,
+    1
+  ],
+  "hold": null,
+  "streams": [
+    {
+      "width": 828,
+      "height": 1792,
+      "r_frame_rate": "60/1",
+      "avg_frame_rate": "892/15",
+      "duration": "7.500000",
+      "nb_frames": "446"
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "retention_manifest": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/manifest.json",
+  "retention_manifest_sha256": "9a8c870ff783adb65db3902e1f880552bd94c910cbd0cac79497e6528a68b729",
+  "refs": [
+    {
+      "branch": "docs/linear-length-audit-journal",
+      "sha": "781afa22beaf3007a4302d8d951b8375ab80f301",
+      "tag": "archive/worktree-20261005/docs/linear-length-audit-journal",
+      "github_verified": true,
+      "archive_id": "ARCH-010",
+      "original_worktree": "/private/tmp/trueskate-audit-journal",
+      "retention_directory": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/trueskate-audit-journal",
+      "retained_files": 0,
+      "retained_bytes": 0
+    },
+    {
+      "branch": "research/curved-execution-audit",
+      "sha": "ecac1ddccf328f8efcdf9cce8147693ac0f67870",
+      "tag": "archive/worktree-20261005/research/curved-execution-audit",
+      "github_verified": true,
+      "archive_id": "ARCH-011",
+      "original_worktree": "/private/tmp/trueskate-curved-audit",
+      "retention_directory": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/trueskate-curved-audit",
+      "retained_files": 9,
+      "retained_bytes": 12717392
+    },
+    {
+      "branch": "research/curved-gestures",
+      "sha": "3f6709ebeeee42d3acbae0a732b87eec1580382e",
+      "tag": "archive/worktree-20261005/research/curved-gestures",
+      "github_verified": true,
+      "archive_id": "ARCH-012",
+      "original_worktree": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/curved-gestures-worktree",
+      "retention_directory": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/curved-gestures-worktree",
+      "retained_files": 12657,
+      "retained_bytes": 4438079324
+    },
+    {
+      "branch": "research/hid-pointer",
+      "sha": "dd27a22cef9135f3458f58a5fc841c2e1dd48e4e",
+      "tag": "archive/worktree-20261005/research/hid-pointer",
+      "github_verified": true,
+      "archive_id": "ARCH-013",
+      "original_worktree": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/hid-pointer-worktree",
+      "retention_directory": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/hid-pointer-worktree",
+      "retained_files": 0,
+      "retained_bytes": 0
+    },
+    {
+      "branch": "research/hid-review-20261004",
+      "sha": "3ccf8bd028320fe60aa30d1f924520734eccb816",
+      "tag": "archive/worktree-20261005/research/hid-review-20261004",
+      "github_verified": true,
+      "archive_id": "ARCH-014",
+      "original_worktree": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/hid-review-worktree",
+      "retention_directory": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/hid-review-worktree",
+      "retained_files": 0,
+      "retained_bytes": 0
+    },
+    {
+      "branch": "research/linear-drag-speed-sweep",
+      "sha": "c5720aefcc7ad21e7a1f23fb42637781f18fca4c",
+      "tag": "archive/worktree-20261005/research/linear-drag-speed-sweep",
+      "github_verified": true,
+      "archive_id": "ARCH-015",
+      "original_worktree": "No active worktree",
+      "retention_directory": "Inherited artifacts retained with linear-speed-worktree",
+      "retained_files": 0,
+      "retained_bytes": 0
+    },
+    {
+      "branch": "research/linear-length-blind-sweep",
+      "sha": "f90a75fe63f0f13f9eb3ea868dcc808a8c11835d",
+      "tag": "archive/worktree-20261005/research/linear-length-blind-sweep",
+      "github_verified": true,
+      "archive_id": "ARCH-016",
+      "original_worktree": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/linear-speed-worktree",
+      "retention_directory": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/linear-speed-worktree",
+      "retained_files": 51,
+      "retained_bytes": 254236065
+    },
+    {
+      "branch": "research/xr-jailbreak-20261004",
+      "sha": "3ccf8bd028320fe60aa30d1f924520734eccb816",
+      "tag": "archive/worktree-20261005/research/xr-jailbreak-20261004",
+      "github_verified": true,
+      "archive_id": "ARCH-017",
+      "original_worktree": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/xr-jailbreak-worktree",
+      "retention_directory": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/xr-jailbreak-worktree",
+      "retained_files": 0,
+      "retained_bytes": 0
+    }
+  ]
+}

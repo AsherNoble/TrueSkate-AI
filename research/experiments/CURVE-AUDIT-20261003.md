@@ -311,3 +311,13 @@ the extraction against a moving-dot overlay
   downgraded. The next route under test is a hardware pointer: a microcontroller
   acting as an AssistiveTouch HID mouse, with the gesture schedule timed on the
   board, plus a capacitive pad for the spin button on the same clock.
+
+
+## Integration clarification (2026-10-05)
+
+The opening status describes the first pilot. Subsequent separately authorized
+runs 3+4 completed all 100 assessments as recorded above; the negative demo replay
+findings remain unresolved. Device/build/jailbreak statements above are historical
+observations from their stated dates. The spacing suggestion is exploratory, not
+curved/spin certification. Current source uses explicit schedule matching and v2
+content-bound reviews; it does not relabel or upgrade these historical v1 artifacts.

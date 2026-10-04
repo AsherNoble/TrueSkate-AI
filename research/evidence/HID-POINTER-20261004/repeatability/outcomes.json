@@ -1,0 +1,85 @@
+{
+ "note": "True Skate trick banner read from the end of each 60 fps recording (banner_sheet.py); run order alternated v2, v3 from 01 to 10; v2 = centroid strokes (graded 3/3 Minor), v3 = leading-edge strokes (graded 1 Minor, 2 Major); identical board schedule within each condition",
+ "runs": {
+  "v2_01": {
+   "trick": "Inward Heelflip",
+   "result": "landed"
+  },
+  "v2_02": {
+   "trick": "Inward Heelflip",
+   "result": "landed"
+  },
+  "v2_03": {
+   "trick": "360 Flip + late Hard Flip",
+   "result": "failed"
+  },
+  "v2_04": {
+   "trick": "360 Flip",
+   "result": "failed"
+  },
+  "v2_05": {
+   "trick": "Inward Heelflip",
+   "result": "landed"
+  },
+  "v2_06": {
+   "trick": "Inward Heelflip",
+   "result": "landed"
+  },
+  "v2_07": {
+   "trick": "360 Triple Flip",
+   "result": "landed"
+  },
+  "v2_08": {
+   "trick": "Pop Shove-It + Nose Manual + Nose Casper Slide",
+   "result": "failed"
+  },
+  "v2_09": {
+   "trick": "360 Triple Flip",
+   "result": "landed"
+  },
+  "v2_10": {
+   "trick": "Pop Shove-It + Nose Manual + Primo Slide",
+   "result": "failed"
+  },
+  "v3_01": {
+   "trick": "FS Pop Shove-It",
+   "result": "landed"
+  },
+  "v3_02": {
+   "trick": "no trick banner",
+   "result": "board upside down"
+  },
+  "v3_03": {
+   "trick": "no trick banner",
+   "result": "board upside down"
+  },
+  "v3_04": {
+   "trick": "FS Pop Shove-It",
+   "result": "landed"
+  },
+  "v3_05": {
+   "trick": "360 Pop Shove-It",
+   "result": "landed"
+  },
+  "v3_06": {
+   "trick": "360 Flip + Manual",
+   "result": "landed"
+  },
+  "v3_07": {
+   "trick": "FS Pop Shove-It",
+   "result": "landed"
+  },
+  "v3_08": {
+   "trick": "FS Pop Shove-It",
+   "result": "landed"
+  },
+  "v3_09": {
+   "trick": "FS Pop Shove-It",
+   "result": "landed"
+  },
+  "v3_10": {
+   "trick": "no trick banner",
+   "result": "board upside down"
+  }
+ }
+}

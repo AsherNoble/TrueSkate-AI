@@ -1,0 +1,194 @@
+{
+  "manifest_sha256": "f7ac2a4622c8d6a557c483b6bd0b34e699e2a0191b6493dfab5a5d73ebbbdc1b",
+  "stage": "pilot",
+  "status": "inconclusive",
+  "allow_execution": false,
+  "primary_budget": 0.01,
+  "secondary_budget": 0.03,
+  "reason": "pilot incomplete or duplicate attempts; preserve failures, do not replace",
+  "analysis_source_sha256": {
+    "src/trueskate_ai/sim/cubic_curve.py": "02599c7742e0abe2fc591dc3b62c418f331babdab8939b2596a06a6fe2162181",
+    "src/trueskate_ai/sim/touch_actions.py": "474d490d182570e7b4bc800482da22c8544a5e3043b5b4caaec60e223e764035",
+    "src/trueskate_ai/sim/gestures.py": "d21f71debb5326c9bcb1866f6b365c33da5f41edd17dccabdbde1a7e59dac569",
+    "src/trueskate_ai/sim/device.py": "183c96f4516a6fe27394ed3d6b4cb2c473fc810ae67c60fcf654571203dbffff",
+    "src/trueskate_ai/data/touch_labels.py": "4e401b46dbf6ec912809de77b95d0597e8cf1724354f925e0d8b11e9ff6777da",
+    "src/trueskate_ai/data/control_hitboxes.py": "84ac2195e0438578e3a40d46bd1095a4abe931dc0f19527c0b4c7d1577367fdb",
+    "src/trueskate_ai/collection/wda_action_timing.py": "9afd18ed77c540a37208de66ecc2a9fbf433b5b73be288c126216182c4002d03",
+    "src/trueskate_ai/collection/xctest_capture.py": "4ac53c3fe03d01fa6657fb0613851c1b60a44c58af52b17d1ae0f13a8145035d",
+    "src/trueskate_ai/collection/tap_timing_calibration.py": "a0658a9cefc9a938c4e87124d4f82463be52e3ac3b5b477d96462ae0a97fce75",
+    "src/trueskate_ai/collection/scene_settle.py": "56e987957f4340104d46f055ce8f66a339a56c18a6326993a1795f124054ede8",
+    "src/trueskate_ai/collection/gameplay_filter.py": "4052d7f5d009c90526b18afda0261781ad089ee4da72be18c61cb3250638e0f1",
+    "src/trueskate_ai/research/curve_protocol.py": "93f05079411dfb773c47c09635f7128b44ad70b258ebdc6746b70c09c76d74b3",
+    "src/trueskate_ai/research/curve_probe.py": "ff98a0fcaa9a1dd909e7d502753543c8bca99816da3329adca8d4a8228de0f6c",
+    "src/trueskate_ai/research/curve_measurement.py": "c798012ba6781dd153e3a5f3d16963b6daf2c078f21eea6406c09aa06bddc6c9",
+    "src/trueskate_ai/research/curve_report.py": "73cd29ee512d4d7be7bd7cd844e32fc787c88dc5f2d0d2251c150605d77fe171",
+    "scripts/collection/probe_cubic_curves.py": "48a8d37f5ee923e66a89292cecc97aa37f735d23379fdf826a1d2a69d1dba269",
+    "scripts/inspect/prepare_curve_exec.py": "f5a9957ae8dccc906125493ffd855a9dcff31177f9e7d6821493545508ecfacb",
+    "scripts/inspect/measure_curve_exec.py": "bec077efdf53a8e934a250e0bbae60a8b093b5a7103870faf5b12d9bc726c284",
+    "scripts/inspect/report_curve_exec.py": "b9f303809724de15b0ab4803a0457844dea45a4c8456d63209fe06a0dfaca165",
+    "scripts/inspect/build_curve_audit.py": "1c18679577a7c39b786186d508ec35326a5f3f959d6e131aa840ee0616bcf271",
+    "scripts/inspect/templates/curve_audit.html": "0ca0ad4a736223434490e7530b1eb8c4e95a15521e0e8f5c370847cc000a1479"
+  },
+  "groups": [
+    {
+      "device": "iPhone_XR",
+      "family": "straight",
+      "duration_s": 0.3,
+      "n": 16,
+      "min_segment_duration_ms": 18,
+      "max_segment_duration_ms": 19,
+      "attempts": 1,
+      "evaluable": 0,
+      "indeterminate": 1,
+      "collapse_candidates": 0,
+      "max_shape_error": null
+    },
+    {
+      "device": "iPhone_XR",
+      "family": "straight",
+      "duration_s": 1.2,
+      "n": 16,
+      "min_segment_duration_ms": 75,
+      "max_segment_duration_ms": 75,
+      "attempts": 1,
+      "evaluable": 0,
+      "indeterminate": 1,
+      "collapse_candidates": 0,
+      "max_shape_error": null
+    },
+    {
+      "device": "iPhone_XR",
+      "family": "arc",
+      "duration_s": 0.3,
+      "n": 16,
+      "min_segment_duration_ms": 18,
+      "max_segment_duration_ms": 19,
+      "attempts": 1,
+      "evaluable": 0,
+      "indeterminate": 1,
+      "collapse_candidates": 0,
+      "max_shape_error": null
+    },
+    {
+      "device": "iPhone_XR",
+      "family": "arc",
+      "duration_s": 1.2,
+      "n": 16,
+      "min_segment_duration_ms": 75,
+      "max_segment_duration_ms": 75,
+      "attempts": 1,
+      "evaluable": 0,
+      "indeterminate": 1,
+      "collapse_candidates": 0,
+      "max_shape_error": null
+    },
+    {
+      "device": "iPhone_XR",
+      "family": "s_curve",
+      "duration_s": 0.3,
+      "n": 16,
+      "min_segment_duration_ms": 18,
+      "max_segment_duration_ms": 19,
+      "attempts": 1,
+      "evaluable": 0,
+      "indeterminate": 1,
+      "collapse_candidates": 0,
+      "max_shape_error": null
+    },
+    {
+      "device": "iPhone_XR",
+      "family": "s_curve",
+      "duration_s": 1.2,
+      "n": 16,
+      "min_segment_duration_ms": 75,
+      "max_segment_duration_ms": 75,
+      "attempts": 1,
+      "evaluable": 0,
+      "indeterminate": 1,
+      "collapse_candidates": 0,
+      "max_shape_error": null
+    },
+    {
+      "device": "iPhone_XR",
+      "family": "reversal",
+      "duration_s": 0.3,
+      "n": 16,
+      "min_segment_duration_ms": 18,
+      "max_segment_duration_ms": 19,
+      "attempts": 1,
+      "evaluable": 0,
+      "indeterminate": 1,
+      "collapse_candidates": 0,
+      "max_shape_error": null
+    },
+    {
+      "device": "iPhone_XR",
+      "family": "reversal",
+      "duration_s": 1.2,
+      "n": 16,
+      "min_segment_duration_ms": 75,
+      "max_segment_duration_ms": 75,
+      "attempts": 1,
+      "evaluable": 0,
+      "indeterminate": 1,
+      "collapse_candidates": 0,
+      "max_shape_error": null
+    }
+  ],
+  "automated_evaluable": 0,
+  "evaluable_after_review": 0,
+  "comparisons": {
+    "0.01": [
+      {
+        "rule_ms": 10,
+        "pass_criteria": false,
+        "attempts": 0,
+        "evaluable": 0,
+        "coverage": 0,
+        "device_family_coverage": {}
+      },
+      {
+        "rule_ms": 20,
+        "pass_criteria": false,
+        "attempts": 0,
+        "evaluable": 0,
+        "coverage": 0,
+        "device_family_coverage": {}
+      },
+      {
+        "rule_ms": 40,
+        "pass_criteria": false,
+        "attempts": 0,
+        "evaluable": 0,
+        "coverage": 0,
+        "device_family_coverage": {}
+      }
+    ],
+    "0.03": [
+      {
+        "rule_ms": 10,
+        "pass_criteria": false,
+        "attempts": 0,
+        "evaluable": 0,
+        "coverage": 0,
+        "device_family_coverage": {}
+      },
+      {
+        "rule_ms": 20,
+        "pass_criteria": false,
+        "attempts": 0,
+        "evaluable": 0,
+        "coverage": 0,
+        "device_family_coverage": {}
+      },
+      {
+        "rule_ms": 40,
+        "pass_criteria": false,
+        "attempts": 0,
+        "evaluable": 0,
+        "coverage": 0,
+        "device_family_coverage": {}
+      }
+    ]
+  }
+}

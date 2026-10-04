@@ -1,0 +1,236 @@
+[
+ {
+  "dx": 0,
+  "dy": 6,
+  "reports": 30,
+  "interval_us": 15000,
+  "spot": "D",
+  "reset": true,
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081758.919521,
+  "n_events": 97,
+  "max_late_us": 1,
+  "counts": [
+   0,
+   180
+  ],
+  "start": [
+   347.75,
+   314.75
+  ],
+  "end": [
+   347.25,
+   430.75
+  ],
+  "moved_pt": [
+   -0.5,
+   116.0
+  ],
+  "gain": [
+   NaN,
+   0.6444
+  ],
+  "n_pre": 8,
+  "n_post": 9,
+  "spread_pt": [
+   0.5,
+   0.0
+  ]
+ },
+ {
+  "dx": 0,
+  "dy": 16,
+  "reports": 12,
+  "interval_us": 15000,
+  "spot": "D",
+  "reset": true,
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081764.655046,
+  "n_events": 79,
+  "max_late_us": 1,
+  "counts": [
+   0,
+   192
+  ],
+  "start": [
+   347.75,
+   314.25
+  ],
+  "end": [
+   347.25,
+   480.75
+  ],
+  "moved_pt": [
+   -0.5,
+   166.5
+  ],
+  "gain": [
+   NaN,
+   0.8672
+  ],
+  "n_pre": 8,
+  "n_post": 10,
+  "spread_pt": [
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "dx": 0,
+  "dy": 32,
+  "reports": 4,
+  "interval_us": 15000,
+  "spot": "D",
+  "reset": true,
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081770.103083,
+  "n_events": 71,
+  "max_late_us": 1,
+  "counts": [
+   0,
+   128
+  ],
+  "start": [
+   347.75,
+   314.75
+  ],
+  "end": [
+   347.25,
+   470.25
+  ],
+  "moved_pt": [
+   -0.5,
+   155.5
+  ],
+  "gain": [
+   NaN,
+   1.2148
+  ],
+  "n_pre": 8,
+  "n_post": 9,
+  "spread_pt": [
+   0.5,
+   0.5
+  ]
+ },
+ {
+  "dx": -3,
+  "dy": 4,
+  "reports": 40,
+  "interval_us": 15000,
+  "spot": "D",
+  "reset": true,
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081775.451875,
+  "n_events": 107,
+  "max_late_us": 1,
+  "counts": [
+   -120,
+   160
+  ],
+  "start": [
+   347.75,
+   314.25
+  ],
+  "end": [
+   277.75,
+   406.75
+  ],
+  "moved_pt": [
+   -70.0,
+   92.5
+  ],
+  "gain": [
+   0.5833,
+   0.5781
+  ],
+  "n_pre": 8,
+  "n_post": 10,
+  "spread_pt": [
+   0.0,
+   0.5
+  ]
+ },
+ {
+  "dx": -6,
+  "dy": 8,
+  "reports": 15,
+  "interval_us": 15000,
+  "spot": "D",
+  "reset": true,
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081781.308893,
+  "n_events": 82,
+  "max_late_us": 2,
+  "counts": [
+   -90,
+   120
+  ],
+  "start": [
+   348.25,
+   314.25
+  ],
+  "end": [
+   276.25,
+   408.75
+  ],
+  "moved_pt": [
+   -72.0,
+   94.5
+  ],
+  "gain": [
+   0.8,
+   0.7875
+  ],
+  "n_pre": 8,
+  "n_post": 10,
+  "spread_pt": [
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "dx": -12,
+  "dy": 16,
+  "reports": 6,
+  "interval_us": 15000,
+  "spot": "D",
+  "reset": true,
+  "kind": "drag",
+  "press_us": 1675000,
+  "go_epoch": 1791081786.8001301,
+  "n_events": 73,
+  "max_late_us": 1,
+  "counts": [
+   -72,
+   96
+  ],
+  "start": [
+   347.75,
+   314.75
+  ],
+  "end": [
+   282.75,
+   400.25
+  ],
+  "moved_pt": [
+   -65.0,
+   85.5
+  ],
+  "gain": [
+   0.9028,
+   0.8906
+  ],
+  "n_pre": 8,
+  "n_post": 10,
+  "spread_pt": [
+   0.5,
+   0.5
+  ]
+ }
+]
