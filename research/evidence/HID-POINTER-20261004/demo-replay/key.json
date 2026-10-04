@@ -1,0 +1,20 @@
+[
+ {
+  "replay": 1,
+  "file": "02_pointer_immediate_r2.mov",
+  "first_push_s": 3.55,
+  "offset_s": 3.065
+ },
+ {
+  "replay": 2,
+  "file": "03_pointer_immediate_r3.mov",
+  "first_push_s": 3.55,
+  "offset_s": 3.065
+ },
+ {
+  "replay": 3,
+  "file": "01_pointer_immediate_r1.mov",
+  "first_push_s": 3.517,
+  "offset_s": 3.032
+ }
+]

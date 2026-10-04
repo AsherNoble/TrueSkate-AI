@@ -1,0 +1,26 @@
+{
+  "schema": "demo-replay-compare-v1",
+  "grades": {
+    "1": {
+      "grade": "minor",
+      "comments": "It got so close to executing the trick. Very good.",
+      "offset_s": 3.065,
+      "updated_at": "2026-10-04T03:16:07.352Z"
+    },
+    "2": {
+      "grade": "minor",
+      "comments": "By far the closest to landing the trick. Managed to perform a 360 pop shove it – which means it spun the correct amount but just didn't include a flip component.",
+      "offset_s": 3.065,
+      "updated_at": "2026-10-04T03:17:32.719Z"
+    },
+    "3": {
+      "grade": "minor",
+      "comments": "All the gestures appear to have been executed at the correct times and more or less the correct positions. However, due to a minor different in the first flick (actually called a scoop) the trick was not executed properly. Still a very satisfactory result & progress.",
+      "offset_s": 3.049,
+      "updated_at": "2026-10-04T03:17:35.219Z"
+    }
+  },
+  "offsets": {
+    "3": 3.049
+  }
+}
