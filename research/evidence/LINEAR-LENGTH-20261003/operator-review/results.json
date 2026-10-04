@@ -1,0 +1,580 @@
+{
+  "experiment": "LINEAR-LENGTH-20261003",
+  "assessment_sha256": "21541d9ed957505903c9e8d2f5c9424835679362177bf93e74f5bfd4fc3fcd36",
+  "bundle_sha256": "dc954a013a05531482095bdff5f1e6b5e232051d41d5342b900cfecc62ff1e1e",
+  "source": "operator blinded viewing labels",
+  "coverage": {
+    "expected": 135,
+    "reviewed": 135,
+    "missing": 0,
+    "unknown": 0,
+    "balanced_repetitions": 3
+  },
+  "overall": {
+    "n": 135,
+    "trace": 101,
+    "hold": 0,
+    "flicker": 34,
+    "board_moved": 120
+  },
+  "by_duration": [
+    {
+      "duration_ms": 50,
+      "n": 15,
+      "trace": 15,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 15
+    },
+    {
+      "duration_ms": 45,
+      "n": 15,
+      "trace": 15,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 15
+    },
+    {
+      "duration_ms": 40,
+      "n": 15,
+      "trace": 15,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 15
+    },
+    {
+      "duration_ms": 35,
+      "n": 15,
+      "trace": 15,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 15
+    },
+    {
+      "duration_ms": 30,
+      "n": 15,
+      "trace": 15,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 15
+    },
+    {
+      "duration_ms": 25,
+      "n": 15,
+      "trace": 12,
+      "hold": 0,
+      "flicker": 3,
+      "board_moved": 15
+    },
+    {
+      "duration_ms": 20,
+      "n": 15,
+      "trace": 7,
+      "hold": 0,
+      "flicker": 8,
+      "board_moved": 15
+    },
+    {
+      "duration_ms": 15,
+      "n": 15,
+      "trace": 7,
+      "hold": 0,
+      "flicker": 8,
+      "board_moved": 15
+    },
+    {
+      "duration_ms": 10,
+      "n": 15,
+      "trace": 0,
+      "hold": 0,
+      "flicker": 15,
+      "board_moved": 0
+    }
+  ],
+  "by_cell": [
+    {
+      "duration_ms": 50,
+      "length_fraction": 0.2,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 50,
+      "length_fraction": 0.4,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 50,
+      "length_fraction": 0.6,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 50,
+      "length_fraction": 0.8,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 50,
+      "length_fraction": 1.0,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 45,
+      "length_fraction": 0.2,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 45,
+      "length_fraction": 0.4,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 45,
+      "length_fraction": 0.6,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 45,
+      "length_fraction": 0.8,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 45,
+      "length_fraction": 1.0,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 40,
+      "length_fraction": 0.2,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 40,
+      "length_fraction": 0.4,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 40,
+      "length_fraction": 0.6,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 40,
+      "length_fraction": 0.8,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 40,
+      "length_fraction": 1.0,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 35,
+      "length_fraction": 0.2,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 35,
+      "length_fraction": 0.4,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 35,
+      "length_fraction": 0.6,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 35,
+      "length_fraction": 0.8,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 35,
+      "length_fraction": 1.0,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 30,
+      "length_fraction": 0.2,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 30,
+      "length_fraction": 0.4,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 30,
+      "length_fraction": 0.6,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 30,
+      "length_fraction": 0.8,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 30,
+      "length_fraction": 1.0,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 25,
+      "length_fraction": 0.2,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 25,
+      "length_fraction": 0.4,
+      "n": 3,
+      "trace": 2,
+      "hold": 0,
+      "flicker": 1,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 25,
+      "length_fraction": 0.6,
+      "n": 3,
+      "trace": 1,
+      "hold": 0,
+      "flicker": 2,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 25,
+      "length_fraction": 0.8,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 25,
+      "length_fraction": 1.0,
+      "n": 3,
+      "trace": 3,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 20,
+      "length_fraction": 0.2,
+      "n": 3,
+      "trace": 2,
+      "hold": 0,
+      "flicker": 1,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 20,
+      "length_fraction": 0.4,
+      "n": 3,
+      "trace": 2,
+      "hold": 0,
+      "flicker": 1,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 20,
+      "length_fraction": 0.6,
+      "n": 3,
+      "trace": 1,
+      "hold": 0,
+      "flicker": 2,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 20,
+      "length_fraction": 0.8,
+      "n": 3,
+      "trace": 2,
+      "hold": 0,
+      "flicker": 1,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 20,
+      "length_fraction": 1.0,
+      "n": 3,
+      "trace": 0,
+      "hold": 0,
+      "flicker": 3,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 15,
+      "length_fraction": 0.2,
+      "n": 3,
+      "trace": 0,
+      "hold": 0,
+      "flicker": 3,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 15,
+      "length_fraction": 0.4,
+      "n": 3,
+      "trace": 1,
+      "hold": 0,
+      "flicker": 2,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 15,
+      "length_fraction": 0.6,
+      "n": 3,
+      "trace": 2,
+      "hold": 0,
+      "flicker": 1,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 15,
+      "length_fraction": 0.8,
+      "n": 3,
+      "trace": 2,
+      "hold": 0,
+      "flicker": 1,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 15,
+      "length_fraction": 1.0,
+      "n": 3,
+      "trace": 2,
+      "hold": 0,
+      "flicker": 1,
+      "board_moved": 3
+    },
+    {
+      "duration_ms": 10,
+      "length_fraction": 0.2,
+      "n": 3,
+      "trace": 0,
+      "hold": 0,
+      "flicker": 3,
+      "board_moved": 0
+    },
+    {
+      "duration_ms": 10,
+      "length_fraction": 0.4,
+      "n": 3,
+      "trace": 0,
+      "hold": 0,
+      "flicker": 3,
+      "board_moved": 0
+    },
+    {
+      "duration_ms": 10,
+      "length_fraction": 0.6,
+      "n": 3,
+      "trace": 0,
+      "hold": 0,
+      "flicker": 3,
+      "board_moved": 0
+    },
+    {
+      "duration_ms": 10,
+      "length_fraction": 0.8,
+      "n": 3,
+      "trace": 0,
+      "hold": 0,
+      "flicker": 3,
+      "board_moved": 0
+    },
+    {
+      "duration_ms": 10,
+      "length_fraction": 1.0,
+      "n": 3,
+      "trace": 0,
+      "hold": 0,
+      "flicker": 3,
+      "board_moved": 0
+    }
+  ],
+  "trace_and_board": [
+    {
+      "label": "trace",
+      "n": 101,
+      "trace": 101,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 101
+    },
+    {
+      "label": "hold",
+      "n": 0,
+      "trace": 0,
+      "hold": 0,
+      "flicker": 0,
+      "board_moved": 0
+    },
+    {
+      "label": "flicker",
+      "n": 34,
+      "trace": 0,
+      "hold": 0,
+      "flicker": 34,
+      "board_moved": 19
+    }
+  ],
+  "comments": [
+    {
+      "clip": 84,
+      "token": "ba7bdb7b2072bebbfca2",
+      "recording": 4,
+      "command_id": "p1-l0-d45",
+      "duration_ms": 45,
+      "length_fraction": 0.2,
+      "repetition": 1,
+      "trace_visible": "trace",
+      "board_moved": true,
+      "comments": "Very short trace. Definitely not a flicker but remarkably short.",
+      "updated_at": "2026-10-03T01:04:30.813Z"
+    },
+    {
+      "clip": 126,
+      "token": "4f13762b0d75300be3c1",
+      "recording": 12,
+      "command_id": "p3-l0-d45",
+      "duration_ms": 45,
+      "length_fraction": 0.2,
+      "repetition": 3,
+      "trace_visible": "trace",
+      "board_moved": true,
+      "comments": "Another very short trace (there have been about 5 \u2013 might just be very short gesture length \u2013 just noting it).",
+      "updated_at": "2026-10-03T01:08:33.166Z"
+    }
+  ],
+  "interpretation": {
+    "board_response_transitions_ms": [
+      [
+        10,
+        15
+      ]
+    ],
+    "all_trace_at_tested_durations_ms": [
+      30,
+      35,
+      40,
+      45,
+      50
+    ],
+    "mixed_trace_at_tested_durations_ms": [
+      15,
+      20,
+      25
+    ],
+    "input_path_collapse": "not established by these video labels"
+  },
+  "defaults": {
+    "trace_visible": "trace after UI improvement",
+    "board_moved": true
+  }
+}

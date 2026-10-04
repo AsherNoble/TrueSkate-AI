@@ -66,3 +66,13 @@ To restore a whole historical environment without modifying the active checkout:
 - Paths: [research/JOURNAL.md](https://github.com/AsherNoble/TrueSkate-AI/blob/2cf396f19d7f35560bac8768bb09b0c9efe3a2f5/research/JOURNAL.md)
 - Recovery: `git show 2cf396f19d7f35560bac8768bb09b0c9efe3a2f5esearch/JOURNAL.md`
 - Artifacts: None beyond the journal text; the entries link to experiment records that remain in the active tree.
+
+
+## ARCH-008 — Complete journal before the linear duration audit entry
+
+- Description: The complete 30-entry journal before adding the 2026-10-03 blinded linear duration × length audit. The removed 2026-09-12 human onset timing audit entry remains preserved here and in its experiment record.
+- Commit: `ac74a7fe887bb98a791af6fb2d95b488f31f44f9`
+- Tag: `archive/journal-before-linear-audit-20261003` (remote tag verified before trimming).
+- Paths: [research/JOURNAL.md](https://github.com/AsherNoble/TrueSkate-AI/blob/ac74a7fe887bb98a791af6fb2d95b488f31f44f9/research/JOURNAL.md)
+- Recovery: `git show ac74a7fe887bb98a791af6fb2d95b488f31f44f9:research/JOURNAL.md`
+- Artifacts: The tag preserves journal text, not ignored recordings. The removed entry's evidence remains in `research/experiments/M1-TIMING-20260912.md` and `research/evidence/M1-TIMING-20260912/`.
