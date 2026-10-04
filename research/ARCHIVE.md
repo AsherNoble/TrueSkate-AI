@@ -76,3 +76,93 @@ To restore a whole historical environment without modifying the active checkout:
 - Paths: [research/JOURNAL.md](https://github.com/AsherNoble/TrueSkate-AI/blob/ac74a7fe887bb98a791af6fb2d95b488f31f44f9/research/JOURNAL.md)
 - Recovery: `git show ac74a7fe887bb98a791af6fb2d95b488f31f44f9:research/JOURNAL.md`
 - Artifacts: The tag preserves journal text, not ignored recordings. The removed entry's evidence remains in `research/experiments/M1-TIMING-20260912.md` and `research/evidence/M1-TIMING-20260912/`.
+
+## ARCH-009 — Correction to ARCH-007 recovery command
+
+- Description: ARCH-007 remains byte-for-byte unchanged. Its recovery command omitted the colon and the first character of research; use the corrected command below. The curved audit original ARCH-009 independently records the same correction.
+- Commit: `2cf396f19d7f35560bac8768bb09b0c9efe3a2f5`
+- Tag: `archive/journal-20261001`
+- Paths: [journal](https://github.com/AsherNoble/TrueSkate-AI/blob/2cf396f19d7f35560bac8768bb09b0c9efe3a2f5/research/JOURNAL.md)
+- Recovery: `git show 2cf396f19d7f35560bac8768bb09b0c9efe3a2f5:research/JOURNAL.md`
+- Artifacts: Journal text only.
+
+## ARCH-010 — Integration index for docs/linear-length-audit-journal
+
+- Description: Original feature tip preserved and GitHub-verified before consolidation; original worktree: /private/tmp/trueskate-audit-journal. Original archive IDs remain unchanged under this tag.
+- Commit: `781afa22beaf3007a4302d8d951b8375ab80f301`
+- Tag: `archive/worktree-20261005/docs/linear-length-audit-journal`
+- Paths: [original archive](https://github.com/AsherNoble/TrueSkate-AI/blob/781afa22beaf3007a4302d8d951b8375ab80f301/research/ARCHIVE.md), [source tree](https://github.com/AsherNoble/TrueSkate-AI/tree/781afa22beaf3007a4302d8d951b8375ab80f301/research/) 
+- Recovery: `git worktree add --detach /absolute/new/arch-10 781afa22beaf3007a4302d8d951b8375ab80f301`
+- Artifacts: 0 ignored regular files (0 bytes) verified under `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/trueskate-audit-journal`. Full original paths, sizes, SHA-256 and symlink targets: `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/manifest.json`. Caches and environments excluded; root `.venv` retained. External/rig artifacts retain original locations in experiment records and are not backed up by Git.
+
+## ARCH-011 — Integration index for research/curved-execution-audit
+
+- Description: Original feature tip preserved and GitHub-verified before consolidation; original worktree: /private/tmp/trueskate-curved-audit. Original ARCH-008 means the conjoined-gesture journal, and ARCH-009 is its ARCH-007 recovery correction; these are qualified by this tag and are distinct from main IDs.
+- Commit: `ecac1ddccf328f8efcdf9cce8147693ac0f67870`
+- Tag: `archive/worktree-20261005/research/curved-execution-audit`
+- Paths: [original archive](https://github.com/AsherNoble/TrueSkate-AI/blob/ecac1ddccf328f8efcdf9cce8147693ac0f67870/research/ARCHIVE.md), [source tree](https://github.com/AsherNoble/TrueSkate-AI/tree/ecac1ddccf328f8efcdf9cce8147693ac0f67870/research/) 
+- Recovery: `git worktree add --detach /absolute/new/arch-11 ecac1ddccf328f8efcdf9cce8147693ac0f67870`
+- Artifacts: 9 ignored regular files (12717392 bytes) verified under `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/trueskate-curved-audit`. Full original paths, sizes, SHA-256 and symlink targets: `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/manifest.json`. Caches and environments excluded; root `.venv` retained. External/rig artifacts retain original locations in experiment records and are not backed up by Git.
+
+## ARCH-012 — Integration index for research/curved-gestures
+
+- Description: Original feature tip preserved and GitHub-verified before consolidation; original worktree: /Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/curved-gestures-worktree. Original ARCH-008 means the pre-curve journal, distinct from main ARCH-008.
+- Commit: `3f6709ebeeee42d3acbae0a732b87eec1580382e`
+- Tag: `archive/worktree-20261005/research/curved-gestures`
+- Paths: [original archive](https://github.com/AsherNoble/TrueSkate-AI/blob/3f6709ebeeee42d3acbae0a732b87eec1580382e/research/ARCHIVE.md), [source tree](https://github.com/AsherNoble/TrueSkate-AI/tree/3f6709ebeeee42d3acbae0a732b87eec1580382e/research/) 
+- Recovery: `git worktree add --detach /absolute/new/arch-12 3f6709ebeeee42d3acbae0a732b87eec1580382e`
+- Artifacts: 12657 ignored regular files (4438079324 bytes) verified under `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/curved-gestures-worktree`. Full original paths, sizes, SHA-256 and symlink targets: `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/manifest.json`. Caches and environments excluded; root `.venv` retained. External/rig artifacts retain original locations in experiment records and are not backed up by Git.
+
+## ARCH-013 — Integration index for research/hid-pointer
+
+- Description: Original feature tip preserved and GitHub-verified before consolidation; original worktree: /Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/hid-pointer-worktree. Original archive IDs remain unchanged under this tag.
+- Commit: `dd27a22cef9135f3458f58a5fc841c2e1dd48e4e`
+- Tag: `archive/worktree-20261005/research/hid-pointer`
+- Paths: [original archive](https://github.com/AsherNoble/TrueSkate-AI/blob/dd27a22cef9135f3458f58a5fc841c2e1dd48e4e/research/ARCHIVE.md), [source tree](https://github.com/AsherNoble/TrueSkate-AI/tree/dd27a22cef9135f3458f58a5fc841c2e1dd48e4e/research/) 
+- Recovery: `git worktree add --detach /absolute/new/arch-13 dd27a22cef9135f3458f58a5fc841c2e1dd48e4e`
+- Artifacts: 0 ignored regular files (0 bytes) verified under `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/hid-pointer-worktree`. Full original paths, sizes, SHA-256 and symlink targets: `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/manifest.json`. Caches and environments excluded; root `.venv` retained. External/rig artifacts retain original locations in experiment records and are not backed up by Git.
+
+## ARCH-014 — Integration index for research/hid-review-20261004
+
+- Description: Original feature tip preserved and GitHub-verified before consolidation; original worktree: /Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/hid-review-worktree. Original archive IDs remain unchanged under this tag.
+- Commit: `3ccf8bd028320fe60aa30d1f924520734eccb816`
+- Tag: `archive/worktree-20261005/research/hid-review-20261004`
+- Paths: [original archive](https://github.com/AsherNoble/TrueSkate-AI/blob/3ccf8bd028320fe60aa30d1f924520734eccb816/research/ARCHIVE.md), [source tree](https://github.com/AsherNoble/TrueSkate-AI/tree/3ccf8bd028320fe60aa30d1f924520734eccb816/research/) 
+- Recovery: `git worktree add --detach /absolute/new/arch-14 3ccf8bd028320fe60aa30d1f924520734eccb816`
+- Artifacts: 0 ignored regular files (0 bytes) verified under `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/hid-review-worktree`. Full original paths, sizes, SHA-256 and symlink targets: `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/manifest.json`. Caches and environments excluded; root `.venv` retained. External/rig artifacts retain original locations in experiment records and are not backed up by Git.
+
+## ARCH-015 — Integration index for research/linear-drag-speed-sweep
+
+- Description: Original feature tip preserved and GitHub-verified before consolidation; original worktree: No active worktree. Original ARCH-008 means the pre-curve journal, distinct from main ARCH-008.
+- Commit: `c5720aefcc7ad21e7a1f23fb42637781f18fca4c`
+- Tag: `archive/worktree-20261005/research/linear-drag-speed-sweep`
+- Paths: [original archive](https://github.com/AsherNoble/TrueSkate-AI/blob/c5720aefcc7ad21e7a1f23fb42637781f18fca4c/research/ARCHIVE.md), [source tree](https://github.com/AsherNoble/TrueSkate-AI/tree/c5720aefcc7ad21e7a1f23fb42637781f18fca4c/research/) 
+- Recovery: `git worktree add --detach /absolute/new/arch-15 c5720aefcc7ad21e7a1f23fb42637781f18fca4c`
+- Artifacts: 0 ignored regular files (0 bytes) verified under `Inherited artifacts retained with linear-speed-worktree`. Full original paths, sizes, SHA-256 and symlink targets: `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/manifest.json`. Caches and environments excluded; root `.venv` retained. External/rig artifacts retain original locations in experiment records and are not backed up by Git.
+
+## ARCH-016 — Integration index for research/linear-length-blind-sweep
+
+- Description: Original feature tip preserved and GitHub-verified before consolidation; original worktree: /Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/linear-speed-worktree. Original ARCH-008 means the pre-curve journal, distinct from main ARCH-008.
+- Commit: `f90a75fe63f0f13f9eb3ea868dcc808a8c11835d`
+- Tag: `archive/worktree-20261005/research/linear-length-blind-sweep`
+- Paths: [original archive](https://github.com/AsherNoble/TrueSkate-AI/blob/f90a75fe63f0f13f9eb3ea868dcc808a8c11835d/research/ARCHIVE.md), [source tree](https://github.com/AsherNoble/TrueSkate-AI/tree/f90a75fe63f0f13f9eb3ea868dcc808a8c11835d/research/) 
+- Recovery: `git worktree add --detach /absolute/new/arch-16 f90a75fe63f0f13f9eb3ea868dcc808a8c11835d`
+- Artifacts: 51 ignored regular files (254236065 bytes) verified under `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/linear-speed-worktree`. Full original paths, sizes, SHA-256 and symlink targets: `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/manifest.json`. Caches and environments excluded; root `.venv` retained. External/rig artifacts retain original locations in experiment records and are not backed up by Git.
+
+## ARCH-017 — Integration index for research/xr-jailbreak-20261004
+
+- Description: Original feature tip preserved and GitHub-verified before consolidation; original worktree: /Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/xr-jailbreak-worktree. Original archive IDs remain unchanged under this tag.
+- Commit: `3ccf8bd028320fe60aa30d1f924520734eccb816`
+- Tag: `archive/worktree-20261005/research/xr-jailbreak-20261004`
+- Paths: [original archive](https://github.com/AsherNoble/TrueSkate-AI/blob/3ccf8bd028320fe60aa30d1f924520734eccb816/research/ARCHIVE.md), [source tree](https://github.com/AsherNoble/TrueSkate-AI/tree/3ccf8bd028320fe60aa30d1f924520734eccb816/research/) 
+- Recovery: `git worktree add --detach /absolute/new/arch-17 3ccf8bd028320fe60aa30d1f924520734eccb816`
+- Artifacts: 0 ignored regular files (0 bytes) verified under `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/xr-jailbreak-worktree`. Full original paths, sizes, SHA-256 and symlink targets: `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/manifest.json`. Caches and environments excluded; root `.venv` retained. External/rig artifacts retain original locations in experiment records and are not backed up by Git.
+
+## ARCH-018 — Complete combined journal before consolidation trimming
+
+- Description: Deduplicated complete 33-entry journal from all original branches and main, corrected RT-12 wording included, before the 30-entry cap. Removed dated entries: 2026-09-17, 2026-09-13 and 2026-09-12; their experiment records remain preserved.
+- Commit: `b5aeca352e8000eb15899937cb63f521c9723f60`
+- Tag: `archive/journal-combined-20261005` (peeled GitHub ref verified before trimming).
+- Paths: [complete journal](https://github.com/AsherNoble/TrueSkate-AI/blob/b5aeca352e8000eb15899937cb63f521c9723f60/research/JOURNAL.md)
+- Recovery: `git show b5aeca352e8000eb15899937cb63f521c9723f60:research/JOURNAL.md`
+- Artifacts: Journal text only; ignored retention and external research artifacts are indexed separately in ARCH-010 through ARCH-017.
