@@ -1,6 +1,7 @@
 # HID-POINTER-20261004 — Can a Bluetooth pointer replay an expert's gesture sequence?
 
-Status: calibrated and validated; demo replay recorded, operator grades pending.
+Status: calibrated and validated; demo replay graded 3/3 Minor; corrected-stroke
+replays recorded, grades pending.
 XR2 only. No collection, no training admission.
 
 ## Question
@@ -103,17 +104,78 @@ and [lift modes](../evidence/HID-POINTER-20261004/validation-lift-modes.txt).
   - the pushes and both flicks arrive as separate strokes at the clip's spacing;
   - the board flips and lands. That repeat's trick scored as "360 Pop Shove-It", where
     the clip shows "360 Flip".
-- **Grades.** Operator grades, side by side with the clip: pending.
+- **Grades: 3/3 Minor**, side by side with the clip
+  ([grades](../evidence/HID-POINTER-20261004/demo-replay/grades.json)). Every XCTest
+  round was Major. Operator comments:
+  - "All the gestures appear to have been executed at the correct times and more or
+    less the correct positions."
+  - The miss was a minor difference in the first flick (the scoop).
+  - One repeat did a 360 Pop Shove-It: "it spun the correct amount but just didn't
+    include a flip component".
+
+### 5. Stroke ends were short (an extraction bias)
+
+The demo strokes were extracted as the centroid of each frame's new trail
+(CURVE-AUDIT). That centroid sits mid-segment. Fast strokes therefore start about
+half a frame of motion late and stop about half a frame short. The frames show it:
+the scoop's trail begins on the board's tail edge and runs ~40 pt past the last
+extracted point ([frames](../evidence/HID-POINTER-20261004/demo-replay-v3/flick-frames-new-trail-magenta.png)).
+
+`scripts/inspect/extract_demo_strokes.py` reads the finger instead:
+- on fast frames (≥ 1.5 glow radii of motion), the leading edge of the new trail,
+  less the glow radius (12–13.5 pt, measured as half the trail's width);
+- the press is the first piece's trailing edge, timed by extrapolating that frame's
+  speed;
+- frames are added while the leading edge still advances;
+- slow frames keep the centroid. The catch is unchanged.
+
+Changes against the replayed extraction, in path length (pt):
+
+| stroke | old | corrected | press moved | lift moved |
+| --- | --- | --- | --- | --- |
+| flick A (scoop) | 162 | 213 | 15 pt, 6.5 ms earlier | 35 pt |
+| flick B | 202 | 247 | 0 | 43 pt |
+| pushes | 422–507 | 452–527 | 0–13 pt | 7–26 pt |
+| catch | 185 | 185 | 0 | 0 |
+
+The corrected points span each visible trail from end to end
+([overlay](../evidence/HID-POINTER-20261004/demo-replay-v3/stroke-ends-v2-green-v3-magenta.png)).
+
+### 6. Replays with corrected stroke ends
+
+- **Run.** 3 repeats ([plan](../evidence/HID-POINTER-20261004/demo-replay-v3/plan.json),
+  [runs](../evidence/HID-POINTER-20261004/demo-replay-v3/runs.json)). Board timing was
+  within 1 µs; presses within ±7 ms of the clip.
+- **Outcomes varied across identical runs.** The three repeats scored an FS Pop
+  Shove-It, an Inward Heelflip, and a 360 Pop Shove-It that landed upside down
+  ("FAILED"). The board's input was identical each time.
+- **Leading hypothesis (untested).** Pointer updates arrive on a 15 ms grid, but the
+  game samples touches once per 16.7 ms frame. One frame in nine receives two updates,
+  which changes the per-frame movement the game sees in a ~50 ms flick. Which frame
+  that is depends on each run's random Bluetooth phase.
+- **Grades.** Pending.
 
 ## Conclusions so far
 
-The pointer route solves what XCTest could not: separate touches with short,
-exact gaps between them, from one schedule. Positioning error is ~1–2 pt. The
-timing floor is the 15 ms Bluetooth grid; no gesture is ever conjoined.
+The pointer route solves what XCTest could not: separate touches with short, exact
+gaps between them, from one schedule. Positioning error is ~1–2 pt. The timing
+floor is the 15 ms Bluetooth grid, and no gesture is ever conjoined. The operator
+graded the first replays 3/3 Minor.
+
+Extracting strokes from trail centroids shortens fast strokes. Read the leading
+edge instead (`extract_demo_strokes.py`). This also affects any Model 1 labels made
+the old way.
+
+Identical schedules can end in different tricks, so a single replay is not a
+measurement of fidelity.
 
 ## Next
 
-- Operator grading of the three replays.
+- Operator grading of the corrected-stroke replays.
+- Measure run-to-run variance before more fidelity work: about 10 identical repeats
+  and their trick outcomes. If the Bluetooth/frame beat explains it, test whether
+  True Skate uses touch timestamps or per-frame deltas, for example by scheduling the
+  same flick at controlled phases.
 - Spin (planned step 6): a capacitive pad on the spin button, driven by a board GPIO on
   the same schedule, so spin shares the board's clock with the gestures.
 - Re-measure the gain if iOS updates or the AssistiveTouch Tracking Speed changes.
