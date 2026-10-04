@@ -5,15 +5,21 @@
 // latency only shifts the start of a schedule, never the gaps inside it.
 //
 // Serial protocol (115200 baud, one command per line):
-//   STATUS                 -> "STATUS connected=<0|1> events=<n>"
+//   STATUS                 -> "STATUS connected=<0|1> auth=<-1|0|1> subscribed=<0|1>
+//                             interval_us=<connection interval> events=<n>"
 //   CLEAR                  -> "OK"
 //   E <t_us> <dx> <dy> <b> -> append event: at t_us after GO send a report with
 //                             relative move (dx, dy in -127..127) and button state b (0/1)
 //   GO                     -> play; then "SENT <i> <actual_us>" per event and "DONE <n>"
 //   NOW <dx> <dy> <b>      -> send one report immediately (calibration, homing)
+//   PARAMS <min> <max> <latency> <timeout>
+//                          -> ask the phone for new connection parameters (interval in
+//                             1.25 ms units, timeout in 10 ms units); the result is logged
+//                             as "CONN update status=..." when the phone answers
 //
-// Pilot only: Bluetooth reports leave on the connection interval (~7.5-15 ms), so
-// the phone sees them with that much jitter even though this clock is exact.
+// Reports leave on the next connection event, so the phone sees them quantised to
+// the connection interval even though this clock is exact. Every interval change
+// is logged as "CONN ...".
 
 #include <BLEDevice.h>
 #include <BLEHIDDevice.h>
@@ -47,6 +53,8 @@ static BLEHIDDevice *hid = nullptr;
 static BLECharacteristic *input = nullptr;
 static volatile bool connected = false;
 static volatile int authStatus = -1;  // -1 none yet, 1 bonded, 0 failed
+static volatile uint16_t connInterval = 0;  // 1.25 ms units, 0 when unknown
+static esp_bd_addr_t peer = {0};
 
 // iOS reads HID reports only over an encrypted, bonded link (the report
 // characteristic is READ_ENCRYPTED), so pairing must actually complete.
@@ -107,7 +115,12 @@ static void logDescriptor(BLECharacteristic *c, uint16_t uuid, const char *name)
 class ServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *, esp_ble_gatts_cb_param_t *param) override {
     connected = true;
+    memcpy(peer, param->connect.remote_bda, sizeof(peer));
+    connInterval = param->connect.conn_params.interval;
     Serial.printf("GATT %lu connect conn_id=%u\n", millis(), param->connect.conn_id);
+    Serial.printf("CONN %lu connect interval_us=%u latency=%u timeout_ms=%u\n", millis(),
+                  param->connect.conn_params.interval * 1250u, param->connect.conn_params.latency,
+                  param->connect.conn_params.timeout * 10u);
   }
   void onDisconnect(BLEServer *server, esp_ble_gatts_cb_param_t *param) override {
     connected = false;
@@ -126,12 +139,21 @@ static void sendReport(int8_t dx, int8_t dy, uint8_t buttons) {
   input->notify();
 }
 
+// Connection parameter updates arrive as GAP events, whichever side asked for them.
+static void onGapEvent(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
+  if (event != ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT) return;
+  const auto &u = param->update_conn_params;
+  if (u.status == ESP_BT_STATUS_SUCCESS) connInterval = u.conn_int;
+  Serial.printf("CONN %lu update status=%d interval_us=%u latency=%u timeout_ms=%u\n", millis(), u.status,
+                u.conn_int * 1250u, u.latency, u.timeout * 10u);
+}
+
 static int8_t clampByte(long v) { return static_cast<int8_t>(v < -127 ? -127 : (v > 127 ? 127 : v)); }
 
 static void handleLine(char *line) {
   if (strcmp(line, "STATUS") == 0) {
-    Serial.printf("STATUS connected=%d auth=%d subscribed=%d events=%u\n", connected ? 1 : 0, authStatus,
-                  subscribed() ? 1 : 0, static_cast<unsigned>(eventCount));
+    Serial.printf("STATUS connected=%d auth=%d subscribed=%d interval_us=%u events=%u\n", connected ? 1 : 0,
+                  authStatus, subscribed() ? 1 : 0, connInterval * 1250u, static_cast<unsigned>(eventCount));
   } else if (strcmp(line, "CLEAR") == 0) {
     eventCount = 0;
     Serial.println("OK");
@@ -152,6 +174,19 @@ static void handleLine(char *line) {
     if (sscanf(line + 4, "%ld %ld %ld", &dx, &dy, &b) != 3) { Serial.println("ERR now"); return; }
     sendReport(clampByte(dx), clampByte(dy), b ? 1 : 0);
     Serial.println("OK");
+  } else if (strncmp(line, "PARAMS ", 7) == 0) {
+    unsigned minInt, maxInt, latency, timeout;
+    if (sscanf(line + 7, "%u %u %u %u", &minInt, &maxInt, &latency, &timeout) != 4 || !connected) {
+      Serial.println("ERR params");
+      return;
+    }
+    esp_ble_conn_update_params_t params = {};
+    memcpy(params.bda, peer, sizeof(peer));
+    params.min_int = minInt;
+    params.max_int = maxInt;
+    params.latency = latency;
+    params.timeout = timeout;
+    Serial.println(esp_ble_gap_update_conn_params(&params) == ESP_OK ? "OK" : "ERR params");
   } else if (strcmp(line, "GO") == 0) {
     if (!connected) { Serial.println("ERR not connected"); return; }
     const uint32_t start = micros();
@@ -171,6 +206,7 @@ void setup() {
   Serial.begin(115200);
   BLEDevice::init("TrueSkate Pointer");
   BLEDevice::setSecurityCallbacks(new SecurityCallbacks());
+  BLEDevice::setCustomGapHandler(onGapEvent);
   BLEServer *server = BLEDevice::createServer();
   server->setCallbacks(new ServerCallbacks());
   hid = new BLEHIDDevice(server);
