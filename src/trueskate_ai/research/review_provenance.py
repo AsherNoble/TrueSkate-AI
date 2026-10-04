@@ -108,6 +108,21 @@ def curve_execution(frozen, planned, execution, timing):
     return verify_execution(frozen, commands, planned, execution, timing, payloads)
 
 
+def curved_execution(frozen, segment, planned, execution, timing):
+    from trueskate_ai.research.curved_audit import verify_manifest
+    verify_manifest(frozen)
+    if type(segment) is not int or not 1 <= segment <= len(frozen['recordings']):
+        raise ValueError('invalid curved audit segment')
+    row = frozen['recordings'][segment - 1]
+    for value in (planned, execution):
+        if value.get('identity') != frozen['identity'] or value.get('segment') != segment:
+            raise ValueError('curved audit identity/segment mismatch')
+        if any(value.get(field) != row[field] for field in ('device', 'park')):
+            raise ValueError('curved audit device/park differs from frozen segment')
+    commands = row['commands']
+    return verify_execution(frozen, commands, planned, execution, timing, [c['payload'] for c in commands])
+
+
 def curve_row_provenance(row):
     proof = row.get('execution_provenance')
     if not isinstance(proof, dict) or 'frozen_manifest' not in proof:

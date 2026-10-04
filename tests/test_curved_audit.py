@@ -57,10 +57,12 @@ def test_importer_counts_only_explicit_ratings():
     spec=importlib.util.spec_from_file_location('audit_report',path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
     mapping=dict(identity='fixture',bundle_sha256='a',items=[dict(id=str(i),family='arcs',duration_ms=150,waypoint_count=5,device='XR1',park='Inbound') for i in range(2)])
     export=dict(schema='blind-curved-execution-v1',bundle_sha256='a',assessments={'0':dict(rating='major',comments='test')})
-    r=module.report(mapping,export)
+    with pytest.raises(ValueError,match='--allow-legacy'):module.report(mapping,export)
+    with pytest.warns(UserWarning,match='weaker provenance'):r=module.report(mapping,export,allow_legacy=True)
+    assert 'weaker provenance' in r['provenance']
     assert r['reviewed']==r['missing']==1 and r['overall']['major']==1 and r['overall']['good']==0
     export['bundle_sha256']='wrong'
-    with pytest.raises(ValueError):module.report(mapping,export)
+    with pytest.raises(ValueError):module.report(mapping,export,allow_legacy=True)
 
 def test_native_decode_requires_exact_count(tmp_path):
     import subprocess,numpy as np

@@ -8,13 +8,19 @@ from trueskate_ai.research.audit_calibration import verify_recording
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--manifest',type=Path,required=True);p.add_argument('--freeze',action='store_true')
-    p.add_argument('--out',type=Path);p.add_argument('--schedule',default='v1',choices=('v1','v2','v3'))
+    p.add_argument('--out',type=Path);p.add_argument('--schedule',choices=('v1','v2','v3'),
+        help='freeze this schedule (default v1); during execution must match the frozen manifest')
     p.add_argument('--segments',help='comma-separated 1-based segments to run (default all)')
     p.add_argument('--wda-revision')
     a=p.parse_args()
-    if a.freeze:save_new(a.manifest,manifest(a.schedule));return
+    if a.freeze:save_new(a.manifest,manifest(a.schedule or 'v1'));return
     if not a.out or not a.wda_revision or 'training-server' not in socket.gethostname():p.error('execution requires rig, new --out and --wda-revision')
     frozen=json.loads(a.manifest.read_text());verify_manifest(frozen)
+    if a.schedule is not None and a.schedule != frozen.get('schedule','v1'):
+        p.error('--schedule differs from frozen manifest')
+    selected={int(x) for x in a.segments.split(',')} if a.segments else None
+    if selected is not None and (not selected or not selected <= set(range(1,len(frozen['recordings'])+1))):
+        p.error('--segments must name existing 1-based segments')
     a.out.mkdir(parents=True,exist_ok=False)
     def interrupted(signum,frame):raise KeyboardInterrupt(f'signal {signum}')
     signal.signal(signal.SIGTERM,interrupted)
@@ -23,7 +29,6 @@ def main():
     from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder
     worker=None
     try:
-        selected={int(x) for x in a.segments.split(',')} if a.segments else None
         for n,segment in enumerate(frozen['recordings'],1):
             if selected and n not in selected:continue
             tunnel=subprocess.check_output(['launchctl','print','system/com.trueskate.remotexpc-tunnel'],text=True)
@@ -40,7 +45,7 @@ def main():
                           park_source='operator task',segment=n,gameplay_review='human',automated_gameplay_scan=False)
             settle=frozen.get('pre_roll_reset_settle_s')
             if settle:  # v2: reset before recording so the start marker fires on a settled board
-                driver.execute('actions',reset_payload());time.sleep(settle);guard()
+                guard();driver.execute('actions',reset_payload());time.sleep(settle);guard()
             out=a.out/f'recording_{n}'
             run_recording(recorder=XCTestScreenRecorder(driver,fps=30),timing=WDAActionTimingCapture(wda_port=port,expected_revision=a.wda_revision),
                           commands=segment['commands'],perform=lambda s:driver.execute('actions',s['payload']),guard=guard,
