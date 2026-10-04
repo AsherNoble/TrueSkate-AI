@@ -157,3 +157,12 @@ To restore a whole historical environment without modifying the active checkout:
 - Paths: [original archive](https://github.com/AsherNoble/TrueSkate-AI/blob/3ccf8bd028320fe60aa30d1f924520734eccb816/research/ARCHIVE.md), [source tree](https://github.com/AsherNoble/TrueSkate-AI/tree/3ccf8bd028320fe60aa30d1f924520734eccb816/research/) 
 - Recovery: `git worktree add --detach /absolute/new/arch-17 3ccf8bd028320fe60aa30d1f924520734eccb816`
 - Artifacts: 0 ignored regular files (0 bytes) verified under `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/xr-jailbreak-worktree`. Full original paths, sizes, SHA-256 and symlink targets: `/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktree-retention-20261005/manifest.json`. Caches and environments excluded; root `.venv` retained. External/rig artifacts retain original locations in experiment records and are not backed up by Git.
+
+## ARCH-018 — Complete combined journal before consolidation trimming
+
+- Description: Deduplicated complete 33-entry journal from all original branches and main, corrected RT-12 wording included, before the 30-entry cap. Removed dated entries: 2026-09-17, 2026-09-13 and 2026-09-12; their experiment records remain preserved.
+- Commit: `b5aeca352e8000eb15899937cb63f521c9723f60`
+- Tag: `archive/journal-combined-20261005` (peeled GitHub ref verified before trimming).
+- Paths: [complete journal](https://github.com/AsherNoble/TrueSkate-AI/blob/b5aeca352e8000eb15899937cb63f521c9723f60/research/JOURNAL.md)
+- Recovery: `git show b5aeca352e8000eb15899937cb63f521c9723f60:research/JOURNAL.md`
+- Artifacts: Journal text only; ignored retention and external research artifacts are indexed separately in ARCH-010 through ARCH-017.
