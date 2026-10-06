@@ -323,7 +323,12 @@ recording setup remains a dependency. The Pico has no ESP32/UART command link
 yet. IPv4 lockdown authenticates without USB, but the phone's Wi-Fi IPv6 path
 times out. The correct developer-proxy service starts over IPv4 and accepts
 paired-client TLS; no native tunnel, WDA launch or recording lifecycle has yet
-been established through that path. The operator
+been established through that path. A bounded IPv4 lifecycle harness is now
+implemented in the isolated feature worktree; read-only rig preflight passed.
+SSH administrator authentication failed, and desktop authentication timed out
+before TUN creation. The expired prompt was cancelled; registry port 42314 and
+the empty default registry were verified intact. No movie or rate comparison
+exists yet. The operator
 has a CHU810 data hub and Ethernet cables, but no Ethernet adapters or spare
 router. The hub currently serves the rig and must stay there. A direct
 phone-to-rig Ethernet link using two adapters and a separate phone-side hub is
