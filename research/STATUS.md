@@ -316,8 +316,14 @@ subjective engineering priors, not measured reliability.
 A first-generation Pico now has a separate bounded, mouse-only hover diagnostic.
 Flash verification, USB HID enumeration and brief cursor movement passed on the
 rig's Mac. The operator confirmed charging through the new XR2 camera adapter;
-XR2 mouse acceptance awaits on-phone observation. The Pico has no ESP32/UART
-command link yet. No collection or recording was started. This is a smoke test,
+XR2 mouse acceptance awaits a recorded test. Existing WDA and an Appium session
+respond over the phone's Wi-Fi address with USB still attached, but WDA exits
+and the CoreDevice tunnel becomes unavailable after USB removal. Wireless
+recording setup remains a dependency. The Pico has no ESP32/UART command link
+yet. IPv4 lockdown authenticates without USB, but the phone's Wi-Fi IPv6 path
+times out and no developer/recording tunnel has been established. The operator
+has hub/Ethernet hardware available; a wired recording network is an untested
+proposal. No collection or recording was started. This is a smoke test,
 not a gesture executor or a validated 1 ms path. See
 [HID-USB-20261006](experiments/HID-USB-20261006.md).
 
