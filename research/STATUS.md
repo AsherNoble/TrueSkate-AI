@@ -321,9 +321,14 @@ respond over the phone's Wi-Fi address with USB still attached, but WDA exits
 and the CoreDevice tunnel becomes unavailable after USB removal. Wireless
 recording setup remains a dependency. The Pico has no ESP32/UART command link
 yet. IPv4 lockdown authenticates without USB, but the phone's Wi-Fi IPv6 path
-times out and no developer/recording tunnel has been established. The operator
-has hub/Ethernet hardware available; a wired recording network is an untested
-proposal. No collection or recording was started. This is a smoke test,
+times out. The correct developer-proxy service starts over IPv4 and accepts
+paired-client TLS; no native tunnel, WDA launch or recording lifecycle has yet
+been established through that path. The operator
+has a CHU810 data hub and Ethernet cables, but no Ethernet adapters or spare
+router. The hub currently serves the rig and must stay there. A direct
+phone-to-rig Ethernet link using two adapters and a separate phone-side hub is
+an untested fallback that could keep the rig on UTS Wi-Fi. No collection or
+recording was started. This is a smoke test,
 not a gesture executor or a validated 1 ms path. See
 [HID-USB-20261006](experiments/HID-USB-20261006.md).
 
