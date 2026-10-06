@@ -313,6 +313,14 @@ Ethernet, WDA network transport and RemoteXPC recording-cleanup chain still need
 a bounded hardware pilot. Adapter confidence figures in the review are
 subjective engineering priors, not measured reliability.
 
+A first-generation Pico now has a separate bounded, mouse-only hover diagnostic.
+Flash verification, USB HID enumeration and brief cursor movement passed on the
+rig's Mac. The operator confirmed charging through the new XR2 camera adapter;
+XR2 mouse acceptance awaits on-phone observation. The Pico has no ESP32/UART
+command link yet. No collection or recording was started. This is a smoke test,
+not a gesture executor or a validated 1 ms path. See
+[HID-USB-20261006](experiments/HID-USB-20261006.md).
+
 AssistiveTouch supports preset and recorded multi-finger gestures. Independent
 live control of two mouse-driven contacts remains unverified. In three short
 XR2 diagnostic recordings, the pointer-only and WDA spin-hold controls worked;
