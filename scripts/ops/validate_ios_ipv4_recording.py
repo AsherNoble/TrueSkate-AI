@@ -88,6 +88,19 @@ class RegistryLease:
                 self.locked = False
 
 
+def lend_registry(helper_cmd, portfile, backup, uid):
+    """Root wrapper: lend the root-owned registry file/dir for the lease, then restore.
+
+    The root daemon recreates the port file as root on boot. Ownership is returned
+    after the helper exits; a still-redirected value is restored from a root backup.
+    """
+    f, d, b = (shlex.quote(str(x)) for x in (portfile, Path(portfile).parent, backup))
+    return (f'set -u; fileown=$(stat -f %u:%g {f}); dirown=$(stat -f %u:%g {d}); cp -p {f} {b}; '
+            f'chown {int(uid)} {f} {d}; {helper_cmd}; rc=$?; '
+            f'if [ "$(cat {f})" = 42315 ]; then cat {b} > {f}; echo registry-restored-by-root >&2; fi; '
+            f'chown "$fileown" {f}; chown "$dirown" {d}; exit $rc')
+
+
 def guardian(state_path):
     """Recover our registry and owned runner if coordinator is killed outright."""
     state_path = Path(state_path)
@@ -286,10 +299,17 @@ class Coordinator:
         self.portfile = Path(json.loads(info.splitlines()[-1])['file'])
         if self.portfile.read_bytes().strip() != b'42314':
             raise RuntimeError('Unexpected default registry file')
-        if not os.access(self.portfile, os.W_OK) or not os.access(self.portfile.parent, os.W_OK):
+        lend = not (os.access(self.portfile, os.W_OK) and os.access(self.portfile.parent, os.W_OK))
+        if lend and not self.a.tunnel_python:
             raise RuntimeError('Coordinator cannot lease the registry file and lock; refusing administrator launch')
         root = self.node('tunnel') + ['--lifetime', '900', '--lease-file', str(self.lease), '--lease-token', self.token]
+        if self.a.tunnel_python:
+            if not (self.a.pair_dir/f'remote_{self.udid}.plist').is_file():
+                raise RuntimeError('RemotePairing record missing; pair over USB first')
+            root += ['--tunnel-python', str(self.a.tunnel_python), '--pair-dir', str(self.a.pair_dir)]
         self.root_cmd = shlex.join(root) + ' > ' + shlex.quote(str(self.out/'helper.log')) + ' 2>&1'
+        if lend:
+            self.root_cmd = lend_registry(self.root_cmd, self.portfile, self.out/'registry-backup', os.getuid())
         (self.out/'administrator-command.txt').write_text(self.root_cmd+'\n')
         self.event('prepared', administrator_command=str(self.out/'administrator-command.txt'))
 
@@ -584,8 +604,11 @@ def main():
     p.add_argument('--prepare', action='store_true')
     p.add_argument('--admin-prompt', action='store_true')
     p.add_argument('--pico-hover', action='store_true')
+    p.add_argument('--tunnel-python', type=Path,
+                   help='Python 3.13+ with pymobiledevice3: use the Wi-Fi RemotePairing tunnel')
+    p.add_argument('--pair-dir', type=Path, default=Path('/Users/training-server/.pymobiledevice3'))
     a = p.parse_args()
-    for path in (a.repo, a.env_file, a.out_dir, a.modules_root):
+    for path in (a.repo, a.env_file, a.out_dir, a.modules_root, a.pair_dir, *([a.tunnel_python] if a.tunnel_python else [])):
         if not path.is_absolute():
             p.error('All paths must be absolute')
     if 'tmp' not in a.out_dir.parts:

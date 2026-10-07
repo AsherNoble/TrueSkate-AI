@@ -8,6 +8,8 @@ import path from 'node:path';
 import dns from 'node:dns/promises';
 import fs from 'node:fs';
 import tls from 'node:tls';
+import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {NodeTunnelError, nodeHandshake, nodeTunnel} from './ios_ipv4_node_tunnel.mjs';
 
 const require = createRequire(import.meta.url);
@@ -79,6 +81,9 @@ function parse(argv) {
   if (!['probe', 'tls-probe', 'native-tls-probe', 'tunnel', 'wda', 'registry-info'].includes(opts.mode)) throw new DiagnosticError('Expected probe, tls-probe, native-tls-probe, tunnel, wda or registry-info mode');
   if (!opts['modules-root'] || !path.isAbsolute(opts['modules-root'])) throw new DiagnosticError('An absolute --modules-root is required');
   if (opts.mode !== 'registry-info' && !opts.udid) throw new DiagnosticError('--udid is required');
+  if (opts['tunnel-python'] && !(path.isAbsolute(opts['tunnel-python']) && opts['pair-dir'] && path.isAbsolute(opts['pair-dir']))) {
+    throw new DiagnosticError('--tunnel-python and --pair-dir must both be absolute');
+  }
   if (opts.port !== 42315 || !Number.isInteger(opts.lifetime) || opts.lifetime < 1 || opts.lifetime > 900) {
     throw new DiagnosticError('Diagnostic port is fixed at 42315; lifetime must be 1..900 seconds');
   }
@@ -147,6 +152,50 @@ export async function serveRegistry(handler, port = 42315) {
   return server;
 }
 
+export function parseWifiReady(line) {
+  let value;
+  try { value = JSON.parse(line); } catch { return null; }
+  if (value.event === 'pmd3-tunnel-error') throw new DiagnosticError(`Wi-Fi tunnel: ${String(value.error).slice(0, 200)}`);
+  if (value.event !== 'pmd3-tunnel-ready') return null;
+  if (!/^[0-9a-f:]+$/i.test(value.address || '') || !Number.isInteger(value.rsd_port) || value.rsd_port < 1 || value.rsd_port > 65535) {
+    throw new DiagnosticError('Wi-Fi tunnel returned invalid parameters');
+  }
+  return {Address: value.address, RsdPort: value.rsd_port, interface: value.interface};
+}
+
+// iOS 18 rejects the classic CoreDeviceProxy over the network; use RemotePairing (pymobiledevice3).
+export async function wifiTunnel(opts, onDead, spawnChild = spawn) {
+  const script = path.join(path.dirname(fileURLToPath(import.meta.url)), 'ios_wifi_tunnel.py');
+  const child = spawnChild(opts['tunnel-python'], [script, '--udid', opts.udid, '--host', opts.host,
+    '--pair-dir', opts['pair-dir'], '--lifetime', String(opts.lifetime)], {stdio: ['pipe', 'pipe', 'inherit']});
+  let ready = false, stopping = false, buffer = '';
+  const closer = async () => {
+    stopping = true;
+    if (child.exitCode !== null || child.signalCode !== null) return;
+    const exited = new Promise(resolve => child.once('exit', resolve));
+    child.stdin.end();
+    child.kill('SIGTERM');
+    await bounded(exited, 6000, 'Wi-Fi tunnel stop').catch(() => child.kill('SIGKILL'));
+  };
+  const result = await bounded(new Promise((resolve, reject) => {
+    child.once('error', reject);
+    child.once('exit', code => { if (ready && !stopping) onDead(); else reject(new DiagnosticError(`Wi-Fi tunnel exited before ready (${code})`)); });
+    child.stdout.on('data', chunk => {
+      buffer += chunk;
+      let index;
+      while ((index = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, index); buffer = buffer.slice(index + 1);
+        process.stdout.write(line + '\n');
+        try {
+          const tunnel = parseWifiReady(line);
+          if (tunnel && !ready) { ready = true; resolve(tunnel); }
+        } catch (error) { reject(error); }
+      }
+    });
+  }), 45000, 'Wi-Fi tunnel establishment').catch(async error => { await closer(); throw error; });
+  return {...result, closer};
+}
+
 async function runTunnel(opts) {
   if (process.getuid?.() !== 0) throw new DiagnosticError('Native tunnel creation requires administrator authentication');
   const checkLease = () => {
@@ -176,16 +225,20 @@ async function runTunnel(opts) {
   setTimeout(() => void cleanup('lifetime-limit', 1), opts.lifetime * 1000);
   setInterval(() => { try { checkLease(); } catch { void cleanup('coordinator-lost', 1); } }, 2000);
   try {
-    auth = await pairedLockdown(opts);
-    emit('paired', {host: auth.host, ios: auth.version});
-    proxy = await openDeveloperProxy(auth, opts.udid, auth.host);
     const onDead = () => {
       handler?.removeTunnelEntry(opts.udid);
       emit('tunnel-lost');
       void cleanup('transport-lost', 1);
     };
-    tunnel = await bounded(nodeTunnel(proxy.socket, proxy, opts['modules-root'], onDead), 25000, 'Node TLS tunnel establishment');
-    await auth.close(); auth = null;
+    if (opts['tunnel-python']) {
+      tunnel = await wifiTunnel(opts, onDead);
+    } else {
+      auth = await pairedLockdown(opts);
+      emit('paired', {host: auth.host, ios: auth.version});
+      proxy = await openDeveloperProxy(auth, opts.udid, auth.host);
+      tunnel = await bounded(nodeTunnel(proxy.socket, proxy, opts['modules-root'], onDead), 25000, 'Node TLS tunnel establishment');
+      await auth.close(); auth = null;
+    }
     const services = sdk.servicesToCatalog(await bounded(
       sdk.discoverServices(opts.udid, tunnel.Address, tunnel.RsdPort), 20000, 'RSD discovery'));
     validateServices(services);

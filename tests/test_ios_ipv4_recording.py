@@ -140,3 +140,20 @@ def test_registry_owner_change_prevents_restore_and_lock_removal(tmp_path):
             diag.save(registry.lock/'owner.json', {'token':'another-owner'})
     assert port.read_bytes() == b'42315'
     assert registry.lock.exists()
+
+
+@pytest.mark.parametrize('helper, expected', [('printf 42315 > {f}', b'42314\n'), ('true', b'42314\n')])
+def test_root_lend_wrapper_restores_redirect_and_ownership(tmp_path, helper, expected):
+    import os
+    import shlex
+    import subprocess
+    box = tmp_path/'strongbox'
+    box.mkdir()
+    port = box/'tunnelRegistryPort'
+    port.write_bytes(b'42314\n')
+    helper = helper.format(f=shlex.quote(str(port)))
+    cmd = diag.lend_registry(helper, port, tmp_path/'backup', os.getuid())
+    result = subprocess.run(['/bin/sh', '-c', cmd], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert port.read_bytes() == expected
+    assert port.stat().st_uid == os.getuid() and box.stat().st_uid == os.getuid()

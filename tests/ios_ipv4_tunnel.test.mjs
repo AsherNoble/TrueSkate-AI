@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {openDeveloperProxy, validateProxyReply, validateServices, pemText, serveRegistry} from '../scripts/ops/ios_ipv4_tunnel.mjs';
+import {openDeveloperProxy, validateProxyReply, validateServices, pemText, serveRegistry, parseWifiReady, wifiTunnel} from '../scripts/ops/ios_ipv4_tunnel.mjs';
 
 test('plist Uint8Array credentials become PEM text, not comma-separated numbers', () => {
   const fixture = '-----BEGIN CERTIFICATE-----\nsynthetic fixture\n-----END CERTIFICATE-----';
@@ -82,4 +82,51 @@ test('packet forwarding preserves data and applies output backpressure', () => {
   assert.deepEqual(output,[packet()]);
   secure.emit('close');assert.equal(failed,'Paired TLS transport closed');
   stop();assert.equal(secure.listenerCount('data'),0);
+});
+
+function fakeChild() {
+  const child = new EventEmitter();
+  child.stdout = new EventEmitter();
+  child.stdin = {end: () => {}};
+  child.exitCode = null; child.signalCode = null; child.signals = [];
+  child.kill = (signal) => { child.signals.push(signal); child.signalCode = signal; setImmediate(() => child.emit('exit', null, signal)); };
+  return child;
+}
+const wifiOpts = {'tunnel-python': '/py', 'pair-dir': '/pairs', udid: 'xr2', host: 'Test-XR-2.local', lifetime: 900};
+
+test('Wi-Fi ready line is validated and errors fail closed', () => {
+  assert.equal(parseWifiReady('not json'), null);
+  assert.equal(parseWifiReady('{"event":"other"}'), null);
+  assert.deepEqual(parseWifiReady('{"event":"pmd3-tunnel-ready","address":"fd2c::1","rsd_port":61250,"interface":"utun9"}'),
+    {Address: 'fd2c::1', RsdPort: 61250, interface: 'utun9'});
+  assert.throws(() => parseWifiReady('{"event":"pmd3-tunnel-ready","address":"x; rm","rsd_port":1}'), /invalid parameters/);
+  assert.throws(() => parseWifiReady('{"event":"pmd3-tunnel-error","error":"ConnectionError"}'), /Wi-Fi tunnel: ConnectionError/);
+});
+test('Wi-Fi tunnel reports unexpected exit as loss', async () => {
+  const child = fakeChild(); let dead = 0;
+  const pending = wifiTunnel(wifiOpts, () => dead++, () => child);
+  child.stdout.emit('data', '{"event":"pmd3-tunnel-ready","address":"fd2c::1","rsd_port":61250}\n');
+  await pending;
+  child.emit('exit', 1, null);
+  assert.equal(dead, 1);
+});
+test('Wi-Fi tunnel resolves on ready and stops its child without reporting loss', async () => {
+  const child = fakeChild(); let argv; let dead = 0;
+  const pending = wifiTunnel(wifiOpts, () => dead++, (cmd, args) => { argv = [cmd, ...args]; return child; });
+  child.stdout.emit('data', '{"event":"pmd3-tunnel-ready","address":"fd2c::1",');
+  child.stdout.emit('data', '"rsd_port":61250,"interface":"utun9"}\n');
+  const tunnel = await pending;
+  assert.equal(argv[0], '/py');
+  assert.deepEqual(argv.slice(2), ['--udid', 'xr2', '--host', 'Test-XR-2.local', '--pair-dir', '/pairs', '--lifetime', '900']);
+  assert.equal(tunnel.RsdPort, 61250);
+  await tunnel.closer();
+  assert.deepEqual(child.signals, ['SIGTERM']);
+  assert.equal(dead, 0);
+});
+test('Wi-Fi tunnel exit before ready rejects without reporting loss', async () => {
+  const child = fakeChild(); let dead = 0;
+  const pending = wifiTunnel(wifiOpts, () => dead++, () => child);
+  child.stdout.emit('data', '{"event":"pmd3-tunnel-error","error":"RuntimeError: RemotePairing record missing"}\n');
+  await assert.rejects(pending, /record missing/);
+  assert.equal(dead, 0);
 });
