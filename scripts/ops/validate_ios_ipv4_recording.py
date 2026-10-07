@@ -295,6 +295,8 @@ class Coordinator:
         save(self.out/'paired-probe.json', [json.loads(x) for x in result.splitlines() if x.startswith('{')])
         details = [json.loads(x) for x in result.splitlines() if x.startswith('{') and json.loads(x).get('event') == 'paired'][0]
         self.phone = 'http://' + details['host'] + ':8100'
+        # Off USB, Appium cannot query the version through usbmux; supply the paired-IPv4 value.
+        self.platform_version = details['ios']
         info = command(self.node('registry-info'), 15)
         self.portfile = Path(json.loads(info.splitlines()[-1])['file'])
         if self.portfile.read_bytes().strip() != b'42314':
@@ -375,6 +377,7 @@ class Coordinator:
         from appium.webdriver.client_config import AppiumClientConfig
         options = XCUITestOptions().load_capabilities({'platformName': 'iOS', 'appium:automationName': 'XCUITest',
                     'appium:udid': self.udid, 'appium:webDriverAgentUrl': self.phone,
+                    'appium:platformVersion': self.platform_version,
                     'appium:noReset': True, 'appium:autoLaunch': False, 'appium:skipLogCapture': True})
         self.driver = webdriver.Remote(options=options, client_config=AppiumClientConfig('http://127.0.0.1:4726', timeout=90))
         self.update_guardian(session_id=self.driver.session_id)
