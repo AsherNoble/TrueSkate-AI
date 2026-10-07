@@ -224,17 +224,3 @@ def test_wifi_file_service_uses_odd_ids_and_strict_data_headers():
     for bad in (header[:39], b'xxxxFILE' + header[8:]):
         with pytest.raises(RuntimeError):
             att.data_header(bad)
-
-
-def test_wda_keepalive_queries_app_state_and_screenshot(monkeypatch):
-    calls = []
-    def fake_http(url, payload=None, timeout=10):
-        calls.append((url.rsplit('/', 1)[-1], payload))
-        return {'sessionId': 'S1'} if url.endswith('/status') else {}
-    monkeypatch.setattr(diag, 'http', fake_http)
-    keepalive = diag.WdaKeepAlive('http://phone:8100', period=0.01)
-    with keepalive:
-        import time as _t
-        _t.sleep(0.05)
-    assert ('state', {'bundleId': diag.BUNDLE}) in calls and ('screenshot', None) in calls
-    assert keepalive.errors == []

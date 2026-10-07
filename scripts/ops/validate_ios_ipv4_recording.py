@@ -248,37 +248,6 @@ class Recording:
             self.stop(recovery=True)
 
 
-class WdaKeepAlive:
-    """Light WDA traffic while the host is busy: the remotexpc runner launcher kills
-    WDA after ~60 s without testmanagerd callbacks. Not used during gesture schedules."""
-    def __init__(self, phone, period=15):
-        self.phone, self.period = phone, period
-        self.stop_event = threading.Event()
-        self.errors = []
-
-    def tick(self):
-        sid = http(self.phone+'/status', timeout=10).get('sessionId')
-        if sid:
-            http(self.phone+'/session/'+sid+'/wda/apps/state', {'bundleId': BUNDLE}, timeout=10)
-            http(self.phone+'/session/'+sid+'/screenshot', timeout=20)
-
-    def loop(self):
-        while not self.stop_event.wait(self.period):
-            try:
-                self.tick()
-            except Exception as exc:
-                self.errors.append(str(exc)[:200])
-
-    def __enter__(self):
-        self.thread = threading.Thread(target=self.loop, daemon=True)
-        self.thread.start()
-        return self
-
-    def __exit__(self, *_):
-        self.stop_event.set()
-        self.thread.join(timeout=25)
-
-
 class Coordinator:
     def __init__(self, args):
         self.a = args
@@ -560,18 +529,26 @@ class Coordinator:
                 self.timing = None
                 save(folder/'wda-action-timing.json', timing_report)
                 validate_action_timing_report(timing_report, expected_revision=REVISION, expected_count=10)
-            keepalive = WdaKeepAlive(self.phone) if self.a.tunnel_python else None
-            if keepalive and not samples:
-                keepalive.__enter__()
             self.wait_until(began+seconds)
-            if keepalive and samples:
-                keepalive.__enter__()
-            try:
-                self.analyse(name, folder, fps, samples, recording, result, events)
-            finally:
-                if keepalive:
-                    keepalive.__exit__()
-                    result['wda_keepalive_errors'] = keepalive.errors
+            mov, stop = recording.stop()
+            self.prerequisites(folder, 'after')
+            result['lifecycle'] = 'passed'
+            metrics, pts = audit_movie(mov, fps, bool(samples))
+            result['video'] = metrics
+            if samples:
+                started_at = float(stop['startedAt'])
+                manifest = {'gestures': events, 'wda_action_timing_report': 'wda-action-timing.json',
+                            'wda_timing_revision': REVISION, 'wda_action_count': 10}
+                save(folder/'diagnostic-manifest.json', manifest)
+                spec = importlib.util.spec_from_file_location('diagnostic_alignment', self.a.repo/'scripts/collection/align_xctest_traces.py')
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[spec.name] = module
+                spec.loader.exec_module(module)
+                info, _ = module._wda_two_anchor_calibration(manifest=manifest, manifest_path=folder/'diagnostic-manifest.json',
+                    mov=mov, started_at=started_at, fps=fps, search_after_s=4, resize_width=256, source_frame_times=pts)
+                save(folder/'calibration.json', info)
+                result['calibration'] = 'passed'
+            self.event('case-passed', case=name, metrics=metrics)
         except BaseException as exc:
             result['error'] = str(exc)
             if samples and result['calibration'] == 'pending':
@@ -586,27 +563,6 @@ class Coordinator:
                 self.timing.cleanup()
                 self.timing = None
             save(self.out/'report.json', self.report)
-
-    def analyse(self, name, folder, fps, samples, recording, result, events):
-        mov, stop = recording.stop()
-        self.prerequisites(folder, 'after')
-        result['lifecycle'] = 'passed'
-        metrics, pts = audit_movie(mov, fps, bool(samples))
-        result['video'] = metrics
-        if samples:
-            started_at = float(stop['startedAt'])
-            manifest = {'gestures': events, 'wda_action_timing_report': 'wda-action-timing.json',
-                        'wda_timing_revision': REVISION, 'wda_action_count': 10}
-            save(folder/'diagnostic-manifest.json', manifest)
-            spec = importlib.util.spec_from_file_location('diagnostic_alignment', self.a.repo/'scripts/collection/align_xctest_traces.py')
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[spec.name] = module
-            spec.loader.exec_module(module)
-            info, _ = module._wda_two_anchor_calibration(manifest=manifest, manifest_path=folder/'diagnostic-manifest.json',
-                mov=mov, started_at=started_at, fps=fps, search_after_s=4, resize_width=256, source_frame_times=pts)
-            save(folder/'calibration.json', info)
-            result['calibration'] = 'passed'
-        self.event('case-passed', case=name, metrics=metrics)
 
     def cleanup(self):
         for label, action in [('session', lambda: self.driver.quit() if self.driver else None),
