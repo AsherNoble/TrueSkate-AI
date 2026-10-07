@@ -23,7 +23,8 @@ import time
 import urllib.request
 import uuid
 
-REVISION = 'b5ace21788b5f5dc4cf0e0759f8bb8a79ab83ae6'
+# Instrumented WDA fork build on both XRs since CURVE-AUDIT-20261003.
+REVISION = 'ae50404aac12d9f8c41f6c3fa8776e97975eaef5'
 BUNDLE = 'com.trueaxis.skate'
 REGISTRY_API = '/remotexpc/tunnels'
 
