@@ -248,6 +248,69 @@ class Recording:
             self.stop(recovery=True)
 
 
+class Operator:
+    """Operator prompts on three channels: the rig Terminal, speech and ntfy.
+
+    ntfy dedupe is disabled (a repeated prompt is still a new instruction) and a failed
+    send is reported rather than swallowed. Readiness is Enter on the controlling
+    Terminal, or the ready file when no Terminal is attached.
+    """
+    def __init__(self, event, enabled):
+        self.event, self.enabled = event, enabled
+
+    def ntfy(self, message, priority):
+        import logging
+        from trueskate_ai.utils import notify as ntfy
+        failures = []
+        class Capture(logging.Handler):
+            def emit(self, record):
+                if 'ntfy' in record.getMessage():
+                    failures.append(record.getMessage()[:200])
+        handler = Capture(logging.WARNING)
+        logging.getLogger().addHandler(handler)
+        try:
+            if not ntfy.is_configured():
+                return 'ntfy not configured'
+            ntfy.notify(message, title='TrueSkate XR2 diagnostic', priority=priority, block=True, dedupe_s=0)
+        except Exception as exc:
+            failures.append(str(exc)[:200])
+        finally:
+            logging.getLogger().removeHandler(handler)
+        return failures[0] if failures else None
+
+    def alert(self, message, priority='high', speech=None):
+        if not self.enabled:
+            return
+        print('\n' + '#' * 64 + f'\n##  {message}\n' + '#' * 64 + '\a', flush=True)
+        if speech:
+            subprocess.Popen(['/usr/bin/say', speech], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.event('operator-alert', message=message, ntfy_error=self.ntfy(message, priority))
+
+    def wait_ready(self, ready_file, timeout_s):
+        """Enter on the Terminal (if any) or the ready file; False on timeout."""
+        import select
+        deadline = time.monotonic() + timeout_s
+        tty = None
+        if self.enabled:
+            try:
+                tty = open('/dev/tty')
+            except OSError:
+                tty = None
+        try:
+            while time.monotonic() < deadline:
+                if ready_file.exists():
+                    return True
+                if tty and select.select([tty], [], [], 0.5)[0]:
+                    tty.readline()
+                    return True
+                if not tty:
+                    time.sleep(0.5)
+            return False
+        finally:
+            if tty:
+                tty.close()
+
+
 class Coordinator:
     def __init__(self, args):
         self.a = args
@@ -260,6 +323,7 @@ class Coordinator:
         self.driver = self.wda = self.admin = self.registry = self.guardian_process = self.wake = None
         self.timing = None
         self.pending = []
+        self.operator = Operator(self.event, args.operator)
         self.report = {'park': 'unverified current gameplay scene', 'corpus_admission': False,
                        'cases': [], 'cleanup_errors': [], 'pico_acceptance': 'not tested'}
         self.udid = None
@@ -484,7 +548,7 @@ class Coordinator:
         command(self.node('delete-attachment') + ['--uuid', uuid_], 60)
         return {'wifi_pull': pulled, 'attachment_deleted': True}
 
-    def case(self, name, fps, seconds, samples=None):
+    def case(self, name, fps, seconds, samples=None, on_recording=None):
         from trueskate_ai.sim.touch_actions import reset_position, long_press, curved_drag
         from trueskate_ai.collection.scene_settle import wait_for_centre_settle
         from trueskate_ai.collection.wda_action_timing import WDAActionTimingCapture, validate_action_timing_report
@@ -509,6 +573,8 @@ class Coordinator:
             recording.start()
             began = time.monotonic()
             self.event('recording-started', case=name, seconds=seconds)
+            if on_recording:
+                on_recording()
             events = []
             if samples:
                 schedule = [(2, None, 'start')] + [(6+5*i, g, None) for i, g in enumerate(samples)] + [(53, None, 'end')]
@@ -650,13 +716,13 @@ class Coordinator:
                 self.case('03-minute-30', 30, 60, samples)
                 self.case('04-minute-60', 60, 60, samples)
             if self.a.pico_hover:
-                self.event('waiting-pico', instruction='Keep Pico disconnected; create pico-ready when operator is ready to plug after recording-started')
-                deadline = time.monotonic()+120
-                while not (self.out/'pico-ready').exists():
-                    if time.monotonic()>deadline:
-                        raise RuntimeError('Pico readiness deadline; no recording retry')
-                    time.sleep(.5)
-                self.case('05-pico-hover-60', 60, self.a.pico_seconds)
+                self.event('waiting-pico', instruction='Keep Pico disconnected; press Enter (or create pico-ready) when ready to plug after recording-started')
+                self.operator.alert('PICO STEP NEXT: Pico unplugged and in hand? Press Enter in this Terminal when ready.',
+                                    'high', 'Pico step next. Press enter when ready.')
+                if not self.operator.wait_ready(self.out/'pico-ready', 300):
+                    raise RuntimeError('Pico readiness deadline; no recording retry')
+                self.case('05-pico-hover-60', 60, self.a.pico_seconds, on_recording=lambda: self.operator.alert(
+                    'PLUG THE PICO IN NOW', 'urgent', 'Plug the Pico in now'))
                 self.report['pico_acceptance'] = 'requires visual review of original movie and insertion timing'
         except BaseException as exc:
             self.report['error'] = str(exc)
@@ -669,6 +735,9 @@ class Coordinator:
                 self.wake.terminate()
                 self.wake.wait(timeout=3)
             self.event('finished', report=str(self.out/'report.json'), cleanup_errors=self.report['cleanup_errors'])
+            self.operator.alert(f"XR2 diagnostic finished ({self.out.name}): "
+                                f"{'aborted: ' + self.report['error'][:120] if self.report.get('error') else 'completed'}",
+                                'default', 'Diagnostic finished')
 
 
 def main():
@@ -686,6 +755,8 @@ def main():
     p.add_argument('--admin-prompt', action='store_true')
     p.add_argument('--pico-hover', action='store_true')
     p.add_argument('--pico-only', action='store_true', help='skip cases 1-4; record only the Pico case')
+    p.add_argument('--operator', action='store_true',
+                   help='prompt the operator on the Terminal, by speech and ntfy; Enter confirms readiness')
     p.add_argument('--pico-seconds', type=int, default=45, choices=range(10, 181), metavar='10..180')
     p.add_argument('--tunnel-python', type=Path,
                    help='Python 3.13+ with pymobiledevice3: use the Wi-Fi RemotePairing tunnel')

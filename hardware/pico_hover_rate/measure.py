@@ -2,8 +2,9 @@
 
 Usage: PYTHONPATH=<repo>/src measure.py <movie.mov> <schedule.json> <out_dir>
 
-- The park row is found from the cursor itself, because the Bluetooth gain may not hold
-  over USB; only detections on that row are used. The movie is streamed, never held.
+- The park row is found from the cursor itself (sparse full-area pass), because the
+  Bluetooth gain may not hold over USB; the cursor is then tracked on every frame within
+  +/-40 pt of that row, as the Bluetooth probe did. The movie is streamed, never held.
 - Passes are placed by schedule time, anchored on the first 3 ms pass. USB can deliver a
   60-report 1 ms pass in a few frames, too short for motion-segment counting.
 - One report's travel is measured from the 15 ms passes. At 3 and 1 ms, travel short of
@@ -23,23 +24,28 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'hid_pointer'))
 from hover_rate_measure import MOVING, find_cursor_anywhere, pass_row, print_rows, summarise  # noqa: E402
 
-ROW_HALF_PT = 30
+ROW_HALF_PT = 40
 WINDOW_PAD_S = (0.15, 0.45)
 
 
-def track(mov):
-    """Stream the movie once: frame times and the best cursor candidate (x, y pt) anywhere in play."""
+def track(mov, y_range_pt, every=1):
+    """Stream the movie: frame times and the cursor (x, y pt) found within y_range_pt."""
     cap = cv2.VideoCapture(mov)
     t, x, y = [], [], []
+    i = 0
     while True:
-        ok, f = cap.read()
+        ok = cap.grab()
         if not ok:
             break
         t.append(cap.get(cv2.CAP_PROP_POS_MSEC) / 1000)
-        d = find_cursor_anywhere(f, (150, 800))
+        d = None
+        if i % every == 0:
+            ok, f = cap.retrieve()
+            d = find_cursor_anywhere(f, y_range_pt) if ok else None
         good = d and d[0] > 8
         x.append(d[1] if good else np.nan)
         y.append(d[2] if good else np.nan)
+        i += 1
     return np.array(t), np.array(x), np.array(y)
 
 
@@ -119,10 +125,10 @@ def main(argv):
     mov, sched_path, out = argv[0], argv[1], Path(argv[2])
     out.mkdir(parents=True, exist_ok=True)
     schedule = json.load(open(sched_path))
-    t, x_all, y_all = track(mov)
+    _, _, y_sparse = track(mov, (150, 800), every=6)            # where the cursor mostly sits
+    row = park_row(y_sparse)
+    t, x, _ = track(mov, (int(row - ROW_HALF_PT), int(row + ROW_HALF_PT)))   # every frame on that row, as the BLE probe did
     fps = (len(t) - 1) / (t[-1] - t[0])
-    row = park_row(y_all)
-    x = np.where(np.abs(y_all - row) <= ROW_HALF_PT, x_all, np.nan)   # the cursor on the park row only
 
     passes = schedule['passes']
     first = passes[0]

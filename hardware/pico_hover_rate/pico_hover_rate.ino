@@ -94,6 +94,9 @@ static Status play() {
 }
 
 void setup() {
+  // Drop the core's default CDC device first: nothing enumerates while the latch is
+  // written (flash writes stall interrupts), and a locked board never re-attaches.
+  TinyUSBDevice.detach();
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
   EEPROM.begin(4096);
@@ -112,7 +115,6 @@ void setup() {
   for (uint16_t i = 0; i < kEventCount; ++i) storeSlot(i, kUnsent);
   saveStats();
 
-  TinyUSBDevice.detach();
   TinyUSBDevice.clearConfiguration();
   TinyUSBDevice.setManufacturerDescriptor("TrueSkate-AI");
   TinyUSBDevice.setProductDescriptor("TrueSkate Pico Rate Probe");

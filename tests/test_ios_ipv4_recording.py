@@ -247,3 +247,43 @@ def test_deferred_analysis_reports_each_case_and_isolates_failures(tmp_path, mon
     events = [json.loads(x)['event'] for x in coord.events.read_text().splitlines()]
     assert events == ['case-passed', 'case-analysis-failed']
     assert json.loads((tmp_path/'report.json').read_text())['cases'][1]['analysis_error']
+
+
+def test_operator_ntfy_disables_dedupe_and_reports_failed_sends(monkeypatch):
+    import logging
+    from trueskate_ai.utils import notify as ntfy
+    calls = []
+    monkeypatch.setattr(ntfy, 'is_configured', lambda: True)
+    def failing(message, **kw):
+        calls.append(kw)
+        logging.warning('ntfy notification failed: %s', 'timed out')
+    monkeypatch.setattr(ntfy, 'notify', failing)
+    op = diag.Operator(lambda *a, **k: None, True)
+    assert 'timed out' in op.ntfy('PLUG THE PICO IN NOW', 'urgent')
+    assert calls[0]['dedupe_s'] == 0 and calls[0]['block'] is True
+    monkeypatch.setattr(ntfy, 'notify', lambda message, **kw: None)
+    assert op.ntfy('again', 'urgent') is None
+    monkeypatch.setattr(ntfy, 'is_configured', lambda: False)
+    assert op.ntfy('again', 'urgent') == 'ntfy not configured'
+
+
+def test_operator_alert_uses_all_channels_only_when_enabled(monkeypatch, capsys):
+    events, spoken = [], []
+    monkeypatch.setattr(diag.subprocess, 'Popen', lambda argv, **kw: spoken.append(argv))
+    op = diag.Operator(lambda name, **kw: events.append((name, kw)), False)
+    op.alert('PLUG THE PICO IN NOW', 'urgent', 'Plug the Pico in now')
+    assert not events and not spoken and capsys.readouterr().out == ''
+    op = diag.Operator(lambda name, **kw: events.append((name, kw)), True)
+    monkeypatch.setattr(op, 'ntfy', lambda message, priority: None)
+    op.alert('PLUG THE PICO IN NOW', 'urgent', 'Plug the Pico in now')
+    assert 'PLUG THE PICO IN NOW' in capsys.readouterr().out
+    assert spoken == [['/usr/bin/say', 'Plug the Pico in now']]
+    assert events == [('operator-alert', {'message': 'PLUG THE PICO IN NOW', 'ntfy_error': None})]
+
+
+def test_operator_ready_by_file_and_times_out(tmp_path):
+    op = diag.Operator(lambda *a, **k: None, False)
+    ready = tmp_path/'pico-ready'
+    assert op.wait_ready(ready, 0.6) is False
+    ready.touch()
+    assert op.wait_ready(ready, 5) is True

@@ -121,3 +121,46 @@ def test_measure_finds_row_anchor_and_windows():
     seg = measure.window_segment(t, x, 1.9, t0, t0 + 0.3)
     assert seg[0] == 100 and seg[-1] == 116
     assert len(measure.window_segment(t, x, 1.9, t0 + 3, t0 + 3.3)) == 0
+
+
+def synthetic_movie(path, schedule, per_report=1.9, latency_s=0.0213, lead_s=1.0, fps=60):  # no exact frame ties
+    """Grey floor with a dark cursor disc on the park row, moved by the schedule's passes."""
+    import cv2
+    passes = schedule['passes']
+    t_end = lead_s + passes[-1]['end_us'] / 1e6 + 1.5
+    writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*'mp4v'), fps, (828, 1792))
+    rng = np.random.default_rng(1)
+    floor = (140 + rng.normal(0, 3, (1792, 828))).clip(0, 255).astype(np.uint8)
+    for k in range(int(t_end * fps)):
+        now = k / fps - lead_s - latency_s
+        x = 109.0
+        for p in passes:
+            done = np.clip(np.floor((now * 1e6 - p['start_us']) / p['step_us']) + 1, 0, p['reports'])
+            x += np.sign(p['dx']) * per_report * done
+        img = cv2.cvtColor(floor, cv2.COLOR_GRAY2BGR)
+        cv2.circle(img, (int(round(x * 2)), 736), 17, (80, 80, 80), -1)
+        writer.write(img)
+    writer.release()
+
+
+def test_measure_recovers_passes_from_a_synthetic_recording(tmp_path):
+    import json
+    passes, t = [], 500_000
+    for dx, step, n in [(4, 3000, 100), (-4, 3000, 100), (4, 1000, 60), (-4, 1000, 60), (4, 15000, 30), (-4, 15000, 30)]:
+        passes.append(dict(mode='rates', dx=dx, step_us=step, reports=n, start_us=t, end_us=t + step * n))
+        t += step * n + 600_000
+    schedule = dict(schedule_hash='0' * 16, n_events=0, pass_dx=4, passes=passes,
+                    presses=[dict(kind='tap', start_us=t, lift_us=t + 50_000)])
+    (tmp_path / 'schedule.json').write_text(json.dumps(schedule))
+    synthetic_movie(tmp_path / 'movie.mp4', schedule)
+    measure.main([str(tmp_path / 'movie.mp4'), str(tmp_path / 'schedule.json'), str(tmp_path / 'out')])
+    result = json.loads((tmp_path / 'out' / 'measure.json').read_text())
+    assert result['park_row_pt'] == pytest.approx(368, abs=5)
+    assert result['per_report_pt'] == pytest.approx(1.9, rel=0.03)
+    rows = result['passes']
+    assert len(rows) == 6 and not any(r.get('missing') for r in rows)
+    for r, p in zip(rows, passes):
+        assert r['delivered'] == pytest.approx(p['reports'], abs=1)
+    fifteen = result['by_step']['rates']['15ms']
+    assert fifteen['displaced_pct'] == 0                      # a perfectly regular synthetic link
+    assert (tmp_path / 'out' / 'press-tap.png').exists()
