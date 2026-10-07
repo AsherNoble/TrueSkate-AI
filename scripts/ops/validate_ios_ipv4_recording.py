@@ -381,6 +381,11 @@ class Coordinator:
                     'appium:noReset': True, 'appium:autoLaunch': False, 'appium:skipLogCapture': True})
         self.driver = webdriver.Remote(options=options, client_config=AppiumClientConfig('http://127.0.0.1:4726', timeout=90))
         self.update_guardian(session_id=self.driver.session_id)
+        # Launching the runner backgrounds True Skate; resume it (never cold-launch).
+        if self.wda and self.driver.query_app_state(BUNDLE) == 2:
+            self.driver.activate_app(BUNDLE)
+            time.sleep(3)
+            self.event('app-resumed-after-wda-launch')
         self.guard(self.out/'initial.png')
         self.event('session-ready')
 
