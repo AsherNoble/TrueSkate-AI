@@ -52,11 +52,13 @@ class RegistryLease:
         self.lock = self.path.with_name(self.path.name + '.ipv4-diagnostic-lock')
         self.changed = False
         self.locked = False
+        self.token = str(uuid.uuid4())
 
     def __enter__(self):
         self.lock.mkdir()
         self.locked = True
         try:
+            save(self.lock/'owner.json', {'pid': os.getpid(), 'token': self.token})
             self.original = self.path.read_bytes()
             if self.original.strip() != b'42314':
                 raise RuntimeError('Unexpected shared tunnel registry port')
@@ -64,6 +66,7 @@ class RegistryLease:
             self.changed = True
             return self
         except BaseException:
+            (self.lock/'owner.json').unlink(missing_ok=True)
             self.lock.rmdir()
             self.locked = False
             raise
@@ -71,12 +74,17 @@ class RegistryLease:
     def __exit__(self, *_):
         try:
             if self.changed:
+                if json.loads((self.lock/'owner.json').read_text()).get('token') != self.token:
+                    raise RuntimeError('Registry lease ownership changed')
                 if self.path.read_bytes() != b'42315':
                     raise RuntimeError('Registry changed externally; original value not overwritten')
                 self.path.write_bytes(self.original)
         finally:
             if self.locked:
-                self.lock.rmdir()
+                owner = self.lock/'owner.json'
+                if owner.exists() and json.loads(owner.read_text()).get('token') == self.token:
+                    owner.unlink()
+                    self.lock.rmdir()
                 self.locked = False
 
 
@@ -103,16 +111,24 @@ def guardian(state_path):
                     os.kill(state['wda_pid'], signal.SIGTERM)
                 except ProcessLookupError:
                     pass
+            if state.get('wake_pid'):
+                try:
+                    os.kill(state['wake_pid'], signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
             port = Path(state['portfile'])
             original = base64.b64decode(state['original'])
-            if port.read_bytes() == b'42315':
-                port.write_bytes(original)
-            elif port.read_bytes() != original:
-                errors.append('Registry changed externally; did not overwrite')
-            Path(state['lease']).unlink(missing_ok=True)
             lock = port.with_name(port.name+'.ipv4-diagnostic-lock')
-            if lock.exists():
+            owner = lock/'owner.json'
+            owns_lock = owner.exists() and json.loads(owner.read_text()).get('token') == state.get('registry_token')
+            if owns_lock:
+                if port.read_bytes() == b'42315':
+                    port.write_bytes(original)
+                elif port.read_bytes() != original:
+                    errors.append('Registry changed externally; did not overwrite')
+                owner.unlink()
                 lock.rmdir()
+            Path(state['lease']).unlink(missing_ok=True)
             save(state_path.with_suffix('.result.json'), {'coordinator_died': True, 'errors': errors})
             return
         time.sleep(1)
@@ -211,7 +227,7 @@ class Coordinator:
         self.lease = self.out / 'coordinator-lease.json'
         self.token = str(uuid.uuid4())
         self.ending = threading.Event()
-        self.driver = self.wda = self.admin = self.registry = self.guardian_process = None
+        self.driver = self.wda = self.admin = self.registry = self.guardian_process = self.wake = None
         self.timing = None
         self.report = {'park': 'unverified current gameplay scene', 'corpus_admission': False,
                        'cases': [], 'cleanup_errors': [], 'pico_acceptance': 'not tested'}
@@ -270,6 +286,8 @@ class Coordinator:
         self.portfile = Path(json.loads(info.splitlines()[-1])['file'])
         if self.portfile.read_bytes().strip() != b'42314':
             raise RuntimeError('Unexpected default registry file')
+        if not os.access(self.portfile, os.W_OK) or not os.access(self.portfile.parent, os.W_OK):
+            raise RuntimeError('Coordinator cannot lease the registry file and lock; refusing administrator launch')
         root = self.node('tunnel') + ['--lifetime', '900', '--lease-file', str(self.lease), '--lease-token', self.token]
         self.root_cmd = shlex.join(root) + ' > ' + shlex.quote(str(self.out/'helper.log')) + ' 2>&1'
         (self.out/'administrator-command.txt').write_text(self.root_cmd+'\n')
@@ -287,7 +305,7 @@ class Coordinator:
         else:
             self.admin = subprocess.Popen(['sudo', '-n', '/bin/sh', '-c', self.root_cmd],
                                           stdout=(self.out/'admin.log').open('w'), stderr=subprocess.STDOUT)
-        deadline = time.monotonic()+120
+        deadline = time.monotonic()+300
         while time.monotonic() < deadline:
             lines = (self.out/'helper.log').read_text().splitlines()
             events = [json.loads(x) for x in lines if x.startswith('{')]
@@ -308,7 +326,8 @@ class Coordinator:
         self.guardian_state = self.out/'guardian-state.json'
         self.guardian_data = {'pid': os.getpid(), 'portfile': str(self.portfile),
                               'original': base64.b64encode(self.portfile.read_bytes()).decode(),
-                              'lease': str(self.lease)}
+                              'lease': str(self.lease), 'registry_token': self.registry.token,
+                              'wake_pid': self.wake.pid if self.wake else None}
         save(self.guardian_state, self.guardian_data)
         self.guardian_process = subprocess.Popen([sys.executable, str(Path(__file__).resolve()),
             '--guardian-state', str(self.guardian_state)], start_new_session=True,
@@ -506,6 +525,9 @@ class Coordinator:
         if self.guardian_process:
             self.guardian_state.unlink(missing_ok=True)
             self.guardian_process.wait(timeout=3)
+        if self.wake and self.wake.poll() is None:
+            self.wake.terminate()
+            self.wake.wait(timeout=3)
         self.event('finished', report=str(self.out/'report.json'), cleanup_errors=self.report['cleanup_errors'])
 
     def stop_wda(self):
@@ -518,6 +540,8 @@ class Coordinator:
             self.preflight()
             if self.a.prepare:
                 return
+            # Hold a bounded idle-sleep assertion during authentication/capture.
+            self.wake = subprocess.Popen(['/usr/bin/caffeinate', '-i', '-t', '900'])
             self.establish()
             self.connect()
             self.case('01-short-30', 30, 5)

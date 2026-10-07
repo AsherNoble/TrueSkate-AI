@@ -7,10 +7,20 @@ import {pathToFileURL} from 'node:url';
 import path from 'node:path';
 import dns from 'node:dns/promises';
 import fs from 'node:fs';
+import tls from 'node:tls';
+import {NodeTunnelError, nodeHandshake, nodeTunnel} from './ios_ipv4_node_tunnel.mjs';
 
 const require = createRequire(import.meta.url);
 const emit = (event, details = {}) => process.stdout.write(JSON.stringify({event, ...details}) + '\n');
 export class DiagnosticError extends Error {}
+const safeFailure = error => error instanceof DiagnosticError || error instanceof NodeTunnelError || /^(SSL_connect|Failed to (load TLS|send CDTunnel|read CDTunnel|parse handshake)|Tunnel handshake timeout|Invalid CDTunnel|Handshake response|Malformed clientParameters|TLS session)/.test(error.message || '')
+  ? error.message : error.code || error.name;
+
+export function pemText(value) {
+  const text = typeof value === 'string' ? value : Buffer.from(value).toString('utf8');
+  if (!text.startsWith('-----BEGIN ')) throw new DiagnosticError('Pairing credential is not PEM');
+  return text;
+}
 
 export function validateIdentity(actual, expected) {
   if (!expected || actual !== expected) throw new DiagnosticError('Paired device identity mismatch');
@@ -65,7 +75,8 @@ function parse(argv) {
     opts[argv[i].slice(2)] = argv[i + 1];
   }
   opts.port = Number(opts.port); opts.lifetime = Number(opts.lifetime);
-  if (!['probe', 'tunnel', 'wda', 'registry-info'].includes(opts.mode)) throw new DiagnosticError('Expected probe, tunnel, wda or registry-info mode');
+  if (opts.mtu && ![1280, 16000].includes(Number(opts.mtu))) throw new DiagnosticError('Probe MTU must be 1280 or 16000');
+  if (!['probe', 'tls-probe', 'native-tls-probe', 'tunnel', 'wda', 'registry-info'].includes(opts.mode)) throw new DiagnosticError('Expected probe, tls-probe, native-tls-probe, tunnel, wda or registry-info mode');
   if (!opts['modules-root'] || !path.isAbsolute(opts['modules-root'])) throw new DiagnosticError('An absolute --modules-root is required');
   if (opts.mode !== 'registry-info' && !opts.udid) throw new DiagnosticError('--udid is required');
   if (opts.port !== 42315 || !Number.isInteger(opts.lifetime) || opts.lifetime < 1 || opts.lifetime > 900) {
@@ -95,18 +106,26 @@ async function pairedLockdown(opts) {
     } catch { /* Socket destruction still closes the session. */ }
     ps.close(); socket.destroy();
   };
+  let stage = 'query-type';
   try {
     await client.queryType(3000);
+    stage = 'start-session';
     session = await client.startSession(pair.HostID, pair.SystemBUID, 3000);
     if (session.enableSessionSSL) {
       // Fix duplicate response piping only on this temporary client instance.
       ps._splitter.unpipe(ps._decoder);
       client.enableSessionSSL(pair.HostPrivateKey, pair.HostCertificate);
     }
+    stage = 'identity';
     validateIdentity(await client.getValue({Key: 'UniqueDeviceID'}, 3000), opts.udid);
+    stage = 'version';
     const version = await client.getValue({Key: 'ProductVersion'}, 3000);
     return {client, pair, host, version, close};
-  } catch (error) { await close(); throw error; }
+  } catch (error) {
+    await close();
+    const message = String(error.message || error.name);
+    throw new DiagnosticError(`Lockdown ${stage}: ${/BEGIN|HostPrivateKey|HostCertificate|PairRecordData/.test(message) ? 'redacted credential error' : message.slice(0,160)}`);
+  }
 }
 
 async function loadSdk(opts) {
@@ -146,7 +165,7 @@ async function runTunnel(opts) {
     try {
       if (handler) handler.removeTunnelEntry(opts.udid);
       if (server) { server.closeAllConnections(); await new Promise(r => server.close(r)); }
-      if (tunnel) await sdk.TunnelManager.closeTunnelByAddress(tunnel.Address);
+      if (tunnel) await tunnel.closer();
       proxy?.socket.destroy();
       if (auth) await auth.close();
       emit('helper-stopped', {reason});
@@ -160,13 +179,13 @@ async function runTunnel(opts) {
     auth = await pairedLockdown(opts);
     emit('paired', {host: auth.host, ios: auth.version});
     proxy = await openDeveloperProxy(auth, opts.udid, auth.host);
-    await auth.close(); auth = null;
-    tunnel = await bounded(sdk.TunnelManager.getTunnel(proxy.socket, {
-      cert: proxy.cert.toString(), key: proxy.key.toString(),
-    }, {onDead: () => {
+    const onDead = () => {
       handler?.removeTunnelEntry(opts.udid);
       emit('tunnel-lost');
-    }}), 20000, 'Native tunnel establishment');
+      void cleanup('transport-lost', 1);
+    };
+    tunnel = await bounded(nodeTunnel(proxy.socket, proxy, opts['modules-root'], onDead), 25000, 'Node TLS tunnel establishment');
+    await auth.close(); auth = null;
     const services = sdk.servicesToCatalog(await bounded(
       sdk.discoverServices(opts.udid, tunnel.Address, tunnel.RsdPort), 20000, 'RSD discovery'));
     validateServices(services);
@@ -184,7 +203,7 @@ async function runTunnel(opts) {
     emit('helper-ready', {pid: process.pid, host: tunnel.Address, rsd_port: tunnel.RsdPort,
       registry_port: opts.port, service_names: Object.keys(services)});
   } catch (error) {
-    emit('helper-error', {error: error instanceof DiagnosticError ? error.message : error.code || error.name});
+    emit('helper-error', {error: safeFailure(error)});
     await cleanup('startup-failed', 1);
   }
 }
@@ -221,7 +240,7 @@ async function runWda(opts) {
 
 async function main(argv) {
   if (argv[0] === '--help') {
-    console.log('ios_ipv4_tunnel.mjs probe|tunnel|wda|registry-info --modules-root ABS --udid UDID [--host DNS_OR_IPV4] [--lifetime 1..900]');
+    console.log('ios_ipv4_tunnel.mjs probe|tls-probe|native-tls-probe|tunnel|wda|registry-info --modules-root ABS --udid UDID [--host DNS_OR_IPV4] [--lifetime 1..900]');
     return;
   }
   const opts = parse(argv);
@@ -231,15 +250,72 @@ async function main(argv) {
     emit('registry-info', {file: item.id, value: await item.read()});
   } else if (opts.mode === 'probe') {
     const auth = await pairedLockdown(opts);
+    emit('probe-stage', {stage: 'paired'});
     try { emit('paired', {host: auth.host, ios: auth.version}); }
     finally { await auth.close(); }
+  } else if (opts.mode === 'native-tls-probe') {
+    if (opts['load-sdk'] === 'yes') await loadSdk(opts);
+    const {TunnelForwarder} = await import(pathToFileURL(path.join(opts['modules-root'], 'appium-ios-tuntap/lib/tunnel/forwarder.js')).href);
+    const auth = await pairedLockdown(opts);
+    const forwarder = new TunnelForwarder();
+    let proxy, destroy;
+    try {
+      proxy = await openDeveloperProxy(auth, opts.udid, auth.host);
+      emit('probe-stage', {stage: 'proxy-open'});
+      if (['yes', 'nodelay'].includes(opts['socket-options'])) proxy.socket.setNoDelay(true);
+      if (['yes', 'keepalive'].includes(opts['socket-options'])) proxy.socket.setKeepAlive(true, 1000);
+      if (opts['close-before-tls'] === 'yes') await auth.close();
+      if (opts['read-stop'] === 'yes') {
+        proxy.socket.pause();
+        proxy.socket._handle.readStop();
+        await new Promise(resolve => setImmediate(resolve));
+      }
+      if (opts['retain-socket'] === 'yes') {
+        destroy = proxy.socket.destroy.bind(proxy.socket);
+        proxy.socket.destroy = () => proxy.socket;
+      }
+      forwarder.connect(proxy.socket, {cert: pemText(proxy.cert), key: pemText(proxy.key)});
+      emit('native-tls-ready', {host: auth.host, read_stop: opts['read-stop'] === 'yes'});
+      if (opts.handshake === 'yes') {
+        const info = forwarder.handshake(16000);
+        emit('native-handshake-ready', {server_address: info.serverAddress, rsd_port: info.serverRSDPort});
+      }
+    } finally { forwarder.stop(); if (destroy) destroy(); else proxy?.socket.destroy(); await auth.close(); }
+  } else if (opts.mode === 'tls-probe') {
+    const auth = await pairedLockdown(opts);
+    emit('probe-stage', {stage: 'paired'});
+    let proxy, secure;
+    try {
+      proxy = await openDeveloperProxy(auth, opts.udid, auth.host);
+      emit('probe-stage', {stage: 'proxy-open'});
+      if (opts['close-before-tls'] === 'yes') await auth.close();
+      if (opts.handshake === 'yes') {
+        const result = await nodeHandshake(proxy.socket, proxy, opts.mtu ? Number(opts.mtu) : 16000);
+        secure = result.secure;
+        emit('node-handshake-ready', {server_address: result.info.serverAddress, rsd_port: result.info.serverRSDPort,
+          client_address: result.info.clientParameters.address, mtu: result.info.clientParameters.mtu});
+        return;
+      }
+      secure = tls.connect({socket: proxy.socket, cert: Buffer.from(proxy.cert), key: Buffer.from(proxy.key),
+        rejectUnauthorized: false, minVersion: 'TLSv1.2', maxVersion: 'TLSv1.2'});
+      await bounded(new Promise((resolve, reject) => {secure.once('secureConnect', resolve); secure.once('error', reject);}), 8000, 'Paired TLS probe');
+      emit('tls-ready', {host: auth.host, close_before_tls: opts['close-before-tls'] === 'yes'});
+    } catch (error) {
+      const message = String(error.message || error.name);
+      emit('probe-failure', {error: /BEGIN|HostPrivateKey|HostCertificate/.test(message) ? 'redacted credential error' : message.slice(0,200)});
+      throw error;
+    } finally { secure?.destroy(); proxy?.socket.destroy(); await auth.close(); }
   } else if (opts.mode === 'tunnel') await runTunnel(opts);
   else await runWda(opts);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   main(process.argv.slice(2)).catch(error => {
-    emit('helper-error', {error: error instanceof DiagnosticError ? error.message : error.code || error.name});
+    emit('helper-error', {error: safeFailure(error)});
+    if (['probe', 'tls-probe', 'native-tls-probe'].includes(process.argv[2])) {
+      const message = String(error.message || error.name);
+      emit('probe-detail', {error: /BEGIN|PrivateKey|Certificate|PairRecord|Uint8Array|Buffer</.test(message) ? 'redacted credential error' : message.slice(0,200)});
+    }
     process.exitCode = 1;
   });
 }

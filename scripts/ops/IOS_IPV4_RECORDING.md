@@ -6,7 +6,17 @@ installed Appium dependencies. It does not rebuild WDA or change vendor modules.
 Ordinary XR2 USB must be absent. Leave the powered camera adapter attached and
 Pico disconnected until the final phase. Unlock XR2 in gameplay first.
 
-Stage the Python coordinator and `ios_ipv4_tunnel.mjs` together under a fresh
+**Live status (2026-10-07):** paired IPv4 and client-certificate TLS work when
+XR2 is awake. XR2 closes the subsequent CDTunnel handshake at both tested MTUs.
+No native TUN, WDA launch or recording has passed on this route. The Node TLS
+forwarder is a diagnostic alternative; its packet interface has offline tests
+but no live validation. The classic CoreDeviceProxy path is described as USB
+in the [reference toolkit](https://github.com/jkcoxson/idevice/blob/master/idevice/src/services/core_device_proxy.rs);
+network tunneling uses a different paired protocol. Do not infer wireless
+recording support from TLS success alone.
+
+Stage the Python coordinator, `ios_ipv4_tunnel.mjs` and
+`ios_ipv4_node_tunnel.mjs` together under a fresh
 `/Users/training-server/trueskate-ai-runtime/tmp/` directory. Keep the live checkout
 unchanged. Use its existing `.venv`, `.env`, and source for gesture/calibration
 contracts. Run the same command first with `--prepare` and a separate output
@@ -26,14 +36,20 @@ from an SSH session can fail without displaying a usable prompt. Credentials go
 only into macOS authentication. Without that flag the helper uses `sudo -n` and
 aborts if authentication is unavailable. The output folder must not exist.
 `administrator-command.txt` contains the exact bounded root-helper command.
+Desktop authentication has a five-minute window; an expired prompt is cancelled.
+The coordinator holds a 15-minute idle-sleep assertion during the live test and
+releases it on exit. This does not override closing the rig's lid. Keep the rig
+awake and reachable throughout the diagnostic.
 
 The helper opens paired lockdown over IPv4, verifies the XR2 identity, starts
-`com.apple.internal.devicecompute.CoreDeviceProxy`, creates a native TUN, discovers
+`com.apple.internal.devicecompute.CoreDeviceProxy`, negotiates CDTunnel over
+paired Node TLS, creates a native TUN using the installed packet interface, discovers
 required developer services and serves a registry on **127.0.0.1:42315**. It does
 not alter the ordinary root daemon or the shared registry file. The unprivileged
 coordinator leases that file, redirects new Appium sessions temporarily, and
 restores its original bytes on exit. A separate guardian handles coordinator
-process death. A missing heartbeat revokes the root helper within approximately
+process death and verifies the lease owner token before touching the shared
+registry or its lock. A missing heartbeat revokes the root helper within approximately
 two seconds; its absolute lifetime cap is 15 minutes. An external registry-file
 change is reported rather than overwritten. Never start another diagnostic
 concurrently or reclaim its lock without investigating the owning process.
@@ -69,6 +85,14 @@ fps and no frame gap over 100 ms. No gate is waived to make the test pass.
 Two 50 ms centre controls bracket each gesture minute. Existing WDA timing and
 strict two-anchor calibration checks run separately using actual movie PTS.
 No aligned training clips or dataset admissions are produced.
+
+Read-only transport probes can run without administrator authentication:
+`probe` authenticates lockdown; `tls-probe --handshake yes --mtu 1280` (or 16000)
+checks the actual CDTunnel response; `native-tls-probe` isolates the installed
+OpenSSL forwarder. All accept the same absolute `--modules-root`, `--udid` and
+`--host` arguments. They read pairing secrets only into memory. A TLS-only pass
+is separate from a successful CoreDevice handshake. Keep the phone awake; a
+62078 timeout invalidates later transport comparisons.
 
 `events.jsonl` provides progress; `report.json` records each case, failure and
 cleanup result. Native recording lifecycle, cadence/calibration and Pico mouse

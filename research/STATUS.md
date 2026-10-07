@@ -325,10 +325,15 @@ times out. The correct developer-proxy service starts over IPv4 and accepts
 paired-client TLS; no native tunnel, WDA launch or recording lifecycle has yet
 been established through that path. A bounded IPv4 lifecycle harness is now
 implemented in the isolated feature worktree; read-only rig preflight passed.
-SSH administrator authentication failed, and desktop authentication timed out
-before TUN creation. The expired prompt was cancelled; registry port 42314 and
-the empty default registry were verified intact. No movie or rate comparison
-exists yet. The operator
+Desktop administrator authentication subsequently succeeded. A Uint8Array-to-PEM
+conversion bug was fixed, but the native forwarder timed out before TUN creation.
+With XR2 awake, paired Node TLS succeeds and the phone closes the following
+CDTunnel handshake at both 1280 and 16000 requested MTUs. This does not establish
+the classic proxy as a working wireless developer route; the reference toolkit
+uses a separate paired network protocol. Its IPv4 availability is still unchecked
+because rig SSH/Tailscale reachability was lost. Port 42314, an empty default
+registry and the healthy root daemon were verified before that loss. No movie,
+rate comparison or Pico acceptance evidence exists yet. The operator
 has a CHU810 data hub and Ethernet cables, but no Ethernet adapters or spare
 router. The hub currently serves the rig and must stay there. A direct
 phone-to-rig Ethernet link using two adapters and a separate phone-side hub is

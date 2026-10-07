@@ -98,9 +98,10 @@ def test_guardian_restores_registry_and_terminates_only_owned_runner(tmp_path, m
     port, lease, state = tmp_path/'port', tmp_path/'lease', tmp_path/'state.json'
     port.write_bytes(b'42315')
     port.with_name('port.ipv4-diagnostic-lock').mkdir()
+    diag.save(port.with_name('port.ipv4-diagnostic-lock')/'owner.json', {'token':'test-owned'})
     lease.write_text('fixture')
     diag.save(state, {'pid': 999999, 'wda_pid': 12345, 'portfile': str(port),
-                      'original': base64.b64encode(b'42314\n').decode(), 'lease': str(lease)})
+                      'original': base64.b64encode(b'42314\n').decode(), 'lease': str(lease), 'registry_token':'test-owned'})
     calls = []
     def kill(pid, sig):
         calls.append((pid, sig))
@@ -112,3 +113,30 @@ def test_guardian_restores_registry_and_terminates_only_owned_runner(tmp_path, m
     assert port.read_bytes() == b'42314\n'
     assert not lease.exists()
     assert json.loads(state.with_suffix('.result.json').read_text())['errors'] == []
+
+
+def test_guardian_does_not_restore_another_registry_owner(tmp_path, monkeypatch):
+    port, lease, state = tmp_path/'port', tmp_path/'lease', tmp_path/'state.json'
+    port.write_bytes(b'42315')
+    lock = port.with_name('port.ipv4-diagnostic-lock')
+    lock.mkdir()
+    diag.save(lock/'owner.json', {'token':'another-owner'})
+    lease.write_text('fixture')
+    diag.save(state, {'pid': 999999, 'portfile': str(port), 'original': base64.b64encode(b'42314').decode(),
+                      'lease': str(lease), 'registry_token':'our-owner'})
+    def dead(*_):
+        raise ProcessLookupError()
+    monkeypatch.setattr(diag.os, 'kill', dead)
+    diag.guardian(state)
+    assert port.read_bytes() == b'42315'
+    assert json.loads((lock/'owner.json').read_text())['token'] == 'another-owner'
+
+
+def test_registry_owner_change_prevents_restore_and_lock_removal(tmp_path):
+    port = tmp_path/'port'
+    port.write_bytes(b'42314')
+    with pytest.raises(RuntimeError, match='ownership changed'):
+        with diag.RegistryLease(port) as registry:
+            diag.save(registry.lock/'owner.json', {'token':'another-owner'})
+    assert port.read_bytes() == b'42315'
+    assert registry.lock.exists()
