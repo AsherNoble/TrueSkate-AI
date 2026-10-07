@@ -264,6 +264,30 @@ async function runTunnel(opts) {
   }
 }
 
+// The installed runner treats 60 s without XCTest callbacks as a dead exec connection, but an
+// idle WDA is legitimately silent between gestures. While the session is running, keep waiting
+// through silence. Transport errors still throw, and stop() clears isRunning before aborting the
+// listener, so shutdown still completes within one poll. In-memory only; modules are unchanged.
+export function idleTolerantRecv(recv, currentService) {
+  return async function (channel, timeoutMs) {
+    for (;;) {
+      const result = await recv.call(this, channel, timeoutMs);
+      const service = currentService();
+      if (result || !service || service.execConnection !== this || !service.isRunning ||
+          service.listenerAbortController?.signal.aborted !== false) {
+        return result;
+      }
+    }
+  };
+}
+
+async function tolerateIdleExec(opts, runner) {
+  const {DvtTestmanagedProxyService} = await import(pathToFileURL(path.join(opts['modules-root'],
+    'appium-ios-remotexpc/build/src/services/ios/testmanagerd/index.js')).href);
+  const proto = DvtTestmanagedProxyService.prototype;
+  proto.recvPlistWithTimeout = idleTolerantRecv(proto.recvPlistWithTimeout, () => runner.xcuitest);
+}
+
 async function runWda(opts) {
   const sdk = await loadSdk(opts);
   const runnerId = 'com.asher.WebDriverAgentRunner.xctrunner';
@@ -275,7 +299,8 @@ async function runWda(opts) {
   const runner = new sdk.XCTestRunner({udid: opts.udid,
     testRunnerBundleId: runnerId, xctestBundleId: 'com.asher.WebDriverAgentRunner',
     appUnderTestBundleId: 'com.trueaxis.skate', killExisting: false,
-    timeoutMs: 600000, launchEnvironment: {USE_PORT: '8100'}});
+    timeoutMs: 840000, launchEnvironment: {USE_PORT: '8100'}});
+  await tolerateIdleExec(opts, runner);
   let exiting = false;
   const cleanup = async () => {
     if (exiting) return;

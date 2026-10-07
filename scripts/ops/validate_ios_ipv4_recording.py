@@ -177,13 +177,13 @@ def movie_metrics(stream, pts, decoded, packet_count, requested_fps, minute):
 
 def audit_movie(mov, fps, minute):
     probe = json.loads(command(['ffprobe', '-v', 'error', '-count_frames', '-count_packets',
-                               '-select_streams', 'v:0', '-show_streams', '-of', 'json', mov], 120))
+                               '-select_streams', 'v:0', '-show_streams', '-of', 'json', mov], 600))
     frames = json.loads(command(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_frames',
-                                '-show_entries', 'frame=best_effort_timestamp_time', '-of', 'json', mov], 120))
+                                '-show_entries', 'frame=best_effort_timestamp_time', '-of', 'json', mov], 600))
     pts = [float(f['best_effort_timestamp_time']) for f in frames['frames']]
     decoded = subprocess.run(['ffmpeg', '-v', 'error', '-xerror', '-i', str(mov), '-map', '0:v:0',
                               '-fps_mode', 'passthrough', '-progress', 'pipe:1', '-f', 'null', '-'],
-                             capture_output=True, text=True, timeout=180, check=True)
+                             capture_output=True, text=True, timeout=600, check=True)
     # ffmpeg may report recoverable corruption despite an exit code of zero.
     if decoded.stderr.strip():
         raise ValueError('Full movie decode reported errors')
@@ -259,6 +259,7 @@ class Coordinator:
         self.ending = threading.Event()
         self.driver = self.wda = self.admin = self.registry = self.guardian_process = self.wake = None
         self.timing = None
+        self.pending = []
         self.report = {'park': 'unverified current gameplay scene', 'corpus_admission': False,
                        'cases': [], 'cleanup_errors': [], 'pico_acceptance': 'not tested'}
         self.udid = None
@@ -395,6 +396,8 @@ class Coordinator:
         options = XCUITestOptions().load_capabilities({'platformName': 'iOS', 'appium:automationName': 'XCUITest',
                     'appium:udid': self.udid, 'appium:webDriverAgentUrl': self.phone,
                     'appium:platformVersion': self.platform_version,
+                    # Silent Pico/analysis stretches must not end the session (default 60 s).
+                    'appium:newCommandTimeout': 600,
                     'appium:noReset': True, 'appium:autoLaunch': False, 'appium:skipLogCapture': True})
         self.driver = webdriver.Remote(options=options, client_config=AppiumClientConfig('http://127.0.0.1:4726', timeout=90))
         self.update_guardian(session_id=self.driver.session_id)
@@ -533,22 +536,11 @@ class Coordinator:
             mov, stop = recording.stop()
             self.prerequisites(folder, 'after')
             result['lifecycle'] = 'passed'
-            metrics, pts = audit_movie(mov, fps, bool(samples))
-            result['video'] = metrics
-            if samples:
-                started_at = float(stop['startedAt'])
-                manifest = {'gestures': events, 'wda_action_timing_report': 'wda-action-timing.json',
-                            'wda_timing_revision': REVISION, 'wda_action_count': 10}
-                save(folder/'diagnostic-manifest.json', manifest)
-                spec = importlib.util.spec_from_file_location('diagnostic_alignment', self.a.repo/'scripts/collection/align_xctest_traces.py')
-                module = importlib.util.module_from_spec(spec)
-                sys.modules[spec.name] = module
-                spec.loader.exec_module(module)
-                info, _ = module._wda_two_anchor_calibration(manifest=manifest, manifest_path=folder/'diagnostic-manifest.json',
-                    mov=mov, started_at=started_at, fps=fps, search_after_s=4, resize_width=256, source_frame_times=pts)
-                save(folder/'calibration.json', info)
-                result['calibration'] = 'passed'
-            self.event('case-passed', case=name, metrics=metrics)
+            # Movie audit and calibration are local and slow on this rig; run them after the
+            # tunnel and WDA are released so capture stays within the helper lifetime.
+            self.pending.append({'result': result, 'folder': folder, 'mov': mov, 'stop': stop,
+                                 'fps': fps, 'samples': samples, 'events': events})
+            self.event('case-recorded', case=name)
         except BaseException as exc:
             result['error'] = str(exc)
             if samples and result['calibration'] == 'pending':
@@ -562,6 +554,39 @@ class Coordinator:
             if self.timing:
                 self.timing.cleanup()
                 self.timing = None
+            save(self.out/'report.json', self.report)
+
+    def analyse(self, item):
+        result, folder, mov, fps, samples = (item[k] for k in ('result', 'folder', 'mov', 'fps', 'samples'))
+        metrics, pts = audit_movie(mov, fps, bool(samples))
+        result['video'] = metrics
+        if samples:
+            started_at = float(item['stop']['startedAt'])
+            manifest = {'gestures': item['events'], 'wda_action_timing_report': 'wda-action-timing.json',
+                        'wda_timing_revision': REVISION, 'wda_action_count': 10}
+            save(folder/'diagnostic-manifest.json', manifest)
+            spec = importlib.util.spec_from_file_location('diagnostic_alignment', self.a.repo/'scripts/collection/align_xctest_traces.py')
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[spec.name] = module
+            spec.loader.exec_module(module)
+            info, _ = module._wda_two_anchor_calibration(manifest=manifest, manifest_path=folder/'diagnostic-manifest.json',
+                mov=mov, started_at=started_at, fps=fps, search_after_s=4, resize_width=256, source_frame_times=pts)
+            save(folder/'calibration.json', info)
+            result['calibration'] = 'passed'
+        return metrics
+
+    def analyse_pending(self):
+        """Audit every recorded movie; one failure does not hide the others' results."""
+        for item in self.pending:
+            result = item['result']
+            try:
+                metrics = self.analyse(item)
+                self.event('case-passed', case=result['name'], metrics=metrics)
+            except Exception as exc:
+                result['analysis_error'] = str(exc)[:600]
+                if item['samples'] and result['calibration'] == 'pending':
+                    result['calibration'] = 'not completed'
+                self.event('case-analysis-failed', case=result['name'], error=result['analysis_error'])
             save(self.out/'report.json', self.report)
 
     def cleanup(self):
@@ -597,10 +622,7 @@ class Coordinator:
         if self.guardian_process:
             self.guardian_state.unlink(missing_ok=True)
             self.guardian_process.wait(timeout=3)
-        if self.wake and self.wake.poll() is None:
-            self.wake.terminate()
-            self.wake.wait(timeout=3)
-        self.event('finished', report=str(self.out/'report.json'), cleanup_errors=self.report['cleanup_errors'])
+        self.event('capture-released', cleanup_errors=self.report['cleanup_errors'])
 
     def stop_wda(self):
         if self.wda and self.wda.poll() is None:
@@ -612,8 +634,8 @@ class Coordinator:
             self.preflight()
             if self.a.prepare:
                 return
-            # Hold a bounded idle-sleep assertion during authentication/capture.
-            self.wake = subprocess.Popen(['/usr/bin/caffeinate', '-i', '-t', '900'])
+            # Hold a bounded idle-sleep assertion through capture and deferred analysis.
+            self.wake = subprocess.Popen(['/usr/bin/caffeinate', '-i', '-t', '1800'])
             self.establish()
             self.delete_leftovers()
             self.connect()
@@ -641,6 +663,11 @@ class Coordinator:
             raise
         finally:
             self.cleanup()
+            self.analyse_pending()
+            if self.wake and self.wake.poll() is None:
+                self.wake.terminate()
+                self.wake.wait(timeout=3)
+            self.event('finished', report=str(self.out/'report.json'), cleanup_errors=self.report['cleanup_errors'])
 
 
 def main():

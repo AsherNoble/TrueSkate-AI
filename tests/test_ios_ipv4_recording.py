@@ -224,3 +224,26 @@ def test_wifi_file_service_uses_odd_ids_and_strict_data_headers():
     for bad in (header[:39], b'xxxxFILE' + header[8:]):
         with pytest.raises(RuntimeError):
             att.data_header(bad)
+
+
+def test_deferred_analysis_reports_each_case_and_isolates_failures(tmp_path, monkeypatch):
+    coord = object.__new__(diag.Coordinator)
+    coord.out, coord.events = tmp_path, tmp_path/'events.jsonl'
+    ok = {'name': 'ok', 'lifecycle': 'passed', 'calibration': 'not applicable'}
+    bad = {'name': 'bad', 'lifecycle': 'passed', 'calibration': 'pending'}
+    coord.report = {'cases': [ok, bad]}
+    coord.pending = [{'result': ok, 'folder': tmp_path, 'mov': tmp_path/'ok.mov', 'stop': {}, 'fps': 30,
+                      'samples': None, 'events': []},
+                     {'result': bad, 'folder': tmp_path, 'mov': tmp_path/'bad.mov', 'stop': {'startedAt': 1},
+                      'fps': 60, 'samples': ['g'], 'events': []}]
+    def audit(mov, fps, minute):
+        if mov.name == 'bad.mov':
+            raise ValueError('Minute duration or cadence gate failed')
+        return {'frames': 151}, []
+    monkeypatch.setattr(diag, 'audit_movie', audit)
+    coord.analyse_pending()
+    assert ok['video'] == {'frames': 151} and 'analysis_error' not in ok
+    assert bad['analysis_error'] == 'Minute duration or cadence gate failed' and bad['calibration'] == 'not completed'
+    events = [json.loads(x)['event'] for x in coord.events.read_text().splitlines()]
+    assert events == ['case-passed', 'case-analysis-failed']
+    assert json.loads((tmp_path/'report.json').read_text())['cases'][1]['analysis_error']

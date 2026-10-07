@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {openDeveloperProxy, validateProxyReply, validateServices, pemText, serveRegistry, parseWifiReady, wifiTunnel} from '../scripts/ops/ios_ipv4_tunnel.mjs';
+import {openDeveloperProxy, validateProxyReply, validateServices, pemText, serveRegistry, parseWifiReady, wifiTunnel, idleTolerantRecv} from '../scripts/ops/ios_ipv4_tunnel.mjs';
 
 test('plist Uint8Array credentials become PEM text, not comma-separated numbers', () => {
   const fixture = '-----BEGIN CERTIFICATE-----\nsynthetic fixture\n-----END CERTIFICATE-----';
@@ -129,4 +129,46 @@ test('Wi-Fi tunnel exit before ready rejects without reporting loss', async () =
   child.stdout.emit('data', '{"event":"pmd3-tunnel-error","error":"RuntimeError: RemotePairing record missing"}\n');
   await assert.rejects(pending, /record missing/);
   assert.equal(dead, 0);
+});
+
+function execFixture(replies) {
+  const connection = {calls: 0};
+  const recv = async function () {
+    connection.calls++;
+    const next = replies.shift();
+    if (next instanceof Error) throw next;
+    return next ?? null;
+  };
+  const controller = new AbortController();
+  const service = {execConnection: connection, isRunning: true, listenerAbortController: controller};
+  return {connection, recv, service, controller};
+}
+
+test('idle exec receive waits through silence while the session runs', async () => {
+  const f = execFixture([null, null, null, ['_XCT_callback', []]]);
+  const wrapped = idleTolerantRecv(f.recv, () => f.service);
+  assert.deepEqual(await wrapped.call(f.connection, 7, 1000), ['_XCT_callback', []]);
+  assert.equal(f.connection.calls, 4);
+});
+test('idle exec receive returns silence once stopping, aborted, or not the exec connection', async () => {
+  for (const change of [s => { s.isRunning = false; }, s => { s.listenerAbortController.abort(); },
+    s => { s.listenerAbortController = null; }, s => { s.execConnection = {}; }]) {
+    const f = execFixture([null]);
+    change(f.service);
+    assert.equal(await idleTolerantRecv(f.recv, () => f.service).call(f.connection, 7, 1000), null);
+    assert.equal(f.connection.calls, 1);
+  }
+  const f = execFixture([null]);
+  assert.equal(await idleTolerantRecv(f.recv, () => null).call(f.connection, 7, 1000), null);
+});
+test('idle exec receive stops looping when stop() begins mid-silence', async () => {
+  const f = execFixture([]);
+  let polls = 0;
+  const recv = async function () { if (++polls === 3) f.service.isRunning = false; return null; };
+  assert.equal(await idleTolerantRecv(recv, () => f.service).call(f.connection, 7, 1000), null);
+  assert.equal(polls, 3);
+});
+test('idle exec receive propagates transport errors', async () => {
+  const f = execFixture([null, new Error('socket closed')]);
+  await assert.rejects(idleTolerantRecv(f.recv, () => f.service).call(f.connection, 7, 1000), /socket closed/);
 });

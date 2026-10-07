@@ -25,6 +25,7 @@ DOMAIN_IDENTIFIER = 'com.apple.testmanagerd'
 SUBDIRECTORIES = ('Attachments', 'tmp/Attachments')
 UUID_NAME_RE = re.compile(r'^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$', re.I)
 ATTEMPTS = 3
+ACTION_TIMEOUT_S = 300  # a 60 fps minute movie is ~130 MB over Wi-Fi
 
 
 def uuid_names(names):
@@ -99,7 +100,7 @@ async def with_file_service(rsd, action):
     for _ in range(ATTEMPTS):
         try:
             async with FileServiceService(rsd, Domain.APP_DATA_CONTAINER, DOMAIN_IDENTIFIER) as fs:
-                return await asyncio.wait_for(action(fs), 60)
+                return await asyncio.wait_for(action(fs), ACTION_TIMEOUT_S)
         except (TimeoutError, asyncio.TimeoutError) as error:
             last = error
     raise last
