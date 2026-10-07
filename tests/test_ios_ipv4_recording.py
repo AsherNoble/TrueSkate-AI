@@ -157,3 +157,50 @@ def test_root_lend_wrapper_restores_redirect_and_ownership(tmp_path, helper, exp
     assert result.returncode == 0, result.stderr
     assert port.read_bytes() == expected
     assert port.stat().st_uid == os.getuid() and box.stat().st_uid == os.getuid()
+
+
+class WifiDriver:
+    def __init__(self, error):
+        self.calls, self.error = [], error
+
+    def execute_script(self, cmd, opts):
+        self.calls.append(cmd)
+        if 'getXCTest' in cmd:
+            return {'uuid': 'ABC', 'startedAt': 1.5, 'fps': 30}
+        if 'startXCTest' in cmd:
+            return {'uuid': 'ABC'}
+        raise RuntimeError(self.error)
+
+
+def test_wifi_stop_pulls_once_when_appium_cannot_locate_movie(tmp_path):
+    driver = WifiDriver("Unable to locate XCTest screen recording identified by 'ABC' for the device x")
+    pulls = []
+    def pull(uuid_, mov):
+        pulls.append(uuid_)
+        mov.write_bytes(b'movie')
+        return {'attachment_deleted': True}
+    rec = diag.Recording(driver, tmp_path, 30, pull)
+    rec.start()
+    mov, meta = rec.stop()
+    rec.recover()
+    assert pulls == ['ABC'] and mov.read_bytes() == b'movie'
+    assert meta['startedAt'] == 1.5 and meta['attachment_deleted']
+    assert driver.calls.count('mobile: stopXCTestScreenRecording') == 1
+
+
+def test_wifi_stop_other_errors_propagate_without_pull(tmp_path):
+    rec = diag.Recording(WifiDriver('transport lost on stop'), tmp_path, 30, lambda *_: pytest.fail('pulled'))
+    rec.start()
+    with pytest.raises(RuntimeError, match='transport lost'):
+        rec.stop()
+
+
+def test_wifi_attachment_summary_requires_one_listing():
+    spec = importlib.util.spec_from_file_location('wifi_attachments', Path(__file__).parents[1]/'scripts/ops/ios_wifi_attachments.py')
+    att = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(att)
+    uid = '0A0B0C0D-1111-2222-3333-444455556666'
+    assert att.summarise({'Attachments': [], 'tmp/Attachments': {'error': 'x'}})['summary'].startswith('Found 0 UUID-shaped attachment')
+    assert att.summarise({'Attachments': [uid, 'notes.txt']})['uuids'] == [uid]
+    with pytest.raises(RuntimeError):
+        att.summarise({'Attachments': {'error': 'x'}, 'tmp/Attachments': {'error': 'y'}})

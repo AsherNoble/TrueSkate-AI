@@ -78,7 +78,10 @@ function parse(argv) {
   }
   opts.port = Number(opts.port); opts.lifetime = Number(opts.lifetime);
   if (opts.mtu && ![1280, 16000].includes(Number(opts.mtu))) throw new DiagnosticError('Probe MTU must be 1280 or 16000');
-  if (!['probe', 'tls-probe', 'native-tls-probe', 'tunnel', 'wda', 'registry-info'].includes(opts.mode)) throw new DiagnosticError('Expected probe, tls-probe, native-tls-probe, tunnel, wda or registry-info mode');
+  if (!['probe', 'tls-probe', 'native-tls-probe', 'tunnel', 'wda', 'registry-info', 'delete-attachment'].includes(opts.mode)) throw new DiagnosticError('Expected probe, tls-probe, native-tls-probe, tunnel, wda, registry-info or delete-attachment mode');
+  if (opts.mode === 'delete-attachment' && !/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i.test(opts.uuid || '')) {
+    throw new DiagnosticError('delete-attachment needs one UUID-shaped --uuid');
+  }
   if (!opts['modules-root'] || !path.isAbsolute(opts['modules-root'])) throw new DiagnosticError('An absolute --modules-root is required');
   if (opts.mode !== 'registry-info' && !opts.udid) throw new DiagnosticError('--udid is required');
   if (opts['tunnel-python'] && !(path.isAbsolute(opts['tunnel-python']) && opts['pair-dir'] && path.isAbsolute(opts['pair-dir']))) {
@@ -358,6 +361,11 @@ async function main(argv) {
       emit('probe-failure', {error: /BEGIN|HostPrivateKey|HostCertificate/.test(message) ? 'redacted credential error' : message.slice(0,200)});
       throw error;
     } finally { secure?.destroy(); proxy?.socket.destroy(); await auth.close(); }
+  } else if (opts.mode === 'delete-attachment') {
+    // Same remotexpc call Appium uses after a real-device recording; one UUID only.
+    const sdk = await loadSdk(opts);
+    await bounded(new sdk.XCTestAttachment(opts.udid).delete([opts.uuid]), 30000, 'Attachment delete');
+    emit('attachment-deleted', {uuid: opts.uuid});
   } else if (opts.mode === 'tunnel') await runTunnel(opts);
   else await runWda(opts);
 }

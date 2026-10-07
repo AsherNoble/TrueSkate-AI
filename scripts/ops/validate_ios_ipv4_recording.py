@@ -195,8 +195,9 @@ def audit_movie(mov, fps, minute):
 
 class Recording:
     """One start attempt, one stop attempt, including uncertain-start recovery."""
-    def __init__(self, driver, folder, fps):
+    def __init__(self, driver, folder, fps, wifi_pull=None):
         self.driver, self.folder, self.fps = driver, folder, fps
+        self.wifi_pull = wifi_pull
         self.attempted = self.stopped = False
 
     def start(self):
@@ -210,8 +211,20 @@ class Recording:
         if self.stopped:
             raise RuntimeError('Stop already attempted; do not hammer recorder')
         self.stopped = True
+        mov = self.folder / ('recovery.mov' if recovery else 'original.mov')
+        # Off USB the stop succeeds in WDA but Appium's devicectl pull cannot find the movie.
+        active = self.driver.execute_script('mobile: getXCTestScreenRecordingInfo', {}) if self.wifi_pull else None
         began = time.monotonic()
-        res = self.driver.execute_script('mobile: stopXCTestScreenRecording', {})
+        try:
+            res = self.driver.execute_script('mobile: stopXCTestScreenRecording', {})
+        except Exception as exc:
+            if not (active and f"recording identified by '{active['uuid']}'" in str(exc)):
+                raise
+            meta = dict(active, recovery=recovery, host_start_epoch_s=self.host_start, appium_pull_error=str(exc)[:300])
+            save(self.folder / 'stop.json', meta)
+            meta.update(self.wifi_pull(active['uuid'], mov), retrieval_s=time.monotonic()-began)
+            save(self.folder / 'stop.json', meta)
+            return mov, meta
         if not isinstance(res, dict) or not res.get('payload'):
             raise ValueError('Stop returned no movie payload')
         # Preserve UUID even if base64 decoding subsequently fails.
@@ -221,7 +234,6 @@ class Recording:
         data = base64.b64decode(res['payload'], validate=True)
         if not data:
             raise ValueError('Empty movie')
-        mov = self.folder / ('recovery.mov' if recovery else 'original.mov')
         mov.write_bytes(data)
         return mov, meta
 
@@ -432,10 +444,26 @@ class Coordinator:
         save(folder/(phase+'-recorder.json'), active)
         if active:
             raise RuntimeError('Recorder is not idle')
-        output = command(['appium', 'driver', 'run', 'xcuitest', 'cleanup-videos', '--', '--udid', self.udid, '--dry-run'], 45)
+        if self.a.tunnel_python:
+            output = command(self.attachments('list'), 240)
+            summary = json.loads(output.splitlines()[-1])['summary']
+        else:
+            output = command(['appium', 'driver', 'run', 'xcuitest', 'cleanup-videos', '--', '--udid', self.udid, '--dry-run'], 45)
+            summary = output
         (folder/(phase+'-attachments.txt')).write_text(output)
-        if 'Found 0 UUID-shaped attachment' not in output:
+        if 'Found 0 UUID-shaped attachment' not in summary:
             raise RuntimeError('Zero recording attachments not verified')
+
+    def attachments(self, mode, *extra):
+        return [self.a.tunnel_python, str(Path(__file__).with_name('ios_wifi_attachments.py')), mode,
+                '--address', self.helper_ready['host'], '--port', str(self.helper_ready['rsd_port']),
+                '--udid', self.udid, *extra]
+
+    def wifi_pull(self, uuid_, mov):
+        """Pull the stopped recording over the tunnel, then delete it as Appium would."""
+        pulled = json.loads(command(self.attachments('pull', '--uuid', uuid_, '--out', str(mov)), 600).splitlines()[-1])
+        command(self.node('delete-attachment') + ['--uuid', uuid_], 60)
+        return {'wifi_pull': pulled, 'attachment_deleted': True}
 
     def case(self, name, fps, seconds, samples=None):
         from trueskate_ai.sim.touch_actions import reset_position, long_press, curved_drag
@@ -446,7 +474,7 @@ class Coordinator:
         result = {'name': name, 'fps_requested': fps, 'lifecycle': 'failed',
                   'calibration': 'pending' if samples else 'not applicable'}
         self.report['cases'].append(result)
-        recording = Recording(self.driver, folder, fps)
+        recording = Recording(self.driver, folder, fps, self.wifi_pull if self.a.tunnel_python else None)
         try:
             self.prerequisites(folder, 'before')
             if samples:
