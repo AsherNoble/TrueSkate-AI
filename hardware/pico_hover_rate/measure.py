@@ -158,8 +158,12 @@ def main(argv):
             continue
         r = pass_row(t, x, s, p['dx'], p['step_us'], p['reports'], per_report)
         r['mode'] = p['mode']
+        r['start_offset_s'] = round(float(t[s[0]] - video_s(p['start_us'])), 3)   # anchor sanity: should stay small
         rows.append(r)
     measured = [r for r in rows if not r.get('missing')]
+    offsets = np.array([r['start_offset_s'] for r in measured])
+    if len(offsets) and np.ptp(offsets) > 0.2:
+        print(f'WARNING: pass start offsets span {np.ptp(offsets):.3f} s; the schedule anchor may be wrong')
     print(f'{mov}: {len(t)} frames at {fps:.1f} fps ({int((np.diff(t) > 0.025).sum())} dropped); park row {row:.0f} pt; '
           f'cursor found in {int(np.isfinite(x).sum())}; one {schedule["pass_dx"]}-count report = {per_report:.3f} pt '
           f'(Bluetooth fit 1.896); anchor {t0:.3f} s; {len(rows) - len(measured)} passes not found')
@@ -172,7 +176,8 @@ def main(argv):
     for p in presses:
         print(f"press {p['kind']}: orange {p['orange_before']} -> {p['orange_peak']} (review press-{p['kind']}.png)")
     json.dump(dict(recording=mov, fps=round(fps, 2), park_row_pt=row, per_report_pt=round(per_report, 4),
-                   anchor_s=round(t0, 3), passes=rows, by_step=by_step, presses=presses),
+                   anchor_s=round(t0, 3), start_offset_span_s=round(float(np.ptp(offsets)), 3) if len(offsets) else None,
+                   passes=rows, by_step=by_step, presses=presses),
               open(out / 'measure.json', 'w'), indent=1)
 
 

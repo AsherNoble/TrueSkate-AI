@@ -164,3 +164,4 @@ def test_measure_recovers_passes_from_a_synthetic_recording(tmp_path):
     fifteen = result['by_step']['rates']['15ms']
     assert fifteen['displaced_pct'] == 0                      # a perfectly regular synthetic link
     assert (tmp_path / 'out' / 'press-tap.png').exists()
+    assert result['start_offset_span_s'] < 0.05

@@ -293,8 +293,10 @@ class Operator:
         tty = None
         if self.enabled:
             try:
+                import termios
                 tty = open('/dev/tty')
-            except OSError:
+                termios.tcflush(tty, termios.TCIFLUSH)   # an earlier stray Enter must not count
+            except (OSError, ImportError):
                 tty = None
         try:
             while time.monotonic() < deadline:
