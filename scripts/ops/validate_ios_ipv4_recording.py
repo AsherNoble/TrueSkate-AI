@@ -639,15 +639,16 @@ class Coordinator:
             self.establish()
             self.delete_leftovers()
             self.connect()
-            self.case('01-short-30', 30, 5)
-            self.case('02-short-60', 60, 5)
-            import numpy as np
-            from trueskate_ai.data.gesture_sampling import sample_basic_linear_mixture
-            rng = np.random.default_rng(20261006)
-            samples = [sample_basic_linear_mixture(rng, tap_fraction=0) for _ in range(8)]
-            save(self.out/'fixed-gestures.json', [g.meta() for g in samples])
-            self.case('03-minute-30', 30, 60, samples)
-            self.case('04-minute-60', 60, 60, samples)
+            if not self.a.pico_only:
+                self.case('01-short-30', 30, 5)
+                self.case('02-short-60', 60, 5)
+                import numpy as np
+                from trueskate_ai.data.gesture_sampling import sample_basic_linear_mixture
+                rng = np.random.default_rng(20261006)
+                samples = [sample_basic_linear_mixture(rng, tap_fraction=0) for _ in range(8)]
+                save(self.out/'fixed-gestures.json', [g.meta() for g in samples])
+                self.case('03-minute-30', 30, 60, samples)
+                self.case('04-minute-60', 60, 60, samples)
             if self.a.pico_hover:
                 self.event('waiting-pico', instruction='Keep Pico disconnected; create pico-ready when operator is ready to plug after recording-started')
                 deadline = time.monotonic()+120
@@ -655,7 +656,7 @@ class Coordinator:
                     if time.monotonic()>deadline:
                         raise RuntimeError('Pico readiness deadline; no recording retry')
                     time.sleep(.5)
-                self.case('05-pico-hover-60', 60, 45)
+                self.case('05-pico-hover-60', 60, self.a.pico_seconds)
                 self.report['pico_acceptance'] = 'requires visual review of original movie and insertion timing'
         except BaseException as exc:
             self.report['error'] = str(exc)
@@ -684,6 +685,8 @@ def main():
     p.add_argument('--prepare', action='store_true')
     p.add_argument('--admin-prompt', action='store_true')
     p.add_argument('--pico-hover', action='store_true')
+    p.add_argument('--pico-only', action='store_true', help='skip cases 1-4; record only the Pico case')
+    p.add_argument('--pico-seconds', type=int, default=45, choices=range(10, 181), metavar='10..180')
     p.add_argument('--tunnel-python', type=Path,
                    help='Python 3.13+ with pymobiledevice3: use the Wi-Fi RemotePairing tunnel')
     p.add_argument('--pair-dir', type=Path, default=Path('/Users/training-server/.pymobiledevice3'))
@@ -691,6 +694,8 @@ def main():
                    help='Wi-Fi mode: delete one earlier diagnostic attachment already copied to PRESERVED_MOV')
     a = p.parse_args()
     a.delete_leftover = [(u, Path(m)) for u, m in a.delete_leftover]
+    if a.pico_only and not a.pico_hover:
+        p.error('--pico-only needs --pico-hover')
     if a.delete_leftover and not a.tunnel_python:
         p.error('--delete-leftover needs --tunnel-python')
     for path in (a.repo, a.env_file, a.out_dir, a.modules_root, a.pair_dir, *([a.tunnel_python] if a.tunnel_python else [])):

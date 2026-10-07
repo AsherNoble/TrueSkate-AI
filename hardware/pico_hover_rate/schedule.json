@@ -1,0 +1,254 @@
+{
+ "schedule_hash": "4efd2d9a323ed50d",
+ "lead_ms": 8000,
+ "n_events": 1447,
+ "duration_us": 30032000,
+ "pass_dx": 4,
+ "passes": [
+  {
+   "mode": "rates",
+   "dx": 4,
+   "step_us": 3000,
+   "reports": 100,
+   "start_us": 1875000,
+   "end_us": 2175000
+  },
+  {
+   "mode": "rates",
+   "dx": -4,
+   "step_us": 3000,
+   "reports": 100,
+   "start_us": 2775000,
+   "end_us": 3075000
+  },
+  {
+   "mode": "rates",
+   "dx": 4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 3675000,
+   "end_us": 3735000
+  },
+  {
+   "mode": "rates",
+   "dx": -4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 4335000,
+   "end_us": 4395000
+  },
+  {
+   "mode": "rates",
+   "dx": 4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 4995000,
+   "end_us": 5445000
+  },
+  {
+   "mode": "rates",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 6045000,
+   "end_us": 6495000
+  },
+  {
+   "mode": "stall",
+   "dx": 4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 7095000,
+   "end_us": 7545000
+  },
+  {
+   "mode": "stall",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 8145000,
+   "end_us": 8595000
+  },
+  {
+   "mode": "stall",
+   "dx": 4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 9195000,
+   "end_us": 9645000
+  },
+  {
+   "mode": "stall",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 10245000,
+   "end_us": 10695000
+  },
+  {
+   "mode": "stall",
+   "dx": 4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 11295000,
+   "end_us": 11745000
+  },
+  {
+   "mode": "stall",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 12345000,
+   "end_us": 12795000
+  },
+  {
+   "mode": "stall",
+   "dx": 4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 13395000,
+   "end_us": 13845000
+  },
+  {
+   "mode": "stall",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 14445000,
+   "end_us": 14895000
+  },
+  {
+   "mode": "stall",
+   "dx": 4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 15495000,
+   "end_us": 15945000
+  },
+  {
+   "mode": "stall",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 16545000,
+   "end_us": 16995000
+  },
+  {
+   "mode": "usb1ms",
+   "dx": 4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 17595000,
+   "end_us": 17655000
+  },
+  {
+   "mode": "usb1ms",
+   "dx": -4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 18255000,
+   "end_us": 18315000
+  },
+  {
+   "mode": "usb1ms",
+   "dx": 4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 18915000,
+   "end_us": 18975000
+  },
+  {
+   "mode": "usb1ms",
+   "dx": -4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 19575000,
+   "end_us": 19635000
+  },
+  {
+   "mode": "usb1ms",
+   "dx": 4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 20235000,
+   "end_us": 20295000
+  },
+  {
+   "mode": "usb1ms",
+   "dx": -4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 20895000,
+   "end_us": 20955000
+  },
+  {
+   "mode": "usb1ms",
+   "dx": 4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 21555000,
+   "end_us": 21615000
+  },
+  {
+   "mode": "usb1ms",
+   "dx": -4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 22215000,
+   "end_us": 22275000
+  },
+  {
+   "mode": "usb1ms",
+   "dx": 4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 22875000,
+   "end_us": 22935000
+  },
+  {
+   "mode": "usb1ms",
+   "dx": -4,
+   "step_us": 1000,
+   "reports": 60,
+   "start_us": 23535000,
+   "end_us": 23595000
+  }
+ ],
+ "presses": [
+  {
+   "kind": "tap",
+   "start_us": 26070000,
+   "lift_us": 26120000
+  },
+  {
+   "kind": "drag15ms",
+   "step_us": 15000,
+   "reports": 10,
+   "dx": 0,
+   "dy": -8,
+   "start_us": 27120000,
+   "lift_us": 27271000
+  },
+  {
+   "kind": "drag1ms",
+   "step_us": 1000,
+   "reports": 10,
+   "dx": 0,
+   "dy": -8,
+   "start_us": 29021000,
+   "lift_us": 29032000
+  }
+ ],
+ "sections": [
+  {
+   "kind": "park",
+   "start_us": 0,
+   "end_us": 1875000
+  },
+  {
+   "kind": "repark",
+   "start_us": 24195000,
+   "end_us": 26070000
+  }
+ ]
+}
