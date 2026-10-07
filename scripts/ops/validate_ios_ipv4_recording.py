@@ -41,8 +41,12 @@ def http(url, payload=None, timeout=10):
 
 
 def command(argv, timeout=45):
-    return subprocess.run([str(x) for x in argv], check=True, capture_output=True,
-                          text=True, timeout=timeout).stdout
+    result = subprocess.run([str(x) for x in argv], capture_output=True, text=True, timeout=timeout)
+    if result.returncode:
+        detail = (result.stderr.strip() or result.stdout.strip()).splitlines()[-3:]
+        raise RuntimeError(f'{Path(str(argv[1] if len(argv) > 1 else argv[0])).name} exited {result.returncode}: '
+                           + ' | '.join(detail)[:600])
+    return result.stdout
 
 
 class RegistryLease:
@@ -459,6 +463,17 @@ class Coordinator:
                 '--address', self.helper_ready['host'], '--port', str(self.helper_ready['rsd_port']),
                 '--udid', self.udid, *extra]
 
+    def delete_leftovers(self):
+        """Delete operator-named attachments left by an earlier run, only once preserved locally."""
+        for uuid_, preserved in self.a.delete_leftover:
+            if not (preserved.is_absolute() and preserved.is_file() and preserved.stat().st_size > 0):
+                raise RuntimeError(f'Leftover {uuid_} has no preserved local copy; not deleting')
+            listed = json.loads(command(self.attachments('list'), 240).splitlines()[-1])
+            if uuid_.upper() not in (u.upper() for u in listed['uuids']):
+                raise RuntimeError(f'Leftover {uuid_} not present; refusing other deletions')
+            command(self.node('delete-attachment') + ['--uuid', uuid_], 60)
+            self.event('leftover-attachment-deleted', uuid=uuid_, preserved=str(preserved))
+
     def wifi_pull(self, uuid_, mov):
         """Pull the stopped recording over the tunnel, then delete it as Appium would."""
         pulled = json.loads(command(self.attachments('pull', '--uuid', uuid_, '--out', str(mov)), 600).splitlines()[-1])
@@ -599,6 +614,7 @@ class Coordinator:
             # Hold a bounded idle-sleep assertion during authentication/capture.
             self.wake = subprocess.Popen(['/usr/bin/caffeinate', '-i', '-t', '900'])
             self.establish()
+            self.delete_leftovers()
             self.connect()
             self.case('01-short-30', 30, 5)
             self.case('02-short-60', 60, 5)
@@ -643,7 +659,12 @@ def main():
     p.add_argument('--tunnel-python', type=Path,
                    help='Python 3.13+ with pymobiledevice3: use the Wi-Fi RemotePairing tunnel')
     p.add_argument('--pair-dir', type=Path, default=Path('/Users/training-server/.pymobiledevice3'))
+    p.add_argument('--delete-leftover', nargs=2, action='append', default=[], metavar=('UUID', 'PRESERVED_MOV'),
+                   help='Wi-Fi mode: delete one earlier diagnostic attachment already copied to PRESERVED_MOV')
     a = p.parse_args()
+    a.delete_leftover = [(u, Path(m)) for u, m in a.delete_leftover]
+    if a.delete_leftover and not a.tunnel_python:
+        p.error('--delete-leftover needs --tunnel-python')
     for path in (a.repo, a.env_file, a.out_dir, a.modules_root, a.pair_dir, *([a.tunnel_python] if a.tunnel_python else [])):
         if not path.is_absolute():
             p.error('All paths must be absolute')

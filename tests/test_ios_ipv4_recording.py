@@ -204,3 +204,23 @@ def test_wifi_attachment_summary_requires_one_listing():
     assert att.summarise({'Attachments': [uid, 'notes.txt']})['uuids'] == [uid]
     with pytest.raises(RuntimeError):
         att.summarise({'Attachments': {'error': 'x'}, 'tmp/Attachments': {'error': 'y'}})
+
+
+def test_wifi_file_service_uses_odd_ids_and_strict_data_headers():
+    import struct
+    spec = importlib.util.spec_from_file_location('wifi_attachments', Path(__file__).parents[1]/'scripts/ops/ios_wifi_attachments.py')
+    att = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(att)
+    class Service:
+        next_message_id = {1: 2, 3: 0}
+    class FS:
+        service = Service()
+    att.odd_id(FS)
+    assert FS.service.next_message_id[1] == 3
+    att.odd_id(FS)
+    assert FS.service.next_message_id[1] == 3
+    header = b'rwb!FILE' + struct.pack('>QQQQ', 1, 0, 2, 2894193)
+    assert att.data_header(header) == (1, 2, 2894193)
+    for bad in (header[:39], b'xxxxFILE' + header[8:]):
+        with pytest.raises(RuntimeError):
+            att.data_header(bad)
