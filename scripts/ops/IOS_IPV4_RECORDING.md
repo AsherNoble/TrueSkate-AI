@@ -6,14 +6,16 @@ installed Appium dependencies. It does not rebuild WDA or change vendor modules.
 Ordinary XR2 USB must be absent. Leave the powered camera adapter attached and
 Pico disconnected until the final phase. Unlock XR2 in gameplay first.
 
-**Live status (2026-10-07):** paired IPv4 and client-certificate TLS work when
-XR2 is awake. XR2 closes the subsequent CDTunnel handshake at both tested MTUs.
-No native TUN, WDA launch or recording has passed on this route. The Node TLS
-forwarder is a diagnostic alternative; its packet interface has offline tests
-but no live validation. The classic CoreDeviceProxy path is described as USB
-in the [reference toolkit](https://github.com/jkcoxson/idevice/blob/master/idevice/src/services/core_device_proxy.rs);
-network tunneling uses a different paired protocol. Do not infer wireless
-recording support from TLS success alone.
+**Live status (2026-10-07):** use the Wi-Fi RemotePairing route
+(`--tunnel-python`). Run-09 passed all five cases with the adapter fitted and no
+rig USB. The classic CoreDeviceProxy path below remains USB-only on XR2 and is
+kept for reference. Prerequisites: a RemotePairing record created once over USB
+(`pymobiledevice3 lockdown remotepairing --pair`, Python 3.13+ environment) and
+XR2 running the instrumented WDA build named by `REVISION`. Production
+`launch_services.py` reinstalls an `unversioned` runner when it rebuilds over
+USB; rebuild with `WDA_TIMING_BUILD_REVISION` from desktop Terminal (SSH has no
+signing keychain). Pause `com.trueskate.services` during a run: its USB retry
+loop restarts Appium on 4726.
 
 Stage the Python coordinator, `ios_ipv4_tunnel.mjs` and
 `ios_ipv4_node_tunnel.mjs` together under a fresh
@@ -28,8 +30,15 @@ root daemon health and an empty default tunnel registry without creating a TUN.
   --repo /Users/training-server/trueskate-ai \
   --env-file /Users/training-server/trueskate-ai/.env \
   --out-dir /Users/training-server/trueskate-ai-runtime/tmp/UNIQUE-DIAGNOSTIC \
-  --admin-prompt --pico-hover
+  --admin-prompt --pico-hover \
+  --tunnel-python /ABS/PY313/bin/python   # Wi-Fi RemotePairing route
 ```
+
+In Wi-Fi mode, testmanagerd attachments are listed and pulled through the tunnel
+(`ios_wifi_attachments.py`) and deleted with the remotexpc call Appium uses.
+`--delete-leftover UUID PRESERVED_MOV` removes one named attachment left by an
+earlier run, only once its copy exists. Movie audit and calibration run after the
+tunnel and WDA are released; `finished` follows analysis.
 
 Use desktop Terminal for `--admin-prompt`; macOS administrator authentication
 from an SSH session can fail without displaying a usable prompt. Credentials go
@@ -37,8 +46,8 @@ only into macOS authentication. Without that flag the helper uses `sudo -n` and
 aborts if authentication is unavailable. The output folder must not exist.
 `administrator-command.txt` contains the exact bounded root-helper command.
 Desktop authentication has a five-minute window; an expired prompt is cancelled.
-The coordinator holds a 15-minute idle-sleep assertion during the live test and
-releases it on exit. This does not override closing the rig's lid. Keep the rig
+The coordinator holds a 30-minute idle-sleep assertion through capture and
+analysis and releases it on exit. This does not override closing the rig's lid. Keep the rig
 awake and reachable throughout the diagnostic.
 
 The helper opens paired lockdown over IPv4, verifies the XR2 identity, starts

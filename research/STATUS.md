@@ -313,33 +313,18 @@ Ethernet, WDA network transport and RemoteXPC recording-cleanup chain still need
 a bounded hardware pilot. Adapter confidence figures in the review are
 subjective engineering priors, not measured reliability.
 
-A first-generation Pico now has a separate bounded, mouse-only hover diagnostic.
-Flash verification, USB HID enumeration and brief cursor movement passed on the
-rig's Mac. The operator confirmed charging through the new XR2 camera adapter;
-XR2 mouse acceptance awaits a recorded test. Existing WDA and an Appium session
-respond over the phone's Wi-Fi address with USB still attached, but WDA exits
-and the CoreDevice tunnel becomes unavailable after USB removal. Wireless
-recording setup remains a dependency. The Pico has no ESP32/UART command link
-yet. IPv4 lockdown authenticates without USB, but the phone's Wi-Fi IPv6 path
-times out. The correct developer-proxy service starts over IPv4 and accepts
-paired-client TLS; no native tunnel, WDA launch or recording lifecycle has yet
-been established through that path. A bounded IPv4 lifecycle harness is now
-implemented in the isolated feature worktree; read-only rig preflight passed.
-Desktop administrator authentication subsequently succeeded. A Uint8Array-to-PEM
-conversion bug was fixed, but the native forwarder timed out before TUN creation.
-With XR2 awake, paired Node TLS succeeds and the phone closes the following
-CDTunnel handshake at both 1280 and 16000 requested MTUs. This does not establish
-the classic proxy as a working wireless developer route; the reference toolkit
-uses a separate paired network protocol. Its IPv4 availability is still unchecked
-because rig SSH/Tailscale reachability was lost. Port 42314, an empty default
-registry and the healthy root daemon were verified before that loss. No movie,
-rate comparison or Pico acceptance evidence exists yet. The operator
-has a CHU810 data hub and Ethernet cables, but no Ethernet adapters or spare
-router. The hub currently serves the rig and must stay there. A direct
-phone-to-rig Ethernet link using two adapters and a separate phone-side hub is
-an untested fallback that could keep the rig on UTS Wi-Fi. No collection or
-recording was started. This is a smoke test,
-not a gesture executor or a validated 1 ms path. See
+A first-generation Pico runs a bounded, mouse-only hover diagnostic. On
+2026-10-07 XR2 accepted it as a pointer through the powered camera adapter while
+WDA control and XCTest recording ran over Wi-Fi with no USB to the rig: the iOS
+pointer appeared 13.0 s into a 45 s 60 fps movie and traced the firmware's two
+squares 21.0-24.1 s (8 s lead, 80 moves). No clicks were sent; touch semantics,
+a command link and a 1 ms path remain untested. The same run passed all five
+cases' gates, including both minute cases' cadence (29.97/59.92 fps, max gap
+50/33 ms) and two-anchor calibration. The wireless route uses a RemotePairing
+TCP tunnel (pymobiledevice3, Python 3.13), not the classic CoreDeviceProxy,
+which XR2 rejects off USB. XR2 now carries instrumented WDA `ae50404a`; the
+services agent's xcodebuild reinstalls an `unversioned` runner whenever it
+rebuilds over USB. No collection or training. See
 [HID-USB-20261006](experiments/HID-USB-20261006.md).
 
 AssistiveTouch supports preset and recorded multi-finger gestures. Independent
