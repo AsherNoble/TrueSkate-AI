@@ -219,30 +219,47 @@ def pass_board(schedule, stats):
     return out
 
 
-EDGE_PT = (20.0, 395.0)          # tracking stops near the screen edges; a pass reaching them is clipped
+TRACK_PT = (15.0, 399.0)         # the finder cannot see the cursor beyond these x (a 60 px patch must fit)
 RESIDUAL_FLAG = 0.35             # in-motion distance from a whole report count, in reports
 BOARD_LATE_US = 1000             # a pass the board sent later than this is not a regular schedule
 
 
-def in_motion_residual(x, s, per_report):
-    """Per-frame distance of the cumulative travel from a whole report count, within segment s."""
+def in_motion_residual(x, s, unit):
+    """Per-frame distance of the cumulative travel from a whole count of unit, within segment s.
+
+    unit is the pass's own travel per counted report (pass_row's), so a rate-dependent gain
+    does not read as noise.
+    """
     a, b = s[0], s[-1] + 1
     before = np.nanmedian(x[max(a - 10, 0):a + 1])
-    k = (x[a:b + 1] - before) / per_report
+    k = (x[a:b + 1] - before) / unit
     k = k[np.isfinite(k)]
     return np.abs(k - np.round(k)) if len(k) else np.array([np.nan])
 
 
-def touches_edge(x, s):
-    seg = x[s[0]:s[-1] + 2]
-    seg = seg[np.isfinite(seg)]
-    return bool(len(seg) and (seg.min() <= EDGE_PT[0] or seg.max() >= EDGE_PT[1]))
+def touches_edge(x, s, margin_pt=5.0):
+    """Whether the pass may have run past where the cursor can be tracked or the screen ends.
+
+    Fast passes move 30-100 pt per frame, so the last tracked in-pass point says little.
+    The rest positions do: a pass clamped at the screen edge (0 or 414 pt) comes to rest
+    outside the trackable range, so its rest frames are lost or sit at the tracking limit.
+    """
+    a, b = s[0], s[-1] + 2
+    for rest in (x[max(a - 10, 0):a + 1], x[b - 1:b + 10]):
+        seen = rest[np.isfinite(rest)]
+        if len(rest) and len(seen) < 0.5 * len(rest):
+            return True
+        if len(seen) and (np.median(seen) <= TRACK_PT[0] + margin_pt or np.median(seen) >= TRACK_PT[1] - margin_pt):
+            return True
+    return False
 
 
-def noise_floor(t, x, video_s, times):
-    """RMS cursor jitter (pt) while parked between passes."""
+def noise_floor(t, x, video_s, times, modes):
+    """RMS cursor jitter (pt) while parked between consecutive passes of one section."""
     dev = []
-    for (_, end), (nxt, _) in zip(times, times[1:]):
+    for (_, end), (nxt, _), m1, m2 in zip(times, times[1:], modes, modes[1:]):
+        if m1 != m2:                                    # a re-home and re-park lies between sections
+            continue
         lo, hi = np.searchsorted(t, video_s(end) + 0.3), np.searchsorted(t, video_s(nxt) - 0.05)
         seg = x[lo:hi]
         seg = seg[np.isfinite(seg)]
@@ -317,13 +334,13 @@ def main(argv):
     for i, p in enumerate(passes):
         if p['step_us'] == 15000:
             s = window_segment(t, x, rough, *window(i), dx=p['dx'])
-            if len(s):
+            if len(s) and not touches_edge(x, s):
                 a, b = s[0], s[-1] + 1
                 travel.append(abs(np.nanmedian(x[b:b + 11]) - np.nanmedian(x[max(a - 10, 0):a + 1])) / p['reports'])
     if not travel:
         raise RuntimeError('No 15 ms pass measured; cannot calibrate one report')
     per_report = float(np.median(travel))
-    noise = noise_floor(t, x, video_s, times)
+    noise = noise_floor(t, x, video_s, times, [p['mode'] for p in passes])
 
     rows = []
     for i, p in enumerate(passes):
@@ -334,8 +351,11 @@ def main(argv):
         r = pass_row(t, x, s, p['dx'], p['step_us'], p['reports'], per_report)
         r['mode'] = p['mode']
         r['start_offset_s'] = round(float(t[s[0]] - window(i)[0]), 3)   # anchor sanity: should stay small
-        r['residual_p99'] = round(float(np.nanpercentile(in_motion_residual(x, s, per_report), 99)), 3)
+        unit = per_report * r['delivered'] / max(round(r['delivered']), 1)     # pass_row's per-report unit
+        r['residual_p99'] = round(float(np.nanpercentile(in_motion_residual(x, s, unit), 99)), 3)
         r['edge_clipped'] = touches_edge(x, s)
+        if r['edge_clipped']:
+            r.pop('displaced', None)                   # travel was cut by the screen edge: not a link measurement
         late = board[i][2]
         r['board_max_late_us'] = late
         if late is not None and late > BOARD_LATE_US:
@@ -371,15 +391,23 @@ def main(argv):
     for mode in dict.fromkeys(p['mode'] for p in passes):
         print(f'-- {mode}')
         by_step[mode] = {f'{k:g}ms': g for k, g in summarise([r for r in measured if r['mode'] == mode]).items()}
-    all_delivered = {}
+    all_delivered, gain_ratio = {}, {}
     for r in measured:
-        for d in r.get('displaced_all_delivered', []):
-            g = all_delivered.setdefault(f"{r['step_ms']:g}ms", {})
+        if 'displaced_all_delivered' not in r:
+            continue
+        k = f"{r['step_ms']:g}ms"
+        g = all_delivered.setdefault(k, {})
+        for d in r['displaced_all_delivered']:
             g[str(d)] = g.get(str(d), 0) + 1
+        gain_ratio.setdefault(k, []).append(r['pass_gain_pt'] / per_report)
     for k, g in all_delivered.items():
         n = sum(g.values())
+        ratio = float(np.median(gain_ratio[k]))
         print(f'every {k}, assuming every on-time report arrived: {n} reports, '
-              f'{100 * sum(v for d, v in g.items() if d != "0") / n:.1f}% off their frame {dict(sorted(g.items(), key=lambda kv: int(kv[0])))}')
+              f'{100 * sum(v for d, v in g.items() if d != "0") / n:.1f}% off their frame '
+              f'{dict(sorted(g.items(), key=lambda kv: int(kv[0])))}; travel per report {ratio:.2f}x the 15 ms gain. '
+              + ('BELOW 1: reports may have been lost; do not cite as regularity.' if ratio < 0.97 else
+                 'Loss and rate-dependent gain are inseparable on video; cite with that caveat.'))
     print('note: frozen/catch-up frames are meaningful at 15 ms only. "displaced" needs every report seen; '
           'at 1 and 3 ms rate-dependent gain can prevent that, so see the all-delivered line (board stats required).')
     presses = press_sheets(mov, t, video_s, schedule.get('presses', []), (float(np.nanmedian(x)), row), out)
@@ -387,6 +415,7 @@ def main(argv):
         print(f"press {p['kind']}: orange {p.get('orange_before')} -> {p.get('orange_peak')} (review press-{p['kind']}.png)")
     json.dump(dict(recording=mov, decoder=backend, fps=round(fps, 2), park_row_pt=row, per_report_pt=round(per_report, 4),
                    displaced_all_delivered=all_delivered,
+                   all_delivered_gain_ratio={k: round(float(np.median(v)), 3) for k, v in gain_ratio.items()},
                    parked_jitter_rms_pt=noise, pointer='dark' if polarity > 0 else 'light', spikes_repaired=repaired,
                    anchor_s=round(t0, 3), start_offset_span_s=span,
                    board_times='stats' if stats else 'scheduled', passes=rows, by_step=by_step, presses=presses),

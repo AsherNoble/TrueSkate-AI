@@ -1,224 +1,224 @@
 {
- "schedule_hash": "58d95a76970be6d1",
+ "schedule_hash": "836470cf82b845f1",
  "lead_ms": 8000,
- "n_events": 1367,
- "duration_us": 29792000,
+ "n_events": 1497,
+ "duration_us": 33542000,
  "pass_dx": 4,
  "passes": [
   {
-   "mode": "rates",
+   "mode": "stall",
    "dx": 4,
-   "step_us": 3000,
-   "reports": 60,
+   "step_us": 15000,
+   "reports": 30,
    "start_us": 1875000,
-   "end_us": 2055000
+   "end_us": 2325000
+  },
+  {
+   "mode": "stall",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 2925000,
+   "end_us": 3375000
+  },
+  {
+   "mode": "stall",
+   "dx": 4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 3975000,
+   "end_us": 4425000
+  },
+  {
+   "mode": "stall",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 5025000,
+   "end_us": 5475000
+  },
+  {
+   "mode": "stall",
+   "dx": 4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 6075000,
+   "end_us": 6525000
+  },
+  {
+   "mode": "stall",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 7125000,
+   "end_us": 7575000
+  },
+  {
+   "mode": "stall",
+   "dx": 4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 8175000,
+   "end_us": 8625000
+  },
+  {
+   "mode": "stall",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 9225000,
+   "end_us": 9675000
+  },
+  {
+   "mode": "stall",
+   "dx": 4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 10275000,
+   "end_us": 10725000
+  },
+  {
+   "mode": "stall",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 11325000,
+   "end_us": 11775000
+  },
+  {
+   "mode": "rates",
+   "dx": 4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 14250000,
+   "end_us": 14700000
+  },
+  {
+   "mode": "rates",
+   "dx": -4,
+   "step_us": 15000,
+   "reports": 30,
+   "start_us": 15300000,
+   "end_us": 15750000
+  },
+  {
+   "mode": "rates",
+   "dx": 4,
+   "step_us": 3000,
+   "reports": 60,
+   "start_us": 16350000,
+   "end_us": 16530000
   },
   {
    "mode": "rates",
    "dx": -4,
    "step_us": 3000,
    "reports": 60,
-   "start_us": 2655000,
-   "end_us": 2835000
+   "start_us": 17130000,
+   "end_us": 17310000
   },
   {
    "mode": "rates",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 3435000,
-   "end_us": 3495000
+   "start_us": 17910000,
+   "end_us": 17970000
   },
   {
    "mode": "rates",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 4095000,
-   "end_us": 4155000
-  },
-  {
-   "mode": "rates",
-   "dx": 4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 4755000,
-   "end_us": 5205000
-  },
-  {
-   "mode": "rates",
-   "dx": -4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 5805000,
-   "end_us": 6255000
-  },
-  {
-   "mode": "stall",
-   "dx": 4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 6855000,
-   "end_us": 7305000
-  },
-  {
-   "mode": "stall",
-   "dx": -4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 7905000,
-   "end_us": 8355000
-  },
-  {
-   "mode": "stall",
-   "dx": 4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 8955000,
-   "end_us": 9405000
-  },
-  {
-   "mode": "stall",
-   "dx": -4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 10005000,
-   "end_us": 10455000
-  },
-  {
-   "mode": "stall",
-   "dx": 4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 11055000,
-   "end_us": 11505000
-  },
-  {
-   "mode": "stall",
-   "dx": -4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 12105000,
-   "end_us": 12555000
-  },
-  {
-   "mode": "stall",
-   "dx": 4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 13155000,
-   "end_us": 13605000
-  },
-  {
-   "mode": "stall",
-   "dx": -4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 14205000,
-   "end_us": 14655000
-  },
-  {
-   "mode": "stall",
-   "dx": 4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 15255000,
-   "end_us": 15705000
-  },
-  {
-   "mode": "stall",
-   "dx": -4,
-   "step_us": 15000,
-   "reports": 30,
-   "start_us": 16305000,
-   "end_us": 16755000
+   "start_us": 18570000,
+   "end_us": 18630000
   },
   {
    "mode": "usb1ms",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 17355000,
-   "end_us": 17415000
+   "start_us": 21105000,
+   "end_us": 21165000
   },
   {
    "mode": "usb1ms",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 18015000,
-   "end_us": 18075000
+   "start_us": 21765000,
+   "end_us": 21825000
   },
   {
    "mode": "usb1ms",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 18675000,
-   "end_us": 18735000
+   "start_us": 22425000,
+   "end_us": 22485000
   },
   {
    "mode": "usb1ms",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 19335000,
-   "end_us": 19395000
+   "start_us": 23085000,
+   "end_us": 23145000
   },
   {
    "mode": "usb1ms",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 19995000,
-   "end_us": 20055000
+   "start_us": 23745000,
+   "end_us": 23805000
   },
   {
    "mode": "usb1ms",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 20655000,
-   "end_us": 20715000
+   "start_us": 24405000,
+   "end_us": 24465000
   },
   {
    "mode": "usb1ms",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 21315000,
-   "end_us": 21375000
+   "start_us": 25065000,
+   "end_us": 25125000
   },
   {
    "mode": "usb1ms",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 21975000,
-   "end_us": 22035000
+   "start_us": 25725000,
+   "end_us": 25785000
   },
   {
    "mode": "usb1ms",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 22635000,
-   "end_us": 22695000
+   "start_us": 26385000,
+   "end_us": 26445000
   },
   {
    "mode": "usb1ms",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 23295000,
-   "end_us": 23355000
+   "start_us": 27045000,
+   "end_us": 27105000
   }
  ],
  "presses": [
   {
    "kind": "tap",
-   "start_us": 25830000,
-   "lift_us": 25880000
+   "start_us": 29580000,
+   "lift_us": 29630000
   },
   {
    "kind": "drag15ms",
@@ -226,8 +226,8 @@
    "reports": 10,
    "dx": 0,
    "dy": -8,
-   "start_us": 26880000,
-   "lift_us": 27031000
+   "start_us": 30630000,
+   "lift_us": 30781000
   },
   {
    "kind": "drag1ms",
@@ -235,8 +235,8 @@
    "reports": 10,
    "dx": 0,
    "dy": -8,
-   "start_us": 28781000,
-   "lift_us": 28792000
+   "start_us": 32531000,
+   "lift_us": 32542000
   }
  ],
  "sections": [
@@ -247,8 +247,18 @@
   },
   {
    "kind": "repark",
-   "start_us": 23955000,
-   "end_us": 25830000
+   "start_us": 12375000,
+   "end_us": 14250000
+  },
+  {
+   "kind": "repark",
+   "start_us": 19230000,
+   "end_us": 21105000
+  },
+  {
+   "kind": "repark",
+   "start_us": 27705000,
+   "end_us": 29580000
   }
  ]
 }

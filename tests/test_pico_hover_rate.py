@@ -46,7 +46,7 @@ def test_hover_passes_never_press_and_return_to_the_park_column():
 
 def test_presses_stay_on_clear_floor_and_lift_as_their_own_report():
     events, _, presses, sections = sched.build()
-    repark_end = next(s['end_us'] for s in sections if s['kind'] == 'repark')
+    repark_end = [s['end_us'] for s in sections if s['kind'] == 'repark'][-1]
     tail = [e for e in events if e[0] >= repark_end]
     for _, x, y, _ in sched.modelled_path(tail):
         assert sched.SAFE_X[0] <= x <= sched.SAFE_X[1] and sched.SAFE_Y[0] <= y <= sched.SAFE_Y[1]
@@ -58,6 +58,16 @@ def test_presses_stay_on_clear_floor_and_lift_as_their_own_report():
         if p['kind'] != 'tap':
             assert p['lift_us'] - held[-1][0] == sched.LIFT_DELAY_US
             assert sum(1 for e in held if e[1:3] != (0, 0)) == p['reports']
+
+
+def test_every_section_starts_from_a_fresh_park_and_stall_comes_first():
+    events, passes, _, sections = sched.build()
+    assert passes[0]['mode'] == 'stall' and passes[0]['step_us'] == 15000
+    for mode in ('stall', 'rates', 'usb1ms'):
+        first = next(p for p in passes if p['mode'] == mode)
+        park = max((s for s in sections if s['end_us'] <= first['start_us']), key=lambda s: s['end_us'])
+        between = [e for e in events if park['end_us'] <= e[0] < first['start_us']]
+        assert not between                                   # nothing moves between the park and the section
 
 
 def test_park_matches_the_bluetooth_planner():
@@ -228,6 +238,20 @@ def test_pass_selection_ignores_a_one_way_glitch_run():
     x[200:204] = x[199] - 40 * np.array([1, 2, 2, 1])           # a misdetection out and back: no net travel
     seg = measure.window_segment(t, x, 1.9, t[95], t[300], dx=4)
     assert seg[0] == 100 and seg[-1] == 116
+
+
+def test_edge_flag_uses_where_the_pass_comes_to_rest():
+    x = np.full(60, 109.0)
+    x[20:24] = [150, 220, 290, 360]                          # fast pass ending at 337, tracked: not clipped
+    x[24:] = 337
+    assert not measure.touches_edge(x, np.arange(19, 24))
+    clipped = x.copy()
+    clipped[23:] = np.nan                                     # clamped at 414: beyond tracking from then on
+    assert measure.touches_edge(clipped, np.arange(19, 23))
+    left = np.full(60, 109.0)
+    left[20:24] = [70, 40, 18, 17]
+    left[24:] = 17                                            # resting at the left tracking limit
+    assert measure.touches_edge(left, np.arange(19, 24))
 
 
 def test_spike_repair_fixes_one_frame_misses_but_not_real_motion():

@@ -4,11 +4,11 @@ USB counterpart of the Bluetooth hover-rate probe
 ([HID-POINTER-20261004 section 8](../../research/experiments/HID-POINTER-20261004.md)).
 The Pico plays a fixed schedule from its own clock, with no command link:
 
-- home and park;
-- 4-count hover passes at 3, 1 and 15 ms (60, 60 and 30 reports each way);
-- 10 passes at 15 ms;
+- home and park before each section;
+- 10 passes at 15 ms (first: the Bluetooth comparison);
+- 4-count hover passes at 15, 3 and 1 ms (30, 60 and 60 reports each way, slowest first);
 - 10 passes at 1 ms;
-- re-home and re-park;
+- a final re-home and re-park;
 - a tap, plus one 10-report drag each at 15 ms and at 1 ms, at the clear-floor park point.
 
 It is mouse-only, with the same descriptor as `pico_mouse_smoke`: 1 ms interval, no CDC.
@@ -20,7 +20,7 @@ The firmware:
 - **Records lateness.** For every event it records the time until TinyUSB accepted the report, in 16 µs units up to about 1 s. Send intervals at 1 ms spacing show how often the host polls.
 - **LED:**
   - 1 s blink: waiting or lead (8 s after mount);
-  - solid: playing (about 30 s);
+  - solid: playing (about 34 s);
   - a 100 ms flash every 2 s: done;
   - double flash: failed;
   - 10 Hz flicker: already ran.
@@ -46,4 +46,6 @@ Before running:
 
 Press positions assume the Bluetooth gain. `measure.py` measures the USB gain, finds the actual park row, and keeps press crops for visual review.
 
-Measure both links with `measure.py`. Its tracker is refined to sub-pixel accuracy and reads the pointer's polarity from the data, so it differs from `hover_rate_measure.py`. Re-measured this way, the Bluetooth 15 ms passes are 5.0% displaced with Wi-Fi on and 2.7% with it off; the original tool reported about 6%. A perfectly regular synthetic link scores 0% at 1, 3 and 15 ms, and parked jitter is reported as the noise floor. Compare 1 and 3 ms by "displaced": frozen and catch-up counts only mean something at 15 ms.
+Measure both links with `measure.py` on one machine (FFmpeg decode; the rig's OpenCV lacks it). Its tracker is refined to sub-pixel accuracy and reads the pointer's polarity from the data, so it differs from `hover_rate_measure.py`. Re-measured this way, the Bluetooth 15 ms passes are 5.3% displaced with Wi-Fi on and 3.0% with it off; the original tool reported about 6% ([evidence](../../research/evidence/HID-POINTER-20261004/update-rate/remeasured-20261008)). The run-11 tunnel needs Wi-Fi, so 5.3% is the like-for-like baseline. A perfectly regular synthetic link scores 0% at every spacing, and parked jitter plus a per-pass in-motion residual are reported as noise. Frozen and catch-up counts only mean something at 15 ms.
+
+At 1 and 3 ms, plain "displaced" exists only when the pass's travel equals its report count, so any rate-dependent gain leaves it empty (None, never 0%). With board stats, "assuming every on-time report arrived" uses each pass's own gain and prints that gain against the 15 ms one. Video cannot separate lost reports from changed gain: below 1x, do not cite it as regularity.

@@ -3,11 +3,11 @@
 One source for the firmware header and the measurement. It mirrors
 hardware/hid_pointer/hover_rate_probe.py so results compare with HID-POINTER-20261004
 section 8:
-  home, park on clear floor;
-  'rates': 4-count reports every 3, 1 and 15 ms, there and back (60, 60, 30 reports);
-  'stall': 10 passes of 30 reports one per 15 ms;
+  each section from a fresh home and park on clear floor, in this order:
+  'stall': 10 passes of 30 reports one per 15 ms (first: the Bluetooth comparison);
+  'rates': 4-count reports every 15, 3 and 1 ms, there and back (30, 60, 60 reports);
   'usb1ms': 10 passes of 60 reports one per 1 ms (frame regularity at USB rate);
-  re-home, re-park, then press tests at the park point: a tap, a 10-report upward drag
+  then a final re-home and re-park, and press tests at the park point: a tap, a 10-report upward drag
   at 15 ms, a hover back down, the same drag at 1 ms. Each lift is its own report 1 ms
   after the last move. Hover passes never press.
 
@@ -27,7 +27,7 @@ GAP_US = 600_000
 PASS_DX = 4
 # 60 reports (114 pt) per fast pass leave ~2.6x headroom for rate-dependent acceleration before
 # the right edge (park x 109 of 414 pt). The Bluetooth probe sent 100 at 3 ms; compare ratios.
-RATES = [(4, 3000, 60), (-4, 3000, 60), (4, 1000, 60), (-4, 1000, 60), (4, 15000, 30), (-4, 15000, 30)]
+RATES = [(4, 15000, 30), (-4, 15000, 30), (4, 3000, 60), (-4, 3000, 60), (4, 1000, 60), (-4, 1000, 60)]   # slowest first
 STALL = [(4, 15000, 30), (-4, 15000, 30)] * 5
 USB1MS = [(4, 1000, 60), (-4, 1000, 60)] * 5
 DRAG = (0, -8, 10)                 # counts per report, reports
@@ -60,8 +60,12 @@ def build():
         t += GAP_US
         return dict(kind=label, start_us=start, end_us=t)
 
-    sections = [home_and_park('park')]
-    for mode, plan in (('rates', RATES), ('stall', STALL), ('usb1ms', USB1MS)):
+    # The 15 ms 'stall' passes (the Bluetooth comparison) come first, and every section starts
+    # from a fresh home and park: if fast reports clamp at a screen edge, only that section is
+    # lost. The first pass, which anchors the analysis, is a long 15 ms one.
+    sections = []
+    for mode, plan in (('stall', STALL), ('rates', RATES), ('usb1ms', USB1MS)):
+        sections.append(home_and_park('park' if not sections else 'repark'))
         for dx, step, n in plan:
             start = t
             for _ in range(n):
