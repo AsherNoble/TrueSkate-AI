@@ -351,9 +351,12 @@ Its held-out middle residual is 16.7487 ms against a 16.667 ms frame limit,
 narrowly failing timing qualification (81.7 microseconds beyond the frozen gate;
 25.0822 ms carried clock uncertainty). Its curve fidelity remains inconclusive,
 with no curve score emitted, individual phase fit or gate relaxation. This does not identify USB jitter
-as the cause. Batch 2's human timing review is pending. There is no qualified
-curve-fidelity result yet: capture and board completion
-do not establish visible contact timing/path accuracy. Native-PTS review uses
+as the cause. Batch 2's verified human control review passes the held-out middle
+gate: 14.1529 ms against 16.667 ms, with 22.4864 ms carried clock uncertainty.
+Its six native-frame curves are open for position/boundary/interruption review
+using that fixed clock. There is no qualified curve-fidelity result or twelve-curve
+pass yet: timing qualification, capture and board completion do not establish
+visible contact/path accuracy. Native-PTS review uses
 Pico start/end controls and a held-out middle
 control, retaining clock/position uncertainty. The operator kept the 150 ms
 reversal stress cases despite their possible 60 Hz measurement floor. The
@@ -363,6 +366,7 @@ requirements and collection-off remain unchanged.
 [first curve capture](evidence/HID-USB-20261006/pico-curve-pilot-curve-01-20261008),
 [second curve capture/review preparation](evidence/HID-USB-20261006/pico-curve-pilot-curve-02-20261008),
 [first timing review](evidence/HID-USB-20261006/pico-curve-pilot-curve-01-timing-20261009),
+[second timing qualification and curve review](evidence/HID-USB-20261006/pico-curve-pilot-curve-02-timing-20261009),
 [pilot workflow](../hardware/pico_curve_pilot/README.md).
 
 AssistiveTouch supports preset and recorded multi-finger gestures. Independent

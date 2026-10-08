@@ -1,0 +1,25 @@
+{
+  "schema": "pico-usb-controls-v1",
+  "version": 2,
+  "bundle_sha256": "bdb79184b47a3573b21b4f49422b2f28785a6135032623eb40df729b6735d466",
+  "annotations": {
+    "control-start": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 780,
+      "boundary_confirmed": true
+    },
+    "control-middle": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 1736,
+      "boundary_confirmed": true
+    },
+    "control-end": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 2604,
+      "boundary_confirmed": true
+    }
+  }
+}

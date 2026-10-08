@@ -1,0 +1,46 @@
+{
+  "bundle_sha256": "bdb79184b47a3573b21b4f49422b2f28785a6135032623eb40df729b6735d466",
+  "export_sha256": "56347faac8894783dfc2e0d8bbe3c544f5214566a9f7dcda16414699d41cefb7",
+  "annotations": {
+    "control-start": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 780,
+      "boundary_confirmed": true
+    },
+    "control-middle": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 1736,
+      "boundary_confirmed": true
+    },
+    "control-end": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 2604,
+      "boundary_confirmed": true
+    }
+  },
+  "fit": {
+    "intercept_s": 10.135054827868853,
+    "rate": 0.9977595573770492,
+    "middle_error_s": 0.01415291803278862,
+    "accepted": true,
+    "uncertainty_s": 0.022486418032787725,
+    "control_onset_intervals_s": [
+      [
+        13.120000000000001,
+        13.136667
+      ],
+      [
+        29.07,
+        29.086667
+      ],
+      [
+        43.551667,
+        43.568333
+      ]
+    ],
+    "source": "Pico accepted reports and visible contact; no WDA execution timestamp"
+  }
+}

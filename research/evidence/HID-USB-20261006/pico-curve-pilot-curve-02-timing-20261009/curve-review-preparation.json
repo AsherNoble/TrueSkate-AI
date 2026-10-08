@@ -1,0 +1,68 @@
+{
+  "schema": "pico-usb-qualified-curve-review-preparation-v1",
+  "private_bundle_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-02-curves-bundle.json",
+  "bundle_sha256": "83303accf20c66885fe072c42d225f85a6399be2bbc9be9255b08fb450cbca02",
+  "media_root": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-02-curves",
+  "fixed_timebase": {
+    "intercept_s": 10.135054827868853,
+    "rate": 0.9977595573770492,
+    "middle_error_s": 0.01415291803278862,
+    "accepted": true,
+    "uncertainty_s": 0.022486418032787725,
+    "control_onset_intervals_s": [
+      [
+        13.120000000000001,
+        13.136667
+      ],
+      [
+        29.07,
+        29.086667
+      ],
+      [
+        43.551667,
+        43.568333
+      ]
+    ],
+    "source": "Pico accepted reports and visible contact; no WDA execution timestamp"
+  },
+  "controls_bundle_sha256": "bdb79184b47a3573b21b4f49422b2f28785a6135032623eb40df729b6735d466",
+  "controls_export_sha256": "56347faac8894783dfc2e0d8bbe3c544f5214566a9f7dcda16414699d41cefb7",
+  "clips": [
+    {
+      "id": "arc-150-r1",
+      "native_frames": 31,
+      "target_frames": 9
+    },
+    {
+      "id": "s-150-r1",
+      "native_frames": 30,
+      "target_frames": 9
+    },
+    {
+      "id": "reversal-150-r1",
+      "native_frames": 29,
+      "target_frames": 8
+    },
+    {
+      "id": "pause-150-r1",
+      "native_frames": 30,
+      "target_frames": 9
+    },
+    {
+      "id": "reversal-600-r0",
+      "native_frames": 57,
+      "target_frames": 36
+    },
+    {
+      "id": "pause-600-r0",
+      "native_frames": 57,
+      "target_frames": 36
+    }
+  ],
+  "html_sha256": "7959f7de939f539182be3551386512f51732538e7e585ccefec7144fd993d1ad",
+  "integrity_script_sha256": "f6dda0135c333f05ed5dbb701b9f7a4e7a67be58ebd150737163e8197ad776e1",
+  "served_page_and_first_image_each_clip_sha256_checks": "passed",
+  "viewer": "temporary localhost port 18977, opened in Google Chrome; stop on exported report path",
+  "curve_score_assigned": false,
+  "training_admission": false
+}
