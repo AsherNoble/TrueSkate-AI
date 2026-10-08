@@ -54,6 +54,9 @@ action groups and activity masks; the older rig model must not overwrite it.
 
 ## Open questions
 
+- Proposed Model 1 replay fine-tuning: automatically grade predicted-gesture
+  replays against reference gameplay, after measuring repeatability and the
+  required feedback speed. [Discussion note, 2026-10-09](protocols/model1_replay_finetuning.md).
 - How does recovery scale with data volume and domain/session diversity?
 - When should linear work expand to curved and curved+spin trajectories?
 - Can Model 1 label expert recordings accurately enough for useful Model 2 training?
