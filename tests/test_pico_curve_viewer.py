@@ -36,8 +36,15 @@ const DATA={schema:'pico-usb-curves-review-v1',version:2,bundle_sha256:'fixture'
  $('boundaryConfirmed').checked=true;$('boundaryConfirmed').onchange();assert.equal(row().boundary_confirmed,true);
  $('overlay').checked=false;await show();assert.equal($('ring').getAttribute('visibility'),'hidden');
  $('next').click();await new Promise(setImmediate);assert.equal(row().first_contact_frame,undefined);assert.equal(row().frames.length,0);
+ assert($('uncertainty').parentElement.hidden);assert($('contactLabel').hidden);assert($('staticLabel').hidden);
+ assert.equal($('unknown').textContent,'Clear touch-down mark');assert($('unknown').disabled);assert($('onset').disabled);
  $('onset').click();assert.equal(row().first_contact_frame,undefined); // no clear preceding displayed frame
  step(1);await new Promise(setImmediate);$('onset').click();assert.equal(row().first_contact_frame,201);
+ assert.equal($('onset').textContent,'Touch-down marked here');assert.equal($('onset').getAttribute('aria-pressed'),'true');
+ assert.match($('status').textContent,/Touch-down marked on frame 201/);assert(!playing);assert(!$('unknown').disabled);
+ $('boundaryConfirmed').checked=true;$('boundaryConfirmed').onchange();assert.equal(row().boundary_confirmed,true);
+ $('unknown').click();assert.equal(row().first_contact_frame,undefined);assert.equal(row().boundary_confirmed,false);assert(!$('boundaryConfirmed').checked);
+ assert.equal($('onset').getAttribute('aria-pressed'),'false');assert($('unknown').disabled);assert.match($('status').textContent,/not marked/);
  global.reviewFrameUrl=async()=>{throw Error('changed bytes')};step(1);await new Promise(setImmediate);
  assert(integrityFailed);assert(!loaded);assert($('export').disabled);saveFrame([0,0]);assert.equal(row().frames.length,0);
  global.reviewFrameUrl=async f=>f.path;$('previous').click();await new Promise(setImmediate);
@@ -47,3 +54,4 @@ const DATA={schema:'pico-usb-curves-review-v1',version:2,bundle_sha256:'fixture'
     result = subprocess.run(['node', '-'], input=harness+script+checks, text=True, capture_output=True)
     assert result.returncode == 0, result.stderr
     assert 'r="10" fill="none"' in template
+    assert '[hidden]{display:none!important}' in template

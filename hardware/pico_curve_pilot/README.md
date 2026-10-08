@@ -149,6 +149,12 @@ settled-board requirement is imposed on the diagnostic curves.
 For each curve batch, first build `review` with `--play-origin-s` to locate the
 three control clips. Mark first visible contact after a clear previous frame,
 export, and import using `fit-controls --bundle --export --media-root --out`.
+Timing mode only needs one touch-down mark per clip and confirmation of its
+clear preceding frame. Marking pauses playback and shows a green **Touch-down
+marked here** button; **Clear touch-down mark** removes that boundary and its
+confirmation. Position uncertainty is hidden in this mode. It is used later
+for contact-centre measurements, as the radius in logical points within which
+the true visible centre could lie around the clicked point.
 The first/end onset intervals define **one affine map** from Pico accepted-report
 times to native movie PTS; the middle is held out. Onset interval midpoints and
 their uncertainty are retained. A middle discrepancy beyond one native frame,
