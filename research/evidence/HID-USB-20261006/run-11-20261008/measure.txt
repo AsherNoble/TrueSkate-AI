@@ -1,0 +1,47 @@
+/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-run11-codex/run-11/05-pico-hover-60/original.mov: 3580 frames at 59.6 fps (22 dropped); park row 368 pt; cursor found in 1583; one 4-count report = 1.904 pt (Bluetooth fit 1.896); dark pointer; 0 one-frame spikes repaired; parked jitter 0.062 pt rms; anchor 14.515 s; 0 passes not found; board times from stats; decoder FFMPEG
+FLAG rates 1 ms +4: board late (residual p99 0.051)
+FLAG usb1ms 1 ms -4: board late (residual p99 0.14)
+FLAG usb1ms 1 ms +4: board late (residual p99 0.297)
+FLAG usb1ms 1 ms -4: board late (residual p99 0.119)
+step ms  dx  sent delivered  send ms deliver ms frames frozen longest catch-up  reports per frame ([n] = after a dropped frame)
+     15  +4    30      30.0      450        450     27      0       0        0  111111112111111112111111112
+     15  -4    30      30.1      450        450     27      0       0        0  111111112111111112111111112
+     15  +4    30      30.0      450        450     27      0       0        0  111111111211111111211111112
+     15  -4    30      30.0      450        450     27      0       0        0  111111111211111112111111112
+     15  +4    30      29.9      450        450     27      2       1        0  111120112201111112111111112
+     15  -4    30      29.9      450        450     27      1       1        1  111111130111111111211111112
+     15  +4    30      30.1      450        450     27      1       1        1  111111111211111130111111112
+     15  -4    30      30.0      450        467     28      0       0        0  1111111121111111112111111111
+     15  +4    30      30.0      450        450     27      1       1        1  111111113011111112111111112
+     15  -4    30      30.0      450        467     28      1       1        0  1111111112111111112120111111
+     15  +4    30      30.0      450        450     27      0       0        0  111121111111121111111211111
+     15  -4    30      29.9      450        450     27      0       0        0  111121111111121111111121111
+      3  +4    60      59.9      180        217     13      1       1       11  4065656565651
+      3  -4    60      59.8      180        183     11      0       0       11  56565656655
+      1  +4    60      59.8       60        100      1      0       0        1  [15][0]?
+      1  -4    60      59.8       60        100      2      0       0        2  [7][0]?4
+      1  +4    60      59.8       60        100      2      0       0        2  [23][0]?4
+      1  -4    60      59.9       60        100      2      1       1        1  [10][17]0?
+      1  +4    60      59.8       60        100      3      1       1        2  [1]?08
+      1  -4    60      59.8       60        100      6      1       1        4  9??0?1
+      1  +4    60      59.7       60        117      2      0       0        1  [15][15]?1
+      1  -4    60      59.9       60        100      2      0       0        2  [6][16]?4
+      1  +4    60      59.8       60         83      1      0       0        1  [13][0]?
+      1  -4    60      59.8       60        100      3      1       1        2  [16]?0?
+      1  +4    60      59.8       60        100      4      1       1        2  [8][18]0?2
+      1  -4    60      59.8       60         50      3      1       1        2  ?0?
+-- stall
+every 15 ms: 300 of 300 reports delivered; on 272 regular frames: frozen 6 (2.2%), longest 1, catch-up 3; frames by reports carried {'0': 6, '1': 235, '2': 28, '3': 3}; dropped frames carried []; reports by frames displaced {'-1': 10, '0': 287, '1': 3} (4.3% off their frame)
+-- rates
+every 15 ms: 60 of 60 reports delivered; on 54 regular frames: frozen 0 (0.0%), longest 0, catch-up 0; frames by reports carried {'1': 48, '2': 6}; dropped frames carried []; reports by frames displaced {'-1': 1, '0': 59} (1.7% off their frame)
+every 3 ms: 120 of 120 reports delivered; on 24 regular frames: frozen 1 (4.2%), longest 1, catch-up 22; frames by reports carried {'0': 1, '1': 1, '4': 1, '5': 11, '6': 10}; dropped frames carried []; reports by frames displaced {'-1': 4, '0': 116} (3.3% off their frame)
+every 1 ms: 120 of 120 reports delivered; on 3 regular frames: frozen 0 (0.0%), longest 0, catch-up 3; frames by reports carried {'4': 1, '45': 1, '49': 1}; dropped frames carried [15, 0, 7, 0]; reports by frames displaced {'-1': 5, '0': 28, '1': 27} (53.3% off their frame)
+-- usb1ms
+every 1 ms: 598 of 600 reports delivered; on 28 regular frames: frozen 6 (21.4%), longest 1, catch-up 19; frames by reports carried {'0': 6, '1': 2, '2': 1, '4': 2, '8': 1, '9': 1, '11': 1, '16': 1, '17': 2, '29': 2, '31': 1, '32': 1, '33': 3, '34': 1, '47': 1, '51': 1}; dropped frames carried [23, 0, 10, 17, 1, 15, 15, 6, 16, 13, 0, 16, 18]; reports by frames displaced {'-1': 63, '0': 249, '1': 108} (40.7% off their frame)
+every 15ms, assuming every on-time report arrived: 360 reports, 3.9% off their frame {'-1': 11, '0': 346, '1': 3}; travel per report 1.00x the 15 ms gain. Loss and rate-dependent gain are inseparable on video; cite with that caveat.
+every 3ms, assuming every on-time report arrived: 120 reports, 3.3% off their frame {'-1': 4, '0': 116}; travel per report 1.00x the 15 ms gain. Loss and rate-dependent gain are inseparable on video; cite with that caveat.
+every 1ms, assuming every on-time report arrived: 480 reports, 42.3% off their frame {'-1': 68, '0': 277, '1': 135}; travel per report 1.00x the 15 ms gain. Loss and rate-dependent gain are inseparable on video; cite with that caveat.
+note: frozen/catch-up frames are meaningful at 15 ms only. "displaced" needs every report seen; at 1 and 3 ms rate-dependent gain can prevent that, so see the all-delivered line (board stats required).
+press tap: orange 0.0 -> 0.0 (review press-tap.png)
+press drag15ms: orange 0.0 -> 0.0009 (review press-drag15ms.png)
+press drag1ms: orange 0.0 -> 0.0012 (review press-drag1ms.png)

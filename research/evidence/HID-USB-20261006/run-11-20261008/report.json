@@ -1,0 +1,24 @@
+{
+  "park": "unverified current gameplay scene",
+  "corpus_admission": false,
+  "cases": [
+    {
+      "name": "05-pico-hover-60",
+      "fps_requested": 60,
+      "lifecycle": "passed",
+      "calibration": "not applicable",
+      "video": {
+        "frames": 3580,
+        "duration_s": 60.111667,
+        "effective_fps": 59.55582632569482,
+        "pts_span_fps": 59.55570346950661,
+        "max_gap_s": 0.05333300000000207,
+        "estimated_missing_slots": 27,
+        "bytes": 73012540,
+        "sha256": "f778e999dc7b20d887c8a840bbc854a8d691c421c5ed1acb5f4a22c8edd3addc"
+      }
+    }
+  ],
+  "cleanup_errors": [],
+  "pico_acceptance": "requires visual review of original movie and insertion timing"
+}
