@@ -164,7 +164,11 @@ Pico receipt times mean TinyUSB acceptance, not independently observed iOS deliv
 Rebuild `review` with the same program/receipt/movie/report and
 `--controls-bundle --controls-export --controls-media` to produce curve clips.
 The target is one moving unfilled 10-logical-point-radius ring evaluated at
-source PTS. O hides it; arrows step native frames. The ring follows the intended
+source PTS. O hides it; arrows step native frames. A translucent logical-point
+grid can be toggled independently: each small square is 1 × 1 logical point,
+with stronger lines every 5 points. It shares the image/mark transform and does
+not intercept clicks. Position uncertainty is a radius around the clicked centre;
+use the grid to estimate that radius. Use the browser's existing zoom if needed. The ring follows the intended
 trajectory, not observed positions or an individually optimized phase. Mark
 contact positions and confirm them against the orange trail; an overlay circle
 alone is not proof of in-game contact. Unknown positions/boundaries stay unknown.
