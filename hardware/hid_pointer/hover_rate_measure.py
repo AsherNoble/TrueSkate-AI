@@ -150,7 +150,8 @@ def summarise(rows):
         g['per_frame_counts'] = dict(sorted(g['per_frame_counts'].items(), key=lambda kv: int(kv[0])))
         g['frozen_pct'] = round(100 * g['frozen'] / max(g['frames'], 1), 1)
         g['displaced'] = dict(sorted(g['displaced'].items(), key=lambda kv: int(kv[0])))
-        g['displaced_pct'] = round(100 * sum(v for k_, v in g['displaced'].items() if k_ != '0') / max(sum(g['displaced'].values()), 1), 1)
+        g['displaced_pct'] = (round(100 * sum(v for k_, v in g['displaced'].items() if k_ != '0') / sum(g['displaced'].values()), 1)
+                              if g['displaced'] else None)       # None: no pass delivered every report
         print(f'every {k:g} ms: {g["delivered"]:.0f} of {g["sent"]} reports delivered; on {g["frames"]} regular frames: '
               f'frozen {g["frozen"]} ({g["frozen_pct"]}%), longest {g["longest_freeze"]}, catch-up {g["catch_up"]}; '
               f'frames by reports carried {g["per_frame_counts"]}; dropped frames carried {g["dropped_frames"]}'

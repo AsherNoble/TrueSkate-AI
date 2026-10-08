@@ -313,7 +313,7 @@ def test_operator_enter_counts_only_after_the_prompt_even_while_ntfy_sends(tmp_p
     assert op.prompt_ready('PICO STEP NEXT', None, tmp_path/'never', 10) is True
     assert _time.monotonic() - began < 1.4                  # did not wait for the slow ntfy
     out = capsys.readouterr().out
-    assert 'Waiting for Enter' in out and 'Ready received.' in out
+    assert 'press Enter' in out and str(tmp_path/'never') in out and 'Ready received.' in out
     os.close(master); os.close(slave)
 
 

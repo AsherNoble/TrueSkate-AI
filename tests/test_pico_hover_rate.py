@@ -142,7 +142,8 @@ def test_measure_finds_row_anchor_and_windows():
     assert seg[0] == 100 and seg[-1] == 116
 
 
-def synthetic_movie(path, schedule, per_report=1.9, latency_s=0.0213, lead_s=1.0, fps=60, floor=140, disc=80):
+def synthetic_movie(path, schedule, per_report=1.9, latency_s=0.0213, lead_s=1.0, fps=60, floor=140, disc=80,
+                    gain_by_step=None):
     """Floor with an antialiased cursor disc at sub-pixel positions on the park row, moved by the passes.
 
     latency_s is not commensurate with 15 ms or 60 fps, so no report lands exactly on a frame edge.
@@ -158,7 +159,7 @@ def synthetic_movie(path, schedule, per_report=1.9, latency_s=0.0213, lead_s=1.0
         x = 109.0
         for p in passes:
             done = np.clip(np.floor((now * 1e6 - p['start_us']) / p['step_us']) + 1, 0, p['reports'])
-            x += np.sign(p['dx']) * per_report * done
+            x += np.sign(p['dx']) * per_report * (gain_by_step or {}).get(p['step_us'], 1.0) * done
         img = cv2.cvtColor(base, cv2.COLOR_GRAY2BGR)
         cv2.circle(img, (int(round(x * 2 * 16)), 736 * 16), 17 * 16, (disc, disc, disc), -1, cv2.LINE_AA, 4)
         writer.write(img)
@@ -193,7 +194,40 @@ def test_measure_recovers_a_regular_link_exactly(tmp_path, floor, disc):
         assert g['displaced'] and g['displaced_pct'] == 0, step     # a perfectly regular link, at every spacing
     assert result['start_offset_span_s'] < 0.05
     assert result['spikes_repaired'] == 0 and result['pointer'] == ('dark' if disc < floor else 'light')
+    assert result['decoder'] and all(r['residual_p99'] < 0.2 and not r['edge_clipped'] for r in rows)
     assert (tmp_path / 'out' / 'press-tap.png').exists()
+
+
+def test_rate_dependent_gain_with_board_stats_still_measures_frame_landing(tmp_path):
+    """1 ms reports move twice as far: plain 'displaced' cannot be computed (no 0% pretence),
+    while the all-delivered measure, using each pass's own gain, still sees a regular link."""
+    import json
+    events, passes, presses, _ = sched.build()
+    schedule = json.loads((ROOT / 'hardware/pico_hover_rate/schedule.json').read_text())
+    synthetic_movie(tmp_path / 'movie.mp4', schedule, gain_by_step={1000: 2.0})
+    (tmp_path / 'stats.json').write_text(json.dumps(dict(lateness_us=[0] * len(events))))
+    measure.main([str(tmp_path / 'movie.mp4'), str(ROOT / 'hardware/pico_hover_rate/schedule.json'),
+                  str(tmp_path / 'out'), str(tmp_path / 'stats.json')])
+    result = json.loads((tmp_path / 'out' / 'measure.json').read_text())
+    one_ms = [r for r in result['passes'] if r['step_ms'] == 1]
+    assert one_ms and all(r['delivered'] == pytest.approx(2 * r['sent'], rel=0.05) for r in one_ms)
+    assert result['by_step']['usb1ms']['1ms']['displaced_pct'] is None
+    assert all(r['pass_gain_pt'] == pytest.approx(3.8, rel=0.03) for r in one_ms)
+    g = result['displaced_all_delivered']['1ms']
+    assert sum(g.values()) == sum(r['sent'] for r in one_ms) and set(g) == {'0'}
+    assert result['by_step']['stall']['15ms']['displaced_pct'] == 0
+    assert not any(r.get('board_late') or r['edge_clipped'] for r in result['passes'])
+    assert all('after the end' in p['error'] for p in result['presses'])   # this short movie stops before the presses
+
+
+def test_pass_selection_ignores_a_one_way_glitch_run():
+    t = np.arange(400) / 60
+    x = np.full(400, 109.0)
+    x[100:118] = 109 + np.arange(18) * 3.5                     # the pass: +60 pt net
+    x[118:] = x[117]
+    x[200:204] = x[199] - 40 * np.array([1, 2, 2, 1])           # a misdetection out and back: no net travel
+    seg = measure.window_segment(t, x, 1.9, t[95], t[300], dx=4)
+    assert seg[0] == 100 and seg[-1] == 116
 
 
 def test_spike_repair_fixes_one_frame_misses_but_not_real_motion():

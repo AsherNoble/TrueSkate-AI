@@ -313,8 +313,8 @@ class Operator:
             sent = threading.Thread(target=lambda: self.event(
                 'operator-alert', message=message, ntfy_error=self.ntfy(message, priority)), daemon=True)
             sent.start()
-            print('Waiting for Enter in this Terminal...' if tty else
-                  f'No Terminal attached: create {ready_file} to continue.', flush=True)
+            print('Click this Terminal window, then press Enter. ' if tty else 'No Terminal attached. ', end='')
+            print(f'(Fallback: creating {ready_file} also continues.)', flush=True)
         deadline = time.monotonic() + timeout_s
         try:
             while time.monotonic() < deadline:

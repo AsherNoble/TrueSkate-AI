@@ -18,7 +18,13 @@ tracker and one method:
 - Regularity: 'displaced' (each report's frame against a perfectly regular link with one
   fitted latency) is comparable at every spacing. 'frozen' and 'catch-up' frames only mean
   something at 15 ms, where a frame should carry one report.
-- Noise floor: cursor jitter while parked between passes, against one report's travel.
+- Noise: cursor jitter while parked, and per pass the in-motion distance from whole report
+  counts (residual p99; flagged above 0.35 of a report). Passes reaching a screen edge, or
+  sent late by the board (stats), are flagged; late ones are not counted as link timing.
+- With board stats, a pass sent fully on time also gets "displaced_all_delivered": frame
+  landing using that pass's own gain, valid when no report was lost.
+- Decoding uses FFmpeg when available and records the decoder; measure both links on one
+  machine.
 - Press tests (USB schedule only): contact sheets around each press for visual review, and
   an orange-trail pixel count as a hint.
 """
@@ -84,9 +90,19 @@ def find_cursor(frame, y_range_pt, board_top_pt=BOARD[2], polarity=0):
     return score, cx / 2, (cy + y0) / 2, r / 2, sign
 
 
+def open_movie(mov):
+    """FFmpeg when this OpenCV has it, so results do not depend on the machine's decoder."""
+    cap = cv2.VideoCapture(mov, cv2.CAP_FFMPEG)
+    if not cap.isOpened():
+        cap = cv2.VideoCapture(mov)
+    if not cap.isOpened():
+        raise RuntimeError(f'Cannot open {mov}')
+    return cap
+
+
 def track(mov, y_range_pt, every=1, board_top_pt=BOARD[2], polarity=0):
     """Stream the movie: frame times, cursor x and y (pt), and the chosen disc's sign per frame."""
-    cap = cv2.VideoCapture(mov)
+    cap = open_movie(mov)
     t, x, y, sign = [], [], [], []
     i = 0
     while cap.grab():
@@ -121,7 +137,7 @@ def repair_spikes(x, limit_pt=15.0):
 def grab(mov, indices):
     """Frames at the given indices, from a second streaming pass."""
     want, out = set(int(i) for i in indices), {}
-    cap = cv2.VideoCapture(mov)
+    cap = open_movie(mov)
     i = 0
     while want - out.keys():
         ok, f = cap.read()
@@ -155,12 +171,12 @@ def anchor_time(t, x, per_report):
     raise RuntimeError('No pass found to anchor the schedule')
 
 
-def window_segment(t, x, per_report, start_s, end_s):
+def window_segment(t, x, per_report, start_s, end_s, dx=0):
     """The pass's motion within [start_s - lead, end_s), as pass_row's segment.
 
     Moving frames are split into runs (gaps of up to 4 still frames allowed, as in
-    motion_segments); the run carrying the most travel is the pass, so a stray tracking
-    glitch elsewhere in the window cannot stretch it.
+    motion_segments). The pass is the run with the most net travel along dx, so a tracking
+    glitch out and back elsewhere in the window (no net travel) cannot win or stretch it.
     """
     lo, hi = np.searchsorted(t, start_s - WINDOW_LEAD_S), np.searchsorted(t, end_s)
     idx = moving_frames(x, per_report)
@@ -168,15 +184,25 @@ def window_segment(t, x, per_report, start_s, end_s):
     if not len(idx):
         return idx
     runs = np.split(idx, np.nonzero(np.diff(idx) > 4)[0] + 1)
-    step = np.abs(np.diff(x))
-    return max(runs, key=lambda r: np.nansum(step[r[0]:r[-1] + 1]))
+    sign = np.sign(dx) if dx else 1
+
+    def net(r):
+        a, b = x[r[0]], x[min(r[-1] + 1, len(x) - 1)]
+        travel = sign * (b - a) if dx else abs(b - a)
+        return travel if np.isfinite(travel) else -np.inf
+    return max(runs, key=net)
 
 
 def pass_times(schedule, stats):
     """Per pass (start_us, end_us) on the board's clock: actual send times when stats are given."""
+    return [(a, b) for a, b, _ in pass_board(schedule, stats)]
+
+
+def pass_board(schedule, stats):
+    """Per pass (start_us, end_us, max_late_us); max_late_us is None without stats."""
     passes = schedule['passes']
     if stats is None:
-        return [(p['start_us'], p['end_us']) for p in passes]
+        return [(p['start_us'], p['end_us'], None) for p in passes]
     from schedule import build, schedule_hash
     events, *_ = build()
     if schedule_hash(events) != schedule['schedule_hash'] or len(stats['lateness_us']) != len(events):
@@ -189,8 +215,28 @@ def pass_times(schedule, stats):
         if (late[idx] < 0).any():
             raise ValueError('a pass was not fully sent; measure without stats')
         sent = t[idx] + late[idx]
-        out.append((int(sent[0]), int(sent[-1] + p['step_us'])))
+        out.append((int(sent[0]), int(sent[-1] + p['step_us']), int(late[idx].max())))
     return out
+
+
+EDGE_PT = (20.0, 395.0)          # tracking stops near the screen edges; a pass reaching them is clipped
+RESIDUAL_FLAG = 0.35             # in-motion distance from a whole report count, in reports
+BOARD_LATE_US = 1000             # a pass the board sent later than this is not a regular schedule
+
+
+def in_motion_residual(x, s, per_report):
+    """Per-frame distance of the cumulative travel from a whole report count, within segment s."""
+    a, b = s[0], s[-1] + 1
+    before = np.nanmedian(x[max(a - 10, 0):a + 1])
+    k = (x[a:b + 1] - before) / per_report
+    k = k[np.isfinite(k)]
+    return np.abs(k - np.round(k)) if len(k) else np.array([np.nan])
+
+
+def touches_edge(x, s):
+    seg = x[s[0]:s[-1] + 2]
+    seg = seg[np.isfinite(seg)]
+    return bool(len(seg) and (seg.min() <= EDGE_PT[0] or seg.max() >= EDGE_PT[1]))
 
 
 def noise_floor(t, x, video_s, times):
@@ -215,12 +261,15 @@ def press_sheets(mov, t, video_s, presses, park_xy, out):
     px, py = int(park_xy[0] * 2), int(park_xy[1] * 2)
     x0, y0 = max(px - 160, 0), max(py - 300, 0)
     plan = []
+    results = []
     for p in presses:
         a = int(np.searchsorted(t, video_s(p['start_us']) - 0.1))
         b = min(int(np.searchsorted(t, video_s(p['lift_us']) + 0.6)), len(t) - 1)
+        if a >= len(t) - 1:
+            results.append(dict(kind=p['kind'], error='press is after the end of the recording'))
+            continue
         plan.append((p, max(a - 30, 0), np.linspace(a, b, 8).astype(int)))
     frames = grab(mov, [i for _, base, picks in plan for i in [base, *picks]])
-    results = []
     for p, base, picks in plan:
         crops = [frames[i][y0:y0 + 420, x0:x0 + 320] for i in picks if i in frames]
         if not crops or base not in frames:
@@ -241,6 +290,8 @@ def main(argv):
     passes = [dict(p, mode=p.get('mode', 'bluetooth')) for p in schedule['passes']]
     times = pass_times(schedule, stats)
 
+    backend = open_movie(mov).getBackendName()
+    board = pass_board(schedule, stats)
     _, _, y_sparse, sign_sparse = track(mov, (150, 800), every=6)   # where the cursor mostly sits
     row = park_row(y_sparse)
     on_row = np.abs(y_sparse - row) <= 10
@@ -265,7 +316,7 @@ def main(argv):
     travel = []
     for i, p in enumerate(passes):
         if p['step_us'] == 15000:
-            s = window_segment(t, x, rough, *window(i))
+            s = window_segment(t, x, rough, *window(i), dx=p['dx'])
             if len(s):
                 a, b = s[0], s[-1] + 1
                 travel.append(abs(np.nanmedian(x[b:b + 11]) - np.nanmedian(x[max(a - 10, 0):a + 1])) / p['reports'])
@@ -276,13 +327,29 @@ def main(argv):
 
     rows = []
     for i, p in enumerate(passes):
-        s = window_segment(t, x, per_report, *window(i))
+        s = window_segment(t, x, per_report, *window(i), dx=p['dx'])
         if not len(s):
             rows.append(dict(mode=p['mode'], dx=p['dx'], step_ms=p['step_us'] / 1000, sent=p['reports'], missing=True))
             continue
         r = pass_row(t, x, s, p['dx'], p['step_us'], p['reports'], per_report)
         r['mode'] = p['mode']
         r['start_offset_s'] = round(float(t[s[0]] - window(i)[0]), 3)   # anchor sanity: should stay small
+        r['residual_p99'] = round(float(np.nanpercentile(in_motion_residual(x, s, per_report), 99)), 3)
+        r['edge_clipped'] = touches_edge(x, s)
+        late = board[i][2]
+        r['board_max_late_us'] = late
+        if late is not None and late > BOARD_LATE_US:
+            r.pop('displaced', None)                   # the board itself was irregular: not a link measurement
+            r['board_late'] = True
+        elif late is not None and not r['edge_clipped'] and not r['untracked'] and r['backwards'] == 0:
+            # Every report left the board on time. If none was lost, the pass's own travel per
+            # report gives its gain, and frame landing can be compared even when gain depends on rate.
+            a, b = s[0], s[-1] + 1
+            travel = abs(np.nanmedian(x[b:b + 11]) - np.nanmedian(x[max(a - 10, 0):a + 1]))
+            scaled = pass_row(t, x, s, p['dx'], p['step_us'], p['reports'], travel / p['reports'])
+            if 'displaced' in scaled:
+                r['displaced_all_delivered'] = scaled['displaced']
+                r['pass_gain_pt'] = round(travel / p['reports'], 4)
         rows.append(r)
     measured = [r for r in rows if not r.get('missing')]
     offsets = np.array([r['start_offset_s'] for r in measured])
@@ -291,21 +358,35 @@ def main(argv):
           f'cursor found in {int(np.isfinite(x).sum())}; one {schedule.get("pass_dx", 4)}-count report = {per_report:.3f} pt '
           f'(Bluetooth fit 1.896); {"dark" if polarity > 0 else "light"} pointer; {repaired} one-frame spikes repaired; '
           f'parked jitter {noise if noise is None else round(noise, 3)} pt rms; anchor {t0:.3f} s; '
-          f'{len(rows) - len(measured)} passes not found; board times {"from stats" if stats else "scheduled"}')
+          f'{len(rows) - len(measured)} passes not found; board times {"from stats" if stats else "scheduled"}; decoder {backend}')
     if span is not None and span > 0.2:
         print(f'WARNING: pass start offsets span {span:.3f} s; the schedule anchor may be wrong')
-    if noise is not None and noise > 0.25 * per_report:
-        print(f'WARNING: parked jitter is {noise / per_report:.0%} of one report; frame counts are near the noise floor')
+    flagged = [r for r in measured if r['residual_p99'] > RESIDUAL_FLAG or r['edge_clipped'] or r.get('board_late')]
+    for r in flagged:
+        why = ', '.join(k for k, v in (('residual', r['residual_p99'] > RESIDUAL_FLAG), ('edge', r['edge_clipped']),
+                                       ('board late', r.get('board_late'))) if v)
+        print(f"FLAG {r['mode']} {r['step_ms']:g} ms {r['dx']:+d}: {why} (residual p99 {r['residual_p99']})")
     print_rows(measured)
     by_step = {}
     for mode in dict.fromkeys(p['mode'] for p in passes):
         print(f'-- {mode}')
         by_step[mode] = {f'{k:g}ms': g for k, g in summarise([r for r in measured if r['mode'] == mode]).items()}
-    print('note: frozen/catch-up frames are meaningful at 15 ms only; compare 1 and 3 ms by "displaced"')
+    all_delivered = {}
+    for r in measured:
+        for d in r.get('displaced_all_delivered', []):
+            g = all_delivered.setdefault(f"{r['step_ms']:g}ms", {})
+            g[str(d)] = g.get(str(d), 0) + 1
+    for k, g in all_delivered.items():
+        n = sum(g.values())
+        print(f'every {k}, assuming every on-time report arrived: {n} reports, '
+              f'{100 * sum(v for d, v in g.items() if d != "0") / n:.1f}% off their frame {dict(sorted(g.items(), key=lambda kv: int(kv[0])))}')
+    print('note: frozen/catch-up frames are meaningful at 15 ms only. "displaced" needs every report seen; '
+          'at 1 and 3 ms rate-dependent gain can prevent that, so see the all-delivered line (board stats required).')
     presses = press_sheets(mov, t, video_s, schedule.get('presses', []), (float(np.nanmedian(x)), row), out)
     for p in presses:
         print(f"press {p['kind']}: orange {p.get('orange_before')} -> {p.get('orange_peak')} (review press-{p['kind']}.png)")
-    json.dump(dict(recording=mov, fps=round(fps, 2), park_row_pt=row, per_report_pt=round(per_report, 4),
+    json.dump(dict(recording=mov, decoder=backend, fps=round(fps, 2), park_row_pt=row, per_report_pt=round(per_report, 4),
+                   displaced_all_delivered=all_delivered,
                    parked_jitter_rms_pt=noise, pointer='dark' if polarity > 0 else 'light', spikes_repaired=repaired,
                    anchor_s=round(t0, 3), start_offset_span_s=span,
                    board_times='stats' if stats else 'scheduled', passes=rows, by_step=by_step, presses=presses),

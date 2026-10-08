@@ -81,8 +81,9 @@ static void releaseButtons() {
   }
 }
 
-// Plays every event at start + t_us, busy-waiting on micros(). Never bursts to catch up:
-// a late event is sent as soon as the endpoint frees, and its lateness is recorded.
+// Plays every event at start + t_us, busy-waiting on micros(). A late event is sent as soon
+// as the endpoint frees, so after a stall the overdue events go out back to back at the host's
+// poll rate. Every event's lateness is recorded; analysis drops passes sent more than 1 ms late.
 static Status play() {
   const uint32_t start = micros();
   for (uint16_t i = 0; i < kEventCount; ++i) {
