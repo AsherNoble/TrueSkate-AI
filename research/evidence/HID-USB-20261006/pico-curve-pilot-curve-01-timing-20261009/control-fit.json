@@ -1,0 +1,49 @@
+{
+  "bundle_sha256": "ce6623074b438c04e05347d05efe6e1a55c65eb78ac7f52c882088e5a7dee445",
+  "export_sha256": "b0e31294baceb9f725becacd88c2387f4aaacd864f46e8d48a29345cd25231ce",
+  "annotations": {
+    "control-start": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 786,
+      "boundary_confirmed": true,
+      "notes": "Preceding frame confirmed clear by operator in chat after export; original export confirmation checkbox was unchecked."
+    },
+    "control-middle": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 1746,
+      "boundary_confirmed": true,
+      "notes": "Preceding frame confirmed clear by operator in chat after export; original export confirmation checkbox was unchecked."
+    },
+    "control-end": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 2615,
+      "boundary_confirmed": true,
+      "notes": "Preceding frame confirmed clear by operator in chat after export; original export confirmation checkbox was unchecked."
+    }
+  },
+  "fit": {
+    "intercept_s": 10.2236613852459,
+    "rate": 0.9998907049180328,
+    "middle_error_s": 0.01674872131147609,
+    "accepted": false,
+    "uncertainty_s": 0.025082221311475195,
+    "control_onset_intervals_s": [
+      [
+        13.215,
+        13.231666999999998
+      ],
+      [
+        29.23,
+        29.246667
+      ],
+      [
+        43.711667,
+        43.728333
+      ]
+    ],
+    "source": "Pico accepted reports and visible contact; no WDA execution timestamp"
+  }
+}

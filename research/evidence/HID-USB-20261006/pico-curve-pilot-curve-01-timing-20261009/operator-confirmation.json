@@ -1,0 +1,14 @@
+{
+  "source_export_sha256": "2f19476a7473e4312cf2a9512fec42d53ac76a35594a0e99c29743ae7446c99c",
+  "answer": "Yes, all three previous frames were clear",
+  "question": "Did you verify that the immediately preceding frame showed no orange contact in all three clips?",
+  "affected_clips": [
+    "control-start",
+    "control-middle",
+    "control-end"
+  ],
+  "field_confirmed": "boundary_confirmed",
+  "recorded_at_utc": "2026-10-08T13:23:10.740918+00:00",
+  "original_export": "preserved without edits",
+  "confirmed_export_sha256": "41ef91f4cb9c5eaf904aee077008afeae3db3e5155923487f7cbd931068ae96d"
+}

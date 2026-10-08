@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-10-08. Behavioural cloning is the development direction.
+Updated 2026-10-09. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -345,8 +345,14 @@ also completed (3,604 frames, 59.91 effective fps, clean recorder/attachment
 cleanup), with all 1,684 reports accepted, no clipping and the same maximum
 board lateness. The authorized one-gain/two-curve recording workload is complete.
 Original movies and timing sectors have verified local copies; sealed native
-timing-control reviews are prepared for both batches, with human marks pending.
-There is no curve-fidelity result yet: capture and board completion
+timing-control reviews are prepared for both batches. Batch 1's human touch-down
+marks and operator-confirmed clear preceding frames passed source integrity.
+Its held-out middle residual is 16.7487 ms against a 16.667 ms frame limit,
+narrowly failing timing qualification (81.7 microseconds beyond the frozen gate;
+25.0822 ms carried clock uncertainty). Its curve fidelity remains inconclusive,
+with no curve score emitted, individual phase fit or gate relaxation. This does not identify USB jitter
+as the cause. Batch 2's human timing review is pending. There is no qualified
+curve-fidelity result yet: capture and board completion
 do not establish visible contact timing/path accuracy. Native-PTS review uses
 Pico start/end controls and a held-out middle
 control, retaining clock/position uncertainty. The operator kept the 150 ms
@@ -356,6 +362,7 @@ requirements and collection-off remain unchanged.
 [Gain evidence](evidence/HID-USB-20261006/pico-curve-pilot-gain-01-20261008),
 [first curve capture](evidence/HID-USB-20261006/pico-curve-pilot-curve-01-20261008),
 [second curve capture/review preparation](evidence/HID-USB-20261006/pico-curve-pilot-curve-02-20261008),
+[first timing review](evidence/HID-USB-20261006/pico-curve-pilot-curve-01-timing-20261009),
 [pilot workflow](../hardware/pico_curve_pilot/README.md).
 
 AssistiveTouch supports preset and recorded multi-finger gestures. Independent
