@@ -354,8 +354,10 @@ with no curve score emitted, individual phase fit or gate relaxation. This does 
 as the cause. Batch 2's verified human control review passes the held-out middle
 gate: 14.1529 ms against 16.667 ms, with 22.4864 ms carried clock uncertainty.
 Its six native-frame curves are open for position/boundary/interruption review
-using that fixed clock. There is no qualified curve-fidelity result or twelve-curve
-pass yet: timing qualification, capture and board completion do not establish
+using that fixed clock. The operator marks AssistiveTouch cursor centres for
+position; cursor accuracy alone does not establish instantaneous game-contact
+fidelity, and orange-trail confirmation remains independent. There is no qualified
+curve-fidelity result or twelve-curve pass yet: timing qualification, capture and board completion do not establish
 visible contact/path accuracy. Native-PTS review uses
 Pico start/end controls and a held-out middle
 control, retaining clock/position uncertainty. The operator kept the 150 ms
