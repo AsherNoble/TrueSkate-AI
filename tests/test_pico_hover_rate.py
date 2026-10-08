@@ -25,6 +25,14 @@ def test_schedule_is_ordered_bounded_and_fits_the_stats_sector():
     assert {(p['step_us'], p['reports']) for p in passes if p['mode'] == 'usb1ms'} == {(1000, 60)}
 
 
+def test_fast_passes_leave_headroom_for_acceleration_before_the_right_edge():
+    _, passes, _, _ = sched.build()
+    for p in passes:
+        reach = p['reports'] * hp.gain_distance(abs(p['dx']))
+        assert hp.PARK_POINT[0] + 2.5 * reach <= 414 or p['step_us'] == 15000
+        assert hp.PARK_POINT[0] + 2.0 * reach <= 414
+
+
 def test_hover_passes_never_press_and_return_to_the_park_column():
     events, passes, _, _ = sched.build()
     for p in passes:
@@ -89,12 +97,20 @@ def test_stats_summarise_lateness_and_host_poll_interval():
     data, schedule = blob(late)
     stats = read_stats.parse(data, schedule)
     assert stats['status'] == 'done' and stats['not_ready_waits'] == 7
-    summary = read_stats.summarise(stats)
+    summary = read_stats.summarise(stats, schedule)
     assert abs(summary['by_step']['1ms']['send_interval_us']['p50'] - 3000) <= read_stats.LATE_UNIT_US
     assert summary['by_step']['15ms']['lateness_us']['max'] == 0
     longest = max(p['reports'] for p in one_ms)
     assert abs(summary['by_step']['1ms']['lateness_us']['max'] - (longest - 1) * 2000) <= read_stats.LATE_UNIT_US
     assert (longest - 1) * 2000 > 65_535                       # beyond a microsecond uint16
+
+
+def test_stats_summary_refuses_a_changed_schedule_py():
+    events, *_ = sched.build()
+    data, schedule = blob([0] * len(events), digest='a' * 16)
+    stats = read_stats.parse(data, schedule)
+    with pytest.raises(ValueError, match='no longer builds'):
+        read_stats.summarise(stats, schedule)
 
 
 def test_stats_reject_other_schedules_and_report_unsent_events():
@@ -106,7 +122,7 @@ def test_stats_reject_other_schedules_and_report_unsent_events():
     data, schedule = blob(late, status=4, sent=10)
     stats = read_stats.parse(data, schedule)
     assert stats['status'] == 'host lost' and stats['events_sent'] == 10
-    assert read_stats.summarise(stats)['by_step'] == {}       # no pass was fully sent
+    assert read_stats.summarise(stats, schedule)['by_step'] == {}   # no pass was fully sent
 
 
 def test_measure_finds_row_anchor_and_windows():
@@ -121,47 +137,82 @@ def test_measure_finds_row_anchor_and_windows():
     seg = measure.window_segment(t, x, 1.9, t0, t0 + 0.3)
     assert seg[0] == 100 and seg[-1] == 116
     assert len(measure.window_segment(t, x, 1.9, t0 + 3, t0 + 3.3)) == 0
+    x[160] = x[159] + 30                                      # a one-frame tracking glitch later in the window
+    seg = measure.window_segment(t, x, 1.9, t0, t0 + 2)
+    assert seg[0] == 100 and seg[-1] == 116
 
 
-def synthetic_movie(path, schedule, per_report=1.9, latency_s=0.0213, lead_s=1.0, fps=60):  # no exact frame ties
-    """Grey floor with a dark cursor disc on the park row, moved by the schedule's passes."""
+def synthetic_movie(path, schedule, per_report=1.9, latency_s=0.0213, lead_s=1.0, fps=60, floor=140, disc=80):
+    """Floor with an antialiased cursor disc at sub-pixel positions on the park row, moved by the passes.
+
+    latency_s is not commensurate with 15 ms or 60 fps, so no report lands exactly on a frame edge.
+    """
     import cv2
     passes = schedule['passes']
     t_end = lead_s + passes[-1]['end_us'] / 1e6 + 1.5
     writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*'mp4v'), fps, (828, 1792))
     rng = np.random.default_rng(1)
-    floor = (140 + rng.normal(0, 3, (1792, 828))).clip(0, 255).astype(np.uint8)
+    base = (floor + rng.normal(0, 3, (1792, 828))).clip(0, 255).astype(np.uint8)
     for k in range(int(t_end * fps)):
         now = k / fps - lead_s - latency_s
         x = 109.0
         for p in passes:
             done = np.clip(np.floor((now * 1e6 - p['start_us']) / p['step_us']) + 1, 0, p['reports'])
             x += np.sign(p['dx']) * per_report * done
-        img = cv2.cvtColor(floor, cv2.COLOR_GRAY2BGR)
-        cv2.circle(img, (int(round(x * 2)), 736), 17, (80, 80, 80), -1)
+        img = cv2.cvtColor(base, cv2.COLOR_GRAY2BGR)
+        cv2.circle(img, (int(round(x * 2 * 16)), 736 * 16), 17 * 16, (disc, disc, disc), -1, cv2.LINE_AA, 4)
         writer.write(img)
     writer.release()
 
 
-def test_measure_recovers_passes_from_a_synthetic_recording(tmp_path):
-    import json
+def synthetic_schedule():
     passes, t = [], 500_000
-    for dx, step, n in [(4, 3000, 100), (-4, 3000, 100), (4, 1000, 60), (-4, 1000, 60), (4, 15000, 30), (-4, 15000, 30)]:
+    for dx, step, n in [(4, 3000, 60), (-4, 3000, 60), (4, 1000, 60), (-4, 1000, 60)] + [(4, 15000, 30), (-4, 15000, 30)] * 3:
         passes.append(dict(mode='rates', dx=dx, step_us=step, reports=n, start_us=t, end_us=t + step * n))
         t += step * n + 600_000
-    schedule = dict(schedule_hash='0' * 16, n_events=0, pass_dx=4, passes=passes,
-                    presses=[dict(kind='tap', start_us=t, lift_us=t + 50_000)])
+    return dict(schedule_hash='0' * 16, n_events=0, pass_dx=4, passes=passes,
+                presses=[dict(kind='tap', start_us=t, lift_us=t + 50_000)])
+
+
+@pytest.mark.parametrize('floor, disc', [(140, 80), (60, 130)])     # dark pointer on light floor, and the reverse
+def test_measure_recovers_a_regular_link_exactly(tmp_path, floor, disc):
+    import json
+    schedule = synthetic_schedule()
     (tmp_path / 'schedule.json').write_text(json.dumps(schedule))
-    synthetic_movie(tmp_path / 'movie.mp4', schedule)
+    synthetic_movie(tmp_path / 'movie.mp4', schedule, floor=floor, disc=disc)
     measure.main([str(tmp_path / 'movie.mp4'), str(tmp_path / 'schedule.json'), str(tmp_path / 'out')])
     result = json.loads((tmp_path / 'out' / 'measure.json').read_text())
     assert result['park_row_pt'] == pytest.approx(368, abs=5)
-    assert result['per_report_pt'] == pytest.approx(1.9, rel=0.03)
+    assert result['per_report_pt'] == pytest.approx(1.9, rel=0.02)
+    assert result['parked_jitter_rms_pt'] < 0.2
     rows = result['passes']
-    assert len(rows) == 6 and not any(r.get('missing') for r in rows)
-    for r, p in zip(rows, passes):
-        assert r['delivered'] == pytest.approx(p['reports'], abs=1)
-    fifteen = result['by_step']['rates']['15ms']
-    assert fifteen['displaced_pct'] == 0                      # a perfectly regular synthetic link
-    assert (tmp_path / 'out' / 'press-tap.png').exists()
+    assert len(rows) == len(schedule['passes']) and not any(r.get('missing') for r in rows)
+    for r, p in zip(rows, schedule['passes']):
+        assert r['delivered'] == pytest.approx(p['reports'], abs=0.5)
+    for step, g in result['by_step']['rates'].items():
+        assert g['displaced'] and g['displaced_pct'] == 0, step     # a perfectly regular link, at every spacing
     assert result['start_offset_span_s'] < 0.05
+    assert result['spikes_repaired'] == 0 and result['pointer'] == ('dark' if disc < floor else 'light')
+    assert (tmp_path / 'out' / 'press-tap.png').exists()
+
+
+def test_spike_repair_fixes_one_frame_misses_but_not_real_motion():
+    x = np.array([100.0, 101, 102, 190, 104, 105, 140, 175, 210, 211])
+    fixed, n = measure.repair_spikes(x)
+    assert n == 1 and fixed[3] == 103
+    assert list(fixed[6:]) == [140, 175, 210, 211]           # a fast pass keeps going: not a spike
+
+
+def test_board_times_from_stats_shift_the_windows():
+    events, passes, _, _ = sched.build()
+    schedule = dict(schedule_hash=sched.schedule_hash(events), passes=passes)
+    late = [0] * len(events)
+    t = np.array([e[0] for e in events])
+    idx = np.nonzero(t >= passes[3]['start_us'])[0]
+    for i in idx:
+        late[i] = 400_000                                    # a stall before pass 3 delays everything after it
+    times = measure.pass_times(schedule, dict(lateness_us=late))
+    assert times[2] == (passes[2]['start_us'], passes[2]['end_us'])
+    assert times[3][0] == passes[3]['start_us'] + 400_000
+    with pytest.raises(ValueError):
+        measure.pass_times(dict(schedule, schedule_hash='0' * 16), dict(lateness_us=late))

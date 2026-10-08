@@ -32,7 +32,7 @@ struct __attribute__((packed)) Header {
 static_assert(sizeof(Header) == 32, "header layout");
 static_assert(sizeof(Header) + 2u * kEventCount <= 4096u, "stats must fit one sector");
 static constexpr uint32_t kMountTimeoutMs = 60000;
-static constexpr uint32_t kSendTimeoutUs = 100000;
+static constexpr uint32_t kSendTimeoutUs = 1000000;   // a host that stops polling this long is gone
 
 static constexpr uint32_t fnv1a(const char *s, uint32_t h = 2166136261u) {
   return *s ? fnv1a(s + 1, (h ^ static_cast<uint8_t>(*s)) * 16777619u) : h;
@@ -63,6 +63,23 @@ static void recordLateness(uint16_t index, uint32_t lateUs) {
 }
 
 static bool hostPresent() { return TinyUSBDevice.mounted() && !TinyUSBDevice.suspended(); }
+
+// Same GET_REPORT answer as pico_mouse_smoke, the build iOS accepted: a neutral report.
+static uint16_t getReport(uint8_t reportId, hid_report_type_t reportType,
+                          uint8_t *buffer, uint16_t requestedLength) {
+  if (reportId != 0 || reportType != HID_REPORT_TYPE_INPUT || requestedLength < 3) return 0;
+  buffer[0] = buffer[1] = buffer[2] = 0;
+  return 3;
+}
+
+// Best effort to never leave a press held: wait (bounded) for the endpoint, then lift.
+static void releaseButtons() {
+  const uint8_t neutral[] = {0, 0, 0};
+  const uint32_t start = micros();
+  while (hostPresent() && micros() - start < 200000u) {
+    if (mouse.ready() && mouse.sendReport(0, neutral, sizeof(neutral))) return;
+  }
+}
 
 // Plays every event at start + t_us, busy-waiting on micros(). Never bursts to catch up:
 // a late event is sent as soon as the endpoint frees, and its lateness is recorded.
@@ -120,6 +137,7 @@ void setup() {
   TinyUSBDevice.setProductDescriptor("TrueSkate Pico Rate Probe");
   TinyUSBDevice.setConfigurationAttribute(0x80);  // Bus powered, no wakeup.
   TinyUSBDevice.setConfigurationMaxPower(100);
+  mouse.setReportCallback(getReport, nullptr);
   if (!mouse.begin()) {
     state = State::Failed;
     return;
@@ -148,11 +166,7 @@ void loop() {
     } else if (now - mountMs >= kLeadMs) {
       digitalWrite(LED_BUILTIN, HIGH);  // Solid while playing.
       header.status = play();
-      if (header.status != kDone) {
-        // Release any held button before reporting failure.
-        const uint8_t neutral[] = {0, 0, 0};
-        if (mouse.ready()) mouse.sendReport(0, neutral, sizeof(neutral));
-      }
+      if (header.status != kDone) releaseButtons();
       saveStats();
       state = header.status == kDone ? State::Done : State::Failed;
     }

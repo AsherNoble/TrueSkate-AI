@@ -278,38 +278,60 @@ class Operator:
             logging.getLogger().removeHandler(handler)
         return failures[0] if failures else None
 
-    def alert(self, message, priority='high', speech=None):
-        if not self.enabled:
-            return
+    def show(self, message, speech=None):
+        """Terminal banner, bell and speech: immediate, no network."""
         print('\n' + '#' * 64 + f'\n##  {message}\n' + '#' * 64 + '\a', flush=True)
         if speech:
             subprocess.Popen(['/usr/bin/say', speech], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def alert(self, message, priority='high', speech=None):
+        """Banner and speech first, then ntfy (blocking); the outcome is logged as an event."""
+        if not self.enabled:
+            return
+        self.show(message, speech)
         self.event('operator-alert', message=message, ntfy_error=self.ntfy(message, priority))
 
-    def wait_ready(self, ready_file, timeout_s):
-        """Enter on the Terminal (if any) or the ready file; False on timeout."""
+    def prompt_ready(self, message, speech, ready_file, timeout_s, priority='high'):
+        """Ask for readiness; True once Enter is pressed on the Terminal (or ready_file appears).
+
+        The Terminal is opened and flushed before the prompt is shown, so any Enter pressed
+        after the prompt counts and nothing pressed before it does. ntfy goes out on a
+        thread, so a slow send never delays reading Enter. Without --operator, only the
+        ready file counts.
+        """
         import select
-        deadline = time.monotonic() + timeout_s
+        import threading
         tty = None
         if self.enabled:
             try:
                 import termios
                 tty = open('/dev/tty')
-                termios.tcflush(tty, termios.TCIFLUSH)   # an earlier stray Enter must not count
+                termios.tcflush(tty, termios.TCIFLUSH)
             except (OSError, ImportError):
                 tty = None
+            self.show(message, speech)
+            sent = threading.Thread(target=lambda: self.event(
+                'operator-alert', message=message, ntfy_error=self.ntfy(message, priority)), daemon=True)
+            sent.start()
+            print('Waiting for Enter in this Terminal...' if tty else
+                  f'No Terminal attached: create {ready_file} to continue.', flush=True)
+        deadline = time.monotonic() + timeout_s
         try:
             while time.monotonic() < deadline:
                 if ready_file.exists():
-                    return True
-                if tty and select.select([tty], [], [], 0.5)[0]:
+                    break
+                if tty is not None and select.select([tty], [], [], 0.5)[0]:
                     tty.readline()
-                    return True
-                if not tty:
+                    break
+                if tty is None:
                     time.sleep(0.5)
-            return False
+            else:
+                return False
+            if self.enabled:
+                print('Ready received.', flush=True)
+            return True
         finally:
-            if tty:
+            if tty is not None:
                 tty.close()
 
 
@@ -602,12 +624,13 @@ class Coordinator:
                 validate_action_timing_report(timing_report, expected_revision=REVISION, expected_count=10)
             self.wait_until(began+seconds)
             mov, stop = recording.stop()
-            self.prerequisites(folder, 'after')
-            result['lifecycle'] = 'passed'
             # Movie audit and calibration are local and slow on this rig; run them after the
-            # tunnel and WDA are released so capture stays within the helper lifetime.
+            # tunnel and WDA are released so capture stays within the helper lifetime. Queue
+            # before the after-check, so a scene changed by the recording keeps its movie.
             self.pending.append({'result': result, 'folder': folder, 'mov': mov, 'stop': stop,
                                  'fps': fps, 'samples': samples, 'events': events})
+            self.prerequisites(folder, 'after')
+            result['lifecycle'] = 'passed'
             self.event('case-recorded', case=name)
         except BaseException as exc:
             result['error'] = str(exc)
@@ -719,9 +742,9 @@ class Coordinator:
                 self.case('04-minute-60', 60, 60, samples)
             if self.a.pico_hover:
                 self.event('waiting-pico', instruction='Keep Pico disconnected; press Enter (or create pico-ready) when ready to plug after recording-started')
-                self.operator.alert('PICO STEP NEXT: Pico unplugged and in hand? Press Enter in this Terminal when ready.',
-                                    'high', 'Pico step next. Press enter when ready.')
-                if not self.operator.wait_ready(self.out/'pico-ready', 300):
+                if not self.operator.prompt_ready(
+                        'PICO STEP NEXT: Pico unplugged and in hand? Press Enter in this Terminal when ready.',
+                        'Pico step next. Press enter when ready.', self.out/'pico-ready', 300):
                     raise RuntimeError('Pico readiness deadline; no recording retry')
                 self.case('05-pico-hover-60', 60, self.a.pico_seconds, on_recording=lambda: self.operator.alert(
                     'PLUG THE PICO IN NOW', 'urgent', 'Plug the Pico in now'))

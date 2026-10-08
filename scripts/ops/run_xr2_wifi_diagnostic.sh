@@ -15,13 +15,22 @@ test ! -e "$OUT" || { echo "output $OUT exists"; exit 1; }
 exec > >(tee -a "$LOG") 2>&1
 
 APPIUM_PID=""
+# Spoken prompts need sound; the rig is often muted. Restore the operator's setting on exit.
+VOLUME=$(osascript -e 'output volume of (get volume settings)' 2>/dev/null)
+MUTED=$(osascript -e 'output muted of (get volume settings)' 2>/dev/null)
 restore() {
   if [ -n "$APPIUM_PID" ]; then kill "$APPIUM_PID" 2>/dev/null; wait "$APPIUM_PID" 2>/dev/null; fi
+  if [ -n "$VOLUME" ]; then osascript -e "set volume output volume $VOLUME" >/dev/null 2>&1; fi
+  if [ "$MUTED" = true ]; then osascript -e 'set volume with output muted' >/dev/null 2>&1; fi
   launchctl bootstrap "gui/$(id -u)" "$PLIST" 2>&1 || true
   launchctl print "gui/$(id -u)/com.trueskate.services" | grep -E "^\s*state" | head -1
   echo "services restored $(date)"
 }
 trap restore EXIT
+osascript -e 'set volume output volume 70 without output muted' >/dev/null 2>&1 \
+  && echo "sound on for prompts (was volume ${VOLUME:-?}, muted ${MUTED:-?})" \
+  || echo "WARNING: could not unmute; spoken prompts may be silent"
+say "Audio check" &
 
 launchctl bootout "gui/$(id -u)/com.trueskate.services" 2>&1 && echo "services paused $(date)"
 sleep 2

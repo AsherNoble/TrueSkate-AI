@@ -4,7 +4,7 @@ One source for the firmware header and the measurement. It mirrors
 hardware/hid_pointer/hover_rate_probe.py so results compare with HID-POINTER-20261004
 section 8:
   home, park on clear floor;
-  'rates': 4-count reports every 3, 1 and 15 ms, there and back (100, 60, 30 reports);
+  'rates': 4-count reports every 3, 1 and 15 ms, there and back (60, 60, 30 reports);
   'stall': 10 passes of 30 reports one per 15 ms;
   'usb1ms': 10 passes of 60 reports one per 1 ms (frame regularity at USB rate);
   re-home, re-park, then press tests at the park point: a tap, a 10-report upward drag
@@ -25,9 +25,11 @@ from trueskate_ai.control.hid_pointer import HOME_REPORTS, PARK_POINT, PARK_REPO
 STEP_US = 15_000
 GAP_US = 600_000
 PASS_DX = 4
-RATES = [(4, 3000, 100), (-4, 3000, 100), (4, 1000, 60), (-4, 1000, 60), (4, 15000, 30), (-4, 15000, 30)]
+# 60 reports (114 pt) per fast pass leave ~2.6x headroom for rate-dependent acceleration before
+# the right edge (park x 109 of 414 pt). The Bluetooth probe sent 100 at 3 ms; compare ratios.
+RATES = [(4, 3000, 60), (-4, 3000, 60), (4, 1000, 60), (-4, 1000, 60), (4, 15000, 30), (-4, 15000, 30)]
 STALL = [(4, 15000, 30), (-4, 15000, 30)] * 5
-USB1MS = [(4, 1000, 60), (-4, 1000, 60)] * 5      # 114 pt each way: room for ~2.6x acceleration before the edge
+USB1MS = [(4, 1000, 60), (-4, 1000, 60)] * 5
 DRAG = (0, -8, 10)                 # counts per report, reports
 TAP_HOLD_US = 50_000
 LIFT_DELAY_US = 1_000

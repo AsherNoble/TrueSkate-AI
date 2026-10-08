@@ -284,6 +284,64 @@ def test_operator_alert_uses_all_channels_only_when_enabled(monkeypatch, capsys)
 def test_operator_ready_by_file_and_times_out(tmp_path):
     op = diag.Operator(lambda *a, **k: None, False)
     ready = tmp_path/'pico-ready'
-    assert op.wait_ready(ready, 0.6) is False
+    assert op.prompt_ready('prompt', None, ready, 0.6) is False
     ready.touch()
-    assert op.wait_ready(ready, 5) is True
+    assert op.prompt_ready('prompt', None, ready, 5) is True
+
+
+def test_operator_enter_counts_only_after_the_prompt_even_while_ntfy_sends(tmp_path, monkeypatch, capsys):
+    import os
+    import threading
+    import time as _time
+    master, slave = os.openpty()
+    monkeypatch.setattr(diag, 'open', lambda path, *a, **k: os.fdopen(os.dup(slave), 'r'), raising=False)
+    monkeypatch.setattr(diag.subprocess, 'Popen', lambda *a, **k: None)
+    events = []
+    op = diag.Operator(lambda name, **kw: events.append(name), True)
+    sending = threading.Event()
+    def slow_ntfy(message, priority):
+        sending.set()
+        _time.sleep(1.5)
+        return None
+    monkeypatch.setattr(op, 'ntfy', slow_ntfy)
+    os.write(master, b'\n')                                 # stray Enter before the prompt
+    def operator():
+        sending.wait(5)
+        os.write(master, b'\n')                             # Enter while ntfy is still sending
+    threading.Thread(target=operator, daemon=True).start()
+    began = _time.monotonic()
+    assert op.prompt_ready('PICO STEP NEXT', None, tmp_path/'never', 10) is True
+    assert _time.monotonic() - began < 1.4                  # did not wait for the slow ntfy
+    out = capsys.readouterr().out
+    assert 'Waiting for Enter' in out and 'Ready received.' in out
+    os.close(master); os.close(slave)
+
+
+def test_operator_stray_enter_alone_does_not_count(tmp_path, monkeypatch):
+    import os
+    master, slave = os.openpty()
+    monkeypatch.setattr(diag, 'open', lambda path, *a, **k: os.fdopen(os.dup(slave), 'r'), raising=False)
+    monkeypatch.setattr(diag.subprocess, 'Popen', lambda *a, **k: None)
+    op = diag.Operator(lambda *a, **k: None, True)
+    monkeypatch.setattr(op, 'ntfy', lambda message, priority: None)
+    os.write(master, b'\n')
+    assert op.prompt_ready('PICO STEP NEXT', None, tmp_path/'never', 1.0) is False
+    os.close(master); os.close(slave)
+
+
+def test_failed_after_check_still_queues_the_recorded_movie(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    coord = object.__new__(diag.Coordinator)
+    coord.out, coord.events = tmp_path, tmp_path/'events.jsonl'
+    coord.a = SimpleNamespace(tunnel_python=None)
+    coord.report, coord.pending, coord.timing = {'cases': []}, [], None
+    coord.driver = Driver()
+    def prerequisites(folder, phase):
+        if phase == 'after':
+            raise RuntimeError('Gameplay guard rejected current scene')
+    monkeypatch.setattr(coord, 'prerequisites', prerequisites)
+    monkeypatch.setattr(coord, 'wait_until', lambda deadline: None)
+    with pytest.raises(RuntimeError, match='Gameplay guard'):
+        coord.case('05-pico-hover-60', 60, 1)
+    assert len(coord.pending) == 1 and coord.pending[0]['mov'].read_bytes() == b'fixture'
+    assert coord.report['cases'][0]['lifecycle'] == 'failed'

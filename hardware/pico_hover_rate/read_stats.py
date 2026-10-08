@@ -16,7 +16,7 @@ import sys
 
 import numpy as np
 
-from schedule import build
+from schedule import build, schedule_hash
 
 HEADER = struct.Struct('<4sIIHHHHIII')
 STATUS = {1: 'armed (did not finish)', 2: 'done', 3: 'no mount', 4: 'host lost', 5: 'send timeout'}
@@ -39,8 +39,10 @@ def parse(blob: bytes, schedule: dict) -> dict:
                 lateness_us=late.tolist())
 
 
-def summarise(stats: dict) -> dict:
+def summarise(stats: dict, schedule: dict) -> dict:
     events, passes, _, _ = build()
+    if schedule_hash(events) != schedule['schedule_hash']:
+        raise ValueError('schedule.py no longer builds the schedule in schedule.json')
     late = np.array(stats['lateness_us'])
     sent = late >= 0
     t = np.array([e[0] for e in events])
@@ -66,7 +68,7 @@ def main(argv):
     blob = open(argv[0], 'rb').read()
     schedule = json.load(open(argv[1]))
     stats = parse(blob, schedule)
-    summary = summarise(stats)
+    summary = summarise(stats, schedule)
     print(json.dumps(summary, indent=1))
     if len(argv) > 2:
         json.dump(dict(stats, summary=summary), open(argv[2], 'w'), indent=1)

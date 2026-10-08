@@ -1,224 +1,224 @@
 {
- "schedule_hash": "4efd2d9a323ed50d",
+ "schedule_hash": "58d95a76970be6d1",
  "lead_ms": 8000,
- "n_events": 1447,
- "duration_us": 30032000,
+ "n_events": 1367,
+ "duration_us": 29792000,
  "pass_dx": 4,
  "passes": [
   {
    "mode": "rates",
    "dx": 4,
    "step_us": 3000,
-   "reports": 100,
+   "reports": 60,
    "start_us": 1875000,
-   "end_us": 2175000
+   "end_us": 2055000
   },
   {
    "mode": "rates",
    "dx": -4,
    "step_us": 3000,
-   "reports": 100,
-   "start_us": 2775000,
-   "end_us": 3075000
+   "reports": 60,
+   "start_us": 2655000,
+   "end_us": 2835000
   },
   {
    "mode": "rates",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 3675000,
-   "end_us": 3735000
+   "start_us": 3435000,
+   "end_us": 3495000
   },
   {
    "mode": "rates",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 4335000,
-   "end_us": 4395000
+   "start_us": 4095000,
+   "end_us": 4155000
   },
   {
    "mode": "rates",
    "dx": 4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 4995000,
-   "end_us": 5445000
+   "start_us": 4755000,
+   "end_us": 5205000
   },
   {
    "mode": "rates",
    "dx": -4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 6045000,
-   "end_us": 6495000
+   "start_us": 5805000,
+   "end_us": 6255000
   },
   {
    "mode": "stall",
    "dx": 4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 7095000,
-   "end_us": 7545000
+   "start_us": 6855000,
+   "end_us": 7305000
   },
   {
    "mode": "stall",
    "dx": -4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 8145000,
-   "end_us": 8595000
+   "start_us": 7905000,
+   "end_us": 8355000
   },
   {
    "mode": "stall",
    "dx": 4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 9195000,
-   "end_us": 9645000
+   "start_us": 8955000,
+   "end_us": 9405000
   },
   {
    "mode": "stall",
    "dx": -4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 10245000,
-   "end_us": 10695000
+   "start_us": 10005000,
+   "end_us": 10455000
   },
   {
    "mode": "stall",
    "dx": 4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 11295000,
-   "end_us": 11745000
+   "start_us": 11055000,
+   "end_us": 11505000
   },
   {
    "mode": "stall",
    "dx": -4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 12345000,
-   "end_us": 12795000
+   "start_us": 12105000,
+   "end_us": 12555000
   },
   {
    "mode": "stall",
    "dx": 4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 13395000,
-   "end_us": 13845000
+   "start_us": 13155000,
+   "end_us": 13605000
   },
   {
    "mode": "stall",
    "dx": -4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 14445000,
-   "end_us": 14895000
+   "start_us": 14205000,
+   "end_us": 14655000
   },
   {
    "mode": "stall",
    "dx": 4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 15495000,
-   "end_us": 15945000
+   "start_us": 15255000,
+   "end_us": 15705000
   },
   {
    "mode": "stall",
    "dx": -4,
    "step_us": 15000,
    "reports": 30,
-   "start_us": 16545000,
-   "end_us": 16995000
+   "start_us": 16305000,
+   "end_us": 16755000
   },
   {
    "mode": "usb1ms",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 17595000,
-   "end_us": 17655000
+   "start_us": 17355000,
+   "end_us": 17415000
   },
   {
    "mode": "usb1ms",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 18255000,
-   "end_us": 18315000
+   "start_us": 18015000,
+   "end_us": 18075000
   },
   {
    "mode": "usb1ms",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 18915000,
-   "end_us": 18975000
+   "start_us": 18675000,
+   "end_us": 18735000
   },
   {
    "mode": "usb1ms",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 19575000,
-   "end_us": 19635000
+   "start_us": 19335000,
+   "end_us": 19395000
   },
   {
    "mode": "usb1ms",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 20235000,
-   "end_us": 20295000
+   "start_us": 19995000,
+   "end_us": 20055000
   },
   {
    "mode": "usb1ms",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 20895000,
-   "end_us": 20955000
+   "start_us": 20655000,
+   "end_us": 20715000
   },
   {
    "mode": "usb1ms",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 21555000,
-   "end_us": 21615000
+   "start_us": 21315000,
+   "end_us": 21375000
   },
   {
    "mode": "usb1ms",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 22215000,
-   "end_us": 22275000
+   "start_us": 21975000,
+   "end_us": 22035000
   },
   {
    "mode": "usb1ms",
    "dx": 4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 22875000,
-   "end_us": 22935000
+   "start_us": 22635000,
+   "end_us": 22695000
   },
   {
    "mode": "usb1ms",
    "dx": -4,
    "step_us": 1000,
    "reports": 60,
-   "start_us": 23535000,
-   "end_us": 23595000
+   "start_us": 23295000,
+   "end_us": 23355000
   }
  ],
  "presses": [
   {
    "kind": "tap",
-   "start_us": 26070000,
-   "lift_us": 26120000
+   "start_us": 25830000,
+   "lift_us": 25880000
   },
   {
    "kind": "drag15ms",
@@ -226,8 +226,8 @@
    "reports": 10,
    "dx": 0,
    "dy": -8,
-   "start_us": 27120000,
-   "lift_us": 27271000
+   "start_us": 26880000,
+   "lift_us": 27031000
   },
   {
    "kind": "drag1ms",
@@ -235,8 +235,8 @@
    "reports": 10,
    "dx": 0,
    "dy": -8,
-   "start_us": 29021000,
-   "lift_us": 29032000
+   "start_us": 28781000,
+   "lift_us": 28792000
   }
  ],
  "sections": [
@@ -247,8 +247,8 @@
   },
   {
    "kind": "repark",
-   "start_us": 24195000,
-   "end_us": 26070000
+   "start_us": 23955000,
+   "end_us": 25830000
   }
  ]
 }

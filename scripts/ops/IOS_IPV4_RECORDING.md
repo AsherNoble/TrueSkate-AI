@@ -34,6 +34,14 @@ root daemon health and an empty default tunnel registry without creating a TUN.
   --tunnel-python /ABS/PY313/bin/python   # Wi-Fi RemotePairing route
 ```
 
+For live runs use `scripts/ops/run_xr2_wifi_diagnostic.sh <run-name> [flags]` from the rig's
+desktop Terminal. It pauses `com.trueskate.services`, runs Appium on 4726, unmutes the
+rig for spoken prompts, passes `--admin-prompt --operator --tunnel-python ...`, and
+restores the services agent and sound on exit. Prompts come from the coordinator itself,
+on three channels: a Terminal banner, `say`, and ntfy. ntfy dedupe is off, because the
+repo helper's one-hour dedupe silently dropped a repeated prompt in run 10; a failed send
+is logged as an `operator-alert` event.
+
 In Wi-Fi mode, testmanagerd attachments are listed and pulled through the tunnel
 (`ios_wifi_attachments.py`) and deleted with the remotexpc call Appium uses.
 `--delete-leftover UUID PRESERVED_MOV` removes one named attachment left by an
@@ -74,11 +82,14 @@ Cases run sequentially and abort on the first failure:
 2. Five seconds at requested 60 fps, no gestures; checks repeat lifecycle cleanup.
 3. One minute at 30 fps with eight fixed linear drags, seed 20261006.
 4. One minute at 60 fps using the identical drags.
-5. Optional 45-second 60 fps Pico hover movie. At `waiting-pico`, confirm the
-   operator is ready, then create `pico-ready` in the output folder. Only after
-   `recording-started` for this case should the operator plug in the Pico.
-   Save insertion timing separately. Late insertion is inconclusive; do not
-   automatically retry or infer input acceptance from charging.
+5. Optional Pico movie at 60 fps (`--pico-hover`; `--pico-seconds`, default 45;
+   `--pico-only` skips cases 1-4). At `waiting-pico` the operator is prompted and
+   presses Enter in the Terminal when ready, or `pico-ready` is created in the output
+   folder when no Terminal is attached. The Terminal is flushed before the prompt.
+   "PLUG THE PICO IN NOW" follows `recording-started`. Save insertion timing
+   separately. Late insertion is inconclusive; do not automatically retry or infer
+   input acceptance from charging. A movie that was stopped and pulled is audited even
+   if the post-recording check then fails.
 
 Every recording requires foreground/gameplay/geometry checks, a live diagnostic
 registry entry, the ordinary root daemon, an idle recorder and a supported dry
