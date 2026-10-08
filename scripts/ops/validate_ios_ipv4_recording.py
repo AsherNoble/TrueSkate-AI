@@ -167,7 +167,7 @@ def movie_metrics(stream, pts, decoded, packet_count, requested_fps, minute):
     if not math.isfinite(duration) or duration <= 0:
         raise ValueError('Invalid video duration')
     rate = count / duration
-    if minute and (duration < 59 or rate < .98 * requested_fps or max(gaps, default=0) > .100001):
+    if minute and (not 59 <= duration <= 61 or rate < .98 * requested_fps or max(gaps, default=0) > .100001):
         raise ValueError('Minute duration or cadence gate failed')
     return {'frames': count, 'duration_s': duration, 'effective_fps': rate,
             'pts_span_fps': (count-1)/(pts[-1]-pts[0]) if count > 1 else None,
@@ -257,6 +257,7 @@ class Operator:
     """
     def __init__(self, event, enabled):
         self.event, self.enabled = event, enabled
+        self.speech = []
 
     def ntfy(self, message, priority):
         import logging
@@ -282,14 +283,37 @@ class Operator:
         """Terminal banner, bell and speech: immediate, no network."""
         print('\n' + '#' * 64 + f'\n##  {message}\n' + '#' * 64 + '\a', flush=True)
         if speech:
-            subprocess.Popen(['/usr/bin/say', speech], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            process = subprocess.Popen(['/usr/bin/say', speech], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if process is not None:  # permits simple offline channel fakes
+                self.speech.append(process)
 
-    def alert(self, message, priority='high', speech=None):
+    def finish_speech(self, timeout_s=15):
+        """Finish queued announcements before the wrapper restores the rig's mute/volume."""
+        deadline = time.monotonic()+timeout_s
+        for process in self.speech:
+            try:
+                process.wait(timeout=max(0, deadline-time.monotonic()))
+            except subprocess.TimeoutExpired:
+                process.terminate()
+                try:
+                    process.wait(timeout=1)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=1)
+                self.event('speech-timeout', timeout_s=timeout_s)
+        self.speech.clear()
+
+    def alert(self, message, priority='high', speech=None, *, background=False):
         """Banner and speech first, then ntfy (blocking); the outcome is logged as an event."""
         if not self.enabled:
             return
         self.show(message, speech)
-        self.event('operator-alert', message=message, ntfy_error=self.ntfy(message, priority))
+        send = lambda: self.event('operator-alert', message=message, ntfy_error=self.ntfy(message, priority))
+        if background:
+            # Network retries must not hold the capture clock past its stop deadline.
+            threading.Thread(target=send, daemon=True).start()
+        else:
+            send()
 
     def prompt_ready(self, message, speech, ready_file, timeout_s, priority='high'):
         """Ask for readiness; True once Enter is pressed on the Terminal (or ready_file appears).
@@ -649,7 +673,7 @@ class Coordinator:
 
     def analyse(self, item):
         result, folder, mov, fps, samples = (item[k] for k in ('result', 'folder', 'mov', 'fps', 'samples'))
-        metrics, pts = audit_movie(mov, fps, bool(samples))
+        metrics, pts = audit_movie(mov, fps, bool(samples) or bool(getattr(getattr(self, 'a', None), 'pico_program', None)))
         result['video'] = metrics
         if samples:
             started_at = float(item['stop']['startedAt'])
@@ -722,6 +746,17 @@ class Coordinator:
 
     def run(self):
         try:
+            if self.a.pico_program:
+                # The pilot module is staged next to this coordinator; the deployed
+                # rig checkout is not a development branch and stays untouched.
+                spec = importlib.util.spec_from_file_location('pico_curve_pilot', Path(__file__).with_name('pico_curve_pilot.py'))
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                program = json.loads(self.a.pico_program.read_text())
+                module.validate_program(program)
+                save(self.out/'pico-program.json', program)
+                self.report['pico_program_sha256'] = program['sha256']
+                self.report['training_admission'] = False
             self.preflight()
             if self.a.prepare:
                 return
@@ -742,12 +777,18 @@ class Coordinator:
                 self.case('04-minute-60', 60, 60, samples)
             if self.a.pico_hover:
                 self.event('waiting-pico', instruction='Keep Pico disconnected; press Enter (or create pico-ready) when ready to plug after recording-started')
+                ready_message = ('PICO STEP NEXT: Pico unplugged and in hand? XR2 in The Workshop with the same '
+                                 'AssistiveTouch settings? Press Enter in this Terminal when ready.' if self.a.pico_program else
+                                 'PICO STEP NEXT: Pico unplugged and in hand? Press Enter in this Terminal when ready.')
                 if not self.operator.prompt_ready(
-                        'PICO STEP NEXT: Pico unplugged and in hand? Press Enter in this Terminal when ready.',
+                        ready_message,
                         'Pico step next. Press enter when ready.', self.out/'pico-ready', 300):
                     raise RuntimeError('Pico readiness deadline; no recording retry')
-                self.case('05-pico-hover-60', 60, self.a.pico_seconds, on_recording=lambda: self.operator.alert(
-                    'PLUG THE PICO IN NOW', 'urgent', 'Plug the Pico in now'))
+                if self.a.pico_program:
+                    self.report.update(park='The Workshop', park_provenance='operator readiness prompt')
+                case_name = '05-pico-program-60' if self.a.pico_program else '05-pico-hover-60'
+                self.case(case_name, 60, self.a.pico_seconds, on_recording=lambda: self.operator.alert(
+                    f'PLUG THE PICO IN NOW ({self.out.name})', 'urgent', 'Plug the Pico in now', background=True))
                 self.report['pico_acceptance'] = 'requires visual review of original movie and insertion timing'
         except BaseException as exc:
             self.report['error'] = str(exc)
@@ -759,10 +800,18 @@ class Coordinator:
             if self.wake and self.wake.poll() is None:
                 self.wake.terminate()
                 self.wake.wait(timeout=3)
+            postflight_failed = bool(self.report['cleanup_errors'] or any(
+                c.get('analysis_error') or c.get('lifecycle') != 'passed' for c in self.report['cases']))
+            failed = bool(self.report.get('error') or postflight_failed)
+            self.report['outcome'] = 'failed' if failed else 'prepared' if self.a.prepare else 'completed'
+            save(self.out/'report.json', self.report)
             self.event('finished', report=str(self.out/'report.json'), cleanup_errors=self.report['cleanup_errors'])
             self.operator.alert(f"XR2 diagnostic finished ({self.out.name}): "
-                                f"{'aborted: ' + self.report['error'][:120] if self.report.get('error') else 'completed'}",
-                                'default', 'Diagnostic finished')
+                                f"{'aborted: ' + self.report['error'][:120] if self.report.get('error') else 'analysis or cleanup failed' if postflight_failed else 'completed'}",
+                                'default', 'Run aborted' if failed else 'Run complete')
+            self.operator.finish_speech()
+            if postflight_failed and not self.report.get('error'):
+                raise RuntimeError('Diagnostic analysis or cleanup failed; see report.json; no recording retry')
 
 
 def main():
@@ -779,6 +828,7 @@ def main():
     p.add_argument('--prepare', action='store_true')
     p.add_argument('--admin-prompt', action='store_true')
     p.add_argument('--pico-hover', action='store_true')
+    p.add_argument('--pico-program', type=Path, help='frozen preloaded USB diagnostic; requires one isolated 60-second Pico case')
     p.add_argument('--pico-only', action='store_true', help='skip cases 1-4; record only the Pico case')
     p.add_argument('--operator', action='store_true',
                    help='prompt the operator on the Terminal, by speech and ntfy; Enter confirms readiness')
@@ -792,9 +842,11 @@ def main():
     a.delete_leftover = [(u, Path(m)) for u, m in a.delete_leftover]
     if a.pico_only and not a.pico_hover:
         p.error('--pico-only needs --pico-hover')
+    if a.pico_program and (not a.pico_only or not a.pico_hover or a.pico_seconds != 60):
+        p.error('--pico-program requires --pico-only --pico-hover --pico-seconds 60')
     if a.delete_leftover and not a.tunnel_python:
         p.error('--delete-leftover needs --tunnel-python')
-    for path in (a.repo, a.env_file, a.out_dir, a.modules_root, a.pair_dir, *([a.tunnel_python] if a.tunnel_python else [])):
+    for path in (a.repo, a.env_file, a.out_dir, a.modules_root, a.pair_dir, *([a.tunnel_python] if a.tunnel_python else []), *([a.pico_program] if a.pico_program else [])):
         if not path.is_absolute():
             p.error('All paths must be absolute')
     if 'tmp' not in a.out_dir.parts:

@@ -1,0 +1,9 @@
+{
+  "flash_id": "E660C0D1C73D5A2B",
+  "firmware_sha256": "e30f59821ea6b7c8ea9f5d63c9f5a00b60d1e8f0a810890f2b45b2f654be4d60",
+  "timing_sector_sha256": "539a52d537e6216b86b05115dbe8dd450a086da90c99267766b04dc15b724908",
+  "timing_sector_unchanged": true,
+  "loaded_and_verified": true,
+  "executed": false,
+  "remains_in_bootsel": true
+}

@@ -82,6 +82,8 @@ def test_metrics_reject_bad_pts_truncated_counts_and_low_cadence():
             diag.movie_metrics(stream, bad_pts, decoded, packets, 30, True)
     with pytest.raises(ValueError, match='cadence'):
         diag.movie_metrics(stream, pts, 1800, 1800, 60, True)
+    with pytest.raises(ValueError, match='duration'):
+        diag.movie_metrics(dict(stream, duration=80), pts, 1800, 1800, 30, True)
 
 
 def test_full_decode_rejects_truncated_movie(tmp_path):
@@ -345,3 +347,73 @@ def test_failed_after_check_still_queues_the_recorded_movie(tmp_path, monkeypatc
         coord.case('05-pico-hover-60', 60, 1)
     assert len(coord.pending) == 1 and coord.pending[0]['mov'].read_bytes() == b'fixture'
     assert coord.report['cases'][0]['lifecycle'] == 'failed'
+
+
+def test_completion_speech_finishes_or_is_terminated_before_volume_restore(monkeypatch):
+    events = []
+    class Speech:
+        def __init__(self, hung):
+            self.hung, self.calls = hung, []
+        def wait(self, timeout):
+            self.calls.append(('wait', timeout))
+            if self.hung:
+                raise diag.subprocess.TimeoutExpired('say', timeout)
+        def terminate(self):
+            self.calls.append(('terminate',))
+            self.hung = False
+    good, hung = Speech(False), Speech(True)
+    op = diag.Operator(lambda name, **kw: events.append(name), True)
+    op.speech = [good, hung]
+    op.finish_speech(.1)
+    assert good.calls[0][0] == 'wait' and hung.calls[1][0] == 'terminate'
+    assert op.speech == [] and events == ['speech-timeout']
+
+
+def test_preloaded_pico_capture_uses_minute_gate_without_wda_calibration(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    coord = object.__new__(diag.Coordinator)
+    coord.a = SimpleNamespace(pico_program=tmp_path/'program.json')
+    calls = []
+    monkeypatch.setattr(diag, 'audit_movie', lambda mov, fps, minute: (calls.append((fps, minute)) or {}, []))
+    result = {}
+    coord.analyse(dict(result=result, folder=tmp_path, mov=tmp_path/'original.mov', fps=60, samples=None))
+    assert calls == [(60, True)] and result['video'] == {}
+
+
+def test_insertion_alert_network_delay_does_not_hold_the_capture_clock(monkeypatch):
+    import threading
+    import time as _time
+    pending, release, done = threading.Event(), threading.Event(), threading.Event()
+    op = diag.Operator(lambda *a, **kw: done.set(), True)
+    monkeypatch.setattr(op, 'show', lambda *a: None)
+    def slow_send(*a):
+        pending.set()
+        release.wait(5)
+    monkeypatch.setattr(op, 'ntfy', slow_send)
+    started = _time.monotonic()
+    op.alert('PLUG NOW', 'urgent', background=True)
+    assert _time.monotonic()-started < .2
+    assert pending.wait(1) and not done.is_set()
+    release.set()
+    assert done.wait(1)
+
+
+def test_deferred_analysis_failure_is_a_failed_run_after_cleanup(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    coord = object.__new__(diag.Coordinator)
+    coord.a = SimpleNamespace(pico_program=None, prepare=True)
+    coord.out, coord.wake = tmp_path, None
+    coord.report = dict(cases=[dict(lifecycle='passed')], cleanup_errors=[])
+    order = []
+    coord.operator = SimpleNamespace(alert=lambda *a: order.append(a[-1]), finish_speech=lambda: order.append('speech-done'))
+    monkeypatch.setattr(coord, 'preflight', lambda: None)
+    monkeypatch.setattr(coord, 'cleanup', lambda: order.append('cleanup'))
+    def analyse():
+        coord.report['cases'][0]['analysis_error'] = 'cadence failed'
+        order.append('analyse')
+    monkeypatch.setattr(coord, 'analyse_pending', analyse)
+    monkeypatch.setattr(coord, 'event', lambda *a, **kw: None)
+    with pytest.raises(RuntimeError, match='analysis or cleanup'):
+        coord.run()
+    assert order == ['cleanup', 'analyse', 'Run aborted', 'speech-done']
+    assert json.loads((tmp_path/'report.json').read_text())['outcome'] == 'failed'
