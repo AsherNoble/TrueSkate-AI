@@ -331,16 +331,22 @@ instrumented WDA `ae50404a`; production services can reinstall an `unversioned`
 runner when rebuilding over USB. Collection remains off. See
 [HID-USB-20261006](experiments/HID-USB-20261006.md) and its run-11 evidence.
 
-A bounded preloaded USB curve pilot is implemented and prepared, with one
-button-up gain calibration followed by two six-gesture programs at 3 ms report
-spacing. It preserves the mouse descriptor, run-once latch and timing sector;
-the gain firmware is verified on the identified Pico, still in BOOTSEL and not
-executed. Native-PTS review uses Pico start/end controls and a held-out middle
+A bounded preloaded USB curve pilot is implemented. Its one button-up gain
+recording completed successfully (3,599 native frames, 59.92 effective fps,
+zero cleanup errors). The Pico accepted all 971 reports with maximum board
+lateness 32 microseconds. All 36 movement passes and 74 stationary windows
+passed the gain checks, with 100% tracking and maximum stationary spread
+0.30 logical points; measured gains at 15 and 3 ms differ by at most 0.55%.
+Both six-gesture programs are compiled from this measured profile. Batch 1
+is staged, prepared and loaded on the identified Pico in BOOTSEL without
+execution; batch 2 remains packaged locally. There is no curve-fidelity result
+yet. Native-PTS review uses Pico start/end controls and a held-out middle
 control, retaining clock/position uncertainty. The operator kept the 150 ms
-reversal stress cases despite their possible 60 Hz measurement floor. There is
-no new live gain or curve-fidelity result yet. The Pico-only control substitution
-is specific to this pilot; Model 1 five-touch requirements and collection-off
-remain unchanged. [Pilot workflow](../hardware/pico_curve_pilot/README.md).
+reversal stress cases despite their possible 60 Hz measurement floor. The
+Pico-only control substitution is specific to this pilot; Model 1 five-touch
+requirements and collection-off remain unchanged.
+[Gain evidence](evidence/HID-USB-20261006/pico-curve-pilot-gain-01-20261008),
+[pilot workflow](../hardware/pico_curve_pilot/README.md).
 
 AssistiveTouch supports preset and recorded multi-finger gestures. Independent
 live control of two mouse-driven contacts remains unverified. In three short

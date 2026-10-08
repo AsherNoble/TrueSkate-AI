@@ -1,0 +1,9 @@
+{
+  "origin_s": 10.411666499999999,
+  "first_motion_interval_s": [
+    12.278333,
+    12.295
+  ],
+  "first_program_motion_s": 1.875,
+  "method": "First quarter-second probe located motion; native frames bracket first visible displacement. Coarse locator for stationary gain windows only; never curve timebase."
+}

@@ -1,0 +1,10 @@
+{
+  "park": "unverified current gameplay scene",
+  "corpus_admission": false,
+  "cases": [],
+  "cleanup_errors": [],
+  "pico_acceptance": "not tested",
+  "pico_program_sha256": "fcb476d291c5b1523d0913d29cba852c3f6b50d5db2396a1efd7dc68aff4534d",
+  "training_admission": false,
+  "outcome": "prepared"
+}

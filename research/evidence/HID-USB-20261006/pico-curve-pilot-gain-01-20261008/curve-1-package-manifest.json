@@ -1,0 +1,21 @@
+{
+  "schema": "pico-curve-stage-v1",
+  "kind": "curves-1",
+  "program_sha256": "fcb476d291c5b1523d0913d29cba852c3f6b50d5db2396a1efd7dc68aff4534d",
+  "eeprom_start": "0x101ff000",
+  "eeprom_end": "0x10200000",
+  "files": {
+    "fw/pico_curve_pilot.ino.uf2": "c3ba14a4e376bef7ad13d36bb0f3e9cd8cb2153ddcda20a496e4523021f6831f",
+    "fw/source.json": "a56fe42796c415fb3bf122df1716cc94f46ae5e8ac9419e246310129cbc6bbdb",
+    "ios_ipv4_node_tunnel.mjs": "0d964e1958a217c3386454c2b95e1dc342dab12df930949c4971ec651cb06f06",
+    "ios_ipv4_tunnel.mjs": "b9afb396a0d90739ddc6a9a33758e2eabfc308113b437243e4d0d2f215ab0c12",
+    "ios_wifi_attachments.py": "4d16d0e3ca657d4b7baa4454debdc308a252342eb171df5298f020c6b5d8f7cb",
+    "ios_wifi_tunnel.py": "6cf420bead7445134fe957f6d2eac34fd7cb2752ceee2bd0606faa5dff223954",
+    "pico-program.json": "f150834d37d13ce2cb7d6731e3594528cacb6cd3b9d847ddefe59cbde125653c",
+    "pico_curve_controls_reference.py": "84ac2195e0438578e3a40d46bd1095a4abe931dc0f19527c0b4c7d1577367fdb",
+    "pico_curve_hid_reference.py": "2fbd8090176c31966798a89221ce2197495e0e10dc2524e378322c5c71f4522c",
+    "pico_curve_pilot.py": "dcb9702d95aa49e3384e7784d24539354fc85aa18639b7a4e557ec997976b30b",
+    "run_xr2_wifi_diagnostic.sh": "a4c99b175d70d907fdd5ffeddbf5f41613f0cbd5256a2b211e18d4affac3f61b",
+    "validate_ios_ipv4_recording.py": "42e9d1ef50a0a95e45df76e07ed5fb891d602518fc700bbcdf6308739b47fabd"
+  }
+}
