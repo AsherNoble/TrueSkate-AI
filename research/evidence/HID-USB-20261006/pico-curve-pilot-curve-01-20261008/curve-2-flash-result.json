@@ -1,0 +1,11 @@
+{
+  "pico_flash_id": "E660C0D1C73D5A2B",
+  "program_sha256": "2a4eb0d5a930438ba7ad1c49fadb4bbe3c7df2357c0f6c9a90d1a583e26439ef",
+  "uf2_sha256": "632f46997a5701035588c4e762ff5cad323e8a2907fc6773aa0698c3415cefaf",
+  "stats_before_sha256": "f709f1c5cd6504e4a8a1c8977198fbb4a0073c41915fa59a3d72158c6e2111ff",
+  "stats_after_sha256": "f709f1c5cd6504e4a8a1c8977198fbb4a0073c41915fa59a3d72158c6e2111ff",
+  "loaded_and_verified": true,
+  "executed": false,
+  "remains_in_bootsel": true,
+  "method": "picotool load -v; no -x or reboot"
+}

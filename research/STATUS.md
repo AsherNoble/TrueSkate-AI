@@ -337,15 +337,20 @@ zero cleanup errors). The Pico accepted all 971 reports with maximum board
 lateness 32 microseconds. All 36 movement passes and 74 stationary windows
 passed the gain checks, with 100% tracking and maximum stationary spread
 0.30 logical points; measured gains at 15 and 3 ms differ by at most 0.55%.
-Both six-gesture programs are compiled from this measured profile. Batch 1
+Both six-gesture programs are compiled from this measured profile. Batch 1's
+one-minute recording completed (3,601 frames, 59.91 effective fps, clean recorder
+and attachment cleanup), and its Pico receipt confirms 1,684/1,684 accepted
+reports with no clipping and 32 microseconds maximum board lateness. Batch 2
 is staged, prepared and loaded on the identified Pico in BOOTSEL without
-execution; batch 2 remains packaged locally. There is no curve-fidelity result
-yet. Native-PTS review uses Pico start/end controls and a held-out middle
+execution. There is no curve-fidelity result yet: capture and board completion
+do not establish visible contact timing/path accuracy. Native-PTS review uses
+Pico start/end controls and a held-out middle
 control, retaining clock/position uncertainty. The operator kept the 150 ms
 reversal stress cases despite their possible 60 Hz measurement floor. The
 Pico-only control substitution is specific to this pilot; Model 1 five-touch
 requirements and collection-off remain unchanged.
 [Gain evidence](evidence/HID-USB-20261006/pico-curve-pilot-gain-01-20261008),
+[first curve capture](evidence/HID-USB-20261006/pico-curve-pilot-curve-01-20261008),
 [pilot workflow](../hardware/pico_curve_pilot/README.md).
 
 AssistiveTouch supports preset and recorded multi-finger gestures. Independent

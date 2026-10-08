@@ -1,0 +1,28 @@
+{
+  "park": "The Workshop",
+  "corpus_admission": false,
+  "cases": [
+    {
+      "name": "05-pico-program-60",
+      "fps_requested": 60,
+      "lifecycle": "passed",
+      "calibration": "not applicable",
+      "video": {
+        "frames": 3601,
+        "duration_s": 60.111667,
+        "effective_fps": 59.90517614492375,
+        "pts_span_fps": 59.90515017888344,
+        "max_gap_s": 0.033334,
+        "estimated_missing_slots": 6,
+        "bytes": 72715022,
+        "sha256": "8d4da179d52995f43887d0c476510378f6f5c062b485666c0dcd51f1186ed219"
+      }
+    }
+  ],
+  "cleanup_errors": [],
+  "pico_acceptance": "requires visual review of original movie and insertion timing",
+  "pico_program_sha256": "fcb476d291c5b1523d0913d29cba852c3f6b50d5db2396a1efd7dc68aff4534d",
+  "training_admission": false,
+  "park_provenance": "operator readiness prompt",
+  "outcome": "completed"
+}
