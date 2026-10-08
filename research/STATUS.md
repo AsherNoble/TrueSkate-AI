@@ -353,12 +353,21 @@ narrowly failing timing qualification (81.7 microseconds beyond the frozen gate;
 with no curve score emitted, individual phase fit or gate relaxation. This does not identify USB jitter
 as the cause. Batch 2's verified human control review passes the held-out middle
 gate: 14.1529 ms against 16.667 ms, with 22.4864 ms carried clock uncertainty.
-Its six native-frame curves are open for position/boundary/interruption review
-using that fixed clock. The operator marks AssistiveTouch cursor centres for
-position; cursor accuracy alone does not establish instantaneous game-contact
-fidelity, and orange-trail confirmation remains independent. There is no qualified
-curve-fidelity result or twelve-curve pass yet: timing qualification, capture and board completion do not establish
-visible contact/path accuracy. Native-PTS review uses
+Batch 2's position review is imported: 100 cursor-centre marks, each explicitly
+declared by the operator to mean active contact at that instant. The unused
+orange-confirmation checkbox is superseded by that attestation in a separate
+scoring copy; original export bytes and all points/uncertainties remain preserved.
+The unchanged orange-control clock comparison has three positional failures
+(150 ms arc/S and 600 ms pause) and three inconclusive cases, with zero passes.
+Both 600 ms cases have full planned-frame position coverage. Lift boundaries
+and interruption assessments are unknown, so duration/continuity are unassessed.
+Operator notes report orange feedback at cursor positions from 1–2 earlier
+frames in four clips. This cross-signal phase relationship is not quantified;
+a diagnostic cursor detector cannot reliably identify the control onsets.
+No per-curve retiming or replacement clock was used. These results do not identify
+USB jitter as the cause or establish a twelve-curve fidelity pass. All review
+viewers are stopped. Capture and board completion do not establish visible
+contact/path accuracy. Native-PTS review uses
 Pico start/end controls and a held-out middle
 control, retaining clock/position uncertainty. The operator kept the 150 ms
 reversal stress cases despite their possible 60 Hz measurement floor. The
@@ -369,6 +378,7 @@ requirements and collection-off remain unchanged.
 [second curve capture/review preparation](evidence/HID-USB-20261006/pico-curve-pilot-curve-02-20261008),
 [first timing review](evidence/HID-USB-20261006/pico-curve-pilot-curve-01-timing-20261009),
 [second timing qualification and curve review](evidence/HID-USB-20261006/pico-curve-pilot-curve-02-timing-20261009),
+[second cursor-position review](evidence/HID-USB-20261006/pico-curve-pilot-curve-02-position-20261009),
 [pilot workflow](../hardware/pico_curve_pilot/README.md).
 
 AssistiveTouch supports preset and recorded multi-finger gestures. Independent

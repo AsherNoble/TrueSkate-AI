@@ -168,10 +168,16 @@ source PTS. O hides it; arrows step native frames. A translucent logical-point
 grid can be toggled independently: each small square is 1 × 1 logical point,
 with stronger lines every 5 points. It shares the image/mark transform and does
 not intercept clicks. Position uncertainty is a radius around the clicked centre;
-use the grid to estimate that radius. Use the browser's existing zoom if needed. The ring follows the intended
-trajectory, not observed positions or an individually optimized phase. Mark
-contact positions and confirm them against the orange trail; an overlay circle
-alone is not proof of in-game contact. Unknown positions/boundaries stay unknown.
+use the grid to estimate that radius. Use the browser's existing zoom if needed.
+The ring follows the intended trajectory, not observed positions or an individually
+optimized phase. Mark observed positions and explicitly confirm active contact.
+If the operator declares that every position mark itself means cursor centre plus
+active-touch judgement, preserve the original export and that declaration, then
+score a separate derived export setting only those marks' `contact_confirmed`
+flags. This requires an explicit attestation; unchecked boxes alone are not one.
+It does not assert cursor/orange spatial or temporal agreement. Retain the observed
+signal and the signal used by the clock anchors in the result's interpretation.
+Unknown positions, lift boundaries and interruption judgements stay unknown.
 Export, stop the viewer, then use `score --bundle --export --media-root --out`.
 
 The scorer requires ≥90% evaluable planned contact frames, every reliable frame's

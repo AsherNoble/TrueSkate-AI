@@ -1,0 +1,953 @@
+{
+  "schema": "pico-usb-curves-review-v1",
+  "version": 2,
+  "bundle_sha256": "83303accf20c66885fe072c42d225f85a6399be2bbc9be9255b08fb450cbca02",
+  "annotations": {
+    "arc-150-r1": {
+      "frames": [
+        {
+          "source_frame": 1017,
+          "point_pt": [
+            175.3916473388672,
+            392.8466491699219
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1016,
+          "point_pt": [
+            165.070556640625,
+            425.1000671386719
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1019,
+          "point_pt": [
+            185.71273803710938,
+            385.1058349609375
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1018,
+          "point_pt": [
+            185.71273803710938,
+            386.3959655761719
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1020,
+          "point_pt": [
+            212.8056182861328,
+            379.9452819824219
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1021,
+          "point_pt": [
+            212.8056182861328,
+            381.23541259765625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1022,
+          "point_pt": [
+            212.8056182861328,
+            381.23541259765625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        }
+      ],
+      "interrupted": null,
+      "first_contact_frame": 1016,
+      "boundary_confirmed": false
+    },
+    "s-150-r1": {
+      "frames": [
+        {
+          "source_frame": 1257,
+          "point_pt": [
+            181.8423309326172,
+            379.3002014160156
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1258,
+          "point_pt": [
+            183.13247680664062,
+            378.01007080078125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1259,
+          "point_pt": [
+            201.1943817138672,
+            419.2944641113281
+          ],
+          "uncertainty_pt": 10,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1260,
+          "point_pt": [
+            208.93521118164062,
+            445.0971984863281
+          ],
+          "uncertainty_pt": 10,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1261,
+          "point_pt": [
+            217.96615600585938,
+            467.0295104980469
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1262,
+          "point_pt": [
+            226.9971160888672,
+            469.60980224609375
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1263,
+          "point_pt": [
+            236.028076171875,
+            447.6774597167969
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1264,
+          "point_pt": [
+            234.73794555664062,
+            448.96759033203125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        }
+      ],
+      "interrupted": null,
+      "notes": "The trace begins approximately at the location the cursor was at frame 6. The location I have marked is the location of the cursor at frame 8 (this frame) – the trace appears in this frame – at the location the cursor was at at frame 6 approx.",
+      "first_contact_frame": 1257,
+      "boundary_confirmed": false
+    },
+    "reversal-150-r1": {
+      "frames": [
+        {
+          "source_frame": 1497,
+          "point_pt": [
+            241.18862915039062,
+            403.1677551269531
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1498,
+          "point_pt": [
+            236.028076171875,
+            416.71417236328125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1499,
+          "point_pt": [
+            234.73794555664062,
+            415.4240417480469
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1500,
+          "point_pt": [
+            212.8056182861328,
+            446.3873291015625
+          ],
+          "uncertainty_pt": 10,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1501,
+          "point_pt": [
+            211.51547241210938,
+            443.80706787109375
+          ],
+          "uncertainty_pt": 10,
+          "contact_confirmed": false
+        }
+      ],
+      "interrupted": null,
+      "notes": "The trace appears in frame 9 at the position the cursor was at frame 8. I have marked the cursor's position at frame 9, tho it should be known that this is like 80 or 100 logical points (a bunch) from where it was at frame 8 where the trace actually appears.",
+      "first_contact_frame": 1497,
+      "boundary_confirmed": false
+    },
+    "pause-150-r1": {
+      "frames": [
+        {
+          "source_frame": 1976,
+          "point_pt": [
+            163.78041076660156,
+            428.3254089355469
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1977,
+          "point_pt": [
+            183.13247680664062,
+            375.4298095703125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1978,
+          "point_pt": [
+            183.13247680664062,
+            375.4298095703125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1979,
+          "point_pt": [
+            190.873291015625,
+            396.0719909667969
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1980,
+          "point_pt": [
+            208.93521118164062,
+            438.6465148925781
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1981,
+          "point_pt": [
+            224.41683959960938,
+            481.22100830078125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1982,
+          "point_pt": [
+            234.73794555664062,
+            454.1281433105469
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 1983,
+          "point_pt": [
+            233.4477996826172,
+            454.1281433105469
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        }
+      ],
+      "interrupted": null,
+      "first_contact_frame": 1976,
+      "boundary_confirmed": false
+    },
+    "reversal-600-r0": {
+      "frames": [
+        {
+          "source_frame": 2216,
+          "point_pt": [
+            181.8423309326172,
+            423.8099365234375
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2217,
+          "point_pt": [
+            189.58316040039062,
+            421.22967529296875
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2218,
+          "point_pt": [
+            198.61410522460938,
+            417.3592529296875
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2219,
+          "point_pt": [
+            206.3549346923828,
+            413.48883056640625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2220,
+          "point_pt": [
+            215.38589477539062,
+            410.9085693359375
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2221,
+          "point_pt": [
+            225.7069854736328,
+            408.32830810546875
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2222,
+          "point_pt": [
+            234.73794555664062,
+            407.03814697265625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2223,
+          "point_pt": [
+            242.478759765625,
+            404.4578857421875
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2224,
+          "point_pt": [
+            238.6083526611328,
+            409.6184387207031
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2225,
+          "point_pt": [
+            234.73794555664062,
+            413.48883056640625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2226,
+          "point_pt": [
+            230.86752319335938,
+            417.3592529296875
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2227,
+          "point_pt": [
+            226.9971160888672,
+            422.5198059082031
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2228,
+          "point_pt": [
+            223.126708984375,
+            428.9704895019531
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2229,
+          "point_pt": [
+            219.2563018798828,
+            431.5507507324219
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2230,
+          "point_pt": [
+            217.96615600585938,
+            434.13104248046875
+          ],
+          "uncertainty_pt": 15,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2231,
+          "point_pt": [
+            216.676025390625,
+            439.29156494140625
+          ],
+          "uncertainty_pt": 15,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2232,
+          "point_pt": [
+            212.8056182861328,
+            443.1619873046875
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2233,
+          "point_pt": [
+            215.38589477539062,
+            439.29156494140625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2234,
+          "point_pt": [
+            217.96615600585938,
+            434.13104248046875
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2235,
+          "point_pt": [
+            221.83657836914062,
+            430.2606201171875
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2236,
+          "point_pt": [
+            225.7069854736328,
+            425.1000671386719
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2237,
+          "point_pt": [
+            228.28726196289062,
+            422.5198059082031
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2238,
+          "point_pt": [
+            232.1576690673828,
+            416.0691223144531
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2239,
+          "point_pt": [
+            234.73794555664062,
+            412.1986999511719
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2240,
+          "point_pt": [
+            237.31822204589844,
+            407.03814697265625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2241,
+          "point_pt": [
+            239.8984832763672,
+            404.4578857421875
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2242,
+          "point_pt": [
+            232.1576690673828,
+            407.03814697265625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2243,
+          "point_pt": [
+            223.126708984375,
+            409.6184387207031
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2244,
+          "point_pt": [
+            216.676025390625,
+            412.1986999511719
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2245,
+          "point_pt": [
+            205.06478881835938,
+            414.77899169921875
+          ],
+          "uncertainty_pt": 15,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2246,
+          "point_pt": [
+            197.323974609375,
+            416.0691223144531
+          ],
+          "uncertainty_pt": 15,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2247,
+          "point_pt": [
+            187.0028839111328,
+            419.93951416015625
+          ],
+          "uncertainty_pt": 15,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2248,
+          "point_pt": [
+            187.0028839111328,
+            419.93951416015625
+          ],
+          "uncertainty_pt": 15,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2249,
+          "point_pt": [
+            170.23109436035156,
+            426.39019775390625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2250,
+          "point_pt": [
+            170.23109436035156,
+            426.39019775390625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2251,
+          "point_pt": [
+            163.78041076660156,
+            427.68035888671875
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        }
+      ],
+      "interrupted": null,
+      "notes": "Trace first appears in frame 10 at the location the cursor was at frame 8.",
+      "first_contact_frame": 2216,
+      "boundary_confirmed": false
+    },
+    "pause-600-r0": {
+      "frames": [
+        {
+          "source_frame": 2424,
+          "point_pt": [
+            166.36068725585938,
+            419.93951416015625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2425,
+          "point_pt": [
+            166.36068725585938,
+            421.8747253417969
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2426,
+          "point_pt": [
+            170.23109436035156,
+            408.9733581542969
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2427,
+          "point_pt": [
+            172.81137084960938,
+            399.9424133300781
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2428,
+          "point_pt": [
+            175.3916473388672,
+            393.4917297363281
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2429,
+          "point_pt": [
+            175.3916473388672,
+            394.7818603515625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2430,
+          "point_pt": [
+            180.5522003173828,
+            379.3002014160156
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2431,
+          "point_pt": [
+            180.5522003173828,
+            380.5903625488281
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2432,
+          "point_pt": [
+            180.5522003173828,
+            379.3002014160156
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2433,
+          "point_pt": [
+            180.5522003173828,
+            380.5903625488281
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2434,
+          "point_pt": [
+            180.5522003173828,
+            379.3002014160156
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2435,
+          "point_pt": [
+            180.5522003173828,
+            380.5903625488281
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2436,
+          "point_pt": [
+            180.5522003173828,
+            379.3002014160156
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2437,
+          "point_pt": [
+            180.5522003173828,
+            379.3002014160156
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2438,
+          "point_pt": [
+            180.5522003173828,
+            379.3002014160156
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2439,
+          "point_pt": [
+            180.5522003173828,
+            379.3002014160156
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2440,
+          "point_pt": [
+            180.5522003173828,
+            380.5903625488281
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2441,
+          "point_pt": [
+            180.5522003173828,
+            379.3002014160156
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2442,
+          "point_pt": [
+            184.422607421875,
+            390.91143798828125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2443,
+          "point_pt": [
+            188.2930145263672,
+            399.9424133300781
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2444,
+          "point_pt": [
+            190.873291015625,
+            407.6832275390625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2445,
+          "point_pt": [
+            194.7436981201172,
+            419.2944641113281
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2446,
+          "point_pt": [
+            197.323974609375,
+            427.0352783203125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2447,
+          "point_pt": [
+            202.48452758789062,
+            438.6465148925781
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2448,
+          "point_pt": [
+            203.774658203125,
+            445.0971984863281
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2449,
+          "point_pt": [
+            207.6450653076172,
+            456.70843505859375
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2450,
+          "point_pt": [
+            211.51547241210938,
+            463.15911865234375
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2451,
+          "point_pt": [
+            211.51547241210938,
+            464.4492492675781
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2452,
+          "point_pt": [
+            219.2563018798828,
+            478.6407470703125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2453,
+          "point_pt": [
+            217.96615600585938,
+            478.6407470703125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2454,
+          "point_pt": [
+            217.96615600585938,
+            478.6407470703125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2455,
+          "point_pt": [
+            220.5464324951172,
+            472.1900634765625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2456,
+          "point_pt": [
+            221.83657836914062,
+            472.1900634765625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2457,
+          "point_pt": [
+            221.83657836914062,
+            472.1900634765625
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2458,
+          "point_pt": [
+            223.126708984375,
+            465.7393798828125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        },
+        {
+          "source_frame": 2459,
+          "point_pt": [
+            223.126708984375,
+            465.7393798828125
+          ],
+          "uncertainty_pt": 5,
+          "contact_confirmed": false
+        }
+      ],
+      "interrupted": null,
+      "first_contact_frame": 2424,
+      "boundary_confirmed": false,
+      "notes": "Trace appears in frame 10 at the position the cursor was at in frame 9."
+    }
+  }
+}

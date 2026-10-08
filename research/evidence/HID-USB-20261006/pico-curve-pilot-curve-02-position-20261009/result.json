@@ -1,0 +1,833 @@
+{
+  "schema": "pico-usb-curve-result-v1",
+  "kind": "curves-2",
+  "verdict": "fail",
+  "results": [
+    {
+      "id": "arc-150-r1",
+      "verdict": "fail",
+      "coverage": 0.4,
+      "evaluated_frames": 4,
+      "expected_frames": 10,
+      "native_contact_frames": 10,
+      "missing_nominal_slots": 0,
+      "unknown_frames": [
+        1023,
+        1024,
+        1025,
+        1026,
+        1027,
+        1028
+      ],
+      "errors": [
+        {
+          "source_frame": 1019,
+          "error": 0.06900869886917754,
+          "uncertainty": 0.056101775571721614,
+          "upper": 0.12511047444089915,
+          "error_pt": 48.613372961706766
+        },
+        {
+          "source_frame": 1020,
+          "error": 0.10687226905866962,
+          "uncertainty": 0.056101775571721614,
+          "upper": 0.16297404463039122,
+          "error_pt": 53.03301507943132
+        },
+        {
+          "source_frame": 1021,
+          "error": 0.08877374695330462,
+          "uncertainty": 0.056101775571721614,
+          "upper": 0.14487552252502622,
+          "error_pt": 39.12719772672273
+        },
+        {
+          "source_frame": 1022,
+          "error": 0.06024872764576773,
+          "uncertainty": 0.056101775571721614,
+          "upper": 0.11635050321748935,
+          "error_pt": 25.442769592141843
+        }
+      ],
+      "duration_error_s": null,
+      "duration_uncertainty_s": null,
+      "observed_onset_error_s": null,
+      "observed_lift_error_s": null,
+      "board_max_lateness_us": 0,
+      "onset_s": 17.1193717295082,
+      "lift_s": 17.27003342267213,
+      "interpretation": "A failed curve does not by itself identify timing as the cause"
+    },
+    {
+      "id": "s-150-r1",
+      "verdict": "fail",
+      "coverage": 0.6666666666666666,
+      "evaluated_frames": 6,
+      "expected_frames": 9,
+      "native_contact_frames": 9,
+      "missing_nominal_slots": 0,
+      "unknown_frames": [
+        1265,
+        1266,
+        1267
+      ],
+      "errors": [
+        {
+          "source_frame": 1259,
+          "error": 0.07339710107633893,
+          "uncertainty": 0.07172726488482856,
+          "upper": 0.14512436596116748,
+          "error_pt": 30.488585737603557
+        },
+        {
+          "source_frame": 1260,
+          "error": 0.09114279249946405,
+          "uncertainty": 0.07172726488482856,
+          "upper": 0.1628700573842926,
+          "error_pt": 59.756065778021124
+        },
+        {
+          "source_frame": 1261,
+          "error": 0.11630216542309649,
+          "uncertainty": 0.05964997019883821,
+          "upper": 0.1759521356219347,
+          "error_pt": 88.26711424681109
+        },
+        {
+          "source_frame": 1262,
+          "error": 0.09746469344176795,
+          "uncertainty": 0.05964997019883821,
+          "upper": 0.15711466364060617,
+          "error_pt": 68.0057780531393
+        },
+        {
+          "source_frame": 1263,
+          "error": 0.07035233961784063,
+          "uncertainty": 0.05964997019883821,
+          "upper": 0.13000230981667885,
+          "error_pt": 32.21515884498321
+        },
+        {
+          "source_frame": 1264,
+          "error": 0.04330489289742538,
+          "uncertainty": 0.05964997019883821,
+          "upper": 0.10295486309626359,
+          "error_pt": 19.10915113022586
+        }
+      ],
+      "duration_error_s": null,
+      "duration_uncertainty_s": null,
+      "observed_onset_error_s": null,
+      "observed_lift_error_s": null,
+      "board_max_lateness_us": 0,
+      "onset_s": 21.110409959016394,
+      "lift_s": 21.261071652180327,
+      "interpretation": "A failed curve does not by itself identify timing as the cause"
+    },
+    {
+      "id": "reversal-150-r1",
+      "verdict": "inconclusive",
+      "coverage": 0.4444444444444444,
+      "evaluated_frames": 4,
+      "expected_frames": 9,
+      "native_contact_frames": 8,
+      "missing_nominal_slots": 1,
+      "unknown_frames": [
+        1502,
+        1503,
+        1504,
+        1505
+      ],
+      "errors": [
+        {
+          "source_frame": 1498,
+          "error": 0.16073548786543193,
+          "uncertainty": 0.1320196135894593,
+          "upper": 0.29275510145489125,
+          "error_pt": 67.3942530921314
+        },
+        {
+          "source_frame": 1499,
+          "error": 0.06915986528957754,
+          "uncertainty": 0.1320196135894593,
+          "upper": 0.20117947887903684,
+          "error_pt": 28.66321582435305
+        },
+        {
+          "source_frame": 1500,
+          "error": 0.08526993822495657,
+          "uncertainty": 0.14409690827544963,
+          "upper": 0.2293668465004062,
+          "error_pt": 50.85457539637397
+        },
+        {
+          "source_frame": 1501,
+          "error": 0.007567751770818911,
+          "uncertainty": 0.14409690827544963,
+          "upper": 0.15166466004626855,
+          "error_pt": 4.737892881647232
+        }
+      ],
+      "duration_error_s": null,
+      "duration_uncertainty_s": null,
+      "observed_onset_error_s": null,
+      "observed_lift_error_s": null,
+      "board_max_lateness_us": 0,
+      "onset_s": 25.101448188524593,
+      "lift_s": 25.252109881688526,
+      "interpretation": "A failed curve does not by itself identify timing as the cause"
+    },
+    {
+      "id": "pause-150-r1",
+      "verdict": "inconclusive",
+      "coverage": 0.8888888888888888,
+      "evaluated_frames": 8,
+      "expected_frames": 9,
+      "native_contact_frames": 9,
+      "missing_nominal_slots": 0,
+      "unknown_frames": [
+        1984
+      ],
+      "errors": [
+        {
+          "source_frame": 1976,
+          "error": 0.010575930278521883,
+          "uncertainty": 0.09030791664045126,
+          "upper": 0.10088384691897315,
+          "error_pt": 5.573776331370882
+        },
+        {
+          "source_frame": 1977,
+          "error": 0.023215025667921163,
+          "uncertainty": 0.09030791664045126,
+          "upper": 0.11352294230837243,
+          "error_pt": 19.45543657920591
+        },
+        {
+          "source_frame": 1978,
+          "error": 0.007715258586043323,
+          "uncertainty": 0.09030791664045126,
+          "upper": 0.09802317522649459,
+          "error_pt": 3.29023436575221
+        },
+        {
+          "source_frame": 1979,
+          "error": 0.024657516742094515,
+          "uncertainty": 0.09030791664045126,
+          "upper": 0.11496543338254578,
+          "error_pt": 20.274519423799468
+        },
+        {
+          "source_frame": 1980,
+          "error": 0.0884760044158781,
+          "uncertainty": 0.09030791664045126,
+          "upper": 0.17878392105632937,
+          "error_pt": 66.30948079944702
+        },
+        {
+          "source_frame": 1981,
+          "error": 0.10845725419597095,
+          "uncertainty": 0.09030791664045126,
+          "upper": 0.1987651708364222,
+          "error_pt": 81.74092241861699
+        },
+        {
+          "source_frame": 1982,
+          "error": 0.05509203618298634,
+          "uncertainty": 0.09030791664045126,
+          "upper": 0.1453999528234376,
+          "error_pt": 24.47589907903581
+        },
+        {
+          "source_frame": 1983,
+          "error": 0.03575712341859136,
+          "uncertainty": 0.09030791664045126,
+          "upper": 0.12606504005904262,
+          "error_pt": 30.116441799860713
+        }
+      ],
+      "duration_error_s": null,
+      "duration_uncertainty_s": null,
+      "observed_onset_error_s": null,
+      "observed_lift_error_s": null,
+      "board_max_lateness_us": 0,
+      "onset_s": 33.08352464754098,
+      "lift_s": 33.23418634070492,
+      "interpretation": "A failed curve does not by itself identify timing as the cause"
+    },
+    {
+      "id": "reversal-600-r0",
+      "verdict": "inconclusive",
+      "coverage": 1.0,
+      "evaluated_frames": 36,
+      "expected_frames": 36,
+      "native_contact_frames": 36,
+      "missing_nominal_slots": 0,
+      "unknown_frames": [],
+      "errors": [
+        {
+          "source_frame": 2216,
+          "error": 0.025756767860280437,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06821945000181624,
+          "error_pt": 11.353495474565458
+        },
+        {
+          "source_frame": 2217,
+          "error": 0.022160644583252065,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06462332672478788,
+          "error_pt": 9.830815311989658
+        },
+        {
+          "source_frame": 2218,
+          "error": 0.021934116506349223,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06439679864788503,
+          "error_pt": 10.05151314725158
+        },
+        {
+          "source_frame": 2219,
+          "error": 0.018801735770664085,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06126441791219989,
+          "error_pt": 9.29900309655108
+        },
+        {
+          "source_frame": 2220,
+          "error": 0.018215580871111487,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.060678263012647296,
+          "error_pt": 8.897105697899738
+        },
+        {
+          "source_frame": 2221,
+          "error": 0.02061998422489572,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06308266636643153,
+          "error_pt": 9.583251220226808
+        },
+        {
+          "source_frame": 2222,
+          "error": 0.019746832508300782,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06220951464983659,
+          "error_pt": 8.655820207522734
+        },
+        {
+          "source_frame": 2223,
+          "error": 0.016148689949201628,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.05861137209073743,
+          "error_pt": 7.129943805157132
+        },
+        {
+          "source_frame": 2224,
+          "error": 0.01687138225324946,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.059334064394785266,
+          "error_pt": 8.448781351686442
+        },
+        {
+          "source_frame": 2225,
+          "error": 0.02677800386961664,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06924068601115245,
+          "error_pt": 12.462296715445515
+        },
+        {
+          "source_frame": 2226,
+          "error": 0.024489849259654747,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06695253140119055,
+          "error_pt": 10.833067559169896
+        },
+        {
+          "source_frame": 2227,
+          "error": 0.022563768272606092,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.0650264504141419,
+          "error_pt": 9.837090264323665
+        },
+        {
+          "source_frame": 2228,
+          "error": 0.02090792228525233,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06337060442678813,
+          "error_pt": 9.334697531895966
+        },
+        {
+          "source_frame": 2229,
+          "error": 0.018662200622463616,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.061124882763999425,
+          "error_pt": 7.740644262972223
+        },
+        {
+          "source_frame": 2230,
+          "error": 0.011106092259830148,
+          "uncertainty": 0.06661727151351649,
+          "upper": 0.07772336377334663,
+          "error_pt": 5.256413126865037
+        },
+        {
+          "source_frame": 2231,
+          "error": 0.004885691587863554,
+          "uncertainty": 0.06661727151351649,
+          "upper": 0.07150296310138005,
+          "error_pt": 3.853685657097988
+        },
+        {
+          "source_frame": 2232,
+          "error": 0.006542443533285079,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.04900512567482088,
+          "error_pt": 5.8251803701311164
+        },
+        {
+          "source_frame": 2233,
+          "error": 0.024074632606525585,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06653731474806139,
+          "error_pt": 17.10309347056879
+        },
+        {
+          "source_frame": 2234,
+          "error": 0.02838215408543665,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.07084483622697246,
+          "error_pt": 20.42520145073028
+        },
+        {
+          "source_frame": 2235,
+          "error": 0.02543300311654851,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06789568525808432,
+          "error_pt": 18.18771321417065
+        },
+        {
+          "source_frame": 2236,
+          "error": 0.023552644817534357,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06601532695907017,
+          "error_pt": 17.14106868757818
+        },
+        {
+          "source_frame": 2237,
+          "error": 0.01750413987873083,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.05996682202026664,
+          "error_pt": 13.236287087557825
+        },
+        {
+          "source_frame": 2238,
+          "error": 0.016924519742579715,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.05938720188411552,
+          "error_pt": 13.45586825161212
+        },
+        {
+          "source_frame": 2239,
+          "error": 0.012707377084441005,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.055170059225976814,
+          "error_pt": 10.956623804653345
+        },
+        {
+          "source_frame": 2240,
+          "error": 0.011218119766261234,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.05368080190779704,
+          "error_pt": 10.019550128454911
+        },
+        {
+          "source_frame": 2241,
+          "error": 0.009447934031137337,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.051910616172673146,
+          "error_pt": 7.043010423711301
+        },
+        {
+          "source_frame": 2242,
+          "error": 0.035810792711060115,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.07827347485259592,
+          "error_pt": 14.92747730497052
+        },
+        {
+          "source_frame": 2243,
+          "error": 0.046010279218150575,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.08847296135968638,
+          "error_pt": 19.43724880292223
+        },
+        {
+          "source_frame": 2244,
+          "error": 0.039308640565310034,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.08177132270684584,
+          "error_pt": 16.646476435094037
+        },
+        {
+          "source_frame": 2245,
+          "error": 0.045009343150087436,
+          "uncertainty": 0.06661727151351649,
+          "upper": 0.11162661466360392,
+          "error_pt": 18.896000787839117
+        },
+        {
+          "source_frame": 2246,
+          "error": 0.0413116867939404,
+          "uncertainty": 0.06661727151351649,
+          "upper": 0.10792895830745688,
+          "error_pt": 17.180152377874876
+        },
+        {
+          "source_frame": 2247,
+          "error": 0.04402263478961124,
+          "uncertainty": 0.06661727151351649,
+          "upper": 0.11063990630312773,
+          "error_pt": 18.383194351993286
+        },
+        {
+          "source_frame": 2248,
+          "error": 0.02164965609694345,
+          "uncertainty": 0.06661727151351649,
+          "upper": 0.08826692761045993,
+          "error_pt": 8.966468362484243
+        },
+        {
+          "source_frame": 2249,
+          "error": 0.04004338663369272,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.08250606877522852,
+          "error_pt": 16.81529261455189
+        },
+        {
+          "source_frame": 2250,
+          "error": 0.01761494578864366,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.06007762793017947,
+          "error_pt": 7.294352394458949
+        },
+        {
+          "source_frame": 2251,
+          "error": 0.011055230171784468,
+          "uncertainty": 0.042462682141535806,
+          "upper": 0.05351791231332027,
+          "error_pt": 4.771796444162998
+        }
+      ],
+      "duration_error_s": null,
+      "duration_uncertainty_s": null,
+      "observed_onset_error_s": null,
+      "observed_lift_error_s": null,
+      "board_max_lateness_us": 0,
+      "onset_s": 37.07456287704918,
+      "lift_s": 37.674216371032784,
+      "interpretation": "A failed curve does not by itself identify timing as the cause"
+    },
+    {
+      "id": "pause-600-r0",
+      "verdict": "fail",
+      "coverage": 1.0,
+      "evaluated_frames": 36,
+      "expected_frames": 36,
+      "native_contact_frames": 36,
+      "missing_nominal_slots": 0,
+      "unknown_frames": [],
+      "errors": [
+        {
+          "source_frame": 2424,
+          "error": 0.010574163660031659,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.04220911383463723,
+          "error_pt": 9.429165458079156
+        },
+        {
+          "source_frame": 2425,
+          "error": 0.005795806750105517,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.03743075692471109,
+          "error_pt": 2.39946462305416
+        },
+        {
+          "source_frame": 2426,
+          "error": 0.006938602159460007,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.03857355233406558,
+          "error_pt": 5.596506331325812
+        },
+        {
+          "source_frame": 2427,
+          "error": 0.008803170294727304,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.04043812046933287,
+          "error_pt": 7.170909325239584
+        },
+        {
+          "source_frame": 2428,
+          "error": 0.008212914772790665,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.039847864947396235,
+          "error_pt": 6.2630113434866255
+        },
+        {
+          "source_frame": 2429,
+          "error": 0.012240577347845753,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.04387552752245132,
+          "error_pt": 5.660167975651865
+        },
+        {
+          "source_frame": 2430,
+          "error": 0.00854462175268693,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.0401795719272925,
+          "error_pt": 5.780902120165676
+        },
+        {
+          "source_frame": 2431,
+          "error": 0.013877533565909105,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.04551248374051467,
+          "error_pt": 6.580643316030348
+        },
+        {
+          "source_frame": 2432,
+          "error": 0.014276438238361396,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.045911388412966964,
+          "error_pt": 6.474473080607869
+        },
+        {
+          "source_frame": 2433,
+          "error": 0.01467885106463895,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.046313801239244515,
+          "error_pt": 7.160530531317374
+        },
+        {
+          "source_frame": 2434,
+          "error": 0.014276438238361396,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.045911388412966964,
+          "error_pt": 6.474473080607869
+        },
+        {
+          "source_frame": 2435,
+          "error": 0.01467885106463895,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.046313801239244515,
+          "error_pt": 7.160530531317374
+        },
+        {
+          "source_frame": 2436,
+          "error": 0.014276438238361396,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.045911388412966964,
+          "error_pt": 6.474473080607869
+        },
+        {
+          "source_frame": 2437,
+          "error": 0.014276438238361396,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.045911388412966964,
+          "error_pt": 6.474473080607869
+        },
+        {
+          "source_frame": 2438,
+          "error": 0.014276438238361396,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.045911388412966964,
+          "error_pt": 6.474473080607869
+        },
+        {
+          "source_frame": 2439,
+          "error": 0.014276438238361396,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.045911388412966964,
+          "error_pt": 6.474473080607869
+        },
+        {
+          "source_frame": 2440,
+          "error": 0.01467885106463895,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.046313801239244515,
+          "error_pt": 7.160530531317374
+        },
+        {
+          "source_frame": 2441,
+          "error": 0.014276438238361396,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.045911388412966964,
+          "error_pt": 6.474473080607869
+        },
+        {
+          "source_frame": 2442,
+          "error": 0.015860207426899232,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.0474951576015048,
+          "error_pt": 13.440887952570343
+        },
+        {
+          "source_frame": 2443,
+          "error": 0.014854934643695526,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.046489884818301096,
+          "error_pt": 12.50474664628679
+        },
+        {
+          "source_frame": 2444,
+          "error": 0.014238641644104917,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.04587359181871049,
+          "error_pt": 10.678287600100441
+        },
+        {
+          "source_frame": 2445,
+          "error": 0.015675308146949594,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.047310258321555165,
+          "error_pt": 12.218506494014012
+        },
+        {
+          "source_frame": 2446,
+          "error": 0.01578938185407182,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.047424332028677386,
+          "error_pt": 10.618923265157603
+        },
+        {
+          "source_frame": 2447,
+          "error": 0.015040852893602765,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.04667580306820833,
+          "error_pt": 11.625177169012751
+        },
+        {
+          "source_frame": 2448,
+          "error": 0.01697664536418528,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.04861159553879085,
+          "error_pt": 9.70262874904567
+        },
+        {
+          "source_frame": 2449,
+          "error": 0.0178940778018175,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.04952902797642307,
+          "error_pt": 11.004454310305109
+        },
+        {
+          "source_frame": 2450,
+          "error": 0.015907772746876426,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.047542722921482,
+          "error_pt": 8.274302056689896
+        },
+        {
+          "source_frame": 2451,
+          "error": 0.024124794295068364,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.05575974446967393,
+          "error_pt": 10.34496051840313
+        },
+        {
+          "source_frame": 2452,
+          "error": 0.014526957746385724,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.04616190792099129,
+          "error_pt": 6.103645970692878
+        },
+        {
+          "source_frame": 2453,
+          "error": 0.02617474978501436,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.05780969995961993,
+          "error_pt": 11.060080020073157
+        },
+        {
+          "source_frame": 2454,
+          "error": 0.03345222903529501,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.06508717920990058,
+          "error_pt": 14.538381309057646
+        },
+        {
+          "source_frame": 2455,
+          "error": 0.034376535496279635,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.0660114856708852,
+          "error_pt": 15.200413006572957
+        },
+        {
+          "source_frame": 2456,
+          "error": 0.040468515252046075,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.07210346542665164,
+          "error_pt": 20.594131468929422
+        },
+        {
+          "source_frame": 2457,
+          "error": 0.05030320830275238,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.08193815847735794,
+          "error_pt": 27.930675684878516
+        },
+        {
+          "source_frame": 2458,
+          "error": 0.05424722672345021,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.08588217689805577,
+          "error_pt": 29.761310503552156
+        },
+        {
+          "source_frame": 2459,
+          "error": 0.06437928678536503,
+          "uncertainty": 0.03163495017460557,
+          "upper": 0.0960142369599706,
+          "error_pt": 37.34973230113398
+        }
+      ],
+      "duration_error_s": null,
+      "duration_uncertainty_s": null,
+      "observed_onset_error_s": null,
+      "observed_lift_error_s": null,
+      "board_max_lateness_us": 0,
+      "onset_s": 40.566721327868855,
+      "lift_s": 41.16637482185246,
+      "interpretation": "A failed curve does not by itself identify timing as the cause"
+    }
+  ],
+  "fit": {
+    "intercept_s": 10.135054827868853,
+    "rate": 0.9977595573770492,
+    "middle_error_s": 0.01415291803278862,
+    "accepted": true,
+    "uncertainty_s": 0.022486418032787725,
+    "control_onset_intervals_s": [
+      [
+        13.120000000000001,
+        13.136667
+      ],
+      [
+        29.07,
+        29.086667
+      ],
+      [
+        43.551667,
+        43.568333
+      ]
+    ],
+    "source": "Pico accepted reports and visible contact; no WDA execution timestamp"
+  },
+  "program_sha256": "2a4eb0d5a930438ba7ad1c49fadb4bbe3c7df2357c0f6c9a90d1a583e26439ef",
+  "profile_sha256": "648a360da80af7b855f6a3d793be28a1e226307c796c8b9bbdb8323b9e4cd917",
+  "receipt_sha256": "5fc35d1ea19302d51226a038abb8f1b12110e73bd2e8bca6f20e5f91a270dc78",
+  "movie_sha256": "cbae9121feba72531fa10040fdc8637200bbe562996acb71196fabab6504f010",
+  "bundle_sha256": "83303accf20c66885fe072c42d225f85a6399be2bbc9be9255b08fb450cbca02",
+  "export_sha256": "8ab99e4c1dd9541378f755b106ee73e3d53b1cb3c8ba7288c94cd9f518119b5c",
+  "training_admission": false,
+  "sha256": "e3d2e540b07ccee24d30e7e8652084d7a9d9f86f7cf45f90db9aecb909c5ae11"
+}

@@ -1,0 +1,134 @@
+{
+  "schema": "pico-usb-cursor-position-review-summary-v1",
+  "date": "2026-10-09",
+  "batch": "curves-2",
+  "source_integrity": "passed: sealed original movie, native PTS, program/receipt/capture report and displayed JPEGs",
+  "original_position_marks": 100,
+  "operator_semantics": "Every position mark is cursor centre plus judgement of active contact; separate attested copy sets only per-mark contact confirmation.",
+  "fixed_clock_comparison_verdict": "fail",
+  "position_comparison": "Observed AssistiveTouch cursor vs intended curve using unchanged clock from independently labelled orange contact controls",
+  "tolerance": 0.03,
+  "clock_uncertainty_ms": 22.486418032787725,
+  "cases": [
+    {
+      "id": "arc-150-r1",
+      "verdict": "fail",
+      "evaluated": 4,
+      "expected": 10,
+      "coverage": 0.4,
+      "max_error_pt": 53.03301507943132,
+      "max_normalized_error": 0.10687226905866962,
+      "max_normalized_lower": 0.050770493486948,
+      "max_normalized_upper": 0.16297404463039122,
+      "definitely_over_tolerance_frames": [
+        1020,
+        1021
+      ],
+      "duration_assessed": false,
+      "limitations": [
+        "First-lift boundary absent; boundary confirmation false; interruption unknown.",
+        "Marked coverage below 90% of planned native slots."
+      ]
+    },
+    {
+      "id": "s-150-r1",
+      "verdict": "fail",
+      "evaluated": 6,
+      "expected": 9,
+      "coverage": 0.6666666666666666,
+      "max_error_pt": 88.26711424681109,
+      "max_normalized_error": 0.11630216542309649,
+      "max_normalized_lower": 0.056652195224258274,
+      "max_normalized_upper": 0.1759521356219347,
+      "definitely_over_tolerance_frames": [
+        1261,
+        1262
+      ],
+      "duration_assessed": false,
+      "limitations": [
+        "First-lift boundary absent; boundary confirmation false; interruption unknown.",
+        "Marked coverage below 90% of planned native slots."
+      ]
+    },
+    {
+      "id": "reversal-150-r1",
+      "verdict": "inconclusive",
+      "evaluated": 4,
+      "expected": 9,
+      "coverage": 0.4444444444444444,
+      "max_error_pt": 67.3942530921314,
+      "max_normalized_error": 0.16073548786543193,
+      "max_normalized_lower": 0.028715874275972636,
+      "max_normalized_upper": 0.29275510145489125,
+      "definitely_over_tolerance_frames": [],
+      "duration_assessed": false,
+      "limitations": [
+        "First-lift boundary absent; boundary confirmation false; interruption unknown.",
+        "Marked coverage below 90% of planned native slots."
+      ]
+    },
+    {
+      "id": "pause-150-r1",
+      "verdict": "inconclusive",
+      "evaluated": 8,
+      "expected": 9,
+      "coverage": 0.8888888888888888,
+      "max_error_pt": 81.74092241861699,
+      "max_normalized_error": 0.10845725419597095,
+      "max_normalized_lower": 0.018149337555519687,
+      "max_normalized_upper": 0.1987651708364222,
+      "definitely_over_tolerance_frames": [],
+      "duration_assessed": false,
+      "limitations": [
+        "First-lift boundary absent; boundary confirmation false; interruption unknown.",
+        "Marked coverage below 90% of planned native slots."
+      ]
+    },
+    {
+      "id": "reversal-600-r0",
+      "verdict": "inconclusive",
+      "evaluated": 36,
+      "expected": 36,
+      "coverage": 1.0,
+      "max_error_pt": 20.42520145073028,
+      "max_normalized_error": 0.046010279218150575,
+      "max_normalized_lower": 0.0035475970766147696,
+      "max_normalized_upper": 0.11162661466360392,
+      "definitely_over_tolerance_frames": [],
+      "duration_assessed": false,
+      "limitations": [
+        "First-lift boundary absent; boundary confirmation false; interruption unknown."
+      ]
+    },
+    {
+      "id": "pause-600-r0",
+      "verdict": "fail",
+      "evaluated": 36,
+      "expected": 36,
+      "coverage": 1.0,
+      "max_error_pt": 37.34973230113398,
+      "max_normalized_error": 0.06437928678536503,
+      "max_normalized_lower": 0.03274433661075946,
+      "max_normalized_upper": 0.0960142369599706,
+      "definitely_over_tolerance_frames": [
+        2459
+      ],
+      "duration_assessed": false,
+      "limitations": [
+        "First-lift boundary absent; boundary confirmation false; interruption unknown."
+      ]
+    }
+  ],
+  "position_fail_cases": 3,
+  "inconclusive_cases": 3,
+  "pass_cases": 0,
+  "phase_evidence": "Operator reports orange feedback appearing at a cursor location from 1-2 earlier displayed frames in four clips. This is qualitative signal-phase evidence, not a fitted or universal lag estimate.",
+  "control_cursor_diagnostic": "Unmodified run-11 detector has low/ambiguous scores around control onsets; cannot independently quantify cursor/orange phase from this diagnostic. No replacement clock or per-curve fit emitted.",
+  "contact_duration_and_continuity": "unassessed: lift boundaries and interruption judgements were not supplied; no inferences made from unmarked frames",
+  "interpretation": "Three definite positional mismatches under the fixed clock after carried uncertainty. These do not establish delivery jitter or distinguish cursor/trace rendering phase from gain/delivery behaviour.",
+  "pilot_verdict": "No twelve-curve pass: batch 1 timing unqualified; batch 2 fixed-clock cursor comparison fails, with remaining cases inconclusive.",
+  "collection": "off",
+  "training_admission": false,
+  "live_workload": "one gain and two curve recordings complete; no replacements scheduled",
+  "viewer": "all pilot review viewers stopped on export receipt"
+}

@@ -1,0 +1,596 @@
+{
+  "method": "Unmodified run-11 finder on native control JPEGs; descriptive diagnostic only, no timebase/scoring modification",
+  "controls": {
+    "control-start": [
+      {
+        "source_frame": 772,
+        "pts_s": 13.003333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 5.3803682273646025,
+          "point_pt": [
+            217.02517650789792,
+            408.21479134640236
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 773,
+        "pts_s": 13.02,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 5.382451560697941,
+          "point_pt": [
+            217.02450034449535,
+            408.21558958114304
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 774,
+        "pts_s": 13.036667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 5.373076560697935,
+          "point_pt": [
+            217.02488276227004,
+            408.2145818523111
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 775,
+        "pts_s": 13.053333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 5.392414588860952,
+          "point_pt": [
+            217.02320552761634,
+            408.21795296967105
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 776,
+        "pts_s": 13.07,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 5.39033125552762,
+          "point_pt": [
+            217.02320552761634,
+            408.21795296967105
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 777,
+        "pts_s": 13.086667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 5.392414588860952,
+          "point_pt": [
+            217.02320552761634,
+            408.21795296967105
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 778,
+        "pts_s": 13.103333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 5.377888468148409,
+          "point_pt": [
+            217.02668950772178,
+            408.21119522382156
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 779,
+        "pts_s": 13.12,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 1.3482056153716968,
+          "point_pt": [
+            204.26131717820886,
+            403.0088126994995
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 780,
+        "pts_s": 13.136667,
+        "orange_first_contact": true,
+        "detector": {
+          "score": -5.95849715254111,
+          "point_pt": [
+            222.9496419195705,
+            427.84587361897115
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 781,
+        "pts_s": 13.153333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": -3.65246863970109,
+          "point_pt": [
+            206.55113482003628,
+            414.02256151917135
+          ],
+          "radius_pt": 9.149999618530273
+        }
+      },
+      {
+        "source_frame": 782,
+        "pts_s": 13.17,
+        "orange_first_contact": false,
+        "detector": {
+          "score": -1.1541989267042094,
+          "point_pt": [
+            206.56628007128006,
+            409.3609801009801
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 783,
+        "pts_s": 13.186667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 9.945294629129814,
+          "point_pt": [
+            206.09155593291524,
+            406.084950657116
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 784,
+        "pts_s": 13.203333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 10.738909647649177,
+          "point_pt": [
+            206.53548703071306,
+            407.226370794215
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 785,
+        "pts_s": 13.22,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 20.292497248120064,
+          "point_pt": [
+            206.1102033265212,
+            403.4949006337798
+          ],
+          "radius_pt": 9.149999618530273
+        }
+      },
+      {
+        "source_frame": 786,
+        "pts_s": 13.236667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 31.500003382362088,
+          "point_pt": [
+            205.66171530305542,
+            400.00631448292995
+          ],
+          "radius_pt": 8.550000190734863
+        }
+      }
+    ],
+    "control-middle": [
+      {
+        "source_frame": 1728,
+        "pts_s": 28.953333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 4.360656474802509,
+          "point_pt": [
+            197.66472732720734,
+            406.1606519544967
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 1729,
+        "pts_s": 28.97,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 4.70835057285696,
+          "point_pt": [
+            195.3773543880384,
+            407.1194428038176
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 1730,
+        "pts_s": 28.986667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 4.3700314748025075,
+          "point_pt": [
+            197.66264998905189,
+            406.1608068754106
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 1731,
+        "pts_s": 29.003333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 4.293989808135846,
+          "point_pt": [
+            197.66101990613933,
+            406.15329166868287
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 1732,
+        "pts_s": 29.02,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 3.16578537568435,
+          "point_pt": [
+            195.39764726998337,
+            408.1878392832287
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 1733,
+        "pts_s": 29.036667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": -1.388382235292422,
+          "point_pt": [
+            211.67274429201785,
+            445.28394858546176
+          ],
+          "radius_pt": 7.5
+        }
+      },
+      {
+        "source_frame": 1734,
+        "pts_s": 29.053333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": -4.826082023813903,
+          "point_pt": [
+            243.44541515616544,
+            452.594624817581
+          ],
+          "radius_pt": 8.600000381469727
+        }
+      },
+      {
+        "source_frame": 1735,
+        "pts_s": 29.07,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 2.050146616025538,
+          "point_pt": [
+            220.7750988328535,
+            406.96653614604486
+          ],
+          "radius_pt": 8.600000381469727
+        }
+      },
+      {
+        "source_frame": 1736,
+        "pts_s": 29.086667,
+        "orange_first_contact": true,
+        "detector": {
+          "score": 3.2286466612250395,
+          "point_pt": [
+            195.3449097393896,
+            407.13105327362933
+          ],
+          "radius_pt": 8.600000381469727
+        }
+      },
+      {
+        "source_frame": 1737,
+        "pts_s": 29.103333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 3.7221730359637757,
+          "point_pt": [
+            196.88971998646005,
+            405.187137994584
+          ],
+          "radius_pt": 9.149999618530273
+        }
+      },
+      {
+        "source_frame": 1738,
+        "pts_s": 29.12,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 5.400765110311168,
+          "point_pt": [
+            213.47766501907682,
+            401.3497233172387
+          ],
+          "radius_pt": 8.600000381469727
+        }
+      },
+      {
+        "source_frame": 1739,
+        "pts_s": 29.136667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 2.9625620933803987,
+          "point_pt": [
+            206.18621828947846,
+            412.53209596462113
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 1740,
+        "pts_s": 29.153333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 10.817968327032421,
+          "point_pt": [
+            205.66004298435126,
+            411.36821858552315
+          ],
+          "radius_pt": 8.550000190734863
+        }
+      },
+      {
+        "source_frame": 1741,
+        "pts_s": 29.17,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 12.398460844408952,
+          "point_pt": [
+            205.29773585391942,
+            408.22655068877975
+          ],
+          "radius_pt": 9.149999618530273
+        }
+      },
+      {
+        "source_frame": 1742,
+        "pts_s": 29.186667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 24.327604419636145,
+          "point_pt": [
+            205.45130684552404,
+            421.5820494737984
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      }
+    ],
+    "control-end": [
+      {
+        "source_frame": 2596,
+        "pts_s": 43.435,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 6.562185482123141,
+          "point_pt": [
+            201.07550936891266,
+            402.3596560681668
+          ],
+          "radius_pt": 8.600000381469727
+        }
+      },
+      {
+        "source_frame": 2597,
+        "pts_s": 43.451667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 6.3757274620821835,
+          "point_pt": [
+            201.06913228105046,
+            402.3560753371403
+          ],
+          "radius_pt": 8.600000381469727
+        }
+      },
+      {
+        "source_frame": 2598,
+        "pts_s": 43.468333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 6.181387532829396,
+          "point_pt": [
+            203.5233159967828,
+            402.86751249757623
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 2599,
+        "pts_s": 43.485,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 6.202669928061336,
+          "point_pt": [
+            203.52494152314995,
+            402.8673822436765
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 2600,
+        "pts_s": 43.501667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 6.221732393957369,
+          "point_pt": [
+            203.51836128220717,
+            402.8641862996991
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 2601,
+        "pts_s": 43.518333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 5.035445072144521,
+          "point_pt": [
+            197.56777098687832,
+            404.70065578321453
+          ],
+          "radius_pt": 8.600000381469727
+        }
+      },
+      {
+        "source_frame": 2602,
+        "pts_s": 43.535,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 6.411906830564666,
+          "point_pt": [
+            204.01357022129676,
+            401.96648527794326
+          ],
+          "radius_pt": 8.600000381469727
+        }
+      },
+      {
+        "source_frame": 2603,
+        "pts_s": 43.551667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 5.178542970623608,
+          "point_pt": [
+            212.2287992829667,
+            402.25122727790495
+          ],
+          "radius_pt": 8.600000381469727
+        }
+      },
+      {
+        "source_frame": 2604,
+        "pts_s": 43.568333,
+        "orange_first_contact": true,
+        "detector": {
+          "score": 5.894649362359997,
+          "point_pt": [
+            199.9169187931775,
+            403.7717662385987
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      },
+      {
+        "source_frame": 2605,
+        "pts_s": 43.585,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 0.9010209272727714,
+          "point_pt": [
+            203.0237560893806,
+            435.2389883916168
+          ],
+          "radius_pt": 7.5
+        }
+      },
+      {
+        "source_frame": 2606,
+        "pts_s": 43.601667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": -0.4369054672661665,
+          "point_pt": [
+            185.52340723882259,
+            440.3885481715562
+          ],
+          "radius_pt": 8.600000381469727
+        }
+      },
+      {
+        "source_frame": 2607,
+        "pts_s": 43.618333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 4.561535606228826,
+          "point_pt": [
+            185.87283159661075,
+            437.55076518231346
+          ],
+          "radius_pt": 8.600000381469727
+        }
+      },
+      {
+        "source_frame": 2608,
+        "pts_s": 43.635,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 8.933578862879088,
+          "point_pt": [
+            205.6746896868049,
+            414.8723798931662
+          ],
+          "radius_pt": 8.550000190734863
+        }
+      },
+      {
+        "source_frame": 2609,
+        "pts_s": 43.651667,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 9.440471450284381,
+          "point_pt": [
+            205.72265304553605,
+            411.0974047995343
+          ],
+          "radius_pt": 9.100000381469727
+        }
+      },
+      {
+        "source_frame": 2610,
+        "pts_s": 43.668333,
+        "orange_first_contact": false,
+        "detector": {
+          "score": 10.630109588332742,
+          "point_pt": [
+            204.91140153274975,
+            409.13274703923776
+          ],
+          "radius_pt": 9.699999809265137
+        }
+      }
+    ]
+  }
+}
