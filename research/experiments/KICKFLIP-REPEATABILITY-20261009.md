@@ -576,3 +576,65 @@ batch may now be continued only as an explicit same-recipe continuation:
 
 `run-repeatability` starts after the carried repeats, and `report()` combines
 carried and new repeats in number order.
+
+## Results — 20 repeats of the approved kickflip (2026-10-09)
+
+**Recipe.** `candidate_19` (SHA-256 `430175177b3eda53…`), approved on trial 21: the
+operator's filmed push (0.13 s), the filmed pop (75 ms), the arc-then-outward
+flick (60 + 40 ms) and the filmed catch (0.52 s). Each stroke was one direct WDA
+record. The run started from the Workshop waypoint after a reset and settle.
+
+**Execution.** Repeats 01–15 ran in stage `kickflip-repeatability-c836c0b3`, and
+16–20 in the continuation stage `kickflip-repeatability-3dadc253`.
+- **Repeat 15** is a technical failure: the recording could not be fetched. Its
+  preserved recording (SHA-256 `9a0e7b22…`) shows a landed KICKFLIP and is
+  reported separately.
+- **Admission:** all 19 other repeats were admitted off the rig, with held-out
+  calibration residuals of −15.3 to +14.2 ms.
+- **Report:** `tmp/kickflip-report-20261009/`, copied to the continuation
+  stage's `report-20261009/`.
+
+**Outcomes.** **19/19 admitted repeats are landed KICKFLIPs** (20/20 including
+the recovered repeat 15). Game scores are ignored.
+
+**Input-delivery variation** (submission gaps; WDA plus rig clock):
+
+| Gap | Median (ms) | Range (ms) | Note |
+|---|---|---|---|
+| push→pop | 559 | 536–576 | |
+| pop→flick | 422 | 322–429 | bimodal: 12 at ~0.42 s, 7 at ~0.32 s (WDA return jitter) |
+| flick→catch | 617 | 599–633 | |
+
+**Visual divergence.** Each repeat was compared with repeat 01, aligned once at
+the push, using the masked grayscale difference.
+- **Pre-push:** ≈0 in every repeat, so the reset/settle starting state reproduces.
+- **Push phase:** small differences (0.7–2.5) in three bands, consistent with
+  push timing and alignment offsets of about one frame. The "onset" values of
+  ~0.05 s reflect these, not gameplay.
+- **Pop to 4 s:** differences rise at the pop (~0.56 s) and grow to 4–10 by 4 s.
+- **What tracks timing:** divergence just after the pop correlates with the
+  push→pop timing difference (r = 0.70). Divergence at 3.5–4 s does not
+  correlate with either measured gap (r = −0.27 for pop→flick, −0.05 for
+  push→pop).
+- **Matched-timing repeats:** repeats 08 and 18, within 0.1–5 ms of the
+  reference on both gaps, diverged as much (7.7, 8.3) as repeats whose flick was
+  ~95 ms earlier (median 6.1).
+- **What the frames show:** 2 s after the flick, the board pose is nearly
+  identical across repeats. By 5 s, small differences in heading after landing
+  have grown into visibly different positions relative to the floor lines.
+
+**Interpretation.** With this executor, the trick outcome is highly repeatable
+despite ~100 ms of flick-timing jitter. Fine-grained trajectory state, the
+heading after landing, varies between runs, and the measured inter-stroke timing
+does not explain that variation.
+
+Candidate sources this experiment cannot separate:
+- touch timing *within* strokes, or its phase relative to the game's frame and
+  physics ticks (rig-clock estimates are ±~10 ms, and WDA reports submission,
+  not contact);
+- game physics sensitivity;
+- intrinsic nondeterminism.
+
+This is **whole-system** repeatability and does not prove intrinsic game
+randomness. Isolating game noise needs identical, independently measured touch
+timing, for example a board-clocked Pico or touch logging.

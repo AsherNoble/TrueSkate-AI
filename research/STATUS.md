@@ -46,6 +46,19 @@ nested subsets, validation-only selection, interrupted-run resume and separate
 certification. Its historical cost figures are dated estimates, not current
 quotes or authorization for cloud work.
 
+## Gameplay repeatability (2026-10-09)
+
+Twenty identical executions of an operator-modelled kickflip on XR1 (Workshop),
+each stroke a separate WDA record, produced **19/19 admitted landed KICKFLIPs**.
+One repeat failed recording retrieval; its preserved video also shows a landed
+KICKFLIP. Pop→flick submission timing varied by ~100 ms through WDA jitter.
+
+The trick outcome was robust to that jitter. The board's heading after landing,
+and therefore its later position, still varied between runs, uncorrelated with
+the measured stroke gaps. Whole-system repeatability only; isolating
+intrinsic game noise needs board-clocked, independently measured touches. See
+[KICKFLIP-REPEATABILITY-20261009](experiments/KICKFLIP-REPEATABILITY-20261009.md).
+
 ## Model 2
 
 The sequence policy, causal datasets, stroke assembly and inference are retained
