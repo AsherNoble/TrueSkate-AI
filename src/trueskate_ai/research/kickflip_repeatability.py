@@ -138,17 +138,21 @@ def prepare_manifest(repo, previous_setup=None):
             raise ValueError('predecessor procedure changed')
         for trial in setup_trials(previous_setup):
             execution = read_json(trial / 'execution.json')
-            if not execution.get('error') or execution.get('events') or execution.get('video') is not None or (trial / 'original.mov').exists():
-                raise ValueError('only failures before recording/gameplay can migrate')
+            if not execution.get('error') or any(e.get('kind') not in ('control', 'reset') for e in execution.get('events', [])):
+                raise ValueError('only failures before gameplay can migrate')
+            video = execution.get('video')
+            movie = trial / 'original.mov'
+            if (video is not None and (not movie.is_file() or video.get('n_bytes') != movie.stat().st_size)) or (video is None and movie.exists()):
+                raise ValueError('only failures with consistent recording retrieval can migrate')
         spent = setup_attempt_count(previous_setup)
         history = dict(source_root=str(previous_setup), manifest_sha256=previous['sha256'],
-            attempts=spent, classification='failed before recording/gameplay; retained, not trick outcomes',
+            attempts=spent, classification='failed before gameplay; retained with any retrieved video, not trick outcomes',
             files={str(Path('history/predecessor') / p.relative_to(previous_setup)): file_sha(p)
                    for p in previous_setup.rglob('*') if p.is_file()})
     return seal(dict(experiment=EXPERIMENT, device='iPhone_XR', park='Workshop', size=list(SIZE),
         fps=FPS, wda_revision=WDA_REVISION, setup_limit=SETUP_LIMIT, repeats=REPEATS,
         push_post_response_wait_s=.48, candidates=candidates, rejected=rejected,
-        calibration='centre controls at 1/30/57 seconds; start/end fit; held-out middle',
+        calibration='centre controls at 1.5/30/57 seconds; start/end fit; held-out middle',
         implementation_hashes={p: file_sha(repo / p) for p in IMPLEMENTATION_PATHS},
         controls_reset_before=True, prior_setup_attempts=spent, prior_setup=history, training_admission=False))
 
@@ -210,7 +214,7 @@ def marker():
 
 
 def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revision,
-              context, clock=time.monotonic, sleep=deadline_sleep, epoch=time.time):
+              context, clock=time.monotonic, sleep=deadline_sleep, epoch=time.time, foreground_guard=None):
     """One start/one retrieval; exact separate contacts, including on interruption."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -241,8 +245,9 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
                 raise RuntimeError('command target exceeds recording deadline')
             # Guards include a fresh screenshot; reserve time for them before the
             # submission deadline instead of adding their latency to every gap.
-            sleep(max(0., target - .8 - clock()))
-            guard()
+            fast = kind == 'gesture' and role in ('pop', 'flick') and foreground_guard is not None
+            sleep(max(0., target - (.25 if fast else 1.5) - clock()))
+            (foreground_guard if fast else guard)()
             sleep(max(0., target - clock()))
             remaining()
             lateness = clock() - target
@@ -263,14 +268,14 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
             return event
         def reset(slot, following_slot):
             event = call('reset', reset_payload(), origin + slot)
-            reserve = min(10., origin + following_slot - clock() - .3)
+            reserve = min(10., origin + following_slot - clock() - 1.6)
             if reserve <= 0:
                 raise RuntimeError('reset exhausted its settling window')
             result = settle(reserve)
             event['settle'] = result.summary()
             if not result.settled or clock() >= origin + following_slot:
                 raise RuntimeError('reset failed to settle before next command')
-        call('control', marker(), origin + 1., role='start')
+        call('control', marker(), origin + 1.5, role='start')
         reset(3., 8.)
         push, pop, flick = candidate['contacts']
         call('gesture', push['payload'], origin + 8., role='push', encoded_duration_s=push['encoded_duration_s'])
@@ -282,12 +287,14 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
         guard()
         if clock() >= origin + 20.:
             raise RuntimeError('gameplay exceeded reserved observation window')
-        reset(27., 30.)
+        reset(25., 30.)
         call('control', marker(), origin + 30., role='middle')
-        reset(54., 57.)
+        reset(52., 57.)
         call('control', marker(), origin + 57., role='end')
-        sleep(max(0., start_call + STOP_S - clock()))
         guard()
+        sleep(max(0., start_call + STOP_S - clock()))
+        if foreground_guard is not None:
+            foreground_guard()
         remaining()
     except BaseException as exc:
         fail('execution', exc)
@@ -343,8 +350,8 @@ def admit_trial(out, revision):
             raise ValueError('unexpected native frame interval/recording duration')
         from trueskate_ai.collection.gameplay_filter import is_menu_frame, is_editor_frame
         def inspect(frame):
-            png = cv2.imencode('.png', frame, [cv2.IMWRITE_PNG_COMPRESSION, 0])[1].tobytes()
-            if is_editor_frame(png) or is_menu_frame(png, allow_idle_navigation=True):
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            if is_editor_frame(rgb) or is_menu_frame(rgb, allow_idle_navigation=True):
                 raise ValueError('gameplay contamination in original video')
         _decode_source_frames(video, pts, keep=False, inspect=inspect)
         onsets, stamps = {}, {}

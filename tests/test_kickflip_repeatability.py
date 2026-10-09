@@ -104,7 +104,7 @@ def test_trial_retains_one_retrieval_and_all_failures(tmp_path, monkeypatch, fai
         clock.sleep(sum(a.get('duration', 0) for a in actions)/1000 + .3)
         return {'value': None}
     def guard():
-        if failure == 'foreground' and clock() > 0:
+        if failure == 'foreground' and recorder.starts:
             raise RuntimeError('foreground lost')
     def settle(reserve):
         clock.sleep(.5)
@@ -143,7 +143,7 @@ def test_trial_retains_one_retrieval_and_all_failures(tmp_path, monkeypatch, fai
         assert [e['role'] for e in gameplay] == ['push', 'pop', 'flick']
         assert gameplay[1]['call_start_monotonic_s'] - gameplay[0]['call_end_monotonic_s'] == pytest.approx(.48)
         assert gameplay[2]['call_start_monotonic_s'] - gameplay[1]['call_start_monotonic_s'] == pytest.approx(.179+.62)
-        assert [e['intended_s'] for e in execution['events'] if e['kind'] == 'control'] == [1, 30, 57]
+        assert [e['intended_s'] for e in execution['events'] if e['kind'] == 'control'] == [1.5, 30, 57]
     saved = module.read_json(tmp_path / 'execution.json')
     assert bool(saved['error']) == bool(failure)
     assert recorder.starts == 1 and recorder.stops == (0 if failure == 'start' else 1)
@@ -257,7 +257,7 @@ def test_report_counts_failures_and_unassessed_movies_without_faking_completion(
 @pytest.mark.parametrize('failure', [None, 'dimensions', 'fps', 'pts', 'decode_count', 'control', 'middle'])
 def test_admission_requires_native_decode_and_independent_calibration(tmp_path, monkeypatch, failure):
     roles = ['start', None, 'push', 'pop', 'flick', None, 'middle', None, 'end']
-    stamps = [1., 3., 8., 8.8, 9.6, 27., 30., 54., 57.]
+    stamps = [1.5, 3., 8., 8.8, 9.6, 25., 30., 52., 57.]
     boundaries = module.validate_action_timing_report.__globals__['BOUNDARIES']
     records = [dict(sequence=i, outcome='success', session_id='synthetic', missing_ios_callback=False,
                     ios_callback_result=True, **{b: dict(monotonic_s=t+j*.01, epoch_s=1000+t+j*.01)
@@ -349,6 +349,7 @@ def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, 
     monkeypatch.setattr(scene, 'wait_for_centre_settle', lambda *a, **k: SettleResult(True, .5))
     monkeypatch.setattr(gameplay, 'is_menu_frame', lambda *a, **k: False)
     monkeypatch.setattr(gameplay, 'is_editor_frame', lambda *a, **k: False)
+    monkeypatch.setattr(gameplay, '_to_rgb01', lambda *a: np.zeros((2, 2, 3), np.float32))
     def run(**kw):
         runs.append(kw['candidate']['sha256'])
         if len(runs) == failure_at:
@@ -423,3 +424,35 @@ def test_migration_cannot_bypass_recorded_or_reviewed_failures(experiment, parti
         save_new(experiment / 'approval.json', {})
     with pytest.raises(ValueError, match='cannot migrate|only failures'):
         module.prepare_manifest(REPO, experiment)
+
+
+def test_retrieved_pre_gameplay_movie_can_migrate_but_gameplay_cannot(experiment):
+    trial = experiment / 'setup/trial_01'
+    trial.mkdir(parents=True)
+    (trial / 'original.mov').write_bytes(b'retained short recording')
+    execution = dict(error='control deadline', events=[], video=dict(n_bytes=(trial / 'original.mov').stat().st_size))
+    save_new(trial / 'execution.json', execution)
+    assert module.prepare_manifest(REPO, experiment)['prior_setup_attempts'] == 1
+    execution['events'] = [dict(kind='gesture', role='push')]
+    (trial / 'execution.json').write_text(json.dumps(execution))
+    with pytest.raises(ValueError, match='before gameplay'):
+        module.prepare_manifest(REPO, experiment)
+
+
+def test_full_screen_guards_do_not_stretch_pop_flick_gaps(tmp_path, monkeypatch):
+    clock, recorder, timing = Clock(), Recorder(), Timing()
+    candidate = module.prepare_manifest(REPO)['candidates'][0]
+    def perform(payload):
+        timing.records.append({})
+        clock.sleep(sum(a.get('duration', 0) for a in payload['actions'][0]['actions']) / 1000 + .3)
+    monkeypatch.setattr(module, 'validate_action_timing_report', lambda *a, **k: [])
+    module.run_trial(out=tmp_path, candidate=candidate, recorder=recorder, timing=timing,
+        perform=perform, guard=lambda: clock.sleep(1.), foreground_guard=lambda: clock.sleep(.18),
+        settle=lambda reserve: SettleResult(True, 0.), revision='synthetic', context={},
+        clock=clock, sleep=clock.sleep, epoch=clock)
+    events = module.read_json(tmp_path / 'execution.json')['events']
+    gestures = [e for e in events if e['kind'] == 'gesture']
+    assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
+    assert gestures[1]['call_start_monotonic_s'] - gestures[0]['call_end_monotonic_s'] == pytest.approx(.48)
+    assert gestures[2]['call_start_monotonic_s'] - gestures[1]['call_start_monotonic_s'] == pytest.approx(.179 + .62)
+    assert clock() - 1. < 60  # Initial full guard occurs before recorder.start().

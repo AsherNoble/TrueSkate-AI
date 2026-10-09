@@ -58,9 +58,10 @@ action groups and activity masks; the older rig model must not overwrite it.
   replays against reference gameplay, after measuring repeatability and the
   required feedback speed. [Discussion note, 2026-10-09](protocols/model1_replay_finetuning.md).
 - [XR1 kickflip repeatability](experiments/KICKFLIP-REPEATABILITY-20261009.md):
-  XR1 is ready in Workshop, but its healthy WDA reports `unversioned`. The first
-  setup attempt stopped before recording/gameplay; permission is pending to use
-  the preserved signed `ae50404a` build. Twenty frozen repeats require explicit
+  XR1 is ready in Workshop. Its first setup attempt stopped before recording/
+  gameplay because WDA reported `unversioned`; the operator approved the verified
+  signed replacement and setup is continuing with the failed start retained.
+  Twenty frozen repeats require explicit
   QuickTime review acceptance first. No gameplay results or game-noise estimate yet.
 - How does recovery scale with data volume and domain/session diversity?
 - When should linear work expand to curved and curved+spin trajectories?

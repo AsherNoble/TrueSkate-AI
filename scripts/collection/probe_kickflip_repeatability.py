@@ -64,7 +64,7 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
     from trueskate_ai.collection.wda_action_timing import WDAActionTimingCapture, _http_json
     from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder
     from trueskate_ai.collection.scene_settle import wait_for_centre_settle
-    from trueskate_ai.collection.gameplay_filter import is_menu_frame, is_editor_frame
+    from trueskate_ai.collection.gameplay_filter import is_menu_frame, is_editor_frame, _to_rgb01
     from trueskate_ai.sim.device import DeviceSession, DEVICES, BUNDLE_ID
     tunnel = subprocess.check_output(['launchctl', 'print', 'system/com.trueskate.remotexpc-tunnel'], text=True)
     if 'state = running' not in tunnel:
@@ -104,13 +104,15 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
         timing_preflight()
         def screenshot():
             return base64.b64decode(_http_json(base + '/screenshot')['value'])
-        def guard():
+        def foreground_guard():
             if sessions() != [driver.session_id] or not owned_wda_session or _http_json(base + '/status').get('sessionId') != owned_wda_session:
                 raise RuntimeError('Appium/WDA session ownership changed')
             if driver.query_app_state(BUNDLE_ID) != 4 or worker._active_bundle_id() != BUNDLE_ID:
                 raise RuntimeError('True Skate foreground lost')
-            png = screenshot()
-            if is_editor_frame(png) or is_menu_frame(png, allow_idle_navigation=True):
+        def guard():
+            foreground_guard()
+            rgb = _to_rgb01(screenshot())
+            if is_editor_frame(rgb) or is_menu_frame(rgb, allow_idle_navigation=True):
                 raise RuntimeError('gameplay contamination')
         def settle(max_wait_s):
             if max_wait_s <= 0:
@@ -142,7 +144,8 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
             experiment.run_trial(out=trial, candidate=candidate,
                 recorder=XCTestScreenRecorder(driver, fps=experiment.FPS),
                 timing=WDAActionTimingCapture(wda_port=8100, expected_revision=manifest['wda_revision']),
-                perform=perform, guard=guard, settle=settle, revision=manifest['wda_revision'], context=context)
+                perform=perform, guard=guard, foreground_guard=foreground_guard,
+                settle=settle, revision=manifest['wda_revision'], context=context)
             # Disconnect before lengthy native decoding; never leave a stale session.
             worker.disconnect()
             experiment.admit_trial(trial, manifest['wda_revision'])
@@ -171,7 +174,7 @@ def main():
     parser.add_argument('--root', type=Path, required=True, help='absolute isolated experiment output directory')
     sub = parser.add_subparsers(dest='command', required=True)
     preparation = sub.add_parser('prepare')
-    preparation.add_argument('--previous-setup', type=Path, help='preserve only pre-recording failures and carry their setup budget into a new manifest')
+    preparation.add_argument('--previous-setup', type=Path, help='preserve pre-gameplay failures and carry their setup budget into a new manifest')
     for name in ('run-setup', 'run-repeatability'):
         command = sub.add_parser(name)
         if name == 'run-setup':

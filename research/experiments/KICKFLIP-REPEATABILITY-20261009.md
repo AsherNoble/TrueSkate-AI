@@ -1,12 +1,13 @@
 # KICKFLIP-REPEATABILITY-20261009 — XR1 push/pop/flick repeatability
 
 Status: implemented and checked offline; the operator confirmed XR1 is charged
-and ready in Workshop. Live setup stopped at WDA build identity: the current
-runner reports `unversioned`, rather than required `ae50404a`. One reserved setup
+and ready in Workshop. Initial live setup stopped at WDA build identity: the
+runner reported `unversioned`, rather than required `ae50404a`. One reserved setup
 attempt made only its initial reset/settle; **no recorder start or gameplay
 contacts occurred**. This failed start counts toward the 24-attempt cap. WDA
-remains healthy and unchanged. Explicit operator permission is pending to switch
-to the preserved, signed, previously validated runner. Model 1 is not involved.
+was left healthy. The operator explicitly approved switching to the preserved,
+signed, previously validated runner; deployment/continuation is underway.
+Model 1 is not involved.
 The operator authorized bounded setup, then 20 repeats only after
 accepting the candidate recording in QuickTime. Collection stays OFF.
 
@@ -41,8 +42,8 @@ accepting the candidate recording in QuickTime. Collection stays OFF.
   Record actual submission gaps; requested gaps are not physical timing proof.
 
 Each trial has its own ≤60 s XCTest recording at requested 60 fps. After a
-pre-recording reset/settle, centre controls run at 1/30/57 s; labelled resets
-run at 3/27/54 s and settle before the following event. Push starts at 8 s;
+pre-recording reset/settle, centre controls run at 1.5/30/57 s; labelled resets
+run at 3/25/52 s and settle before the following guard/event. Push starts at 8 s;
 pop follows the historical post-response wait; flick follows the explicit gap.
 The gameplay window ends before the reset at 27 s. Stop targets 59 s including
 recorder-start latency, with one retrieval attempt on interruption/failure.
@@ -50,6 +51,10 @@ recorder-start latency, with one retrieval attempt on interruption/failure.
 Validate WDA build `ae50404aac12d9f8c41f6c3fa8776e97975eaef5`, exact timing record
 counts, native dimensions/PTS and full FFmpeg decode counts. Keep gameplay and
 foreground guards, reserving guard/screenshot time before each submission slot.
+Full screenshot/menu/editor guards surround the three-contact sequence and all
+controls/resets. Pop/flick retain per-contact Appium/WDA ownership and foreground
+guards; costly screenshots do not consume their short gesture gaps. Every native
+video frame still receives the same menu/editor checks during admission.
 Start/end controls define the video clock with ≥55 s anchor
 span; the held-out middle must agree within two native frames. Unobservable
 controls or technical faults stop progress; do not relax admission or silently
@@ -101,6 +106,13 @@ the setup cap; all candidate attempts must be assessed.
 For the temporary Appium server add `--appium-port 4725` to every live command.
 Session discovery must succeed; never bypass it after a permission error.
 
+After resolving a failure before gameplay, prepare a successor with
+`prepare --previous-setup /absolute/predecessor/experiment`. This copies and hashes
+all predecessor evidence (including any short retrieved recording) and carries
+its spent setup budget. Executed/partial gameplay or an approved/main batch
+cannot migrate through this path. Read-only
+WDA identity and idle checks now run before reserving an attempt/resetting.
+
 Copy the experiment directory to the laptop, then `preview --candidate
 candidate_01` renders and opens QuickTime (use `--no-open` when rendering on the
 rig). Only after the operator accepts, `approve --candidate candidate_01
@@ -139,7 +151,8 @@ recorded events and no video. A separate read-only session confirmed timing
 schema 1, `build_revision=unversioned`, capture disabled and zero records.
 All diagnostic sessions were disconnected; the recorder is idle. No trick
 assessment, QuickTime candidate preview or 20-repeat batch exists.
-The temporary Appium 4725 is stopped while restart permission is pending.
+The temporary Appium 4725 was stopped while restart permission was pending,
+then relaunched for the authorized continuation.
 
 Preserved replacement: `wda-timing-deployment/viewport-cache-20261003/derived-data/Build/Products`
 under the rig runtime `tmp/`. The runner passes deep strict codesign verification;
@@ -150,11 +163,49 @@ This is the already-tested CURVE-AUDIT build, not a freshly compiled candidate.
 Full inspection is in `wda-recovery-preflight.json`. The merged rig WDA source
 is clean at `ae50404a`; that alone does not identify the currently loaded binary.
 `wda-recovery-profilecheck.json` confirms the replacement profile includes XR1.
-The default product used by the current supervisor has a profile that expired
-2026-09-20 01:39:44 UTC; do not assume it can relaunch as a rollback. The current
-healthy process remains untouched while permission is pending.
+Correction: the first profile check selected an unused `WebDriverAgent-timing`
+DerivedData directory (`gbz…`), whose profile expired 2026-09-20. It did not identify
+the current supervisor's products. `xcodebuild -showBuildSettings` resolves the
+active project to `WebDriverAgent-dfaybgzjcctyfxgzkzvwwwsjarle/Build/Products`;
+its original profile expires **2026-10-10 05:12:09 UTC**. The earlier claim that
+the active runner's profile had expired was incorrect.
 
 Do not accept `unversioned`, overwrite the failed attempt, reset the setup budget,
-or weaken admission. If restart is approved, document the deployment and resolved
-failure before continuing. Preserve the failed start separately from gameplay
+or weaken admission. Document the deployment and resolved failure before
+continuing. Preserve the failed start separately from gameplay
 outcomes. Twenty repeats still require actual QuickTime review acceptance.
+
+## Approved deployment and continuation — 2026-10-09
+
+The operator replied **“Yes”** to switching XR1 to the verified build and continuing
+setup. Copied the validated signed products into the current project's default
+DerivedData selection, preserving the complete original as sibling
+`Products.before-kickflip-20261009`. Requested restart of only XR1's WDA runner;
+the existing supervisor relaunched XR1 services using `test-without-building`.
+No WDA source or service definition was edited and no rebuild was needed. WDA
+reported ready, build time Oct 2 22:04:17, no active session; True Skate remained
+foreground. Receipt: `wda-deployment-receipt.json` in the original rig evidence root.
+
+Continuation source `c0ea83acf94c60312120991c1cd7ffa4fe171f21` is staged at
+`/Users/training-server/trueskate-ai-runtime/tmp/kickflip-repeatability-c0ea83ac`.
+Its experiment manifest retains all predecessor evidence under
+`history/predecessor`, including the failed start, and starts the next attempt at
+`setup/trial_02`. Gesture candidate hashes, required WDA revision and admission
+gates are unchanged. Thirty-nine focused offline tests passed, including immutable
+failed-start history, budget carry-forward and rejection of recorded-run migration.
+
+The timing identity passed on trial 02, but the first control exceeded its
+100 ms scheduling-lateness gate by 207.546 ms. No actions were submitted; its
+1,125,338-byte original and zero-record timing report were retrieved and retained.
+Read-only guard profiling measured screenshot retrieval at 0.36–0.41 s, duplicate
+image decoding/checks at 0.53–0.59 s, and ownership/foreground checks at about
+0.18 s. This is implementation overhead, not evidence about game repeatability.
+
+Repaired the schedule to reserve 1.5 s for full guards, moved the first calibration
+slot to 1.5 s (anchor span remains ≥55 s), and moved reset slots to 25/52 s for
+settling/guard slack. Stop checks run before the final wait plus a fresh foreground
+check at stop. The push/pop/flick recipe and 100 ms lateness gate remain unchanged.
+Images are decoded once for live checks; native BGR frames are converted directly
+to RGB for identical admission predicates, avoiding a PNG encode/decode round trip.
+The next successor retains both pre-gameplay technical failures and starts at
+attempt 03, leaving 22 of the original 24 setup attempts available.
