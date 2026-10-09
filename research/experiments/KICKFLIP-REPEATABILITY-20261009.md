@@ -43,9 +43,9 @@ accepting the candidate recording in QuickTime. Collection stays OFF.
 
 Each trial has its own ≤60 s XCTest recording at requested 60 fps. After a
 pre-recording reset/settle, centre controls run at 1.5/30/57 s; labelled resets
-run at 3/25/52 s and settle before the following guard/event. Push starts at 8 s;
+run at 3/22/49 s and settle before the following guard/event. Push starts at 14 s;
 pop follows the historical post-response wait; flick follows the explicit gap.
-The gameplay window ends before the reset at 27 s. Stop targets 59 s including
+The gameplay window ends before the reset at 22 s. Stop targets 59 s including
 recorder-start latency, with one retrieval attempt on interruption/failure.
 
 Validate WDA build `ae50404aac12d9f8c41f6c3fa8776e97975eaef5`, exact timing record
@@ -209,3 +209,13 @@ Images are decoded once for live checks; native BGR frames are converted directl
 to RGB for identical admission predicates, avoiding a PNG encode/decode round trip.
 The next successor retains both pre-gameplay technical failures and starts at
 attempt 03, leaving 22 of the original 24 setup attempts available.
+
+Trial 03 submitted only its start control and reset, then failed the unchanged
+settling gate. Initial reset settling took 4.6 s; the in-recording allowance
+expired at 3.417 s after differences 10.351, 3.295 and 0.676 (two consecutive
+differences below 2 are required). Its 8,589,481-byte movie and two timing records
+were retained. No push/pop/flick ran. Expanded calibration-only slack: first reset
+3 s → push 14 s, middle reset 22 s → control 30 s, final reset 49 s → control 57 s.
+Gesture durations and inter-contact timing, settling threshold, held-out residual,
+native-frame and maximum-lateness gates remain unchanged. All three pre-gameplay
+failures count toward the original cap; next attempt is 04, with 21 remaining.

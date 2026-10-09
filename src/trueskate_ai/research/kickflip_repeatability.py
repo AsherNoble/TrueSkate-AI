@@ -276,9 +276,9 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
             if not result.settled or clock() >= origin + following_slot:
                 raise RuntimeError('reset failed to settle before next command')
         call('control', marker(), origin + 1.5, role='start')
-        reset(3., 8.)
+        reset(3., 14.)
         push, pop, flick = candidate['contacts']
-        call('gesture', push['payload'], origin + 8., role='push', encoded_duration_s=push['encoded_duration_s'])
+        call('gesture', push['payload'], origin + 14., role='push', encoded_duration_s=push['encoded_duration_s'])
         # The historic push sleeps AFTER the blocking call, not after physical lift.
         pop_event = call('gesture', pop['payload'], clock() + .48, role='pop',
                          encoded_duration_s=pop['encoded_duration_s'])
@@ -287,9 +287,9 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
         guard()
         if clock() >= origin + 20.:
             raise RuntimeError('gameplay exceeded reserved observation window')
-        reset(25., 30.)
+        reset(22., 30.)
         call('control', marker(), origin + 30., role='middle')
-        reset(52., 57.)
+        reset(49., 57.)
         call('control', marker(), origin + 57., role='end')
         guard()
         sleep(max(0., start_call + STOP_S - clock()))

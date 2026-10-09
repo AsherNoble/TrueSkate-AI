@@ -257,7 +257,7 @@ def test_report_counts_failures_and_unassessed_movies_without_faking_completion(
 @pytest.mark.parametrize('failure', [None, 'dimensions', 'fps', 'pts', 'decode_count', 'control', 'middle'])
 def test_admission_requires_native_decode_and_independent_calibration(tmp_path, monkeypatch, failure):
     roles = ['start', None, 'push', 'pop', 'flick', None, 'middle', None, 'end']
-    stamps = [1.5, 3., 8., 8.8, 9.6, 25., 30., 52., 57.]
+    stamps = [1.5, 3., 14., 14.8, 15.6, 22., 30., 49., 57.]
     boundaries = module.validate_action_timing_report.__globals__['BOUNDARIES']
     records = [dict(sequence=i, outcome='success', session_id='synthetic', missing_ios_callback=False,
                     ios_callback_result=True, **{b: dict(monotonic_s=t+j*.01, epoch_s=1000+t+j*.01)
@@ -448,7 +448,7 @@ def test_full_screen_guards_do_not_stretch_pop_flick_gaps(tmp_path, monkeypatch)
     monkeypatch.setattr(module, 'validate_action_timing_report', lambda *a, **k: [])
     module.run_trial(out=tmp_path, candidate=candidate, recorder=recorder, timing=timing,
         perform=perform, guard=lambda: clock.sleep(1.), foreground_guard=lambda: clock.sleep(.18),
-        settle=lambda reserve: SettleResult(True, 0.), revision='synthetic', context={},
+        settle=lambda reserve: (clock.sleep(4.6) or SettleResult(True, 4.6)), revision='synthetic', context={},
         clock=clock, sleep=clock.sleep, epoch=clock)
     events = module.read_json(tmp_path / 'execution.json')['events']
     gestures = [e for e in events if e['kind'] == 'gesture']
