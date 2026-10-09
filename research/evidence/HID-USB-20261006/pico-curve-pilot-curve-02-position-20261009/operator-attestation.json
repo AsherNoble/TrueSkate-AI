@@ -1,0 +1,714 @@
+{
+  "schema": "pico-usb-operator-mark-semantics-v1",
+  "operator_statement": "If I record the position, it means two things: that is where the accesibility cursor is at that instant AND I think the accesibility cursor is actively touching the screen at that instant. You can infer whatever information you need from that.",
+  "scope": "Every recorded position is AssistiveTouch cursor centre and operator judgement of active contact at that native frame; original checkbox is not used by operator.",
+  "original_export_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-review-83303accf20c.json",
+  "original_export_bytes_sha256": "0fc109941f5a03c2b7d3ecc35885f217820237c7fa2d876c9dd3c6b6efdc52a4",
+  "derived_export_bytes_sha256": "701e7c3e0e53b63504d7f48bc4a38483225a51e56736bf95937fc1e63dd1f379",
+  "changed_fields": [
+    {
+      "clip": "arc-150-r1",
+      "source_frame": 1017,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "arc-150-r1",
+      "source_frame": 1016,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "arc-150-r1",
+      "source_frame": 1019,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "arc-150-r1",
+      "source_frame": 1018,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "arc-150-r1",
+      "source_frame": 1020,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "arc-150-r1",
+      "source_frame": 1021,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "arc-150-r1",
+      "source_frame": 1022,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "s-150-r1",
+      "source_frame": 1257,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "s-150-r1",
+      "source_frame": 1258,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "s-150-r1",
+      "source_frame": 1259,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "s-150-r1",
+      "source_frame": 1260,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "s-150-r1",
+      "source_frame": 1261,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "s-150-r1",
+      "source_frame": 1262,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "s-150-r1",
+      "source_frame": 1263,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "s-150-r1",
+      "source_frame": 1264,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-150-r1",
+      "source_frame": 1497,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-150-r1",
+      "source_frame": 1498,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-150-r1",
+      "source_frame": 1499,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-150-r1",
+      "source_frame": 1500,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-150-r1",
+      "source_frame": 1501,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-150-r1",
+      "source_frame": 1976,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-150-r1",
+      "source_frame": 1977,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-150-r1",
+      "source_frame": 1978,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-150-r1",
+      "source_frame": 1979,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-150-r1",
+      "source_frame": 1980,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-150-r1",
+      "source_frame": 1981,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-150-r1",
+      "source_frame": 1982,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-150-r1",
+      "source_frame": 1983,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2216,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2217,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2218,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2219,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2220,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2221,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2222,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2223,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2224,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2225,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2226,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2227,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2228,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2229,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2230,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2231,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2232,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2233,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2234,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2235,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2236,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2237,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2238,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2239,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2240,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2241,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2242,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2243,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2244,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2245,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2246,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2247,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2248,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2249,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2250,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "reversal-600-r0",
+      "source_frame": 2251,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2424,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2425,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2426,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2427,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2428,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2429,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2430,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2431,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2432,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2433,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2434,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2435,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2436,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2437,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2438,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2439,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2440,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2441,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2442,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2443,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2444,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2445,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2446,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2447,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2448,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2449,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2450,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2451,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2452,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2453,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2454,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2455,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2456,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2457,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2458,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    },
+    {
+      "clip": "pause-600-r0",
+      "source_frame": 2459,
+      "field": "contact_confirmed",
+      "original": false,
+      "derived": true
+    }
+  ],
+  "positions_frames_uncertainties_notes_unchanged": true,
+  "unknown_boundaries_and_interruption_preserved": true,
+  "orange_trail_position_correspondence": "not asserted; operator notes visible trail at earlier cursor positions",
+  "viewer": "localhost 18977 stopped after exported report path received"
+}

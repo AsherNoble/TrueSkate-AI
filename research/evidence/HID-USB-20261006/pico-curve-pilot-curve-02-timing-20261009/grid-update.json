@@ -1,0 +1,46 @@
+{
+  "schema": "pico-usb-review-grid-update-v1",
+  "date": "2026-10-09",
+  "bundle_sha256": "83303accf20c66885fe072c42d225f85a6399be2bbc9be9255b08fb450cbca02",
+  "old_html_sha256": "7959f7de939f539182be3551386512f51732538e7e585ccefec7144fd993d1ad",
+  "html_sha256": "57081972f284b0692be7afd3efa9053fe856a5cc5c38c78b68cc1be3eaaed0c2",
+  "grid": "translucent SVG overlay: 1 logical point per square; stronger lines every 5 points",
+  "geometry": "same 414 by 896 logical viewBox as cursor marks/target; exact image display transform; overlay ignores pointer events",
+  "zoom_controls_added": false,
+  "grid_default": "on; can toggle off",
+  "user_annotations": "Existing localStorage key and saved rows preserved; grid toggling does not save/change annotations",
+  "sealed_bindings_unchanged": {
+    "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-02-curves-bundle.json": "23ed6b1b16bac876aa4a2070f4c1bcd208d108aa86e4c55ebee913791328fe68",
+    "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-02-curves/data.js": "f16244c973404c6fb2d79339b82a73d5c60f2547684fb9a378d7da56a3ced49c",
+    "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-02-curves/review_integrity.js": "f6dda0135c333f05ed5dbb701b9f7a4e7a67be58ebd150737163e8197ad776e1"
+  },
+  "tests": {
+    "existing_viewer_test": "1 passed",
+    "browser": {
+      "synthetic_media_only": true,
+      "grid_toggles_without_changing_annotations": true,
+      "grid_does_not_intercept_clicks": true,
+      "logical_click": [
+        207,
+        429.8677062988281
+      ],
+      "click_target": "screen",
+      "saved_mark_preserved_on_reload": true,
+      "geometry": {
+        "point_screen_px": 0.8479352678571429,
+        "point_screen_py": 0.8479352678571429,
+        "native_point_screen_px": 0.8479352678571429,
+        "native_point_screen_py": 0.8479352678571429,
+        "minor_x": 1,
+        "minor_y": 1,
+        "major_x": 5,
+        "major_y": 5,
+        "grid_pointer_events": "none",
+        "minor_opacity": "0.3",
+        "major_opacity": "0.5"
+      }
+    }
+  },
+  "browser_fixture": "isolated synthetic media; no holdout used as regression fixture; test browser closed",
+  "live_server": "existing temporary localhost 18977; stop on exported review path"
+}

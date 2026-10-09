@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-08",
+  "run": "gain-01",
+  "capture_outcome": "completed",
+  "events_sent": 971,
+  "events_expected": 971,
+  "clipped": 0,
+  "board_max_lateness_us": 32,
+  "board_p99_lateness_us": 0.0,
+  "accepted_gain_profile": "648a360da80af7b855f6a3d793be28a1e226307c796c8b9bbdb8323b9e4cd917",
+  "stationary_windows": 74,
+  "movement_passes": 36,
+  "minimum_tracked_fraction": 1.0,
+  "maximum_stationary_spread_pt": 0.2991248156509534,
+  "maximum_rate_gain_difference_fraction": 0.00545899783919172,
+  "review": "automatic stationary quality checks; assistant inspected all 74 preserved cursor crops; no human contact fidelity annotation",
+  "curve_1": "compiled, all 12 staged files verified, prepare passed, loaded and verified in BOOTSEL without execution",
+  "curve_2": "compiled and packaged locally; not staged or loaded",
+  "training_admission": false,
+  "collection": "off"
+}

@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-09",
+  "batch": "curves-2",
+  "verdict": "timing qualification passed; curve fidelity pending human position review",
+  "middle_residual_ms": 14.15291803278862,
+  "middle_native_frame_ms": 16.66699999999821,
+  "margin_within_frozen_gate_ms": 2.5140819672095915,
+  "clock_uncertainty_ms": 22.486418032787725,
+  "accepted": true,
+  "interpretation": "Independent start/end onset interval midpoints define one clock map; held-out middle passes the frozen one-native-frame gate. No per-curve phase fit. Board receipt times are TinyUSB acceptance, not independently observed iOS delivery.",
+  "first_batch": "inconclusive timing qualification; no curve score assigned",
+  "curve_review": "six native-frame curve clips prepared; human positions/boundaries/interruption pending",
+  "pilot_verdict": "no twelve-curve pass established",
+  "training_admission": false,
+  "collection": "off"
+}

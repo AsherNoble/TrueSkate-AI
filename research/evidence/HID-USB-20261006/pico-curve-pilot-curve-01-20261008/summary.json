@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-08",
+  "run": "curve-01",
+  "capture_outcome": "completed",
+  "events_sent": 1684,
+  "events_expected": 1684,
+  "clipped": 0,
+  "board_max_lateness_us": 32,
+  "board_p99_lateness_us": 0.0,
+  "profile_sha256": "648a360da80af7b855f6a3d793be28a1e226307c796c8b9bbdb8323b9e4cd917",
+  "curve_fidelity": "unscored; requires independent visible control boundaries and native-frame contact review",
+  "curve_2": "all 12 staged files verified, prepare passed, loaded and verified in BOOTSEL without execution",
+  "training_admission": false,
+  "collection": "off"
+}

@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-09",
+  "batch": "curves-1",
+  "verdict": "inconclusive timing qualification; no curve score assigned",
+  "middle_residual_ms": 16.74872131147609,
+  "middle_native_frame_ms": 16.66699999999821,
+  "excess_over_frozen_gate_us": 81.72131147787809,
+  "clock_uncertainty_ms": 25.082221311475195,
+  "accepted": false,
+  "interpretation": "The held-out control narrowly exceeds the frozen one-native-frame gate; this does not identify USB jitter as the cause. Source integrity passed; operator confirmed all preceding frames clear. No individual curve phase fit or timing gate relaxation.",
+  "first_viewer": "stopped after exported path received",
+  "second_timing_review": "open temporarily on localhost port 18976",
+  "training_admission": false,
+  "collection": "off"
+}

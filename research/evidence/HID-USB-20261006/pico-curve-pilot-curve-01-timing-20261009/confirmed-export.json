@@ -1,0 +1,28 @@
+{
+  "schema": "pico-usb-controls-v1",
+  "version": 2,
+  "bundle_sha256": "ce6623074b438c04e05347d05efe6e1a55c65eb78ac7f52c882088e5a7dee445",
+  "annotations": {
+    "control-start": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 786,
+      "boundary_confirmed": true,
+      "notes": "Preceding frame confirmed clear by operator in chat after export; original export confirmation checkbox was unchecked."
+    },
+    "control-middle": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 1746,
+      "boundary_confirmed": true,
+      "notes": "Preceding frame confirmed clear by operator in chat after export; original export confirmation checkbox was unchecked."
+    },
+    "control-end": {
+      "frames": [],
+      "interrupted": null,
+      "first_contact_frame": 2615,
+      "boundary_confirmed": true,
+      "notes": "Preceding frame confirmed clear by operator in chat after export; original export confirmation checkbox was unchecked."
+    }
+  }
+}

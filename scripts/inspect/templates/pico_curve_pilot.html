@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pico curve diagnostic review</title>
+<style>
+:root{font:15px system-ui;color-scheme:dark;background:#11171c;color:#edf2f5}*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}main{max-width:1100px;margin:auto;padding:20px}h1{font-size:22px;margin:0 0 10px}.layout{display:grid;grid-template-columns:minmax(280px,1fr) 360px;gap:20px}.screen{position:relative;height:75vh;background:#030608;overflow:hidden}img,svg{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}svg{z-index:2;touch-action:none;cursor:crosshair}button,select,input,textarea{font:inherit}button,select,textarea,input[type=number]{background:#24323d;color:inherit;border:1px solid #526676;border-radius:5px;padding:8px}button{cursor:pointer}button:disabled{opacity:.4}button:focus-visible{outline:2px solid #73cde7}button[aria-pressed=true]{background:#245d49;border-color:#8ee0b9}p{line-height:1.5;color:#bfcbd3}.buttons{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}label{display:block;margin:14px 0}input[type=range]{width:100%}textarea{width:100%;height:65px}#stamp,#status{font-variant-numeric:tabular-nums}#status{min-height:40px;color:#d1eade}aside{padding:15px;background:#18232c;border-radius:8px}#help,#gridHelp{font-size:13px}#error{color:#ffb4a8}@media(max-width:730px){.layout{grid-template-columns:1fr}.screen{height:60vh}}
+</style>
+<main><h1>Pico curve diagnostic review</h1><p id="progress"></p><div class="layout"><section>
+<div class="screen"><img id="native" alt="Native recording frame"><svg id="screen" viewBox="0 0 414 896" preserveAspectRatio="xMidYMid meet">
+<defs>
+<pattern id="pointGrid" width="1" height="1" patternUnits="userSpaceOnUse"><path d="M1 0H0V1" fill="none" stroke="white" stroke-width=".15" stroke-opacity=".3"/></pattern>
+<pattern id="fivePointGrid" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M5 0H0V5" fill="none" stroke="white" stroke-width=".3" stroke-opacity=".5"/></pattern>
+</defs>
+<g id="logicalGrid" pointer-events="none" aria-hidden="true"><rect width="414" height="896" fill="url(#pointGrid)"/><rect width="414" height="896" fill="url(#fivePointGrid)"/></g>
+<circle id="ring" r="10" fill="none" stroke="#56dcff" stroke-width="1.5" visibility="hidden"/>
+<circle id="mark" r="2" fill="#ffdd72" visibility="hidden"/></svg></div>
+<input id="seek" type="range" min="0" value="0" aria-label="Native frame">
+<div class="buttons"><button id="back">← Frame</button><button id="play">Play</button><button id="forward">Frame →</button>
+<select id="speed" aria-label="Playback speed"><option value=".1">0.1×</option><option value=".25" selected>0.25×</option><option value=".5">0.5×</option><option value="1">1×</option></select></div>
+<p id="stamp"></p><p id="error" role="alert"></p></section><aside>
+<h2 id="clip"></h2><p id="help"></p><p id="status" role="status" aria-live="polite"></p>
+<label><input id="overlay" type="checkbox" checked> Show target ring</label>
+<label><input id="grid" type="checkbox" checked> Show logical-point grid</label>
+<p id="gridHelp">Small squares: 1 × 1 logical point. Strong lines: every 5 points. Uncertainty is a radius: 2 points means the centre could be within 2 small squares of your click.</p>
+<label>Position uncertainty (logical points) <input id="uncertainty" type="number" min="0" step=".5" value="2"></label>
+<label id="contactLabel"><input id="contact" type="checkbox"> Confirm contact position against orange trail</label>
+<div class="buttons"><button id="unknown">Clear this frame / unknown</button></div>
+<div id="boundaries"><div class="buttons"><button id="onset">First contact here</button><button id="lift">First lifted frame here</button></div>
+<label><input id="boundaryConfirmed" type="checkbox"> Boundary follows a clear previous frame</label></div>
+<label id="staticLabel"><input id="static" type="checkbox"> Cursor stays still in this window</label>
+<label id="interruptionLabel">Contact interruption <select id="interrupted"><option value="">Unknown</option><option value="false">None observed</option><option value="true">Observed</option></select></label>
+<label>Notes<textarea id="notes"></textarea></label>
+<div class="buttons"><button id="previous">← Previous clip</button><button id="next">Next clip →</button></div>
+<div class="buttons"><button id="export">Export review</button></div>
+<p id="footerHelp"></p>
+</aside></div></main>
+<script src="data.js"></script><script src="review_integrity.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),key='pico-review:'+DATA.bundle_sha256;
+let saved={};try{saved=JSON.parse(localStorage.getItem(key)||'{}')}catch{}
+const rows={};for(const c of DATA.clips)rows[c.id]=saved[c.id]||{frames:[],interrupted:null};
+let clipIndex=0,index=0,playing=false,timer=null,generation=0,url=null,loaded=false,integrityFailed=false;
+const clip=()=>DATA.clips[clipIndex],row=()=>rows[clip().id],frame=()=>clip().frames[index];
+function persist(){localStorage.setItem(key,JSON.stringify(rows))}
+function stop(){playing=false;clearTimeout(timer);$('play').textContent='Play'}
+function frameRow(){return row().frames.find(r=>r.source_frame===frame().source_frame)}
+function saveFrame(point){
+ if(!loaded||integrityFailed)return;
+ const n=Number($('uncertainty').value);if(!Number.isFinite(n)||n<0)return;
+ row().frames=row().frames.filter(r=>r.source_frame!==frame().source_frame);
+ if(point)row().frames.push({source_frame:frame().source_frame,point_pt:point,uncertainty_pt:n,contact_confirmed:$('contact').checked});
+ persist();updateStatus();drawMark();
+}
+function showGrid(){$('logicalGrid').setAttribute('visibility',$('grid').checked?'visible':'hidden')}
+function drawMark(){const r=frameRow();$('mark').setAttribute('visibility',r?.point_pt?'visible':'hidden');if(r?.point_pt){$('mark').setAttribute('cx',r.point_pt[0]);$('mark').setAttribute('cy',r.point_pt[1])}}
+function refreshActions(){
+ const blocked=!loaded||integrityFailed;
+ $('onset').disabled=blocked||index===0;$('lift').disabled=blocked||index===0;
+ $('unknown').disabled=blocked||(clip().purpose==='control'&&row().first_contact_frame==null);
+ $('export').disabled=blocked;
+ $('boundaryConfirmed').disabled=clip().purpose==='control'&&row().first_contact_frame==null;
+}
+function updateStatus(){
+ const r=row(),control=clip().purpose==='control';
+ $('status').textContent=control?(r.first_contact_frame==null?'Touch-down is not marked.':`Touch-down marked on frame ${r.first_contact_frame}. ${r.boundary_confirmed?'Previous frame confirmed clear.':'Confirm that the previous frame is clear.'}`):`Marked ${r.frames.length}/${clip().frames.length} frames. First contact: ${r.first_contact_frame??'unknown'}. First lifted: ${r.first_lifted_frame??'unknown'}.`;
+ const here=r.first_contact_frame===frame().source_frame;
+ $('onset').textContent=here?'Touch-down marked here':'First contact here';$('onset').setAttribute('aria-pressed',String(here));
+ refreshActions();persist();
+}
+async function show(){
+ loaded=false;for(const id of ['onset','lift','unknown','export'])$(id).disabled=true;$('screen').style.pointerEvents='none';$('ring').setAttribute('visibility','hidden');
+ const token=++generation,c=clip(),f=frame();$('error').textContent='';$('seek').max=c.frames.length-1;$('seek').value=index;
+ $('stamp').textContent=`Frame ${f.source_frame} · source PTS ${f.pts_s.toFixed(6)} s · ${index+1}/${c.frames.length}`;
+ const mode={'pico-usb-gain-review-v1':'Stationary gain windows','pico-usb-controls-v1':'Timing controls','pico-usb-curves-review-v1':'Curve contacts'}[DATA.schema]||'Preview';
+ $('progress').textContent=`${mode} · ${clipIndex+1}/${DATA.clips.length} clips`;$('clip').textContent=c.id;
+ const target=f.target,visible=$('overlay').checked&&target;
+ if(target){$('ring').setAttribute('cx',target[0]*414);$('ring').setAttribute('cy',target[1]*896)}
+ const r=frameRow();$('contact').checked=r?.contact_confirmed===true;if(r)$('uncertainty').value=r.uncertainty_pt;
+ drawMark();updateStatus();
+ try{const next=await reviewFrameUrl(f);if(token!==generation){URL.revokeObjectURL(next);return}const old=url;url=next;
+  await new Promise((resolve,reject)=>{$('native').onload=resolve;$('native').onerror=()=>reject(Error('Verified frame could not be displayed'));$('native').src=next});
+  if(old)URL.revokeObjectURL(old);if(token!==generation)return;loaded=true;
+  refreshActions();$('screen').style.pointerEvents=integrityFailed?'none':'auto';
+  $('ring').setAttribute('visibility',visible&&!integrityFailed?'visible':'hidden');
+ }catch(e){if(token!==generation)return;stop();integrityFailed=true;loaded=false;refreshActions();$('native').removeAttribute('src');$('error').textContent=e.message+' Rebuild this review before exporting.'}
+}
+function enterClip(){
+ stop();index=0;const c=clip(),r=row();const isStatic=c.purpose==='static',isCurve=c.purpose==='curve';
+ $('staticLabel').hidden=!isStatic;$('boundaries').hidden=isStatic;$('lift').hidden=!isCurve;$('contactLabel').hidden=!isCurve;$('interruptionLabel').hidden=!isCurve;
+ $('overlay').parentElement.hidden=!isCurve;$('uncertainty').parentElement.hidden=!isStatic&&!isCurve;
+ $('unknown').textContent=c.purpose==='control'?'Clear touch-down mark':'Clear this frame / unknown';
+ $('screen').style.cursor=c.purpose==='control'?'default':'crosshair';
+ $('static').checked=r.static_confirmed===true;$('boundaryConfirmed').checked=r.boundary_confirmed===true;
+ $('interrupted').value=r.interrupted===null?'':String(r.interrupted);$('notes').value=r.notes||'';
+ $('help').textContent=isStatic?'Mark at least three cursor centres in this stationary window and confirm stability.':isCurve?'Step each contact frame, mark its observed position, and confirm agreement with the orange trail. Mark both contact boundaries.':'Find the first orange contact glow/trail, step back to confirm the previous frame is clear, then return and click First contact here. The grey pointer is already visible before touch-down.';
+ $('footerHelp').textContent=c.purpose==='control'?'Arrow keys step frames; Space plays or pauses. Mark one touch-down per clip, confirm the previous frame, then export after all three clips.':'Click the visible cursor/contact centre to mark a frame. Unmarked frames stay unknown. Space plays; arrow keys step native frames; O hides the ring.';
+ show();
+}
+function step(delta){stop();index=Math.max(0,Math.min(clip().frames.length-1,index+delta));show()}
+async function tick(){if(!playing)return;if(index===clip().frames.length-1){stop();return}const dt=(clip().frames[index+1].pts_s-frame().pts_s)*1000/Number($('speed').value);timer=setTimeout(async()=>{if(!playing)return;index++;await show();tick()},dt)}
+$('play').onclick=()=>{if(playing)stop();else{playing=true;$('play').textContent='Pause';tick()}};
+$('back').onclick=()=>step(-1);$('forward').onclick=()=>step(1);$('seek').oninput=()=>{stop();index=Number($('seek').value);show()};$('overlay').onchange=show;$('grid').onchange=showGrid;
+$('screen').onclick=e=>{stop();if(!['static','curve'].includes(clip().purpose))return;const p=$('screen').createSVGPoint();p.x=e.clientX;p.y=e.clientY;const v=p.matrixTransform($('screen').getScreenCTM().inverse());if(v.x>=0&&v.x<=414&&v.y>=0&&v.y<=896)saveFrame([v.x,v.y])};
+$('contact').onchange=()=>{const r=frameRow();if(r)saveFrame(r.point_pt)};$('uncertainty').onchange=()=>{const r=frameRow();if(r)saveFrame(r.point_pt)};
+$('unknown').onclick=()=>{if(!loaded||integrityFailed)return;stop();if(clip().purpose==='control'){delete row().first_contact_frame;row().boundary_confirmed=false;$('boundaryConfirmed').checked=false;updateStatus()}else saveFrame(null)};
+$('onset').onclick=()=>{if(!loaded||integrityFailed||index===0)return;stop();row().first_contact_frame=frame().source_frame;row().boundary_confirmed=false;$('boundaryConfirmed').checked=false;updateStatus()};
+$('lift').onclick=()=>{if(!loaded||integrityFailed||index===0)return;stop();row().first_lifted_frame=frame().source_frame;row().boundary_confirmed=false;$('boundaryConfirmed').checked=false;updateStatus()};
+$('static').onchange=()=>{row().static_confirmed=$('static').checked;updateStatus()};$('boundaryConfirmed').onchange=()=>{row().boundary_confirmed=$('boundaryConfirmed').checked;updateStatus()};
+$('interrupted').onchange=()=>{row().interrupted=$('interrupted').value===''?null:$('interrupted').value==='true';updateStatus()};$('notes').oninput=()=>{row().notes=$('notes').value;persist()};
+$('previous').onclick=()=>{if(clipIndex>0){clipIndex--;enterClip()}};$('next').onclick=()=>{if(clipIndex<DATA.clips.length-1){clipIndex++;enterClip()}};
+$('export').onclick=()=>{if(integrityFailed||!loaded)return;stop();const value={schema:DATA.schema,version:2,bundle_sha256:DATA.bundle_sha256,annotations:rows};const u=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)+'\n'],{type:'application/json'}));const a=document.createElement('a');a.href=u;a.download='pico-review-'+DATA.bundle_sha256.slice(0,12)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),5000)};
+document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;if([' ','ArrowLeft','ArrowRight','o','O'].includes(e.key))e.preventDefault();if(e.key===' ')$('play').click();if(e.key==='ArrowLeft')step(-1);if(e.key==='ArrowRight')step(1);if(e.key.toLowerCase()==='o'){$('overlay').checked=!$('overlay').checked;show()}});
+showGrid();enterClip();
+</script></html>

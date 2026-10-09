@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-10-08. Behavioural cloning is the development direction.
+Updated 2026-10-09. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -54,6 +54,9 @@ action groups and activity masks; the older rig model must not overwrite it.
 
 ## Open questions
 
+- Proposed Model 1 replay fine-tuning: automatically grade predicted-gesture
+  replays against reference gameplay, after measuring repeatability and the
+  required feedback speed. [Discussion note, 2026-10-09](protocols/model1_replay_finetuning.md).
 - How does recovery scale with data volume and domain/session diversity?
 - When should linear work expand to curved and curved+spin trajectories?
 - Can Model 1 label expert recordings accurately enough for useful Model 2 training?
@@ -331,6 +334,56 @@ instrumented WDA `ae50404a`; production services can reinstall an `unversioned`
 runner when rebuilding over USB. Collection remains off. See
 [HID-USB-20261006](experiments/HID-USB-20261006.md) and its run-11 evidence.
 
+A bounded preloaded USB curve pilot is implemented. Its one button-up gain
+recording completed successfully (3,599 native frames, 59.92 effective fps,
+zero cleanup errors). The Pico accepted all 971 reports with maximum board
+lateness 32 microseconds. All 36 movement passes and 74 stationary windows
+passed the gain checks, with 100% tracking and maximum stationary spread
+0.30 logical points; measured gains at 15 and 3 ms differ by at most 0.55%.
+Both six-gesture programs are compiled from this measured profile. Batch 1's
+one-minute recording completed (3,601 frames, 59.91 effective fps, clean recorder
+and attachment cleanup), and its Pico receipt confirms 1,684/1,684 accepted
+reports with no clipping and 32 microseconds maximum board lateness. Batch 2
+also completed (3,604 frames, 59.91 effective fps, clean recorder/attachment
+cleanup), with all 1,684 reports accepted, no clipping and the same maximum
+board lateness. The authorized one-gain/two-curve recording workload is complete.
+Original movies and timing sectors have verified local copies; sealed native
+timing-control reviews are prepared for both batches. Batch 1's human touch-down
+marks and operator-confirmed clear preceding frames passed source integrity.
+Its held-out middle residual is 16.7487 ms against a 16.667 ms frame limit,
+narrowly failing timing qualification (81.7 microseconds beyond the frozen gate;
+25.0822 ms carried clock uncertainty). Its curve fidelity remains inconclusive,
+with no curve score emitted, individual phase fit or gate relaxation. This does not identify USB jitter
+as the cause. Batch 2's verified human control review passes the held-out middle
+gate: 14.1529 ms against 16.667 ms, with 22.4864 ms carried clock uncertainty.
+Batch 2's position review is imported: 100 cursor-centre marks, each explicitly
+declared by the operator to mean active contact at that instant. The unused
+orange-confirmation checkbox is superseded by that attestation in a separate
+scoring copy; original export bytes and all points/uncertainties remain preserved.
+The unchanged orange-control clock comparison has three positional failures
+(150 ms arc/S and 600 ms pause) and three inconclusive cases, with zero passes.
+Both 600 ms cases have full planned-frame position coverage. Lift boundaries
+and interruption assessments are unknown, so duration/continuity are unassessed.
+Operator notes report orange feedback at cursor positions from 1–2 earlier
+frames in four clips. This cross-signal phase relationship is not quantified;
+a diagnostic cursor detector cannot reliably identify the control onsets.
+No per-curve retiming or replacement clock was used. These results do not identify
+USB jitter as the cause or establish a twelve-curve fidelity pass. All review
+viewers are stopped. Capture and board completion do not establish visible
+contact/path accuracy. Native-PTS review uses
+Pico start/end controls and a held-out middle
+control, retaining clock/position uncertainty. The operator kept the 150 ms
+reversal stress cases despite their possible 60 Hz measurement floor. The
+Pico-only control substitution is specific to this pilot; Model 1 five-touch
+requirements and collection-off remain unchanged.
+[Gain evidence](evidence/HID-USB-20261006/pico-curve-pilot-gain-01-20261008),
+[first curve capture](evidence/HID-USB-20261006/pico-curve-pilot-curve-01-20261008),
+[second curve capture/review preparation](evidence/HID-USB-20261006/pico-curve-pilot-curve-02-20261008),
+[first timing review](evidence/HID-USB-20261006/pico-curve-pilot-curve-01-timing-20261009),
+[second timing qualification and curve review](evidence/HID-USB-20261006/pico-curve-pilot-curve-02-timing-20261009),
+[second cursor-position review](evidence/HID-USB-20261006/pico-curve-pilot-curve-02-position-20261009),
+[pilot workflow](../hardware/pico_curve_pilot/README.md).
+
 AssistiveTouch supports preset and recorded multi-finger gestures. Independent
 live control of two mouse-driven contacts remains unverified. In three short
 XR2 diagnostic recordings, the pointer-only and WDA spin-hold controls worked;
@@ -473,8 +526,9 @@ Device and park are confounded, and some overlays may be about one frame late.
 Bundled, serial, scheduled indexed-path and anchor-finger demo replays all failed
 human review; separate scheduled records also hit XCTest's overlapping-record
 restriction. Preserve these negative results when considering future executors.
-USB HID now has bounded hover/tap/drag evidence; buffered curved replay and
-physical spin-pad approaches remain unvalidated proposals.
+USB HID now has bounded hover/tap/drag evidence; the preloaded curved pilot
+awaits live calibration and review. A reusable host command link and physical
+spin-pad approaches remain unvalidated proposals.
 
 Current audit/replay source retrieves partial recordings on every post-start exit
 and retains failures without retrying failed stop RPCs. New review bundles bind
