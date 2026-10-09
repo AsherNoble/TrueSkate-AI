@@ -57,7 +57,12 @@ VARIANTS = ({}, dict(pop_s=.05), dict(pop_s=.1), dict(flick_s=.06), dict(flick_s
             dict(pop_end=[.52, .73], pop_s=.05, flick_s=.06),
             # Trials 17-18 (candidate_10) landed KICKFLIPs that the operator calls rocket
             # flips: the board flips nose-up. Angle the flick up the deck to level it.
-            dict(flick_s=.04, flick_end=[.715, .46]), dict(flick_s=.04, flick_end=[.715, .42]))
+            dict(flick_s=.04, flick_end=[.715, .46]), dict(flick_s=.04, flick_end=[.715, .42]),
+            # Operator now allows 2-3 point flicks. Their filmed flick presses almost still on
+            # the deck for ~50 ms (a likely levelling press), then snaps right in ~50 ms.
+            dict(flick_points=[[.537, .51], [.545, .517], [.715, .51]], flick_durations_s=[.05, .04]),
+            dict(flick_points=[[.537, .51], [.545, .517], [.715, .565]], flick_durations_s=[.05, .05]),
+            dict(flick_points=[[.537, .51], [.545, .517], [.715, .51]], flick_durations_s=[.08, .04]))
 IMPLEMENTATION_PATHS = (
     'scripts/collection/probe_kickflip_repeatability.py',
     'src/trueskate_ai/research/kickflip_repeatability.py',
@@ -127,16 +132,22 @@ def contact_payload(name, points, duration_s, easing_power=1.):
                 easing_power=easing_power, payload=payload, payload_sha256=digest(payload))
 
 
-def direct_stroke(name, start, end, duration_s):
-    """One straight contact for WDA's /wda/perform_trick_gestures; start == end holds."""
-    if not .01 <= duration_s <= 1.:
+def direct_stroke(name, points, durations_s):
+    """One contact for WDA's /wda/perform_trick_gestures: straight segments, one time each.
+
+    Repeating a point holds it. The operator allows two or three points for the flick.
+    """
+    if len(points) != len(durations_s) + 1 or not 2 <= len(points) <= 3:
+        raise ValueError('a stroke needs two or three points and one duration per segment')
+    if any(not .005 <= d <= 1. for d in durations_s):
         raise ValueError('invalid stroke duration')
-    (x0, y0), (x1, y1) = safe_scaled_path([start, end])
-    payload = {'gestures': [{'waypoints': [dict(x=int(x0), y=int(y0)),
-                                           dict(x=int(x1), y=int(y1), duration_ms=int(round(duration_s * 1000)))]}]}
-    return dict(name=name, transport='wda_perform_trick_gestures', points=[list(start), list(end)],
-                encoded_duration_s=int(round(duration_s * 1000)) / 1000, payload=payload,
-                payload_sha256=digest(payload))
+    scaled = safe_scaled_path(points)
+    ms = [int(round(d * 1000)) for d in durations_s]
+    waypoints = [dict(x=int(scaled[0][0]), y=int(scaled[0][1]))]
+    waypoints += [dict(x=int(x), y=int(y), duration_ms=d) for (x, y), d in zip(scaled[1:], ms)]
+    payload = {'gestures': [{'waypoints': waypoints}]}
+    return dict(name=name, transport='wda_perform_trick_gestures', points=[list(p) for p in points],
+                encoded_duration_s=sum(ms) / 1000, payload=payload, payload_sha256=digest(payload))
 
 
 def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
@@ -147,9 +158,11 @@ def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
         candidate_id = f'candidate_{index:02d}'
         params = {**KICKFLIP, **change}
         try:
-            contacts = [push, direct_stroke('pop', params['pop_start'], params['pop_end'], params['pop_s']),
-                        direct_stroke('flick', params['flick_start'], params['flick_end'], params['flick_s']),
-                        direct_stroke('catch', params['catch_point'], params['catch_point'], params['catch_s'])]
+            flick = (direct_stroke('flick', params['flick_points'], params['flick_durations_s'])
+                     if 'flick_points' in params else
+                     direct_stroke('flick', [params['flick_start'], params['flick_end']], [params['flick_s']]))
+            contacts = [push, direct_stroke('pop', [params['pop_start'], params['pop_end']], [params['pop_s']]),
+                        flick, direct_stroke('catch', [params['catch_point']] * 2, [params['catch_s']])]
             candidates.append(seal(dict(id=candidate_id, seed='operator-filmed kickflip 2026-10-09',
                 parameters=params, varied=sorted(change), contacts=contacts,
                 catch_wait_s=round(max(0., params['catch_gap_s'] - DIRECT_RETURN_S), 3),

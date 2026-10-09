@@ -484,3 +484,11 @@ flips while pitched nose-up rather than levelled. In the operator's video, the
 flick finger first slides ~50 ms up the deck toward the nose, which is the
 levelling motion; a later flick also meets a more nose-up board. Added straight
 0.04 s flicks angled up the deck (end y 0.46 and 0.42).
+
+**Correction and three-point flicks.** Frame tracking of the operator's flick
+shows a near-stationary press on the deck (≈3 pt drift over ~50 ms), not a slide
+up the deck, followed by a ~50 ms snap right and slightly down. The operator now
+allows two- or three-point flicks. `direct_stroke` takes up to three points with
+one duration per segment. `candidate_16`–`18` press for 50 or 80 ms, then snap
+horizontally (40 ms) or along the filmed slant (50 ms). Two-point payloads are
+unchanged.

@@ -74,7 +74,7 @@ def direct(clock, overhead, calls=None):
 
 def test_candidates_preserve_push_and_send_each_stroke_alone(experiment):
     manifest = module.load_manifest(experiment)
-    assert len(manifest['candidates']) == 15 and manifest['rejected'] == []
+    assert len(manifest['candidates']) == 18 and manifest['rejected'] == []
     first = manifest['candidates'][0]
     assert first['varied'] == [] and [c['name'] for c in first['contacts']] == ['push', 'pop', 'flick', 'catch']
     push = first['contacts'][0]
@@ -90,7 +90,7 @@ def test_candidates_preserve_push_and_send_each_stroke_alone(experiment):
             # One gesture, one straight segment, one XCTest record (GESTURES.md hard rule).
             assert stroke['transport'] == 'wda_perform_trick_gestures'
             assert len(stroke['payload']['gestures']) == 1
-            assert len(stroke['payload']['gestures'][0]['waypoints']) == 2
+            assert len(stroke['payload']['gestures'][0]['waypoints']) in (2, 3)
     first['contacts'][0]['payload']['actions'][0]['actions'][2]['duration'] = 21
     with pytest.raises(ValueError, match='hash'):
         module.verify_seal(first)
@@ -597,4 +597,12 @@ def test_filmed_strokes_are_single_straight_contacts():
 
 def test_strokes_cannot_reach_protected_controls():
     with pytest.raises(ValueError, match='protected'):
-        module.direct_stroke('pop', [.505, .56], [.555, .98], .075)
+        module.direct_stroke('pop', [[.505, .56], [.555, .98]], [.075])
+
+
+def test_three_point_flick_presses_then_snaps():
+    flick = module.prepare_manifest(REPO)['candidates'][15]['contacts'][2]
+    waypoints = flick['payload']['gestures'][0]['waypoints']
+    assert [w.get('duration_ms') for w in waypoints] == [None, 50, 40] and flick['encoded_duration_s'] == .09
+    with pytest.raises(ValueError, match='two or three points'):
+        module.direct_stroke('flick', [[.5, .5]] * 4, [.01] * 3)
