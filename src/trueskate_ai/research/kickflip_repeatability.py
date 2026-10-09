@@ -54,7 +54,10 @@ VARIANTS = ({}, dict(pop_s=.05), dict(pop_s=.1), dict(flick_s=.06), dict(flick_s
             # (~0.70) removes post-pop stroke time that only delays the flick.
             dict(pop_end=[.52, .73], pop_s=.05, flick_s=.06, flick_end=[.715, .51]),
             dict(pop_end=[.52, .73], pop_s=.04, flick_s=.06, flick_end=[.715, .51]),
-            dict(pop_end=[.52, .73], pop_s=.05, flick_s=.06))
+            dict(pop_end=[.52, .73], pop_s=.05, flick_s=.06),
+            # Trials 17-18 (candidate_10) landed KICKFLIPs that the operator calls rocket
+            # flips: the board flips nose-up. Angle the flick up the deck to level it.
+            dict(flick_s=.04, flick_end=[.715, .46]), dict(flick_s=.04, flick_end=[.715, .42]))
 IMPLEMENTATION_PATHS = (
     'scripts/collection/probe_kickflip_repeatability.py',
     'src/trueskate_ai/research/kickflip_repeatability.py',

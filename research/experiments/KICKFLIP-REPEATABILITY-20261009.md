@@ -470,3 +470,17 @@ flipped about halfway and landed upside down, with no banner. Trial 14
 (WDA jitter), so the flick started 0.427 s after the pop. The board completed a
 flip and landed: **HARD FLIP, score 130**. The next candidates keep the 0.06 s or
 faster flick and remove its downward slant (a likely shove-it input).
+
+**Trials 15–18.**
+- Trial 15 (filmed pop, horizontal 0.06 s flick): KICKFLIP, then FAILED;
+  under-rotated, landed upside down.
+- Trial 16 (short quick pop to y 0.73 in 0.05 s, horizontal 0.06 s flick):
+  HARD FLIP, score 91, landed.
+- Trials 17 and 18 (`candidate_10`: filmed pop, horizontal 0.04 s flick, flick
+  ~0.43 s after the pop): **KICKFLIP**, scores 85 and 98, landed.
+
+The operator rates 17 and 18 as kickflips of the "rocket flip" kind: the board
+flips while pitched nose-up rather than levelled. In the operator's video, the
+flick finger first slides ~50 ms up the deck toward the nose, which is the
+levelling motion; a later flick also meets a more nose-up board. Added straight
+0.04 s flicks angled up the deck (end y 0.46 and 0.42).
