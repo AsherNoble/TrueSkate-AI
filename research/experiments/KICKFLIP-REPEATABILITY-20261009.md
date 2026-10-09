@@ -461,3 +461,12 @@ video times are estimated from the rig clock plus the median rig-to-WDA offset o
 the instrumented requests. Calibration still uses the instrumented centre
 controls. `run-setup --defer-admission` plus `admit` lets the slow native-frame
 admission run on the laptop against the SHA-bound original.
+
+**Trials 13–14** (`f089b174`, separate direct records, laptop admission). Both
+showed clean, separate pop and flick trails, with no conjoining. Trial 13
+(0.10 s flick): the flick call started 0.331 s after the pop call; the board
+flipped about halfway and landed upside down, with no banner. Trial 14
+(`candidate_04`, 0.06 s flick): the pop request took 426 ms rather than 331 ms
+(WDA jitter), so the flick started 0.427 s after the pop. The board completed a
+flip and landed: **HARD FLIP, score 130**. The next candidates keep the 0.06 s or
+faster flick and remove its downward slant (a likely shove-it input).

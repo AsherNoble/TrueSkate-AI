@@ -74,7 +74,7 @@ def direct(clock, overhead, calls=None):
 
 def test_candidates_preserve_push_and_send_each_stroke_alone(experiment):
     manifest = module.load_manifest(experiment)
-    assert len(manifest['candidates']) == 7 and manifest['rejected'] == []
+    assert len(manifest['candidates']) == 10 and manifest['rejected'] == []
     first = manifest['candidates'][0]
     assert first['varied'] == [] and [c['name'] for c in first['contacts']] == ['push', 'pop', 'flick', 'catch']
     push = first['contacts'][0]
