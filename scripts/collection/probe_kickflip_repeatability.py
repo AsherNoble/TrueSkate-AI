@@ -274,9 +274,9 @@ def main():
     else:
         manifest = experiment.load_manifest(root)
         print(json.dumps(dict(setup_attempts=experiment.setup_attempt_count(root), setup_limit=experiment.SETUP_LIMIT,
-            review_approved=(root / 'approval.json').exists(), candidates=[dict(id=c['id'], seed=c['seed'],
-            durations_s=[g['encoded_duration_s'] for g in c['contacts']], gap_s=c['pop_to_flick_gap_s'])
-            for c in manifest['candidates']], repeats=experiment.report(root)), indent=2))
+            review_approved=(root / 'approval.json').exists(), candidates=[dict(id=c['id'], varied=c['varied'],
+            fingers=c['contacts'][1]['fingers']) for c in manifest['candidates']],
+            rejected=manifest['rejected'], repeats=experiment.report(root)), indent=2))
 
 
 if __name__ == '__main__':

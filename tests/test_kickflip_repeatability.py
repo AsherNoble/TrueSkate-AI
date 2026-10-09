@@ -62,23 +62,26 @@ class Timing:
         return dict(records=self.records)
 
 
-def test_candidates_preserve_push_and_never_bundle_contacts(experiment):
+def test_candidates_preserve_push_and_give_each_trick_stroke_one_finger(experiment):
     manifest = module.load_manifest(experiment)
-    assert len(manifest['candidates']) == 11 and manifest['rejected'] == []
-    assert {c['seed'] for c in manifest['candidates']} == {'mined'}
+    assert len(manifest['candidates']) == 12 and manifest['rejected'] == []
     first = manifest['candidates'][0]
-    assert [c['name'] for c in first['contacts']] == ['push', 'pop', 'flick']
+    assert first['varied'] == [] and [c['name'] for c in first['contacts']] == ['push', 'trick']
     push = first['contacts'][0]
     assert push['encoded_duration_s'] == .02
     assert push['points'] == [[.7658, .3044], [.7658, .6797]]
+    assert len(push['payload']['actions']) == 1
+    for candidate in manifest['candidates'][1:]:
+        assert candidate['contacts'][0] == push and len(candidate['varied']) == 1
+        assert {k: v for k, v in candidate['parameters'].items() if k not in candidate['varied']} == \
+            {k: v for k, v in module.KICKFLIP.items() if k not in candidate['varied']}
     for candidate in manifest['candidates']:
-        assert candidate['pop_to_flick_gap_s'] >= .4
-        assert candidate['contacts'][0] == push
-        for contact in candidate['contacts']:
-            assert len(contact['payload']['actions']) == 1
-            actions = contact['payload']['actions'][0]['actions']
-            assert sum(a['type'] == 'pointerDown' for a in actions) == 1
-            assert sum(a['type'] == 'pointerUp' for a in actions) == 1
+        sources = candidate['contacts'][1]['payload']['actions']
+        assert [f['role'] for f in candidate['contacts'][1]['fingers']] == ['pop', 'flick', 'catch']
+        assert len({len(source['actions']) for source in sources}) == 1
+        for source in sources:
+            assert sum(a['type'] == 'pointerDown' for a in source['actions']) == 1
+            assert sum(a['type'] == 'pointerUp' for a in source['actions']) == 1
     first['contacts'][0]['payload']['actions'][0]['actions'][2]['duration'] = 21
     with pytest.raises(ValueError, match='hash'):
         module.verify_seal(first)
@@ -139,11 +142,11 @@ def test_trial_retains_one_retrieval_and_all_failures(tmp_path, monkeypatch, fai
     else:
         module.run_trial(**kwargs)
         execution = module.read_json(tmp_path / 'execution.json')
-        assert len(calls) == 9 and clock() == 59
+        assert len(calls) == 8 and clock() == 59
         gameplay = [e for e in execution['events'] if e['kind'] == 'gesture']
-        assert [e['role'] for e in gameplay] == ['push', 'pop', 'flick']
+        assert [e['role'] for e in gameplay] == ['push', 'trick']
         assert gameplay[1]['call_start_monotonic_s'] - gameplay[0]['call_end_monotonic_s'] == pytest.approx(.48)
-        assert gameplay[2]['call_start_monotonic_s'] - gameplay[1]['call_end_monotonic_s'] == pytest.approx(.62)
+        assert gameplay[1]['encoded_duration_s'] == candidate['contacts'][1]['encoded_duration_s']
         assert [e['intended_s'] for e in execution['events'] if e['kind'] == 'control'] == [1.5, 30, 57]
     saved = module.read_json(tmp_path / 'execution.json')
     assert bool(saved['error']) == bool(failure)
@@ -245,20 +248,20 @@ def test_report_counts_failures_and_unassessed_movies_without_faking_completion(
             continue
         (trial / 'original.mov').write_bytes(b'synthetic')
         gestures = [dict(role=role, submitted_monotonic_s=t, encoded_duration_s=.05,
-                         ios_callback_latency_s=.35) for role, t in zip(('push', 'pop', 'flick'), (10., 10.8, 11.4))]
+                         ios_callback_latency_s=.35) for role, t in zip(('push', 'trick'), (10., 10.9))]
         save_new(trial / 'admission.json', dict(accepted=True, video_sha256=module.file_sha(trial / 'original.mov'),
                  gestures=gestures, heldout_middle_error_s=.01, native_frame_s=1/60, max_frame_gap_s=.033))
     result = module.report(experiment)
     assert result['attempted'] == 2 and result['admitted'] == 1 and not result['complete']
     assert result['outcomes'] == {'unassessed': 1}
     assert result['technical_failures'] == ['repeats/trial_02']
-    assert result['timing_distributions']['pop_to_flick']['median_s'] == pytest.approx(.6)
+    assert result['timing_distributions']['push_to_trick']['median_s'] == pytest.approx(.9)
 
 
 @pytest.mark.parametrize('failure', [None, 'dimensions', 'fps', 'pts', 'decode_count', 'control', 'middle'])
 def test_admission_requires_native_decode_and_independent_calibration(tmp_path, monkeypatch, failure):
-    roles = ['start', None, 'push', 'pop', 'flick', None, 'middle', None, 'end']
-    stamps = [1.5, 3., 14., 14.8, 15.6, 22., 30., 49., 57.]
+    roles = ['start', None, 'push', 'trick', None, 'middle', None, 'end']
+    stamps = [1.5, 3., 14., 14.9, 22., 30., 49., 57.]
     boundaries = module.validate_action_timing_report.__globals__['BOUNDARIES']
     records = [dict(sequence=i, outcome='success', session_id='synthetic', missing_ios_callback=False,
                     ios_callback_result=True, **{b: dict(monotonic_s=t+j*.01, epoch_s=1000+t+j*.01)
@@ -292,7 +295,7 @@ def test_admission_requires_native_decode_and_independent_calibration(tmp_path, 
     else:
         result = module.admit_trial(tmp_path, 'synthetic')
         assert result['accepted'] and result['heldout_middle_error_s'] == pytest.approx(0.)
-        assert [g['role'] for g in result['gestures']] == ['push', 'pop', 'flick']
+        assert [g['role'] for g in result['gestures']] == ['push', 'trick']
 
 
 def load_cli():
@@ -444,7 +447,7 @@ def test_retrieved_pre_gameplay_movie_can_migrate_but_gameplay_cannot(experiment
         module.prepare_manifest(REPO, experiment)
 
 
-def test_full_screen_guards_do_not_stretch_pop_flick_gaps(tmp_path, monkeypatch):
+def test_full_screen_guards_do_not_stretch_push_to_trick_wait(tmp_path, monkeypatch):
     clock, recorder, timing = Clock(), Recorder(), Timing()
     candidate = module.prepare_manifest(REPO)['candidates'][0]
     def perform(payload):
@@ -459,12 +462,11 @@ def test_full_screen_guards_do_not_stretch_pop_flick_gaps(tmp_path, monkeypatch)
     gestures = [e for e in events if e['kind'] == 'gesture']
     assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
     assert gestures[1]['call_start_monotonic_s'] - gestures[0]['call_end_monotonic_s'] == pytest.approx(.48)
-    assert gestures[2]['call_start_monotonic_s'] - gestures[1]['call_end_monotonic_s'] == pytest.approx(.62)
     assert clock() - 1.4 < 60  # Initial full guard occurs before recorder.start().
 
 
-def test_slow_wda_returns_delay_but_never_overrun_the_flick(tmp_path, monkeypatch):
-    # Trial 06: every call took ~0.69 s, so a flick timed from pop start was already late.
+def test_slow_wda_returns_never_overrun_the_trick(tmp_path, monkeypatch):
+    # Trial 06: every call took ~0.69 s; a contact timed from a previous start was already late.
     clock, recorder, timing = Clock(), Recorder(), Timing()
     candidate = module.prepare_manifest(REPO)['candidates'][0]
     def perform(payload):
@@ -476,9 +478,9 @@ def test_slow_wda_returns_delay_but_never_overrun_the_flick(tmp_path, monkeypatc
         settle=lambda reserve: (clock.sleep(4.6) or SettleResult(True, 4.6)), revision='synthetic', context={},
         clock=clock, sleep=clock.sleep, epoch=clock)
     events = module.read_json(tmp_path / 'execution.json')['events']
-    pop, flick = [e for e in events if e['role'] in ('pop', 'flick')]
+    push, trick = [e for e in events if e['kind'] == 'gesture']
     assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
-    assert flick['call_start_monotonic_s'] - pop['call_end_monotonic_s'] == pytest.approx(candidate['pop_to_flick_gap_s'])
+    assert trick['call_start_monotonic_s'] - push['call_end_monotonic_s'] == pytest.approx(.48)
 
 
 @pytest.mark.parametrize('state', ['ready', 'no_tunnel', 'other_device', 'leftover', 'unlistable'])
@@ -509,7 +511,7 @@ def supersede(root):
     manifest = module.load_manifest(root)
     manifest.pop('sha256')
     old = {k: v for k, v in manifest['candidates'][0].items() if k != 'sha256'}
-    old['pop_to_flick_gap_s'] = .48
+    old['parameters'] = {**old['parameters'], 'flick_gap_s': .48}
     manifest['candidates'] = [module.seal(old)]
     (root / 'manifest.json').write_text(json.dumps(module.seal(manifest)))
 
@@ -554,3 +556,28 @@ def test_superseded_procedure_still_requires_assessed_gameplay(experiment):
     add_gameplay_trial(experiment, 1, assessed=False)
     with pytest.raises(ValueError, match='admitted and assessed'):
         module.prepare_manifest(REPO, experiment, 'reason')
+
+
+def test_operator_kickflip_timeline_is_exact_in_one_payload():
+    trick = module.trick_payload(module.KICKFLIP)
+    fingers = {f['role']: f for f in trick['fingers']}
+    # Pop holds 0.75 s, then a 0.1 s move whose ms truncation ends it at 0.848 s.
+    assert (fingers['pop']['down_s'], fingers['pop']['up_s']) == (0., .848)
+    assert fingers['flick']['down_s'] == pytest.approx(.9) and fingers['flick']['up_s'] == pytest.approx(.96)
+    assert fingers['catch']['down_s'] == pytest.approx(1.21) and fingers['catch']['up_s'] == pytest.approx(1.51)
+    assert trick['encoded_duration_s'] == pytest.approx(1.51)
+    pop, flick, catch = trick['payload']['actions']
+    moves = [a['duration'] for a in pop['actions'] if a['type'] == 'pointerMove'][1:]
+    assert moves == sorted(moves, reverse=True) and moves[0] > moves[-1]  # Accelerates downward.
+    assert [a['y'] for a in pop['actions'] if a['type'] == 'pointerMove'][-1] == int(.67 * 896 + 150)
+    for source in (flick, catch):
+        kinds = [a['type'] for a in source['actions']]
+        down = kinds.index('pointerDown')
+        # WDA drops a zero-duration move followed by a pause; the move is re-issued before down.
+        assert kinds[down - 1] == 'pointerMove' and kinds[down - 2] == 'pause'
+    assert {(a['x'], a['y']) for a in catch['actions'] if a['type'] == 'pointerMove'} == {(207, 448)}
+
+
+def test_pop_cannot_reach_protected_bottom_controls():
+    with pytest.raises(ValueError, match='protected'):
+        module.trick_payload({**module.KICKFLIP, 'pop_length_pt': 200.})

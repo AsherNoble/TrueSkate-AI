@@ -20,7 +20,7 @@ from trueskate_ai.research.curve_protocol import digest, save_new
 from trueskate_ai.research.curved_audit import reset_payload
 from trueskate_ai.research.linear_speed_probe import deadline_sleep
 from trueskate_ai.sim.gestures import PUSH_START, PUSH_END, PUSH_DURATION
-from trueskate_ai.sim.touch_actions import build_curved_drag, make_touch_pointer
+from trueskate_ai.sim.touch_actions import build_curved_drag, easing_to_segment_durations, make_touch_pointer
 
 EXPERIMENT = 'KICKFLIP-REPEATABILITY-20261009'
 SETUP_LIMIT = 24
@@ -30,11 +30,19 @@ SIZE = (414, 896)
 FPS = 60
 STOP_S = 59.
 LATE_S = .1
-# Mined recipe only. The hand guess's original 30 ms pop-to-flick gap ran as one
-# bundled payload; separate requests cannot reproduce it (WDA calls take 0.45-0.7 s).
-SEEDS = (
-    ('mined', 'tail_20260611/kickflip_2g_20260611_095155.json', 'best_gestures', None),
-)
+# Operator-described kickflip (2026-10-09). The mined library pop missed the board
+# in this camera. Pop, flick and catch need ~0.1 s spacing, so they share one
+# request with a finger each, as the trick executor bundles close strokes; t = 0
+# is pop touch-down. Each variant changes one uncertain number from the centre.
+TAIL_TIP = (.5, .67)
+BOARD_CENTRE = (.5, .5)
+FLICK_END = (.8, .5)
+KICKFLIP = dict(pop_hold_s=.75, pop_length_pt=150., pop_move_s=.1, pop_easing_power=.5,
+                flick_gap_s=.05, flick_s=.06, catch_delay_s=.25, catch_hold_s=.3)
+# 190 points is the longest pop clear of the bottom bar's protected margin.
+VARIANTS = ({}, dict(pop_length_pt=100.), dict(pop_length_pt=190.), dict(pop_move_s=.06),
+            dict(pop_move_s=.16), dict(flick_gap_s=0.), dict(flick_gap_s=.12), dict(flick_s=.04),
+            dict(flick_s=.1), dict(catch_delay_s=.15), dict(catch_delay_s=.4), dict(pop_hold_s=.4))
 IMPLEMENTATION_PATHS = (
     'scripts/collection/probe_kickflip_repeatability.py',
     'src/trueskate_ai/research/kickflip_repeatability.py',
@@ -76,10 +84,7 @@ def verify_seal(value):
     return value
 
 
-def contact_payload(name, points, duration_s, easing_power=1.):
-    if (len(points) < 2 or not np.isfinite(duration_s) or not .01 <= duration_s <= 1.
-            or not np.isfinite(easing_power) or not .3 <= easing_power <= 3.):
-        raise ValueError('invalid gesture duration/easing/points')
+def safe_scaled_path(points):
     if any(len(p) != 2 or not all(np.isfinite(v) and 0 <= v <= 1 for v in p) for p in points):
         raise ValueError('normalized finite points required')
     # Check both source and the actual Selenium-quantized path.
@@ -88,6 +93,14 @@ def contact_payload(name, points, duration_s, easing_power=1.):
     for path in (points, quantized):
         if any(not segment_is_safe(a, b) for a, b in zip(path, path[1:])):
             raise ValueError('gesture crosses protected controls')
+    return scaled
+
+
+def contact_payload(name, points, duration_s, easing_power=1.):
+    if (len(points) < 2 or not np.isfinite(duration_s) or not .01 <= duration_s <= 1.
+            or not np.isfinite(easing_power) or not .3 <= easing_power <= 3.):
+        raise ValueError('invalid gesture duration/easing/points')
+    scaled = safe_scaled_path(points)
     finger = make_touch_pointer(name)
     finger.name = name
     build_curved_drag(finger, scaled, total_duration=duration_s,
@@ -99,36 +112,67 @@ def contact_payload(name, points, duration_s, easing_power=1.):
                 easing_power=easing_power, payload=payload, payload_sha256=digest(payload))
 
 
+def trick_payload(params):
+    """Pop, flick and catch fingers in one W3C payload with independent timelines."""
+    pop_end = (TAIL_TIP[0], TAIL_TIP[1] + params['pop_length_pt'] / SIZE[1])
+    pop_points = [(TAIL_TIP[0], TAIL_TIP[1] + (pop_end[1] - TAIL_TIP[1]) * i / 4) for i in range(5)]
+    pop_up = params['pop_hold_s'] + params['pop_move_s']
+    flick_down = pop_up + params['flick_gap_s']
+    catch_down = flick_down + params['flick_s'] + params['catch_delay_s']
+    strokes = (('pop', pop_points, 0., params['pop_hold_s'], params['pop_move_s'], params['pop_easing_power']),
+               ('flick', [BOARD_CENTRE, FLICK_END], flick_down, 0., params['flick_s'], 1.),
+               ('catch', [BOARD_CENTRE, BOARD_CENTRE], catch_down, params['catch_hold_s'], 0., 1.))
+    sources, fingers = [], []
+    for role, points, down_s, hold_s, move_s, easing_power in strokes:
+        if not (0 <= down_s and 0 <= hold_s and 0 <= move_s <= 1. and .3 <= easing_power <= 3. and hold_s + move_s > 0):
+            raise ValueError('invalid trick stroke timing')
+        scaled = safe_scaled_path(points)
+        finger = make_touch_pointer(role)
+        finger.name = role  # Stable ids keep identical recipes hash-identical.
+        finger.create_pointer_move(x=scaled[0][0], y=scaled[0][1], duration=0)
+        if down_s > 0:
+            finger.create_pause(down_s)
+            # WDA drops a zero-duration move followed by a pause; re-issue it before down.
+            finger.create_pointer_move(x=scaled[0][0], y=scaled[0][1], duration=0)
+        finger.create_pointer_down()
+        if hold_s > 0:
+            finger.create_pause(hold_s)
+        if move_s > 0:
+            # Progress -> time easing; a power below one starts slowly and accelerates.
+            durations = easing_to_segment_durations(len(scaled) - 1, int(round(move_s * 1000)),
+                                                    lambda t, p=easing_power: t ** p)
+            for (x, y), duration in zip(scaled[1:], durations):
+                finger.create_pointer_move(x=x, y=y, duration=duration)
+        finger.create_pointer_up(0)
+        source = finger.encode()
+        elapsed, down, up = 0, None, None
+        for action in source['actions']:
+            down = elapsed if action['type'] == 'pointerDown' else down
+            up = elapsed if action['type'] == 'pointerUp' else up
+            elapsed += action.get('duration', 0)
+        sources.append(source)
+        fingers.append(dict(role=role, points=points, down_s=down / 1000, up_s=up / 1000))
+    longest = max(len(source['actions']) for source in sources)
+    for source in sources:  # Same padding as the trick executor's combined payload.
+        source['actions'] += [dict(type='pause', duration=0)] * (longest - len(source['actions']))
+    payload = {'actions': sources}
+    return dict(name='trick', fingers=fingers, payload=payload, payload_sha256=digest(payload),
+                encoded_duration_s=max(f['up_s'] for f in fingers))
+
+
 def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
     repo = Path(repo)
-    recipes = []
-    for name, relative, key, gap_override in SEEDS:
-        source = repo / 'trick_libraries' / relative
-        library = read_json(source)
-        recipe = library[key]
-        gap = recipe['delays'][0] if gap_override is None else gap_override
-        recipes.append((name, recipe['gestures'][:2], gap, str(relative), file_sha(source)))
     push = contact_payload('push', [PUSH_START, PUSH_END], PUSH_DURATION, 2.)
-    factors = sorted(((a, b) for a in (.8, 1., 1.2) for b in (.8, 1., 1.2)),
-                     key=lambda x: (round(abs(x[0] - 1) + abs(x[1] - 1), 6), x))
-    specs = [(seed, a, b, seed[2]) for a, b in factors for seed in recipes]
-    specs += [(seed, 1., 1., round(seed[2] + delta, 3)) for seed in recipes for delta in (-.08, .08)]
     candidates, rejected = [], []
-    for index, (seed, a, b, gap) in enumerate(specs, 1):
-        name, gestures, _, source, source_sha = seed
+    for index, change in enumerate(VARIANTS, 1):
         candidate_id = f'candidate_{index:02d}'
+        params = {**KICKFLIP, **change}
         try:
-            if gap < .4:
-                raise ValueError('pop-to-flick gap below WDA experiment floor')
-            contacts = [push] + [contact_payload(role, g['points'], round(g['duration'] * factor, 6),
-                                                 g['easing_power'])
-                                 for role, g, factor in zip(('pop', 'flick'), gestures, (a, b))]
-            candidates.append(seal(dict(id=candidate_id, seed=name, contacts=contacts,
-                pop_to_flick_gap_s=gap, source_library=source, source_library_sha256=source_sha,
-                source_transform='first two strokes only; no catch; gap waited after the pop request returns',
+            candidates.append(seal(dict(id=candidate_id, seed='operator-described kickflip 2026-10-09',
+                parameters=params, varied=sorted(change), contacts=[push, trick_payload(params)],
                 training_admission=False)))
         except ValueError as exc:
-            rejected.append(dict(id=candidate_id, error=str(exc)))
+            rejected.append(dict(id=candidate_id, parameters=params, error=str(exc)))
     history, spent = None, 0
     if previous_setup is not None:
         previous_setup = Path(previous_setup)
@@ -264,7 +308,7 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
                 raise RuntimeError('command target exceeds recording deadline')
             # Guards include a fresh screenshot; reserve time for them before the
             # submission deadline instead of adding their latency to every gap.
-            fast = foreground_guard is not None and (kind == 'reset' or kind == 'gesture' and role in ('pop', 'flick'))
+            fast = foreground_guard is not None and (kind == 'reset' or kind == 'gesture' and role == 'trick')
             sleep(max(0., target - (.25 if fast else 1.5) - clock()))
             (foreground_guard if fast else guard)()
             sleep(max(0., target - clock()))
@@ -296,15 +340,11 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
                 raise RuntimeError('reset failed to settle before next command')
         call('control', marker(), origin + 1.5, role='start')
         reset(3., 14.)
-        push, pop, flick = candidate['contacts']
+        push, trick = candidate['contacts']
         call('gesture', push['payload'], origin + 14., role='push', encoded_duration_s=push['encoded_duration_s'])
         # The historic push sleeps AFTER the blocking call, not after physical lift.
-        pop_event = call('gesture', pop['payload'], clock() + .48, role='pop',
-                         encoded_duration_s=pop['encoded_duration_s'])
-        # As in the historical sequential executor, the gap starts when the blocking
-        # pop request returns, so WDA latency can delay but never overrun the flick.
-        call('gesture', flick['payload'], pop_event['call_end_monotonic_s'] + candidate['pop_to_flick_gap_s'],
-             role='flick', encoded_duration_s=flick['encoded_duration_s'])
+        call('gesture', trick['payload'], clock() + .48, role='trick',
+             encoded_duration_s=trick['encoded_duration_s'])
         guard()
         if clock() >= origin + 20.:
             raise RuntimeError('gameplay exceeded reserved observation window')
@@ -335,7 +375,7 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
         if not failures:
             try:
                 validate_action_timing_report(report, expected_revision=revision, expected_count=len(events))
-                if len(events) != 9:
+                if len(events) != 8:
                     raise ValueError('incomplete fixed trial')
             except BaseException as exc:
                 fail('timing_validation', exc)
@@ -520,7 +560,7 @@ def report(root):
             max_frame_gap_s=admission['max_frame_gap_s']))
     summary['complete'] = len(trials) == REPEATS and summary['admitted'] == REPEATS
     summary['timing_distributions'] = {}
-    for key in ('push_to_pop', 'pop_to_flick'):
+    for key in ('push_to_trick',):
         values = [r['submission_gaps_s'][key] for r in summary['runs']]
         if values:
             summary['timing_distributions'][key] = dict(count=len(values), min_s=min(values),
@@ -541,9 +581,12 @@ def render_report(root, out):
         admission = read_json(trial / 'admission.json')
         pts = np.array(admission['original_pts_s'])
         gestures = {g['role']: g for g in admission['gestures']}
-        flick_end = gestures['flick']['video_start_s'] + gestures['flick']['encoded_duration_s']
-        targets = {f'before_{role}': g['video_start_s'] - admission['native_frame_s']
-                   for role, g in gestures.items()}
+        fingers = {f['role']: f for f in read_json(trial / 'planned.json')['candidate']['contacts'][1]['fingers']}
+        trick_start = gestures['trick']['video_start_s']
+        flick_end = trick_start + fingers['flick']['up_s']
+        targets = {f'before_{role}': trick_start + f['down_s'] - admission['native_frame_s']
+                   for role, f in fingers.items()}
+        targets['before_push'] = gestures['push']['video_start_s'] - admission['native_frame_s']
         targets.update({f'after_flick_{offset:g}s': flick_end + offset for offset in (.1, .25, .5, 1., 2., 5.)})
         for label, target in targets.items():
             index = int(np.argmin(abs(pts-target)))
@@ -561,7 +604,7 @@ def render_report(root, out):
             continue
         reference_trial, reference_start = reference
         movie = out / f'{reference_trial.name}_vs_{trial.name}.mov'
-        # Only the first push aligns videos. Pop/flick/landing retain their real timing.
+        # Only the first push aligns videos. The trick and landing retain their real timing.
         filters = (f'[0:v]trim=start={reference_start}:duration=11,setpts=PTS-STARTPTS,scale=414:896[left];'
                    f'[1:v]trim=start={start}:duration=11,setpts=PTS-STARTPTS,scale=414:896[right];'
                    '[left][right]hstack=inputs=2:shortest=1[v]')

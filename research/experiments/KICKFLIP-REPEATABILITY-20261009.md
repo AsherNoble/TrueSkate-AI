@@ -297,3 +297,43 @@ WDA and Appium idle and `/wda/video` null, the cleanup wrapper's dry-run listed
 exactly these 12 UUIDs. Deletion is pending operator permission.
 The successor is staged at `…/tmp/kickflip-repeatability-cd63e203` (source
 `cd63e203`). It was prepared offline: 6 prior attempts carried, 11 candidates.
+
+## Trial 07 and operator-described kickflip — 2026-10-09
+
+Source `cd63e203`, rig root `…/tmp/kickflip-repeatability-cd63e203`. **Trial 07**
+(mined centre recipe, flick gap after pop return) ran all nine commands within
+25 ms of their slots. WDA submission gaps were push→pop 0.930 s and pop→flick
+1.300 s, and the pop call took 656 ms. The source video shows a **360 FLIP**
+(score 280) followed by `PRIMO SLIDE — FAILED`; the board landed graphic side
+up. Close frames show the mined "pop" stroke entirely off the board. Its trail
+runs right of and below the tail, from (0.90, 0.63) down then left. The board
+neither pitches nor gains speed (6 mph). The second stroke starts on the tail at
+(0.54, 0.65) and alone pops and flips the board; speed jumps to 14 mph. In this
+camera and stance the mined recipe is a single-stroke 360 flip, so trial 05's
+landed 360 flip is consistent with the same mechanism.
+
+The operator described a kickflip:
+1. pop: straight down from the tail tip, about 150 logical points, as a
+   ~0.75 s hold followed immediately by a fast southward move;
+2. flick: fast, (0.5, 0.5) → (0.8, 0.5);
+3. catch: stationary hold at (0.5, 0.5) after the board has flipped.
+
+These strokes need roughly 0.1 s spacing, but separate WDA requests cannot start
+closer than about 1 s apart. The repository's trick executor
+(`execute_n_slot_gestures`, used by CMA-ES and Model 2 inference) bundles closely
+timed strokes into one W3C request with one finger per stroke. This candidate
+set does the same. The push remains a separate request, followed by the
+historical 0.48 s wait after it returns. Each finger re-issues its start move
+after a leading pause, as the executor does, because WDA drops a zero-duration
+move followed by a pause.
+
+Centre recipe, t = 0 at pop touch-down: pop from (0.50, 0.67), hold 0.75 s, then
+a 0.10 s move 150 points down. That move is split into four accelerating
+segments (easing power 0.5; encoded 50/20/15/13 ms, lift at 0.848 s). The flick
+starts 0.05 s after the pop lifts and lasts 0.06 s. The catch holds 0.30 s,
+starting 0.25 s after the flick. Eleven variants each change one uncertain
+number: pop length 100/190 points (190 is the longest clear of the bottom bar),
+pop move 0.06/0.16 s, flick gap 0/0.12 s, flick 0.04/0.10 s, catch delay
+0.15/0.40 s, and pop hold 0.40 s. The two-of-three landed-kickflip rule, QuickTime
+review, admission gates and the 24-attempt cap are unchanged. The successor
+carries trials 01–07 (7 attempts, 17 remaining).
