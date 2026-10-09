@@ -49,7 +49,12 @@ VARIANTS = ({}, dict(pop_s=.05), dict(pop_s=.1), dict(flick_s=.06), dict(flick_s
             # Trial 14 (0.06 s flick) landed a HARD FLIP: try removing the flick's downward
             # slant (a likely shove-it input when the flick arrives ~0.3 s after the pop).
             dict(flick_s=.06, flick_end=[.715, .51]), dict(flick_s=.06, flick_end=[.715, .48]),
-            dict(flick_s=.04, flick_end=[.715, .51]))
+            dict(flick_s=.04, flick_end=[.715, .51]),
+            # Operator: the pop should be quick and shorter. Ending just past the tail tip
+            # (~0.70) removes post-pop stroke time that only delays the flick.
+            dict(pop_end=[.52, .73], pop_s=.05, flick_s=.06, flick_end=[.715, .51]),
+            dict(pop_end=[.52, .73], pop_s=.04, flick_s=.06, flick_end=[.715, .51]),
+            dict(pop_end=[.52, .73], pop_s=.05, flick_s=.06))
 IMPLEMENTATION_PATHS = (
     'scripts/collection/probe_kickflip_repeatability.py',
     'src/trueskate_ai/research/kickflip_repeatability.py',
