@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-10-05. Behavioural cloning is the development direction.
+Updated 2026-10-08. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -306,26 +306,30 @@ repeat succeeded.
 ## HID gesture execution and recording review
 
 The ESP32 Bluetooth pointer pilot supports separate strokes with short gaps,
-but XR2 forces a 15 ms connection interval and approximately 6% of the measured
-reports landed a visible frame early or late. A wired Pico mouse is a proposed
-next transport, not a validated 1 ms game-input path. The powered Lightning hub,
-Ethernet, WDA network transport and RemoteXPC recording-cleanup chain still need
-a bounded hardware pilot. Adapter confidence figures in the review are
-subjective engineering priors, not measured reliability.
+but XR2 forces a 15 ms connection interval. Remeasuring its movies with the USB
+probe's tracker and FFmpeg gives 5.3% frame-displaced reports with Wi-Fi on and
+3.0% off, superseding the original approximately 6% tracker result. USB run-11
+gave 4.3% in the matched ten-pass, 300-report comparison: no clear jitter gain.
 
-A first-generation Pico runs a bounded, mouse-only hover diagnostic. On
-2026-10-07 XR2 accepted it as a pointer through the powered camera adapter while
-WDA control and XCTest recording ran over Wi-Fi with no USB to the rig: the iOS
-pointer appeared 13.0 s into a 45 s 60 fps movie and traced the firmware's two
-squares 21.0-24.1 s (8 s lead, 80 moves). No clicks were sent; touch semantics,
-a command link and a 1 ms path remain untested. The same run passed all five
-cases' gates, including both minute cases' cadence (29.97/59.92 fps, max gap
-50/33 ms) and two-anchor calibration. The wireless route uses a RemotePairing
-TCP tunnel (pymobiledevice3, Python 3.13), not the classic CoreDeviceProxy,
-which XR2 rejects off USB. XR2 now carries instrumented WDA `ae50404a`; the
-services agent's xcodebuild reinstalls an `unversioned` runner whenever it
-rebuilds over USB. No collection or training. See
-[HID-USB-20261006](experiments/HID-USB-20261006.md).
+XR2 accepts Pico hover, a tap and two drags through the powered camera adapter
+while WDA control, native XCTest capture, retrieval and attachment cleanup run
+over Wi-Fi with no rig USB. Run-09 passed all five cases, including minute
+30/60 fps recordings and two-anchor WDA calibration. Run-11 (2026-10-08) passed
+a one-minute 60 fps capture (3,580 frames, 59.56 effective fps, zero cleanup
+errors) and the Pico completed 1,497/1,497 events. Regular board acceptance and
+near-complete visible travel at 3 ms support faster report throughput. At 1 ms,
+four of twelve passes exceeded the board lateness gate (maximum 6.608 ms), and
+capture gaps clustered around fast motion; clean 1 ms game-input timing remains
+unvalidated. Contacts are visible in assistant-reviewed sheets, not a human
+fidelity audit. A buffered host command link, exact press/lift/path validation
+and production collection remain open; Ethernet and multi-finger control are
+separate untested proposals.
+
+The wireless route uses a RemotePairing TCP tunnel (pymobiledevice3, Python
+3.13), not the classic CoreDeviceProxy, which XR2 rejects off USB. XR2 carries
+instrumented WDA `ae50404a`; production services can reinstall an `unversioned`
+runner when rebuilding over USB. Collection remains off. See
+[HID-USB-20261006](experiments/HID-USB-20261006.md) and its run-11 evidence.
 
 AssistiveTouch supports preset and recorded multi-finger gestures. Independent
 live control of two mouse-driven contacts remains unverified. In three short
@@ -469,7 +473,8 @@ Device and park are confounded, and some overlays may be about one frame late.
 Bundled, serial, scheduled indexed-path and anchor-finger demo replays all failed
 human review; separate scheduled records also hit XCTest's overlapping-record
 restriction. Preserve these negative results when considering future executors.
-USB HID and physical spin-pad approaches remain unvalidated proposals.
+USB HID now has bounded hover/tap/drag evidence; buffered curved replay and
+physical spin-pad approaches remain unvalidated proposals.
 
 Current audit/replay source retrieves partial recordings on every post-start exit
 and retains failures without retrying failed stop RPCs. New review bundles bind

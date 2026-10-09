@@ -1,0 +1,32 @@
+{
+  "experiment_id": "HID-USB-20261006",
+  "run": "run-11",
+  "date": "2026-10-08",
+  "source_commit": "796a6ef9173899e0f8598252d5ef2e3534c449d0",
+  "firmware_sha256": "11a0b3419ae892fa30927017b061e73a45113752258e7618ffe7b5eb9231384d",
+  "schedule_hash": "836470cf82b845f1",
+  "pico_flash_id": "E660C0D1C73D5A2B",
+  "build_id": "7964d91b",
+  "rig_run": "/Users/training-server/trueskate-ai-runtime/tmp/ipv4-wifi-20261007/run-11",
+  "rig_stats": "/Users/training-server/trueskate-ai-runtime/tmp/pico-rate-20261008/fw/run-11-stats.bin",
+  "local_artifacts": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-run11-codex",
+  "raw_movie_sha256": "f778e999dc7b20d887c8a840bbc854a8d691c421c5ed1acb5f4a22c8edd3addc",
+  "raw_stats_sha256": "539a52d537e6216b86b05115dbe8dd450a086da90c99267766b04dc15b724908",
+  "opencv_version": "4.13.0",
+  "decoder": "FFMPEG",
+  "capture_requested_seconds": 60,
+  "park": "The Workshop (operator confirmed in the preceding Claude session); automated report retains unverified scene",
+  "visual_review": "Assistant inspected press contact sheets: orange tap glow and drag trails; not human-labelled.",
+  "pts_gaps_over_25ms": 22,
+  "pts_gaps_near_1ms_passes": 18,
+  "evidence_sha256": {
+    "stats.json": "fbdf62f60f318dc3b08724d20d235e85600636610c92b1ae11146e3c8a0f4601",
+    "measure.json": "205878ebf55f7f5641a2b72c474e73241de7aceee4eef409a5538aab96ce8c0e",
+    "measure.txt": "760f4245836b8b06100d792c7868262a0bb5f727db8540ae178b4dda13d1869b",
+    "report.json": "ede56bf4bc91cf931ac9c688da565855b6efa5681e294ca3ee6c8731b7bf8b2e",
+    "press-tap.png": "6e7f19692bb1bc22aa3845d4bc44e84755dd79f40e43391246f99d57a3bf4fae",
+    "press-drag15ms.png": "8ca225891f75d92fe66a98f5003017186a4faa11994cf39e29e7d15e97cec51a",
+    "press-drag1ms.png": "6b78d43aab1828e1196a55ff423f8c5143b0989e247b888001dffcc466cbabfd"
+  },
+  "no_collection_or_training": true
+}
