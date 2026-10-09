@@ -6,17 +6,43 @@ import base64
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import shutil
 import socket
 import subprocess
 import sys
+import urllib.request
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / 'src'))
 
 from trueskate_ai.research import kickflip_repeatability as experiment
 from trueskate_ai.research.curve_protocol import save_new
+
+TUNNEL_REGISTRY = 'http://127.0.0.1:42314/remotexpc/tunnels/'
+
+
+def recording_cleanup_ready(udid):
+    """Require XR1's RemoteXPC tunnel and zero leftover XCTest attachments.
+
+    A running tunnel daemon is not enough: with no tunnel for the phone, every
+    retrieved recording stays on the device (KICKFLIP-REPEATABILITY-20261009).
+    """
+    try:
+        with urllib.request.urlopen(TUNNEL_REGISTRY + udid, timeout=5) as response:
+            tunnel = response.read().decode()
+    except OSError as exc:
+        raise RuntimeError(f'XR1 RemoteXPC tunnel unavailable; no start attempted ({exc})') from exc
+    if udid not in tunnel:
+        raise RuntimeError('tunnel registry did not return XR1; no start attempted')
+    listing = subprocess.run(['appium', 'driver', 'run', 'xcuitest', 'cleanup-videos', '--', '--udid', udid, '--dry-run'],
+                             capture_output=True, text=True, timeout=180)
+    found = re.search(r'Found (\d+) UUID-shaped attachment', listing.stdout + listing.stderr)
+    if listing.returncode or not found:
+        raise RuntimeError('could not list XR1 recording attachments; no start attempted')
+    if int(found.group(1)):
+        raise RuntimeError(f'{found.group(1)} XR1 recording attachment(s) remain; preserve/clean before recording')
 
 
 def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, settings_note, appium_port=4723):
@@ -69,6 +95,7 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
     tunnel = subprocess.check_output(['launchctl', 'print', 'system/com.trueskate.remotexpc-tunnel'], text=True)
     if 'state = running' not in tunnel:
         raise RuntimeError('root recording tunnel must be running; no start attempted')
+    recording_cleanup_ready(os.environ['IPHONE_XR_UDID'])
     cfg = dict(next(d for d in DEVICES if d['name'] == 'iPhone_XR'), appium_port=appium_port)
     base = f"http://127.0.0.1:{cfg['wda_port']}"
     if _http_json(base + '/status').get('sessionId'):
@@ -153,6 +180,7 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
             if repeatability and index < experiment.REPEATS:
                 if sessions() or _http_json(base + '/status').get('sessionId'):
                     raise RuntimeError('session ownership changed between repeats')
+                recording_cleanup_ready(os.environ['IPHONE_XR_UDID'])
                 worker.connect()
                 driver = worker.driver
                 owned_wda_session = _http_json(base + '/status').get('sessionId')
@@ -175,6 +203,7 @@ def main():
     sub = parser.add_subparsers(dest='command', required=True)
     preparation = sub.add_parser('prepare')
     preparation.add_argument('--previous-setup', type=Path, help='preserve pre-gameplay failures and carry their setup budget into a new manifest')
+    preparation.add_argument('--superseded-reason', help='required when the candidate procedure changed; also carries assessed gameplay and technical failures')
     for name in ('run-setup', 'run-repeatability'):
         command = sub.add_parser(name)
         if name == 'run-setup':
@@ -204,7 +233,7 @@ def main():
     if args.command == 'prepare':
         if args.previous_setup is not None and not args.previous_setup.is_absolute():
             parser.error('--previous-setup must be absolute')
-        manifest = experiment.prepare_manifest(REPO, args.previous_setup)
+        manifest = experiment.prepare_manifest(REPO, args.previous_setup, args.superseded_reason)
         root.mkdir(parents=True, exist_ok=False)
         if args.previous_setup is not None:
             shutil.copytree(args.previous_setup, root / 'history/predecessor')

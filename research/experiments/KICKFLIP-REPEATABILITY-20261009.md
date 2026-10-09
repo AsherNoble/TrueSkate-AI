@@ -1,12 +1,10 @@
 # KICKFLIP-REPEATABILITY-20261009 — XR1 push/pop/flick repeatability
 
-Status: implemented and checked offline; the operator confirmed XR1 is charged
-and ready in Workshop. Initial live setup stopped at WDA build identity: the
-runner reported `unversioned`, rather than required `ae50404a`. One reserved setup
-attempt made only its initial reset/settle; **no recorder start or gameplay
-contacts occurred**. This failed start counts toward the 24-attempt cap. WDA
-was left healthy. The operator explicitly approved switching to the preserved,
-signed, previously validated runner; deployment/continuation is underway.
+Status: setup paused at 6/24 attempts. Trial 05 landed a 360 flip; trial 06
+overran its flick slot. The procedure is revised (mined seed only; flick gap
+waited after the pop request returns) and recording is blocked until XR1's
+RemoteXPC tunnel is restored. See **Trials 05–06 and procedure revision** below;
+the earlier sections record the original procedure and preflight history.
 Model 1 is not involved.
 The operator authorized bounded setup, then 20 repeats only after
 accepting the candidate recording in QuickTime. Collection stays OFF.
@@ -228,3 +226,60 @@ next control or gameplay. This removes duplicate image work from the short
 control→reset gap. A synthetic 1.4 s full-guard/4.6 s settling case verifies all
 submission slots, gesture gaps and the one-minute stop without relaxing a gate.
 Four retained pre-gameplay failures count; next attempt is 05 (20 slots remaining).
+
+## Trials 05–06 and procedure revision — 2026-10-09
+
+Source `c7acea0a`, rig root `…/tmp/kickflip-repeatability-c7acea0a`.
+
+**Trial 05** (`candidate_01`, mined centre recipe) completed all nine commands and
+passed admission: 3,541 native frames, maximum frame gap 33.33 ms, held-out
+middle residual 1.741 ms. WDA submission gaps were push→pop 0.931 s and
+pop→flick 0.803 s. The source video shows a landed **360 FLIP** (score 146), not a
+kickflip. That observation is recorded in `assessment.json`.
+
+**Trial 06** (`candidate_02`, hand guess: 60/50 ms, 480 ms gap) stopped with
+`gesture schedule overrun: 0.362315s`. Every WDA call took 0.69–0.70 s, compared
+with 0.44–0.66 s in trial 05. The flick was due 0.539 s after the pop call
+started, but the pop call alone returned at 0.705 s. Push and pop executed; the
+flick was withheld. The 20,089,340-byte original was retrieved. Under trial 06's
+latency, the mined recipe's flick deadline (pop start + 0.799 s) would also have
+been missed.
+
+**Cause.** The runner timed the flick from pop *start*, which assumed less WDA
+latency than was measured. The CMA-ES path that found the mined recipe ran gaps
+above 0.6 s as separate requests and slept the gap *after* the pop request
+returned (`execute_n_slot_gestures`, sequential branch, zero compensation). Its
+flick therefore landed about 0.4 s later than in trial 05. The hand guess's
+original 30 ms gap ran as one bundled payload. Widening it to 480 ms produced a
+different recipe.
+
+**Decision.** The operator chose "whatever we are likely to be using from now
+on". Collection uses one request per contact, because bundled run04b was
+rejected for joined gestures. Model 2 times strokes relative to the previous
+stroke's completion. The revised procedure therefore keeps separate requests and
+waits each gap after the previous request returns, as the push→pop wait already
+did. The hand-guess seed is removed, leaving 11 mined candidates. Lateness,
+guards, calibration, admission and the 24-attempt cap are unchanged; WDA latency
+now appears in measured submission gaps rather than causing overruns.
+
+**Recording-cleanup fault.** Every recording in this experiment logged `No tunnel
+found for device` at stop, so its XCTest attachment was not deleted. The root
+`com.trueskate.remotexpc-tunnel` daemon was running, but its registry held
+**zero tunnels**: XR2's tunnel was removed on 2026-10-07 after `SSL read failed`,
+and XR1 returned 404. The existing `launchctl … state = running` preflight could
+not detect this. XR1 holds 12 UUID attachments. Five are retrieved originals
+from trials 02–06. Seven come from the late-September `xr-control-4380162` run,
+where retrieval failed with `Unable to locate XCTest screen recording`, so the
+phone may hold their only copies. Preserve them to host storage before any
+deletion. Live runs now also require a registry entry for XR1 and an Appium
+cleanup dry-run reporting zero UUID attachments, checked before the first
+connection and before each repeat.
+
+**Continuation.** Restarting the tunnel daemon requires the operator (sudo).
+Then preserve the seven unretrieved attachments, clean up with the documented
+wrapper, and prepare a successor with
+`prepare --previous-setup …/c7acea0a/experiment --superseded-reason '…'`. The
+successor carries trial 05 as a superseded-procedure outcome and trial 06 as a
+technical failure during gameplay. Both count toward the cap, so the next
+attempt is 07 with 18 remaining. Neither can count as evidence for the new
+candidates.

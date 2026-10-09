@@ -30,9 +30,10 @@ SIZE = (414, 896)
 FPS = 60
 STOP_S = 59.
 LATE_S = .1
+# Mined recipe only. The hand guess's original 30 ms pop-to-flick gap ran as one
+# bundled payload; separate requests cannot reproduce it (WDA calls take 0.45-0.7 s).
 SEEDS = (
     ('mined', 'tail_20260611/kickflip_2g_20260611_095155.json', 'best_gestures', None),
-    ('handguess', 'kickflip_handguess_20260613.json', 'median_gestures', .48),
 )
 IMPLEMENTATION_PATHS = (
     'scripts/collection/probe_kickflip_repeatability.py',
@@ -98,7 +99,7 @@ def contact_payload(name, points, duration_s, easing_power=1.):
                 easing_power=easing_power, payload=payload, payload_sha256=digest(payload))
 
 
-def prepare_manifest(repo, previous_setup=None):
+def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
     repo = Path(repo)
     recipes = []
     for name, relative, key, gap_override in SEEDS:
@@ -124,7 +125,7 @@ def prepare_manifest(repo, previous_setup=None):
                                  for role, g, factor in zip(('pop', 'flick'), gestures, (a, b))]
             candidates.append(seal(dict(id=candidate_id, seed=name, contacts=contacts,
                 pop_to_flick_gap_s=gap, source_library=source, source_library_sha256=source_sha,
-                source_transform='first two strokes only; no catch; explicit sequential WDA gap',
+                source_transform='first two strokes only; no catch; gap waited after the pop request returns',
                 training_admission=False)))
         except ValueError as exc:
             rejected.append(dict(id=candidate_id, error=str(exc)))
@@ -134,19 +135,37 @@ def prepare_manifest(repo, previous_setup=None):
         previous = load_manifest(previous_setup)
         if (previous_setup / 'approval.json').exists() or list((previous_setup / 'repeats').glob('trial_*')):
             raise ValueError('reviewed or repeatability runs cannot migrate')
-        if previous['experiment'] != EXPERIMENT or previous['wda_revision'] != WDA_REVISION or [c['sha256'] for c in previous['candidates']] != [c['sha256'] for c in candidates]:
+        if previous['experiment'] != EXPERIMENT or previous['wda_revision'] != WDA_REVISION:
             raise ValueError('predecessor procedure changed')
+        # A changed recipe set supersedes the old procedure: its gameplay attempts
+        # still spend the cap but can never count as evidence for the new candidates.
+        superseded = [c['sha256'] for c in previous['candidates']] != [c['sha256'] for c in candidates]
+        if superseded and not (superseded_reason or '').strip():
+            raise ValueError('predecessor procedure changed; an explicit superseded-procedure reason is required')
+        classifications = {}
         for trial in setup_trials(previous_setup):
             execution = read_json(trial / 'execution.json')
-            if not execution.get('error') or any(e.get('kind') not in ('control', 'reset') for e in execution.get('events', [])):
+            gameplay = any(e.get('kind') not in ('control', 'reset') for e in execution.get('events', []))
+            if gameplay and not superseded:
                 raise ValueError('only failures before gameplay can migrate')
             video = execution.get('video')
             movie = trial / 'original.mov'
             if (video is not None and (not movie.is_file() or video.get('n_bytes') != movie.stat().st_size)) or (video is None and movie.exists()):
                 raise ValueError('only failures with consistent recording retrieval can migrate')
+            if execution.get('error'):
+                classifications[trial.name] = 'technical failure ' + ('during' if gameplay else 'before') + ' gameplay'
+            elif not gameplay:
+                raise ValueError('only failures before gameplay can migrate')
+            else:
+                admission = read_json(trial / 'admission.json') if (trial / 'admission.json').exists() else {}
+                assessment = read_json(trial / 'assessment.json') if (trial / 'assessment.json').exists() else {}
+                if not admission.get('accepted') or assessment.get('video_sha256') != file_sha(movie):
+                    raise ValueError('completed gameplay must be admitted and assessed before it can migrate')
+                classifications[trial.name] = f"superseded-procedure outcome: {assessment['trick']} / {assessment['status']}"
         spent = setup_attempt_count(previous_setup)
         history = dict(source_root=str(previous_setup), manifest_sha256=previous['sha256'],
-            attempts=spent, classification='failed before gameplay; retained with any retrieved video, not trick outcomes',
+            attempts=spent, trials=classifications, superseded_reason=superseded_reason if superseded else None,
+            classification='retained evidence; never trick outcomes for these candidates',
             files={str(Path('history/predecessor') / p.relative_to(previous_setup)): file_sha(p)
                    for p in previous_setup.rglob('*') if p.is_file()})
     return seal(dict(experiment=EXPERIMENT, device='iPhone_XR', park='Workshop', size=list(SIZE),
@@ -282,8 +301,10 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
         # The historic push sleeps AFTER the blocking call, not after physical lift.
         pop_event = call('gesture', pop['payload'], clock() + .48, role='pop',
                          encoded_duration_s=pop['encoded_duration_s'])
-        flick_target = pop_event['call_start_monotonic_s'] + pop['encoded_duration_s'] + candidate['pop_to_flick_gap_s']
-        call('gesture', flick['payload'], flick_target, role='flick', encoded_duration_s=flick['encoded_duration_s'])
+        # As in the historical sequential executor, the gap starts when the blocking
+        # pop request returns, so WDA latency can delay but never overrun the flick.
+        call('gesture', flick['payload'], pop_event['call_end_monotonic_s'] + candidate['pop_to_flick_gap_s'],
+             role='flick', encoded_duration_s=flick['encoded_duration_s'])
         guard()
         if clock() >= origin + 20.:
             raise RuntimeError('gameplay exceeded reserved observation window')

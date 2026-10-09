@@ -64,7 +64,8 @@ class Timing:
 
 def test_candidates_preserve_push_and_never_bundle_contacts(experiment):
     manifest = module.load_manifest(experiment)
-    assert len(manifest['candidates']) == 22 and manifest['rejected'] == []
+    assert len(manifest['candidates']) == 11 and manifest['rejected'] == []
+    assert {c['seed'] for c in manifest['candidates']} == {'mined'}
     first = manifest['candidates'][0]
     assert [c['name'] for c in first['contacts']] == ['push', 'pop', 'flick']
     push = first['contacts'][0]
@@ -142,7 +143,7 @@ def test_trial_retains_one_retrieval_and_all_failures(tmp_path, monkeypatch, fai
         gameplay = [e for e in execution['events'] if e['kind'] == 'gesture']
         assert [e['role'] for e in gameplay] == ['push', 'pop', 'flick']
         assert gameplay[1]['call_start_monotonic_s'] - gameplay[0]['call_end_monotonic_s'] == pytest.approx(.48)
-        assert gameplay[2]['call_start_monotonic_s'] - gameplay[1]['call_start_monotonic_s'] == pytest.approx(.179+.62)
+        assert gameplay[2]['call_start_monotonic_s'] - gameplay[1]['call_end_monotonic_s'] == pytest.approx(.62)
         assert [e['intended_s'] for e in execution['events'] if e['kind'] == 'control'] == [1.5, 30, 57]
     saved = module.read_json(tmp_path / 'execution.json')
     assert bool(saved['error']) == bool(failure)
@@ -317,7 +318,8 @@ def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, 
     monkeypatch.setattr(cli.socket, 'gethostname', lambda: 'training-server')
     monkeypatch.setattr(cli.subprocess, 'check_output', lambda *a, **k: 'state = running')
     monkeypatch.setattr(cli.signal, 'signal', lambda *a: None)
-    runs, resets, connections = [], [], []
+    runs, resets, connections, cleanup_checks = [], [], [], []
+    monkeypatch.setattr(cli, 'recording_cleanup_ready', lambda udid: cleanup_checks.append(len(connections)))
     class Worker:
         def __init__(self, *a, **k):
             self.driver = None
@@ -366,6 +368,8 @@ def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, 
     else:
         cli.live_batch(**kwargs)
         assert len(runs) == module.REPEATS == len(connections) == len(resets)
+        # Checked before the first connection and before every later reconnect.
+        assert cleanup_checks == list(range(module.REPEATS))
     assert len(set(runs)) == 1
     with pytest.raises(ValueError, match='already started'):
         cli.live_batch(**kwargs)
@@ -375,6 +379,7 @@ def test_unapproved_batch_never_contacts_phone(experiment, monkeypatch):
     cli = load_cli()
     monkeypatch.setattr(cli.socket, 'gethostname', lambda: 'training-server')
     monkeypatch.setattr(cli.subprocess, 'check_output', lambda *a, **k: pytest.fail('phone preflight before review'))
+    monkeypatch.setattr(cli, 'recording_cleanup_ready', lambda udid: pytest.fail('phone preflight before review'))
     with pytest.raises(FileNotFoundError):
         cli.live_batch(experiment, candidate_id=None, repeatability=True, env_file=experiment / 'missing.env',
                        ready_note='ready', settings_note='synthetic waypoint/settings')
@@ -454,5 +459,98 @@ def test_full_screen_guards_do_not_stretch_pop_flick_gaps(tmp_path, monkeypatch)
     gestures = [e for e in events if e['kind'] == 'gesture']
     assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
     assert gestures[1]['call_start_monotonic_s'] - gestures[0]['call_end_monotonic_s'] == pytest.approx(.48)
-    assert gestures[2]['call_start_monotonic_s'] - gestures[1]['call_start_monotonic_s'] == pytest.approx(.179 + .62)
+    assert gestures[2]['call_start_monotonic_s'] - gestures[1]['call_end_monotonic_s'] == pytest.approx(.62)
     assert clock() - 1.4 < 60  # Initial full guard occurs before recorder.start().
+
+
+def test_slow_wda_returns_delay_but_never_overrun_the_flick(tmp_path, monkeypatch):
+    # Trial 06: every call took ~0.69 s, so a flick timed from pop start was already late.
+    clock, recorder, timing = Clock(), Recorder(), Timing()
+    candidate = module.prepare_manifest(REPO)['candidates'][0]
+    def perform(payload):
+        timing.records.append({})
+        clock.sleep(sum(a.get('duration', 0) for a in payload['actions'][0]['actions']) / 1000 + .65)
+    monkeypatch.setattr(module, 'validate_action_timing_report', lambda *a, **k: [])
+    module.run_trial(out=tmp_path, candidate=candidate, recorder=recorder, timing=timing,
+        perform=perform, guard=lambda: clock.sleep(1.4), foreground_guard=lambda: clock.sleep(.18),
+        settle=lambda reserve: (clock.sleep(4.6) or SettleResult(True, 4.6)), revision='synthetic', context={},
+        clock=clock, sleep=clock.sleep, epoch=clock)
+    events = module.read_json(tmp_path / 'execution.json')['events']
+    pop, flick = [e for e in events if e['role'] in ('pop', 'flick')]
+    assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
+    assert flick['call_start_monotonic_s'] - pop['call_end_monotonic_s'] == pytest.approx(candidate['pop_to_flick_gap_s'])
+
+
+@pytest.mark.parametrize('state', ['ready', 'no_tunnel', 'other_device', 'leftover', 'unlistable'])
+def test_recording_cleanup_requires_tunnel_and_zero_attachments(monkeypatch, state):
+    import io
+    import urllib.error
+    cli = load_cli()
+    def urlopen(url, timeout):
+        assert url.endswith('/synthetic-udid')
+        if state == 'no_tunnel':
+            raise urllib.error.HTTPError(url, 404, 'Not Found', {}, io.BytesIO(b''))
+        body = b'{"udid": "synthetic-other"}' if state == 'other_device' else b'{"udid": "synthetic-udid"}'
+        return io.BytesIO(body)
+    monkeypatch.setattr(cli.urllib.request, 'urlopen', urlopen)
+    count = 3 if state == 'leftover' else 0
+    listing = SimpleNamespace(returncode=1 if state == 'unlistable' else 0, stderr='',
+        stdout=f'Found {count} UUID-shaped attachment{"" if count == 1 else "s"} in testmanagerd Attachments')
+    monkeypatch.setattr(cli.subprocess, 'run', lambda *a, **k: listing)
+    if state == 'ready':
+        cli.recording_cleanup_ready('synthetic-udid')
+    else:
+        with pytest.raises(RuntimeError, match='tunnel|registry|remain|list'):
+            cli.recording_cleanup_ready('synthetic-udid')
+
+
+def supersede(root):
+    """Rewrite a predecessor as an older recipe set (different candidate hashes)."""
+    manifest = module.load_manifest(root)
+    manifest.pop('sha256')
+    old = {k: v for k, v in manifest['candidates'][0].items() if k != 'sha256'}
+    old['pop_to_flick_gap_s'] = .48
+    manifest['candidates'] = [module.seal(old)]
+    (root / 'manifest.json').write_text(json.dumps(module.seal(manifest)))
+
+
+def add_gameplay_trial(root, index, *, error=None, assessed=True):
+    trial = root / 'setup' / f'trial_{index:02d}'
+    trial.mkdir(parents=True)
+    (trial / 'original.mov').write_bytes(f'synthetic gameplay {index}'.encode())
+    save_new(trial / 'reservation.json', dict(candidate_id='candidate_01'))
+    save_new(trial / 'execution.json', dict(error=error, events=[dict(kind='gesture', role='push')],
+             video=dict(n_bytes=(trial / 'original.mov').stat().st_size)))
+    if not error:
+        sha = module.file_sha(trial / 'original.mov')
+        save_new(trial / 'admission.json', dict(accepted=True, video_sha256=sha))
+        if assessed:
+            save_new(trial / 'assessment.json', dict(trick='360 FLIP', status='landed', video_sha256=sha))
+
+
+def test_superseded_procedure_carries_gameplay_attempts_only_with_a_reason(experiment, tmp_path):
+    import shutil
+    supersede(experiment)
+    add_gameplay_trial(experiment, 1)
+    add_gameplay_trial(experiment, 2, error='gesture schedule overrun')
+    with pytest.raises(ValueError, match='superseded-procedure reason'):
+        module.prepare_manifest(REPO, experiment)
+    manifest = module.prepare_manifest(REPO, experiment, 'flick gap now follows the pop return')
+    history = manifest['prior_setup']
+    assert manifest['prior_setup_attempts'] == 2 and history['superseded_reason']
+    assert history['trials'] == {'trial_01': 'superseded-procedure outcome: 360 FLIP / landed',
+                                 'trial_02': 'technical failure during gameplay'}
+    successor = tmp_path / 'successor'
+    shutil.copytree(experiment, successor / 'history/predecessor')
+    save_new(successor / 'manifest.json', manifest)
+    reserved, _ = module.reserve_setup(successor, 'candidate_01')
+    assert reserved.name == 'trial_03'
+    # Old outcomes stay in history and never enter a new candidate's review pool.
+    assert [p.name for p in module.setup_trials(successor)] == ['trial_03']
+
+
+def test_superseded_procedure_still_requires_assessed_gameplay(experiment):
+    supersede(experiment)
+    add_gameplay_trial(experiment, 1, assessed=False)
+    with pytest.raises(ValueError, match='admitted and assessed'):
+        module.prepare_manifest(REPO, experiment, 'reason')
