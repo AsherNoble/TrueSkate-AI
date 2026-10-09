@@ -1,0 +1,15 @@
+hover_rate_wifi_on.mov: 877 frames at 59.7 fps (4 dropped); park row 368 pt; cursor found in 738; one 4-count report = 1.903 pt (Bluetooth fit 1.896); dark pointer; 0 one-frame spikes repaired; parked jitter 0.028 pt rms; anchor 3.083 s; 0 passes not found; board times scheduled; decoder FFMPEG
+step ms  dx  sent delivered  send ms deliver ms frames frozen longest catch-up  reports per frame ([n] = after a dropped frame)
+     15  +4    30      30.0      450        433     26      0       0        0  21112111111112111111112111
+     15  -4    30      30.0      450        450     27      0       0        0  111112111111112111111111211
+     15  +4    30      30.1      450        467     28      5       1        2  1111031111110221110211110301
+     15  -4    30      30.0      450        450     27      0       0        0  111111211111111211111112111
+     15  +4    30      30.0      450        450     27      0       0        0  111111211111112111111111211
+     15  -4    30      30.0      450        450     27      0       0        0  111111211111111211111111211
+     15  +4    30      30.0      450        450     27      1       1        1  111111211111111211111113011
+     15  -4    30      30.0      450        450     27      1       1        1  111111211111130111111111211
+     15  +4    30      30.0      450        450     27      0       0        0  111111211111112111111112111
+     15  -4    30      29.9      450        450     27      1       1        0  111111211111102211111111211
+-- bluetooth
+every 15 ms: 300 of 300 reports delivered; on 270 regular frames: frozen 8 (3.0%), longest 1, catch-up 4; frames by reports carried {'0': 8, '1': 228, '2': 30, '3': 4}; dropped frames carried []; reports by frames displaced {'-1': 4, '0': 284, '1': 11, '2': 1} (5.3% off their frame)
+note: frozen/catch-up frames are meaningful at 15 ms only. "displaced" needs every report seen; at 1 and 3 ms rate-dependent gain can prevent that, so see the all-delivered line (board stats required).

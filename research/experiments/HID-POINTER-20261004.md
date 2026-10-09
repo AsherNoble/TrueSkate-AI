@@ -3,7 +3,8 @@
 Status: calibrated and validated. Demo replay graded 3/3 Minor; corrected strokes
 graded 1 Minor, 2 Major. A 20-run repeatability test shows identical schedules
 ending in different tricks. Bluetooth LE carries one useful report per 15 ms, and
-~6% of them land a frame early or late; a USB pointer is next.
+3–5% of them land a frame early or late (re-measured 2026-10-08; first reported ~6%);
+a USB pointer is next.
 XR2 only. No collection, no training admission.
 
 ## Question
@@ -227,9 +228,23 @@ The corrected points span each visible trail from end to end
   - The run with Wi-Fi on had longer stalls, with late reports arriving three to a frame.
   - The run with Wi-Fi off had none of those, but just as many reports a frame off.
   - The Wi-Fi comparison is one run each.
+  - **Re-measured 2026-10-08. Use these figures for any USB comparison.** The table above
+    came from a tracker whose ~0.25 pt steps flipped some whole-report counts. The same
+    movies were run through `hardware/pico_hover_rate/measure.py`, which uses sub-pixel
+    tracking, FFmpeg decoding, and per-report gain fitted from the 15 ms passes. Result,
+    as displaced reports at 15 ms:
+    - Wi-Fi on: 16 of 300 (**5.3%**);
+    - Wi-Fi off: 9 of 300 (**3.0%**);
+    - `ble1`: 6 of 60 (10.0%).
+
+    Parked jitter is 0.03–0.05 pt. A perfectly regular synthetic link scores 0%. Evidence:
+    [remeasured-20261008](../evidence/HID-POINTER-20261004/update-rate/remeasured-20261008).
+    Delivery counts at 1 and 3 ms are unchanged. The new figure is the better estimate
+    but not pure timing: frames carrying one report move 1.02 ± 0.10 reports, so iOS
+    smooths or varies the pointer slightly. Use one tool on one decoder for both links.
 - **What it means for replays.**
-  - A ~50 ms flick is 3–4 reports. At ~6% displaced per report, roughly one flick in five
-    has a report in the wrong frame.
+  - A ~50 ms flick is 3–4 reports. At ~3–5% displaced per report (re-measured; originally
+    ~6%), roughly one flick in six to eight has a report in the wrong frame.
   - This adds to the run's random 15 ms / 16.7 ms phase.
   - Both vary between runs of one schedule. They fit section 7's spread of tricks but are
     not shown to cause it.
@@ -257,8 +272,8 @@ distributions. Finding the source of this variance comes before more fidelity
 work.
 
 Bluetooth LE limits timing at the source. It carries at most one useful report per
-15 ms, and ~6% of those reach the screen a frame early or late, whether Wi-Fi is on or
-off. Both change between runs of the same schedule. The precision target
+15 ms, and 3–5% of those reach the screen a frame early or late (5.3% with Wi-Fi on,
+3.0% off, one run each; re-measured, see section 8). Both change between runs of the same schedule. The precision target
 needs a link that is finer than a frame and regular.
 
 ## Next
