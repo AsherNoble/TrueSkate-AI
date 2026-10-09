@@ -208,8 +208,11 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
             remaining()
             if target >= deadline:
                 raise RuntimeError('command target exceeds recording deadline')
-            sleep(max(0., target - clock()))
+            # Guards include a fresh screenshot; reserve time for them before the
+            # submission deadline instead of adding their latency to every gap.
+            sleep(max(0., target - .8 - clock()))
             guard()
+            sleep(max(0., target - clock()))
             remaining()
             lateness = clock() - target
             if lateness > LATE_S:

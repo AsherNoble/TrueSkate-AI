@@ -1,13 +1,19 @@
 # KICKFLIP-REPEATABILITY-20261009 — XR1 push/pop/flick repeatability
 
-Status: implemented and checked offline; **awaiting operator confirmation that
-XR1 is charged and in Workshop**. No live attempt has been made. Model 1 is not
+Status: implemented and checked offline; the operator confirmed XR1 is charged
+and ready in Workshop. Live preflight passed foreground/recording-tunnel checks;
+no live attempt has been made yet. Model 1 is not
 involved. The operator authorized bounded setup, then 20 repeats only after
 accepting the candidate recording in QuickTime. Collection stays OFF.
 
 ## Frozen procedure
 
-- XR1 (`iPhone_XR`), Appium 4723/WDA 8100, 414×896 logical coordinates. Use an
+- XR1 (`iPhone_XR`), WDA 8100, 414×896 logical coordinates. The normal Appium
+  server on 4723 lacks Appium 3 session discovery. Use a temporary diagnostic
+  Appium on 4725 with `xcuitest:xctest_screen_record,*:session_discovery` enabled;
+  keep the healthy WDA and existing supervised services running. Require idle
+  WDA before connection and verify both Appium and WDA ownership on every guard.
+  Record the selected Appium port in immutable context. Use an
   unobstructed Workshop flatground waypoint, unchanged stance/camera/physics.
   Record the readiness statement and waypoint/settings notes; retain initial
   scene images for every attempt. A settled image is not proof of identical state.
@@ -39,7 +45,8 @@ recorder-start latency, with one retrieval attempt on interruption/failure.
 
 Validate WDA build `ae50404aac12d9f8c41f6c3fa8776e97975eaef5`, exact timing record
 counts, native dimensions/PTS and full FFmpeg decode counts. Keep gameplay and
-foreground guards. Start/end controls define the video clock with ≥55 s anchor
+foreground guards, reserving guard/screenshot time before each submission slot.
+Start/end controls define the video clock with ≥55 s anchor
 span; the held-out middle must agree within two native frames. Unobservable
 controls or technical faults stop progress; do not relax admission or silently
 replace recordings. Preserve original movies and errors separately from outcomes.
@@ -86,6 +93,9 @@ use `assess --trial setup/trial_01 --trick KICKFLIP --status landed
 --evidence-note 'source-video observation …'`; labels are explicit observations,
 not inferred from the library name. Confirm a successful candidate twice within
 the setup cap; all candidate attempts must be assessed.
+
+For the temporary Appium server add `--appium-port 4725` to every live command.
+Session discovery must succeed; never bypass it after a permission error.
 
 Copy the experiment directory to the laptop, then `preview --candidate
 candidate_01` renders and opens QuickTime (use `--no-open` when rendering on the

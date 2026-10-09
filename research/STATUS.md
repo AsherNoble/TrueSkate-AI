@@ -58,8 +58,8 @@ action groups and activity masks; the older rig model must not overwrite it.
   replays against reference gameplay, after measuring repeatability and the
   required feedback speed. [Discussion note, 2026-10-09](protocols/model1_replay_finetuning.md).
 - [XR1 kickflip repeatability](experiments/KICKFLIP-REPEATABILITY-20261009.md):
-  bounded Appium push/pop/flick setup is implemented offline; waiting for XR1
-  readiness in Workshop. Twenty frozen repeats require explicit QuickTime review
+  bounded Appium push/pop/flick setup is implemented offline; XR1 readiness in
+  Workshop is confirmed and live preflight is underway. Twenty frozen repeats require explicit QuickTime review
   acceptance first. No live results or intrinsic game-noise estimate yet.
 - How does recovery scale with data volume and domain/session diversity?
 - When should linear work expand to curved and curved+spin trajectories?

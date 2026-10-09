@@ -104,7 +104,7 @@ def test_trial_retains_one_retrieval_and_all_failures(tmp_path, monkeypatch, fai
         clock.sleep(sum(a.get('duration', 0) for a in actions)/1000 + .3)
         return {'value': None}
     def guard():
-        if failure == 'foreground' and clock() >= 1:
+        if failure == 'foreground' and clock() > 0:
             raise RuntimeError('foreground lost')
     def settle(reserve):
         clock.sleep(.5)
@@ -324,12 +324,17 @@ def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, 
         def connect(self):
             connections.append('connect')
             self.driver = SimpleNamespace(capabilities={'udid': 'synthetic'},
-                query_app_state=lambda b: 4, execute=lambda action, payload: resets.append(payload))
+                session_id='synthetic-appium', query_app_state=lambda b: 4,
+                execute=lambda action, payload: resets.append(payload))
         def disconnect(self):
             self.driver = None
         def _active_bundle_id(self):
             return device.BUNDLE_ID
     def http(url):
+        if url.endswith('/appium/sessions'):
+            return dict(value=[dict(id='synthetic-appium')] if len(connections) > len(runs) else [])
+        if url.endswith('/status'):
+            return dict(sessionId='synthetic-wda' if len(connections) > len(runs) else None)
         if url.endswith('activeAppInfo'):
             return dict(value=dict(bundleId=device.BUNDLE_ID))
         if url.endswith('screenshot'):
@@ -370,3 +375,17 @@ def test_unapproved_batch_never_contacts_phone(experiment, monkeypatch):
     with pytest.raises(FileNotFoundError):
         cli.live_batch(experiment, candidate_id=None, repeatability=True, env_file=experiment / 'missing.env',
                        ready_note='ready', settings_note='synthetic waypoint/settings')
+
+
+def test_screenshot_guard_latency_is_reserved_before_submission(tmp_path, monkeypatch):
+    clock, recorder, timing = Clock(), Recorder(), Timing()
+    candidate = module.prepare_manifest(REPO)['candidates'][0]
+    def perform(payload):
+        timing.records.append({})
+        clock.sleep(sum(a.get('duration', 0) for a in payload['actions'][0]['actions']) / 1000 + .1)
+    monkeypatch.setattr(module, 'validate_action_timing_report', lambda *a, **k: [])
+    module.run_trial(out=tmp_path, candidate=candidate, recorder=recorder, timing=timing,
+        perform=perform, guard=lambda: clock.sleep(.2), settle=lambda reserve: SettleResult(True, 0.),
+        revision='synthetic', context={}, clock=clock, sleep=clock.sleep, epoch=clock)
+    events = module.read_json(tmp_path / 'execution.json')['events']
+    assert all(e['lateness_s'] == pytest.approx(0.) for e in events)

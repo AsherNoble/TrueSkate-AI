@@ -18,7 +18,7 @@ from trueskate_ai.research import kickflip_repeatability as experiment
 from trueskate_ai.research.curve_protocol import save_new
 
 
-def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, settings_note):
+def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, settings_note, appium_port=4723):
     if not ready_note.strip() or not settings_note.strip():
         raise ValueError('operator readiness and waypoint/settings notes are required')
     if 'training-server' not in socket.gethostname():
@@ -41,13 +41,13 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
         for trial in experiment.setup_trials(root):
             if not (trial / 'admission.json').exists() or not experiment.read_json(trial / 'admission.json')['accepted']:
                 raise ValueError('previous technical failure requires resolution; no replacement')
-    context = dict(device='iPhone_XR', park='Workshop', settings_note=settings_note,
+    context = dict(device='iPhone_XR', park='Workshop', appium_port=appium_port, settings_note=settings_note,
                    park_source='operator-confirmed readiness statement', operator_ready_note=ready_note,
                    allow_idle_navigation=True, training_admission=False)
     if (root / 'context.json').exists():
         recorded = experiment.read_json(root / 'context.json')
         # Readiness may be restated; fixed scene/settings must not change.
-        if recorded['settings_note'] != settings_note:
+        if recorded['settings_note'] != settings_note or recorded.get('appium_port', 4723) != appium_port:
             raise ValueError('waypoint/settings changed; requires a new reviewed experiment')
         context = recorded
     else:
@@ -68,14 +68,21 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
     tunnel = subprocess.check_output(['launchctl', 'print', 'system/com.trueskate.remotexpc-tunnel'], text=True)
     if 'state = running' not in tunnel:
         raise RuntimeError('root recording tunnel must be running; no start attempted')
-    cfg = next(d for d in DEVICES if d['name'] == 'iPhone_XR')
+    cfg = dict(next(d for d in DEVICES if d['name'] == 'iPhone_XR'), appium_port=appium_port)
     base = f"http://127.0.0.1:{cfg['wda_port']}"
-    _http_json(base + '/status')
+    if _http_json(base + '/status').get('sessionId'):
+        raise RuntimeError('XR1 WDA session is already owned; do not disturb it')
     if _http_json(base + '/wda/activeAppInfo')['value']['bundleId'] != BUNDLE_ID:
         raise RuntimeError('True Skate must already be frontmost')
     if _http_json(base + '/wda/video').get('value') is not None:
         raise RuntimeError('recorder is not idle; no start attempted')
-    if _http_json('http://127.0.0.1:4723/sessions').get('value'):
+    appium_base = f'http://127.0.0.1:{appium_port}'
+    def sessions():
+        value = _http_json(appium_base + '/appium/sessions').get('value')
+        if not isinstance(value, list) or any(not isinstance(s, dict) or not s.get('id') for s in value):
+            raise RuntimeError('Appium session discovery must be enabled and return a session list')
+        return [s['id'] for s in value]
+    if sessions():
         raise RuntimeError('XR1 Appium session is already owned; do not disturb it')
     worker = DeviceSession(cfg, calibrate_touch_on_connect=False)
     def interrupted(signum, frame):
@@ -85,12 +92,15 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
     try:
         worker.connect()
         driver = worker.driver
+        owned_wda_session = _http_json(base + '/status').get('sessionId')
         actual_udid = driver.capabilities.get('udid') or driver.capabilities.get('appium:udid')
         if actual_udid != os.environ['IPHONE_XR_UDID']:
             raise RuntimeError('Appium session does not confirm configured XR1 UDID')
         def screenshot():
             return base64.b64decode(_http_json(base + '/screenshot')['value'])
         def guard():
+            if sessions() != [driver.session_id] or not owned_wda_session or _http_json(base + '/status').get('sessionId') != owned_wda_session:
+                raise RuntimeError('Appium/WDA session ownership changed')
             if driver.query_app_state(BUNDLE_ID) != 4 or worker._active_bundle_id() != BUNDLE_ID:
                 raise RuntimeError('True Skate foreground lost')
             png = screenshot()
@@ -132,8 +142,14 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
             experiment.admit_trial(trial, manifest['wda_revision'])
             print(f"{'repeat' if repeatability else 'setup'} {index}: recording complete and validated: {trial}", flush=True)
             if repeatability and index < experiment.REPEATS:
+                if sessions() or _http_json(base + '/status').get('sessionId'):
+                    raise RuntimeError('session ownership changed between repeats')
                 worker.connect()
                 driver = worker.driver
+                owned_wda_session = _http_json(base + '/status').get('sessionId')
+                actual_udid = driver.capabilities.get('udid') or driver.capabilities.get('appium:udid')
+                if actual_udid != os.environ['IPHONE_XR_UDID']:
+                    raise RuntimeError('reconnected Appium session does not confirm configured XR1 UDID')
         print('run complete; all requested recordings retrieved', flush=True)
     except BaseException as exc:
         if trial is not None and not (trial / 'live-failure.json').exists():
@@ -155,6 +171,7 @@ def main():
         command.add_argument('--env-file', type=Path, required=True)
         command.add_argument('--operator-ready-note', required=True)
         command.add_argument('--settings-note', required=True, help='fixed waypoint, stance, camera and physics settings')
+        command.add_argument('--appium-port', type=int, default=4723, help='session-discovery-enabled Appium; temporary diagnostic server may use a separate port')
     assessment = sub.add_parser('assess')
     assessment.add_argument('--trial', required=True, help='relative setup/trial_NN or repeats/trial_NN')
     assessment.add_argument('--trick', required=True)
@@ -180,7 +197,7 @@ def main():
     elif args.command.startswith('run-'):
         live_batch(root, candidate_id=getattr(args, 'candidate', None),
                    repeatability=args.command == 'run-repeatability', env_file=args.env_file,
-                   ready_note=args.operator_ready_note, settings_note=args.settings_note)
+                   ready_note=args.operator_ready_note, settings_note=args.settings_note, appium_port=args.appium_port)
     elif args.command == 'assess':
         trial = (root / args.trial).resolve()
         relative = trial.relative_to(root.resolve())
