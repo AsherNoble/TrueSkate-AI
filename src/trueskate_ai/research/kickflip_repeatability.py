@@ -19,8 +19,6 @@ from trueskate_ai.research.curve_measurement import _decode_source_frames, read_
 from trueskate_ai.research.curve_protocol import digest, save_new
 from trueskate_ai.research.curved_audit import reset_payload
 from trueskate_ai.research.linear_speed_probe import deadline_sleep
-from trueskate_ai.sim.gestures import PUSH_START, PUSH_END, PUSH_DURATION
-from trueskate_ai.sim.touch_actions import build_curved_drag, easing_to_segment_durations, make_touch_pointer
 
 EXPERIMENT = 'KICKFLIP-REPEATABILITY-20261009'
 # Operator (2026-10-09): keep iterating until the kickflip is reproduced.
@@ -35,7 +33,11 @@ LATE_S = .1
 # straight, constant-speed strokes; normalized points; t = 0 at pop touch-down.
 # The pop runs from mid-board down off the tail; the flick from the board's upper
 # half right and slightly down; the catch is a stationary hold on the upper half.
-KICKFLIP = dict(pop_start=[.505, .56], pop_end=[.555, .815], pop_s=.075, flick_gap_s=.13,
+# The historical 20 ms push is in the unreliable flicker range (LINEAR-LENGTH-20261003)
+# and failed to move the board in trial 19; use the operator's filmed 0.13 s push,
+# which ended 0.37 s before the pop.
+KICKFLIP = dict(push_start=[.813, .27], push_end=[.74, .522], push_s=.13, push_to_pop_s=.37,
+                pop_start=[.505, .56], pop_end=[.555, .815], pop_s=.075, flick_gap_s=.13,
                 flick_start=[.537, .51], flick_end=[.715, .565], flick_s=.1, catch_gap_s=.43,
                 catch_point=[.5, .505], catch_s=.52)
 # One XCTest record per stroke (GESTURES.md hard rule): multi-path records conjoin
@@ -121,22 +123,6 @@ def safe_scaled_path(points):
     return scaled
 
 
-def contact_payload(name, points, duration_s, easing_power=1.):
-    if (len(points) < 2 or not np.isfinite(duration_s) or not .01 <= duration_s <= 1.
-            or not np.isfinite(easing_power) or not .3 <= easing_power <= 3.):
-        raise ValueError('invalid gesture duration/easing/points')
-    scaled = safe_scaled_path(points)
-    finger = make_touch_pointer(name)
-    finger.name = name
-    build_curved_drag(finger, scaled, total_duration=duration_s,
-                      easing=(lambda t: t ** easing_power) if easing_power != 1. else None)
-    payload = {'actions': [finger.encode()]}
-    movements = payload['actions'][0]['actions']
-    return dict(name=name, points=points, requested_duration_s=duration_s,
-                encoded_duration_s=sum(a.get('duration', 0) for a in movements) / 1000,
-                easing_power=easing_power, payload=payload, payload_sha256=digest(payload))
-
-
 def direct_stroke(name, points, durations_s):
     """One contact for WDA's /wda/perform_trick_gestures: straight segments, one time each.
 
@@ -157,7 +143,6 @@ def direct_stroke(name, points, durations_s):
 
 def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
     repo = Path(repo)
-    push = contact_payload('push', [PUSH_START, PUSH_END], PUSH_DURATION, 2.)
     candidates, rejected = [], []
     for index, change in enumerate(VARIANTS, 1):
         candidate_id = f'candidate_{index:02d}'
@@ -166,11 +151,13 @@ def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
             flick = (direct_stroke('flick', params['flick_points'], params['flick_durations_s'])
                      if 'flick_points' in params else
                      direct_stroke('flick', [params['flick_start'], params['flick_end']], [params['flick_s']]))
+            push = direct_stroke('push', [params['push_start'], params['push_end']], [params['push_s']])
             contacts = [push, direct_stroke('pop', [params['pop_start'], params['pop_end']], [params['pop_s']]),
                         flick, direct_stroke('catch', [params['catch_point']] * 2, [params['catch_s']])]
             candidates.append(seal(dict(id=candidate_id, seed='operator-filmed kickflip 2026-10-09',
                 parameters=params, varied=sorted(change), contacts=contacts,
                 catch_wait_s=round(max(0., params['catch_gap_s'] - DIRECT_RETURN_S), 3),
+                pop_wait_s=round(max(0., params['push_to_pop_s'] - DIRECT_RETURN_S), 3),
                 training_admission=False)))
         except ValueError as exc:
             rejected.append(dict(id=candidate_id, parameters=params, error=str(exc)))
@@ -215,7 +202,7 @@ def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
                    for p in previous_setup.rglob('*') if p.is_file()})
     return seal(dict(experiment=EXPERIMENT, device='iPhone_XR', park='Workshop', size=list(SIZE),
         fps=FPS, wda_revision=WDA_REVISION, setup_limit=SETUP_LIMIT, repeats=REPEATS,
-        push_post_response_wait_s=.48, candidates=candidates, rejected=rejected,
+        candidates=candidates, rejected=rejected,
         calibration='centre controls at 1.5/30/57 seconds; start/end fit; held-out middle',
         implementation_hashes={p: file_sha(repo / p) for p in IMPLEMENTATION_PATHS},
         controls_reset_before=True, prior_setup_attempts=spent, prior_setup=history, training_admission=False))
@@ -344,10 +331,11 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
         call('control', marker(), origin + 1.5, role='start')
         reset(3., 14.)
         push, pop, flick, catch = candidate['contacts']
-        call('gesture', push['payload'], origin + 14., role='push', encoded_duration_s=push['encoded_duration_s'])
-        # The historic push sleeps AFTER the blocking call, not after physical lift.
-        call('gesture', pop['payload'], clock() + .48, role='pop',
-             encoded_duration_s=pop['encoded_duration_s'], direct=True)
+        call('gesture', push['payload'], origin + 14., role='push',
+             encoded_duration_s=push['encoded_duration_s'], direct=True)
+        # The full guard ran just before the push; a guard here would delay the pop.
+        call('gesture', pop['payload'], clock() + candidate['pop_wait_s'], role='pop',
+             encoded_duration_s=pop['encoded_duration_s'], direct=True, guarded=False)
         # No guards between strokes: each would add ~0.2 s to an already late flick.
         call('gesture', flick['payload'], clock(), role='flick',
              encoded_duration_s=flick['encoded_duration_s'], direct=True, guarded=False)

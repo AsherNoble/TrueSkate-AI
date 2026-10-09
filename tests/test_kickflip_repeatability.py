@@ -78,20 +78,19 @@ def test_candidates_preserve_push_and_send_each_stroke_alone(experiment):
     first = manifest['candidates'][0]
     assert first['varied'] == [] and [c['name'] for c in first['contacts']] == ['push', 'pop', 'flick', 'catch']
     push = first['contacts'][0]
-    assert push['encoded_duration_s'] == .02
-    assert push['points'] == [[.7658, .3044], [.7658, .6797]]
-    assert len(push['payload']['actions']) == 1
+    # The operator's filmed push, not the 20 ms flicker-range historical push.
+    assert push['encoded_duration_s'] == .13 and push['points'] == [[.813, .27], [.74, .522]]
     for candidate in manifest['candidates'][1:]:
         assert candidate['contacts'][0] == push and candidate['varied']
         assert {k: v for k, v in candidate['parameters'].items() if k not in candidate['varied']} == \
             {k: v for k, v in module.KICKFLIP.items() if k not in candidate['varied']}
     for candidate in manifest['candidates']:
-        for stroke in candidate['contacts'][1:]:
+        for stroke in candidate['contacts']:
             # One gesture, one straight segment, one XCTest record (GESTURES.md hard rule).
             assert stroke['transport'] == 'wda_perform_trick_gestures'
             assert len(stroke['payload']['gestures']) == 1
             assert len(stroke['payload']['gestures'][0]['waypoints']) in (2, 3)
-    first['contacts'][0]['payload']['actions'][0]['actions'][2]['duration'] = 21
+    first['contacts'][0]['payload']['gestures'][0]['waypoints'][1]['duration_ms'] = 21
     with pytest.raises(ValueError, match='hash'):
         module.verify_seal(first)
 
@@ -99,7 +98,7 @@ def test_candidates_preserve_push_and_send_each_stroke_alone(experiment):
 @pytest.mark.parametrize('points', [[(.5, .5), (.05, .4)], [(.5, .5), (float('nan'), .6)], [(.5, .5), (1.1, .6)]])
 def test_unsafe_geometry_rejected(points):
     with pytest.raises(ValueError):
-        module.contact_payload('bad', points, .1)
+        module.direct_stroke('bad', points, [.1])
 
 
 @pytest.mark.parametrize('failure', [None, 'start', 'slow_start', 'execution', 'interrupt', 'exit',
@@ -142,8 +141,14 @@ def test_trial_retains_one_retrieval_and_all_failures(tmp_path, monkeypatch, fai
     monkeypatch.setattr(module, 'validate_action_timing_report', validate)
     def sleep(seconds):
         clock.sleep(seconds + (.2 if failure == 'sleep' else 0))
+    stroke = direct(clock, .27, calls)
+    def perform_direct(payload):
+        result = stroke(payload)
+        if len(calls) == 3 and failure in ('execution', 'interrupt', 'exit'):  # The push.
+            raise {'execution': OSError, 'interrupt': KeyboardInterrupt, 'exit': SystemExit}[failure]('synthetic failure')
+        return result
     kwargs = dict(out=tmp_path, candidate=candidate, recorder=recorder, timing=timing,
-                  perform=perform, perform_direct=direct(clock, .27, calls), guard=guard, settle=settle,
+                  perform=perform, perform_direct=perform_direct, guard=guard, settle=settle,
                   revision='synthetic', context={}, clock=clock, sleep=sleep, epoch=lambda: 1000+clock())
     if failure:
         with pytest.raises(RuntimeError):
@@ -155,8 +160,8 @@ def test_trial_retains_one_retrieval_and_all_failures(tmp_path, monkeypatch, fai
         gameplay = [e for e in execution['events'] if e['kind'] == 'gesture']
         push, pop, flick, catch = gameplay
         assert [e['role'] for e in gameplay] == ['push', 'pop', 'flick', 'catch']
-        assert [e['instrumented'] for e in gameplay] == [True, False, False, False]
-        assert pop['call_start_monotonic_s'] - push['call_end_monotonic_s'] == pytest.approx(.48)
+        assert [e['instrumented'] for e in gameplay] == [False, False, False, False]
+        assert pop['call_start_monotonic_s'] - push['call_end_monotonic_s'] == pytest.approx(candidate['pop_wait_s'])
         # Flick as soon as the pop returns; the catch waits the remaining filmed gap.
         assert flick['call_start_monotonic_s'] == pytest.approx(pop['call_end_monotonic_s'])
         assert catch['call_start_monotonic_s'] - flick['call_end_monotonic_s'] == pytest.approx(candidate['catch_wait_s'])
@@ -278,7 +283,7 @@ def test_report_counts_failures_and_unassessed_movies_without_faking_completion(
 def test_admission_requires_native_decode_and_independent_calibration(tmp_path, monkeypatch, failure):
     roles = ['start', None, 'push', 'pop', 'flick', 'catch', None, 'middle', None, 'end']
     stamps = [1.5, 3., 14., 14.9, 15.3, 15.75, 22., 30., 49., 57.]
-    direct_roles = ('pop', 'flick', 'catch')
+    direct_roles = ('push', 'pop', 'flick', 'catch')
     boundaries = module.validate_action_timing_report.__globals__['BOUNDARIES']
     # Rig clock runs 100 s behind WDA's; requests enter WDA as the rig call starts.
     records = [dict(sequence=i, outcome='success', session_id='synthetic', missing_ios_callback=False,
@@ -488,7 +493,7 @@ def test_full_screen_guards_do_not_stretch_stroke_gaps(tmp_path, monkeypatch):
     events = module.read_json(tmp_path / 'execution.json')['events']
     push, pop, flick, catch = [e for e in events if e['kind'] == 'gesture']
     assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
-    assert pop['call_start_monotonic_s'] - push['call_end_monotonic_s'] == pytest.approx(.48)
+    assert pop['call_start_monotonic_s'] - push['call_end_monotonic_s'] == pytest.approx(candidate['pop_wait_s'])
     assert flick['call_start_monotonic_s'] == pytest.approx(pop['call_end_monotonic_s'])
     assert clock() - 1.4 < 60  # Initial full guard occurs before recorder.start().
 
@@ -509,7 +514,7 @@ def test_slow_wda_returns_never_overrun_the_strokes(tmp_path, monkeypatch):
     events = module.read_json(tmp_path / 'execution.json')['events']
     push, pop, flick, catch = [e for e in events if e['kind'] == 'gesture']
     assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
-    assert pop['call_start_monotonic_s'] - push['call_end_monotonic_s'] == pytest.approx(.48)
+    assert pop['call_start_monotonic_s'] - push['call_end_monotonic_s'] == pytest.approx(candidate['pop_wait_s'])
 
 
 @pytest.mark.parametrize('state', ['ready', 'no_tunnel', 'other_device', 'leftover', 'unlistable'])

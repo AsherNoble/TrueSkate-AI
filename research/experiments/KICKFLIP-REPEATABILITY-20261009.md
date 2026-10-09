@@ -499,3 +499,14 @@ qualifies for review; the operator calls these rocket flips. The operator adds t
 their flick follows a curved, downward-ish arc before going straight outward.
 `candidate_19`–`21` use a slower down-right first segment (40–60 ms), then a fast
 outward segment (30–40 ms).
+
+**Push replaced (operator).** The historical push lasts 20 ms. LINEAR-LENGTH-20261003
+found visible traces in only 7/15 gestures at 20 ms and no board response at
+10 ms. The operator reports it appears as a flicker and did not move the board
+in trial 19. Candidates now use the operator's filmed push as a straight direct
+stroke: (0.813, 0.27) → (0.74, 0.522), 228 pt over 0.13 s. The pop follows
+0.37 s after the push ends, as filmed. With ~0.25 s endpoint return, the runner
+waits a further `pop_wait_s` = 0.12 s with no guard; the full guard runs
+immediately before the push. All gameplay strokes are now uninstrumented direct
+records. Calibration, resets and controls remain instrumented W3C requests. The
+unused W3C push builder was removed. Trials 01–20 used the 20 ms push.
