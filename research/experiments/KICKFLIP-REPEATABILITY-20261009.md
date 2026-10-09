@@ -283,3 +283,17 @@ successor carries trial 05 as a superseded-procedure outcome and trial 06 as a
 technical failure during gameplay. Both count toward the cap, so the next
 attempt is 07 with 18 remaining. Neither can count as evidence for the new
 candidates.
+
+**Tunnel restored and attachments preserved — 2026-10-09.** The operator ran
+`sudo launchctl kickstart -k system/com.trueskate.remotexpc-tunnel` on the rig.
+The registry then returned XR1 (HTTP 200, USB, 69 services). XR2 was not
+registered and is not used here. All 12 XR1 attachments were copied with
+`devicectl device copy from` to
+`…/tmp/recovered-xctest-attachments-20261009/`; `inventory.json` there records
+each file's size, duration and SHA-256. The five experiment attachments match
+the retained trial 02–06 originals byte for byte. The seven `xr-control-4380162`
+recordings (51.7–62.4 s; 64.8–74.4 MB) exist only in this preserved copy. With
+WDA and Appium idle and `/wda/video` null, the cleanup wrapper's dry-run listed
+exactly these 12 UUIDs. Deletion is pending operator permission.
+The successor is staged at `…/tmp/kickflip-repeatability-cd63e203` (source
+`cd63e203`). It was prepared offline: 6 prior attempts carried, 11 candidates.
