@@ -360,3 +360,20 @@ yields exactly one touch. A test replays WDA's rules on every finger.
 move/pause/move/down pattern. This likely adds an unlabelled spin-button or
 start-point touch from payload start in spin and combined trick payloads.
 Verify on device before relying on those labels.
+
+**Trial 09** (`27b4734c`, single-touch fingers) ran all eight commands within
+15 ms; the trick request took 1,705 ms. Only the tail touch is visible during
+the hold, and the flick and catch arrive on schedule. The 0.75 s tail hold braked
+the board from 4 to 0 mph. The pop then produced only a small hop; the flick
+rolled the board onto its edge and it dropped back onto its wheels at an angle.
+No trick banner appeared.
+
+**Pop revision (operator).** The hold is not a separate gesture. The pop is one
+stroke that starts very slowly and accelerates roughly exponentially
+("ppppOP", like a board's snap). The pop now moves along 16 equal-distance
+steps from the tail tip. Their timing follows position
+(e^(k·t/T) − 1)/(e^k − 1), with centre T = 0.8 s, k = 6 and 150 points: the
+first step takes 435 ms and the last steps 8–9 ms, ending at ≈1,100 pt/s.
+Millisecond truncation lifts the finger at 0.791 s. The flick and catch timing
+is unchanged relative to the lift. Variants: k = 4/8, T = 0.5/1.1 s, length
+100/190 points, flick gap 0/0.12 s, flick 0.04 s, catch delay 0.15/0.40 s.

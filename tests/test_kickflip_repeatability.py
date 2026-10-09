@@ -561,20 +561,28 @@ def test_superseded_procedure_still_requires_assessed_gameplay(experiment):
 def test_operator_kickflip_timeline_is_exact_in_one_payload():
     trick = module.trick_payload(module.KICKFLIP)
     fingers = {f['role']: f for f in trick['fingers']}
-    # Pop holds 0.75 s, then a 0.1 s move whose ms truncation ends it at 0.848 s.
-    assert (fingers['pop']['down_s'], fingers['pop']['up_s']) == (0., .848)
-    assert fingers['flick']['down_s'] == pytest.approx(.9) and fingers['flick']['up_s'] == pytest.approx(.96)
-    assert fingers['catch']['down_s'] == pytest.approx(1.21) and fingers['catch']['up_s'] == pytest.approx(1.51)
-    assert trick['encoded_duration_s'] == pytest.approx(1.51)
+    pop_up = fingers['pop']['up_s']
+    # One continuous 0.8 s pop (ms truncation may shorten it slightly); no separate hold.
+    assert fingers['pop']['down_s'] == 0. and .785 <= pop_up <= .8
+    assert fingers['flick']['down_s'] == pytest.approx(pop_up + .05)
+    assert fingers['flick']['up_s'] == pytest.approx(pop_up + .11)
+    assert fingers['catch']['down_s'] == pytest.approx(pop_up + .36)
+    assert fingers['catch']['up_s'] == pytest.approx(pop_up + .66) == trick['encoded_duration_s']
     pop, flick, catch = trick['payload']['actions']
+    kinds = [a['type'] for a in pop['actions']]
+    assert kinds[:2] == ['pointerMove', 'pointerDown'] and 'pause' not in kinds[:kinds.index('pointerUp')]
     moves = [a['duration'] for a in pop['actions'] if a['type'] == 'pointerMove'][1:]
-    assert moves == sorted(moves, reverse=True) and moves[0] > moves[-1]  # Accelerates downward.
+    # Equal distances with shrinking durations: exponential speed-up, mostly a slow creep.
+    assert len(moves) == 16 and all(a >= b for a, b in zip(moves, moves[1:]))  # ms truncation ties
+    assert moves[0] / sum(moves) > .5 and moves[-1] <= 10
     assert [a['y'] for a in pop['actions'] if a['type'] == 'pointerMove'][-1] == int(.67 * 896 + 150)
     assert {(a['x'], a['y']) for a in catch['actions'] if a['type'] == 'pointerMove'} == {(207, 448)}
     # Replaying WDA's path rules yields exactly one touch per finger at the planned times.
     touches = {f['role']: wda_touch_paths(source) for f, source in zip(trick['fingers'], trick['payload']['actions'])}
-    assert touches == {'pop': [(0, 848, (207, 600))], 'flick': [(900, 960, (207, 448))],
-                       'catch': [(1210, 1510, (207, 448))]}
+    ms = lambda seconds: int(round(seconds * 1000))
+    assert touches == {'pop': [(0, ms(pop_up), (207, 600))],
+                       'flick': [(ms(pop_up + .05), ms(pop_up + .11), (207, 448))],
+                       'catch': [(ms(pop_up + .36), ms(pop_up + .66), (207, 448))]}
 
 
 def wda_touch_paths(source):

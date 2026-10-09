@@ -37,12 +37,20 @@ LATE_S = .1
 TAIL_TIP = (.5, .67)
 BOARD_CENTRE = (.5, .5)
 FLICK_END = (.8, .5)
-KICKFLIP = dict(pop_hold_s=.75, pop_length_pt=150., pop_move_s=.1, pop_easing_power=.5,
-                flick_gap_s=.05, flick_s=.06, catch_delay_s=.25, catch_hold_s=.3)
+# The pop is one stroke with exponential velocity ("ppppOP"): it creeps for most of
+# pop_s, then snaps. A separate hold braked the board to 0 mph (trial 09).
+KICKFLIP = dict(pop_s=.8, pop_sharpness=6., pop_length_pt=150., flick_gap_s=.05, flick_s=.06,
+                catch_delay_s=.25, catch_hold_s=.3)
 # 190 points is the longest pop clear of the bottom bar's protected margin.
-VARIANTS = ({}, dict(pop_length_pt=100.), dict(pop_length_pt=190.), dict(pop_move_s=.06),
-            dict(pop_move_s=.16), dict(flick_gap_s=0.), dict(flick_gap_s=.12), dict(flick_s=.04),
-            dict(flick_s=.1), dict(catch_delay_s=.15), dict(catch_delay_s=.4), dict(pop_hold_s=.4))
+VARIANTS = ({}, dict(pop_sharpness=4.), dict(pop_sharpness=8.), dict(pop_s=.5), dict(pop_s=1.1),
+            dict(pop_length_pt=100.), dict(pop_length_pt=190.), dict(flick_gap_s=0.), dict(flick_gap_s=.12),
+            dict(flick_s=.04), dict(catch_delay_s=.15), dict(catch_delay_s=.4))
+POP_SEGMENTS = 16
+
+
+def exponential_easing(sharpness):
+    """Progress -> time for position (e^(k t) - 1) / (e^k - 1): slow start, fast snap."""
+    return lambda p: float(np.log1p(p * np.expm1(sharpness)) / sharpness)
 IMPLEMENTATION_PATHS = (
     'scripts/collection/probe_kickflip_repeatability.py',
     'src/trueskate_ai/research/kickflip_repeatability.py',
@@ -114,17 +122,20 @@ def contact_payload(name, points, duration_s, easing_power=1.):
 
 def trick_payload(params):
     """Pop, flick and catch fingers in one W3C payload with independent timelines."""
-    pop_end = (TAIL_TIP[0], TAIL_TIP[1] + params['pop_length_pt'] / SIZE[1])
-    pop_points = [(TAIL_TIP[0], TAIL_TIP[1] + (pop_end[1] - TAIL_TIP[1]) * i / 4) for i in range(5)]
-    pop_up = params['pop_hold_s'] + params['pop_move_s']
+    if not 0 < params['pop_sharpness'] <= 12:
+        raise ValueError('invalid pop sharpness')
+    length = params['pop_length_pt'] / SIZE[1]
+    pop_points = [(TAIL_TIP[0], TAIL_TIP[1] + length * i / POP_SEGMENTS) for i in range(POP_SEGMENTS + 1)]
+    pop_easing = exponential_easing(params['pop_sharpness'])
+    pop_up = sum(easing_to_segment_durations(POP_SEGMENTS, int(round(params['pop_s'] * 1000)), pop_easing)) / 1000
     flick_down = pop_up + params['flick_gap_s']
     catch_down = flick_down + params['flick_s'] + params['catch_delay_s']
-    strokes = (('pop', pop_points, 0., params['pop_hold_s'], params['pop_move_s'], params['pop_easing_power']),
-               ('flick', [BOARD_CENTRE, FLICK_END], flick_down, 0., params['flick_s'], 1.),
-               ('catch', [BOARD_CENTRE, BOARD_CENTRE], catch_down, params['catch_hold_s'], 0., 1.))
+    strokes = (('pop', pop_points, 0., 0., params['pop_s'], pop_easing),
+               ('flick', [BOARD_CENTRE, FLICK_END], flick_down, 0., params['flick_s'], None),
+               ('catch', [BOARD_CENTRE, BOARD_CENTRE], catch_down, params['catch_hold_s'], 0., None))
     sources, fingers = [], []
-    for role, points, down_s, hold_s, move_s, easing_power in strokes:
-        if not (0 <= down_s and 0 <= hold_s and 0 <= move_s <= 1. and .3 <= easing_power <= 3. and hold_s + move_s > 0):
+    for role, points, down_s, hold_s, move_s, easing in strokes:
+        if not (0 <= down_s and 0 <= hold_s and 0 <= move_s <= 1.5 and hold_s + move_s > 0):
             raise ValueError('invalid trick stroke timing')
         scaled = safe_scaled_path(points)
         finger = make_touch_pointer(role)
@@ -137,9 +148,8 @@ def trick_payload(params):
         if hold_s > 0:
             finger.create_pause(hold_s)
         if move_s > 0:
-            # Progress -> time easing; a power below one starts slowly and accelerates.
             durations = easing_to_segment_durations(len(scaled) - 1, int(round(move_s * 1000)),
-                                                    lambda t, p=easing_power: t ** p)
+                                                    easing or (lambda t: t))
             for (x, y), duration in zip(scaled[1:], durations):
                 finger.create_pointer_move(x=x, y=y, duration=duration)
         finger.create_pointer_up(0)
