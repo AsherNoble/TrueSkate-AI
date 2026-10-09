@@ -46,6 +46,19 @@ nested subsets, validation-only selection, interrupted-run resume and separate
 certification. Its historical cost figures are dated estimates, not current
 quotes or authorization for cloud work.
 
+## Gameplay repeatability (2026-10-09)
+
+Twenty identical executions of an operator-modelled kickflip on XR1 (Workshop),
+each stroke a separate WDA record, produced **19/19 admitted landed KICKFLIPs**.
+One repeat failed recording retrieval; its preserved video also shows a landed
+KICKFLIP. Pop→flick submission timing varied by ~100 ms through WDA jitter.
+
+The trick outcome was robust to that jitter. The board's heading after landing,
+and therefore its later position, still varied between runs, uncorrelated with
+the measured stroke gaps. Whole-system repeatability only; isolating
+intrinsic game noise needs board-clocked, independently measured touches. See
+[KICKFLIP-REPEATABILITY-20261009](experiments/KICKFLIP-REPEATABILITY-20261009.md).
+
 ## Model 2
 
 The sequence policy, causal datasets, stroke assembly and inference are retained
@@ -57,6 +70,12 @@ action groups and activity masks; the older rig model must not overwrite it.
 - Proposed Model 1 replay fine-tuning: automatically grade predicted-gesture
   replays against reference gameplay, after measuring repeatability and the
   required feedback speed. [Discussion note, 2026-10-09](protocols/model1_replay_finetuning.md).
+- [XR1 kickflip repeatability](experiments/KICKFLIP-REPEATABILITY-20261009.md):
+  XR1 is ready in Workshop. Its first setup attempt stopped before recording/
+  gameplay because WDA reported `unversioned`; the operator approved the verified
+  signed replacement and setup is continuing with the failed start retained.
+  Twenty frozen repeats require explicit
+  QuickTime review acceptance first. No gameplay results or game-noise estimate yet.
 - How does recovery scale with data volume and domain/session diversity?
 - When should linear work expand to curved and curved+spin trajectories?
 - Can Model 1 label expert recordings accurately enough for useful Model 2 training?
