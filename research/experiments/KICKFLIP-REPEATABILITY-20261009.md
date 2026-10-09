@@ -492,3 +492,10 @@ allows two- or three-point flicks. `direct_stroke` takes up to three points with
 one duration per segment. `candidate_16`–`18` press for 50 or 80 ms, then snap
 horizontally (40 ms) or along the filmed slant (50 ms). Two-point payloads are
 unchanged.
+
+**Trial 19** (`candidate_10`, third attempt): KICKFLIP, score 50, landed, then
+"Line Ended". `candidate_10` is therefore 3/3 landed KICKFLIPs (85, 98, 50) and
+qualifies for review; the operator calls these rocket flips. The operator adds that
+their flick follows a curved, downward-ish arc before going straight outward.
+`candidate_19`–`21` use a slower down-right first segment (40–60 ms), then a fast
+outward segment (30–40 ms).

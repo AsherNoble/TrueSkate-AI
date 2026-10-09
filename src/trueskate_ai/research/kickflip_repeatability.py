@@ -62,7 +62,12 @@ VARIANTS = ({}, dict(pop_s=.05), dict(pop_s=.1), dict(flick_s=.06), dict(flick_s
             # the deck for ~50 ms (a likely levelling press), then snaps right in ~50 ms.
             dict(flick_points=[[.537, .51], [.545, .517], [.715, .51]], flick_durations_s=[.05, .04]),
             dict(flick_points=[[.537, .51], [.545, .517], [.715, .565]], flick_durations_s=[.05, .05]),
-            dict(flick_points=[[.537, .51], [.545, .517], [.715, .51]], flick_durations_s=[.08, .04]))
+            dict(flick_points=[[.537, .51], [.545, .517], [.715, .51]], flick_durations_s=[.08, .04]),
+            # Operator: the flick travels a curved, downward-ish arc before going straight
+            # outward. Slower down-right first segment, then a fast outward segment.
+            dict(flick_points=[[.537, .51], [.57, .54], [.715, .56]], flick_durations_s=[.06, .04]),
+            dict(flick_points=[[.537, .51], [.57, .54], [.715, .56]], flick_durations_s=[.04, .03]),
+            dict(flick_points=[[.537, .51], [.56, .545], [.715, .55]], flick_durations_s=[.05, .04]))
 IMPLEMENTATION_PATHS = (
     'scripts/collection/probe_kickflip_repeatability.py',
     'src/trueskate_ai/research/kickflip_repeatability.py',
