@@ -1,0 +1,13 @@
+hover_rate_ble1.mov: 571 frames at 59.6 fps (4 dropped); park row 368 pt; cursor found in 432; one 4-count report = 1.901 pt (Bluetooth fit 1.896); dark pointer; 0 one-frame spikes repaired; parked jitter 0.035 pt rms; anchor 3.067 s; 0 passes not found; board times scheduled; decoder FFMPEG
+step ms  dx  sent delivered  send ms deliver ms frames frozen longest catch-up  reports per frame ([n] = after a dropped frame)
+      3  +4   100      59.9      300        533     32      1       1        4  22031222112242221221242122221132
+      3  -4   100      60.9      300        533     32      1       1        4  22242221221013212222224122122132
+      1  +4    60      32.9       60        250     15      0       0        4  122332222222332
+      1  -4    60      34.0       60        283     17      0       0        2  42222211322222221
+     15  +4    30      30.0      450        450     27      1       1        1  111103111111111211111111211
+     15  -4    30      30.0      450        450     27      3       2        1  111004021111111211111112111
+-- bluetooth
+every 3 ms: 121 of 200 reports delivered; on 64 regular frames: frozen 2 (3.1%), longest 1, catch-up 8; frames by reports carried {'0': 2, '1': 15, '2': 39, '3': 4, '4': 4}; dropped frames carried []
+every 1 ms: 67 of 120 reports delivered; on 32 regular frames: frozen 0 (0.0%), longest 0, catch-up 6; frames by reports carried {'1': 4, '2': 22, '3': 5, '4': 1}; dropped frames carried []
+every 15 ms: 60 of 60 reports delivered; on 54 regular frames: frozen 4 (7.4%), longest 2, catch-up 2; frames by reports carried {'0': 4, '1': 43, '2': 5, '3': 1, '4': 1}; dropped frames carried []; reports by frames displaced {'-1': 1, '0': 54, '1': 4, '2': 1} (10.0% off their frame)
+note: frozen/catch-up frames are meaningful at 15 ms only. "displaced" needs every report seen; at 1 and 3 ms rate-dependent gain can prevent that, so see the all-delivered line (board stats required).

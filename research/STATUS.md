@@ -313,6 +313,20 @@ Ethernet, WDA network transport and RemoteXPC recording-cleanup chain still need
 a bounded hardware pilot. Adapter confidence figures in the review are
 subjective engineering priors, not measured reliability.
 
+A first-generation Pico runs a bounded, mouse-only hover diagnostic. On
+2026-10-07 XR2 accepted it as a pointer through the powered camera adapter while
+WDA control and XCTest recording ran over Wi-Fi with no USB to the rig: the iOS
+pointer appeared 13.0 s into a 45 s 60 fps movie and traced the firmware's two
+squares 21.0-24.1 s (8 s lead, 80 moves). No clicks were sent; touch semantics,
+a command link and a 1 ms path remain untested. The same run passed all five
+cases' gates, including both minute cases' cadence (29.97/59.92 fps, max gap
+50/33 ms) and two-anchor calibration. The wireless route uses a RemotePairing
+TCP tunnel (pymobiledevice3, Python 3.13), not the classic CoreDeviceProxy,
+which XR2 rejects off USB. XR2 now carries instrumented WDA `ae50404a`; the
+services agent's xcodebuild reinstalls an `unversioned` runner whenever it
+rebuilds over USB. No collection or training. See
+[HID-USB-20261006](experiments/HID-USB-20261006.md).
+
 AssistiveTouch supports preset and recorded multi-finger gestures. Independent
 live control of two mouse-driven contacts remains unverified. In three short
 XR2 diagnostic recordings, the pointer-only and WDA spin-hold controls worked;
