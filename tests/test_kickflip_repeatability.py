@@ -64,7 +64,7 @@ class Timing:
 
 def test_candidates_preserve_push_and_give_each_trick_stroke_one_finger(experiment):
     manifest = module.load_manifest(experiment)
-    assert len(manifest['candidates']) == 12 and manifest['rejected'] == []
+    assert len(manifest['candidates']) == 13 and manifest['rejected'] == []
     first = manifest['candidates'][0]
     assert first['varied'] == [] and [c['name'] for c in first['contacts']] == ['push', 'trick']
     push = first['contacts'][0]
@@ -72,7 +72,7 @@ def test_candidates_preserve_push_and_give_each_trick_stroke_one_finger(experime
     assert push['points'] == [[.7658, .3044], [.7658, .6797]]
     assert len(push['payload']['actions']) == 1
     for candidate in manifest['candidates'][1:]:
-        assert candidate['contacts'][0] == push and len(candidate['varied']) == 1
+        assert candidate['contacts'][0] == push and candidate['varied']
         assert {k: v for k, v in candidate['parameters'].items() if k not in candidate['varied']} == \
             {k: v for k, v in module.KICKFLIP.items() if k not in candidate['varied']}
     for candidate in manifest['candidates']:

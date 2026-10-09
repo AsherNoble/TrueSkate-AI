@@ -377,3 +377,10 @@ first step takes 435 ms and the last steps 8–9 ms, ending at ≈1,100 pt/s.
 Millisecond truncation lifts the finger at 0.791 s. The flick and catch timing
 is unchanged relative to the lift. Variants: k = 4/8, T = 0.5/1.1 s, length
 100/190 points, flick gap 0/0.12 s, flick 0.04 s, catch delay 0.15/0.40 s.
+
+**Trial 10** (`3fc10e10`, exponential pop, centre) ran all eight commands within
+13 ms. The slow creep held the board at 4 mph, unlike the separate hold; speed
+fell to about 1 mph only at the snap. The outcome matched trial 09: a small hop,
+the flick rolled the board onto its edge, and no banner. The operator chose a
+quicker 0.5 s pop with a 0.5 s pop-to-flick gap, added as `candidate_13`;
+existing candidate IDs are unchanged.

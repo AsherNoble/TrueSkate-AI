@@ -44,7 +44,9 @@ KICKFLIP = dict(pop_s=.8, pop_sharpness=6., pop_length_pt=150., flick_gap_s=.05,
 # 190 points is the longest pop clear of the bottom bar's protected margin.
 VARIANTS = ({}, dict(pop_sharpness=4.), dict(pop_sharpness=8.), dict(pop_s=.5), dict(pop_s=1.1),
             dict(pop_length_pt=100.), dict(pop_length_pt=190.), dict(flick_gap_s=0.), dict(flick_gap_s=.12),
-            dict(flick_s=.04), dict(catch_delay_s=.15), dict(catch_delay_s=.4))
+            dict(flick_s=.04), dict(catch_delay_s=.15), dict(catch_delay_s=.4),
+            # Operator steering after trial 10: quicker pop and a longer pop-to-flick gap.
+            dict(pop_s=.5, flick_gap_s=.5))
 POP_SEGMENTS = 16
 
 
