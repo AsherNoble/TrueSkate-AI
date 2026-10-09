@@ -1,9 +1,13 @@
 # KICKFLIP-REPEATABILITY-20261009 — XR1 push/pop/flick repeatability
 
 Status: implemented and checked offline; the operator confirmed XR1 is charged
-and ready in Workshop. Live preflight passed foreground/recording-tunnel checks;
-no live attempt has been made yet. Model 1 is not
-involved. The operator authorized bounded setup, then 20 repeats only after
+and ready in Workshop. Live setup stopped at WDA build identity: the current
+runner reports `unversioned`, rather than required `ae50404a`. One reserved setup
+attempt made only its initial reset/settle; **no recorder start or gameplay
+contacts occurred**. This failed start counts toward the 24-attempt cap. WDA
+remains healthy and unchanged. Explicit operator permission is pending to switch
+to the preserved, signed, previously validated runner. Model 1 is not involved.
+The operator authorized bounded setup, then 20 repeats only after
 accepting the candidate recording in QuickTime. Collection stays OFF.
 
 ## Frozen procedure
@@ -117,3 +121,40 @@ single retrieval, attempt caps, first-three review selection, immutable approval
 native decode/calibration rejection, and exactly 20 repeats with no replacements.
 Synthetic FFmpeg movies exercise preview/side-by-side rendering, source snapshots
 and exact 60-frame native decoding. These are test artifacts, not research runs.
+
+## Live preflight — 2026-10-09
+
+Execution source: `b2c6ca3d4c58ec6ab6eca5ea7e581c73d09be215` on
+`research/kickflip-repeatability`. The Appium 3 endpoint is `/appium/sessions`,
+protected by `*:session_discovery`; the supervised 4723 server lacks this flag.
+A temporary loopback-only server on 4725 passed idle discovery. Existing WDA,
+Appium 4723 and the root recording tunnel were left running.
+
+Rig evidence root:
+`/Users/training-server/trueskate-ai-runtime/tmp/kickflip-repeatability-b2c6ca3d`.
+Local copy:
+`tmp/kickflip-repeatability-live-preflight-b2c6ca3d`.
+`experiment/setup/trial_01/execution.json` retains the identity error, zero
+recorded events and no video. A separate read-only session confirmed timing
+schema 1, `build_revision=unversioned`, capture disabled and zero records.
+All diagnostic sessions were disconnected; the recorder is idle. No trick
+assessment, QuickTime candidate preview or 20-repeat batch exists.
+The temporary Appium 4725 is stopped while restart permission is pending.
+
+Preserved replacement: `wda-timing-deployment/viewport-cache-20261003/derived-data/Build/Products`
+under the rig runtime `tmp/`. The runner passes deep strict codesign verification;
+its profile expires **2026-10-10 04:51:31 UTC**. Its WebDriverAgentLib binary
+embeds the exact expected revision and has SHA-256
+`cc418bc0e19c07d0b70d8ff2112e4331e6d322ed3085757fbb4748b0db651d6d`.
+This is the already-tested CURVE-AUDIT build, not a freshly compiled candidate.
+Full inspection is in `wda-recovery-preflight.json`. The merged rig WDA source
+is clean at `ae50404a`; that alone does not identify the currently loaded binary.
+`wda-recovery-profilecheck.json` confirms the replacement profile includes XR1.
+The default product used by the current supervisor has a profile that expired
+2026-09-20 01:39:44 UTC; do not assume it can relaunch as a rollback. The current
+healthy process remains untouched while permission is pending.
+
+Do not accept `unversioned`, overwrite the failed attempt, reset the setup budget,
+or weaken admission. If restart is approved, document the deployment and resolved
+failure before continuing. Preserve the failed start separately from gameplay
+outcomes. Twenty repeats still require actual QuickTime review acceptance.
