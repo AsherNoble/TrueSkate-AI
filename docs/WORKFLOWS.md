@@ -17,6 +17,7 @@ to test a refactor. `--help` on each entrypoint describes its existing flags.
 | Sequence-policy training | Unfinished research | `scripts/model2/train_sequence_model.py` |
 | Device policy replay | Experimental; controls phone | `scripts/model2/run_sequence_policy.py` |
 | Private XR menu control | Standalone; session discovery required | `scripts/control/serve.py` ([guide](XR_CONTROL.md)) |
+| Kickflip repeatability | Bounded diagnostic; operator review before 20 repeats | `scripts/collection/probe_kickflip_repeatability.py` ([procedure](../research/experiments/KICKFLIP-REPEATABILITY-20261009.md)) |
 | Corpus preview/progress | Supported | `scripts/train_dashboard.py` |
 
 ## Offline verification
