@@ -52,7 +52,7 @@ Validate WDA build `ae50404aac12d9f8c41f6c3fa8776e97975eaef5`, exact timing reco
 counts, native dimensions/PTS and full FFmpeg decode counts. Keep gameplay and
 foreground guards, reserving guard/screenshot time before each submission slot.
 Full screenshot/menu/editor guards surround the three-contact sequence and all
-controls/resets. Pop/flick retain per-contact Appium/WDA ownership and foreground
+controls. Resets/pop/flick retain per-contact Appium/WDA ownership and foreground
 guards; costly screenshots do not consume their short gesture gaps. Every native
 video frame still receives the same menu/editor checks during admission.
 Start/end controls define the video clock with ≥55 s anchor
@@ -219,3 +219,12 @@ were retained. No push/pop/flick ran. Expanded calibration-only slack: first res
 Gesture durations and inter-contact timing, settling threshold, held-out residual,
 native-frame and maximum-lateness gates remain unchanged. All three pre-gameplay
 failures count toward the original cap; next attempt is 04, with 21 remaining.
+
+Trial 04 completed only the start control, then the redundant pre-reset screenshot
+check overran that reset's deadline by 212.031 ms. It was stopped and retrieved
+before gameplay. Resets now use the same fast foreground/ownership guard as
+pop/flick; every reset is followed by settling and a full scene check before the
+next control or gameplay. This removes duplicate image work from the short
+control→reset gap. A synthetic 1.4 s full-guard/4.6 s settling case verifies all
+submission slots, gesture gaps and the one-minute stop without relaxing a gate.
+Four retained pre-gameplay failures count; next attempt is 05 (20 slots remaining).

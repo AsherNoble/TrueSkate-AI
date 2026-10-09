@@ -245,7 +245,7 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
                 raise RuntimeError('command target exceeds recording deadline')
             # Guards include a fresh screenshot; reserve time for them before the
             # submission deadline instead of adding their latency to every gap.
-            fast = kind == 'gesture' and role in ('pop', 'flick') and foreground_guard is not None
+            fast = foreground_guard is not None and (kind == 'reset' or kind == 'gesture' and role in ('pop', 'flick'))
             sleep(max(0., target - (.25 if fast else 1.5) - clock()))
             (foreground_guard if fast else guard)()
             sleep(max(0., target - clock()))

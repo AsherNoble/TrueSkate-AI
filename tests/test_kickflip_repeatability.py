@@ -447,7 +447,7 @@ def test_full_screen_guards_do_not_stretch_pop_flick_gaps(tmp_path, monkeypatch)
         clock.sleep(sum(a.get('duration', 0) for a in payload['actions'][0]['actions']) / 1000 + .3)
     monkeypatch.setattr(module, 'validate_action_timing_report', lambda *a, **k: [])
     module.run_trial(out=tmp_path, candidate=candidate, recorder=recorder, timing=timing,
-        perform=perform, guard=lambda: clock.sleep(1.), foreground_guard=lambda: clock.sleep(.18),
+        perform=perform, guard=lambda: clock.sleep(1.4), foreground_guard=lambda: clock.sleep(.18),
         settle=lambda reserve: (clock.sleep(4.6) or SettleResult(True, 4.6)), revision='synthetic', context={},
         clock=clock, sleep=clock.sleep, epoch=clock)
     events = module.read_json(tmp_path / 'execution.json')['events']
@@ -455,4 +455,4 @@ def test_full_screen_guards_do_not_stretch_pop_flick_gaps(tmp_path, monkeypatch)
     assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
     assert gestures[1]['call_start_monotonic_s'] - gestures[0]['call_end_monotonic_s'] == pytest.approx(.48)
     assert gestures[2]['call_start_monotonic_s'] - gestures[1]['call_start_monotonic_s'] == pytest.approx(.179 + .62)
-    assert clock() - 1. < 60  # Initial full guard occurs before recorder.start().
+    assert clock() - 1.4 < 60  # Initial full guard occurs before recorder.start().
