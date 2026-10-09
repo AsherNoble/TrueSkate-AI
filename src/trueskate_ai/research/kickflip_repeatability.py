@@ -30,29 +30,18 @@ SIZE = (414, 896)
 FPS = 60
 STOP_S = 59.
 LATE_S = .1
-# Operator-described kickflip (2026-10-09). The mined library pop missed the board
-# in this camera. Pop, flick and catch need ~0.1 s spacing, so they share one
-# request with a finger each, as the trick executor bundles close strokes; t = 0
-# is pop touch-down. Each variant changes one uncertain number from the centre.
-TAIL_TIP = (.5, .67)
-BOARD_CENTRE = (.5, .5)
-FLICK_END = (.8, .5)
-# The pop is one stroke with exponential velocity ("ppppOP"): it creeps for most of
-# pop_s, then snaps. A separate hold braked the board to 0 mph (trial 09).
-KICKFLIP = dict(pop_s=.8, pop_sharpness=6., pop_length_pt=150., flick_gap_s=.05, flick_s=.06,
-                catch_delay_s=.25, catch_hold_s=.3)
-# 190 points is the longest pop clear of the bottom bar's protected margin.
-VARIANTS = ({}, dict(pop_sharpness=4.), dict(pop_sharpness=8.), dict(pop_s=.5), dict(pop_s=1.1),
-            dict(pop_length_pt=100.), dict(pop_length_pt=190.), dict(flick_gap_s=0.), dict(flick_gap_s=.12),
-            dict(flick_s=.04), dict(catch_delay_s=.15), dict(catch_delay_s=.4),
-            # Operator steering after trial 10: quicker pop and a longer pop-to-flick gap.
-            dict(pop_s=.5, flick_gap_s=.5))
-POP_SEGMENTS = 16
-
-
-def exponential_easing(sharpness):
-    """Progress -> time for position (e^(k t) - 1) / (e^k - 1): slow start, fast snap."""
-    return lambda p: float(np.log1p(p * np.expm1(sharpness)) / sharpness)
+# Operator's filmed kickflip (tmp/Example Kickflip.MP4, 60 fps), approximated with
+# straight, constant-speed strokes; normalized points; t = 0 at pop touch-down.
+# The pop runs from mid-board down off the tail; the flick from the board's upper
+# half right and slightly down; the catch is a stationary hold on the upper half.
+KICKFLIP = dict(pop_start=[.505, .56], pop_end=[.555, .815], pop_s=.075, flick_gap_s=.13,
+                flick_start=[.537, .51], flick_end=[.715, .565], flick_s=.1, catch_gap_s=.43,
+                catch_point=[.5, .505], catch_s=.52)
+# WDA/XCTest drops time when no finger is down (trial 11 ran a planned 0.5 s gap
+# in ~0.07 s), so a stationary off-board finger spans the whole trick.
+KEEPALIVE_POINT = (.85, .8)
+VARIANTS = ({}, dict(pop_s=.05), dict(pop_s=.1), dict(flick_gap_s=.08), dict(flick_gap_s=.18),
+            dict(flick_s=.06), dict(flick_s=.14), dict(catch_gap_s=.3), dict(catch_gap_s=.55))
 IMPLEMENTATION_PATHS = (
     'scripts/collection/probe_kickflip_repeatability.py',
     'src/trueskate_ai/research/kickflip_repeatability.py',
@@ -123,18 +112,14 @@ def contact_payload(name, points, duration_s, easing_power=1.):
 
 
 def trick_payload(params):
-    """Pop, flick and catch fingers in one W3C payload with independent timelines."""
-    if not 0 < params['pop_sharpness'] <= 12:
-        raise ValueError('invalid pop sharpness')
-    length = params['pop_length_pt'] / SIZE[1]
-    pop_points = [(TAIL_TIP[0], TAIL_TIP[1] + length * i / POP_SEGMENTS) for i in range(POP_SEGMENTS + 1)]
-    pop_easing = exponential_easing(params['pop_sharpness'])
-    pop_up = sum(easing_to_segment_durations(POP_SEGMENTS, int(round(params['pop_s'] * 1000)), pop_easing)) / 1000
-    flick_down = pop_up + params['flick_gap_s']
-    catch_down = flick_down + params['flick_s'] + params['catch_delay_s']
-    strokes = (('pop', pop_points, 0., 0., params['pop_s'], pop_easing),
-               ('flick', [BOARD_CENTRE, FLICK_END], flick_down, 0., params['flick_s'], None),
-               ('catch', [BOARD_CENTRE, BOARD_CENTRE], catch_down, params['catch_hold_s'], 0., None))
+    """Kickflip strokes plus a keep-alive finger in one W3C payload, one finger each."""
+    flick_down = params['pop_s'] + params['flick_gap_s']
+    catch_down = flick_down + params['flick_s'] + params['catch_gap_s']
+    end = catch_down + params['catch_s']
+    strokes = (('pop', [params['pop_start'], params['pop_end']], 0., 0., params['pop_s'], None),
+               ('flick', [params['flick_start'], params['flick_end']], flick_down, 0., params['flick_s'], None),
+               ('catch', [params['catch_point']] * 2, catch_down, params['catch_s'], 0., None),
+               ('keepalive', [KEEPALIVE_POINT] * 2, 0., end, 0., None))
     sources, fingers = [], []
     for role, points, down_s, hold_s, move_s, easing in strokes:
         if not (0 <= down_s and 0 <= hold_s and 0 <= move_s <= 1.5 and hold_s + move_s > 0):

@@ -384,3 +384,37 @@ fell to about 1 mph only at the snap. The outcome matched trial 09: a small hop,
 the flick rolled the board onto its edge, and no banner. The operator chose a
 quicker 0.5 s pop with a 0.5 s pop-to-flick gap, added as `candidate_13`;
 existing candidate IDs are unchanged.
+
+**Trial 11** (`36aac272`, `candidate_13`: 0.5 s pop, 0.5 s pop-to-flick gap) ran
+the planned payload; payload SHA and hover durations match. iOS nevertheless
+reported completion 1.080 s after submission for a payload ending at 1.602 s.
+In the video, the flick trail starts 0.067 s after the pop trail appears, so the
+0.5 s gap was not played. Simple gestures complete about 0.23 s after their
+encoded duration. On that basis, trials 09, 10 and 11 played ≈1.23, 1.23 and
+0.85 s against 1.51, 1.45 and 1.60 s planned. The shortfall roughly matches
+their finger-free intervals (0.30, 0.30 and 0.75 s).
+
+**Finding: within one WDA actions request, intervals with no finger down are
+collapsed; holds with a finger down keep real time.** This likely explains the
+"joined gestures" of bundled run04b. It also implies that the
+`execute_n_slot_gestures` combined branch has not honoured positive inter-stroke
+gaps. Separate requests and the Pico, which keeps its own clock, are unaffected.
+
+**Operator reference.** The operator filmed a landed KICKFLIP (score 99) at
+`tmp/Example Kickflip.MP4`: 750×1624 at 60 fps, the same aspect ratio as XR, with
+the board at x 0.40–0.60 and y 0.44–0.70 as on XR1. Glow tracking gives these
+normalized positions, with t = 0 at pop touch-down:
+- pop (0.505, 0.56) → (0.555, 0.815) over 0.075 s (~3,000 pt/s, near-constant
+  speed, starting mid-board; no hold or creep visible);
+- 0.13 s with no finger down;
+- flick (0.537, 0.51) → (0.715, 0.565) over 0.10 s;
+- 0.43 s with no finger down;
+- catch: hold at (0.50, 0.505) for 0.52 s.
+
+The operator asked for straight-line gestures only. The candidate set reproduces
+these strokes as single constant-speed moves. A stationary keep-alive finger at
+off-board (0.85, 0.80) spans the whole trick, so no finger-free interval exists
+for WDA to collapse; trial 07 showed off-board touches have no visible effect.
+Variants: pop 0.05/0.10 s, flick gap 0.08/0.18 s, flick 0.06/0.14 s, catch gap
+0.30/0.55 s. The historical push is unchanged. The operator's own push was a
+~0.12 s diagonal stroke (0.81, 0.27) → (0.74, 0.52), ending 0.37 s before the pop.

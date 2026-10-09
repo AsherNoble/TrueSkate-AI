@@ -64,7 +64,7 @@ class Timing:
 
 def test_candidates_preserve_push_and_give_each_trick_stroke_one_finger(experiment):
     manifest = module.load_manifest(experiment)
-    assert len(manifest['candidates']) == 13 and manifest['rejected'] == []
+    assert len(manifest['candidates']) == 9 and manifest['rejected'] == []
     first = manifest['candidates'][0]
     assert first['varied'] == [] and [c['name'] for c in first['contacts']] == ['push', 'trick']
     push = first['contacts'][0]
@@ -77,7 +77,7 @@ def test_candidates_preserve_push_and_give_each_trick_stroke_one_finger(experime
             {k: v for k, v in module.KICKFLIP.items() if k not in candidate['varied']}
     for candidate in manifest['candidates']:
         sources = candidate['contacts'][1]['payload']['actions']
-        assert [f['role'] for f in candidate['contacts'][1]['fingers']] == ['pop', 'flick', 'catch']
+        assert [f['role'] for f in candidate['contacts'][1]['fingers']] == ['pop', 'flick', 'catch', 'keepalive']
         assert len({len(source['actions']) for source in sources}) == 1
         for source in sources:
             assert sum(a['type'] == 'pointerDown' for a in source['actions']) == 1
@@ -560,29 +560,30 @@ def test_superseded_procedure_still_requires_assessed_gameplay(experiment):
 
 def test_operator_kickflip_timeline_is_exact_in_one_payload():
     trick = module.trick_payload(module.KICKFLIP)
-    fingers = {f['role']: f for f in trick['fingers']}
-    pop_up = fingers['pop']['up_s']
-    # One continuous 0.8 s pop (ms truncation may shorten it slightly); no separate hold.
-    assert fingers['pop']['down_s'] == 0. and .785 <= pop_up <= .8
-    assert fingers['flick']['down_s'] == pytest.approx(pop_up + .05)
-    assert fingers['flick']['up_s'] == pytest.approx(pop_up + .11)
-    assert fingers['catch']['down_s'] == pytest.approx(pop_up + .36)
-    assert fingers['catch']['up_s'] == pytest.approx(pop_up + .66) == trick['encoded_duration_s']
-    pop, flick, catch = trick['payload']['actions']
-    kinds = [a['type'] for a in pop['actions']]
-    assert kinds[:2] == ['pointerMove', 'pointerDown'] and 'pause' not in kinds[:kinds.index('pointerUp')]
-    moves = [a['duration'] for a in pop['actions'] if a['type'] == 'pointerMove'][1:]
-    # Equal distances with shrinking durations: exponential speed-up, mostly a slow creep.
-    assert len(moves) == 16 and all(a >= b for a, b in zip(moves, moves[1:]))  # ms truncation ties
-    assert moves[0] / sum(moves) > .5 and moves[-1] <= 10
-    assert [a['y'] for a in pop['actions'] if a['type'] == 'pointerMove'][-1] == int(.67 * 896 + 150)
-    assert {(a['x'], a['y']) for a in catch['actions'] if a['type'] == 'pointerMove'} == {(207, 448)}
-    # Replaying WDA's path rules yields exactly one touch per finger at the planned times.
-    touches = {f['role']: wda_touch_paths(source) for f, source in zip(trick['fingers'], trick['payload']['actions'])}
-    ms = lambda seconds: int(round(seconds * 1000))
-    assert touches == {'pop': [(0, ms(pop_up), (207, 600))],
-                       'flick': [(ms(pop_up + .05), ms(pop_up + .11), (207, 448))],
-                       'catch': [(ms(pop_up + .36), ms(pop_up + .66), (207, 448))]}
+    sources = trick['payload']['actions']
+    assert [f['role'] for f in trick['fingers']] == ['pop', 'flick', 'catch', 'keepalive']
+    # Replaying WDA's path rules yields exactly one touch per finger at the filmed times.
+    touches = {f['role']: wda_touch_paths(source) for f, source in zip(trick['fingers'], sources)}
+    assert touches == {'pop': [(0, 75, (209, 501))], 'flick': [(205, 305, (222, 456))],
+                       'catch': [(735, 1255, (207, 452))], 'keepalive': [(0, 1255, (351, 716))]}
+    assert trick['encoded_duration_s'] == pytest.approx(1.255)
+    # Every stroke is one straight constant-speed move (or a stationary hold).
+    for source in sources:
+        assert sum(a['type'] == 'pointerMove' and a['duration'] > 0 for a in source['actions']
+                   if source['actions'].index(a) > 1) <= 1
+
+
+@pytest.mark.parametrize('candidate', range(9))
+def test_no_finger_free_moment_inside_the_trick(candidate):
+    # WDA/XCTest skips time when no finger is down (trial 11), so touches must cover [0, end].
+    trick = module.prepare_manifest(REPO)['candidates'][candidate]['contacts'][1]
+    intervals = sorted(t[:2] for source in trick['payload']['actions'] for t in wda_touch_paths(source))
+    covered = intervals[0][1]
+    assert intervals[0][0] == 0
+    for start, stop in intervals[1:]:
+        assert start <= covered
+        covered = max(covered, stop)
+    assert covered == round(trick['encoded_duration_s'] * 1000)
 
 
 def wda_touch_paths(source):
@@ -615,6 +616,6 @@ def test_leading_pause_pattern_creates_a_phantom_touch():
     assert wda_touch_paths(source) == [(0, None, (207, 448)), (900, 960, (207, 448))]
 
 
-def test_pop_cannot_reach_protected_bottom_controls():
+def test_strokes_cannot_reach_protected_controls():
     with pytest.raises(ValueError, match='protected'):
-        module.trick_payload({**module.KICKFLIP, 'pop_length_pt': 200.})
+        module.trick_payload({**module.KICKFLIP, 'pop_end': (.555, .98)})
