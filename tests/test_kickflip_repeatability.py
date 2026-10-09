@@ -335,8 +335,9 @@ def load_cli():
     return cli
 
 
-@pytest.mark.parametrize('failure_at,defer', [(None, False), (4, False), (None, True), (4, True)])
-def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, monkeypatch, failure_at, defer):
+@pytest.mark.parametrize('failure_at,defer,carried', [(None, False, 0), (4, False, 0), (None, True, 0), (4, True, 0),
+                                                       (None, True, 15)])
+def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, monkeypatch, failure_at, defer, carried):
     import base64
     import trueskate_ai.sim.device as device
     import trueskate_ai.collection.wda_action_timing as timing
@@ -344,6 +345,11 @@ def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, 
     import trueskate_ai.collection.scene_settle as scene
     import trueskate_ai.collection.gameplay_filter as gameplay
     cli = load_cli()
+    if carried:  # Continuation stage: the predecessor's first repeats are carried, never rerun.
+        manifest = module.load_manifest(experiment)
+        manifest.pop('sha256')
+        manifest['prior_setup'] = dict(attempts=0, files={}, repeats=[f'trial_{i:02d}' for i in range(1, carried + 1)])
+        (experiment / 'manifest.json').write_text(json.dumps(module.seal(manifest)))
     install_review(experiment)
     module.approve_review(experiment, 'candidate_01', 'Operator approves preview')
     env_file = experiment / 'synthetic.env'
@@ -402,11 +408,12 @@ def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, 
         assert (experiment / 'repeats/trial_04/live-failure.json').exists()
     else:
         cli.live_batch(**kwargs)
-        assert len(runs) == module.REPEATS == len(connections) == len(resets)
+        assert len(runs) == module.REPEATS - carried == len(connections) == len(resets)
+        assert sorted(p.name for p in (experiment / 'repeats').iterdir())[0] == f'trial_{carried + 1:02d}'
         # Deferred admission runs off the rig afterwards; never inline.
-        assert len(admitted) == (0 if defer else module.REPEATS)
+        assert len(admitted) == (0 if defer else module.REPEATS - carried)
         # Checked before the first connection and before every later reconnect.
-        assert cleanup_checks == list(range(module.REPEATS))
+        assert cleanup_checks == list(range(module.REPEATS - carried))
     assert len(set(runs)) == 1
     with pytest.raises(ValueError, match='already started'):
         cli.live_batch(**kwargs)
@@ -465,7 +472,7 @@ def test_migration_cannot_bypass_recorded_or_reviewed_failures(experiment, parti
         events=[{}] if partial == 'actions' else [], video={} if partial == 'video' else None))
     if partial == 'approval':
         save_new(experiment / 'approval.json', {})
-    with pytest.raises(ValueError, match='cannot migrate|only failures'):
+    with pytest.raises(ValueError, match='cannot migrate|only failures|explicit same-recipe continuation'):
         module.prepare_manifest(REPO, experiment)
 
 
@@ -696,3 +703,44 @@ def test_code_change_after_gameplay_migrates_only_with_a_reason(experiment, monk
 
 
 IMPL_KEY = 'src/trueskate_ai/research/kickflip_repeatability.py'
+
+
+def add_repeat(root, relative, *, failure=False, assessed=True):
+    trial = root / relative
+    trial.mkdir(parents=True)
+    if failure:
+        save_new(trial / 'live-failure.json', dict(error='recorder_stop', no_replacements=True))
+        return trial
+    (trial / 'original.mov').write_bytes(f'synthetic {relative}'.encode())
+    sha = module.file_sha(trial / 'original.mov')
+    gestures = [dict(role=r, submitted_monotonic_s=t, encoded_duration_s=.05) for r, t in
+                zip(('push', 'pop', 'flick', 'catch'), (10., 10.6, 11., 11.6))]
+    save_new(trial / 'admission.json', dict(accepted=True, video_sha256=sha, gestures=gestures,
+             heldout_middle_error_s=0., native_frame_s=1/60, max_frame_gap_s=1/60))
+    if assessed:
+        save_new(trial / 'assessment.json', dict(trick='KICKFLIP', status='landed', video_sha256=sha))
+    return trial
+
+
+@pytest.mark.parametrize('case', ['ok', 'no_reason', 'gap', 'unassessed'])
+def test_interrupted_batch_continues_only_as_explicit_same_recipe_stage(experiment, case):
+    save_new(experiment / 'approval.json', {})
+    add_repeat(experiment, 'repeats/trial_01', assessed=case != 'unassessed')
+    add_repeat(experiment, 'repeats/trial_03' if case == 'gap' else 'repeats/trial_02', failure=True)
+    reason = None if case == 'no_reason' else 'operator: run the remaining repeats after a retrieval failure'
+    if case != 'ok':
+        with pytest.raises(ValueError):
+            module.prepare_manifest(REPO, experiment, reason)
+        return
+    manifest = module.prepare_manifest(REPO, experiment, reason)
+    assert manifest['prior_setup']['repeats'] == ['trial_01', 'trial_02']
+
+
+def test_report_combines_carried_and_new_repeats(experiment):
+    add_repeat(experiment, 'history/predecessor/repeats/trial_01')
+    add_repeat(experiment, 'history/predecessor/repeats/trial_02', failure=True)
+    add_repeat(experiment, 'repeats/trial_03')
+    result = module.report(experiment)
+    assert result['attempted'] == 3 and result['admitted'] == 2
+    assert result['technical_failures'] == ['history/predecessor/repeats/trial_02']
+    assert [r['trial'] for r in result['runs']] == ['history/predecessor/repeats/trial_01', 'repeats/trial_03']

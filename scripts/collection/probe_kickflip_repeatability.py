@@ -60,6 +60,8 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
         existing = sorted((root / 'repeats').glob('trial_*'))
         if existing:
             raise ValueError('repeatability batch already started; no automatic retry/replacement')
+        # A continuation stage starts after the predecessor's repeats; none are replaced.
+        first_repeat = 1 + len((manifest.get('prior_setup') or {}).get('repeats', []))
     else:
         if (root / 'approval.json').exists() or experiment.setup_attempt_count(root) >= experiment.SETUP_LIMIT:
             raise ValueError('setup is frozen or has reached its attempt limit')
@@ -155,7 +157,7 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
             with urllib.request.urlopen(request, timeout=10) as response:
                 return json.loads(response.read())
         guard()
-        for index in range(1, experiment.REPEATS + 1) if repeatability else (1,):
+        for index in range(first_repeat, experiment.REPEATS + 1) if repeatability else (1,):
             if repeatability:
                 if experiment.approved_candidate(root)['sha256'] != candidate['sha256']:
                     raise ValueError('approval changed during batch')

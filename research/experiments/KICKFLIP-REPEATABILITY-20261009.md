@@ -545,3 +545,34 @@ and 21 (different pushes) gave a floor of 0.05 and onset at the push.
 Migration treats changed execution code as a procedure change, as it does changed
 candidates. Gameplay attempts then migrate only with an explicit superseded
 reason; previously only pre-gameplay failures could migrate across a code change.
+
+## Repeat batch, part 1 — 2026-10-09
+
+The operator approved `candidate_19` on trial 21 alone (sealed `gate.minimum = 1`,
+source `history/predecessor/setup/trial_21`). The batch ran in stage
+`kickflip-repeatability-c836c0b3` with deferred admission.
+
+- **Repeats 01–14:** recorded, admitted off the rig (held-out residual within
+  15.3 ms) and assessed. **All 14 are landed KICKFLIPs.**
+- **Pop→flick submission gap:** two clusters, ~0.42 s (01–03, 06–10, 12) and
+  ~0.33 s (04, 05, 11, 13, 14), from WDA return jitter.
+- **Repeat 15:** all ten commands succeeded. The recorder stop then failed with
+  "Unable to locate XCTest screen recording 990739DC…", although the attachment
+  was listed on XR1. The batch stopped without replacement, as designed.
+- **Repeat 15 evidence:** the attachment was copied with `devicectl` to
+  `repeats/trial_15/recovered-attachment-990739DC….mov` (59.13 s, 3,542 frames,
+  SHA-256 `9a0e7b22…`), described in `recovered-attachment.json`, then deleted
+  with the cleanup wrapper (0 remaining).
+- **Repeat 15 status:** per the operator, it stays a technical failure in the
+  counts, with its outcome reported separately.
+
+**Continuation (operator: "Run repeats 16–20").** A stage carrying an approved
+batch may now be continued only as an explicit same-recipe continuation:
+- the candidate hashes must be identical;
+- a reason is required;
+- earlier repeats must be contiguous from 1, and each either admitted and
+  assessed or a recorded technical failure;
+- earlier repeats are copied into history and never rerun or replaced.
+
+`run-repeatability` starts after the carried repeats, and `report()` combines
+carried and new repeats in number order.

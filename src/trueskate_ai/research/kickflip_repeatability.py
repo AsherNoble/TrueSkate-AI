@@ -165,10 +165,24 @@ def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
     if previous_setup is not None:
         previous_setup = Path(previous_setup)
         previous = load_manifest(previous_setup)
-        if (previous_setup / 'approval.json').exists() or list((previous_setup / 'repeats').glob('trial_*')):
-            raise ValueError('reviewed or repeatability runs cannot migrate')
         if previous['experiment'] != EXPERIMENT or previous['wda_revision'] != WDA_REVISION:
             raise ValueError('predecessor procedure changed')
+        prior_repeats = repeat_trials(previous_setup, include_history=False)
+        if (previous_setup / 'approval.json').exists() or prior_repeats:
+            # Continuing an interrupted batch: same sealed recipes, explicit reason, and every
+            # earlier repeat retained as admitted+assessed or as a recorded technical failure.
+            if (not (superseded_reason or '').strip()
+                    or [c['sha256'] for c in previous['candidates']] != [c['sha256'] for c in candidates]):
+                raise ValueError('reviewed or repeatability runs migrate only as an explicit same-recipe continuation')
+            if [trial_number(t) for t in prior_repeats] != list(range(1, len(prior_repeats) + 1)):
+                raise ValueError('earlier repeats must be contiguous from 1')
+            for trial in prior_repeats:
+                if (trial / 'live-failure.json').exists():
+                    continue
+                admission = read_json(trial / 'admission.json') if (trial / 'admission.json').exists() else {}
+                assessment = read_json(trial / 'assessment.json') if (trial / 'assessment.json').exists() else {}
+                if not admission.get('accepted') or assessment.get('video_sha256') != file_sha(trial / 'original.mov'):
+                    raise ValueError('earlier repeats must be admitted and assessed, or recorded technical failures')
         # A changed recipe set or execution code supersedes the old procedure: its gameplay
         # attempts still spend the cap. Only an identical sealed recipe can later count them,
         # and only through the explicit operator gate override.
@@ -200,6 +214,7 @@ def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
         spent = setup_attempt_count(previous_setup)
         history = dict(source_root=str(previous_setup), manifest_sha256=previous['sha256'],
             attempts=spent, trials=classifications, superseded_reason=superseded_reason if superseded else None,
+            repeats=[t.name for t in prior_repeats],
             classification='retained evidence; never trick outcomes for these candidates',
             files={str(Path('history/predecessor') / p.relative_to(previous_setup)): file_sha(p)
                    for p in previous_setup.rglob('*') if p.is_file()})
@@ -231,6 +246,15 @@ def verify_implementation(manifest, repo):
     expected = manifest['implementation_hashes']
     if expected != {p: file_sha(Path(repo) / p) for p in IMPLEMENTATION_PATHS}:
         raise ValueError('execution implementation changed; requires newly reviewed manifest')
+
+
+def repeat_trials(root, include_history=True):
+    """Repeats in number order, including those of a continued predecessor batch."""
+    root = Path(root)
+    found = [*(root / 'repeats').glob('trial_*')]
+    if include_history:
+        found += root.glob('history/**/repeats/trial_*')
+    return sorted(found, key=trial_number)
 
 
 def setup_trials(root):
@@ -633,7 +657,7 @@ def divergence(root, runs, native_frame_s):
 
 def report(root):
     root = Path(root)
-    trials = sorted((root / 'repeats').glob('trial_*'))
+    trials = repeat_trials(root)
     summary = dict(experiment=EXPERIMENT, expected_repeats=REPEATS, attempted=len(trials),
                    admitted=0, technical_failures=[], outcomes={}, runs=[], training_admission=False,
                    limitation='Whole-system repeatability; no proof of intrinsic game randomness. '
