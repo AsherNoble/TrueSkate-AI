@@ -1,0 +1,71 @@
+{
+  "review": "Timing control review only; unknown marks remain unknown; no curve timebase fitted yet",
+  "batches": [
+    {
+      "batch": 1,
+      "bundle_sha256": "ce6623074b438c04e05347d05efe6e1a55c65eb78ac7f52c882088e5a7dee445",
+      "bundle_file_sha256": "24b1cb36593c516a85c5cfa1e6eac0040c2d588ac19f363f0058e47472a4264e",
+      "private_bundle_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-01-controls-bundle.json",
+      "media_root": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-01-controls",
+      "locating_origin": {
+        "origin_s": 10.3,
+        "coarse_first_control_pts_s": 13.315,
+        "method": "Orange increase plus assistant-inspected native sheets locates a 1.4-second control clip. Not an onset annotation or curve timebase."
+      },
+      "clips": [
+        {
+          "id": "control-start",
+          "native_frames": 84,
+          "pts_first_s": 12.565,
+          "pts_last_s": 13.946667
+        },
+        {
+          "id": "control-middle",
+          "native_frames": 84,
+          "pts_first_s": 28.563333,
+          "pts_last_s": 29.946667
+        },
+        {
+          "id": "control-end",
+          "native_frames": 84,
+          "pts_first_s": 43.061667,
+          "pts_last_s": 44.445
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "bundle_sha256": "bdb79184b47a3573b21b4f49422b2f28785a6135032623eb40df729b6735d466",
+      "bundle_file_sha256": "5e9765c58fe8b5aae3a3b342fb04a41ac96917db5133979b39e990211a944808",
+      "private_bundle_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-02-controls-bundle.json",
+      "media_root": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-02-controls",
+      "locating_origin": {
+        "origin_s": 10.17,
+        "coarse_first_control_pts_s": 13.186667,
+        "method": "Orange increase plus assistant-inspected native sheets locates a 1.4-second control clip. Not an onset annotation or curve timebase."
+      },
+      "clips": [
+        {
+          "id": "control-start",
+          "native_frames": 84,
+          "pts_first_s": 12.421667,
+          "pts_last_s": 13.803333
+        },
+        {
+          "id": "control-middle",
+          "native_frames": 84,
+          "pts_first_s": 28.42,
+          "pts_last_s": 29.803333
+        },
+        {
+          "id": "control-end",
+          "native_frames": 84,
+          "pts_first_s": 42.935,
+          "pts_last_s": 44.318333
+        }
+      ]
+    }
+  ],
+  "first_viewer_url": "http://127.0.0.1:18975/",
+  "viewer": "Temporary local server; close after exported path is received"
+}

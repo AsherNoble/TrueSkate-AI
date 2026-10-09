@@ -1,0 +1,29 @@
+{
+  "schema": "pico-usb-cursor-review-provenance-v1",
+  "private_bundle_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-02-curves-bundle.json",
+  "bundle_sha256": "83303accf20c66885fe072c42d225f85a6399be2bbc9be9255b08fb450cbca02",
+  "private_bundle_file_sha256": "23ed6b1b16bac876aa4a2070f4c1bcd208d108aa86e4c55ebee913791328fe68",
+  "original_export_sha256": "0fc109941f5a03c2b7d3ecc35885f217820237c7fa2d876c9dd3c6b6efdc52a4",
+  "derived_export_sha256": "701e7c3e0e53b63504d7f48bc4a38483225a51e56736bf95937fc1e63dd1f379",
+  "scored_result_sha256": "e3d2e540b07ccee24d30e7e8652084d7a9d9f86f7cf45f90db9aecb909c5ae11",
+  "controls_export_sha256": "56347faac8894783dfc2e0d8bbe3c544f5214566a9f7dcda16414699d41cefb7",
+  "movie_sha256": "cbae9121feba72531fa10040fdc8637200bbe562996acb71196fabab6504f010",
+  "program_sha256": "2a4eb0d5a930438ba7ad1c49fadb4bbe3c7df2357c0f6c9a90d1a583e26439ef",
+  "profile_sha256": "648a360da80af7b855f6a3d793be28a1e226307c796c8b9bbdb8323b9e4cd917",
+  "receipt_sha256": "5fc35d1ea19302d51226a038abb8f1b12110e73bd2e8bca6f20e5f91a270dc78",
+  "files_sha256": {
+    "control-cursor-diagnostic.json": "5364fb7d7c4f67788142bdb805c2a51f48c67d5278c940d635d3a76e15df6998",
+    "operator-attestation.json": "dc4dbf86aa9c457e21762261160d72adedb980836e9769715121e7c3ed1bd23a",
+    "operator-confirmed-export.json": "701e7c3e0e53b63504d7f48bc4a38483225a51e56736bf95937fc1e63dd1f379",
+    "original-export.json": "0fc109941f5a03c2b7d3ecc35885f217820237c7fa2d876c9dd3c6b6efdc52a4",
+    "result.json": "148bdf29f43589dd54bae2efa4b90462553a4ff151145c4bc8e37ffc31bc8971",
+    "summary.json": "2e8b9eebbb48fc408cf3495a43f3713a6a361d0b3cac78121821cfbdc4d9c58a"
+  },
+  "sealed_inputs_changed": false,
+  "original_export_changed": false,
+  "individual_curve_phase_fit": false,
+  "scoring_thresholds_changed": false,
+  "measurement_scope": "cursor position and operator active-touch judgement, not per-frame orange-position agreement",
+  "supersedes_contact_checkbox_requirement_in": "research/evidence/HID-USB-20261006/pico-curve-pilot-curve-02-timing-20261009/measurement-method.json",
+  "raw_and_private_artifacts": "Ignored originals, private bundles, JPEGs and stats remain at existing local/rig paths; compact Git evidence does not back them up."
+}

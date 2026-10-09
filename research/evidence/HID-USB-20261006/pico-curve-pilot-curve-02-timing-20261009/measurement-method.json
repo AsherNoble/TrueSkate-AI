@@ -1,0 +1,13 @@
+{
+  "schema": "pico-usb-position-measurement-method-v1",
+  "date": "2026-10-09",
+  "curve_bundle_sha256": "83303accf20c66885fe072c42d225f85a6399be2bbc9be9255b08fb450cbca02",
+  "measurement_source": "operator marks centre of AssistiveTouch accessibility cursor",
+  "operator_reason": "Cursor centre appears easier to locate; orange trace might lag. Relative rendering lag is an operator hypothesis, not measured evidence.",
+  "scope": "Cursor-position accuracy; correspondence to the game's instantaneous received touch position/timing is not established by cursor marks alone.",
+  "contact_confirmation": "Existing orange-trail confirmation remains an independent requirement for a qualified contact-position score. Do not infer confirmation from a cursor mark or relabel an unchecked confirmation.",
+  "boundaries": "Cursor is also visible during hover; retain independently observed contact/lift boundaries and interruption assessment.",
+  "thresholds_changed": false,
+  "clock_changed": false,
+  "training_admission": false
+}

@@ -1,0 +1,30 @@
+{
+  "bundle_sha256": "ce6623074b438c04e05347d05efe6e1a55c65eb78ac7f52c882088e5a7dee445",
+  "export_sha256": "2f19476a7473e4312cf2a9512fec42d53ac76a35594a0e99c29743ae7446c99c",
+  "source_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-review-ce6623074b43.json",
+  "source_and_media_integrity": "verified",
+  "marks": {
+    "control-start": {
+      "source_frame": 786,
+      "pts_s": 13.231667,
+      "preceding_frame": 785,
+      "preceding_pts_s": 13.215,
+      "boundary_confirmed": false
+    },
+    "control-middle": {
+      "source_frame": 1746,
+      "pts_s": 29.246667,
+      "preceding_frame": 1745,
+      "preceding_pts_s": 29.23,
+      "boundary_confirmed": false
+    },
+    "control-end": {
+      "source_frame": 2615,
+      "pts_s": 43.728333,
+      "preceding_frame": 2614,
+      "preceding_pts_s": 43.711667,
+      "boundary_confirmed": false
+    }
+  },
+  "timing_qualification": "pending preceding-frame confirmation"
+}

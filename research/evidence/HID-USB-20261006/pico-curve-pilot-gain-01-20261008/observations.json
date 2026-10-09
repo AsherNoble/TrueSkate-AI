@@ -1,0 +1,521 @@
+{
+  "program_sha256": "31239d27efdff0afcc38c7b0b8873d03a3b3b627885f3d5bc1db47ee193f0836",
+  "evidence_sha256": "da637c8b938dd47d3335edb765ef7be68bead4ed209b839e544a9ec59786b646",
+  "confirmation": "automatic stationary tracker quality checks; not human contact review",
+  "passes": [
+    {
+      "id": "g00",
+      "before_pt": [
+        109.24924918637052,
+        368.0371383315864
+      ],
+      "after_pt": [
+        117.31754144151361,
+        368.0470215901182
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g01",
+      "before_pt": [
+        117.31754144151361,
+        368.0470215901182
+      ],
+      "after_pt": [
+        109.30500164224101,
+        367.88082922660965
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g02",
+      "before_pt": [
+        109.30500164224101,
+        367.88082922660965
+      ],
+      "after_pt": [
+        125.08056897216153,
+        368.1812471146354
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g03",
+      "before_pt": [
+        125.08056897216153,
+        368.1812471146354
+      ],
+      "after_pt": [
+        109.17274344667346,
+        367.9021993760298
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g04",
+      "before_pt": [
+        109.17274344667346,
+        367.9021993760298
+      ],
+      "after_pt": [
+        144.82753625254082,
+        368.2509816870527
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g05",
+      "before_pt": [
+        144.82753625254082,
+        368.2509816870527
+      ],
+      "after_pt": [
+        109.2488776795593,
+        368.0364462762791
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g06",
+      "before_pt": [
+        109.2488776795593,
+        368.0364462762791
+      ],
+      "after_pt": [
+        150.84922402797608,
+        368.10498577000806
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g07",
+      "before_pt": [
+        150.84922402797608,
+        368.10498577000806
+      ],
+      "after_pt": [
+        109.24878687008722,
+        368.0364462762791
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g08",
+      "before_pt": [
+        109.24878687008722,
+        368.0364462762791
+      ],
+      "after_pt": [
+        150.05182032047995,
+        367.9266638554703
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g09",
+      "before_pt": [
+        150.05182032047995,
+        367.9266638554703
+      ],
+      "after_pt": [
+        109.30247304214843,
+        367.8903422512624
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g10",
+      "before_pt": [
+        109.30247304214843,
+        367.8903422512624
+      ],
+      "after_pt": [
+        150.35467414456616,
+        368.0674895003701
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g11",
+      "before_pt": [
+        150.35467414456616,
+        368.0674895003701
+      ],
+      "after_pt": [
+        109.15977576570674,
+        367.92828883168323
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g12",
+      "before_pt": [
+        109.15977576570674,
+        367.92828883168323
+      ],
+      "after_pt": [
+        192.8261411352039,
+        368.245710449973
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g13",
+      "before_pt": [
+        192.8261411352039,
+        368.245710449973
+      ],
+      "after_pt": [
+        109.27440215584502,
+        367.895085462742
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g14",
+      "before_pt": [
+        109.27440215584502,
+        367.895085462742
+      ],
+      "after_pt": [
+        109.38393370674635,
+        409.4785353645976
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g15",
+      "before_pt": [
+        109.38393370674635,
+        409.4785353645976
+      ],
+      "after_pt": [
+        109.31704458737599,
+        367.7876232036475
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g16",
+      "before_pt": [
+        109.31704458737599,
+        367.7876232036475
+      ],
+      "after_pt": [
+        136.16993170076276,
+        395.10741629125187
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g17",
+      "before_pt": [
+        136.16993170076276,
+        395.10741629125187
+      ],
+      "after_pt": [
+        109.27938976696998,
+        368.046103195465
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g18",
+      "before_pt": [
+        109.24911780681539,
+        368.0371383315864
+      ],
+      "after_pt": [
+        117.28910575125829,
+        368.16752290967975
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g19",
+      "before_pt": [
+        117.28910575125829,
+        368.16752290967975
+      ],
+      "after_pt": [
+        109.28443424240743,
+        367.9077296788936
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g20",
+      "before_pt": [
+        109.28443424240743,
+        367.9077296788936
+      ],
+      "after_pt": [
+        125.19232240223869,
+        368.08787648144954
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g21",
+      "before_pt": [
+        125.19232240223869,
+        368.08787648144954
+      ],
+      "after_pt": [
+        109.27404622165207,
+        367.90513250306316
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g22",
+      "before_pt": [
+        109.27404622165207,
+        367.90513250306316
+      ],
+      "after_pt": [
+        144.9602073423233,
+        368.1157069284948
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g23",
+      "before_pt": [
+        144.9602073423233,
+        368.1157069284948
+      ],
+      "after_pt": [
+        109.312438053674,
+        367.8725163410377
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g24",
+      "before_pt": [
+        109.312438053674,
+        367.8725163410377
+      ],
+      "after_pt": [
+        150.84112708911533,
+        368.10490758921446
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g25",
+      "before_pt": [
+        150.84112708911533,
+        368.10490758921446
+      ],
+      "after_pt": [
+        109.31179864286969,
+        367.7736113558121
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g26",
+      "before_pt": [
+        109.31179864286969,
+        367.7736113558121
+      ],
+      "after_pt": [
+        149.8703301496691,
+        368.0429197463785
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g27",
+      "before_pt": [
+        149.8703301496691,
+        368.0429197463785
+      ],
+      "after_pt": [
+        109.32167519792328,
+        367.77774408145575
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g28",
+      "before_pt": [
+        109.32167519792328,
+        367.77774408145575
+      ],
+      "after_pt": [
+        150.36526556704285,
+        368.0467645941497
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g29",
+      "before_pt": [
+        150.36526556704285,
+        368.0467645941497
+      ],
+      "after_pt": [
+        109.24911780681539,
+        368.0371383315864
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g30",
+      "before_pt": [
+        109.24911780681539,
+        368.0371383315864
+      ],
+      "after_pt": [
+        192.9129145983016,
+        368.24889583488897
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g31",
+      "before_pt": [
+        192.9129145983016,
+        368.24889583488897
+      ],
+      "after_pt": [
+        109.24880980657844,
+        368.03723276853384
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g32",
+      "before_pt": [
+        109.24880980657844,
+        368.03723276853384
+      ],
+      "after_pt": [
+        109.38861336019957,
+        409.48487072251226
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g33",
+      "before_pt": [
+        109.38861336019957,
+        409.48487072251226
+      ],
+      "after_pt": [
+        109.24880980657844,
+        368.0364462762791
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g34",
+      "before_pt": [
+        109.24880980657844,
+        368.0364462762791
+      ],
+      "after_pt": [
+        136.17139549249592,
+        395.08676647513073
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    },
+    {
+      "id": "g35",
+      "before_pt": [
+        136.17139549249592,
+        395.08676647513073
+      ],
+      "after_pt": [
+        109.2814439814065,
+        367.8931136925227
+      ],
+      "uncertainty_pt": 0.5,
+      "stable": true,
+      "confirmed": true
+    }
+  ],
+  "park_points_pt": [
+    [
+      109.24924918637052,
+      368.0371383315864
+    ],
+    [
+      109.24911780681539,
+      368.0371383315864
+    ]
+  ]
+}

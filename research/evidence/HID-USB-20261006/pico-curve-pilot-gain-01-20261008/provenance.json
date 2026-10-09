@@ -1,0 +1,28 @@
+{
+  "implementation_commit": "788099b9",
+  "pico_flash_id": "E660C0D1C73D5A2B",
+  "gain_program_sha256": "31239d27efdff0afcc38c7b0b8873d03a3b3b627885f3d5bc1db47ee193f0836",
+  "gain_uf2_sha256": "e30f59821ea6b7c8ea9f5d63c9f5a00b60d1e8f0a810890f2b45b2f654be4d60",
+  "gain_stats_sha256": "298749b78b48aa7bad616058318b5422273edb9bf6bf5fc62eec36bd219ba058",
+  "gain_movie_sha256": "36e6a77ed5b6aa2614ae450eadc6ca1a4aaee4c630a6899a155984def8f474c5",
+  "raw_gain_evidence_sha256": "2744a7f8620e0946c1dc73c0a6a13b2979c18708e2fe486829ccec7d4c398e47",
+  "raw_rig_capture": "/Users/training-server/trueskate-ai-runtime/tmp/pico-curve-pilot-20261008/gain-01",
+  "raw_rig_stats": "/Users/training-server/trueskate-ai-runtime/tmp/pico-curve-pilot-20261008/fw/gain-01-stats.bin",
+  "local_build_capture_measurement_root": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build",
+  "curve_1_rig_stage": "/Users/training-server/trueskate-ai-runtime/tmp/pico-curve-pilot-curves-1-20261008",
+  "files_sha256": {
+    "capture-report.json": "d46d82267e926e858ddbc846bcf2dc406279bd3ca6e9cd9d57e31b8cdf8c1b4b",
+    "contact-sheet-0.jpg": "e845253589eee4b0ab514b6fbf1e166a13c73a0c7d4a0c5f71039c885bdd2bef",
+    "contact-sheet-1.jpg": "f30855bd98c2fbe736e98c05125e3dd9666ac20df28c1c7177b44e329ba2812a",
+    "curve-1-flash-result.json": "4140bde3239e72ac1db3d12b0e8cda2ab22fc8de600dfdcca8b49e78b371aea1",
+    "curve-1-package-manifest.json": "c80c42c0780343833fcd430a2c1978498b8cf2c8c646d8cb4d184b2552188322",
+    "curve-1-prepare-report.json": "cdf1c5fec4007ec51502092502e2286fc2c90f2db05397b2a5dd631ea8f0f00e",
+    "locating-origin.json": "a17d7bf9741ee692a47ddc68947cf1a9cbcfc4cbdf31031840c6ad4db79081da",
+    "observations.json": "45e9ea23b3bbc4025ec93dac762cd64960e1d9932701605838b3d4d6ddce53a9",
+    "profile.json": "dd5260a602b48a334019239a35b7fd2e1e1083ba66b5e66c654746eb668dd0b7",
+    "quality-summary.json": "ab27cba02b570b979c7037d7384c4bc8532690abddaedfec7b339c167e8778e8",
+    "receipts.json": "962732b976424ea11522885e95550e75c6dcdea34373aaf2788b5f7f480e931d",
+    "summary.json": "cced7e8e7a541bf65933639910f2eb86f041f710b49b9f99c5e39ac4be1089d4"
+  },
+  "raw_backup_note": "Git preserves these compact results only; ignored raw movies, stats and firmware remain at the explicit locations above."
+}

@@ -6,7 +6,7 @@
 # agent. Operator prompts (Terminal, speech, ntfy) come from the coordinator's --operator.
 set -u
 RUN=${1:?run name required}; shift
-STAGE=/Users/training-server/trueskate-ai-runtime/tmp/ipv4-wifi-20261007
+STAGE=$(cd "$(dirname "$0")" && pwd)
 REPO=/Users/training-server/trueskate-ai
 OUT=$STAGE/$RUN
 PLIST=/Users/training-server/Library/LaunchAgents/com.trueskate.services.plist
@@ -44,4 +44,6 @@ echo "appium ready pid $APPIUM_PID"
 "$REPO/.venv/bin/python" "$STAGE/validate_ios_ipv4_recording.py" \
   --repo "$REPO" --env-file "$REPO/.env" --out-dir "$OUT" --admin-prompt --operator \
   --tunnel-python /Users/training-server/trueskate-ai-runtime/tmp/pmd3-xr2-20261007/venv313/bin/python "$@"
-echo "coordinator exit $?"
+RESULT=$?
+echo "coordinator exit $RESULT"
+exit "$RESULT"

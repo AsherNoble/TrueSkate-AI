@@ -1,0 +1,15 @@
+{
+  "schema": "pico-usb-control-import-status-v1",
+  "imported_at_utc": "2026-10-08T13:37:11.850598+00:00",
+  "original_export_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-review-bdb79184b47a.json",
+  "original_export_bytes_sha256": "1d127f075ff95f8ee238d1d64bf7e58822a6bc7ef15b169f9af4e964085b7de1",
+  "selected_frames": {
+    "control-start": 780,
+    "control-middle": 1736,
+    "control-end": 2604
+  },
+  "all_previous_frames_confirmed_in_export": true,
+  "source_integrity": "passed: sealed bundle, original movie/PTS and displayed JPEG binding",
+  "annotations_changed": false,
+  "viewer": "second timing viewer stopped after exported path received"
+}

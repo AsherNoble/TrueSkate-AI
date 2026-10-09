@@ -1,0 +1,17 @@
+{
+  "implementation_commit": "788099b9",
+  "viewer_repair_commit": "788ce77a",
+  "controls_bundle_sha256": "bdb79184b47a3573b21b4f49422b2f28785a6135032623eb40df729b6735d466",
+  "private_controls_bundle_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-02-controls-bundle.json",
+  "controls_media_root": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build/curve-02-controls",
+  "curve_bundle_sha256": "83303accf20c66885fe072c42d225f85a6399be2bbc9be9255b08fb450cbca02",
+  "movie_sha256": "cbae9121feba72531fa10040fdc8637200bbe562996acb71196fabab6504f010",
+  "stats_sha256": "60cb42bb1e24aa5906889e9f65e92dc9c3ff88b3b0e4a6ccd139bc396cdd826f",
+  "files_sha256": {
+    "control-fit.json": "758c050fd7bd1117b4f4ca2cf8447d289701e5671622982724d2ea6d3aa981da",
+    "curve-review-preparation.json": "5d977f3a69027e7aae7b797b746a47823f1a24aa1f8f3bb601d6c8635df356e4",
+    "import-status.json": "8df4fc2f09e31f71322718756e7a7c014304bfdf0a1f0b4f19b4800b09aba00c",
+    "original-export.json": "1d127f075ff95f8ee238d1d64bf7e58822a6bc7ef15b169f9af4e964085b7de1",
+    "summary.json": "7a42f9511ae1a53f4eabfda22e7299946f572c4b2133ab1fe13eded36643842c"
+  }
+}

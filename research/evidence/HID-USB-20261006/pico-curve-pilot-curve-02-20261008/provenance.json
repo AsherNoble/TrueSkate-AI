@@ -1,0 +1,18 @@
+{
+  "implementation_commit": "788099b9",
+  "pico_flash_id": "E660C0D1C73D5A2B",
+  "curve_2_program_sha256": "2a4eb0d5a930438ba7ad1c49fadb4bbe3c7df2357c0f6c9a90d1a583e26439ef",
+  "curve_2_uf2_sha256": "632f46997a5701035588c4e762ff5cad323e8a2907fc6773aa0698c3415cefaf",
+  "curve_2_stats_sha256": "60cb42bb1e24aa5906889e9f65e92dc9c3ff88b3b0e4a6ccd139bc396cdd826f",
+  "curve_2_movie_sha256": "cbae9121feba72531fa10040fdc8637200bbe562996acb71196fabab6504f010",
+  "raw_rig_capture": "/Users/training-server/trueskate-ai-runtime/tmp/pico-curve-pilot-curves-2-20261008/curve-02",
+  "raw_rig_stats": "/Users/training-server/trueskate-ai-runtime/tmp/pico-curve-pilot-curves-2-20261008/fw/curve-02-stats.bin",
+  "local_build_capture_root": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/pico-curve-pilot-build",
+  "files_sha256": {
+    "capture-report.json": "c2b0a7e7fc407a302dedc43269c66e6b01cda05ebd2820ce2d5cfda1021f0663",
+    "receipts.json": "51a400a6acfe38bd56d3b347ac03fba334b63eacdbfa08afb15fb31addf842cc",
+    "review-preparation.json": "bdf68eaed838030c103b94e4e927f512e389ae4f76c84fba8659e73f31d43977",
+    "summary.json": "d815df0c06faca95a1b893853bdbec98adc8243ddd8db2548d95d7e38c56a4c5"
+  },
+  "raw_backup_note": "Git preserves compact results only; ignored raw movies, stats, firmware and sealed review media remain at the explicit locations above."
+}
