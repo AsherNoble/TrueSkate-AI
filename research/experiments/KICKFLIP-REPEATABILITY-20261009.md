@@ -418,3 +418,46 @@ for WDA to collapse; trial 07 showed off-board touches have no visible effect.
 Variants: pop 0.05/0.10 s, flick gap 0.08/0.18 s, flick 0.06/0.14 s, catch gap
 0.30/0.55 s. The historical push is unchanged. The operator's own push was a
 ~0.12 s diagonal stroke (0.81, 0.27) → (0.74, 0.52), ending 0.37 s before the pop.
+
+**Trial 12** (`2dfb06f8`, filmed strokes with an off-board keep-alive finger)
+played in real time: iOS completion came 1.492 s after submission for a 1.255 s
+payload. The pop worked (4 → 13 mph), and the game scored **TRICK COMPLETED:
+OLLIE**, score 38, also completing the park's Ollie challenge. Trails were drawn
+from the keep-alive point to the other strokes, and the flick rolled the board
+only partway.
+
+## Correction — attempts 08–12 repeated documented results (2026-10-09)
+
+The operator identified trial 12 as an execution bug. Attempts 08–12 re-tested
+executors already rejected in
+[CURVE-AUDIT-20261003](CURVE-AUDIT-20261003.md) and GESTURES.md's **one touch
+contact per request** hard rule (May 2026, archived
+`wda_trick_gestures_plan.md`):
+- multi-path records run as parallel finger tracks and are drawn as one conjoined
+  chain;
+- distinct-path records drop idle time, which I misreported as a "new finding";
+- hover moves emit real touches;
+- an anchor (keep-alive) finger gains trail lines whenever another finger lifts;
+- on-device scheduled separate records are rejected ("only one gesture can be
+  performed at a time");
+- separate requests cannot start within ~0.25 s of the previous gesture's end.
+
+The earlier "wider impact" note on `_build_spin_hold_finger` is withdrawn as
+unverified: GESTURES.md treats the spin hold as a legitimate simultaneous
+contact, and whether its leading pause starts the hold early is untested.
+Trial 07's speculation is unaffected.
+
+**Revised procedure (operator: no attempt cap; keep iterating until the kickflip
+is reproduced).** `SETUP_LIMIT` is raised to 200. Pop, flick and catch are each
+sent as **one straight contact in its own XCTest record** via WDA's direct
+`/wda/perform_trick_gestures` endpoint, which avoids W3C preparation (~0.10 s)
+and the stability wait (~0.07 s) measured on trial 12. The flick is sent as soon
+as the pop returns, so the expected gap is ~0.25–0.3 s against the filmed
+0.13 s; this is the XCTest floor. The catch waits for the remaining filmed gap.
+There are no guards between strokes; full guards surround the sequence, and
+admission still checks every native frame. The direct endpoint is not
+timing-instrumented, so its strokes are marked `instrumented=false`, and their
+video times are estimated from the rig clock plus the median rig-to-WDA offset of
+the instrumented requests. Calibration still uses the instrumented centre
+controls. `run-setup --defer-admission` plus `admit` lets the slow native-frame
+admission run on the laptop against the SHA-bound original.

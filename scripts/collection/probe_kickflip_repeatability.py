@@ -45,7 +45,8 @@ def recording_cleanup_ready(udid):
         raise RuntimeError(f'{found.group(1)} XR1 recording attachment(s) remain; preserve/clean before recording')
 
 
-def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, settings_note, appium_port=4723):
+def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, settings_note, appium_port=4723,
+               defer_admission=False):
     if not ready_note.strip() or not settings_note.strip():
         raise ValueError('operator readiness and waypoint/settings notes are required')
     if 'training-server' not in socket.gethostname():
@@ -147,6 +148,12 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
             return wait_for_centre_settle(screenshot, threshold=2., max_wait_s=max_wait_s)
         def perform(payload):
             return driver.execute('actions', payload)
+        def perform_direct(payload):
+            # One stroke = one XCTest record via WDA's direct endpoint (no Appium hop).
+            request = urllib.request.Request(base + '/wda/perform_trick_gestures', method='POST',
+                data=json.dumps(payload).encode(), headers={'Content-Type': 'application/json'})
+            with urllib.request.urlopen(request, timeout=10) as response:
+                return json.loads(response.read())
         guard()
         for index in range(1, experiment.REPEATS + 1) if repeatability else (1,):
             if repeatability:
@@ -171,12 +178,16 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
             experiment.run_trial(out=trial, candidate=candidate,
                 recorder=XCTestScreenRecorder(driver, fps=experiment.FPS),
                 timing=WDAActionTimingCapture(wda_port=8100, expected_revision=manifest['wda_revision']),
-                perform=perform, guard=guard, foreground_guard=foreground_guard,
+                perform=perform, perform_direct=perform_direct, guard=guard, foreground_guard=foreground_guard,
                 settle=settle, revision=manifest['wda_revision'], context=context)
             # Disconnect before lengthy native decoding; never leave a stale session.
             worker.disconnect()
-            experiment.admit_trial(trial, manifest['wda_revision'])
-            print(f"{'repeat' if repeatability else 'setup'} {index}: recording complete and validated: {trial}", flush=True)
+            if defer_admission and not repeatability:
+                # Native-frame admission takes ~17 min on the rig; run `admit` elsewhere and copy it back.
+                print(f'setup {index}: recording complete; admission deferred: {trial}', flush=True)
+            else:
+                experiment.admit_trial(trial, manifest['wda_revision'])
+                print(f"{'repeat' if repeatability else 'setup'} {index}: recording complete and validated: {trial}", flush=True)
             if repeatability and index < experiment.REPEATS:
                 if sessions() or _http_json(base + '/status').get('sessionId'):
                     raise RuntimeError('session ownership changed between repeats')
@@ -212,6 +223,10 @@ def main():
         command.add_argument('--operator-ready-note', required=True)
         command.add_argument('--settings-note', required=True, help='fixed waypoint, stance, camera and physics settings')
         command.add_argument('--appium-port', type=int, default=4723, help='session-discovery-enabled Appium; temporary diagnostic server may use a separate port')
+        if name == 'run-setup':
+            command.add_argument('--defer-admission', action='store_true', help='skip on-rig admission; run `admit` on a faster machine and copy admission.json back')
+    admit = sub.add_parser('admit')
+    admit.add_argument('--trial', required=True, help='relative setup/trial_NN to validate (same code, any machine)')
     assessment = sub.add_parser('assess')
     assessment.add_argument('--trial', required=True, help='relative setup/trial_NN or repeats/trial_NN')
     assessment.add_argument('--trick', required=True)
@@ -245,7 +260,13 @@ def main():
     elif args.command.startswith('run-'):
         live_batch(root, candidate_id=getattr(args, 'candidate', None),
                    repeatability=args.command == 'run-repeatability', env_file=args.env_file,
-                   ready_note=args.operator_ready_note, settings_note=args.settings_note, appium_port=args.appium_port)
+                   ready_note=args.operator_ready_note, settings_note=args.settings_note, appium_port=args.appium_port,
+                   defer_admission=getattr(args, 'defer_admission', False))
+    elif args.command == 'admit':
+        trial = (root / args.trial).resolve()
+        result = experiment.admit_trial(trial, experiment.load_manifest(root)['wda_revision'])
+        print(json.dumps(dict(accepted=result['accepted'], heldout_middle_error_s=result['heldout_middle_error_s'],
+                              gestures=[(g['role'], round(g['video_start_s'], 3)) for g in result['gestures']])))
     elif args.command == 'assess':
         trial = (root / args.trial).resolve()
         relative = trial.relative_to(root.resolve())
@@ -275,7 +296,8 @@ def main():
         manifest = experiment.load_manifest(root)
         print(json.dumps(dict(setup_attempts=experiment.setup_attempt_count(root), setup_limit=experiment.SETUP_LIMIT,
             review_approved=(root / 'approval.json').exists(), candidates=[dict(id=c['id'], varied=c['varied'],
-            fingers=c['contacts'][1]['fingers']) for c in manifest['candidates']],
+            strokes=[(x['name'], x['points'], x['encoded_duration_s']) for x in c['contacts']],
+            catch_wait_s=c['catch_wait_s']) for c in manifest['candidates']],
             rejected=manifest['rejected'], repeats=experiment.report(root)), indent=2))
 
 

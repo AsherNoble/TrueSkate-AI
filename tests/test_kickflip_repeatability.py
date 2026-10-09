@@ -62,11 +62,21 @@ class Timing:
         return dict(records=self.records)
 
 
-def test_candidates_preserve_push_and_give_each_trick_stroke_one_finger(experiment):
+def direct(clock, overhead, calls=None):
+    """Fake /wda/perform_trick_gestures: blocks for the stroke plus overhead; no WDA timing record."""
+    def perform_direct(payload):
+        if calls is not None:
+            calls.append((payload, clock()))
+        clock.sleep(payload['gestures'][0]['waypoints'][-1]['duration_ms'] / 1000 + overhead)
+        return {'value': None}
+    return perform_direct
+
+
+def test_candidates_preserve_push_and_send_each_stroke_alone(experiment):
     manifest = module.load_manifest(experiment)
-    assert len(manifest['candidates']) == 9 and manifest['rejected'] == []
+    assert len(manifest['candidates']) == 7 and manifest['rejected'] == []
     first = manifest['candidates'][0]
-    assert first['varied'] == [] and [c['name'] for c in first['contacts']] == ['push', 'trick']
+    assert first['varied'] == [] and [c['name'] for c in first['contacts']] == ['push', 'pop', 'flick', 'catch']
     push = first['contacts'][0]
     assert push['encoded_duration_s'] == .02
     assert push['points'] == [[.7658, .3044], [.7658, .6797]]
@@ -76,12 +86,11 @@ def test_candidates_preserve_push_and_give_each_trick_stroke_one_finger(experime
         assert {k: v for k, v in candidate['parameters'].items() if k not in candidate['varied']} == \
             {k: v for k, v in module.KICKFLIP.items() if k not in candidate['varied']}
     for candidate in manifest['candidates']:
-        sources = candidate['contacts'][1]['payload']['actions']
-        assert [f['role'] for f in candidate['contacts'][1]['fingers']] == ['pop', 'flick', 'catch', 'keepalive']
-        assert len({len(source['actions']) for source in sources}) == 1
-        for source in sources:
-            assert sum(a['type'] == 'pointerDown' for a in source['actions']) == 1
-            assert sum(a['type'] == 'pointerUp' for a in source['actions']) == 1
+        for stroke in candidate['contacts'][1:]:
+            # One gesture, one straight segment, one XCTest record (GESTURES.md hard rule).
+            assert stroke['transport'] == 'wda_perform_trick_gestures'
+            assert len(stroke['payload']['gestures']) == 1
+            assert len(stroke['payload']['gestures'][0]['waypoints']) == 2
     first['contacts'][0]['payload']['actions'][0]['actions'][2]['duration'] = 21
     with pytest.raises(ValueError, match='hash'):
         module.verify_seal(first)
@@ -134,19 +143,23 @@ def test_trial_retains_one_retrieval_and_all_failures(tmp_path, monkeypatch, fai
     def sleep(seconds):
         clock.sleep(seconds + (.2 if failure == 'sleep' else 0))
     kwargs = dict(out=tmp_path, candidate=candidate, recorder=recorder, timing=timing,
-                  perform=perform, guard=guard, settle=settle, revision='synthetic', context={},
-                  clock=clock, sleep=sleep, epoch=lambda: 1000+clock())
+                  perform=perform, perform_direct=direct(clock, .27, calls), guard=guard, settle=settle,
+                  revision='synthetic', context={}, clock=clock, sleep=sleep, epoch=lambda: 1000+clock())
     if failure:
         with pytest.raises(RuntimeError):
             module.run_trial(**kwargs)
     else:
         module.run_trial(**kwargs)
         execution = module.read_json(tmp_path / 'execution.json')
-        assert len(calls) == 8 and clock() == 59
+        assert len(calls) == 10 and clock() == 59
         gameplay = [e for e in execution['events'] if e['kind'] == 'gesture']
-        assert [e['role'] for e in gameplay] == ['push', 'trick']
-        assert gameplay[1]['call_start_monotonic_s'] - gameplay[0]['call_end_monotonic_s'] == pytest.approx(.48)
-        assert gameplay[1]['encoded_duration_s'] == candidate['contacts'][1]['encoded_duration_s']
+        push, pop, flick, catch = gameplay
+        assert [e['role'] for e in gameplay] == ['push', 'pop', 'flick', 'catch']
+        assert [e['instrumented'] for e in gameplay] == [True, False, False, False]
+        assert pop['call_start_monotonic_s'] - push['call_end_monotonic_s'] == pytest.approx(.48)
+        # Flick as soon as the pop returns; the catch waits the remaining filmed gap.
+        assert flick['call_start_monotonic_s'] == pytest.approx(pop['call_end_monotonic_s'])
+        assert catch['call_start_monotonic_s'] - flick['call_end_monotonic_s'] == pytest.approx(candidate['catch_wait_s'])
         assert [e['intended_s'] for e in execution['events'] if e['kind'] == 'control'] == [1.5, 30, 57]
     saved = module.read_json(tmp_path / 'execution.json')
     assert bool(saved['error']) == bool(failure)
@@ -168,7 +181,8 @@ def add_trial(root, index, candidate_id='candidate_01', *, landed=True, assessed
     return trial
 
 
-def test_attempt_cap_and_failed_start_cannot_be_replaced(experiment):
+def test_attempt_cap_and_failed_start_cannot_be_replaced(experiment, monkeypatch):
+    monkeypatch.setattr(module, 'SETUP_LIMIT', 24)
     for i in range(1, 25):
         add_trial(experiment, i)
     with pytest.raises(ValueError, match='limit'):
@@ -248,26 +262,34 @@ def test_report_counts_failures_and_unassessed_movies_without_faking_completion(
             continue
         (trial / 'original.mov').write_bytes(b'synthetic')
         gestures = [dict(role=role, submitted_monotonic_s=t, encoded_duration_s=.05,
-                         ios_callback_latency_s=.35) for role, t in zip(('push', 'trick'), (10., 10.9))]
+                         ios_callback_latency_s=.35) for role, t in zip(('push', 'pop', 'flick', 'catch'),
+                                                                       (10., 10.9, 11.3, 11.75))]
         save_new(trial / 'admission.json', dict(accepted=True, video_sha256=module.file_sha(trial / 'original.mov'),
                  gestures=gestures, heldout_middle_error_s=.01, native_frame_s=1/60, max_frame_gap_s=.033))
     result = module.report(experiment)
     assert result['attempted'] == 2 and result['admitted'] == 1 and not result['complete']
     assert result['outcomes'] == {'unassessed': 1}
     assert result['technical_failures'] == ['repeats/trial_02']
-    assert result['timing_distributions']['push_to_trick']['median_s'] == pytest.approx(.9)
+    assert result['timing_distributions']['pop_to_flick']['median_s'] == pytest.approx(.4)
+    assert result['timing_distributions']['flick_to_catch']['median_s'] == pytest.approx(.45)
 
 
 @pytest.mark.parametrize('failure', [None, 'dimensions', 'fps', 'pts', 'decode_count', 'control', 'middle'])
 def test_admission_requires_native_decode_and_independent_calibration(tmp_path, monkeypatch, failure):
-    roles = ['start', None, 'push', 'trick', None, 'middle', None, 'end']
-    stamps = [1.5, 3., 14., 14.9, 22., 30., 49., 57.]
+    roles = ['start', None, 'push', 'pop', 'flick', 'catch', None, 'middle', None, 'end']
+    stamps = [1.5, 3., 14., 14.9, 15.3, 15.75, 22., 30., 49., 57.]
+    direct_roles = ('pop', 'flick', 'catch')
     boundaries = module.validate_action_timing_report.__globals__['BOUNDARIES']
+    # Rig clock runs 100 s behind WDA's; requests enter WDA as the rig call starts.
     records = [dict(sequence=i, outcome='success', session_id='synthetic', missing_ios_callback=False,
                     ios_callback_result=True, **{b: dict(monotonic_s=t+j*.01, epoch_s=1000+t+j*.01)
-                    for j, b in enumerate(boundaries)}) for i, t in enumerate(stamps)]
+                    for j, b in enumerate(boundaries)})
+               for i, t in enumerate(t for r, t in zip(roles, stamps) if r not in direct_roles)]
+    entered = boundaries.index('request_entered')
     events = [dict(kind='control' if role in ('start', 'middle', 'end') else 'gesture' if role else 'reset',
-                   role=role, encoded_duration_s=.05, lateness_s=0.) for role in roles]
+                   role=role, encoded_duration_s=.05, lateness_s=0., instrumented=role not in direct_roles,
+                   call_start_monotonic_s=t - 100 + entered * .01, call_end_monotonic_s=t - 99.6)
+              for role, t in zip(roles, stamps)]
     save_new(tmp_path / 'execution.json', dict(error=None, events=events, video=dict(started_at_epoch_s=1000.)))
     save_new(tmp_path / 'wda-timing.json', dict(schema_version=1, build_revision='synthetic', records=records, dropped_records=0))
     (tmp_path / 'original.mov').write_bytes(b'synthetic')
@@ -295,7 +317,10 @@ def test_admission_requires_native_decode_and_independent_calibration(tmp_path, 
     else:
         result = module.admit_trial(tmp_path, 'synthetic')
         assert result['accepted'] and result['heldout_middle_error_s'] == pytest.approx(0.)
-        assert [g['role'] for g in result['gestures']] == ['push', 'trick']
+        assert [g['role'] for g in result['gestures']] == ['push', 'pop', 'flick', 'catch']
+        assert result['rig_to_wda_offset_s'] == pytest.approx(100.)
+        flick = result['gestures'][2]
+        assert not flick['instrumented'] and flick['submitted_monotonic_s'] == pytest.approx(15.3 + entered * .01)
 
 
 def load_cli():
@@ -396,7 +421,8 @@ def test_screenshot_guard_latency_is_reserved_before_submission(tmp_path, monkey
         clock.sleep(sum(a.get('duration', 0) for a in payload['actions'][0]['actions']) / 1000 + .1)
     monkeypatch.setattr(module, 'validate_action_timing_report', lambda *a, **k: [])
     module.run_trial(out=tmp_path, candidate=candidate, recorder=recorder, timing=timing,
-        perform=perform, guard=lambda: clock.sleep(.2), settle=lambda reserve: SettleResult(True, 0.),
+        perform=perform, perform_direct=direct(clock, .1), guard=lambda: clock.sleep(.2),
+        settle=lambda reserve: SettleResult(True, 0.),
         revision='synthetic', context={}, clock=clock, sleep=clock.sleep, epoch=clock)
     events = module.read_json(tmp_path / 'execution.json')['events']
     assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
@@ -447,7 +473,7 @@ def test_retrieved_pre_gameplay_movie_can_migrate_but_gameplay_cannot(experiment
         module.prepare_manifest(REPO, experiment)
 
 
-def test_full_screen_guards_do_not_stretch_push_to_trick_wait(tmp_path, monkeypatch):
+def test_full_screen_guards_do_not_stretch_stroke_gaps(tmp_path, monkeypatch):
     clock, recorder, timing = Clock(), Recorder(), Timing()
     candidate = module.prepare_manifest(REPO)['candidates'][0]
     def perform(payload):
@@ -455,17 +481,19 @@ def test_full_screen_guards_do_not_stretch_push_to_trick_wait(tmp_path, monkeypa
         clock.sleep(sum(a.get('duration', 0) for a in payload['actions'][0]['actions']) / 1000 + .3)
     monkeypatch.setattr(module, 'validate_action_timing_report', lambda *a, **k: [])
     module.run_trial(out=tmp_path, candidate=candidate, recorder=recorder, timing=timing,
-        perform=perform, guard=lambda: clock.sleep(1.4), foreground_guard=lambda: clock.sleep(.18),
+        perform=perform, perform_direct=direct(clock, .27), guard=lambda: clock.sleep(1.4),
+        foreground_guard=lambda: clock.sleep(.18),
         settle=lambda reserve: (clock.sleep(4.6) or SettleResult(True, 4.6)), revision='synthetic', context={},
         clock=clock, sleep=clock.sleep, epoch=clock)
     events = module.read_json(tmp_path / 'execution.json')['events']
-    gestures = [e for e in events if e['kind'] == 'gesture']
+    push, pop, flick, catch = [e for e in events if e['kind'] == 'gesture']
     assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
-    assert gestures[1]['call_start_monotonic_s'] - gestures[0]['call_end_monotonic_s'] == pytest.approx(.48)
+    assert pop['call_start_monotonic_s'] - push['call_end_monotonic_s'] == pytest.approx(.48)
+    assert flick['call_start_monotonic_s'] == pytest.approx(pop['call_end_monotonic_s'])
     assert clock() - 1.4 < 60  # Initial full guard occurs before recorder.start().
 
 
-def test_slow_wda_returns_never_overrun_the_trick(tmp_path, monkeypatch):
+def test_slow_wda_returns_never_overrun_the_strokes(tmp_path, monkeypatch):
     # Trial 06: every call took ~0.69 s; a contact timed from a previous start was already late.
     clock, recorder, timing = Clock(), Recorder(), Timing()
     candidate = module.prepare_manifest(REPO)['candidates'][0]
@@ -474,13 +502,14 @@ def test_slow_wda_returns_never_overrun_the_trick(tmp_path, monkeypatch):
         clock.sleep(sum(a.get('duration', 0) for a in payload['actions'][0]['actions']) / 1000 + .65)
     monkeypatch.setattr(module, 'validate_action_timing_report', lambda *a, **k: [])
     module.run_trial(out=tmp_path, candidate=candidate, recorder=recorder, timing=timing,
-        perform=perform, guard=lambda: clock.sleep(1.4), foreground_guard=lambda: clock.sleep(.18),
+        perform=perform, perform_direct=direct(clock, .65), guard=lambda: clock.sleep(1.4),
+        foreground_guard=lambda: clock.sleep(.18),
         settle=lambda reserve: (clock.sleep(4.6) or SettleResult(True, 4.6)), revision='synthetic', context={},
         clock=clock, sleep=clock.sleep, epoch=clock)
     events = module.read_json(tmp_path / 'execution.json')['events']
-    push, trick = [e for e in events if e['kind'] == 'gesture']
+    push, pop, flick, catch = [e for e in events if e['kind'] == 'gesture']
     assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
-    assert trick['call_start_monotonic_s'] - push['call_end_monotonic_s'] == pytest.approx(.48)
+    assert pop['call_start_monotonic_s'] - push['call_end_monotonic_s'] == pytest.approx(.48)
 
 
 @pytest.mark.parametrize('state', ['ready', 'no_tunnel', 'other_device', 'leftover', 'unlistable'])
@@ -558,64 +587,14 @@ def test_superseded_procedure_still_requires_assessed_gameplay(experiment):
         module.prepare_manifest(REPO, experiment, 'reason')
 
 
-def test_operator_kickflip_timeline_is_exact_in_one_payload():
-    trick = module.trick_payload(module.KICKFLIP)
-    sources = trick['payload']['actions']
-    assert [f['role'] for f in trick['fingers']] == ['pop', 'flick', 'catch', 'keepalive']
-    # Replaying WDA's path rules yields exactly one touch per finger at the filmed times.
-    touches = {f['role']: wda_touch_paths(source) for f, source in zip(trick['fingers'], sources)}
-    assert touches == {'pop': [(0, 75, (209, 501))], 'flick': [(205, 305, (222, 456))],
-                       'catch': [(735, 1255, (207, 452))], 'keepalive': [(0, 1255, (351, 716))]}
-    assert trick['encoded_duration_s'] == pytest.approx(1.255)
-    # Every stroke is one straight constant-speed move (or a stationary hold).
-    for source in sources:
-        assert sum(a['type'] == 'pointerMove' and a['duration'] > 0 for a in source['actions']
-                   if source['actions'].index(a) > 1) <= 1
-
-
-@pytest.mark.parametrize('candidate', range(9))
-def test_no_finger_free_moment_inside_the_trick(candidate):
-    # WDA/XCTest skips time when no finger is down (trial 11), so touches must cover [0, end].
-    trick = module.prepare_manifest(REPO)['candidates'][candidate]['contacts'][1]
-    intervals = sorted(t[:2] for source in trick['payload']['actions'] for t in wda_touch_paths(source))
-    covered = intervals[0][1]
-    assert intervals[0][0] == 0
-    for start, stop in intervals[1:]:
-        assert start <= covered
-        covered = max(covered, stop)
-    assert covered == round(trick['encoded_duration_s'] * 1000)
-
-
-def wda_touch_paths(source):
-    """FBW3CActionsSynthesizer at ae50404a: a move with no touch starts one at its end;
-    a down is skipped only at index 1 after a move; otherwise a down starts a new touch."""
-    touches, current, offset, position = [], None, 0, None
-    for index, action in enumerate(source['actions']):
-        duration = action.get('duration', 0)
-        if action['type'] == 'pointerMove':
-            position = (action['x'], action['y'])
-            if current is None:
-                current = [offset + duration, None, position]
-                touches.append(current)
-        elif action['type'] == 'pointerDown':
-            if not (current is not None and index == 1 and source['actions'][0]['type'] == 'pointerMove'):
-                current = [offset, None, position]
-                touches.append(current)
-        elif action['type'] == 'pointerUp':
-            current[1] = offset
-        offset += duration
-    return [tuple(t) for t in touches]
-
-
-def test_leading_pause_pattern_creates_a_phantom_touch():
-    # The executor/spin-hold pattern: move(0), pause, move(0), down. WDA touches at t = 0
-    # from the first move and never lifts it, then adds the intended touch.
-    source = dict(actions=[dict(type='pointerMove', duration=0, x=207, y=448), dict(type='pause', duration=900),
-                           dict(type='pointerMove', duration=0, x=207, y=448), dict(type='pointerDown'),
-                           dict(type='pointerMove', duration=60, x=331, y=448), dict(type='pointerUp')])
-    assert wda_touch_paths(source) == [(0, None, (207, 448)), (900, 960, (207, 448))]
+def test_filmed_strokes_are_single_straight_contacts():
+    pop, flick, catch = module.prepare_manifest(REPO)['candidates'][0]['contacts'][1:]
+    assert pop['payload'] == {'gestures': [{'waypoints': [dict(x=209, y=501), dict(x=229, y=730, duration_ms=75)]}]}
+    assert flick['payload']['gestures'][0]['waypoints'][-1]['duration_ms'] == 100
+    hold = catch['payload']['gestures'][0]['waypoints']
+    assert (hold[0]['x'], hold[0]['y']) == (hold[1]['x'], hold[1]['y']) and hold[1]['duration_ms'] == 520
 
 
 def test_strokes_cannot_reach_protected_controls():
     with pytest.raises(ValueError, match='protected'):
-        module.trick_payload({**module.KICKFLIP, 'pop_end': (.555, .98)})
+        module.direct_stroke('pop', [.505, .56], [.555, .98], .075)

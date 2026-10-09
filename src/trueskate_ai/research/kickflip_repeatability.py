@@ -23,7 +23,8 @@ from trueskate_ai.sim.gestures import PUSH_START, PUSH_END, PUSH_DURATION
 from trueskate_ai.sim.touch_actions import build_curved_drag, easing_to_segment_durations, make_touch_pointer
 
 EXPERIMENT = 'KICKFLIP-REPEATABILITY-20261009'
-SETUP_LIMIT = 24
+# Operator (2026-10-09): keep iterating until the kickflip is reproduced.
+SETUP_LIMIT = 200
 REPEATS = 20
 WDA_REVISION = 'ae50404aac12d9f8c41f6c3fa8776e97975eaef5'
 SIZE = (414, 896)
@@ -37,11 +38,14 @@ LATE_S = .1
 KICKFLIP = dict(pop_start=[.505, .56], pop_end=[.555, .815], pop_s=.075, flick_gap_s=.13,
                 flick_start=[.537, .51], flick_end=[.715, .565], flick_s=.1, catch_gap_s=.43,
                 catch_point=[.5, .505], catch_s=.52)
-# WDA/XCTest drops time when no finger is down (trial 11 ran a planned 0.5 s gap
-# in ~0.07 s), so a stationary off-board finger spans the whole trick.
-KEEPALIVE_POINT = (.85, .8)
-VARIANTS = ({}, dict(pop_s=.05), dict(pop_s=.1), dict(flick_gap_s=.08), dict(flick_gap_s=.18),
-            dict(flick_s=.06), dict(flick_s=.14), dict(catch_gap_s=.3), dict(catch_gap_s=.55))
+# One XCTest record per stroke (GESTURES.md hard rule): multi-path records conjoin
+# strokes and anchors draw lines (CURVE-AUDIT-20261003, attempts 08-12). Records
+# cannot start within ~0.25 s of the previous gesture's end, so the flick is sent
+# as soon as the pop returns; flick_gap_s and catch_gap_s are filmed targets.
+# Strokes use WDA's direct endpoint (no W3C preparation or stability wait).
+DIRECT_RETURN_S = .25  # Typical end-of-gesture to endpoint return; sets the catch wait.
+VARIANTS = ({}, dict(pop_s=.05), dict(pop_s=.1), dict(flick_s=.06), dict(flick_s=.14),
+            dict(catch_gap_s=.3), dict(catch_gap_s=.55))
 IMPLEMENTATION_PATHS = (
     'scripts/collection/probe_kickflip_repeatability.py',
     'src/trueskate_ai/research/kickflip_repeatability.py',
@@ -111,49 +115,16 @@ def contact_payload(name, points, duration_s, easing_power=1.):
                 easing_power=easing_power, payload=payload, payload_sha256=digest(payload))
 
 
-def trick_payload(params):
-    """Kickflip strokes plus a keep-alive finger in one W3C payload, one finger each."""
-    flick_down = params['pop_s'] + params['flick_gap_s']
-    catch_down = flick_down + params['flick_s'] + params['catch_gap_s']
-    end = catch_down + params['catch_s']
-    strokes = (('pop', [params['pop_start'], params['pop_end']], 0., 0., params['pop_s'], None),
-               ('flick', [params['flick_start'], params['flick_end']], flick_down, 0., params['flick_s'], None),
-               ('catch', [params['catch_point']] * 2, catch_down, params['catch_s'], 0., None),
-               ('keepalive', [KEEPALIVE_POINT] * 2, 0., end, 0., None))
-    sources, fingers = [], []
-    for role, points, down_s, hold_s, move_s, easing in strokes:
-        if not (0 <= down_s and 0 <= hold_s and 0 <= move_s <= 1.5 and hold_s + move_s > 0):
-            raise ValueError('invalid trick stroke timing')
-        scaled = safe_scaled_path(points)
-        finger = make_touch_pointer(role)
-        finger.name = role  # Stable ids keep identical recipes hash-identical.
-        # WDA starts a touch at the END of a finger's first move and ignores a down
-        # only at index 1. A leading move/pause/move/down therefore adds a phantom
-        # touch at t = 0 (trial 08). Hover to the start for the whole wait instead.
-        finger.create_pointer_move(x=scaled[0][0], y=scaled[0][1], duration=int(round(down_s * 1000)))
-        finger.create_pointer_down()
-        if hold_s > 0:
-            finger.create_pause(hold_s)
-        if move_s > 0:
-            durations = easing_to_segment_durations(len(scaled) - 1, int(round(move_s * 1000)),
-                                                    easing or (lambda t: t))
-            for (x, y), duration in zip(scaled[1:], durations):
-                finger.create_pointer_move(x=x, y=y, duration=duration)
-        finger.create_pointer_up(0)
-        source = finger.encode()
-        elapsed, down, up = 0, None, None
-        for action in source['actions']:
-            down = elapsed if action['type'] == 'pointerDown' else down
-            up = elapsed if action['type'] == 'pointerUp' else up
-            elapsed += action.get('duration', 0)
-        sources.append(source)
-        fingers.append(dict(role=role, points=points, down_s=down / 1000, up_s=up / 1000))
-    longest = max(len(source['actions']) for source in sources)
-    for source in sources:  # Same padding as the trick executor's combined payload.
-        source['actions'] += [dict(type='pause', duration=0)] * (longest - len(source['actions']))
-    payload = {'actions': sources}
-    return dict(name='trick', fingers=fingers, payload=payload, payload_sha256=digest(payload),
-                encoded_duration_s=max(f['up_s'] for f in fingers))
+def direct_stroke(name, start, end, duration_s):
+    """One straight contact for WDA's /wda/perform_trick_gestures; start == end holds."""
+    if not .01 <= duration_s <= 1.:
+        raise ValueError('invalid stroke duration')
+    (x0, y0), (x1, y1) = safe_scaled_path([start, end])
+    payload = {'gestures': [{'waypoints': [dict(x=int(x0), y=int(y0)),
+                                           dict(x=int(x1), y=int(y1), duration_ms=int(round(duration_s * 1000)))]}]}
+    return dict(name=name, transport='wda_perform_trick_gestures', points=[list(start), list(end)],
+                encoded_duration_s=int(round(duration_s * 1000)) / 1000, payload=payload,
+                payload_sha256=digest(payload))
 
 
 def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
@@ -164,8 +135,12 @@ def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
         candidate_id = f'candidate_{index:02d}'
         params = {**KICKFLIP, **change}
         try:
-            candidates.append(seal(dict(id=candidate_id, seed='operator-described kickflip 2026-10-09',
-                parameters=params, varied=sorted(change), contacts=[push, trick_payload(params)],
+            contacts = [push, direct_stroke('pop', params['pop_start'], params['pop_end'], params['pop_s']),
+                        direct_stroke('flick', params['flick_start'], params['flick_end'], params['flick_s']),
+                        direct_stroke('catch', params['catch_point'], params['catch_point'], params['catch_s'])]
+            candidates.append(seal(dict(id=candidate_id, seed='operator-filmed kickflip 2026-10-09',
+                parameters=params, varied=sorted(change), contacts=contacts,
+                catch_wait_s=round(max(0., params['catch_gap_s'] - DIRECT_RETURN_S), 3),
                 training_admission=False)))
         except ValueError as exc:
             rejected.append(dict(id=candidate_id, parameters=params, error=str(exc)))
@@ -254,7 +229,7 @@ def reserve_setup(root, candidate_id):
     trials = setup_trials(root)
     spent = manifest.get('prior_setup_attempts', 0) + len(trials)
     if spent >= SETUP_LIMIT:
-        raise ValueError('24-attempt setup limit reached; operator steering required')
+        raise ValueError(f'{SETUP_LIMIT}-attempt setup limit reached; operator steering required')
     if any(not (p / 'admission.json').exists() or not read_json(p / 'admission.json')['accepted'] for p in trials):
         raise ValueError('a technical failure or unvalidated attempt requires resolution; no replacement')
     candidate = next((c for c in manifest['candidates'] if c['id'] == candidate_id), None)
@@ -273,7 +248,8 @@ def marker():
 
 
 def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revision,
-              context, clock=time.monotonic, sleep=deadline_sleep, epoch=time.time, foreground_guard=None):
+              context, clock=time.monotonic, sleep=deadline_sleep, epoch=time.time, foreground_guard=None,
+              perform_direct=None):
     """One start/one retrieval; exact separate contacts, including on interruption."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -298,15 +274,16 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
         def remaining():
             if clock() >= deadline:
                 raise RuntimeError('one-minute recording deadline exceeded')
-        def call(kind, payload, target, *, role=None, encoded_duration_s=.05):
+        def call(kind, payload, target, *, role=None, encoded_duration_s=.05, direct=False, guarded=True):
             remaining()
             if target >= deadline:
                 raise RuntimeError('command target exceeds recording deadline')
             # Guards include a fresh screenshot; reserve time for them before the
             # submission deadline instead of adding their latency to every gap.
-            fast = foreground_guard is not None and (kind == 'reset' or kind == 'gesture' and role == 'trick')
-            sleep(max(0., target - (.25 if fast else 1.5) - clock()))
-            (foreground_guard if fast else guard)()
+            fast = foreground_guard is not None and (kind == 'reset' or kind == 'gesture' and role == 'pop')
+            if guarded:
+                sleep(max(0., target - (.25 if fast else 1.5) - clock()))
+                (foreground_guard if fast else guard)()
             sleep(max(0., target - clock()))
             remaining()
             lateness = clock() - target
@@ -314,10 +291,10 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
                 raise RuntimeError(f'{kind} schedule overrun: {lateness:.6f}s')
             event = dict(kind=kind, role=role, intended_s=target-origin,
                          lateness_s=lateness, encoded_duration_s=encoded_duration_s,
-                         payload=payload, payload_sha256=digest(payload),
+                         payload=payload, payload_sha256=digest(payload), instrumented=not direct,
                          call_start_monotonic_s=clock(), call_start_epoch_s=epoch(), success=False)
             events.append(event)
-            response = perform(payload)
+            response = (perform_direct if direct else perform)(payload)
             event.update(response=response, call_end_monotonic_s=clock(), call_end_epoch_s=epoch())
             if isinstance(response, dict) and (response.get('error') or
                     isinstance(response.get('value'), dict) and response['value'].get('error')):
@@ -336,11 +313,16 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
                 raise RuntimeError('reset failed to settle before next command')
         call('control', marker(), origin + 1.5, role='start')
         reset(3., 14.)
-        push, trick = candidate['contacts']
+        push, pop, flick, catch = candidate['contacts']
         call('gesture', push['payload'], origin + 14., role='push', encoded_duration_s=push['encoded_duration_s'])
         # The historic push sleeps AFTER the blocking call, not after physical lift.
-        call('gesture', trick['payload'], clock() + .48, role='trick',
-             encoded_duration_s=trick['encoded_duration_s'])
+        call('gesture', pop['payload'], clock() + .48, role='pop',
+             encoded_duration_s=pop['encoded_duration_s'], direct=True)
+        # No guards between strokes: each would add ~0.2 s to an already late flick.
+        call('gesture', flick['payload'], clock(), role='flick',
+             encoded_duration_s=flick['encoded_duration_s'], direct=True, guarded=False)
+        call('gesture', catch['payload'], clock() + candidate['catch_wait_s'], role='catch',
+             encoded_duration_s=catch['encoded_duration_s'], direct=True, guarded=False)
         guard()
         if clock() >= origin + 20.:
             raise RuntimeError('gameplay exceeded reserved observation window')
@@ -370,8 +352,9 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
                 fail('timing_stop', exc)
         if not failures:
             try:
-                validate_action_timing_report(report, expected_revision=revision, expected_count=len(events))
-                if len(events) != 8:
+                validate_action_timing_report(report, expected_revision=revision,
+                                              expected_count=sum(e['instrumented'] for e in events))
+                if len(events) != 10:
                     raise ValueError('incomplete fixed trial')
             except BaseException as exc:
                 fail('timing_validation', exc)
@@ -390,8 +373,9 @@ def admit_trial(out, revision):
         execution = read_json(out / 'execution.json')
         if execution['error']:
             raise ValueError(execution['error'])
+        instrumented = [e for e in execution['events'] if e.get('instrumented', True)]
         records = validate_action_timing_report(read_json(out / 'wda-timing.json'),
-                    expected_revision=revision, expected_count=len(execution['events']))
+                    expected_revision=revision, expected_count=len(instrumented))
         video = out / 'original.mov'
         probe = json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-select_streams', 'v:0',
             '-show_streams', '-show_frames', '-show_entries',
@@ -413,7 +397,7 @@ def admit_trial(out, revision):
         _decode_source_frames(video, pts, keep=False, inspect=inspect)
         onsets, stamps = {}, {}
         started = execution['video']['started_at_epoch_s']
-        for event, record in zip(execution['events'], records):
+        for event, record in zip(instrumented, records):
             if event['kind'] != 'control':
                 continue
             approximate = record['submitted_to_ios']['epoch_s'] - started
@@ -427,15 +411,29 @@ def admit_trial(out, revision):
         residual = onsets['middle'] - fit.video_time_s(stamps['middle'])
         if not onsets['start'] < onsets['middle'] < onsets['end'] or abs(residual) > 2 * native:
             raise ValueError('held-out middle calibration failed')
+        # Direct strokes have no WDA timing record. Map their rig-clock call starts
+        # with the median rig-to-WDA offset of the instrumented requests (approximate).
+        offset = float(np.median([r['request_entered']['monotonic_s'] - e['call_start_monotonic_s']
+                                  for e, r in zip(instrumented, records)]))
+        by_event = {id(e): r for e, r in zip(instrumented, records)}
         gestures = []
-        for event, record in zip(execution['events'], records):
-            if event['kind'] == 'gesture':
+        for event in execution['events']:
+            if event['kind'] != 'gesture':
+                continue
+            record = by_event.get(id(event))
+            if record is not None:
                 stamp = record['submitted_to_ios']['monotonic_s']
-                gestures.append(dict(role=event['role'], submitted_monotonic_s=stamp,
+                gestures.append(dict(role=event['role'], instrumented=True, submitted_monotonic_s=stamp,
                     video_start_s=fit.video_time_s(stamp), encoded_duration_s=event['encoded_duration_s'],
                     ios_callback_latency_s=record['ios_completion_callback']['monotonic_s']-stamp,
                     call_lateness_s=event['lateness_s']))
-        result = dict(accepted=True, fit=asdict(fit), control_onsets_s=onsets,
+            else:
+                stamp = event['call_start_monotonic_s'] + offset
+                gestures.append(dict(role=event['role'], instrumented=False, submitted_monotonic_s=stamp,
+                    video_start_s=fit.video_time_s(stamp), encoded_duration_s=event['encoded_duration_s'],
+                    call_duration_s=event['call_end_monotonic_s'] - event['call_start_monotonic_s'],
+                    call_lateness_s=event['lateness_s'], timing_source='rig clock + median WDA offset'))
+        result = dict(accepted=True, fit=asdict(fit), control_onsets_s=onsets, rig_to_wda_offset_s=offset,
             heldout_middle_error_s=residual, native_frame_s=native, frame_count=len(pts),
             max_frame_gap_s=float(np.max(np.diff(pts))), original_pts_s=pts.tolist(),
             video_sha256=file_sha(video), gestures=gestures, training_admission=False)
@@ -556,7 +554,7 @@ def report(root):
             max_frame_gap_s=admission['max_frame_gap_s']))
     summary['complete'] = len(trials) == REPEATS and summary['admitted'] == REPEATS
     summary['timing_distributions'] = {}
-    for key in ('push_to_trick',):
+    for key in ('push_to_pop', 'pop_to_flick', 'flick_to_catch'):
         values = [r['submission_gaps_s'][key] for r in summary['runs']]
         if values:
             summary['timing_distributions'][key] = dict(count=len(values), min_s=min(values),
@@ -577,12 +575,9 @@ def render_report(root, out):
         admission = read_json(trial / 'admission.json')
         pts = np.array(admission['original_pts_s'])
         gestures = {g['role']: g for g in admission['gestures']}
-        fingers = {f['role']: f for f in read_json(trial / 'planned.json')['candidate']['contacts'][1]['fingers']}
-        trick_start = gestures['trick']['video_start_s']
-        flick_end = trick_start + fingers['flick']['up_s']
-        targets = {f'before_{role}': trick_start + f['down_s'] - admission['native_frame_s']
-                   for role, f in fingers.items()}
-        targets['before_push'] = gestures['push']['video_start_s'] - admission['native_frame_s']
+        flick_end = gestures['flick']['video_start_s'] + gestures['flick']['encoded_duration_s']
+        targets = {f'before_{role}': g['video_start_s'] - admission['native_frame_s']
+                   for role, g in gestures.items()}
         targets.update({f'after_flick_{offset:g}s': flick_end + offset for offset in (.1, .25, .5, 1., 2., 5.)})
         for label, target in targets.items():
             index = int(np.argmin(abs(pts-target)))
@@ -600,7 +595,7 @@ def render_report(root, out):
             continue
         reference_trial, reference_start = reference
         movie = out / f'{reference_trial.name}_vs_{trial.name}.mov'
-        # Only the first push aligns videos. The trick and landing retain their real timing.
+        # Only the first push aligns videos. Pop/flick/catch/landing retain their real timing.
         filters = (f'[0:v]trim=start={reference_start}:duration=11,setpts=PTS-STARTPTS,scale=414:896[left];'
                    f'[1:v]trim=start={start}:duration=11,setpts=PTS-STARTPTS,scale=414:896[right];'
                    '[left][right]hstack=inputs=2:shortest=1[v]')
