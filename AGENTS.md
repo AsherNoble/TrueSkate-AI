@@ -1,5 +1,9 @@
 # Repository instructions
 
+Canonical instructions for every agent. Claude Code and Codex read this file
+directly; `.github/copilot-instructions.md` forwards here. Do not add a
+`CLAUDE.md`: Claude Code loads `AGENTS.md` only when a project has none.
+
 ## Current direction
 
 Behavioural cloning is authoritative. Read `research/STATUS.md` and the short
@@ -22,6 +26,20 @@ Model 2 is unfinished. PPO/CMA-ES implementations are retired in tagged history.
 - Once a feature branch is merged into the default branch, delete it: local
   branch, remote branch and worktree. This applies here and to the WDA fork.
   Preserve/archive refs (`preserve/*`, `archive/*` tags) are exempt.
+
+## Commit hygiene
+
+- Each PR lands on `main` as one commit. Split a PR only when it holds
+  independent changes. Working commits stay on the branch until merge.
+- Before squashing, push an annotated tag at the branch tip:
+  `archive/squash-YYYYMMDD/<branch>`. Research records and rig evidence
+  directories cite branch SHAs; the tag keeps them reachable. Squashing is
+  not a retirement, so it needs no `research/ARCHIVE.md` entry.
+- Squashed message: `type: message`, a short context paragraph, the tag and
+  full tip SHA, then one bullet per squashed commit: `- <short SHA> <subject>`.
+- Squash locally, force-push the one-commit branch, then use GitHub "Squash
+  and merge"; the `main` ruleset requires a PR and allows no bypass. Merge
+  stacked PRs in order, rebasing each next branch onto the new `main` first.
 
 ## Rig invariants
 
