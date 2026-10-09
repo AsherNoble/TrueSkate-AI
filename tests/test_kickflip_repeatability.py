@@ -681,3 +681,18 @@ def test_divergence_curve_is_zero_for_identical_frames_and_finds_onset():
     offsets = np.arange(60) / 60 - .5
     onset, floor, threshold = module.divergence_onset(offsets, module.divergence_curve(reference, frames))
     assert onset == pytest.approx(offsets[40]) and floor == 0.
+
+
+def test_code_change_after_gameplay_migrates_only_with_a_reason(experiment, monkeypatch):
+    add_gameplay_trial(experiment, 1)
+    manifest = module.load_manifest(experiment)
+    manifest.pop('sha256')
+    manifest['implementation_hashes'] = {**manifest['implementation_hashes'], IMPL_KEY: 'older code'}
+    (experiment / 'manifest.json').write_text(json.dumps(module.seal(manifest)))
+    with pytest.raises(ValueError, match='superseded-procedure reason'):
+        module.prepare_manifest(REPO, experiment)
+    migrated = module.prepare_manifest(REPO, experiment, 'gate override and deferred repeat admission')
+    assert migrated['prior_setup']['trials'] == {'trial_01': 'superseded-procedure outcome: 360 FLIP / landed'}
+
+
+IMPL_KEY = 'src/trueskate_ai/research/kickflip_repeatability.py'

@@ -542,3 +542,6 @@ max(3 × floor, floor + 2) after the push, where the floor is the pre-push 95th
 percentile. A per-repeat table relates outcome and onset to the measured
 push→pop, pop→flick and flick→catch submission gaps. A smoke test on trials 20
 and 21 (different pushes) gave a floor of 0.05 and onset at the push.
+Migration treats changed execution code as a procedure change, as it does changed
+candidates. Gameplay attempts then migrate only with an explicit superseded
+reason; previously only pre-gameplay failures could migrate across a code change.

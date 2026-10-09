@@ -169,9 +169,12 @@ def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
             raise ValueError('reviewed or repeatability runs cannot migrate')
         if previous['experiment'] != EXPERIMENT or previous['wda_revision'] != WDA_REVISION:
             raise ValueError('predecessor procedure changed')
-        # A changed recipe set supersedes the old procedure: its gameplay attempts
-        # still spend the cap but can never count as evidence for the new candidates.
-        superseded = [c['sha256'] for c in previous['candidates']] != [c['sha256'] for c in candidates]
+        # A changed recipe set or execution code supersedes the old procedure: its gameplay
+        # attempts still spend the cap. Only an identical sealed recipe can later count them,
+        # and only through the explicit operator gate override.
+        implementation = {p: file_sha(repo / p) for p in IMPLEMENTATION_PATHS}
+        superseded = ([c['sha256'] for c in previous['candidates']] != [c['sha256'] for c in candidates]
+                      or previous['implementation_hashes'] != implementation)
         if superseded and not (superseded_reason or '').strip():
             raise ValueError('predecessor procedure changed; an explicit superseded-procedure reason is required')
         classifications = {}
