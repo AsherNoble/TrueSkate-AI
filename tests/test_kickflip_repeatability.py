@@ -570,12 +570,41 @@ def test_operator_kickflip_timeline_is_exact_in_one_payload():
     moves = [a['duration'] for a in pop['actions'] if a['type'] == 'pointerMove'][1:]
     assert moves == sorted(moves, reverse=True) and moves[0] > moves[-1]  # Accelerates downward.
     assert [a['y'] for a in pop['actions'] if a['type'] == 'pointerMove'][-1] == int(.67 * 896 + 150)
-    for source in (flick, catch):
-        kinds = [a['type'] for a in source['actions']]
-        down = kinds.index('pointerDown')
-        # WDA drops a zero-duration move followed by a pause; the move is re-issued before down.
-        assert kinds[down - 1] == 'pointerMove' and kinds[down - 2] == 'pause'
     assert {(a['x'], a['y']) for a in catch['actions'] if a['type'] == 'pointerMove'} == {(207, 448)}
+    # Replaying WDA's path rules yields exactly one touch per finger at the planned times.
+    touches = {f['role']: wda_touch_paths(source) for f, source in zip(trick['fingers'], trick['payload']['actions'])}
+    assert touches == {'pop': [(0, 848, (207, 600))], 'flick': [(900, 960, (207, 448))],
+                       'catch': [(1210, 1510, (207, 448))]}
+
+
+def wda_touch_paths(source):
+    """FBW3CActionsSynthesizer at ae50404a: a move with no touch starts one at its end;
+    a down is skipped only at index 1 after a move; otherwise a down starts a new touch."""
+    touches, current, offset, position = [], None, 0, None
+    for index, action in enumerate(source['actions']):
+        duration = action.get('duration', 0)
+        if action['type'] == 'pointerMove':
+            position = (action['x'], action['y'])
+            if current is None:
+                current = [offset + duration, None, position]
+                touches.append(current)
+        elif action['type'] == 'pointerDown':
+            if not (current is not None and index == 1 and source['actions'][0]['type'] == 'pointerMove'):
+                current = [offset, None, position]
+                touches.append(current)
+        elif action['type'] == 'pointerUp':
+            current[1] = offset
+        offset += duration
+    return [tuple(t) for t in touches]
+
+
+def test_leading_pause_pattern_creates_a_phantom_touch():
+    # The executor/spin-hold pattern: move(0), pause, move(0), down. WDA touches at t = 0
+    # from the first move and never lifts it, then adds the intended touch.
+    source = dict(actions=[dict(type='pointerMove', duration=0, x=207, y=448), dict(type='pause', duration=900),
+                           dict(type='pointerMove', duration=0, x=207, y=448), dict(type='pointerDown'),
+                           dict(type='pointerMove', duration=60, x=331, y=448), dict(type='pointerUp')])
+    assert wda_touch_paths(source) == [(0, None, (207, 448)), (900, 960, (207, 448))]
 
 
 def test_pop_cannot_reach_protected_bottom_controls():

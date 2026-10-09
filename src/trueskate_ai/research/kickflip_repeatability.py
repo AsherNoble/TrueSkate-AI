@@ -129,11 +129,10 @@ def trick_payload(params):
         scaled = safe_scaled_path(points)
         finger = make_touch_pointer(role)
         finger.name = role  # Stable ids keep identical recipes hash-identical.
-        finger.create_pointer_move(x=scaled[0][0], y=scaled[0][1], duration=0)
-        if down_s > 0:
-            finger.create_pause(down_s)
-            # WDA drops a zero-duration move followed by a pause; re-issue it before down.
-            finger.create_pointer_move(x=scaled[0][0], y=scaled[0][1], duration=0)
+        # WDA starts a touch at the END of a finger's first move and ignores a down
+        # only at index 1. A leading move/pause/move/down therefore adds a phantom
+        # touch at t = 0 (trial 08). Hover to the start for the whole wait instead.
+        finger.create_pointer_move(x=scaled[0][0], y=scaled[0][1], duration=int(round(down_s * 1000)))
         finger.create_pointer_down()
         if hold_s > 0:
             finger.create_pause(hold_s)

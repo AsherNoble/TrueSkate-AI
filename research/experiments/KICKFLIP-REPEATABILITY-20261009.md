@@ -337,3 +337,26 @@ pop move 0.06/0.16 s, flick gap 0/0.12 s, flick 0.04/0.10 s, catch delay
 0.15/0.40 s, and pop hold 0.40 s. The two-of-three landed-kickflip rule, QuickTime
 review, admission gates and the 24-attempt cap are unchanged. The successor
 carries trials 01–07 (7 attempts, 17 remaining).
+
+**Trial 08** (`6a733550`, operator centre recipe) ran all eight commands within
+19 ms of their slots; the trick request took 2,006 ms. The board never left the
+ground. From the start of the pop hold, the video shows a second touch glow near
+(0.5, 0.5) on the front half of the board as well as the tail touch. That glow
+moves right with the flick and remains as the catch.
+
+**WDA phantom touch.** `FBW3CActionsSynthesizer` at `ae50404a` builds touches
+per finger as follows:
+- a `pointerMove` with no current touch starts one at the move's end offset;
+- a `pointerDown` is ignored only at index 1 after a move;
+- any other `pointerDown` starts a new touch.
+
+The delayed fingers used `move(0) → pause → move(0) → down`, so each created a
+touch at t = 0 that was never lifted, plus the intended touch. The flick finger
+therefore pinned the board while the tail popped. Delayed fingers now hover to
+their start point for the whole wait, `move(duration = down time) → down`, which
+yields exactly one touch. A test replays WDA's rules on every finger.
+**Wider impact (not changed here):** `_build_spin_hold_finger` and the
+`execute_n_slot_gestures` combined branch use the same leading
+move/pause/move/down pattern. This likely adds an unlabelled spin-button or
+start-point touch from payload start in spin and combined trick payloads.
+Verify on device before relying on those labels.
