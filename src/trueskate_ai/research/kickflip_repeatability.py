@@ -462,11 +462,28 @@ def admit_trial(out, revision):
     return result
 
 
-def qualified_trials(root, candidate_id):
+def trial_number(trial):
+    return int(Path(trial).name.split('_')[1])
+
+
+def qualified_trials(root, candidate_id, minimum=3):
+    """First `minimum` attempts of the candidate; all of its attempts must be assessed.
+
+    The default gate is three attempts with at least two landed KICKFLIPs. An operator
+    override (minimum < 3) also counts preserved predecessor attempts of the *identical*
+    sealed recipe, and requires every selected attempt to be a landed KICKFLIP.
+    """
+    root = Path(root)
     trials = []
-    for trial in setup_trials(root):
-        reservation = read_json(trial / 'reservation.json')
-        if reservation['candidate_id'] == candidate_id:
+    if minimum >= 3:
+        pool = [(t, read_json(t / 'reservation.json')['candidate_id'] == candidate_id) for t in setup_trials(root)]
+    else:
+        candidate = next(c for c in load_manifest(root)['candidates'] if c['id'] == candidate_id)
+        everywhere = sorted([*setup_trials(root), *root.glob('history/**/setup/trial_*')], key=trial_number)
+        pool = [(t, read_json(t / 'reservation.json').get('candidate_sha256') == candidate['sha256'])
+                for t in everywhere]
+    for trial, matches in pool:
+        if matches:
             if not (trial / 'assessment.json').exists():
                 raise ValueError('all candidate attempts must be assessed; do not skip failures')
             admission = read_json(trial / 'admission.json')
@@ -474,20 +491,23 @@ def qualified_trials(root, candidate_id):
             if not admission['accepted'] or assessment['video_sha256'] != file_sha(trial / 'original.mov'):
                 raise ValueError('assessment is not tied to admitted source video')
             trials.append((trial, assessment))
-    if len(trials) < 3:
-        raise ValueError('three assessed candidate attempts required before review')
-    # Show the first three, not a cherry-picked group of later successful attempts.
-    selected = trials[:3]
-    if sum(a['trick'] == 'KICKFLIP' and a['status'] == 'landed' for _, a in selected) < 2:
-        raise ValueError('candidate requires at least two landed kickflips in its first three assessed attempts')
+    if minimum < 1 or len(trials) < minimum:
+        raise ValueError(f'{minimum} assessed candidate attempt(s) required before review')
+    # Show the first attempts, not a cherry-picked group of later successful attempts.
+    selected = trials[:minimum]
+    landed = sum(a['trick'] == 'KICKFLIP' and a['status'] == 'landed' for _, a in selected)
+    if landed < (2 if minimum >= 3 else minimum):
+        raise ValueError('candidate lacks the required landed kickflips in its first assessed attempts')
     return [p for p, _ in selected]
 
 
-def review_candidate(root, candidate_id):
+def review_candidate(root, candidate_id, *, minimum=3, override_reason=None):
     root = Path(root)
+    if minimum < 3 and not (override_reason or '').strip():
+        raise ValueError('an operator gate override needs an explicit reason')
     manifest = load_manifest(root)
     candidate = next(c for c in manifest['candidates'] if c['id'] == candidate_id)
-    trials = qualified_trials(root, candidate_id)
+    trials = qualified_trials(root, candidate_id, minimum)
     destination = root / 'review' / candidate_id
     destination.mkdir(parents=True, exist_ok=False)
     clips, sources = [], []
@@ -509,6 +529,7 @@ def review_candidate(root, candidate_id):
     review = seal(dict(candidate_id=candidate_id, candidate_sha256=candidate['sha256'],
         manifest_sha256=manifest['sha256'], context_sha256=digest(read_json(root / 'context.json')),
         sources=sources, preview=str(preview.relative_to(root)), preview_sha256=file_sha(preview),
+        gate=dict(minimum=minimum, override_reason=override_reason if minimum < 3 else None),
         operator_approval_required=True))
     save_new(destination / 'review.json', review)
     return preview
@@ -521,7 +542,10 @@ def approve_review(root, candidate_id, statement):
     review = verify_seal(read_json(root / 'review' / candidate_id / 'review.json'))
     if file_sha(root / review['preview']) != review['preview_sha256']:
         raise ValueError('review movie changed')
-    qualified_trials(root, candidate_id)
+    gate = review.get('gate', dict(minimum=3))
+    selected = qualified_trials(root, candidate_id, gate['minimum'])
+    if [str(t.relative_to(root)) for t in selected] != [source['trial'] for source in review['sources']]:
+        raise ValueError('reviewed attempts are no longer the first qualifying attempts')
     save_new(root / 'approval.json', seal(dict(review=review, operator_statement=statement,
         approved_at_epoch_s=time.time(), repeats=REPEATS, training_admission=False)))
 
@@ -541,6 +565,67 @@ def approved_candidate(root):
         if file_sha(root / source['trial'] / 'original.mov') != source['video_sha256']:
             raise ValueError('reviewed original video changed')
     return candidate
+
+
+DIVERGENCE_WINDOW_S = (-.5, 4.)
+# 104x224 grayscale; hide the HUD: top 15 %, bottom 10 % and the speedometer corner.
+DIVERGENCE_MASK = np.ones((224, 104), bool)
+DIVERGENCE_MASK[:34], DIVERGENCE_MASK[201:], DIVERGENCE_MASK[179:, 78:] = False, False, False
+
+
+def divergence_frame(frame):
+    small = cv2.resize(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), (104, 224), interpolation=cv2.INTER_AREA)
+    return small.astype(np.float32)
+
+
+def divergence_curve(reference, frames):
+    """Mean absolute masked difference between paired (already aligned) processed frames."""
+    return np.array([float(np.abs(a - b)[DIVERGENCE_MASK].mean()) for a, b in zip(reference, frames)])
+
+
+def divergence_onset(offsets, curve, *, factor=3., minimum=2., sustain=3):
+    """First offset after the push where the difference stays above the pre-push noise floor."""
+    offsets, curve = np.asarray(offsets), np.asarray(curve)
+    before = curve[offsets < 0]
+    floor = float(np.percentile(before, 95)) if len(before) else 0.
+    threshold = max(factor * floor, floor + minimum)
+    above = (curve > threshold) & (offsets >= 0)
+    for i in range(len(curve) - sustain + 1):
+        if above[i:i + sustain].all():
+            return float(offsets[i]), floor, threshold
+    return None, floor, threshold
+
+
+def processed_window(trial, admission):
+    """Processed native frames around the push, keyed by offset from the push's video start."""
+    pts = np.array(admission['original_pts_s'])
+    push = next(g for g in admission['gestures'] if g['role'] == 'push')['video_start_s']
+    start, end = push + DIVERGENCE_WINDOW_S[0], push + DIVERGENCE_WINDOW_S[1]
+    frames = []
+    _decode_source_frames(Path(trial) / 'original.mov', pts, start=start, end=end, keep=False,
+                          inspect=lambda frame: frames.append(divergence_frame(frame)))
+    offsets = [float(t - push) for t in pts if start <= t <= end]
+    if len(offsets) != len(frames):
+        raise ValueError('divergence window decode count differs from source PTS')
+    return np.array(offsets), frames
+
+
+def divergence(root, runs, native_frame_s):
+    """Each admitted repeat against the first, aligned once at the push; pairs within half a frame."""
+    root = Path(root)
+    window = lambda run: processed_window(root / run['trial'], read_json(root / run['trial'] / 'admission.json'))
+    (ref_offsets, ref_frames), results = window(runs[0]), []
+    for run in runs[1:]:
+        offsets, frames = window(run)  # One repeat in memory at a time.
+        nearest = np.abs(ref_offsets[None, :] - offsets[:, None]).argmin(axis=1)
+        keep = np.abs(ref_offsets[nearest] - offsets) <= native_frame_s / 2
+        paired = [i for i in range(len(offsets)) if keep[i]]
+        curve = divergence_curve([ref_frames[nearest[i]] for i in paired], [frames[i] for i in paired])
+        onset, floor, threshold = divergence_onset(offsets[paired], curve)
+        results.append(dict(trial=run['trial'], offsets_s=offsets[paired].tolist(), mean_abs_difference=curve.tolist(),
+                            onset_s=onset, noise_floor=floor, threshold=threshold))
+    return dict(reference=runs[0]['trial'], alignment='push video start', window_s=list(DIVERGENCE_WINDOW_S),
+                metric='mean absolute grayscale difference, 104x224, HUD masked', runs=results)
 
 
 def report(root):
@@ -624,6 +709,23 @@ def render_report(root, out):
             right=run['trial'], alignment='first push only', duration_s=11.,
             rendered_for_inspection=True, use_original_pts_for_measurement=True))
     save_new(out / 'visual-provenance.json', dict(snapshots=snapshots, comparisons=comparisons))
+    onsets = {}
+    if len(summary['runs']) > 1:
+        result = divergence(root, summary['runs'], float(np.median([r['native_frame_s'] for r in summary['runs']])))
+        save_new(out / 'divergence.json', result)
+        onsets = {r['trial']: r['onset_s'] for r in result['runs']}
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        figure, axes = plt.subplots(figsize=(10, 5))
+        for r in result['runs']:
+            axes.plot(r['offsets_s'], r['mean_abs_difference'], lw=1, alpha=.7)
+        axes.axvline(0, color='k', lw=.8)
+        axes.set(xlabel='seconds from push start (aligned once)', ylabel='mean |difference| vs reference',
+                 title=f"{len(result['runs'])} repeats vs {result['reference']}")
+        figure.tight_layout()
+        figure.savefig(out / 'divergence.png', dpi=120)
+        plt.close(figure)
     lines = [f'# {EXPERIMENT}', '',
              f"Attempts: {summary['attempted']}/{REPEATS}; admitted: {summary['admitted']}; complete: {summary['complete']}.",
              '', '## Trick and landing outcomes', '']
@@ -632,6 +734,15 @@ def render_report(root, out):
     for key, values in summary['timing_distributions'].items():
         lines.append(f"- {key}: min {values['min_s']*1000:.2f}, median {values['median_s']*1000:.2f}, "
                      f"p95 {values['p95_s']*1000:.2f}, max {values['max_s']*1000:.2f} ms.")
+    lines += ['', '## Per-repeat outcome, divergence onset and measured gaps', '',
+              '| Repeat | Outcome | Divergence onset (s) | push→pop (s) | pop→flick (s) | flick→catch (s) |',
+              '|---|---|---|---|---|---|']
+    for run in summary['runs']:
+        a, g, onset = run['assessment'], run['submission_gaps_s'], onsets.get(run['trial'])
+        lines.append(f"| {run['trial']} | {a['trick'] + ' / ' + a['status'] if a else 'unassessed'} | "
+                     f"{'reference' if run is summary['runs'][0] else ('none' if onset is None else f'{onset:.3f}')} | "
+                     + ' | '.join(f"{g.get(k, float('nan')):.3f}" for k in ('push_to_pop', 'pop_to_flick', 'flick_to_catch'))
+                     + ' |')
     lines += ['', '## Interpretation', '', summary['limitation'], '',
               'Compare the snapshots and first-push-aligned movies through the full sequence. '
               'The first admitted repeat is the comparison reference, not the most similar or successful run. '

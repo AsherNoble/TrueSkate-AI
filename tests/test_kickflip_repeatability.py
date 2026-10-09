@@ -209,7 +209,7 @@ def test_review_cannot_omit_failed_or_unassessed_runs(experiment):
     add_trial(experiment, 2, landed=False)
     add_trial(experiment, 3)
     add_trial(experiment, 4)
-    with pytest.raises(ValueError, match='first three'):
+    with pytest.raises(ValueError, match='required landed kickflips'):
         module.qualified_trials(experiment, 'candidate_01')
     (experiment / 'setup/trial_01/assessment.json').unlink()
     with pytest.raises(ValueError, match='all candidate attempts'):
@@ -335,8 +335,8 @@ def load_cli():
     return cli
 
 
-@pytest.mark.parametrize('failure_at', [None, 4])
-def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, monkeypatch, failure_at):
+@pytest.mark.parametrize('failure_at,defer', [(None, False), (4, False), (None, True), (4, True)])
+def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, monkeypatch, failure_at, defer):
     import base64
     import trueskate_ai.sim.device as device
     import trueskate_ai.collection.wda_action_timing as timing
@@ -390,9 +390,11 @@ def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, 
         if len(runs) == failure_at:
             raise RuntimeError('synthetic live failure')
     monkeypatch.setattr(module, 'run_trial', run)
-    monkeypatch.setattr(module, 'admit_trial', lambda p, rev: save_new(p / 'admission.json', dict(accepted=True)))
+    admitted = []
+    monkeypatch.setattr(module, 'admit_trial', lambda p, rev: admitted.append(p))
     kwargs = dict(root=experiment, candidate_id=None, repeatability=True, env_file=env_file,
-                  ready_note='operator confirms ready', settings_note='synthetic waypoint/settings')
+                  ready_note='operator confirms ready', settings_note='synthetic waypoint/settings',
+                  defer_admission=defer)
     if failure_at:
         with pytest.raises(RuntimeError, match='live failure'):
             cli.live_batch(**kwargs)
@@ -401,6 +403,8 @@ def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, 
     else:
         cli.live_batch(**kwargs)
         assert len(runs) == module.REPEATS == len(connections) == len(resets)
+        # Deferred admission runs off the rig afterwards; never inline.
+        assert len(admitted) == (0 if defer else module.REPEATS)
         # Checked before the first connection and before every later reconnect.
         assert cleanup_checks == list(range(module.REPEATS))
     assert len(set(runs)) == 1
@@ -611,3 +615,69 @@ def test_three_point_flick_presses_then_snaps():
     assert [w.get('duration_ms') for w in waypoints] == [None, 50, 40] and flick['encoded_duration_s'] == .09
     with pytest.raises(ValueError, match='two or three points'):
         module.direct_stroke('flick', [[.5, .5]] * 4, [.01] * 3)
+
+
+def add_recipe_attempt(root, relative, candidate, *, trick='KICKFLIP', status='landed', assessed=True):
+    trial = root / relative
+    trial.mkdir(parents=True)
+    (trial / 'original.mov').write_bytes(f'synthetic {relative}'.encode())
+    sha = module.file_sha(trial / 'original.mov')
+    save_new(trial / 'reservation.json', dict(candidate_id='candidate_99', candidate_sha256=candidate['sha256']))
+    save_new(trial / 'admission.json', dict(accepted=True, video_sha256=sha))
+    if assessed:
+        save_new(trial / 'assessment.json', dict(trick=trick, status=status, video_sha256=sha))
+    return trial
+
+
+@pytest.mark.parametrize('case', ['ok', 'mismatch', 'failed', 'hardflip', 'unassessed'])
+def test_operator_override_uses_first_identical_recipe_attempts(experiment, case):
+    candidate = module.load_manifest(experiment)['candidates'][0]
+    other = module.load_manifest(experiment)['candidates'][1]
+    recipe = other if case == 'mismatch' else candidate
+    add_recipe_attempt(experiment, 'history/predecessor/setup/trial_21', recipe,
+                       status='failed' if case == 'failed' else 'landed',
+                       trick='HARD FLIP' if case == 'hardflip' else 'KICKFLIP')
+    if case == 'unassessed':
+        add_recipe_attempt(experiment, 'setup/trial_22', candidate, assessed=False)
+    if case == 'ok':
+        selected = module.qualified_trials(experiment, candidate['id'], 1)
+        assert [p.relative_to(experiment).as_posix() for p in selected] == ['history/predecessor/setup/trial_21']
+        # The default gate never counts history.
+        with pytest.raises(ValueError, match='3 assessed'):
+            module.qualified_trials(experiment, candidate['id'])
+    else:
+        with pytest.raises(ValueError):
+            module.qualified_trials(experiment, candidate['id'], 1)
+
+
+def test_override_needs_reason_and_approval_binds_the_gate(experiment):
+    candidate = module.load_manifest(experiment)['candidates'][0]
+    with pytest.raises(ValueError, match='explicit reason'):
+        module.review_candidate(experiment, candidate['id'], minimum=1, override_reason=' ')
+    trial = add_recipe_attempt(experiment, 'history/predecessor/setup/trial_21', candidate)
+    manifest = module.load_manifest(experiment)
+    review_dir = experiment / 'review' / candidate['id']
+    review_dir.mkdir(parents=True)
+    (review_dir / 'preview.mov').write_bytes(b'synthetic preview')
+    review = dict(candidate_id=candidate['id'], candidate_sha256=candidate['sha256'], manifest_sha256=manifest['sha256'],
+                  context_sha256=module.digest(module.read_json(experiment / 'context.json')),
+                  sources=[dict(trial='history/predecessor/setup/trial_21', video_sha256=module.file_sha(trial / 'original.mov'))],
+                  preview=f"review/{candidate['id']}/preview.mov", preview_sha256=module.file_sha(review_dir / 'preview.mov'),
+                  gate=dict(minimum=1, override_reason='operator approved on trial 21 alone'))
+    save_new(review_dir / 'review.json', module.seal(review))
+    module.approve_review(experiment, candidate['id'], 'Operator approves trial 21')
+    assert module.approved_candidate(experiment)['id'] == candidate['id']
+    assert module.read_json(experiment / 'approval.json')['review']['gate']['minimum'] == 1
+
+
+def test_divergence_curve_is_zero_for_identical_frames_and_finds_onset():
+    rng = np.random.default_rng(0)
+    scene = rng.integers(0, 255, (400, 200, 3), dtype=np.uint8)
+    reference = [module.divergence_frame(scene) for _ in range(60)]
+    assert not module.divergence_curve(reference, reference).any()
+    changed = scene.copy()
+    changed[150:250, 50:150] = 255  # Board-area change, inside the unmasked region.
+    frames = [module.divergence_frame(scene if i < 40 else changed) for i in range(60)]
+    offsets = np.arange(60) / 60 - .5
+    onset, floor, threshold = module.divergence_onset(offsets, module.divergence_curve(reference, frames))
+    assert onset == pytest.approx(offsets[40]) and floor == 0.

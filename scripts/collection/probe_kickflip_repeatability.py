@@ -182,9 +182,9 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
                 settle=settle, revision=manifest['wda_revision'], context=context)
             # Disconnect before lengthy native decoding; never leave a stale session.
             worker.disconnect()
-            if defer_admission and not repeatability:
+            if defer_admission:
                 # Native-frame admission takes ~17 min on the rig; run `admit` elsewhere and copy it back.
-                print(f'setup {index}: recording complete; admission deferred: {trial}', flush=True)
+                print(f"{'repeat' if repeatability else 'setup'} {index}: recording complete; admission deferred: {trial}", flush=True)
             else:
                 experiment.admit_trial(trial, manifest['wda_revision'])
                 print(f"{'repeat' if repeatability else 'setup'} {index}: recording complete and validated: {trial}", flush=True)
@@ -223,10 +223,9 @@ def main():
         command.add_argument('--operator-ready-note', required=True)
         command.add_argument('--settings-note', required=True, help='fixed waypoint, stance, camera and physics settings')
         command.add_argument('--appium-port', type=int, default=4723, help='session-discovery-enabled Appium; temporary diagnostic server may use a separate port')
-        if name == 'run-setup':
-            command.add_argument('--defer-admission', action='store_true', help='skip on-rig admission; run `admit` on a faster machine and copy admission.json back')
+        command.add_argument('--defer-admission', action='store_true', help='skip on-rig admission; run `admit` on a faster machine and copy admission.json back')
     admit = sub.add_parser('admit')
-    admit.add_argument('--trial', required=True, help='relative setup/trial_NN to validate (same code, any machine)')
+    admit.add_argument('--trial', required=True, help='relative setup/trial_NN or repeats/trial_NN to validate (same code, any machine)')
     assessment = sub.add_parser('assess')
     assessment.add_argument('--trial', required=True, help='relative setup/trial_NN or repeats/trial_NN')
     assessment.add_argument('--trick', required=True)
@@ -235,6 +234,8 @@ def main():
     preview = sub.add_parser('preview')
     preview.add_argument('--candidate', required=True)
     preview.add_argument('--no-open', action='store_true', help='render only on rig; open returned movie on laptop')
+    preview.add_argument('--operator-minimum', type=int, default=3, help='operator gate override: review the first N identical-recipe attempts (N < 3 needs --override-reason)')
+    preview.add_argument('--override-reason', help='explicit operator reason, sealed into the review')
     approval = sub.add_parser('approve')
     approval.add_argument('--candidate', required=True)
     approval.add_argument('--operator-statement', required=True, help='exact explicit acceptance of the QuickTime review')
@@ -278,7 +279,8 @@ def main():
         save_new(trial / 'assessment.json', dict(trick=args.trick.strip().upper(), status=args.status,
                  evidence_note=args.evidence_note, video_sha256=experiment.file_sha(trial / 'original.mov')))
     elif args.command == 'preview':
-        movie = experiment.review_candidate(root, args.candidate)
+        movie = experiment.review_candidate(root, args.candidate, minimum=args.operator_minimum,
+                                            override_reason=args.override_reason)
         print(movie)
         if not args.no_open:
             if sys.platform != 'darwin' or 'training-server' in socket.gethostname():

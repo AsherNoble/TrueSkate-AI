@@ -510,3 +510,35 @@ waits a further `pop_wait_s` = 0.12 s with no guard; the full guard runs
 immediately before the push. All gameplay strokes are now uninstrumented direct
 records. Calibration, resets and controls remain instrumented W3C requests. The
 unused W3C push builder was removed. Trials 01–20 used the 20 ms push.
+
+## Recipe approval and repeatability procedure — 2026-10-09
+
+**Trial 21** (`1996b27d`, `candidate_19`: filmed push, filmed pop,
+arc-then-outward flick, filmed catch; flick 0.326 s after the pop) landed a
+**KICKFLIP**. The board was doing 6 mph into the pop, against 4 mph with the 20 ms
+push. The operator judged it satisfactory for the experiment ("mine is better as a
+kickflip") and chose to **approve on trial 21 alone**.
+
+The gate gains an explicit operator override. `preview --operator-minimum 1
+--override-reason '…'` reviews the first attempt(s) of the **identical sealed
+recipe** (same candidate SHA-256), including preserved predecessor attempts. It
+requires every such attempt to be assessed and every selected attempt to be a
+landed KICKFLIP. The minimum and reason are sealed into `review.json`, and approval
+re-checks that the reviewed attempts are still the first qualifying ones. The
+default gate (three attempts, at least two landed kickflips, current setup only)
+is unchanged.
+
+The repeats use `run-repeatability --defer-admission`. Each recording is admitted
+afterwards with identical code off the rig and copied back. Live guards, the
+tunnel and zero-attachment check, and stopping without replacement are unchanged.
+Game scores are ignored as outcome measures: the operator reports that repeated
+tricks are scored progressively lower.
+
+The report adds **divergence curves**. Each admitted repeat is aligned once at its
+push video start with the first admitted repeat, and the metric is the mean
+absolute masked grayscale difference (104×224, HUD masked) over push −0.5 to
++4 s at native PTS. Onset is the first sustained exceedance of
+max(3 × floor, floor + 2) after the push, where the floor is the pre-push 95th
+percentile. A per-repeat table relates outcome and onset to the measured
+push→pop, pop→flick and flick→catch submission gaps. A smoke test on trials 20
+and 21 (different pushes) gave a floor of 0.05 and onset at the push.
