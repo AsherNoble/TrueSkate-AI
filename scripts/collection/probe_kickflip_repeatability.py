@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import socket
 import subprocess
 import sys
@@ -33,7 +34,7 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
         if existing:
             raise ValueError('repeatability batch already started; no automatic retry/replacement')
     else:
-        if (root / 'approval.json').exists() or len(experiment.setup_trials(root)) >= experiment.SETUP_LIMIT:
+        if (root / 'approval.json').exists() or experiment.setup_attempt_count(root) >= experiment.SETUP_LIMIT:
             raise ValueError('setup is frozen or has reached its attempt limit')
         candidate = next((c for c in manifest['candidates'] if c['id'] == candidate_id), None)
         if candidate is None:
@@ -96,6 +97,11 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
         actual_udid = driver.capabilities.get('udid') or driver.capabilities.get('appium:udid')
         if actual_udid != os.environ['IPHONE_XR_UDID']:
             raise RuntimeError('Appium session does not confirm configured XR1 UDID')
+        def timing_preflight():
+            metadata = _http_json(base + '/session/' + owned_wda_session + '/wda/actionTiming').get('value')
+            if not isinstance(metadata, dict) or metadata.get('schema_version') != 1 or metadata.get('build_revision') != manifest['wda_revision'] or metadata.get('enabled'):
+                raise RuntimeError('instrumented WDA identity/idle check failed before attempt reservation')
+        timing_preflight()
         def screenshot():
             return base64.b64decode(_http_json(base + '/screenshot')['value'])
         def guard():
@@ -150,6 +156,7 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
                 actual_udid = driver.capabilities.get('udid') or driver.capabilities.get('appium:udid')
                 if actual_udid != os.environ['IPHONE_XR_UDID']:
                     raise RuntimeError('reconnected Appium session does not confirm configured XR1 UDID')
+                timing_preflight()
         print('run complete; all requested recordings retrieved', flush=True)
     except BaseException as exc:
         if trial is not None and not (trial / 'live-failure.json').exists():
@@ -163,7 +170,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, required=True, help='absolute isolated experiment output directory')
     sub = parser.add_subparsers(dest='command', required=True)
-    sub.add_parser('prepare')
+    preparation = sub.add_parser('prepare')
+    preparation.add_argument('--previous-setup', type=Path, help='preserve only pre-recording failures and carry their setup budget into a new manifest')
     for name in ('run-setup', 'run-repeatability'):
         command = sub.add_parser(name)
         if name == 'run-setup':
@@ -191,8 +199,16 @@ def main():
         parser.error('--root must be absolute')
     root = args.root
     if args.command == 'prepare':
+        if args.previous_setup is not None and not args.previous_setup.is_absolute():
+            parser.error('--previous-setup must be absolute')
+        manifest = experiment.prepare_manifest(REPO, args.previous_setup)
         root.mkdir(parents=True, exist_ok=False)
-        save_new(root / 'manifest.json', experiment.prepare_manifest(REPO))
+        if args.previous_setup is not None:
+            shutil.copytree(args.previous_setup, root / 'history/predecessor')
+            if (args.previous_setup / 'context.json').exists():
+                shutil.copyfile(args.previous_setup / 'context.json', root / 'context.json')
+        save_new(root / 'manifest.json', manifest)
+        experiment.load_manifest(root)
         print(root / 'manifest.json')
     elif args.command.startswith('run-'):
         live_batch(root, candidate_id=getattr(args, 'candidate', None),
@@ -225,7 +241,7 @@ def main():
         print(args.out)
     else:
         manifest = experiment.load_manifest(root)
-        print(json.dumps(dict(setup_attempts=len(experiment.setup_trials(root)), setup_limit=experiment.SETUP_LIMIT,
+        print(json.dumps(dict(setup_attempts=experiment.setup_attempt_count(root), setup_limit=experiment.SETUP_LIMIT,
             review_approved=(root / 'approval.json').exists(), candidates=[dict(id=c['id'], seed=c['seed'],
             durations_s=[g['encoded_duration_s'] for g in c['contacts']], gap_s=c['pop_to_flick_gap_s'])
             for c in manifest['candidates']], repeats=experiment.report(root)), indent=2))

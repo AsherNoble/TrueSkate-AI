@@ -98,7 +98,7 @@ def contact_payload(name, points, duration_s, easing_power=1.):
                 easing_power=easing_power, payload=payload, payload_sha256=digest(payload))
 
 
-def prepare_manifest(repo):
+def prepare_manifest(repo, previous_setup=None):
     repo = Path(repo)
     recipes = []
     for name, relative, key, gap_override in SEEDS:
@@ -128,18 +128,44 @@ def prepare_manifest(repo):
                 training_admission=False)))
         except ValueError as exc:
             rejected.append(dict(id=candidate_id, error=str(exc)))
+    history, spent = None, 0
+    if previous_setup is not None:
+        previous_setup = Path(previous_setup)
+        previous = load_manifest(previous_setup)
+        if (previous_setup / 'approval.json').exists() or list((previous_setup / 'repeats').glob('trial_*')):
+            raise ValueError('reviewed or repeatability runs cannot migrate')
+        if previous['experiment'] != EXPERIMENT or previous['wda_revision'] != WDA_REVISION or [c['sha256'] for c in previous['candidates']] != [c['sha256'] for c in candidates]:
+            raise ValueError('predecessor procedure changed')
+        for trial in setup_trials(previous_setup):
+            execution = read_json(trial / 'execution.json')
+            if not execution.get('error') or execution.get('events') or execution.get('video') is not None or (trial / 'original.mov').exists():
+                raise ValueError('only failures before recording/gameplay can migrate')
+        spent = setup_attempt_count(previous_setup)
+        history = dict(source_root=str(previous_setup), manifest_sha256=previous['sha256'],
+            attempts=spent, classification='failed before recording/gameplay; retained, not trick outcomes',
+            files={str(Path('history/predecessor') / p.relative_to(previous_setup)): file_sha(p)
+                   for p in previous_setup.rglob('*') if p.is_file()})
     return seal(dict(experiment=EXPERIMENT, device='iPhone_XR', park='Workshop', size=list(SIZE),
         fps=FPS, wda_revision=WDA_REVISION, setup_limit=SETUP_LIMIT, repeats=REPEATS,
         push_post_response_wait_s=.48, candidates=candidates, rejected=rejected,
         calibration='centre controls at 1/30/57 seconds; start/end fit; held-out middle',
         implementation_hashes={p: file_sha(repo / p) for p in IMPLEMENTATION_PATHS},
-        controls_reset_before=True, training_admission=False))
+        controls_reset_before=True, prior_setup_attempts=spent, prior_setup=history, training_admission=False))
 
 
 def load_manifest(root):
     manifest = verify_seal(read_json(Path(root) / 'manifest.json'))
     for candidate in manifest['candidates']:
         verify_seal(candidate)
+    history = manifest.get('prior_setup')
+    if history:
+        if history['attempts'] != manifest['prior_setup_attempts']:
+            raise ValueError('predecessor budget mismatch')
+        for relative, expected in history['files'].items():
+            path = (Path(root) / relative).resolve()
+            path.relative_to(Path(root).resolve() / 'history/predecessor')
+            if file_sha(path) != expected:
+                raise ValueError('predecessor evidence changed')
     return manifest
 
 
@@ -153,20 +179,25 @@ def setup_trials(root):
     return sorted((Path(root) / 'setup').glob('trial_*'))
 
 
+def setup_attempt_count(root):
+    return load_manifest(root).get('prior_setup_attempts', 0) + len(setup_trials(root))
+
+
 def reserve_setup(root, candidate_id):
     root = Path(root)
     manifest = load_manifest(root)
     if (root / 'approval.json').exists():
         raise ValueError('setup is frozen after review approval')
     trials = setup_trials(root)
-    if len(trials) >= SETUP_LIMIT:
+    spent = manifest.get('prior_setup_attempts', 0) + len(trials)
+    if spent >= SETUP_LIMIT:
         raise ValueError('24-attempt setup limit reached; operator steering required')
     if any(not (p / 'admission.json').exists() or not read_json(p / 'admission.json')['accepted'] for p in trials):
         raise ValueError('a technical failure or unvalidated attempt requires resolution; no replacement')
     candidate = next((c for c in manifest['candidates'] if c['id'] == candidate_id), None)
     if candidate is None:
         raise ValueError('unknown candidate')
-    trial = root / 'setup' / f'trial_{len(trials) + 1:02d}'
+    trial = root / 'setup' / f'trial_{spent + 1:02d}'
     trial.mkdir(parents=True, exist_ok=False)  # Reservation counts even a failed start.
     save_new(trial / 'reservation.json', dict(candidate_id=candidate_id, candidate_sha256=candidate['sha256']))
     return trial, candidate

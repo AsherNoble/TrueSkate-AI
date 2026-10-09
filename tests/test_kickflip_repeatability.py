@@ -331,6 +331,8 @@ def test_live_batch_is_exactly_twenty_and_stops_without_replacement(experiment, 
         def _active_bundle_id(self):
             return device.BUNDLE_ID
     def http(url):
+        if url.endswith('/wda/actionTiming'):
+            return dict(value=dict(schema_version=1, build_revision=module.WDA_REVISION, enabled=False))
         if url.endswith('/appium/sessions'):
             return dict(value=[dict(id='synthetic-appium')] if len(connections) > len(runs) else [])
         if url.endswith('/status'):
@@ -389,3 +391,35 @@ def test_screenshot_guard_latency_is_reserved_before_submission(tmp_path, monkey
         revision='synthetic', context={}, clock=clock, sleep=clock.sleep, epoch=clock)
     events = module.read_json(tmp_path / 'execution.json')['events']
     assert all(e['lateness_s'] == pytest.approx(0.) for e in events)
+
+
+def test_pre_recording_failure_history_preserves_budget_and_evidence(experiment, tmp_path):
+    import shutil
+    trial = experiment / 'setup/trial_01'
+    trial.mkdir(parents=True)
+    save_new(trial / 'reservation.json', dict(candidate_id='candidate_01'))
+    save_new(trial / 'execution.json', dict(error='identity mismatch', events=[], video=None))
+    successor = tmp_path / 'successor'
+    manifest = module.prepare_manifest(REPO, experiment)
+    assert manifest['prior_setup_attempts'] == 1
+    shutil.copytree(experiment, successor / 'history/predecessor')
+    save_new(successor / 'manifest.json', manifest)
+    assert module.setup_attempt_count(successor) == 1
+    reserved, _ = module.reserve_setup(successor, 'candidate_01')
+    assert reserved.name == 'trial_02'
+    assert module.setup_attempt_count(successor) == 2
+    (successor / 'history/predecessor/setup/trial_01/execution.json').write_text('{}')
+    with pytest.raises(ValueError, match='predecessor evidence changed'):
+        module.load_manifest(successor)
+
+
+@pytest.mark.parametrize('partial', ['video', 'actions', 'approval'])
+def test_migration_cannot_bypass_recorded_or_reviewed_failures(experiment, partial):
+    trial = experiment / 'setup/trial_01'
+    trial.mkdir(parents=True)
+    save_new(trial / 'execution.json', dict(error='failure',
+        events=[{}] if partial == 'actions' else [], video={} if partial == 'video' else None))
+    if partial == 'approval':
+        save_new(experiment / 'approval.json', {})
+    with pytest.raises(ValueError, match='cannot migrate|only failures'):
+        module.prepare_manifest(REPO, experiment)
