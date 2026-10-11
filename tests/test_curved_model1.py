@@ -318,6 +318,24 @@ def test_cloud_budget_rejects_before_importing_modal():
     assert module.approved_seconds("benchmark", 2, 900) == 900
 
 
+def test_modal_definition_builds_without_starting_remote_work(monkeypatch):
+    import contextlib
+    import modal
+    from types import SimpleNamespace
+    path = Path(__file__).parents[1]/"scripts/model1/curved_modal.py"
+    spec = importlib.util.spec_from_file_location("curved_modal_definition", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    @contextlib.contextmanager
+    def blocked(*args, **kwargs):
+        raise RuntimeError("remote work blocked by test")
+        yield
+    monkeypatch.setattr(modal.App, "run", blocked)
+    with pytest.raises(RuntimeError, match="remote work blocked by test"):
+        module.execute(SimpleNamespace(command="benchmark", approved_budget_usd=2,
+                       max_seconds=900, run="synthetic", bundle_hash="a"*64, resume=False))
+
+
 def test_extract_native_recording_and_reject_menu(tmp_path, monkeypatch):
     from trueskate_ai.collection.tap_timing_calibration import TwoAnchorTimingFit
     source = tmp_path/"recording"
