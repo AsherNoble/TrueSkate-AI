@@ -15,14 +15,21 @@ from urllib.request import urlopen
 from .contract import Gesture, SAMPLERS, save_json
 from .ledger import pipeline_fingerprint
 
-SLOTS = (5, 10, 15, 20, 24, 35, 40, 45, 49, 52)
+# Live rounds 3–5 measured screenshot preparation at 0.63–1.24 s and touch calls
+# lasting up to 1.22 s beyond the gesture. A slot must fit the previous call, its
+# foreground check, preparation and the pre-touch check: 4.25 s after a sample
+# (≤1.2 s gesture), 3 s after a 50 ms control/reset. Ten samples per minute.
+SLOTS = (4.75, 9, 13.25, 17.5, 21.75, 32.25, 36.5, 40.75, 45, 49.25)
+CONTROL_SLOTS = (("start", 1.5), ("middle", 29), ("end", 57))
+RESET_SLOTS = (26, 53.5)
+PREPARE_LEAD_S = 1.75
 
 
 def commands_for(ledger, session_id):
     from trueskate_ai.research.curved_audit import marker_payload, reset_payload
     commands = [dict(kind="control", role=role, slot_s=slot, payload=marker_payload())
-                for role, slot in (("start", 1.5), ("middle", 30), ("end", 58))]
-    commands += [dict(kind="reset", slot_s=slot, payload=reset_payload()) for slot in (27, 55)]
+                for role, slot in CONTROL_SLOTS]
+    commands += [dict(kind="reset", slot_s=slot, payload=reset_payload()) for slot in RESET_SLOTS]
     candidates = []
     try:
         for slot in SLOTS:
@@ -147,7 +154,7 @@ def collect(ledger, *, session_id, park, device, revision, max_minutes, env_file
                 run_recording(recorder=XCTestScreenRecorder(driver, fps=60),
                               timing=WDAActionTimingCapture(wda_port=cfg["wda_port"], expected_revision=revision),
                               commands=commands, perform=perform, guard=guard, out=out,
-                              prepare=lambda spec: gameplay(), prepare_lead_s=1.25, guard_lead_s=.25,
+                              prepare=lambda spec: gameplay(), prepare_lead_s=PREPARE_LEAD_S, guard_lead_s=.25,
                               revision=revision,
                               metadata=dict(schema="model1_curved_v1", seed=ledger.definition["seed"],
                                             session=session_id, device=device, park=park,

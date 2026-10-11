@@ -455,3 +455,20 @@ def test_selection_uses_all_park_quotas_and_whole_sessions(tmp_path, monkeypatch
     for row in result["samples"]:
         session_splits.setdefault(row["session"], set()).add(row["split"])
     assert all(len(splits) == 1 for splits in session_splits.values())
+
+
+def test_minute_schedule_budgets_measured_live_overheads():
+    from trueskate_ai.model1.curved import collection
+    from trueskate_ai.model1.curved.contract import MAX_DURATION_MS
+    rows = sorted([(s, "sample") for s in collection.SLOTS]
+                  + [(s, "control") for _, s in collection.CONTROL_SLOTS]
+                  + [(s, "reset") for s in collection.RESET_SLOTS])
+    assert len(collection.SLOTS) == 10 and rows[-1][0] < 59
+    starts = dict(collection.CONTROL_SLOTS)
+    assert starts["end"]-starts["start"] >= 55
+    # Worst live values: 1.22 s call overhead, 0.2 s foreground query, 1.24 s preparation.
+    overhead, query, preparation = 1.22, .2, 1.24
+    for (slot, kind), (following, _) in zip(rows, rows[1:]):
+        contact = MAX_DURATION_MS/1000 if kind == "sample" else .05
+        ready = max(slot+contact+overhead+query, following-collection.PREPARE_LEAD_S)
+        assert ready+preparation+query <= following, (slot, following)
