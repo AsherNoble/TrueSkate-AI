@@ -4,10 +4,12 @@ Updated 2026-10-11. Behavioural cloning is the development direction.
 
 ## Model 1
 
-Curved collection/audit/training is implemented in an additive namespace and is
-under offline verification. The agreed gate is ≥95/100 human-reviewed clips,
+Curved collection/audit/training is implemented in an additive namespace, with
+offline checks passing. The initial Inbound recording stopped at the final
+marker deadline; screenshot preparation is being moved ahead of touch slots
+for a fresh second round. The agreed gate is ≥95/100 human-reviewed clips,
 at most five rounds, then a separate 14,000-clip pool and seeded 12,500 selection
-across five parks, with a global 20,000-dispatch ceiling. No live curved
+across five parks, with a global 20,000-dispatch ceiling. No passing curved
 qualification or trained curved result is claimed. See
 [M1-CURVED-20261011](experiments/M1-CURVED-20261011.md) and the
 [current protocol](protocols/model1_curved_collection_v1.md).
