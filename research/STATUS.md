@@ -5,14 +5,15 @@ Updated 2026-10-11. Behavioural cloning is the development direction.
 ## Model 1
 
 Curved collection/audit/training is implemented in an additive namespace, with
-offline checks passing. Four Inbound rounds failed technically before review:
-two scheduler-overhead deadline misses; a clean minute admitting 2/10 because
-the idle navigation bar's slide tripped the menu detector and clip encoding
-snapped native 15 ms intervals to a 1/60 s grid; then 8/10 admitted before
-Appium's 60 s idle timeout ended the session during extraction. The operator
-allowed the idle-navigation signature and only reviewed rounds now count toward
-five; encodes keep the source time base, the collector holds its Appium session
-and clip checks run in parallel (3x on the rig). 32 dispatches spent; round 5 next.
+offline checks passing. Five Inbound rounds failed technically before review:
+scheduler-overhead deadline misses (rounds 1, 2 and 5); a clean minute admitting
+2/10 because the idle navigation bar's slide tripped the menu detector and clip
+encoding snapped native 15 ms intervals to a 1/60 s grid; then 8/10 admitted
+before Appium's 60 s idle timeout ended the session during extraction. The
+operator allowed the idle-navigation signature and only reviewed rounds now
+count toward five; encodes keep the source time base, the collector holds its
+Appium session, clip checks run in parallel (3x on the rig) and the minute is
+spaced for measured worst-case overheads. 39 dispatches spent; round 6 next.
 The agreed gate is ≥95/100 human-reviewed clips,
 at most five reviewed rounds, then a separate 14,000-clip pool and seeded 12,500 selection
 across five parks, with a global 20,000-dispatch ceiling. No passing curved
