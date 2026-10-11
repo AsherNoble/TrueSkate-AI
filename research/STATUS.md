@@ -5,12 +5,14 @@ Updated 2026-10-11. Behavioural cloning is the development direction.
 ## Model 1
 
 Curved collection/audit/training is implemented in an additive namespace, with
-offline checks passing. Two Inbound attempts exposed scheduler overhead: first
-screenshot work, then the foreground query consumed the touch deadline. Both
-failed rounds are preserved (12 candidate dispatches, zero admitted clips).
-The same checks now run just ahead of the touch slots for fresh round 3.
+offline checks passing. Three Inbound rounds failed technically before review:
+two scheduler-overhead deadline misses, then a clean minute admitting 2/10
+because the idle navigation bar's slide tripped the menu detector and clip
+encoding snapped native 15 ms intervals to a 1/60 s grid. The operator allowed
+the idle-navigation signature and only reviewed rounds now count toward five;
+the encoder keeps the source time base. 22 dispatches spent; fresh round 4 next.
 The agreed gate is ≥95/100 human-reviewed clips,
-at most five rounds, then a separate 14,000-clip pool and seeded 12,500 selection
+at most five reviewed rounds, then a separate 14,000-clip pool and seeded 12,500 selection
 across five parks, with a global 20,000-dispatch ceiling. No passing curved
 qualification or trained curved result is claimed. See
 [M1-CURVED-20261011](experiments/M1-CURVED-20261011.md) and the

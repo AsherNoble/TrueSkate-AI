@@ -57,7 +57,9 @@ Complete, verified sample evidence can recover an admission. To reject unresolve
 outcomes and cancel unexecuted plans without ever replaying the commands, rerun
 with `--abandon-unresolved`. This preserves spent attempts. To declare a failed
 technical round, use `fail-audit --reason '<diagnosis>'`; after a fix, start the
-next round with `start-audit`. Every failed round counts towards the total five.
+next round with `start-audit`. Only rounds whose 100 clips received a human
+verdict count towards the total five; `status` reports `reviewed_rounds`.
+Technical failures still require a revised pipeline before the next round.
 
 ## Audit and qualification
 

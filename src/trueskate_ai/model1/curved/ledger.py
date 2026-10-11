@@ -114,8 +114,8 @@ class Ledger:
                     raise ValueError("finish current audit before changing its pipeline")
                 return row["number"]
             number = 1 if row is None else row["number"]+1
-            if number > 5:
-                raise ValueError("five audit rounds failed; redesign required")
+            if self.reviewed_rounds() >= 5:
+                raise ValueError("five reviewed audit rounds failed; redesign required")
             if row and row["fingerprint"] == fingerprint:
                 raise ValueError("failed audit requires diagnosis and a revised pipeline")
             self.db.execute("INSERT INTO rounds VALUES(?,?,'collecting',NULL,NULL)",
@@ -329,8 +329,18 @@ class Ledger:
                                                  audit_sha256=manifest["sha256"])),))
         return result
 
+    def reviewed_rounds(self) -> int:
+        """Rounds whose 100 clips received a human verdict; only these count toward five.
+
+        Operator decision 2026-10-11: technical failures before review are sealed and
+        still require a revised pipeline, but the 20,000-attempt ceiling bounds them.
+        """
+        return sum(1 for r in self.db.execute(
+            "SELECT review_json FROM rounds WHERE status IN ('passed','failed')")
+            if r[0] and "score" in json.loads(r[0]))
+
     def fail_round(self, reason: str):
-        """A technical failure consumes a round too; no unlimited pilot restart loophole."""
+        """Seal a technical failure; it needs a revised pipeline but not a review round."""
         if not reason.strip():
             raise ValueError("diagnosis required")
         with self.db:
@@ -349,5 +359,6 @@ class Ledger:
                     attempts_remaining=self.definition["attempt_limit"]-self.spent,
                     qualified=self.get("qualified"),
                     rounds=[dict(r) for r in self.db.execute("SELECT number,status,fingerprint FROM rounds")],
+                    reviewed_rounds=self.reviewed_rounds(),
                     admitted=len(self.admitted()),
                     sessions=[dict(s, admitted=len(self.admitted(s["id"]))) for s in self.sessions()])

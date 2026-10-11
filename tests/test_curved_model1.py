@@ -35,7 +35,8 @@ def meta_for(gesture=None, **extra):
                 onset_s=.3, release_s=.3+gesture.times_ms[-1]/1000,
                 frame_times_s=times, source_frame_pts_s=times, source_frame_numbers=list(range(120)),
                 source_recording_id="recording-1", calibration=dict(accepted=True),
-                admission=dict(accepted=True, frame_count=120, menu_checked_frames=120, native_frame_selection=True),
+                admission=dict(accepted=True, frame_count=120, menu_checked_frames=120, native_frame_selection=True,
+                               menu_policy=capture.MENU_POLICY),
                 **extra)
 
 
@@ -110,11 +111,19 @@ def test_budget_persists_after_unknown_dispatch_and_rounds_are_bounded(tmp_path)
     ledger.fail_round("technical failure")
     with pytest.raises(ValueError, match="revised pipeline"):
         ledger.start_round("v1")
-    for number in range(2, 6):
+    # Technical failures need a revised pipeline but do not consume review rounds.
+    for number in range(2, 5):
         assert ledger.start_round(f"v{number}") == number
-        ledger.fail_round("failed")
-    with pytest.raises(ValueError, match="five audit"):
-        ledger.start_round("v6")
+        ledger.fail_round("technical failure")
+    assert ledger.reviewed_rounds() == 0
+    for number in range(5, 10):
+        assert ledger.start_round(f"v{number}") == number
+        ledger.db.execute("UPDATE rounds SET status='failed',review_json=? WHERE number=?",
+                          (json.dumps(dict(report={}, score=dict(passed=False))), number))
+        ledger.db.commit()
+    assert ledger.reviewed_rounds() == 5
+    with pytest.raises(ValueError, match="five reviewed audit"):
+        ledger.start_round("v10")
     ledger.close()
 
 
@@ -351,7 +360,8 @@ def test_extract_native_recording_and_reject_menu(tmp_path, monkeypatch):
     monkeypatch.setattr(capture, "calibrate_recording", lambda *_: (
         planned, records, pts, TwoAnchorTimingFit(0, 1, 57), dict(accepted=True)))
     monkeypatch.setattr(capture, "is_editor_frame", lambda rgb: False)
-    monkeypatch.setattr(capture, "is_menu_frame", lambda rgb: False)
+    # Only the idle-navigation signature: admitted under the curved menu policy.
+    monkeypatch.setattr(capture, "is_menu_frame", lambda rgb, allow_idle_navigation=False: not allow_idle_navigation)
     class EvidenceLedger:
         def __init__(self): self.rows = {}
         def session(self, _): return dict(id="s", park="synthetic", phase="audit", split=None)
@@ -368,9 +378,43 @@ def test_extract_native_recording_and_reject_menu(tmp_path, monkeypatch):
     second = tmp_path/"menu-recording"
     second.mkdir()
     shutil.copy2(source/"original.mov", second/"original.mov")
-    monkeypatch.setattr(capture, "is_menu_frame", lambda rgb: True)
+    monkeypatch.setattr(capture, "is_menu_frame", lambda rgb, allow_idle_navigation=False: True)
     assert capture.extract_recording(second, ledger, revision="synthetic") == []
     assert all(path is None and "menu" in reason for path, reason in ledger.rows.values())
+
+
+def test_extract_preserves_irregular_native_intervals(tmp_path, monkeypatch):
+    """A native 15 ms interval must survive encoding (live round 3 regression)."""
+    from trueskate_ai.collection.tap_timing_calibration import TwoAnchorTimingFit
+    source = tmp_path/"recording"
+    source.mkdir()
+    # 1/600 time base like XCTest; frame 200 arrives one tick early, so 15 ms then 16.67 ms.
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=s=32x64:r=60",
+                    "-frames:v", "600", "-vf", "settb=1/600,setpts=N*10-gte(N\\,200)",
+                    "-fps_mode", "passthrough", "-enc_time_base", "1:600", "-video_track_timescale", "600",
+                    "-c:v", "libx264", "-threads", "1", str(source/"original.mov")], check=True)
+    pts = capture.probe_pts(source/"original.mov")
+    assert np.isclose(np.diff(pts)[199], .015)
+    assert capture.source_time_base(source/"original.mov") == "1:600"
+    gesture = Gesture(((.5, .4), (.6, .6)), (0, 600), "arc")
+    planned = dict(commands=[dict(kind="sample", candidate_id=1, gesture=gesture.to_dict())],
+                   seed=12, session="s", device="synthetic", fingerprint="p", waypoint=1, settings_note="synthetic")
+    records = [dict(submitted_to_ios=dict(monotonic_s=3.))]
+    monkeypatch.setattr(capture, "calibrate_recording", lambda *_: (
+        planned, records, pts, TwoAnchorTimingFit(0, 1, 57), dict(accepted=True)))
+    monkeypatch.setattr(capture, "is_editor_frame", lambda rgb: False)
+    monkeypatch.setattr(capture, "is_menu_frame", lambda rgb, allow_idle_navigation=False: False)
+    class EvidenceLedger:
+        def __init__(self): self.rows = {}
+        def session(self, _): return dict(id="s", park="synthetic", phase="audit", split=None)
+        def settle(self, identity, *, sample_path=None, reason=None):
+            self.rows[identity] = (sample_path, reason)
+    ledger = EvidenceLedger()
+    (folder,) = capture.extract_recording(source, ledger, revision="synthetic")
+    meta = capture.verify_sample(folder)
+    numbers = meta["source_frame_numbers"]
+    assert numbers[0] < 200 <= numbers[-1]
+    assert ledger.rows[1] == (folder, None)
 
 
 def test_selection_uses_all_park_quotas_and_whole_sessions(tmp_path, monkeypatch):

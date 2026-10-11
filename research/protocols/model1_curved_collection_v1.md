@@ -48,9 +48,12 @@ Each qualification round contains 100 fresh automatically admitted clips:
 20 per park, ten from each sampler in each park. Human review passes a round at
 **at least 95/100 meet-spec**, with no gross or systematic defect. Failures and
 unclear judgements do not pass. A failed round requires a diagnosed fix and a
-new pipeline fingerprint before another fresh 100. There are **five rounds
-total**, initial included. A technical abort explicitly declared a failed round
-also consumes one round. Five failures stop the program for redesign.
+new pipeline fingerprint before another fresh 100. There are **five reviewed
+rounds total**, initial included. A technical abort declared before human
+review is sealed and still needs a diagnosed fix and new fingerprint, but does
+not consume a reviewed round; the global attempt ceiling bounds those restarts
+(operator decision 2026-10-11). Five reviewed failures stop the program for
+redesign.
 
 Once qualified, freeze that pipeline and collect a separate **14,000 admitted
 production clips**, 2,800 per park. Pilot clips are excluded. Select a seeded
@@ -97,7 +100,13 @@ provenance. Never shift an individual gesture until its overlay looks right.
 
 Keep foreground, menu/editor, root and per-device RemoteXPC tunnel, empty
 attachment and disk-space guards. Check every candidate clip frame for menu
-contamination. Stop the invocation on its first recorder/calibration failure.
+and editor contamination. The neutral five-button idle navigation bar overlays
+live gameplay and slides away about 200 ms after touch-down; both the pre-touch
+guard and clip admission allow that signature only (`allow_idle_navigation`,
+operator decision 2026-10-11). Replay/menu colour, editor and foreground
+checks are unchanged. Clip encodes keep the source stream time base so native
+PTS survive irregular intervals. Stop the invocation on its first
+recorder/calibration failure.
 Never restart healthy WDA, weaken admission or silently clean preserved evidence.
 Every live invocation is one explicit park/session and 1–28 recorded minutes;
 it stops earlier when its quota or global budget is reached. There are no

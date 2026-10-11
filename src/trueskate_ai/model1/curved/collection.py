@@ -117,7 +117,8 @@ def collect(ledger, *, session_id, park, device, revision, max_minutes, env_file
         def gameplay():
             guard()
             png = driver.get_screenshot_as_png()
-            if is_menu_frame(png) or is_editor_frame(png):
+            # Idle navigation overlays usable gameplay (operator decision 2026-10-11).
+            if is_menu_frame(png, allow_idle_navigation=True) or is_editor_frame(png):
                 raise RuntimeError("menu/editor detected before touch")
             guard()
 
