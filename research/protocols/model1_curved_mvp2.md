@@ -1,5 +1,10 @@
 # Model 1 MVP 2.0 — arbitrary single-drag recovery
 
+**Historical design record.** The agreed 2026-10-11
+[collection → audit → training protocol](model1_curved_collection_v1.md)
+supersedes the provisional cap, timing, sampling and qualification decisions
+below. This record preserves the earlier discussion.
+
 Operator requirements recorded 2026-10-03. This is a design record, not a
 collection/training launch or a frozen workload.
 

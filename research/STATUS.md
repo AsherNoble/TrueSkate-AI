@@ -1,8 +1,16 @@
 # Current research status
 
-Updated 2026-10-09. Behavioural cloning is the development direction.
+Updated 2026-10-11. Behavioural cloning is the development direction.
 
 ## Model 1
+
+Curved collection/audit/training is implemented in an additive namespace and is
+under offline verification. The agreed gate is ≥95/100 human-reviewed clips,
+at most five rounds, then a separate 14,000-clip pool and seeded 12,500 selection
+across five parks, with a global 20,000-dispatch ceiling. No live curved
+qualification or trained curved result is claimed. See
+[M1-CURVED-20261011](experiments/M1-CURVED-20261011.md) and the
+[current protocol](protocols/model1_curved_collection_v1.md).
 
 Current work is calibrated linear clip regression and scaling. The current
 best is **91.04%** test recovery: the 64×144 input, seed 2, trained on

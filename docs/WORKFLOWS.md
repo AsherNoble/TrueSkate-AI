@@ -10,6 +10,7 @@ to test a refactor. `--help` on each entrypoint describes its existing flags.
 | Offline segment alignment | Supported | `scripts/collection/align_xctest_traces.py` |
 | MJPEG self-labelled capture | Experimental | `scripts/collection/collect_self_labeled_traces.py` |
 | Linear training | Current | `scripts/model1/train_basic_linear_regressor.py` |
+| Curved collection, qualification and training | Implemented; live qualification pending | `scripts/collection/curved_model1.py`, `scripts/model1/train_curved_model1.py` ([operations](CURVED_MODEL1.md)) |
 | Hold training | Experimental | `scripts/model1/train_basic_hold_regressor.py` |
 | Per-frame heatmap training | Experimental | `scripts/model1/train_trace_extractor.py` |
 | Recurrent temporal training | Experimental | `scripts/model1/train_temporal_trace_extractor.py` |
