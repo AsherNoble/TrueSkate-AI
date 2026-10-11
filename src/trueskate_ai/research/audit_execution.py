@@ -20,13 +20,15 @@ def deadline_sleep(seconds):
 
 def run_recording(*, recorder, timing, commands, perform, guard, out,
                   revision, metadata, clock=time.monotonic, sleep=deadline_sleep,
-                  epoch=time.time, prepare=None, prepare_lead_s=1.25):
+                  epoch=time.time, prepare=None, prepare_lead_s=1.25, guard_lead_s=0.):
     """Run one fixed minute; stop on first failure and retain complete/partial evidence."""
     slots = [c['slot_s'] for c in commands]
     if not slots or any(type(s) not in (int, float) or not math.isfinite(s) or not 0 <= s < 59 for s in slots) or any(b <= a for a, b in zip(slots, slots[1:])):
         raise ValueError('ordered commands inside the one-minute recording required')
     if not math.isfinite(prepare_lead_s) or prepare_lead_s < 0:
         raise ValueError('finite nonnegative preparation lead required')
+    if not math.isfinite(guard_lead_s) or not 0 <= guard_lead_s <= .25:
+        raise ValueError('foreground guard lead must be between zero and 250 ms')
     metadata = dict(metadata, wda_revision=revision)
     out = Path(out)
     out.mkdir(parents=True, exist_ok=False)
@@ -57,15 +59,24 @@ def run_recording(*, recorder, timing, commands, perform, guard, out,
                 preparation['preparation_finished_monotonic_s'] = clock()
                 if clock() > target + LATE_S:
                     raise RuntimeError('preparation overrun')
-            sleep(max(0., target-clock()))
+            sleep(max(0., target-guard_lead_s-clock()))
             woke = clock()
-            schedule.append(dict(kind=spec['kind'], slot_s=spec['slot_s'],
-                                 woke_monotonic_s=woke, lateness_s=woke-target, **preparation))
+            scheduled = dict(kind=spec['kind'], slot_s=spec['slot_s'],
+                             woke_monotonic_s=woke, lateness_s=woke-target, **preparation)
+            schedule.append(scheduled)
             if woke > target + LATE_S:
                 raise RuntimeError('sleep overrun')
+            # The read-only query itself takes roughly 80–190 ms on the rig.
+            # Budget it just ahead of the touch without extending its deadline.
+            scheduled['foreground_started_monotonic_s'] = clock()
             guard()
+            scheduled['foreground_finished_monotonic_s'] = clock()
             if clock() > target + LATE_S:
                 raise RuntimeError('schedule overrun after foreground guard')
+            sleep(max(0., target-clock()))
+            scheduled['submission_lateness_s'] = clock()-target
+            if clock() > target + LATE_S:
+                raise RuntimeError('sleep overrun after foreground guard')
             event = dict(spec=spec, payload=spec['payload'], payload_sha256=digest(spec['payload']),
                          success=False, call_start_monotonic_s=clock(), call_start_epoch_s=epoch())
             events.append(event)

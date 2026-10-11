@@ -128,3 +128,39 @@ def test_screenshot_preparation_preserves_final_marker_deadline(tmp_path, monkey
         assert calls==pytest.approx([58.18])  # Initial guard consumes .09 before recording origin.
         assert clock.now==pytest.approx(59.09)
     assert rec.stops==1
+
+
+@pytest.mark.parametrize('guard_seconds', [.08, .185, .30, .36])
+def test_foreground_query_has_budget_before_touch_without_extending_deadline(tmp_path, monkeypatch, guard_seconds):
+    clock=Clock();rec=Recorder();calls=[]
+    monkeypatch.setattr(execution,'validate_action_timing_report',lambda *a,**k:None)
+    args=dict(recorder=rec,timing=Timing(),commands=[dict(kind='control',slot_s=58,payload={})],
+        prepare=lambda spec:clock.sleep(.90),prepare_lead_s=1.25,guard_lead_s=.25,
+        perform=lambda spec:(calls.append(clock()),clock.sleep(.44)),
+        guard=lambda:clock.sleep(guard_seconds),out=tmp_path/'run',revision='fixture',metadata={},
+        clock=clock,sleep=clock.sleep,epoch=clock)
+    if guard_seconds > .35:
+        with pytest.raises(RuntimeError,match='schedule overrun after foreground guard'):
+            execution.run_recording(**args)
+        assert calls==[]
+    else:
+        execution.run_recording(**args)
+        # Origin includes the initial guard; late queries may consume the
+        # existing 100 ms tolerance, but never move the scheduled deadline.
+        assert calls==pytest.approx([guard_seconds+58+max(0,guard_seconds-.25)])
+        assert clock.now==pytest.approx(guard_seconds+59)
+    assert rec.stops==1
+
+
+def test_leading_foreground_guard_still_blocks_changed_app(tmp_path, monkeypatch):
+    clock=Clock();rec=Recorder();calls=[];guards=0
+    monkeypatch.setattr(execution,'validate_action_timing_report',lambda *a,**k:None)
+    def guard():
+        nonlocal guards
+        guards+=1
+        if guards==2:raise RuntimeError('foreground changed')
+    with pytest.raises(RuntimeError,match='foreground changed'):
+        execution.run_recording(recorder=rec,timing=Timing(),commands=[dict(kind='sample',slot_s=5,payload={})],
+            perform=lambda spec:calls.append(spec),guard=guard,guard_lead_s=.25,
+            out=tmp_path/'run',revision='fixture',metadata={},clock=clock,sleep=clock.sleep,epoch=clock)
+    assert not calls and rec.stops==1
