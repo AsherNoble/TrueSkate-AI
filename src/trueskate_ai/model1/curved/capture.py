@@ -1,6 +1,7 @@
 """60 Hz native-frame calibration and exact-index, random-onset extraction."""
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 import hashlib
 import json
@@ -20,6 +21,8 @@ from .contract import FRAME_COUNT, SCHEMA, Gesture, save_json
 # the board idles; replay/menu colour, editor and foreground gates still apply.
 # Operator decision 2026-10-11 (round 3 evidence in M1-CURVED-20261011).
 MENU_POLICY = "allow_idle_navigation"
+# Full-resolution contamination checks dominate extraction on the rig's 4-core i5.
+CHECK_WORKERS = 4
 
 
 def file_sha256(path: Path) -> str:
@@ -184,9 +187,9 @@ def extract_recording(out: Path, ledger, *, revision: str) -> list[Path]:
                  "-threads", "2", str(sample/"clip.mp4")]
     subprocess.run(args, check=True, capture_output=True)
     source_hash = file_sha256(out/"original.mov")
-    admitted = []
-    for index, command, start, sample in jobs:
-        candidate_id = command["candidate_id"]
+
+    def check(job):
+        _, _, start, sample = job
         try:
             clip_pts = probe_pts(sample/"clip.mp4", recording=False)
             if len(clip_pts) != FRAME_COUNT:
@@ -205,6 +208,20 @@ def extract_recording(out: Path, ledger, *, revision: str) -> list[Path]:
             selected_pts = pts[start:start+FRAME_COUNT]
             if not np.allclose(clip_pts-clip_pts[0], selected_pts-selected_pts[0], atol=.001):
                 raise ValueError("encoded clip changed native timestamps")
+            return selected_pts, None
+        except Exception as exc:
+            return None, exc
+
+    # Clip checks are independent and FFmpeg/NumPy release the GIL; the ledger is
+    # still settled in dispatch order from this thread.
+    with ThreadPoolExecutor(max_workers=min(CHECK_WORKERS, len(jobs))) as pool:
+        outcomes = list(pool.map(check, jobs))
+    admitted = []
+    for (index, command, start, sample), (selected_pts, error) in zip(jobs, outcomes):
+        candidate_id = command["candidate_id"]
+        try:
+            if error is not None:
+                raise error
             session = ledger.session(planned["session"])
             meta = dict(schema=SCHEMA, candidate_id=candidate_id,
                         session_id=session["id"], park=session["park"],
