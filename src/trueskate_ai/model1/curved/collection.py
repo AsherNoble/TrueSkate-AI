@@ -108,7 +108,9 @@ def collect(ledger, *, session_id, park, device, revision, max_minutes, env_file
     if _http_json(base+"/wda/video").get("value") is not None:
         raise RuntimeError("recorder is not idle")
     attachment_guard(udid)
-    worker = DeviceSession(cfg)
+    # Each minute's extraction issues no Appium commands for several minutes;
+    # the 60 s default ended the session before minute 2 in rounds 3 and 4.
+    worker = DeviceSession(cfg, new_command_timeout_s=3600)
     try:
         worker.connect()
         driver = worker.driver
