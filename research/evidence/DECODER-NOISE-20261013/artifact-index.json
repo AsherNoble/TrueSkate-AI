@@ -1,0 +1,54 @@
+{
+  "research/evidence/DECODER-NOISE-20261013/PLAN-FROZEN.md": {
+    "bytes": 4057,
+    "sha256": "230f498e8a590422a452c03ae411525628f9ac84b36f4b7d709cea0be70b3185"
+  },
+  "research/evidence/DECODER-NOISE-20261013/REPORT.md": {
+    "bytes": 9827,
+    "sha256": "91d0b460abc60f2ca93d2a9c5638588e5b0203f348c5c2742504ce8ec0850dc9"
+  },
+  "research/evidence/DECODER-NOISE-20261013/cohort-frozen.json": {
+    "bytes": 625,
+    "sha256": "59bc53dd60c9563795282cb3ea93b728c4f377ccdddfddeab75bbeb24de3d5e6"
+  },
+  "research/evidence/DECODER-NOISE-20261013/fixtures.json.gz": {
+    "bytes": 43039,
+    "sha256": "f55de09e452a3190222e086f53ecfdf65667b0a0403ff998ef2ab0f73485f9ff"
+  },
+  "research/evidence/DECODER-NOISE-20261013/paired-results.json.gz": {
+    "bytes": 8998231,
+    "sha256": "da5f637807d0072fb54b21a4a4a72cbbd019ad3079b67ea20b09f21bcda3a7c0"
+  },
+  "research/evidence/DECODER-NOISE-20261013/provenance.json": {
+    "bytes": 2055,
+    "sha256": "f1ea034151238bbbad4bc4d827d8d70407687f702aa8649ca4eab77bde7018bf"
+  },
+  "research/evidence/DECODER-NOISE-20261013/repeat-checks.json": {
+    "bytes": 714,
+    "sha256": "2566843d39d76d461399becad9a8134931eff77e61fbb9ffd659d6c2fd8c627d"
+  },
+  "research/evidence/DECODER-NOISE-20261013/study.py": {
+    "bytes": 15277,
+    "sha256": "cade5452ad7925ac5c56dd9f3339ca2734aa3e5b4a96283075c6fc6e212f2deb"
+  },
+  "research/evidence/DECODER-NOISE-20261013/summary.json": {
+    "bytes": 175127,
+    "sha256": "4696e21affc2cfb83af84c16c29bc1e843b7359b0ff15f67b072d95ac2e51f9f"
+  },
+  "research/evidence/DECODER-NOISE-20261013/validation.json": {
+    "bytes": 407,
+    "sha256": "eb104bc87560856b4a00cad4b92e8f02d900e9cc7378f55489a08a1634973943"
+  },
+  "research/evidence/DECODER-NOISE-20261013/verification.json": {
+    "bytes": 316,
+    "sha256": "54c6c2510934103189f57bfdf60bdbefac866f6e3e241d86047326d62e2cebca"
+  },
+  "research/evidence/DECODER-NOISE-20261013/verify.py": {
+    "bytes": 4402,
+    "sha256": "8e111409e876ca14ba22dddd221ccb338a57144de27f93eb09aadc3e8f8e6046"
+  },
+  "research/experiments/DECODER-NOISE-20261013.md": {
+    "bytes": 2437,
+    "sha256": "606574b39d363f896fecf354256a6a5f839afd8278532855d55274fe3013c086"
+  }
+}

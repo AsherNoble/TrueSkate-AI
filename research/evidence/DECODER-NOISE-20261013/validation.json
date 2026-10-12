@@ -1,0 +1,10 @@
+{
+  "experiment_verifier": "passed:43,200 unique paired cases;120 exact replays;8 repeats",
+  "decoder_unit_test": "1 passed in0.92s",
+  "archive_checker": "Archive integrity passed",
+  "git_diff_check": "passed",
+  "production_source_edits": false,
+  "shared_research_index_edits": false,
+  "physical_or_cloud_operations": false,
+  "primary_admissibility_unchanged_by_quantization_bookkeeping_fix": true
+}
