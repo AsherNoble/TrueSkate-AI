@@ -44,15 +44,18 @@ def score_review(manifest, report):
             gross.append(sample["id"])
         if rating == "meet":
             times = np.asarray(sample["frame_times_s"])
-            for key, target in (("onset_frame", "onset_s"), ("release_frame", "release_s")):
+            # Release marks are optional since 2026-10-12 (operator decision); a supplied one is checked.
+            released = row.get("release_frame") is not None
+            marks = [("onset_frame", "onset_s")] + ([("release_frame", "release_s")] if released else [])
+            for key, target in marks:
                 frame = row.get(key)
                 if type(frame) is not int or not 0 <= frame < len(times):
-                    raise ValueError("passing clips require observed onset and release frame marks")
+                    raise ValueError(f"passing clips require an observed onset frame mark ({key} invalid)")
                 expected = int(np.argmin(abs(times-sample[target])))
                 if abs(frame-expected) > 1:
                     rating = "fail"
                     reason = "observed contact boundary differs by more than one native frame"
-            if row["release_frame"] <= row["onset_frame"]:
+            if released and row["release_frame"] <= row["onset_frame"]:
                 raise ValueError("release must follow onset")
         counts[rating] += 1
         if reason:

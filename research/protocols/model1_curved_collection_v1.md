@@ -120,8 +120,11 @@ The temporary viewer decodes every native frame, displays actual PTS, and shows
 one toggleable hollow target ring of radius ten logical points. A translucent
 logical grid is optional. There are no added zoom controls and no redundant
 orange-contact confirmation. Review the active accessibility cursor when it
-represents contact. Mark first active-contact and first clear-after-release
-frames. Boundaries must agree with the nearest target frame within one frame.
+represents contact. Mark the first active-contact frame; it must agree with the
+nearest target frame within one frame. Amended 2026-10-12 by the operator after
+reviewing round 6: the first clear-after-release mark is optional and the review
+UI no longer offers it; a release mark supplied in an export is still checked.
+"Meet" still requires seeing full intended contact without truncation.
 
 “Meet” also confirms the entire active path follows within 0.03 normalized
 distance, with full intended contact and no extra contact, menu or truncation.
