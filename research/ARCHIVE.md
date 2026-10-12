@@ -166,3 +166,12 @@ To restore a whole historical environment without modifying the active checkout:
 - Paths: [complete journal](https://github.com/AsherNoble/TrueSkate-AI/blob/b5aeca352e8000eb15899937cb63f521c9723f60/research/JOURNAL.md)
 - Recovery: `git show b5aeca352e8000eb15899937cb63f521c9723f60:research/JOURNAL.md`
 - Artifacts: Journal text only; ignored retention and external research artifacts are indexed separately in ARCH-010 through ARCH-017.
+
+## ARCH-019 — Complete journal before the M1-COLAB-20261006 entry
+
+- Description: Complete 30-entry journal before adding the 2026-10-13 M1-COLAB-20261006 entry under the 30-entry cap. Removed dated entry: 2026-09-18 (replacement linear corpus started on XR2).
+- Commit: `5ff12564d6fc50d92686d553867bef85924197af`
+- Tag: `archive/journal-20261013` (peeled GitHub ref verified before trimming).
+- Paths: [complete journal](https://github.com/AsherNoble/TrueSkate-AI/blob/5ff12564d6fc50d92686d553867bef85924197af/research/JOURNAL.md)
+- Recovery: `git show 5ff12564d6fc50d92686d553867bef85924197af:research/JOURNAL.md`
+- Artifacts: Journal text only.

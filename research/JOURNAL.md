@@ -5,6 +5,27 @@ append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
 Put substantial experiments in individual records and current facts in STATUS.
 
 
+## 2026-10-13 — Free Colab reproduces Model 1 training but not Modal's turnaround
+
+- **What ran:** one Model 1 seed on a free Colab T4, with the reference recipe
+  and pins. The frame cache was off, because free Colab's 12.7 GB of RAM cannot
+  hold it.
+- **Matches Modal:** the Modal checkpoint scored 91.25% on Colab, 0.0 pp from
+  its Modal score. Validation over epochs 1–19 averaged −0.08 pp against Modal
+  seed 0. Resuming at epoch 6 on a new VM restored the state exactly.
+- **Slower:** uncached epochs took 943 s, against Modal's 270 s. Colab ended the
+  second session after 4.15 h. With two attempts per UTC day, a 3-seed batch
+  would take about 35 GPU-h over five or more days. The operator stopped the run
+  at 19/40 epochs (5.94 GPU-h).
+- **Effort:** about zero active operator minutes after one-time setup; the agent
+  drove the browser.
+- **Cost comparison:** Modal's L4 list price for three seeds is $12.46, and 39%
+  of that is the 64 GiB memory request. Starter's $30/month credit may cover
+  about two runs a month. Colab's paid L4 could fit the cache for $2–5 of units,
+  but seeds run serially and need a live session. For occasional training,
+  Modal has more pros. The Modal plan and credit balance are still unknown.
+  [M1-COLAB-20261006](experiments/M1-COLAB-20261006.md).
+
 ## 2026-10-03 — Repeated finding: bundled gestures are conjoined
 
 - **Do not bundle sequential gestures into one request.** A replay of an expert
@@ -423,17 +444,3 @@ Put substantial experiments in individual records and current facts in STATUS.
   erroneous `The Workshop` label in all 910 admitted clip records and their
   segment manifests, and renamed 86 park directories to `skateboard_gb_2024`.
   The paused collector was not relaunched.
-
-## 2026-09-18 — Replacement linear corpus started on XR2
-
-- Linear sampling now keeps both the start and end point outside every expanded
-  control hitbox. Intermediate crossings remain provisionally allowed while the
-  path/speed activation rule is deferred for later research.
-- Two isolated one-minute runs passed strict two-anchor admission. A concurrent
-  service launch exposed and fixed a stale screen-recorder binding after Appium
-  session recovery (`b60f19d`). The service supervisor was then unloaded because
-  it conflicts with the separately launched prebuilt WDA stack.
-- XR2 collection started in Skateboard GB 2024 at `b60f19d`, in a new
-  `basic_linear_v2_20260918` corpus, with idle-navigation allowance but all
-  replay/editor and foreground guards retained. The first production segment
-  admitted 10 clips; a strict watcher stops at 1,100. XR1 was unavailable.
