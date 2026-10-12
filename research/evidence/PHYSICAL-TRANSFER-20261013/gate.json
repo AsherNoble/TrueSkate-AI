@@ -1,0 +1,32 @@
+{
+  "experiment": "PHYSICAL-TRANSFER-20261013",
+  "status": "blocked-before-dispatch",
+  "reason": "No separately signed UIKit helper with independently logged touch timestamps is available",
+  "helper_requests": {
+    "planned": 80,
+    "dispatched": 0,
+    "admitted": 0
+  },
+  "game_requests": {
+    "planned": 20,
+    "dispatched": 0,
+    "admitted": 0
+  },
+  "support_requests": {
+    "planned": 12,
+    "dispatched": 0
+  },
+  "recordings_started": 0,
+  "physical_position_repeatability": null,
+  "physical_timing_repeatability": null,
+  "physical_transfer_law": null,
+  "game_rendering_repeatability": null,
+  "learning_pilot_gate": "closed",
+  "current_park": null,
+  "current_waypoint": null,
+  "current_settings": null,
+  "wda_restarted": false,
+  "rig_source_modified": false,
+  "collection_enabled": false,
+  "paid_compute_used": false
+}

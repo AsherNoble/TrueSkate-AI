@@ -1,0 +1,101 @@
+{
+  "source_base_sha": "dc159db075f60336ba2543fc7e607c00f5188c51",
+  "branch": "codex/physical-transfer-20261013",
+  "plan_sha256": "0c02c970e82d754fc90903dddc92431b678131b5aad9edb71f422a084a1970ed",
+  "physical_dispatches": 0,
+  "recordings": 0,
+  "artifacts": [
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/README.md",
+      "bytes": 1083,
+      "sha256": "1288d4d1a7831542e91e95e77a6368afe7fa0b0ba3b7f9806da27c66a7314907"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/REPORT.md",
+      "bytes": 11701,
+      "sha256": "65d4c3ed56054adc84ff6bf5d48a85ef4cf1c81266412df52380faf3dbd6844c"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/analyze.py",
+      "bytes": 11921,
+      "sha256": "c90625a6e648f3fcd886082d8ccd1a2233eca257ed3702f76720a42446560ba6"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/clapperboard-inspection.json",
+      "bytes": 492,
+      "sha256": "e990d0fdd671f10ba9153c78de58f7172cbde3c9a45332e7be40a34bd674d25f"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/freeze.py",
+      "bytes": 6316,
+      "sha256": "9f46f6069ba1749195321a5349ce1f42132b263d015348a8ada3a4f8ab7679dd"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/frozen-plan.json",
+      "bytes": 60665,
+      "sha256": "a1baa5bd099cc7ae7d1d07ac672daa7e3e82bd48ab6044e708870d87c2510091"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/gate.json",
+      "bytes": 849,
+      "sha256": "d98c7b09e9494933c713c093cbf947f0bdf4052c11681faa93bd2b24de1139df"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/helper/Info.plist",
+      "bytes": 948,
+      "sha256": "2b42bc572556bf0bd33c717c0df84ec4a50d30192f8f3c35490ffbcc2e0c3770"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/helper/build.json",
+      "bytes": 1316,
+      "sha256": "c7dfdc0334329bf7ba5ce285baa8eacc5ca58755540a26b8d4c87ce4752fbf44"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/helper/build_unsigned.py",
+      "bytes": 1470,
+      "sha256": "497fed3790c057de6dad616fb522608125438fa95a638a51b766bf42024aabcd"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/helper/main.m",
+      "bytes": 6371,
+      "sha256": "2a955002ba83825b1ec94501da47927a9fbf20c8bb8c5ddc4be749083e407f44"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/local-preflight.json",
+      "bytes": 1581,
+      "sha256": "bcd084303919f1253b56e9dc5c05bf1772080fe0080bf5ec36f1525e9e048337"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/postflight.json",
+      "bytes": 6039,
+      "sha256": "0f1244deac21a078ac82fe5509430d762505443c959c3a139977c61a5cfe534c"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/preflight.json",
+      "bytes": 6039,
+      "sha256": "0016e53739d440825b02066e097de301dbb2a52a596cd9803c7071c5939ba6c3"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/preflight_remote.py",
+      "bytes": 3926,
+      "sha256": "079c5e919dad9fe7e5b208cb5badfbf5fc580c13e2bb9ad0cb2be027f71915cf"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/synthetic-verification.json",
+      "bytes": 721,
+      "sha256": "0fa0bdcee264426a974aad1afe6002798042ef84a53d82a3b12d6979b4154485"
+    },
+    {
+      "path": "research/evidence/PHYSICAL-TRANSFER-20261013/verify_analysis.py",
+      "bytes": 4943,
+      "sha256": "07e79157214e38276595d8af86d63c81726069f10a2d6f2ec3d5d7fe9ddf0541"
+    },
+    {
+      "path": "research/experiments/PHYSICAL-TRANSFER-20261013.md",
+      "bytes": 2923,
+      "sha256": "39452a781e073620a3735b9c545eebb75ee472e20c82f19f9d76e919335b1c09"
+    }
+  ],
+  "ignored_unsigned_app": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/physical-transfer-20261013/tmp/physical-transfer-helper-unsigned-final-20261013/PhysicalTouchLogger.app",
+  "no_private_key_or_profile_export": true
+}
