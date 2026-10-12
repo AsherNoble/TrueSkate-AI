@@ -1,0 +1,14 @@
+/content/bench-store/code/benchmark.py:270: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
+  result = {"batch_shape": list(batch["frames"].shape), "loss": float(loss),
+device=cuda name=Tesla T4
+epoch=1 val_start_med=0.0177 val_end_med=0.0228 val_duration_mae=0.0679 val_recovery=43.5% secs=945.8
+DRIVE_VERIFIED epoch=1 sha256=7401ea53e3a24ef749ccf17bbd77fc3fa86bfca2ce0a872905c8f714edb474f4
+epoch=2 val_start_med=0.0121 val_end_med=0.0192 val_duration_mae=0.0419 val_recovery=64.4% secs=938.3
+DRIVE_VERIFIED epoch=2 sha256=a04432cf04cb398dde3c2cab24ef6e46b257f44b76edcb1c4b4e0c38bebc76d1
+epoch=3 val_start_med=0.0110 val_end_med=0.0154 val_duration_mae=0.0364 val_recovery=73.8% secs=943.9
+DRIVE_VERIFIED epoch=3 sha256=bb81e1ee642433c442c01de5c5c30aca23d4b0e7e6fc50f6227853394af68944
+epoch=4 val_start_med=0.0115 val_end_med=0.0150 val_duration_mae=0.0334 val_recovery=74.1% secs=939.4
+DRIVE_VERIFIED epoch=4 sha256=3df0fe6b46b9f8349546b781e230dda86ac62b7a8a3156e07b523fe59bf2ffbb
+epoch=5 val_start_med=0.0104 val_end_med=0.0143 val_duration_mae=0.0351 val_recovery=77.8% secs=943.2
+DRIVE_VERIFIED epoch=5 sha256=e3db30da30112a7ee6741bb02b74f0cc6f7b41f77a9f7e90def963fdb012d1ea

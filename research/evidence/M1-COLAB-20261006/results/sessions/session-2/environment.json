@@ -1,0 +1,20 @@
+{
+  "cpu_count": 2,
+  "cuda": "13.0",
+  "cuda_available": true,
+  "cudnn": 92000,
+  "gpu": "Tesla T4",
+  "gpu_memory_bytes": 15637086208,
+  "packages": {
+    "numpy": "2.4.6",
+    "opencv-python-headless": "4.13.0.92",
+    "scipy": "1.17.1",
+    "selenium": "4.43.0",
+    "torch": "2.12.0"
+  },
+  "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+  "python": "3.11.17 (main, Oct  9 2026, 15:21:28) [Clang 22.1.3 ]",
+  "source_sha": "e0424f99e3f668e1722e56fac4f17372cd60a62d",
+  "torch_build": "2.12.0+cu130",
+  "torch_threads": 1
+}

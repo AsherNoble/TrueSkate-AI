@@ -1,0 +1,13 @@
+{
+  "bytes": 635050,
+  "callback_seconds": 16.617161541000314,
+  "epoch": 7,
+  "path": "/content/bench-store/results/checkpoints/epoch-07.pth",
+  "peak_ram_bytes": 2028191744,
+  "peak_vram_allocated_bytes": 3381998592,
+  "peak_vram_reserved_bytes": 5375000576,
+  "relative_path": "checkpoints/epoch-07.pth",
+  "session_id": "session-2",
+  "sha256": "22f296713faa8a664d3d62ae62478130c85a1cddb1934eba4d0d050bc4e06877",
+  "verified_at": 1791791918.7884412
+}

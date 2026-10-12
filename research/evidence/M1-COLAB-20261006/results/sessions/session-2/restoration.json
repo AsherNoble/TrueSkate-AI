@@ -1,0 +1,26 @@
+{
+  "actual": {
+    "cuda": "27ef8a214b5eb8580984734ff1e04bc8bb3c7db9457d4e8eb93354bc9a881bc7",
+    "model": "9c98a32c677c87f5b3216f163cd7b53b0107cd9072585ea2649dbcb203ea5ed6",
+    "numpy": "bf2cb10b17ece49bb7b40bd422b56dc190e2807eb8e2a78ede7bd9d935b63e3b",
+    "optimizer": "f740086f7983916cd20bde87408c132f85f5e4c637560c4ec8fb4ef1db540d48",
+    "shuffle": "271991cf2236e254eb5143a575ded7e2a5713a31795c010943b1b1296bd2a16b",
+    "torch": "5c4028193ec4987f54860433e98864689f32e8ef29be068820c04083ba8ee9ac"
+  },
+  "actual_next_lrs": [
+    0.0009619397662556434
+  ],
+  "expected": {
+    "cuda": "27ef8a214b5eb8580984734ff1e04bc8bb3c7db9457d4e8eb93354bc9a881bc7",
+    "model": "9c98a32c677c87f5b3216f163cd7b53b0107cd9072585ea2649dbcb203ea5ed6",
+    "numpy": "bf2cb10b17ece49bb7b40bd422b56dc190e2807eb8e2a78ede7bd9d935b63e3b",
+    "optimizer": "f740086f7983916cd20bde87408c132f85f5e4c637560c4ec8fb4ef1db540d48",
+    "shuffle": "271991cf2236e254eb5143a575ded7e2a5713a31795c010943b1b1296bd2a16b",
+    "torch": "5c4028193ec4987f54860433e98864689f32e8ef29be068820c04083ba8ee9ac"
+  },
+  "next_lr": 0.0009619397662556434,
+  "passed": true,
+  "restored_lr": 0.0009755282581475768,
+  "restored_states_passed": true,
+  "resume_at_epoch": 6
+}
