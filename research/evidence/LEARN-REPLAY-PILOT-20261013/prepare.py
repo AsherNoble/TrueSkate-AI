@@ -48,6 +48,7 @@ def prepare(seed=SEED):
     plan = dict(kind=KIND, seed=seed, physical_gate="blocked-unmeasured",
                 park_context=None, qualification=False,
                 candidate_dispatch_limit=600, replay_dispatch_limit=200,
+                capture_support_limit=360, replay_support_limit=120,
                 candidates=rows, selected_test_ids=selected, replay=replay)
     plan["sha256"] = digest(plan)
     validate(plan)
@@ -62,7 +63,9 @@ def validate(plan):
         raise ValueError("plan digest changed")
     rows = plan["candidates"]
     if (len(rows) != 600 or plan.get("candidate_dispatch_limit") != 600
-            or plan.get("replay_dispatch_limit") != 200):
+            or plan.get("replay_dispatch_limit") != 200
+            or plan.get("capture_support_limit") != 360
+            or plan.get("replay_support_limit") != 120):
         raise ValueError("frozen diagnostic budget changed")
     if {r["id"] for r in rows} != set(range(1, 601)):
         raise ValueError("candidate identities changed")

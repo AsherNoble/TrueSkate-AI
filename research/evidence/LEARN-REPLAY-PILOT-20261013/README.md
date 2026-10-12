@@ -13,7 +13,7 @@ device-control entry point.
 - `test_prepare.py`: synthetic mutation, partition leakage, budget and paired
   replay checks; five tests passed.
 
-Plan digest: `c824ed77a4af134bc99f6dd831176e040b31a06c10ba85db4fee10744b4267db`.
+Plan digest: `f06fce86b507533e64b84520fb6c6719f0d9df99bd00c36913390a526bb1be6c`.
 
 From this worktree's repository root, reproduce without changing frozen evidence:
 

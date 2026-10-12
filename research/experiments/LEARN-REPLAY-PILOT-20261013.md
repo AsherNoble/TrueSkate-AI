@@ -30,8 +30,13 @@ bulk collection, paid training or human-demonstration claim.
    menu/editor checks, native 120-frame windows, foreground/tunnel/attachment/
    disk checks and failure caps remain unchanged. Rejections consume the budget;
    no automatic replacement, retry or silent cohort shrink. An incomplete
-   nominal corpus stops this pilot for diagnosis. Support marker/reset requests
-   require an explicit separate bounded schedule before live capture.
+   nominal corpus stops this pilot for diagnosis. Use exactly five one-minute
+   recordings per session, ten candidate slots per recording. The current
+   collector's frozen slot constants provide three calibration markers, two
+   in-recording resets and one pre-roll reset per minute: at most 360 support
+   requests across 60 recordings, 960 total capture touch requests. A session is
+   a distinct recorded block; no source recording crosses a split. Twelve
+   contiguous blocks do not establish twelve independent game populations.
 5. Freeze all media/metadata/payload hashes and session separation before
    training. Labels are exact quantized compiled commands on the calibrated
    command clock, with native PTS, not reconstructed trail heads or UIKit
@@ -53,7 +58,12 @@ bulk collection, paid training or human-demonstration claim.
    predicted requests each, frozen randomized order, at most 200 scientific
    requests. Persist spending before every RPC, including timeouts. No retry of
    an unknown outcome. Use matched reset/context, calibration and fresh capture;
-   log support requests separately with a hard predeclared budget.
+   reverify context each session and report residual board-state variation.
+   Reset/settle does not prove identical game state. Use twenty one-minute
+   recordings with the same ten-slot/three-marker/three-reset schedule: at most
+   120 support requests and 320 total replay touch requests. Invalid predictions
+   leave their slots empty and counted; never replace them or move another job
+   into that slot. Both capture and replay stop on the first recording failure.
 
 ## Outcomes and analysis
 
@@ -69,6 +79,9 @@ This can diagnose whether the network learns a useful command inverse through
 the same executor. It cannot certify human-video transfer, unseen parks,
 unique command recovery or production readiness. Round 6 remains 83 Meet/16 Fail/
 1 Unclear, and its qualification/dispatch ledger is untouched.
+Four hundred training clips may be underpowered. Report epoch training loss
+and validation learning curves; a negative result cannot refute learnability
+of a deterministic executor warp.
 
 ## Prepared artifacts and current blocker
 
@@ -77,7 +90,7 @@ generates 600 legal commands and the 200-request replay order without accessing
 a device. The selected 20 test IDs are frozen before any media or model output.
 The generated compressed plan, source and hash are preserved with this record.
 It has no live dispatch command and no production manifest compatibility.
-Plan digest: `c824ed77a4af134bc99f6dd831176e040b31a06c10ba85db4fee10744b4267db`.
+Plan digest: `f06fce86b507533e64b84520fb6c6719f0d9df99bd00c36913390a526bb1be6c`.
 Its five synthetic cohort/mutation checks pass; this is preparation validation,
 not evidence of learning or physical execution.
 
