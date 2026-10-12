@@ -19,6 +19,8 @@ const fs = require('node:fs');
   if (action.kind === 'click') { let loc=page.getByRole(action.role || 'button', {name:action.name,exact:action.exact !== false}); if(action.nth!==undefined)loc=loc.nth(action.nth); await loc.click(); }
   if (action.kind === 'dblclick') await page.getByText(action.name,{exact:true}).first().dblclick();
   if (action.kind === 'fill') await page.getByRole(action.role || 'textbox', {name:action.name,exact:true}).fill(action.value);
+  // Fills a secret from a local file so its value never appears in arguments or output.
+  if (action.kind === 'fill_file') await page.locator(action.selector).fill(fs.readFileSync(action.file, 'utf8').trim());
   if (action.kind === 'text') await page.getByText(action.name,{exact:true}).click();
   if (action.kind === 'goto') await page.goto(action.url, {waitUntil:'domcontentloaded'});
   if (action.kind === 'screenshot') await page.screenshot({path:action.path,fullPage:false});

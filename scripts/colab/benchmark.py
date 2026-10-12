@@ -3,6 +3,11 @@
 No Modal invocation, credentials, collection, decoded-frame cache, or holdout
 evaluation. The notebook owns allocation/release and a wall-clock subprocess
 deadline; the callback commits completed epochs before the deliberate stop.
+
+Persistent state lives in a local mirror (``STORE_ROOT``) of one Drive folder,
+reached through a drive.file-scoped rclone remote: the credential sees only
+files its own OAuth client created. ``persist`` uploads mirror files and
+checks Drive's own SHA-256 before anything that depends on them is written.
 """
 from __future__ import annotations
 
@@ -17,6 +22,7 @@ import platform
 import resource
 import shutil
 import statistics
+import subprocess
 import sys
 import tarfile
 import time
@@ -29,6 +35,8 @@ PACKAGES = {"torch": "2.12.0", "opencv-python-headless": "4.13.0.92",
             "numpy": "2.4.6", "scipy": "1.17.1", "selenium": "4.43.0"}
 LIMIT_SECONDS = 12 * 3600
 CALENDAR_SECONDS = 72 * 3600
+REMOTE = "bench:"  # drive.file scope; root_folder_id is the benchmark folder
+STORE_ROOT = None  # local mirror of REMOTE; None keeps everything local (tests)
 
 
 def sha256(path):
@@ -81,6 +89,40 @@ def safe_extract(path, destination):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with archive.extractfile(member) as source, target.open("wb") as out:
                     shutil.copyfileobj(source, out)
+
+
+def rclone(*args):
+    proc = subprocess.run([os.environ.get("RCLONE_BIN", "rclone"), *map(str, args)],
+                          capture_output=True, text=True)
+    if proc.returncode:
+        raise RuntimeError(f"rclone {args[0]} failed rc={proc.returncode}: {proc.stderr.strip()[-500:]}")
+    return proc.stdout
+
+
+def remote_sha256(relative):
+    """SHA-256 of one remote file as reported by Drive, not recomputed locally."""
+    lines = [l.split(None, 1) for l in rclone("hashsum", "sha256", REMOTE + relative).splitlines() if l.strip()]
+    if len(lines) != 1 or len(lines[0][0]) != 64:
+        raise RuntimeError(f"no unique remote SHA-256 for {relative}: {lines}")
+    return lines[0][0]
+
+
+def persist(*paths):
+    """Upload mirror files in order; each is verified remotely before the next starts."""
+    if STORE_ROOT is None:
+        return
+    root = Path(STORE_ROOT).resolve()
+    for path in paths:
+        path = Path(path).resolve()
+        relative = path.relative_to(root).as_posix()
+        expected = sha256(path)
+        rclone("copyto", path, REMOTE + relative)
+        if remote_sha256(relative) != expected:
+            raise RuntimeError(f"remote checksum mismatch after upload: {relative}")
+
+
+def persist_tree(directory):
+    persist(*sorted(p for p in Path(directory).rglob("*") if p.is_file() and not p.name.endswith(".tmp")))
 
 
 def remaining(ledger, now=None):
@@ -140,7 +182,7 @@ def stage(inputs, local):
         if path.stat().st_size != record["bytes"] or sha256(path) != record["sha256"]:
             raise RuntimeError(f"input hash mismatch: {name}")
     local.mkdir(parents=True, exist_ok=True)
-    # Always read archives from private Drive, then decode from ephemeral disk.
+    # Inputs were pulled from the scoped Drive folder; decode from ephemeral disk.
     for name in ("source.tar.gz", "data.tar"):
         copy_verified(inputs / name, local / name)
     source = local / "source"
@@ -290,6 +332,23 @@ def recovery_trace(trainer, snapshot, evidence_path):
     sys.settrace(trace)
 
 
+def commit_checkpoint(resume, persistent):
+    """Persist one completed epoch. The checkpoint is verified remotely before
+    the pointer naming it is written, so the pointer never names a missing file."""
+    import torch
+    payload = torch.load(resume, map_location="cpu", weights_only=False)
+    epoch = payload["completed_epoch"]
+    relative = f"checkpoints/epoch-{epoch:02d}.pth"
+    record = copy_verified(resume, persistent / relative)
+    persist(persistent / relative)
+    record.update({"relative_path": relative, "epoch": epoch})
+    write_json(persistent / "latest.json", record)
+    write_json(persistent / "history.json", {"validation_curve": payload["validation_curve"],
+               "epoch_history": payload["epoch_history"], "best_epoch": payload["best"]["epoch"]})
+    persist(persistent / "latest.json", persistent / "history.json")
+    return record
+
+
 def run(inputs, persistent, local, session_id, phase):
     import torch
     persistent.mkdir(parents=True, exist_ok=True)
@@ -299,10 +358,12 @@ def run(inputs, persistent, local, session_id, phase):
     check_environment(session / "environment.json")
     trainer, staging = stage(inputs, local)
     write_json(session / "staging.json", staging)
+    persist(session / "environment.json", session / "staging.json")
     admission_path = persistent / "preflight.json"
     if not admission_path.exists():
         admission = preflight(trainer, inputs, local)
         write_json(admission_path, admission)
+        persist(admission_path)
         if not admission["passed"]:
             raise RuntimeError("environment-mismatch: reference differs by more than 0.5 percentage points")
     elif not json.loads(admission_path.read_text())["passed"]:
@@ -326,29 +387,29 @@ def run(inputs, persistent, local, session_id, phase):
     torch.cuda.reset_peak_memory_stats()
     write_json(session / "ready.json", {"setup_and_preflight_seconds": time.monotonic() - started,
                                        "resume_at_epoch": epochs_completed + 1})
+    persist(session / "ready.json")
     out = local / "model.pth"
 
     def checkpoint_callback():
         tick = time.monotonic()
         if not resume.exists():
             record = copy_verified(out, persistent / "final/model.pth")
+            persist(persistent / "final/model.pth")
             record["relative_path"] = "final/model.pth"
             write_json(persistent / "final/verified.json", record)
+            persist(persistent / "final/verified.json")
             return
-        payload = torch.load(resume, map_location="cpu", weights_only=False)
-        epoch = payload["completed_epoch"]
-        relative = f"checkpoints/epoch-{epoch:02d}.pth"
-        record = copy_verified(resume, persistent / relative)
-        record.update({"relative_path": relative, "epoch": epoch})
-        write_json(pointer, record)
-        write_json(persistent / "history.json", {"validation_curve": payload["validation_curve"],
-                   "epoch_history": payload["epoch_history"], "best_epoch": payload["best"]["epoch"]})
+        record = commit_checkpoint(resume, persistent)
+        epoch = record["epoch"]
+        if (session / "restoration.json").exists():
+            persist(session / "restoration.json")
         record.update({"callback_seconds": time.monotonic() - tick,
                        "peak_ram_bytes": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024,
                        "peak_vram_allocated_bytes": torch.cuda.max_memory_allocated(),
                        "peak_vram_reserved_bytes": torch.cuda.max_memory_reserved(),
                        "session_id": session_id, "verified_at": time.time()})
         write_json(persistent / f"epochs/epoch-{epoch:02d}.json", record)
+        persist(persistent / f"epochs/epoch-{epoch:02d}.json")
         print(f"DRIVE_VERIFIED epoch={epoch} sha256={record['sha256']}", flush=True)
         if phase == "timing" and epoch == 5:
             raise RecoveryBoundary("epoch 5 saved; delete runtime before resuming epoch 6")
@@ -361,6 +422,7 @@ def run(inputs, persistent, local, session_id, phase):
             experiment_manifest=local / "data/experiment.json", resume_path=resume,
             checkpoint_callback=checkpoint_callback, decode_mode="sequential", lr_schedule="cosine")
         write_json(persistent / "final/metrics.json", {k:v for k,v in result.items() if k != "state_dict"})
+        persist(persistent / "final/metrics.json")
         return "completed"
     except RecoveryBoundary:
         return "awaiting_runtime_deletion"
@@ -437,10 +499,12 @@ def report(persistent, reference):
             "and manual-effort completeness are in evidence.json and sessions/. Missing measurements remain unknown. "
             "No test or new-park holdout evaluation; no parallel reliability or monthly capacity conclusion.\n")
     (persistent / "report.md").write_text(text)
+    persist(persistent / "evidence.json", persistent / "report.md")
     return result
 
 
 def main():
+    global STORE_ROOT
     p = argparse.ArgumentParser()
     p.add_argument("command", choices=("run", "report"))
     p.add_argument("--inputs", type=Path, required=True)
@@ -448,16 +512,25 @@ def main():
     p.add_argument("--local", type=Path, default=Path("/content/model1-benchmark"))
     p.add_argument("--session-id", default="session-1")
     p.add_argument("--phase", choices=("timing", "completion"), default="timing")
+    p.add_argument("--store-root", type=Path, help="local mirror root of the scoped remote")
     a = p.parse_args()
+    STORE_ROOT = a.store_root
     if a.command == "report":
         report(a.persistent, json.loads((a.inputs / "reference/modal_seed0.json").read_text()))
         return
+    session = a.persistent / "sessions" / a.session_id
     try:
         status = run(a.inputs, a.persistent, a.local, a.session_id, a.phase)
-        write_json(a.persistent / "sessions" / a.session_id / "outcome.json", {"status": status})
+        write_json(session / "outcome.json", {"status": status})
+        persist(session / "outcome.json")
     except Exception as exc:
-        write_json(a.persistent / "sessions" / a.session_id / "failure.json",
+        write_json(session / "failure.json",
                    {"error": str(exc), "type": type(exc).__name__, "traceback": traceback.format_exc()})
+        try:
+            persist(*(p for p in (session / "environment.json", session / "staging.json",
+                                  session / "restoration.json", session / "failure.json") if p.exists()))
+        except Exception as upload_error:
+            print(f"failure evidence upload failed: {upload_error}", file=sys.stderr, flush=True)
         raise
 
 
