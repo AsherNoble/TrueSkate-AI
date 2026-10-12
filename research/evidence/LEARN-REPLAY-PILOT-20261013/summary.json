@@ -1,0 +1,37 @@
+{
+  "plan_digest": "c824ed77a4af134bc99f6dd831176e040b31a06c10ba85db4fee10744b4267db",
+  "serialized_sha256": "9ce8999befa6d016a8a3e470bff585dda9bdb015ef8d33d2a22056fb014f4b8d",
+  "gzip_sha256": "3a7ca7498e6a6b2d7f7db8422fd62b09977914dba1d39e1806da261de770e5e4",
+  "preparation_validation": {
+    "candidate_count": 600,
+    "replay_count": 200,
+    "sessions": 12,
+    "selected_test_ids": [
+      258,
+      270,
+      273,
+      281,
+      285,
+      290,
+      291,
+      293,
+      296,
+      356,
+      357,
+      362,
+      366,
+      368,
+      370,
+      376,
+      382,
+      387,
+      394,
+      399
+    ]
+  },
+  "physical_requests": 0,
+  "admitted_pilot_clips": 0,
+  "training_epochs": 0,
+  "replay_requests": 0,
+  "blocked": "No separately signed UIKit touch logger on XR1; physical repeatability unmeasured"
+}
