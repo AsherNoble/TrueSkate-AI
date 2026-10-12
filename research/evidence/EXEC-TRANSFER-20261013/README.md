@@ -24,7 +24,7 @@ confidence forecasts and unverified hypotheses are not current findings.
 | [legacy tracker output](lag-baseline/summary.json), [cap sensitivity](lag-baseline/cap-sensitivity.json) | Exploratory direction estimates and their sensitivity; not validated timing truth |
 | `lag-baseline/vlag-all.json.gz` | Full preserved per-frame legacy tracker outputs |
 | `prior-reports/` | Original human-coverage report, executor comparison and transfer draft |
-| [Claude collaboration status](CLAUDE-COLLABORATION.md) | Requested external session blocked by automatic approval review; selected disclosure awaits approval |
+| [Claude collaboration status](CLAUDE-COLLABORATION.md) | External-session proposal was blocked by automatic approval review, then cancelled by the operator |
 
 The corpus movies and metadata were outside Git at:
 
