@@ -1,0 +1,21 @@
+{
+  "synthetic_only": true,
+  "passed": true,
+  "checks": [
+    "112-request schedule and unique80 helper IDs",
+    "current guard-aware slots",
+    "exact linear geometry/duration",
+    "callback stall does not alter touch duration",
+    "coalesced sample inclusion and duplicate removal",
+    "cancel rejection",
+    "same-timestamp spatial conflict detected",
+    "known20ms duration spread",
+    "common-time comparison has no duration normalization",
+    "overflow rejection",
+    "request/batch identity protection",
+    "buffered JSONL parsing",
+    "partial cohort closes gate; full80 ideal synthetic cohort opens helper-only gate"
+  ],
+  "no_physical_requests": true,
+  "no_physical_repeatability_claim": true
+}

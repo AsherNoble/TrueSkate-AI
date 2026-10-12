@@ -1,0 +1,2405 @@
+{
+  "schema": "physical-transfer-20261013-v1",
+  "seed": 20261013,
+  "device": "iPhone_XR",
+  "device_env_key": "IPHONE_XR_UDID",
+  "logical_size": [
+    414,
+    896
+  ],
+  "wda_port": 8100,
+  "appium_port": 4723,
+  "control_map": "xr-414x896-20260914-v1",
+  "helper_bundle_id": "com.trueskate.research.touchlogger.physical20261013",
+  "helper_requests": [
+    {
+      "request_id": "helper-001",
+      "path_id": "single_400",
+      "repeat": 1
+    },
+    {
+      "request_id": "helper-002",
+      "path_id": "middle_hold_800",
+      "repeat": 1
+    },
+    {
+      "request_id": "helper-003",
+      "path_id": "unequal_600",
+      "repeat": 1
+    },
+    {
+      "request_id": "helper-004",
+      "path_id": "final_hold_600",
+      "repeat": 1
+    },
+    {
+      "request_id": "helper-005",
+      "path_id": "corner_600",
+      "repeat": 1
+    },
+    {
+      "request_id": "helper-006",
+      "path_id": "single_800",
+      "repeat": 1
+    },
+    {
+      "request_id": "helper-007",
+      "path_id": "initial_hold_600",
+      "repeat": 1
+    },
+    {
+      "request_id": "helper-008",
+      "path_id": "split_800",
+      "repeat": 1
+    },
+    {
+      "request_id": "helper-009",
+      "path_id": "middle_hold_800",
+      "repeat": 2
+    },
+    {
+      "request_id": "helper-010",
+      "path_id": "split_800",
+      "repeat": 2
+    },
+    {
+      "request_id": "helper-011",
+      "path_id": "unequal_600",
+      "repeat": 2
+    },
+    {
+      "request_id": "helper-012",
+      "path_id": "single_400",
+      "repeat": 2
+    },
+    {
+      "request_id": "helper-013",
+      "path_id": "initial_hold_600",
+      "repeat": 2
+    },
+    {
+      "request_id": "helper-014",
+      "path_id": "final_hold_600",
+      "repeat": 2
+    },
+    {
+      "request_id": "helper-015",
+      "path_id": "single_800",
+      "repeat": 2
+    },
+    {
+      "request_id": "helper-016",
+      "path_id": "corner_600",
+      "repeat": 2
+    },
+    {
+      "request_id": "helper-017",
+      "path_id": "single_400",
+      "repeat": 3
+    },
+    {
+      "request_id": "helper-018",
+      "path_id": "single_800",
+      "repeat": 3
+    },
+    {
+      "request_id": "helper-019",
+      "path_id": "final_hold_600",
+      "repeat": 3
+    },
+    {
+      "request_id": "helper-020",
+      "path_id": "corner_600",
+      "repeat": 3
+    },
+    {
+      "request_id": "helper-021",
+      "path_id": "middle_hold_800",
+      "repeat": 3
+    },
+    {
+      "request_id": "helper-022",
+      "path_id": "unequal_600",
+      "repeat": 3
+    },
+    {
+      "request_id": "helper-023",
+      "path_id": "initial_hold_600",
+      "repeat": 3
+    },
+    {
+      "request_id": "helper-024",
+      "path_id": "split_800",
+      "repeat": 3
+    },
+    {
+      "request_id": "helper-025",
+      "path_id": "initial_hold_600",
+      "repeat": 4
+    },
+    {
+      "request_id": "helper-026",
+      "path_id": "split_800",
+      "repeat": 4
+    },
+    {
+      "request_id": "helper-027",
+      "path_id": "final_hold_600",
+      "repeat": 4
+    },
+    {
+      "request_id": "helper-028",
+      "path_id": "middle_hold_800",
+      "repeat": 4
+    },
+    {
+      "request_id": "helper-029",
+      "path_id": "single_800",
+      "repeat": 4
+    },
+    {
+      "request_id": "helper-030",
+      "path_id": "corner_600",
+      "repeat": 4
+    },
+    {
+      "request_id": "helper-031",
+      "path_id": "single_400",
+      "repeat": 4
+    },
+    {
+      "request_id": "helper-032",
+      "path_id": "unequal_600",
+      "repeat": 4
+    },
+    {
+      "request_id": "helper-033",
+      "path_id": "single_800",
+      "repeat": 5
+    },
+    {
+      "request_id": "helper-034",
+      "path_id": "middle_hold_800",
+      "repeat": 5
+    },
+    {
+      "request_id": "helper-035",
+      "path_id": "unequal_600",
+      "repeat": 5
+    },
+    {
+      "request_id": "helper-036",
+      "path_id": "initial_hold_600",
+      "repeat": 5
+    },
+    {
+      "request_id": "helper-037",
+      "path_id": "final_hold_600",
+      "repeat": 5
+    },
+    {
+      "request_id": "helper-038",
+      "path_id": "single_400",
+      "repeat": 5
+    },
+    {
+      "request_id": "helper-039",
+      "path_id": "split_800",
+      "repeat": 5
+    },
+    {
+      "request_id": "helper-040",
+      "path_id": "corner_600",
+      "repeat": 5
+    },
+    {
+      "request_id": "helper-041",
+      "path_id": "middle_hold_800",
+      "repeat": 6
+    },
+    {
+      "request_id": "helper-042",
+      "path_id": "unequal_600",
+      "repeat": 6
+    },
+    {
+      "request_id": "helper-043",
+      "path_id": "split_800",
+      "repeat": 6
+    },
+    {
+      "request_id": "helper-044",
+      "path_id": "corner_600",
+      "repeat": 6
+    },
+    {
+      "request_id": "helper-045",
+      "path_id": "single_800",
+      "repeat": 6
+    },
+    {
+      "request_id": "helper-046",
+      "path_id": "single_400",
+      "repeat": 6
+    },
+    {
+      "request_id": "helper-047",
+      "path_id": "final_hold_600",
+      "repeat": 6
+    },
+    {
+      "request_id": "helper-048",
+      "path_id": "initial_hold_600",
+      "repeat": 6
+    },
+    {
+      "request_id": "helper-049",
+      "path_id": "unequal_600",
+      "repeat": 7
+    },
+    {
+      "request_id": "helper-050",
+      "path_id": "single_400",
+      "repeat": 7
+    },
+    {
+      "request_id": "helper-051",
+      "path_id": "corner_600",
+      "repeat": 7
+    },
+    {
+      "request_id": "helper-052",
+      "path_id": "single_800",
+      "repeat": 7
+    },
+    {
+      "request_id": "helper-053",
+      "path_id": "split_800",
+      "repeat": 7
+    },
+    {
+      "request_id": "helper-054",
+      "path_id": "middle_hold_800",
+      "repeat": 7
+    },
+    {
+      "request_id": "helper-055",
+      "path_id": "initial_hold_600",
+      "repeat": 7
+    },
+    {
+      "request_id": "helper-056",
+      "path_id": "final_hold_600",
+      "repeat": 7
+    },
+    {
+      "request_id": "helper-057",
+      "path_id": "split_800",
+      "repeat": 8
+    },
+    {
+      "request_id": "helper-058",
+      "path_id": "initial_hold_600",
+      "repeat": 8
+    },
+    {
+      "request_id": "helper-059",
+      "path_id": "single_800",
+      "repeat": 8
+    },
+    {
+      "request_id": "helper-060",
+      "path_id": "final_hold_600",
+      "repeat": 8
+    },
+    {
+      "request_id": "helper-061",
+      "path_id": "corner_600",
+      "repeat": 8
+    },
+    {
+      "request_id": "helper-062",
+      "path_id": "single_400",
+      "repeat": 8
+    },
+    {
+      "request_id": "helper-063",
+      "path_id": "unequal_600",
+      "repeat": 8
+    },
+    {
+      "request_id": "helper-064",
+      "path_id": "middle_hold_800",
+      "repeat": 8
+    },
+    {
+      "request_id": "helper-065",
+      "path_id": "middle_hold_800",
+      "repeat": 9
+    },
+    {
+      "request_id": "helper-066",
+      "path_id": "final_hold_600",
+      "repeat": 9
+    },
+    {
+      "request_id": "helper-067",
+      "path_id": "corner_600",
+      "repeat": 9
+    },
+    {
+      "request_id": "helper-068",
+      "path_id": "single_400",
+      "repeat": 9
+    },
+    {
+      "request_id": "helper-069",
+      "path_id": "single_800",
+      "repeat": 9
+    },
+    {
+      "request_id": "helper-070",
+      "path_id": "split_800",
+      "repeat": 9
+    },
+    {
+      "request_id": "helper-071",
+      "path_id": "unequal_600",
+      "repeat": 9
+    },
+    {
+      "request_id": "helper-072",
+      "path_id": "initial_hold_600",
+      "repeat": 9
+    },
+    {
+      "request_id": "helper-073",
+      "path_id": "corner_600",
+      "repeat": 10
+    },
+    {
+      "request_id": "helper-074",
+      "path_id": "initial_hold_600",
+      "repeat": 10
+    },
+    {
+      "request_id": "helper-075",
+      "path_id": "single_400",
+      "repeat": 10
+    },
+    {
+      "request_id": "helper-076",
+      "path_id": "middle_hold_800",
+      "repeat": 10
+    },
+    {
+      "request_id": "helper-077",
+      "path_id": "final_hold_600",
+      "repeat": 10
+    },
+    {
+      "request_id": "helper-078",
+      "path_id": "single_800",
+      "repeat": 10
+    },
+    {
+      "request_id": "helper-079",
+      "path_id": "split_800",
+      "repeat": 10
+    },
+    {
+      "request_id": "helper-080",
+      "path_id": "unequal_600",
+      "repeat": 10
+    }
+  ],
+  "paths": [
+    {
+      "path_id": "single_400",
+      "gesture": {
+        "schema": "model1_curved_v1",
+        "points": [
+          [
+            0.35,
+            0.45
+          ],
+          [
+            0.65,
+            0.65
+          ]
+        ],
+        "times_ms": [
+          0,
+          400
+        ],
+        "sampler": "random_chain",
+        "profile": "single_400",
+        "ideal": null,
+        "command_points": [
+          [
+            0.34782608695652173,
+            0.4497767857142857
+          ],
+          [
+            0.6497584541062802,
+            0.6495535714285714
+          ]
+        ],
+        "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35"
+      },
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 144,
+                "y": 403,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 400,
+                "x": 269,
+                "y": 582,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35"
+    },
+    {
+      "path_id": "single_800",
+      "gesture": {
+        "schema": "model1_curved_v1",
+        "points": [
+          [
+            0.35,
+            0.45
+          ],
+          [
+            0.65,
+            0.65
+          ]
+        ],
+        "times_ms": [
+          0,
+          800
+        ],
+        "sampler": "random_chain",
+        "profile": "single_800",
+        "ideal": null,
+        "command_points": [
+          [
+            0.34782608695652173,
+            0.4497767857142857
+          ],
+          [
+            0.6497584541062802,
+            0.6495535714285714
+          ]
+        ],
+        "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2"
+      },
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 144,
+                "y": 403,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 800,
+                "x": 269,
+                "y": 582,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2"
+    },
+    {
+      "path_id": "split_800",
+      "gesture": {
+        "schema": "model1_curved_v1",
+        "points": [
+          [
+            0.35,
+            0.45
+          ],
+          [
+            0.5,
+            0.55
+          ],
+          [
+            0.65,
+            0.65
+          ]
+        ],
+        "times_ms": [
+          0,
+          400,
+          800
+        ],
+        "sampler": "random_chain",
+        "profile": "split_800",
+        "ideal": null,
+        "command_points": [
+          [
+            0.34782608695652173,
+            0.4497767857142857
+          ],
+          [
+            0.5,
+            0.5491071428571429
+          ],
+          [
+            0.6497584541062802,
+            0.6495535714285714
+          ]
+        ],
+        "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3"
+      },
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 144,
+                "y": 403,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 400,
+                "x": 207,
+                "y": 492,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 400,
+                "x": 269,
+                "y": 582,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3"
+    },
+    {
+      "path_id": "corner_600",
+      "gesture": {
+        "schema": "model1_curved_v1",
+        "points": [
+          [
+            0.35,
+            0.4
+          ],
+          [
+            0.65,
+            0.4
+          ],
+          [
+            0.65,
+            0.65
+          ]
+        ],
+        "times_ms": [
+          0,
+          300,
+          600
+        ],
+        "sampler": "random_chain",
+        "profile": "corner_600",
+        "ideal": null,
+        "command_points": [
+          [
+            0.34782608695652173,
+            0.39955357142857145
+          ],
+          [
+            0.6497584541062802,
+            0.39955357142857145
+          ],
+          [
+            0.6497584541062802,
+            0.6495535714285714
+          ]
+        ],
+        "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795"
+      },
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 144,
+                "y": 358,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 300,
+                "x": 269,
+                "y": 358,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 300,
+                "x": 269,
+                "y": 582,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795"
+    },
+    {
+      "path_id": "unequal_600",
+      "gesture": {
+        "schema": "model1_curved_v1",
+        "points": [
+          [
+            0.35,
+            0.4
+          ],
+          [
+            0.65,
+            0.4
+          ],
+          [
+            0.65,
+            0.65
+          ]
+        ],
+        "times_ms": [
+          0,
+          150,
+          600
+        ],
+        "sampler": "random_chain",
+        "profile": "unequal_600",
+        "ideal": null,
+        "command_points": [
+          [
+            0.34782608695652173,
+            0.39955357142857145
+          ],
+          [
+            0.6497584541062802,
+            0.39955357142857145
+          ],
+          [
+            0.6497584541062802,
+            0.6495535714285714
+          ]
+        ],
+        "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17"
+      },
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 144,
+                "y": 358,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 150,
+                "x": 269,
+                "y": 358,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 450,
+                "x": 269,
+                "y": 582,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17"
+    },
+    {
+      "path_id": "initial_hold_600",
+      "gesture": {
+        "schema": "model1_curved_v1",
+        "points": [
+          [
+            0.35,
+            0.45
+          ],
+          [
+            0.35,
+            0.45
+          ],
+          [
+            0.65,
+            0.65
+          ]
+        ],
+        "times_ms": [
+          0,
+          200,
+          600
+        ],
+        "sampler": "random_chain",
+        "profile": "initial_hold_600",
+        "ideal": null,
+        "command_points": [
+          [
+            0.34782608695652173,
+            0.4497767857142857
+          ],
+          [
+            0.34782608695652173,
+            0.4497767857142857
+          ],
+          [
+            0.6497584541062802,
+            0.6495535714285714
+          ]
+        ],
+        "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354"
+      },
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 144,
+                "y": 403,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 200,
+                "x": 144,
+                "y": 403,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 400,
+                "x": 269,
+                "y": 582,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354"
+    },
+    {
+      "path_id": "middle_hold_800",
+      "gesture": {
+        "schema": "model1_curved_v1",
+        "points": [
+          [
+            0.35,
+            0.45
+          ],
+          [
+            0.5,
+            0.55
+          ],
+          [
+            0.5,
+            0.55
+          ],
+          [
+            0.65,
+            0.65
+          ]
+        ],
+        "times_ms": [
+          0,
+          200,
+          400,
+          800
+        ],
+        "sampler": "random_chain",
+        "profile": "middle_hold_800",
+        "ideal": null,
+        "command_points": [
+          [
+            0.34782608695652173,
+            0.4497767857142857
+          ],
+          [
+            0.5,
+            0.5491071428571429
+          ],
+          [
+            0.5,
+            0.5491071428571429
+          ],
+          [
+            0.6497584541062802,
+            0.6495535714285714
+          ]
+        ],
+        "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c"
+      },
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 144,
+                "y": 403,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 200,
+                "x": 207,
+                "y": 492,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 200,
+                "x": 207,
+                "y": 492,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 400,
+                "x": 269,
+                "y": 582,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c"
+    },
+    {
+      "path_id": "final_hold_600",
+      "gesture": {
+        "schema": "model1_curved_v1",
+        "points": [
+          [
+            0.35,
+            0.45
+          ],
+          [
+            0.65,
+            0.65
+          ],
+          [
+            0.65,
+            0.65
+          ]
+        ],
+        "times_ms": [
+          0,
+          400,
+          600
+        ],
+        "sampler": "random_chain",
+        "profile": "final_hold_600",
+        "ideal": null,
+        "command_points": [
+          [
+            0.34782608695652173,
+            0.4497767857142857
+          ],
+          [
+            0.6497584541062802,
+            0.6495535714285714
+          ],
+          [
+            0.6497584541062802,
+            0.6495535714285714
+          ]
+        ],
+        "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc"
+      },
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 144,
+                "y": 403,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 400,
+                "x": 269,
+                "y": 582,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 200,
+                "x": 269,
+                "y": 582,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc"
+    }
+  ],
+  "game_recordings": [
+    {
+      "recording_id": "game-01",
+      "pre_roll_reset": {
+        "kind": "reset",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "id": "reset",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49,
+                  "origin": "viewport"
+                },
+                {
+                  "type": "pointerDown",
+                  "button": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        },
+        "settle_s": 3
+      },
+      "commands": [
+        {
+          "kind": "control",
+          "role": "start",
+          "slot_s": 1.5,
+          "payload": {
+            "actions": [
+              {
+                "type": "pointer",
+                "id": "marker_0",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 207,
+                    "y": 448,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_1",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_2",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_3",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_4",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 4.75,
+          "request_id": "game-001",
+          "path_id": "unequal_600",
+          "repeat": 1
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 9,
+          "request_id": "game-002",
+          "path_id": "corner_600",
+          "repeat": 1
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 13.25,
+          "request_id": "game-003",
+          "path_id": "middle_hold_800",
+          "repeat": 1
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 17.5,
+          "request_id": "game-004",
+          "path_id": "single_800",
+          "repeat": 1
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 21.75,
+          "request_id": "game-005",
+          "path_id": "middle_hold_800",
+          "repeat": 2
+        },
+        {
+          "kind": "reset",
+          "slot_s": 26,
+          "payload": {
+            "actions": [
+              {
+                "type": "pointer",
+                "id": "reset",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 207,
+                    "y": 49,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "kind": "control",
+          "role": "middle",
+          "slot_s": 29,
+          "payload": {
+            "actions": [
+              {
+                "type": "pointer",
+                "id": "marker_0",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 207,
+                    "y": 448,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_1",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_2",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_3",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_4",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 32.25,
+          "request_id": "game-006",
+          "path_id": "corner_600",
+          "repeat": 2
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 36.5,
+          "request_id": "game-007",
+          "path_id": "single_800",
+          "repeat": 2
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 40.75,
+          "request_id": "game-008",
+          "path_id": "unequal_600",
+          "repeat": 2
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 45,
+          "request_id": "game-009",
+          "path_id": "unequal_600",
+          "repeat": 3
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 49.25,
+          "request_id": "game-010",
+          "path_id": "middle_hold_800",
+          "repeat": 3
+        },
+        {
+          "kind": "reset",
+          "slot_s": 53.5,
+          "payload": {
+            "actions": [
+              {
+                "type": "pointer",
+                "id": "reset",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 207,
+                    "y": 49,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "kind": "control",
+          "role": "end",
+          "slot_s": 57,
+          "payload": {
+            "actions": [
+              {
+                "type": "pointer",
+                "id": "marker_0",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 207,
+                    "y": 448,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_1",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_2",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_3",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_4",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "stop_s": 59,
+      "maximum_recording_s": 60,
+      "prepare_lead_s": 1.75,
+      "guard_lead_s": 0.25
+    },
+    {
+      "recording_id": "game-02",
+      "pre_roll_reset": {
+        "kind": "reset",
+        "payload": {
+          "actions": [
+            {
+              "type": "pointer",
+              "id": "reset",
+              "parameters": {
+                "pointerType": "touch"
+              },
+              "actions": [
+                {
+                  "type": "pointerMove",
+                  "duration": 0,
+                  "x": 207,
+                  "y": 49,
+                  "origin": "viewport"
+                },
+                {
+                  "type": "pointerDown",
+                  "button": 0
+                },
+                {
+                  "type": "pause",
+                  "duration": 50
+                },
+                {
+                  "type": "pointerUp",
+                  "button": 0
+                }
+              ]
+            }
+          ]
+        },
+        "settle_s": 3
+      },
+      "commands": [
+        {
+          "kind": "control",
+          "role": "start",
+          "slot_s": 1.5,
+          "payload": {
+            "actions": [
+              {
+                "type": "pointer",
+                "id": "marker_0",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 207,
+                    "y": 448,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_1",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_2",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_3",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_4",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 4.75,
+          "request_id": "game-011",
+          "path_id": "single_800",
+          "repeat": 3
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 9,
+          "request_id": "game-012",
+          "path_id": "corner_600",
+          "repeat": 3
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 13.25,
+          "request_id": "game-013",
+          "path_id": "middle_hold_800",
+          "repeat": 4
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 17.5,
+          "request_id": "game-014",
+          "path_id": "unequal_600",
+          "repeat": 4
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 21.75,
+          "request_id": "game-015",
+          "path_id": "single_800",
+          "repeat": 4
+        },
+        {
+          "kind": "reset",
+          "slot_s": 26,
+          "payload": {
+            "actions": [
+              {
+                "type": "pointer",
+                "id": "reset",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 207,
+                    "y": 49,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "kind": "control",
+          "role": "middle",
+          "slot_s": 29,
+          "payload": {
+            "actions": [
+              {
+                "type": "pointer",
+                "id": "marker_0",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 207,
+                    "y": 448,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_1",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_2",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_3",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_4",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 32.25,
+          "request_id": "game-016",
+          "path_id": "corner_600",
+          "repeat": 4
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 36.5,
+          "request_id": "game-017",
+          "path_id": "unequal_600",
+          "repeat": 5
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 40.75,
+          "request_id": "game-018",
+          "path_id": "single_800",
+          "repeat": 5
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 45,
+          "request_id": "game-019",
+          "path_id": "middle_hold_800",
+          "repeat": 5
+        },
+        {
+          "kind": "scientific",
+          "slot_s": 49.25,
+          "request_id": "game-020",
+          "path_id": "corner_600",
+          "repeat": 5
+        },
+        {
+          "kind": "reset",
+          "slot_s": 53.5,
+          "payload": {
+            "actions": [
+              {
+                "type": "pointer",
+                "id": "reset",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 207,
+                    "y": 49,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "kind": "control",
+          "role": "end",
+          "slot_s": 57,
+          "payload": {
+            "actions": [
+              {
+                "type": "pointer",
+                "id": "marker_0",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 207,
+                    "y": 448,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_1",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_2",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 377,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_3",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 136,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              },
+              {
+                "type": "pointer",
+                "id": "marker_4",
+                "parameters": {
+                  "pointerType": "touch"
+                },
+                "actions": [
+                  {
+                    "type": "pointerMove",
+                    "duration": 0,
+                    "x": 278,
+                    "y": 519,
+                    "origin": "viewport"
+                  },
+                  {
+                    "type": "pointerDown",
+                    "button": 0
+                  },
+                  {
+                    "type": "pause",
+                    "duration": 50
+                  },
+                  {
+                    "type": "pointerUp",
+                    "button": 0
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "stop_s": 59,
+      "maximum_recording_s": 60,
+      "prepare_lead_s": 1.75,
+      "guard_lead_s": 0.25
+    }
+  ],
+  "budget": {
+    "helper_scientific": 80,
+    "game_scientific": 20,
+    "calibration": 6,
+    "resets": 6,
+    "total_touch_requests": 112,
+    "automatic_replacements": 0
+  },
+  "current_park": null,
+  "current_waypoint": null,
+  "current_settings": null,
+  "source_sha": "dc159db075f60336ba2543fc7e607c00f5188c51",
+  "schedule_source": "src/trueskate_ai/model1/curved/collection.py",
+  "schedule_source_sha256": "9d77d74221376986b953b716601f57a8b56575d33394ac6bd984a72eb1c86974",
+  "pilot_gate": {
+    "status": "closed-unmeasured",
+    "interpretation": "pragmatic diagnostic thresholds, not universal label tolerances",
+    "all_80_complete_uncancelled_no_overflow": true,
+    "every_path_measured_repeats": 10,
+    "p95_repeat_position_deviation_normalized_max": 0.01,
+    "worst_repeat_position_deviation_normalized_max": 0.03,
+    "position_comparison": "common absolute time from touch B; componentwise median; no duration normalization",
+    "p95_absolute_release_deviation_from_path_median_ms_max": 8.333333333333334,
+    "required_corner_endpoint_nearest_sample_distance_pt_max": 2.0,
+    "required_hold_observed_distinct_timestamp_span_ms_min": 50.0,
+    "all_20_game_recordings_technically_admitted": true,
+    "minimum_interpretable_rendered_paths_per_family": 4,
+    "rendered_onset_max_range_native_frames": 1,
+    "current_context_verified": true,
+    "unmeasurable_or_any_failed_condition": "stop; do not change threshold or replace attempts",
+    "game_interpretation": "rendered start/path observability only; no glow-derived release/input timing or identical-state assertion"
+  },
+  "training_admission": false,
+  "qualification_effect": "none",
+  "live_prerequisites": [
+    "separately signed helper without replacing WDA",
+    "current device/park/waypoint/settings verification",
+    "exclusive session ownership",
+    "healthy unchanged WDA with expected timing revision",
+    "running root tunnel",
+    "idle recorder",
+    "foreground/menu/editor and settle guards",
+    "native decode and unchanged per-segment calibration"
+  ],
+  "sha256": "0c02c970e82d754fc90903dddc92431b678131b5aad9edb71f422a084a1970ed"
+}

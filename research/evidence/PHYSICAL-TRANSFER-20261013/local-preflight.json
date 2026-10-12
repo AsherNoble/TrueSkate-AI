@@ -1,0 +1,32 @@
+{
+  "signing_identities": {
+    "exit_code": 0,
+    "stdout": "  1) D2B4CDB665D8B3904FAF5881330A543D31823E2B \"Apple Development: [account redacted] (5X2Y92A36W)\" (CSSMERR_TP_CERT_REVOKED)\n  2) 5D6358AE7D5F0F23BE0A639F6B2DDD8CB250F91E \"Apple Development: [account redacted] (5X2Y92A36W)\" (CSSMERR_TP_CERT_REVOKED)\n     2 valid identities found\n",
+    "stderr": "",
+    "raw_stdout_sha256": "3dc3cd6d28e52326c9e7a65201f1273e35f764abbd0361d26dc8695cabc10105"
+  },
+  "profile_paths": [],
+  "profile_roots": [
+    {
+      "path": "/Users/ashernoble/Library/Developer/Xcode/UserData/Provisioning Profiles",
+      "exists": true
+    },
+    {
+      "path": "/Users/ashernoble/Library/MobileDevice/Provisioning Profiles",
+      "exists": false
+    }
+  ],
+  "initial_tailscale_backend": "Stopped",
+  "initial_self_online": false,
+  "connect_operation": "tailscale up --timeout=15s --accept-routes",
+  "settings_reset": false,
+  "existing_preferences_preserved": true,
+  "connection_restored": true,
+  "xcode_version": "Xcode 26.6\nBuild version 17F113",
+  "clang_version": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+  "unsigned_verification": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/physical-transfer-20261013/tmp/physical-transfer-helper-unsigned-final-20261013/PhysicalTouchLogger.app: code object is not signed at all\n"
+  }
+}

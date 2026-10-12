@@ -1,0 +1,143 @@
+{
+  "utc": "2026-10-12T23:47:50.827694+00:00",
+  "release_symlink": "/Users/training-server/trueskate-ai-releases/189dfde",
+  "release_sha": {
+    "exit_code": 0,
+    "stdout": "189dfded0e1de31794d7dd9b88773dd3abfc8ba8\n",
+    "stderr": ""
+  },
+  "release_source_status": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "udid_source": "/Users/training-server/trueskate-ai/.env:IPHONE_XR_UDID",
+  "xr1_udid_sha256": "e5184f9180b442bd21c65705b13b6817497b566b36aeee46663758153f3bf2ef",
+  "details_match_env": true,
+  "device_properties": {
+    "bootedFromSnapshot": true,
+    "bootedSnapshotName": "com.apple.os.update-08D5C42C36C5ACB5717E8C4404E8B9004CBE739D8F9CC22CCC222C98EED2709B",
+    "bootState": "booted",
+    "ddiServicesAvailable": true,
+    "developerModeStatus": "enabled",
+    "hasInternalOSBuild": false,
+    "name": "Test XR_1",
+    "osBuildUpdate": "22H320",
+    "osVersionNumber": "18.7.6",
+    "rootFileSystemIsWritable": false,
+    "screenViewingURL": "devices://device/open?id=F7D0F12C-4C79-4EEB-B009-C83461D9D7B9"
+  },
+  "hardware": {
+    "marketingName": "iPhone XR",
+    "productType": "iPhone11,8",
+    "hardwareModel": "N841AP",
+    "reality": "physical"
+  },
+  "wda_status": {
+    "value": {
+      "build": {
+        "version": "12.2.0",
+        "time": "Oct  2 2026 22:04:17",
+        "productBundleIdentifier": "com.facebook.WebDriverAgentRunner"
+      },
+      "os": {
+        "testmanagerdVersion": 65535,
+        "name": "iOS",
+        "sdkVersion": "18.0",
+        "version": "18.7.6"
+      },
+      "device": "iphone",
+      "ios": {
+        "ip": "172.19.182.159"
+      },
+      "message": "WebDriverAgent is ready to accept commands",
+      "state": "success",
+      "ready": true
+    },
+    "sessionId": null
+  },
+  "foreground": {
+    "value": {
+      "processArguments": {
+        "env": {},
+        "args": []
+      },
+      "name": "",
+      "pid": 460,
+      "bundleId": "com.trueaxis.skate"
+    },
+    "sessionId": null
+  },
+  "recorder": {
+    "value": null,
+    "sessionId": null
+  },
+  "installed_app_count": 72,
+  "relevant_apps": [
+    {
+      "name": "Clapperboard",
+      "bundleIdentifier": "com.ashernoble.clapperboard",
+      "version": "1.0",
+      "builtByDeveloper": true
+    },
+    {
+      "name": "True Skate",
+      "bundleIdentifier": "com.trueaxis.skate",
+      "version": "1.6.11",
+      "builtByDeveloper": false
+    },
+    {
+      "name": "WebDriverAgentRunner-Runner",
+      "bundleIdentifier": "com.asher.WebDriverAgentRunner.xctrunner",
+      "version": "1.0",
+      "builtByDeveloper": true
+    }
+  ],
+  "signing_identities": {
+    "exit_code": 0,
+    "stdout": "     0 valid identities found\n",
+    "stderr": ""
+  },
+  "profiles": [
+    {
+      "path": "/Users/training-server/Library/Developer/Xcode/UserData/Provisioning Profiles/0d92c3cb-7c83-456d-870d-41d094944cf6.mobileprovision",
+      "sha256": "1adce44f960a1e0cfdb08ba9abc455675e530374edbab7f017e2069a744e8a5e",
+      "name": "iOS Team Provisioning Profile: com.asher.WebDriverAgentRunner.xctrunner",
+      "created": "2026-10-03 05:12:09",
+      "expires": "2026-10-10 05:12:09",
+      "app_identifier": "BK75JV5YK4.com.asher.WebDriverAgentRunner.xctrunner",
+      "matches_xr1": true,
+      "metadata_trust": "unverified CMS payload metadata only; not a signing authorization"
+    },
+    {
+      "path": "/Users/training-server/Library/Developer/Xcode/UserData/Provisioning Profiles/77496a76-5917-4a2b-a623-1d05856f3147.mobileprovision",
+      "sha256": "cec0d47cf3cb3b5218c831d1305d5b1c6546f8a4e68969e3f2b44718a947a374",
+      "name": "iOS Team Provisioning Profile: com.asher.WebDriverAgentRunner",
+      "created": "2026-10-07 10:13:56",
+      "expires": "2026-10-14 10:13:56",
+      "app_identifier": "BK75JV5YK4.com.asher.WebDriverAgentRunner",
+      "matches_xr1": true,
+      "metadata_trust": "unverified CMS payload metadata only; not a signing authorization"
+    }
+  ],
+  "tunnel": {
+    "exit_code": 0,
+    "stdout": "system/com.trueskate.remotexpc-tunnel = {\n\tactive count = 1\n\tpath = /Library/LaunchDaemons/com.trueskate.remotexpc-tunnel.plist\n\ttype = LaunchDaemon\n\tstate = running\n\n\tprogram = /usr/local/bin/appium\n\targuments = {\n\t\t/usr/local/bin/appium\n\t\tdriver\n\t\trun\n\t\txcuitest\n\t\ttunnel-creation\n\t}\n\n\tstdout path = /Users/training-server/trueskate-ai/logs/remotexpc_tunnel.log\n\tstderr path = /Users/training-server/trueskate-ai/logs/remotexpc_tunnel.log\n\tdefault environment = {\n\t\tPATH => /usr/bin:/bin:/usr/sbin:/sbin\n\t}\n\n\tenvironment = {\n\t\tPATH => /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin\n\t\tHOME => /Users/training-server\n\t\tAPPIUM_HOME => /Users/training-server/.appium\n\t\tXPC_SERVICE_NAME => com.trueskate.remotexpc-tunnel\n\t}\n\n\tdomain = system\n\tminimum runtime = 10\n\texit timeout = 5\n\truns = 20\n\tpid = 65776\n\timmediate reason = inefficient\n\tforks = 1\n\texecs = 2\n\tinitialized = 1\n\ttrampolined = 1\n\tstarted suspended = 0\n\tproxy started suspended = 0\n\tlast terminating signal = Terminated: 15\n\n\tspawn type = daemon (3)\n\tjetsam priority = 40\n\tjetsam memory limit (active) = (unlimited)\n\tjetsam memory limit (inactive) = (unlimited)\n\tjetsamproperties category = daemon\n\tjetsam thread limit = 32\n\tcpumon = default\n\tprobabilistic guard malloc policy = {\n\t\tactivation rate = 1/1000\n\t\tsample rate = 1/0\n\t}\n\n\tproperties = keepalive | runatload | inferred program | managed LWCR\n}\n",
+    "stderr": ""
+  },
+  "collector_and_watchdog_disabled_lines": [
+    "\"com.trueskate.collect.xr2\" => disabled",
+    "\"com.trueskate.watchdog.xr1\" => disabled",
+    "\"com.trueskate.watchdog.xr2\" => disabled",
+    "\"com.trueskate.collect.xr1\" => disabled"
+  ],
+  "current_park": null,
+  "current_waypoint": null,
+  "current_settings": null,
+  "touches_submitted": 0,
+  "recordings_started": 0,
+  "helper_installed": false,
+  "wda_restarted": false,
+  "collection_enabled": false,
+  "preflight_source_sha256": "079c5e919dad9fe7e5b208cb5badfbf5fc580c13e2bb9ad0cb2be027f71915cf"
+}

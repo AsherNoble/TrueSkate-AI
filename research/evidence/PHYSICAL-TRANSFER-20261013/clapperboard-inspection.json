@@ -1,0 +1,9 @@
+{
+  "source_path": "/Users/ashernoble/Projects/Robotics & hardware/Clapperboard/Sources/ContentView.swift",
+  "sha256": "e690c57b400367844e34040c7fed5c321be79334ab198a3d62dfc7fe8cecbb65",
+  "git_head": "f2705442f0024dca81d11f8d8ed8372aca9488f3",
+  "installed_source_identity_verified": false,
+  "observed_source_function": "SwiftUI DragGesture(minimumDistance: 0).onEnded toggles black/white; no raw UITouch or coalesced/timestamp logging",
+  "app_launched": false,
+  "app_modified": false
+}
