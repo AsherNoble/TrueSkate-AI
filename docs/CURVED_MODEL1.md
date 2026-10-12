@@ -70,10 +70,25 @@ python scripts/collection/curved_model1.py --root "$CURVED_ROOT" seal-audit --ro
 python scripts/collection/curved_model1.py --root "$CURVED_ROOT" view-audit --round 1 --port 8765
 ```
 
-The server listens only on localhost. Use the established SSH port forwarding
-to view a rig-hosted audit; open the forwarded URL in Google Chrome. `--open`
-opens Chrome when running the viewer locally. Native frames preload per clip.
-Marks and ratings persist in the browser under the manifest hash.
+`view-audit` serves the review UI (`model1/curved/review.py` and `review.html`)
+on localhost only. `viewer.py`/`viewer.html` stay byte-identical because sealed
+rounds fingerprint them and production must reuse that fingerprint; the review
+UI is outside the fingerprint and changes neither the export nor scoring.
+
+Prefer reviewing on the laptop. Copy `audit-N/manifest.json` and every listed
+sample's `clip.mp4` and `meta.json` into a local directory with the same
+relative paths, then run
+`python -m trueskate_ai.model1.curved.review --root <copy> --round N --open`.
+The server re-verifies every clip and metadata hash against the sealed manifest
+before it starts, decodes each clip once (well under a second on an M2) and
+prefetches the next clips. A rig-hosted review still works through SSH
+forwarding, but it ships every full-resolution frame over the tunnel.
+
+Clips are grouped by park; marks (S/E), judgement (1/2/3), systemic flag (D)
+and reason save automatically in the browser under the manifest hash, and
+Save & next (Enter) moves to the next incomplete clip. Export is enabled once
+every clip satisfies the same completeness rules as import. A local server
+has no `review.json` to watch; stop it with Ctrl-C after the rig import.
 
 Export all 100 ratings and import that exact file:
 

@@ -472,3 +472,67 @@ def test_minute_schedule_budgets_measured_live_overheads():
         contact = MAX_DURATION_MS/1000 if kind == "sample" else .05
         ready = max(slot+contact+overhead+query, following-collection.PREPARE_LEAD_S)
         assert ready+preparation+query <= following, (slot, following)
+
+
+def review_root(tmp_path, native):
+    """A sealed one-clip audit round on disk, as review.serve expects it."""
+    root = tmp_path/"run"
+    root.mkdir()
+    folder, meta, row = sample_dir(root, native, phase="audit")
+    row.update(frame_times_s=meta["frame_times_s"], onset_s=meta["onset_s"], release_s=meta["release_s"],
+               clock_rate=1., gesture=meta["gesture"])
+    manifest = dict(schema=SCHEMA, round=1, samples=[row])
+    manifest["sha256"] = digest(manifest)
+    save_json(root/"audit-1"/"manifest.json", manifest)
+    return root, folder, manifest
+
+
+def test_review_server_serves_verified_frames_and_stops_on_import(tmp_path, native):
+    import socket
+    import threading
+    from urllib.error import HTTPError
+    from urllib.request import urlopen
+    from trueskate_ai.model1.curved import review
+    root, folder, manifest = review_root(tmp_path, native)
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    server = threading.Thread(target=review.serve, args=(root, 1), kwargs=dict(port=port), daemon=True)
+    server.start()
+    base = f"http://127.0.0.1:{port}"
+    for _ in range(100):
+        try:
+            page = urlopen(base+"/", timeout=5).read()
+            break
+        except OSError:
+            server.join(.05)
+    assert b"Save &amp; next" in page
+    assert json.loads(urlopen(base+"/manifest").read())["sha256"] == manifest["sha256"]
+    assert json.loads(urlopen(base+"/context").read())["1"]["session"] == "session-1"
+    frames = [urlopen(f"{base}/frame/1/{n}?m={manifest['sha256'][:16]}").read() for n in (0, 119)]
+    assert all(f.startswith(b"\xff\xd8") for f in frames)
+    with pytest.raises(HTTPError):
+        urlopen(base+"/frame/1/120")
+    save_json(root/"audit-1"/"review.json", {})  # Importing the review closes the server.
+    server.join(5)
+    assert not server.is_alive()
+    assert not list(root.glob("audit-review-*"))
+
+
+def test_review_server_refuses_changed_evidence(tmp_path, native):
+    from trueskate_ai.model1.curved import review
+    root, folder, _ = review_root(tmp_path, native)
+    (folder/"clip.mp4").write_bytes(b"changed after sealing")
+    with pytest.raises(ValueError, match="changed"):
+        review.serve(root, 1, port=0)
+
+
+def test_review_ui_stays_outside_the_pipeline_fingerprint(monkeypatch):
+    # Sealed rounds fingerprint viewer.py/viewer.html; production must reuse that fingerprint.
+    from trueskate_ai.model1.curved import ledger
+    read = []
+    original = Path.read_bytes
+    monkeypatch.setattr(Path, "read_bytes", lambda self: read.append(self.name) or original(self))
+    ledger.pipeline_fingerprint("wda")
+    assert {"viewer.py", "viewer.html"} <= set(read)
+    assert not {"review.py", "review.html"} & set(read)
