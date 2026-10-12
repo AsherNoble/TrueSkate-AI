@@ -35,7 +35,8 @@ from google.colab import userdata
 BIN, CONF, STORE = Path('/content/rclone/rclone'), Path('/content/rclone/rclone.conf'), Path('/content/bench-store')
 EXPECTED = {expected!r}
 if not BIN.exists():
-    archive = urllib.request.urlopen('https://downloads.rclone.org/{rclone}/rclone-{rclone}-linux-amd64.zip', timeout=300).read()
+    # GitHub release asset: downloads.rclone.org rejects urllib's default User-Agent (HTTP 403).
+    archive = urllib.request.urlopen('https://github.com/rclone/rclone/releases/download/{rclone}/rclone-{rclone}-linux-amd64.zip', timeout=300).read()
     if hashlib.sha256(archive).hexdigest() != '{rclone_sha}':
         raise RuntimeError('rclone archive checksum mismatch')
     BIN.parent.mkdir(parents=True, exist_ok=True)
