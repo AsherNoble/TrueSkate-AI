@@ -36,6 +36,9 @@ Thumbs.db
 .ipynb_checkpoints
 *.ipynb_checkpoints/
 
+# Node
+node_modules/
+
 # ML/Data Science — repo-root data/ only (a bare "data/" also hid scripts/data/)
 /data/
 !/data/.gitkeep
