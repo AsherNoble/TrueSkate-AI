@@ -1,0 +1,42 @@
+[
+  {
+    "id": "line-00",
+    "baseline_equal": true,
+    "candidate_equal": true
+  },
+  {
+    "id": "kink-00",
+    "baseline_equal": true,
+    "candidate_equal": true
+  },
+  {
+    "id": "alternating-00",
+    "baseline_equal": true,
+    "candidate_equal": true
+  },
+  {
+    "id": "hold-00",
+    "baseline_equal": true,
+    "candidate_equal": true
+  },
+  {
+    "id": "arch-00",
+    "baseline_equal": true,
+    "candidate_equal": true
+  },
+  {
+    "id": "near_left-00",
+    "baseline_equal": true,
+    "candidate_equal": true
+  },
+  {
+    "id": "near_bottom-00",
+    "baseline_equal": true,
+    "candidate_equal": true
+  },
+  {
+    "id": "near_top-00",
+    "baseline_equal": true,
+    "candidate_equal": true
+  }
+]

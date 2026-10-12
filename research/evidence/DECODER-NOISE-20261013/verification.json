@@ -1,0 +1,12 @@
+{
+  "result_rows": 43200,
+  "unique_keys": 43200,
+  "fixture_regeneration": true,
+  "source_hashes_match": true,
+  "frozen_plan_hash_matches": true,
+  "replayed_rows": 120,
+  "exact_replay_scores_and_payloads": true,
+  "paired_boundaries_segment_counts_equal": true,
+  "deterministic_repeats": 8,
+  "passed": true
+}

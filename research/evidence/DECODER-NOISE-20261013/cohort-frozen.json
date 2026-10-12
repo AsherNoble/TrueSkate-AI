@@ -1,0 +1,35 @@
+{
+  "seeds": {
+    "cohort": 2026101301,
+    "corruption": 2026101302,
+    "bootstrap": 2026101303
+  },
+  "count": 192,
+  "families": [
+    "line",
+    "kink",
+    "alternating",
+    "hold",
+    "arch",
+    "near_left",
+    "near_bottom",
+    "near_top"
+  ],
+  "fixture_sha256": "ca4f641697c22c8087c909c2f45f343fa5e7187970d6d45b4a472f9699b9eb8f",
+  "generation_rejections": {},
+  "plan_sha256": "230f498e8a590422a452c03ae411525628f9ac84b36f4b7d709cea0be70b3185",
+  "levels": [
+    0.005,
+    0.01,
+    0.02,
+    0.03,
+    0.04,
+    0.06
+  ],
+  "corruptions": [
+    "independent",
+    "ar1",
+    "drift",
+    "endpoint"
+  ]
+}

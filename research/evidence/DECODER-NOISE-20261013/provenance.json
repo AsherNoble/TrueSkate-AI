@@ -1,0 +1,32 @@
+{
+  "source_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/decoder-noise-20261013",
+  "source_sha": "dc159db075f60336ba2543fc7e607c00f5188c51",
+  "source_hashes": {
+    "src/trueskate_ai/model1/curved/decoder.py": "05fc2bf914a61a9bfdc79e18b2817e9772a06f0ab4e95f96129b390e35319128",
+    "src/trueskate_ai/model1/curved/dataset.py": "563061f148030f06cfb354a02ccea9b00e2e4662ef1370587b9cd21763cad56a",
+    "src/trueskate_ai/model1/curved/contract.py": "8964eebc69c51bc983606e3672bbc9dbeb340b0c1f046727afd779ebfd4b6ba3",
+    "src/trueskate_ai/sim/timed_waypoints.py": "56e1307d361b95a8552130fbd1d19b304367a07b1543aa64123cefcb11ab0089",
+    "src/trueskate_ai/data/control_hitboxes.py": "84ac2195e0438578e3a40d46bd1095a4abe931dc0f19527c0b4c7d1577367fdb"
+  },
+  "refit_sha256": "f8fccaddd0ae131404230374a0b56dcab94c2af9fb38a8c1d0e4539be72e95ba",
+  "script_sha256": "cade5452ad7925ac5c56dd9f3339ca2734aa3e5b4a96283075c6fc6e212f2deb",
+  "python": "3.11.0 (v3.11.0:deaf509e8f, Oct 24 2022, 14:43:23) [Clang 13.0.0 (clang-1300.0.29.30)]",
+  "numpy": "2.4.6",
+  "platform": "macOS-26.2-arm64-arm-64bit",
+  "argv": [
+    "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/decoder-noise-20261013/research/evidence/DECODER-NOISE-20261013/study.py",
+    "--source",
+    "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/decoder-noise-20261013",
+    "--out",
+    "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/decoder-noise-20261013/research/evidence/DECODER-NOISE-20261013"
+  ],
+  "elapsed_s": 202.02567829200007,
+  "fixture_count": 192,
+  "paired_case_count": 43200,
+  "notes": [
+    "Independent generated fixtures only; no corpus, trained model, simulator or physical device.",
+    "Same corrupted float32 XY/logits to both variants; true commands enter only scoring.",
+    "Unchanged scoring and compiler; invalid commands count as admissibility failures without fallback.",
+    "Noise levels are hypothetical stress, not observed error estimates."
+  ]
+}
