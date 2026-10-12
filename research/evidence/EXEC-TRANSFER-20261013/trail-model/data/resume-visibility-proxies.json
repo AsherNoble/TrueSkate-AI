@@ -1,0 +1,924 @@
+{
+  "summary": {
+    "board": {
+      "frames": 1358,
+      "denominator": 4272,
+      "clips_any": 71,
+      "clips_atleast20pct": 59
+    },
+    "preexisting_ridge": {
+      "frames": 1433,
+      "denominator": 4272,
+      "clips_any": 88,
+      "clips_atleast20pct": 69
+    },
+    "geometric_overlap": {
+      "frames": 1201,
+      "denominator": 4272,
+      "clips_any": 35,
+      "clips_atleast20pct": 34
+    }
+  },
+  "per_clip": [
+    {
+      "sid": 51,
+      "n_active": 50,
+      "n_board_risk": 3,
+      "n_preexisting_ridge_risk": 15,
+      "n_geometric_overlap_risk": 48,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 52,
+      "n_active": 20,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 20,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 53,
+      "n_active": 33,
+      "n_board_risk": 22,
+      "n_preexisting_ridge_risk": 11,
+      "n_geometric_overlap_risk": 11,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 54,
+      "n_active": 61,
+      "n_board_risk": 19,
+      "n_preexisting_ridge_risk": 18,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 55,
+      "n_active": 71,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 4,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 56,
+      "n_active": 48,
+      "n_board_risk": 48,
+      "n_preexisting_ridge_risk": 23,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 57,
+      "n_active": 18,
+      "n_board_risk": 12,
+      "n_preexisting_ridge_risk": 11,
+      "n_geometric_overlap_risk": 11,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 58,
+      "n_active": 35,
+      "n_board_risk": 35,
+      "n_preexisting_ridge_risk": 33,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 59,
+      "n_active": 47,
+      "n_board_risk": 9,
+      "n_preexisting_ridge_risk": 15,
+      "n_geometric_overlap_risk": 36,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 60,
+      "n_active": 34,
+      "n_board_risk": 34,
+      "n_preexisting_ridge_risk": 10,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 61,
+      "n_active": 30,
+      "n_board_risk": 7,
+      "n_preexisting_ridge_risk": 4,
+      "n_geometric_overlap_risk": 16,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 62,
+      "n_active": 37,
+      "n_board_risk": 17,
+      "n_preexisting_ridge_risk": 10,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 63,
+      "n_active": 71,
+      "n_board_risk": 37,
+      "n_preexisting_ridge_risk": 29,
+      "n_geometric_overlap_risk": 70,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 64,
+      "n_active": 63,
+      "n_board_risk": 8,
+      "n_preexisting_ridge_risk": 31,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 65,
+      "n_active": 46,
+      "n_board_risk": 16,
+      "n_preexisting_ridge_risk": 24,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 66,
+      "n_active": 35,
+      "n_board_risk": 32,
+      "n_preexisting_ridge_risk": 27,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 67,
+      "n_active": 66,
+      "n_board_risk": 26,
+      "n_preexisting_ridge_risk": 9,
+      "n_geometric_overlap_risk": 55,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 68,
+      "n_active": 42,
+      "n_board_risk": 5,
+      "n_preexisting_ridge_risk": 15,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 69,
+      "n_active": 41,
+      "n_board_risk": 26,
+      "n_preexisting_ridge_risk": 21,
+      "n_geometric_overlap_risk": 41,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 70,
+      "n_active": 62,
+      "n_board_risk": 30,
+      "n_preexisting_ridge_risk": 16,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 71,
+      "n_active": 66,
+      "n_board_risk": 27,
+      "n_preexisting_ridge_risk": 16,
+      "n_geometric_overlap_risk": 63,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 72,
+      "n_active": 59,
+      "n_board_risk": 59,
+      "n_preexisting_ridge_risk": 59,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 73,
+      "n_active": 27,
+      "n_board_risk": 16,
+      "n_preexisting_ridge_risk": 14,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 74,
+      "n_active": 24,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 16,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 75,
+      "n_active": 56,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 7,
+      "n_geometric_overlap_risk": 43,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 76,
+      "n_active": 69,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 77,
+      "n_active": 31,
+      "n_board_risk": 14,
+      "n_preexisting_ridge_risk": 14,
+      "n_geometric_overlap_risk": 25,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 78,
+      "n_active": 63,
+      "n_board_risk": 42,
+      "n_preexisting_ridge_risk": 12,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 79,
+      "n_active": 30,
+      "n_board_risk": 17,
+      "n_preexisting_ridge_risk": 12,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 80,
+      "n_active": 28,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 81,
+      "n_active": 28,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 82,
+      "n_active": 41,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 83,
+      "n_active": 50,
+      "n_board_risk": 9,
+      "n_preexisting_ridge_risk": 7,
+      "n_geometric_overlap_risk": 40,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 84,
+      "n_active": 60,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 14,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 85,
+      "n_active": 38,
+      "n_board_risk": 31,
+      "n_preexisting_ridge_risk": 14,
+      "n_geometric_overlap_risk": 38,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 86,
+      "n_active": 24,
+      "n_board_risk": 7,
+      "n_preexisting_ridge_risk": 5,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 87,
+      "n_active": 37,
+      "n_board_risk": 10,
+      "n_preexisting_ridge_risk": 9,
+      "n_geometric_overlap_risk": 17,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 88,
+      "n_active": 38,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 8,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 89,
+      "n_active": 69,
+      "n_board_risk": 16,
+      "n_preexisting_ridge_risk": 20,
+      "n_geometric_overlap_risk": 68,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 90,
+      "n_active": 61,
+      "n_board_risk": 12,
+      "n_preexisting_ridge_risk": 12,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 91,
+      "n_active": 39,
+      "n_board_risk": 16,
+      "n_preexisting_ridge_risk": 12,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 92,
+      "n_active": 63,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 9,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 93,
+      "n_active": 25,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 4,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 94,
+      "n_active": 51,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 95,
+      "n_active": 52,
+      "n_board_risk": 20,
+      "n_preexisting_ridge_risk": 51,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 96,
+      "n_active": 22,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 1,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 97,
+      "n_active": 44,
+      "n_board_risk": 21,
+      "n_preexisting_ridge_risk": 22,
+      "n_geometric_overlap_risk": 43,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 98,
+      "n_active": 39,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 99,
+      "n_active": 29,
+      "n_board_risk": 2,
+      "n_preexisting_ridge_risk": 8,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 100,
+      "n_active": 20,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 101,
+      "n_active": 51,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 23,
+      "n_geometric_overlap_risk": 48,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 102,
+      "n_active": 30,
+      "n_board_risk": 20,
+      "n_preexisting_ridge_risk": 3,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 103,
+      "n_active": 28,
+      "n_board_risk": 8,
+      "n_preexisting_ridge_risk": 10,
+      "n_geometric_overlap_risk": 28,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 104,
+      "n_active": 68,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 22,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 105,
+      "n_active": 65,
+      "n_board_risk": 15,
+      "n_preexisting_ridge_risk": 16,
+      "n_geometric_overlap_risk": 61,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 106,
+      "n_active": 43,
+      "n_board_risk": 8,
+      "n_preexisting_ridge_risk": 15,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 107,
+      "n_active": 27,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 19,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 108,
+      "n_active": 54,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 109,
+      "n_active": 34,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 3,
+      "n_geometric_overlap_risk": 33,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 110,
+      "n_active": 67,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 2,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 111,
+      "n_active": 61,
+      "n_board_risk": 2,
+      "n_preexisting_ridge_risk": 13,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 112,
+      "n_active": 36,
+      "n_board_risk": 20,
+      "n_preexisting_ridge_risk": 3,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 113,
+      "n_active": 59,
+      "n_board_risk": 23,
+      "n_preexisting_ridge_risk": 33,
+      "n_geometric_overlap_risk": 57,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 114,
+      "n_active": 70,
+      "n_board_risk": 14,
+      "n_preexisting_ridge_risk": 17,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 115,
+      "n_active": 58,
+      "n_board_risk": 21,
+      "n_preexisting_ridge_risk": 39,
+      "n_geometric_overlap_risk": 57,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 116,
+      "n_active": 18,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 5,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 117,
+      "n_active": 54,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 118,
+      "n_active": 30,
+      "n_board_risk": 8,
+      "n_preexisting_ridge_risk": 7,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 119,
+      "n_active": 20,
+      "n_board_risk": 15,
+      "n_preexisting_ridge_risk": 19,
+      "n_geometric_overlap_risk": 12,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 120,
+      "n_active": 58,
+      "n_board_risk": 19,
+      "n_preexisting_ridge_risk": 6,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 121,
+      "n_active": 51,
+      "n_board_risk": 10,
+      "n_preexisting_ridge_risk": 14,
+      "n_geometric_overlap_risk": 8,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 122,
+      "n_active": 65,
+      "n_board_risk": 42,
+      "n_preexisting_ridge_risk": 40,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 123,
+      "n_active": 37,
+      "n_board_risk": 10,
+      "n_preexisting_ridge_risk": 6,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 124,
+      "n_active": 30,
+      "n_board_risk": 12,
+      "n_preexisting_ridge_risk": 14,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 125,
+      "n_active": 22,
+      "n_board_risk": 15,
+      "n_preexisting_ridge_risk": 12,
+      "n_geometric_overlap_risk": 6,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 126,
+      "n_active": 21,
+      "n_board_risk": 6,
+      "n_preexisting_ridge_risk": 5,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 127,
+      "n_active": 21,
+      "n_board_risk": 19,
+      "n_preexisting_ridge_risk": 17,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 128,
+      "n_active": 65,
+      "n_board_risk": 38,
+      "n_preexisting_ridge_risk": 15,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 129,
+      "n_active": 22,
+      "n_board_risk": 7,
+      "n_preexisting_ridge_risk": 7,
+      "n_geometric_overlap_risk": 21,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 130,
+      "n_active": 46,
+      "n_board_risk": 22,
+      "n_preexisting_ridge_risk": 34,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 131,
+      "n_active": 57,
+      "n_board_risk": 22,
+      "n_preexisting_ridge_risk": 28,
+      "n_geometric_overlap_risk": 47,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 132,
+      "n_active": 30,
+      "n_board_risk": 4,
+      "n_preexisting_ridge_risk": 19,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 133,
+      "n_active": 44,
+      "n_board_risk": 9,
+      "n_preexisting_ridge_risk": 28,
+      "n_geometric_overlap_risk": 36,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 134,
+      "n_active": 33,
+      "n_board_risk": 33,
+      "n_preexisting_ridge_risk": 12,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 135,
+      "n_active": 49,
+      "n_board_risk": 21,
+      "n_preexisting_ridge_risk": 33,
+      "n_geometric_overlap_risk": 44,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 136,
+      "n_active": 68,
+      "n_board_risk": 22,
+      "n_preexisting_ridge_risk": 41,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 137,
+      "n_active": 42,
+      "n_board_risk": 42,
+      "n_preexisting_ridge_risk": 10,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 138,
+      "n_active": 27,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 14,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 139,
+      "n_active": 20,
+      "n_board_risk": 8,
+      "n_preexisting_ridge_risk": 13,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 140,
+      "n_active": 57,
+      "n_board_risk": 57,
+      "n_preexisting_ridge_risk": 48,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 151,
+      "n_active": 24,
+      "n_board_risk": 3,
+      "n_preexisting_ridge_risk": 10,
+      "n_geometric_overlap_risk": 15,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 152,
+      "n_active": 39,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 1,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 153,
+      "n_active": 28,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 4,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 154,
+      "n_active": 30,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 0,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 155,
+      "n_active": 35,
+      "n_board_risk": 18,
+      "n_preexisting_ridge_risk": 11,
+      "n_geometric_overlap_risk": 9,
+      "midpoint_board_risk": true,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 156,
+      "n_active": 23,
+      "n_board_risk": 5,
+      "n_preexisting_ridge_risk": 19,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 157,
+      "n_active": 25,
+      "n_board_risk": 14,
+      "n_preexisting_ridge_risk": 18,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": true
+    },
+    {
+      "sid": 158,
+      "n_active": 70,
+      "n_board_risk": 32,
+      "n_preexisting_ridge_risk": 35,
+      "n_geometric_overlap_risk": 27,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 159,
+      "n_active": 31,
+      "n_board_risk": 9,
+      "n_preexisting_ridge_risk": 18,
+      "n_geometric_overlap_risk": 26,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    },
+    {
+      "sid": 160,
+      "n_active": 36,
+      "n_board_risk": 0,
+      "n_preexisting_ridge_risk": 1,
+      "n_geometric_overlap_risk": 0,
+      "midpoint_board_risk": false,
+      "midpoint_preexisting_ridge_risk": false
+    }
+  ]
+}

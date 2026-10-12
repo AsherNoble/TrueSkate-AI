@@ -1,0 +1,505 @@
+{
+  "groups": [
+    "synchronous-before",
+    "buffered",
+    "synchronous-after"
+  ],
+  "commands": {
+    "r6_053": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 185,
+                "y": 173,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 125,
+                "x": 206,
+                "y": 184,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 186,
+                "x": 228,
+                "y": 289,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 247,
+                "x": 386,
+                "y": 251,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          185,
+          173
+        ],
+        [
+          125,
+          206,
+          184
+        ],
+        [
+          311,
+          228,
+          289
+        ],
+        [
+          558,
+          386,
+          251
+        ]
+      ],
+      "kind": "r6"
+    },
+    "r6_080": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 59,
+                "y": 470,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 159,
+                "x": 65,
+                "y": 464,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 183,
+                "x": 74,
+                "y": 466,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 122,
+                "x": 78,
+                "y": 474,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          59,
+          470
+        ],
+        [
+          159,
+          65,
+          464
+        ],
+        [
+          342,
+          74,
+          466
+        ],
+        [
+          464,
+          78,
+          474
+        ]
+      ],
+      "kind": "r6"
+    },
+    "r6_153": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 309,
+                "y": 451,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 478,
+                "x": 378,
+                "y": 754,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          309,
+          451
+        ],
+        [
+          478,
+          378,
+          754
+        ]
+      ],
+      "kind": "r6"
+    },
+    "single_1200": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 1200,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          1200,
+          307,
+          448
+        ]
+      ],
+      "kind": "single"
+    },
+    "hold_first_100": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 300,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          100,
+          107,
+          448
+        ],
+        [
+          400,
+          307,
+          448
+        ]
+      ],
+      "kind": "hold"
+    },
+    "corner90_100": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 87,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 207,
+                "y": 328,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          87,
+          448
+        ],
+        [
+          100,
+          207,
+          448
+        ],
+        [
+          200,
+          207,
+          328
+        ]
+      ],
+      "kind": "corner"
+    }
+  },
+  "order": [
+    [
+      "single_1200",
+      0
+    ],
+    [
+      "r6_053",
+      2
+    ],
+    [
+      "hold_first_100",
+      3
+    ],
+    [
+      "r6_153",
+      0
+    ],
+    [
+      "single_1200",
+      1
+    ],
+    [
+      "r6_053",
+      4
+    ],
+    [
+      "corner90_100",
+      0
+    ],
+    [
+      "r6_080",
+      3
+    ],
+    [
+      "hold_first_100",
+      1
+    ],
+    [
+      "r6_153",
+      2
+    ],
+    [
+      "r6_153",
+      3
+    ],
+    [
+      "r6_153",
+      4
+    ],
+    [
+      "hold_first_100",
+      0
+    ],
+    [
+      "corner90_100",
+      4
+    ],
+    [
+      "r6_053",
+      1
+    ],
+    [
+      "r6_053",
+      0
+    ],
+    [
+      "r6_080",
+      0
+    ],
+    [
+      "r6_080",
+      4
+    ],
+    [
+      "r6_153",
+      1
+    ],
+    [
+      "r6_053",
+      3
+    ],
+    [
+      "corner90_100",
+      3
+    ],
+    [
+      "hold_first_100",
+      2
+    ],
+    [
+      "single_1200",
+      3
+    ],
+    [
+      "single_1200",
+      4
+    ],
+    [
+      "single_1200",
+      2
+    ],
+    [
+      "hold_first_100",
+      4
+    ],
+    [
+      "r6_080",
+      1
+    ],
+    [
+      "r6_080",
+      2
+    ],
+    [
+      "corner90_100",
+      2
+    ],
+    [
+      "corner90_100",
+      1
+    ]
+  ],
+  "seed": 612,
+  "buffered_source": "../touchlogger-buffered/src/main.m"
+}

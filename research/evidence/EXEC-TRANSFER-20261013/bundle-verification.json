@@ -1,0 +1,16 @@
+{
+  "preserved_file_hashes_checked": 148,
+  "parsed_files": {
+    "json": 61,
+    "python": 41
+  },
+  "research_numeric_invariants": "passed",
+  "preserved_complete_request_counts": {
+    "resume-20261013": 745,
+    "boundary-20261013": 255,
+    "observer-20261013": 90
+  },
+  "local_report_links": "passed",
+  "original_source_verification_complete_now": false,
+  "limitation": "Original movies/profiles are unavailable. This checks preserved outputs and arithmetic, not raw-source regeneration or physical transfer."
+}

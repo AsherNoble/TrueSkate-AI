@@ -1,0 +1,66 @@
+{
+  "claude_research_session": "e0f1c48e-973a-4ff3-a26a-f5f2350d9a43",
+  "claude_resume_session": "380dc89c-3d2b-43ff-bcc5-4794e1404d2e",
+  "scratchpad": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad",
+  "files": {
+    "review/review.json": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/review-backup/curved-audit-6-d2aabb9959b3.json",
+      "sha256": "4085a0096e2d1d594ce6c60f45fbba73ebe6ba565b03bc8bb08caac95c0fb5b9"
+    },
+    "review/chrome-rows.json": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/review-backup/rows-from-chrome-20261012T225725.json",
+      "sha256": "e7171d867825ce2ce3b0888fac6a82ba642da758740679413279ff130c9c3786"
+    },
+    "prior-reports/human-coverage.md": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/research/4-human-coverage/REPORT.md",
+      "sha256": "34fc34547d1b461cf866dc0328966f299adb7bb49b7812528cfae2120c131589"
+    },
+    "prior-reports/executor-alternatives.md": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/research/5-executor-alternatives/REPORT.md",
+      "sha256": "d17518b39992cf52f457e4bf9e428245191faa26c267cf06fc34ee75b2a61ad6"
+    },
+    "prior-reports/design.md": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/design/EXEC-TRANSFER-DESIGN.md",
+      "sha256": "5941ab2527439349872147401d38ea311d7e670be8e75275b5325ddcfe18d6a8"
+    },
+    "lag-baseline/summary.json": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/research/6-synthesis/lag-summary.json",
+      "sha256": "bbef5e66594e46239a27c2d0acfdde8d688e4bb4fc82ecc80caed37a291233a1"
+    },
+    "lag-baseline/aggregate.py": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/research/6-synthesis/aggregate-preserved.py",
+      "sha256": "0c055d680148c1dffe1188e63ca28810f81dad0fb4c8c72a7d2f597ae25d9835"
+    },
+    "lag-baseline/viterbi_lag.py": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/lag/viterbi_lag.py",
+      "sha256": "a5119514c4ab4183b142d7347aa12f1de52df5e15c36dbd7831ff43fc0194b1c"
+    },
+    "lag-baseline/trail_lag.py": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/lag/trail_lag.py",
+      "sha256": "c10b039acd135099cb854c80c0e6af8674a0a85041db521c7e5ff2bc62043995"
+    },
+    "lag-baseline/profile.py": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/lag/profile.py",
+      "sha256": "9dca3f924ea217155a014614d42f145c16568a2bd3c9545ee50e70cdffc70f3b"
+    },
+    "lag-baseline/render_check.py": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/lag/render_check.py",
+      "sha256": "0061d6af82d2cd6a2ae237965aeccfac535fbbacb8ca891f3ef8a7914825d55e"
+    },
+    "lag-baseline/vlag-all.json.gz": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/lag/vlag-all.json",
+      "uncompressed_sha256": "82b55fde0c21a04c486c3df38a33507605ee48ce89b721090c9703388121c77c",
+      "sha256": "5576977a00663225d0ca016f93e093aec11ce207e66c2ea03dd3d6288283f56d"
+    }
+  },
+  "external_manifest_backup": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/executor-research-preserved-20261013/manifest.json.gz",
+  "external_files": {
+    "manifest.json.gz": {
+      "original_path": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/audit6-mirror/audit-6/manifest.json",
+      "uncompressed_sha256": "b3daad332ce5b1f575f83b73acc4fc34af429c50003dd5ea95a28a78286bcfca",
+      "sha256": "c9b82383793f43413692ea70bae9810aaa7cde9ef13d8248e5eaafe3df6de693",
+      "external_path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/executor-research-preserved-20261013/manifest.json.gz"
+    }
+  },
+  "external_manifest_worktree_copy": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/tmp/executor-research-preserved/manifest.json.gz"
+}

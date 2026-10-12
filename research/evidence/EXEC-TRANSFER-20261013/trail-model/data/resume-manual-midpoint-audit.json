@@ -1,0 +1,509 @@
+{
+  "method": "Manual review of every midpoint crop in img/resume-midpoint-{1..5}.jpg. Deck intersection includes silhouette edge; scenery means a salient hard edge/HUD within about30native px of command centre. These are static contact-neighbourhood risks, not measured invisible-head events or per-clip any-frame prevalence.",
+  "total": 100,
+  "deck_intersections": 9,
+  "definite_scenery_intersections": 12,
+  "possible_scenery_intersections": 8,
+  "per_clip": [
+    {
+      "sid": 51,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 52,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 53,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 54,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 55,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 56,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 57,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 58,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 59,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 60,
+      "deck_intersection": false,
+      "scenery": "possible"
+    },
+    {
+      "sid": 61,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 62,
+      "deck_intersection": true,
+      "scenery": "none"
+    },
+    {
+      "sid": 63,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 64,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 65,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 66,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 67,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 68,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 69,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 70,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 71,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 72,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 73,
+      "deck_intersection": true,
+      "scenery": "none"
+    },
+    {
+      "sid": 74,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 75,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 76,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 77,
+      "deck_intersection": true,
+      "scenery": "none"
+    },
+    {
+      "sid": 78,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 79,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 80,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 81,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 82,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 83,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 84,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 85,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 86,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 87,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 88,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 89,
+      "deck_intersection": false,
+      "scenery": "possible"
+    },
+    {
+      "sid": 90,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 91,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 92,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 93,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 94,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 95,
+      "deck_intersection": false,
+      "scenery": "possible"
+    },
+    {
+      "sid": 96,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 97,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 98,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 99,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 100,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 101,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 102,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 103,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 104,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 105,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 106,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 107,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 108,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 109,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 110,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 111,
+      "deck_intersection": false,
+      "scenery": "possible"
+    },
+    {
+      "sid": 112,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 113,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 114,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 115,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 116,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 117,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 118,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 119,
+      "deck_intersection": false,
+      "scenery": "definite"
+    },
+    {
+      "sid": 120,
+      "deck_intersection": false,
+      "scenery": "possible"
+    },
+    {
+      "sid": 121,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 122,
+      "deck_intersection": true,
+      "scenery": "none"
+    },
+    {
+      "sid": 123,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 124,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 125,
+      "deck_intersection": true,
+      "scenery": "none"
+    },
+    {
+      "sid": 126,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 127,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 128,
+      "deck_intersection": true,
+      "scenery": "none"
+    },
+    {
+      "sid": 129,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 130,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 131,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 132,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 133,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 134,
+      "deck_intersection": true,
+      "scenery": "none"
+    },
+    {
+      "sid": 135,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 136,
+      "deck_intersection": false,
+      "scenery": "possible"
+    },
+    {
+      "sid": 137,
+      "deck_intersection": true,
+      "scenery": "none"
+    },
+    {
+      "sid": 138,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 139,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 140,
+      "deck_intersection": false,
+      "scenery": "possible"
+    },
+    {
+      "sid": 151,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 152,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 153,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 154,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 155,
+      "deck_intersection": true,
+      "scenery": "none"
+    },
+    {
+      "sid": 156,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 157,
+      "deck_intersection": false,
+      "scenery": "possible"
+    },
+    {
+      "sid": 158,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 159,
+      "deck_intersection": false,
+      "scenery": "none"
+    },
+    {
+      "sid": 160,
+      "deck_intersection": false,
+      "scenery": "none"
+    }
+  ]
+}

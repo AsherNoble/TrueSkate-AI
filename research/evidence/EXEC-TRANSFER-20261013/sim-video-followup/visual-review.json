@@ -1,0 +1,15 @@
+{
+  "performed_before_fitting": true,
+  "method": "Inspected every generated full-context and native-scale cropped tile in visual-01.jpg and visual-02.jpg, before running fit. Green circle is measured threshold edge; cyan cross is edge minus29px. Predictions were absent.",
+  "exclude_clips": {},
+  "clips": {
+    "61": "Frames36,37,38: clear downward-moving warm trail head on floor to right of board. No deck intersection or hard scenery edge at measured front.",
+    "90": "Frames50,92: clear isolated diagonally moving heads; board nearby but not at threshold front. Only threshold30 qualifies; retain for sensitivity, absent primary25.",
+    "93": "Frame99: clear leftward-moving head in floor region beneath board; no board intersection at front. Single frame only.",
+    "99": "Frames78,79: clear upward-moving head after initial hold. Selected front is in moving leg, not held endpoint. No inference about hold duration.",
+    "118": "Frames12,14,18: clear upper-left-moving head on floor to right of board. Board/scenery do not cross selected head.",
+    "121": "Frame94: clear downward-moving head on floor left of board, away from preceding kink. Single frame only.",
+    "153": "Frames23,30,37: clear downward-moving head on open floor right of board. Broad illumination gradients remain a background-model risk, but no salient stripe or deck intersection at head."
+  },
+  "coverage_limitation": "Only7of100clips qualify at anythreshold; primary25 has27frames from6clips, development3clips across2recordings and heldout3clips across3recordings. Manual validation covers representative endpoints/middle of every selected run, not independent human touch centre timestamps."
+}

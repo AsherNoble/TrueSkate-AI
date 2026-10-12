@@ -1,0 +1,68 @@
+{
+  "counts": {
+    "20:active_frames": 4872,
+    "20:photometric_edges": 3314,
+    "20:none_or_ambiguous": 4845,
+    "25:active_frames": 4872,
+    "25:photometric_edges": 3328,
+    "25:none_or_ambiguous": 4845,
+    "30:active_frames": 4872,
+    "30:photometric_edges": 3256,
+    "30:none_or_ambiguous": 4844,
+    "20:geometry_edges": 140,
+    "25:geometry_edges": 141,
+    "30:geometry_edges": 135,
+    "20:accepted_frames": 27,
+    "25:accepted_frames": 27,
+    "30:accepted_frames": 28
+  },
+  "by_clip": {
+    "61": {
+      "20": 3,
+      "25": 3,
+      "30": 3
+    },
+    "90": {
+      "30": 2
+    },
+    "93": {
+      "20": 1,
+      "25": 1,
+      "30": 1
+    },
+    "99": {
+      "20": 2,
+      "25": 2,
+      "30": 2
+    },
+    "118": {
+      "20": 5,
+      "25": 5,
+      "30": 4
+    },
+    "121": {
+      "20": 1,
+      "25": 1,
+      "30": 1
+    },
+    "153": {
+      "20": 15,
+      "25": 15,
+      "30": 15
+    }
+  },
+  "split": {
+    "audit-6-2d593b9762c2-fd23a0c229c8": "development",
+    "audit-6-2d593b9762c2-b77b5f341a8d": "heldout",
+    "audit-6-eb7ac2e2fd4f-6e31311022b5": "development",
+    "audit-6-eb7ac2e2fd4f-fd5b8950e50b": "heldout",
+    "audit-6-c4fa9014f5d9-b202d97fedd1": "development",
+    "audit-6-c4fa9014f5d9-500d91e07cb6": "heldout",
+    "audit-6-eae4c5878a14-17d9796ced96": "development",
+    "audit-6-eae4c5878a14-f5c8d3daf9be": "heldout",
+    "audit-6-67a1465920a0-242133188a51": "development",
+    "audit-6-67a1465920a0-d0b746b24dda": "heldout"
+  },
+  "recording_count": 10,
+  "candidate_clip_count": 7
+}

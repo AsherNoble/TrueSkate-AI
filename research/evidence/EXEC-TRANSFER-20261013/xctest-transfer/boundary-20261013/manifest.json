@@ -1,0 +1,7875 @@
+{
+  "probes": {
+    "boundary_d15_n1": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          15,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d15_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          15,
+          207,
+          448
+        ],
+        [
+          30,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d15_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          15,
+          127,
+          448
+        ],
+        [
+          30,
+          147,
+          448
+        ],
+        [
+          45,
+          167,
+          448
+        ],
+        [
+          60,
+          187,
+          448
+        ],
+        [
+          75,
+          207,
+          448
+        ],
+        [
+          90,
+          227,
+          448
+        ],
+        [
+          105,
+          247,
+          448
+        ],
+        [
+          120,
+          267,
+          448
+        ],
+        [
+          135,
+          287,
+          448
+        ],
+        [
+          150,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d15_n20": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 117,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 137,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 157,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 177,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 197,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 217,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 237,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 257,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 277,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 297,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          15,
+          117,
+          448
+        ],
+        [
+          30,
+          127,
+          448
+        ],
+        [
+          45,
+          137,
+          448
+        ],
+        [
+          60,
+          147,
+          448
+        ],
+        [
+          75,
+          157,
+          448
+        ],
+        [
+          90,
+          167,
+          448
+        ],
+        [
+          105,
+          177,
+          448
+        ],
+        [
+          120,
+          187,
+          448
+        ],
+        [
+          135,
+          197,
+          448
+        ],
+        [
+          150,
+          207,
+          448
+        ],
+        [
+          165,
+          217,
+          448
+        ],
+        [
+          180,
+          227,
+          448
+        ],
+        [
+          195,
+          237,
+          448
+        ],
+        [
+          210,
+          247,
+          448
+        ],
+        [
+          225,
+          257,
+          448
+        ],
+        [
+          240,
+          267,
+          448
+        ],
+        [
+          255,
+          277,
+          448
+        ],
+        [
+          270,
+          287,
+          448
+        ],
+        [
+          285,
+          297,
+          448
+        ],
+        [
+          300,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d15_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          15,
+          307,
+          448
+        ],
+        [
+          30,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d15_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          15,
+          307,
+          448
+        ],
+        [
+          30,
+          107,
+          448
+        ],
+        [
+          45,
+          307,
+          448
+        ],
+        [
+          60,
+          107,
+          448
+        ],
+        [
+          75,
+          307,
+          448
+        ],
+        [
+          90,
+          107,
+          448
+        ],
+        [
+          105,
+          307,
+          448
+        ],
+        [
+          120,
+          107,
+          448
+        ],
+        [
+          135,
+          307,
+          448
+        ],
+        [
+          150,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d16_n1": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          16,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d16_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          16,
+          207,
+          448
+        ],
+        [
+          32,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d16_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          16,
+          127,
+          448
+        ],
+        [
+          32,
+          147,
+          448
+        ],
+        [
+          48,
+          167,
+          448
+        ],
+        [
+          64,
+          187,
+          448
+        ],
+        [
+          80,
+          207,
+          448
+        ],
+        [
+          96,
+          227,
+          448
+        ],
+        [
+          112,
+          247,
+          448
+        ],
+        [
+          128,
+          267,
+          448
+        ],
+        [
+          144,
+          287,
+          448
+        ],
+        [
+          160,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d16_n20": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 117,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 137,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 157,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 177,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 197,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 217,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 237,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 257,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 277,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 297,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          16,
+          117,
+          448
+        ],
+        [
+          32,
+          127,
+          448
+        ],
+        [
+          48,
+          137,
+          448
+        ],
+        [
+          64,
+          147,
+          448
+        ],
+        [
+          80,
+          157,
+          448
+        ],
+        [
+          96,
+          167,
+          448
+        ],
+        [
+          112,
+          177,
+          448
+        ],
+        [
+          128,
+          187,
+          448
+        ],
+        [
+          144,
+          197,
+          448
+        ],
+        [
+          160,
+          207,
+          448
+        ],
+        [
+          176,
+          217,
+          448
+        ],
+        [
+          192,
+          227,
+          448
+        ],
+        [
+          208,
+          237,
+          448
+        ],
+        [
+          224,
+          247,
+          448
+        ],
+        [
+          240,
+          257,
+          448
+        ],
+        [
+          256,
+          267,
+          448
+        ],
+        [
+          272,
+          277,
+          448
+        ],
+        [
+          288,
+          287,
+          448
+        ],
+        [
+          304,
+          297,
+          448
+        ],
+        [
+          320,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d16_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          16,
+          307,
+          448
+        ],
+        [
+          32,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d16_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          16,
+          307,
+          448
+        ],
+        [
+          32,
+          107,
+          448
+        ],
+        [
+          48,
+          307,
+          448
+        ],
+        [
+          64,
+          107,
+          448
+        ],
+        [
+          80,
+          307,
+          448
+        ],
+        [
+          96,
+          107,
+          448
+        ],
+        [
+          112,
+          307,
+          448
+        ],
+        [
+          128,
+          107,
+          448
+        ],
+        [
+          144,
+          307,
+          448
+        ],
+        [
+          160,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d17_n1": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          17,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d17_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          17,
+          207,
+          448
+        ],
+        [
+          34,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d17_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          17,
+          127,
+          448
+        ],
+        [
+          34,
+          147,
+          448
+        ],
+        [
+          51,
+          167,
+          448
+        ],
+        [
+          68,
+          187,
+          448
+        ],
+        [
+          85,
+          207,
+          448
+        ],
+        [
+          102,
+          227,
+          448
+        ],
+        [
+          119,
+          247,
+          448
+        ],
+        [
+          136,
+          267,
+          448
+        ],
+        [
+          153,
+          287,
+          448
+        ],
+        [
+          170,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d17_n20": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 117,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 137,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 157,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 177,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 197,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 217,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 237,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 257,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 277,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 297,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          17,
+          117,
+          448
+        ],
+        [
+          34,
+          127,
+          448
+        ],
+        [
+          51,
+          137,
+          448
+        ],
+        [
+          68,
+          147,
+          448
+        ],
+        [
+          85,
+          157,
+          448
+        ],
+        [
+          102,
+          167,
+          448
+        ],
+        [
+          119,
+          177,
+          448
+        ],
+        [
+          136,
+          187,
+          448
+        ],
+        [
+          153,
+          197,
+          448
+        ],
+        [
+          170,
+          207,
+          448
+        ],
+        [
+          187,
+          217,
+          448
+        ],
+        [
+          204,
+          227,
+          448
+        ],
+        [
+          221,
+          237,
+          448
+        ],
+        [
+          238,
+          247,
+          448
+        ],
+        [
+          255,
+          257,
+          448
+        ],
+        [
+          272,
+          267,
+          448
+        ],
+        [
+          289,
+          277,
+          448
+        ],
+        [
+          306,
+          287,
+          448
+        ],
+        [
+          323,
+          297,
+          448
+        ],
+        [
+          340,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d17_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          17,
+          307,
+          448
+        ],
+        [
+          34,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d17_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          17,
+          307,
+          448
+        ],
+        [
+          34,
+          107,
+          448
+        ],
+        [
+          51,
+          307,
+          448
+        ],
+        [
+          68,
+          107,
+          448
+        ],
+        [
+          85,
+          307,
+          448
+        ],
+        [
+          102,
+          107,
+          448
+        ],
+        [
+          119,
+          307,
+          448
+        ],
+        [
+          136,
+          107,
+          448
+        ],
+        [
+          153,
+          307,
+          448
+        ],
+        [
+          170,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d20_n1": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          20,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d20_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          20,
+          207,
+          448
+        ],
+        [
+          40,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d20_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          20,
+          127,
+          448
+        ],
+        [
+          40,
+          147,
+          448
+        ],
+        [
+          60,
+          167,
+          448
+        ],
+        [
+          80,
+          187,
+          448
+        ],
+        [
+          100,
+          207,
+          448
+        ],
+        [
+          120,
+          227,
+          448
+        ],
+        [
+          140,
+          247,
+          448
+        ],
+        [
+          160,
+          267,
+          448
+        ],
+        [
+          180,
+          287,
+          448
+        ],
+        [
+          200,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d20_n20": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 117,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 137,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 157,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 177,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 197,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 217,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 237,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 257,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 277,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 297,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          20,
+          117,
+          448
+        ],
+        [
+          40,
+          127,
+          448
+        ],
+        [
+          60,
+          137,
+          448
+        ],
+        [
+          80,
+          147,
+          448
+        ],
+        [
+          100,
+          157,
+          448
+        ],
+        [
+          120,
+          167,
+          448
+        ],
+        [
+          140,
+          177,
+          448
+        ],
+        [
+          160,
+          187,
+          448
+        ],
+        [
+          180,
+          197,
+          448
+        ],
+        [
+          200,
+          207,
+          448
+        ],
+        [
+          220,
+          217,
+          448
+        ],
+        [
+          240,
+          227,
+          448
+        ],
+        [
+          260,
+          237,
+          448
+        ],
+        [
+          280,
+          247,
+          448
+        ],
+        [
+          300,
+          257,
+          448
+        ],
+        [
+          320,
+          267,
+          448
+        ],
+        [
+          340,
+          277,
+          448
+        ],
+        [
+          360,
+          287,
+          448
+        ],
+        [
+          380,
+          297,
+          448
+        ],
+        [
+          400,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d20_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          20,
+          307,
+          448
+        ],
+        [
+          40,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d20_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 20,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          20,
+          307,
+          448
+        ],
+        [
+          40,
+          107,
+          448
+        ],
+        [
+          60,
+          307,
+          448
+        ],
+        [
+          80,
+          107,
+          448
+        ],
+        [
+          100,
+          307,
+          448
+        ],
+        [
+          120,
+          107,
+          448
+        ],
+        [
+          140,
+          307,
+          448
+        ],
+        [
+          160,
+          107,
+          448
+        ],
+        [
+          180,
+          307,
+          448
+        ],
+        [
+          200,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d25_n1": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          25,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d25_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          25,
+          207,
+          448
+        ],
+        [
+          50,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d25_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          25,
+          127,
+          448
+        ],
+        [
+          50,
+          147,
+          448
+        ],
+        [
+          75,
+          167,
+          448
+        ],
+        [
+          100,
+          187,
+          448
+        ],
+        [
+          125,
+          207,
+          448
+        ],
+        [
+          150,
+          227,
+          448
+        ],
+        [
+          175,
+          247,
+          448
+        ],
+        [
+          200,
+          267,
+          448
+        ],
+        [
+          225,
+          287,
+          448
+        ],
+        [
+          250,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d25_n20": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 117,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 137,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 157,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 177,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 197,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 217,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 237,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 257,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 277,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 297,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          25,
+          117,
+          448
+        ],
+        [
+          50,
+          127,
+          448
+        ],
+        [
+          75,
+          137,
+          448
+        ],
+        [
+          100,
+          147,
+          448
+        ],
+        [
+          125,
+          157,
+          448
+        ],
+        [
+          150,
+          167,
+          448
+        ],
+        [
+          175,
+          177,
+          448
+        ],
+        [
+          200,
+          187,
+          448
+        ],
+        [
+          225,
+          197,
+          448
+        ],
+        [
+          250,
+          207,
+          448
+        ],
+        [
+          275,
+          217,
+          448
+        ],
+        [
+          300,
+          227,
+          448
+        ],
+        [
+          325,
+          237,
+          448
+        ],
+        [
+          350,
+          247,
+          448
+        ],
+        [
+          375,
+          257,
+          448
+        ],
+        [
+          400,
+          267,
+          448
+        ],
+        [
+          425,
+          277,
+          448
+        ],
+        [
+          450,
+          287,
+          448
+        ],
+        [
+          475,
+          297,
+          448
+        ],
+        [
+          500,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d25_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          25,
+          307,
+          448
+        ],
+        [
+          50,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d25_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 25,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          25,
+          307,
+          448
+        ],
+        [
+          50,
+          107,
+          448
+        ],
+        [
+          75,
+          307,
+          448
+        ],
+        [
+          100,
+          107,
+          448
+        ],
+        [
+          125,
+          307,
+          448
+        ],
+        [
+          150,
+          107,
+          448
+        ],
+        [
+          175,
+          307,
+          448
+        ],
+        [
+          200,
+          107,
+          448
+        ],
+        [
+          225,
+          307,
+          448
+        ],
+        [
+          250,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d33_n1": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          33,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d33_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          33,
+          207,
+          448
+        ],
+        [
+          66,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d33_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          33,
+          127,
+          448
+        ],
+        [
+          66,
+          147,
+          448
+        ],
+        [
+          99,
+          167,
+          448
+        ],
+        [
+          132,
+          187,
+          448
+        ],
+        [
+          165,
+          207,
+          448
+        ],
+        [
+          198,
+          227,
+          448
+        ],
+        [
+          231,
+          247,
+          448
+        ],
+        [
+          264,
+          267,
+          448
+        ],
+        [
+          297,
+          287,
+          448
+        ],
+        [
+          330,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_d33_n20": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 117,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 137,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 157,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 177,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 197,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 217,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 237,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 257,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 277,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 297,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          33,
+          117,
+          448
+        ],
+        [
+          66,
+          127,
+          448
+        ],
+        [
+          99,
+          137,
+          448
+        ],
+        [
+          132,
+          147,
+          448
+        ],
+        [
+          165,
+          157,
+          448
+        ],
+        [
+          198,
+          167,
+          448
+        ],
+        [
+          231,
+          177,
+          448
+        ],
+        [
+          264,
+          187,
+          448
+        ],
+        [
+          297,
+          197,
+          448
+        ],
+        [
+          330,
+          207,
+          448
+        ],
+        [
+          363,
+          217,
+          448
+        ],
+        [
+          396,
+          227,
+          448
+        ],
+        [
+          429,
+          237,
+          448
+        ],
+        [
+          462,
+          247,
+          448
+        ],
+        [
+          495,
+          257,
+          448
+        ],
+        [
+          528,
+          267,
+          448
+        ],
+        [
+          561,
+          277,
+          448
+        ],
+        [
+          594,
+          287,
+          448
+        ],
+        [
+          627,
+          297,
+          448
+        ],
+        [
+          660,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d33_n2": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          33,
+          307,
+          448
+        ],
+        [
+          66,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_zig_d33_n10": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 33,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          33,
+          307,
+          448
+        ],
+        [
+          66,
+          107,
+          448
+        ],
+        [
+          99,
+          307,
+          448
+        ],
+        [
+          132,
+          107,
+          448
+        ],
+        [
+          165,
+          307,
+          448
+        ],
+        [
+          198,
+          107,
+          448
+        ],
+        [
+          231,
+          307,
+          448
+        ],
+        [
+          264,
+          107,
+          448
+        ],
+        [
+          297,
+          307,
+          448
+        ],
+        [
+          330,
+          107,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_total300_n17": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 18,
+                "x": 119,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 18,
+                "x": 131,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 18,
+                "x": 142,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 18,
+                "x": 154,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 18,
+                "x": 166,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 18,
+                "x": 178,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 18,
+                "x": 189,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 18,
+                "x": 201,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 18,
+                "x": 213,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 18,
+                "x": 225,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 18,
+                "x": 236,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 248,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 260,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 272,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 283,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 295,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          18,
+          119,
+          448
+        ],
+        [
+          36,
+          131,
+          448
+        ],
+        [
+          54,
+          142,
+          448
+        ],
+        [
+          72,
+          154,
+          448
+        ],
+        [
+          90,
+          166,
+          448
+        ],
+        [
+          108,
+          178,
+          448
+        ],
+        [
+          126,
+          189,
+          448
+        ],
+        [
+          144,
+          201,
+          448
+        ],
+        [
+          162,
+          213,
+          448
+        ],
+        [
+          180,
+          225,
+          448
+        ],
+        [
+          198,
+          236,
+          448
+        ],
+        [
+          215,
+          248,
+          448
+        ],
+        [
+          232,
+          260,
+          448
+        ],
+        [
+          249,
+          272,
+          448
+        ],
+        [
+          266,
+          283,
+          448
+        ],
+        [
+          283,
+          295,
+          448
+        ],
+        [
+          300,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_total300_n18": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 118,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 129,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 140,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 151,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 163,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 174,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 185,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 196,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 218,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 229,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 240,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 251,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 263,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 274,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 285,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 296,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          17,
+          118,
+          448
+        ],
+        [
+          34,
+          129,
+          448
+        ],
+        [
+          51,
+          140,
+          448
+        ],
+        [
+          68,
+          151,
+          448
+        ],
+        [
+          85,
+          163,
+          448
+        ],
+        [
+          102,
+          174,
+          448
+        ],
+        [
+          119,
+          185,
+          448
+        ],
+        [
+          136,
+          196,
+          448
+        ],
+        [
+          153,
+          207,
+          448
+        ],
+        [
+          170,
+          218,
+          448
+        ],
+        [
+          187,
+          229,
+          448
+        ],
+        [
+          204,
+          240,
+          448
+        ],
+        [
+          220,
+          251,
+          448
+        ],
+        [
+          236,
+          263,
+          448
+        ],
+        [
+          252,
+          274,
+          448
+        ],
+        [
+          268,
+          285,
+          448
+        ],
+        [
+          284,
+          296,
+          448
+        ],
+        [
+          300,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_total300_n19": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 118,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 128,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 139,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 149,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 160,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 170,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 181,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 191,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 202,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 212,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 223,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 233,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 244,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 254,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 265,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 275,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 286,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 296,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          16,
+          118,
+          448
+        ],
+        [
+          32,
+          128,
+          448
+        ],
+        [
+          48,
+          139,
+          448
+        ],
+        [
+          64,
+          149,
+          448
+        ],
+        [
+          80,
+          160,
+          448
+        ],
+        [
+          96,
+          170,
+          448
+        ],
+        [
+          112,
+          181,
+          448
+        ],
+        [
+          128,
+          191,
+          448
+        ],
+        [
+          144,
+          202,
+          448
+        ],
+        [
+          160,
+          212,
+          448
+        ],
+        [
+          176,
+          223,
+          448
+        ],
+        [
+          192,
+          233,
+          448
+        ],
+        [
+          208,
+          244,
+          448
+        ],
+        [
+          224,
+          254,
+          448
+        ],
+        [
+          240,
+          265,
+          448
+        ],
+        [
+          255,
+          275,
+          448
+        ],
+        [
+          270,
+          286,
+          448
+        ],
+        [
+          285,
+          296,
+          448
+        ],
+        [
+          300,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "boundary_total300_n20": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 117,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 127,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 137,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 147,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 157,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 167,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 177,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 187,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 197,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 217,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 227,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 237,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 247,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 257,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 267,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 277,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 287,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 297,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          15,
+          117,
+          448
+        ],
+        [
+          30,
+          127,
+          448
+        ],
+        [
+          45,
+          137,
+          448
+        ],
+        [
+          60,
+          147,
+          448
+        ],
+        [
+          75,
+          157,
+          448
+        ],
+        [
+          90,
+          167,
+          448
+        ],
+        [
+          105,
+          177,
+          448
+        ],
+        [
+          120,
+          187,
+          448
+        ],
+        [
+          135,
+          197,
+          448
+        ],
+        [
+          150,
+          207,
+          448
+        ],
+        [
+          165,
+          217,
+          448
+        ],
+        [
+          180,
+          227,
+          448
+        ],
+        [
+          195,
+          237,
+          448
+        ],
+        [
+          210,
+          247,
+          448
+        ],
+        [
+          225,
+          257,
+          448
+        ],
+        [
+          240,
+          267,
+          448
+        ],
+        [
+          255,
+          277,
+          448
+        ],
+        [
+          270,
+          287,
+          448
+        ],
+        [
+          285,
+          297,
+          448
+        ],
+        [
+          300,
+          307,
+          448
+        ]
+      ],
+      "kind": "boundary"
+    },
+    "mixed_15_100": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          15,
+          307,
+          448
+        ],
+        [
+          115,
+          107,
+          448
+        ]
+      ],
+      "kind": "mixed"
+    },
+    "mixed_100_15": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          100,
+          307,
+          448
+        ],
+        [
+          115,
+          107,
+          448
+        ]
+      ],
+      "kind": "mixed"
+    },
+    "mixed_15_100_15": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          15,
+          307,
+          448
+        ],
+        [
+          115,
+          107,
+          448
+        ],
+        [
+          130,
+          307,
+          448
+        ]
+      ],
+      "kind": "mixed"
+    },
+    "mixed_100_15_100": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          100,
+          307,
+          448
+        ],
+        [
+          115,
+          107,
+          448
+        ],
+        [
+          215,
+          307,
+          448
+        ]
+      ],
+      "kind": "mixed"
+    },
+    "mixed_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          16,
+          307,
+          448
+        ],
+        [
+          33,
+          107,
+          448
+        ],
+        [
+          49,
+          307,
+          448
+        ],
+        [
+          66,
+          107,
+          448
+        ],
+        [
+          82,
+          307,
+          448
+        ],
+        [
+          99,
+          107,
+          448
+        ],
+        [
+          115,
+          307,
+          448
+        ],
+        [
+          132,
+          107,
+          448
+        ],
+        [
+          148,
+          307,
+          448
+        ],
+        [
+          165,
+          107,
+          448
+        ],
+        [
+          181,
+          307,
+          448
+        ],
+        [
+          198,
+          107,
+          448
+        ],
+        [
+          214,
+          307,
+          448
+        ],
+        [
+          231,
+          107,
+          448
+        ],
+        [
+          247,
+          307,
+          448
+        ],
+        [
+          264,
+          107,
+          448
+        ],
+        [
+          280,
+          307,
+          448
+        ],
+        [
+          297,
+          107,
+          448
+        ],
+        [
+          313,
+          307,
+          448
+        ],
+        [
+          330,
+          107,
+          448
+        ]
+      ],
+      "kind": "mixed"
+    },
+    "mixed_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          17,
+          307,
+          448
+        ],
+        [
+          33,
+          107,
+          448
+        ],
+        [
+          50,
+          307,
+          448
+        ],
+        [
+          66,
+          107,
+          448
+        ],
+        [
+          83,
+          307,
+          448
+        ],
+        [
+          99,
+          107,
+          448
+        ],
+        [
+          116,
+          307,
+          448
+        ],
+        [
+          132,
+          107,
+          448
+        ],
+        [
+          149,
+          307,
+          448
+        ],
+        [
+          165,
+          107,
+          448
+        ],
+        [
+          182,
+          307,
+          448
+        ],
+        [
+          198,
+          107,
+          448
+        ],
+        [
+          215,
+          307,
+          448
+        ],
+        [
+          231,
+          107,
+          448
+        ],
+        [
+          248,
+          307,
+          448
+        ],
+        [
+          264,
+          107,
+          448
+        ],
+        [
+          281,
+          307,
+          448
+        ],
+        [
+          297,
+          107,
+          448
+        ],
+        [
+          314,
+          307,
+          448
+        ],
+        [
+          330,
+          107,
+          448
+        ]
+      ],
+      "kind": "mixed"
+    },
+    "mixed_100_16_100": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          100,
+          307,
+          448
+        ],
+        [
+          116,
+          107,
+          448
+        ],
+        [
+          216,
+          307,
+          448
+        ]
+      ],
+      "kind": "mixed"
+    },
+    "mixed_100_17_100": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          100,
+          307,
+          448
+        ],
+        [
+          117,
+          107,
+          448
+        ],
+        [
+          217,
+          307,
+          448
+        ]
+      ],
+      "kind": "mixed"
+    },
+    "boundary_hold_mid15": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 15,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          100,
+          207,
+          448
+        ],
+        [
+          115,
+          207,
+          448
+        ],
+        [
+          215,
+          307,
+          448
+        ]
+      ],
+      "kind": "mixed"
+    },
+    "boundary_hold_mid16": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 16,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          100,
+          207,
+          448
+        ],
+        [
+          116,
+          207,
+          448
+        ],
+        [
+          216,
+          307,
+          448
+        ]
+      ],
+      "kind": "mixed"
+    },
+    "boundary_hold_mid17": {
+      "payload": {
+        "actions": [
+          {
+            "type": "pointer",
+            "id": "timed_path",
+            "parameters": {
+              "pointerType": "touch"
+            },
+            "actions": [
+              {
+                "type": "pointerMove",
+                "duration": 0,
+                "x": 107,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerDown",
+                "button": 0
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 17,
+                "x": 207,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerMove",
+                "duration": 100,
+                "x": 307,
+                "y": 448,
+                "origin": "viewport"
+              },
+              {
+                "type": "pointerUp",
+                "button": 0
+              }
+            ]
+          }
+        ]
+      },
+      "cmd": [
+        [
+          0,
+          107,
+          448
+        ],
+        [
+          100,
+          207,
+          448
+        ],
+        [
+          117,
+          207,
+          448
+        ],
+        [
+          217,
+          307,
+          448
+        ]
+      ],
+      "kind": "mixed"
+    }
+  },
+  "order": [
+    [
+      "boundary_total300_n20",
+      2
+    ],
+    [
+      "boundary_d20_n2",
+      2
+    ],
+    [
+      "boundary_d33_n20",
+      2
+    ],
+    [
+      "mixed_100_15",
+      4
+    ],
+    [
+      "mixed_100_15",
+      1
+    ],
+    [
+      "boundary_hold_mid17",
+      2
+    ],
+    [
+      "boundary_zig_d15_n2",
+      1
+    ],
+    [
+      "boundary_d15_n20",
+      3
+    ],
+    [
+      "boundary_total300_n18",
+      0
+    ],
+    [
+      "boundary_zig_d16_n10",
+      4
+    ],
+    [
+      "boundary_zig_d25_n2",
+      1
+    ],
+    [
+      "boundary_d33_n1",
+      0
+    ],
+    [
+      "boundary_total300_n20",
+      3
+    ],
+    [
+      "boundary_total300_n17",
+      1
+    ],
+    [
+      "boundary_zig_d15_n10",
+      1
+    ],
+    [
+      "mixed_15_100",
+      1
+    ],
+    [
+      "boundary_zig_d20_n10",
+      3
+    ],
+    [
+      "boundary_hold_mid15",
+      0
+    ],
+    [
+      "boundary_d16_n10",
+      0
+    ],
+    [
+      "mixed_15_100_15",
+      4
+    ],
+    [
+      "mixed_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16",
+      3
+    ],
+    [
+      "boundary_total300_n18",
+      2
+    ],
+    [
+      "boundary_d15_n10",
+      1
+    ],
+    [
+      "boundary_zig_d17_n2",
+      4
+    ],
+    [
+      "boundary_hold_mid15",
+      3
+    ],
+    [
+      "mixed_100_15_100",
+      1
+    ],
+    [
+      "boundary_zig_d15_n10",
+      2
+    ],
+    [
+      "mixed_100_15",
+      2
+    ],
+    [
+      "boundary_d25_n20",
+      0
+    ],
+    [
+      "boundary_total300_n20",
+      0
+    ],
+    [
+      "boundary_d20_n1",
+      2
+    ],
+    [
+      "boundary_d17_n2",
+      0
+    ],
+    [
+      "boundary_total300_n19",
+      2
+    ],
+    [
+      "boundary_d20_n20",
+      0
+    ],
+    [
+      "boundary_total300_n18",
+      4
+    ],
+    [
+      "boundary_zig_d20_n2",
+      0
+    ],
+    [
+      "boundary_d15_n1",
+      3
+    ],
+    [
+      "boundary_d25_n2",
+      0
+    ],
+    [
+      "mixed_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16",
+      0
+    ],
+    [
+      "mixed_100_16_100",
+      0
+    ],
+    [
+      "mixed_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17",
+      2
+    ],
+    [
+      "boundary_zig_d25_n2",
+      3
+    ],
+    [
+      "boundary_d33_n10",
+      0
+    ],
+    [
+      "mixed_100_17_100",
+      3
+    ],
+    [
+      "boundary_d16_n20",
+      0
+    ],
+    [
+      "boundary_zig_d33_n2",
+      1
+    ],
+    [
+      "boundary_zig_d25_n2",
+      0
+    ],
+    [
+      "boundary_d16_n1",
+      0
+    ],
+    [
+      "boundary_hold_mid15",
+      2
+    ],
+    [
+      "mixed_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17",
+      0
+    ],
+    [
+      "boundary_d20_n2",
+      0
+    ],
+    [
+      "boundary_d15_n1",
+      0
+    ],
+    [
+      "boundary_zig_d20_n10",
+      0
+    ],
+    [
+      "boundary_zig_d15_n10",
+      4
+    ],
+    [
+      "boundary_d15_n10",
+      2
+    ],
+    [
+      "boundary_d15_n10",
+      0
+    ],
+    [
+      "boundary_d25_n10",
+      3
+    ],
+    [
+      "mixed_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16",
+      4
+    ],
+    [
+      "boundary_d15_n20",
+      0
+    ],
+    [
+      "boundary_zig_d15_n10",
+      3
+    ],
+    [
+      "boundary_d16_n20",
+      2
+    ],
+    [
+      "boundary_zig_d16_n10",
+      3
+    ],
+    [
+      "boundary_total300_n20",
+      1
+    ],
+    [
+      "boundary_d25_n20",
+      3
+    ],
+    [
+      "boundary_hold_mid16",
+      1
+    ],
+    [
+      "boundary_zig_d33_n2",
+      0
+    ],
+    [
+      "boundary_d15_n20",
+      1
+    ],
+    [
+      "boundary_d33_n1",
+      3
+    ],
+    [
+      "boundary_d33_n2",
+      1
+    ],
+    [
+      "boundary_d20_n2",
+      3
+    ],
+    [
+      "boundary_zig_d25_n10",
+      0
+    ],
+    [
+      "boundary_zig_d16_n2",
+      0
+    ],
+    [
+      "boundary_hold_mid17",
+      3
+    ],
+    [
+      "boundary_d20_n20",
+      4
+    ],
+    [
+      "boundary_zig_d15_n2",
+      0
+    ],
+    [
+      "boundary_total300_n19",
+      0
+    ],
+    [
+      "boundary_zig_d17_n10",
+      0
+    ],
+    [
+      "mixed_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17",
+      4
+    ],
+    [
+      "boundary_d17_n1",
+      0
+    ],
+    [
+      "boundary_d25_n2",
+      3
+    ],
+    [
+      "boundary_zig_d20_n2",
+      3
+    ],
+    [
+      "boundary_d20_n10",
+      1
+    ],
+    [
+      "boundary_d20_n10",
+      2
+    ],
+    [
+      "mixed_15_100_15",
+      3
+    ],
+    [
+      "boundary_d16_n20",
+      1
+    ],
+    [
+      "boundary_zig_d25_n10",
+      1
+    ],
+    [
+      "boundary_zig_d33_n10",
+      3
+    ],
+    [
+      "mixed_100_15_100",
+      4
+    ],
+    [
+      "boundary_d20_n10",
+      3
+    ],
+    [
+      "boundary_d16_n1",
+      4
+    ],
+    [
+      "boundary_hold_mid17",
+      0
+    ],
+    [
+      "boundary_hold_mid16",
+      2
+    ],
+    [
+      "mixed_100_15_100",
+      3
+    ],
+    [
+      "boundary_hold_mid15",
+      4
+    ],
+    [
+      "boundary_d17_n10",
+      0
+    ],
+    [
+      "boundary_d20_n1",
+      4
+    ],
+    [
+      "mixed_100_15",
+      0
+    ],
+    [
+      "mixed_15_100",
+      2
+    ],
+    [
+      "boundary_zig_d17_n2",
+      0
+    ],
+    [
+      "mixed_100_16_100",
+      2
+    ],
+    [
+      "boundary_d17_n2",
+      3
+    ],
+    [
+      "boundary_d17_n10",
+      2
+    ],
+    [
+      "boundary_d33_n1",
+      1
+    ],
+    [
+      "boundary_d33_n10",
+      1
+    ],
+    [
+      "boundary_total300_n17",
+      2
+    ],
+    [
+      "mixed_100_16_100",
+      3
+    ],
+    [
+      "boundary_zig_d33_n2",
+      3
+    ],
+    [
+      "boundary_total300_n17",
+      0
+    ],
+    [
+      "boundary_d16_n10",
+      4
+    ],
+    [
+      "boundary_total300_n18",
+      1
+    ],
+    [
+      "boundary_zig_d25_n2",
+      2
+    ],
+    [
+      "boundary_d17_n10",
+      3
+    ],
+    [
+      "boundary_zig_d17_n10",
+      1
+    ],
+    [
+      "boundary_zig_d16_n10",
+      2
+    ],
+    [
+      "boundary_d15_n20",
+      4
+    ],
+    [
+      "boundary_zig_d17_n10",
+      3
+    ],
+    [
+      "boundary_d20_n20",
+      2
+    ],
+    [
+      "mixed_15_100",
+      0
+    ],
+    [
+      "boundary_d16_n10",
+      3
+    ],
+    [
+      "boundary_d16_n1",
+      1
+    ],
+    [
+      "boundary_zig_d33_n2",
+      4
+    ],
+    [
+      "boundary_d33_n10",
+      2
+    ],
+    [
+      "boundary_d25_n1",
+      3
+    ],
+    [
+      "boundary_total300_n17",
+      3
+    ],
+    [
+      "boundary_d33_n10",
+      3
+    ],
+    [
+      "boundary_d25_n10",
+      2
+    ],
+    [
+      "boundary_zig_d17_n10",
+      2
+    ],
+    [
+      "boundary_d17_n10",
+      4
+    ],
+    [
+      "mixed_100_16_100",
+      4
+    ],
+    [
+      "boundary_zig_d20_n10",
+      1
+    ],
+    [
+      "boundary_zig_d33_n10",
+      0
+    ],
+    [
+      "boundary_d20_n10",
+      4
+    ],
+    [
+      "boundary_d15_n1",
+      1
+    ],
+    [
+      "boundary_total300_n17",
+      4
+    ],
+    [
+      "boundary_d25_n1",
+      4
+    ],
+    [
+      "boundary_zig_d17_n2",
+      1
+    ],
+    [
+      "boundary_d25_n20",
+      1
+    ],
+    [
+      "boundary_d20_n2",
+      1
+    ],
+    [
+      "boundary_d17_n20",
+      4
+    ],
+    [
+      "boundary_d33_n10",
+      4
+    ],
+    [
+      "boundary_d20_n20",
+      3
+    ],
+    [
+      "boundary_total300_n20",
+      4
+    ],
+    [
+      "boundary_d17_n10",
+      1
+    ],
+    [
+      "boundary_zig_d33_n2",
+      2
+    ],
+    [
+      "boundary_zig_d16_n2",
+      4
+    ],
+    [
+      "boundary_zig_d15_n2",
+      3
+    ],
+    [
+      "boundary_d16_n1",
+      2
+    ],
+    [
+      "boundary_d17_n1",
+      1
+    ],
+    [
+      "boundary_zig_d20_n10",
+      4
+    ],
+    [
+      "boundary_d25_n20",
+      2
+    ],
+    [
+      "boundary_d25_n2",
+      2
+    ],
+    [
+      "boundary_d15_n10",
+      3
+    ],
+    [
+      "boundary_d16_n2",
+      1
+    ],
+    [
+      "boundary_d17_n2",
+      4
+    ],
+    [
+      "boundary_d17_n1",
+      2
+    ],
+    [
+      "boundary_d17_n20",
+      3
+    ],
+    [
+      "boundary_d33_n2",
+      2
+    ],
+    [
+      "mixed_100_17_100",
+      2
+    ],
+    [
+      "boundary_zig_d17_n2",
+      3
+    ],
+    [
+      "boundary_d25_n1",
+      0
+    ],
+    [
+      "boundary_zig_d16_n10",
+      1
+    ],
+    [
+      "mixed_100_15_100",
+      2
+    ],
+    [
+      "boundary_d15_n2",
+      3
+    ],
+    [
+      "mixed_100_17_100",
+      1
+    ],
+    [
+      "boundary_d33_n20",
+      3
+    ],
+    [
+      "boundary_d33_n20",
+      1
+    ],
+    [
+      "boundary_zig_d33_n10",
+      1
+    ],
+    [
+      "boundary_zig_d33_n10",
+      4
+    ],
+    [
+      "boundary_d17_n2",
+      1
+    ],
+    [
+      "mixed_100_15_100",
+      0
+    ],
+    [
+      "boundary_d25_n20",
+      4
+    ],
+    [
+      "boundary_d25_n1",
+      1
+    ],
+    [
+      "boundary_zig_d20_n2",
+      2
+    ],
+    [
+      "boundary_zig_d25_n10",
+      2
+    ],
+    [
+      "boundary_d16_n10",
+      1
+    ],
+    [
+      "boundary_zig_d16_n10",
+      0
+    ],
+    [
+      "boundary_d33_n2",
+      4
+    ],
+    [
+      "boundary_d17_n20",
+      2
+    ],
+    [
+      "boundary_zig_d16_n2",
+      2
+    ],
+    [
+      "boundary_total300_n19",
+      1
+    ],
+    [
+      "mixed_15_100",
+      3
+    ],
+    [
+      "boundary_d20_n1",
+      1
+    ],
+    [
+      "mixed_100_17_100",
+      4
+    ],
+    [
+      "boundary_zig_d25_n2",
+      4
+    ],
+    [
+      "boundary_d25_n2",
+      1
+    ],
+    [
+      "boundary_d25_n1",
+      2
+    ],
+    [
+      "boundary_d20_n20",
+      1
+    ],
+    [
+      "boundary_d16_n2",
+      0
+    ],
+    [
+      "boundary_d17_n20",
+      0
+    ],
+    [
+      "boundary_zig_d15_n10",
+      0
+    ],
+    [
+      "boundary_hold_mid17",
+      1
+    ],
+    [
+      "mixed_15_100_15",
+      1
+    ],
+    [
+      "boundary_d15_n20",
+      2
+    ],
+    [
+      "mixed_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17",
+      1
+    ],
+    [
+      "boundary_d20_n10",
+      0
+    ],
+    [
+      "boundary_zig_d16_n2",
+      3
+    ],
+    [
+      "mixed_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17",
+      3
+    ],
+    [
+      "boundary_d17_n1",
+      4
+    ],
+    [
+      "boundary_d15_n1",
+      4
+    ],
+    [
+      "boundary_zig_d25_n10",
+      3
+    ],
+    [
+      "boundary_d17_n20",
+      1
+    ],
+    [
+      "boundary_d20_n1",
+      0
+    ],
+    [
+      "boundary_hold_mid15",
+      1
+    ],
+    [
+      "boundary_total300_n18",
+      3
+    ],
+    [
+      "mixed_100_16_100",
+      1
+    ],
+    [
+      "boundary_hold_mid16",
+      3
+    ],
+    [
+      "boundary_d16_n2",
+      2
+    ],
+    [
+      "boundary_d33_n1",
+      4
+    ],
+    [
+      "boundary_d17_n1",
+      3
+    ],
+    [
+      "boundary_d15_n2",
+      0
+    ],
+    [
+      "boundary_d33_n20",
+      4
+    ],
+    [
+      "boundary_zig_d15_n2",
+      4
+    ],
+    [
+      "boundary_zig_d20_n2",
+      4
+    ],
+    [
+      "boundary_zig_d20_n2",
+      1
+    ],
+    [
+      "mixed_15_100_15",
+      2
+    ],
+    [
+      "boundary_hold_mid17",
+      4
+    ],
+    [
+      "boundary_d16_n2",
+      3
+    ],
+    [
+      "boundary_d16_n20",
+      3
+    ],
+    [
+      "boundary_zig_d25_n10",
+      4
+    ],
+    [
+      "mixed_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16",
+      1
+    ],
+    [
+      "boundary_d20_n2",
+      4
+    ],
+    [
+      "boundary_d15_n2",
+      2
+    ],
+    [
+      "boundary_d33_n2",
+      0
+    ],
+    [
+      "mixed_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16",
+      2
+    ],
+    [
+      "boundary_d15_n2",
+      4
+    ],
+    [
+      "boundary_d16_n10",
+      2
+    ],
+    [
+      "boundary_d33_n20",
+      0
+    ],
+    [
+      "boundary_zig_d17_n10",
+      4
+    ],
+    [
+      "boundary_d16_n1",
+      3
+    ],
+    [
+      "boundary_total300_n19",
+      4
+    ],
+    [
+      "boundary_zig_d20_n10",
+      2
+    ],
+    [
+      "mixed_100_17_100",
+      0
+    ],
+    [
+      "boundary_d20_n1",
+      3
+    ],
+    [
+      "boundary_d25_n10",
+      4
+    ],
+    [
+      "boundary_zig_d33_n10",
+      2
+    ],
+    [
+      "mixed_100_15",
+      3
+    ],
+    [
+      "boundary_d15_n2",
+      1
+    ],
+    [
+      "boundary_d25_n2",
+      4
+    ],
+    [
+      "boundary_d16_n20",
+      4
+    ],
+    [
+      "boundary_d33_n1",
+      2
+    ],
+    [
+      "boundary_d15_n10",
+      4
+    ],
+    [
+      "boundary_d25_n10",
+      1
+    ],
+    [
+      "boundary_hold_mid16",
+      0
+    ],
+    [
+      "boundary_zig_d15_n2",
+      2
+    ],
+    [
+      "boundary_hold_mid16",
+      4
+    ],
+    [
+      "boundary_zig_d16_n2",
+      1
+    ],
+    [
+      "boundary_total300_n19",
+      3
+    ],
+    [
+      "mixed_15_100_15",
+      0
+    ],
+    [
+      "boundary_d16_n2",
+      4
+    ],
+    [
+      "boundary_d17_n2",
+      2
+    ],
+    [
+      "boundary_d15_n1",
+      2
+    ],
+    [
+      "mixed_15_100",
+      4
+    ],
+    [
+      "boundary_d33_n2",
+      3
+    ],
+    [
+      "boundary_d25_n10",
+      0
+    ],
+    [
+      "boundary_zig_d17_n2",
+      2
+    ]
+  ],
+  "repeats": 5,
+  "seed": 71,
+  "diagnostic_patch": "../diagnostic-dump.patch"
+}

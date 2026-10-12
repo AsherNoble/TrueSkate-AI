@@ -1,0 +1,76 @@
+{
+  "status": "proposed_only_waiting_explicit_approval",
+  "destination": "Claude Code using existing user account/service",
+  "payload_directory": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/tmp/claude-research-bridge/payload",
+  "tools": [
+    "Read",
+    "Glob",
+    "Grep",
+    "Agent"
+  ],
+  "private_contents": "Research reports and compact simulator summaries, including local provenance paths and private findings. No raw dataset, source tree, movies, checkpoints, env or credentials.",
+  "files": {
+    "synthesis.md": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/experiments/EXEC-TRANSFER-20261013.md",
+      "bytes": 15835,
+      "sha256": "3c8806c1c190b605c86dfcb07eec04e467a46cc5b53a66fd63376dc895a61c6f"
+    },
+    "decoder-report.md": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/evidence/EXEC-TRANSFER-20261013/decoder-followup/REPORT.md",
+      "bytes": 13763,
+      "sha256": "6368481b5f0efe745d732101e9d104c676d4124065a8c4b269ec9f34735e9155"
+    },
+    "simulator-video-report.md": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/evidence/EXEC-TRANSFER-20261013/sim-video-followup/REPORT.md",
+      "bytes": 8510,
+      "sha256": "7c2206b6060c30032059ca4cf644995830ff5d64fa458b846ba8cf70209a3911"
+    },
+    "trail-report.md": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/evidence/EXEC-TRANSFER-20261013/trail-model/REPORT.md",
+      "bytes": 4712,
+      "sha256": "70cf347170edc333113ee3c007ee327c22008450b565004aa7080b233b46405b"
+    },
+    "label-report.md": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/evidence/EXEC-TRANSFER-20261013/label-tolerance/REPORT.md",
+      "bytes": 4126,
+      "sha256": "4bd437dd55e97f267ad1c3fb609c55a3c085bdc96b1ff79ab6d40f605aa03506"
+    },
+    "artifact-availability.json": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/evidence/EXEC-TRANSFER-20261013/artifact-availability.json",
+      "bytes": 1386,
+      "sha256": "1abefd6319610ad3bfec5c044ad47771867a4ab972bd52d2752cf62a3df8a584"
+    },
+    "recap-control-points.json": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/evidence/EXEC-TRANSFER-20261013/xctest-transfer/resume-20261013/recap-control-points.json",
+      "bytes": 780,
+      "sha256": "be65cc25155b8b410fe247c8028f689f4d59e4db78c2877ffef8154a13957202"
+    },
+    "boundary-summary.json": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/evidence/EXEC-TRANSFER-20261013/xctest-transfer/boundary-20261013/summary.json",
+      "bytes": 10717,
+      "sha256": "bef81023d2d2e9296bd13b41b16652bc26f0844e682ad09565ea460894768b44"
+    },
+    "observer-summary.json": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/evidence/EXEC-TRANSFER-20261013/xctest-transfer/observer-20261013/summary.json",
+      "bytes": 725,
+      "sha256": "80ab92db3aa20174cc40be8d98fe3dd958da2509ecc7e845258e570b67ba1edd"
+    },
+    "xctest-report.md": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/evidence/EXEC-TRANSFER-20261013/xctest-transfer/REPORT.md",
+      "bytes": 6768,
+      "sha256": "d9efa53ddca4f8a78ef03b1aa690c21afb46e45bf8328989383c6a3c31216f07"
+    },
+    "compensation-report.md": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/evidence/EXEC-TRANSFER-20261013/compensation-followup/REPORT.md",
+      "bytes": 6595,
+      "sha256": "04d0c6f454f0569a3f0d856bf65a17e29c70e7f7ad44b97ca3c1b678e2d2a455"
+    },
+    "compensation-duration-summary.json": {
+      "source": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/executor-research-20261013/research/evidence/EXEC-TRANSFER-20261013/compensation-followup/results.json",
+      "bytes": 4836,
+      "sha256": "45a034a6af3207a47e75c6596b2ed39bd1625f16855f906a79bc04c5ee584cdb",
+      "transformation": "Summary subset excludes command_results and input_sha256 from the source results JSON."
+    }
+  },
+  "total_bytes": 78753
+}

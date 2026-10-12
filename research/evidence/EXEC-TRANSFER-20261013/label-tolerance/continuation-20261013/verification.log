@@ -1,0 +1,65 @@
+{
+  "clean_inverse_parameter_max_abs": 0.0,
+  "det_inverse_parameter_max_abs": 8.326672684688674e-17,
+  "random_onset_uniform_prior_bayes": {
+    "n": 20000,
+    "onset_mae_ms": 11.067581189755654,
+    "onset_rmse_ms": 13.136236834552138,
+    "command": {
+      "xy_mae": 0.02094455879891608,
+      "xy_mae_p95": 0.04446836077197945,
+      "pass_rate": 0.5222,
+      "contact_disagree": 0.03914020778233187,
+      "boundary_mae_ms": 11.067581189755654,
+      "good_fraction": 0.6736010378591726
+    },
+    "nominal_replay": {
+      "xy_mae": 0.005578397797470373,
+      "xy_mae_p95": 0.029088186946890738,
+      "pass_rate": 0.88845,
+      "contact_disagree": 0.010424304636771497,
+      "boundary_mae_ms": 2.934560806210859,
+      "good_fraction": 0.9285121751160433
+    },
+    "fresh_replay": {
+      "xy_mae": 0.025089731852446923,
+      "xy_mae_p95": 0.05265086447248596,
+      "pass_rate": 0.4320500000000001,
+      "contact_disagree": 0.046676602519100135,
+      "boundary_mae_ms": 13.274071501712053,
+      "good_fraction": 0.5999562018112364
+    },
+    "warning": "Parameter-squared-error Bayes oracle uses true executed timing, not video. It is not necessarily optimal for trajectory score. Chunk-mean p95 is descriptive only."
+  },
+  "local_window_collision": {
+    "command_a": [
+      [
+        0.1,
+        0.1589898669028243,
+        0.06921215971661088,
+        0.19999999999999998
+      ]
+    ],
+    "command_b": [
+      [
+        0.1,
+        0.19472202409246542,
+        0.15633357108904153,
+        0.19999999999999998
+      ]
+    ],
+    "frame": 12,
+    "time_s": 0.2,
+    "window": "t-2..t+1",
+    "local_pixel_maxdiff": 0.0,
+    "whole_video_maxdiff": 0.6638701558113098,
+    "target_xy_distance": 0.063480072436924,
+    "minimum_max_pair_xy_error": 0.031740036218462,
+    "caveat": "Not proof against CurvedModel because its5D GroupNorm transmits global means/variances."
+  },
+  "collapse_collision": {
+    "identical_pixels": true,
+    "move_and_hold_duration_delta_ms": 120,
+    "balanced_pair_per_duration_RMSE_lower_bound_ms": 60
+  }
+}

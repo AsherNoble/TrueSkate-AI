@@ -1,0 +1,33 @@
+You are research agent 2 of 5 ("trail-model") for the TrueSkate-AI curved Model 1 MVP. The main Claude session coordinates you. Report findings to it.
+
+CONTEXT
+- True Skate (iOS) draws a glowing orange-peach touch "trail" where the finger moves. It fades within a few hundred ms, it's drawn UNDER the skateboard (the board occludes it), and its tip is a bright, broad, soft cap. Synthetic gestures were executed by XCTest on an iPhone XR and recorded at native 60 fps, 828x1792 px (2 px per logical point).
+- 100 sealed round-6 clips are mirrored locally at /private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/audit6-mirror/:
+  - The manifest is audit-6/manifest.json. Each sample has sample_dir, frame_times_s (120 native frames), onset_s, release_s, clock_rate, and gesture.command_points (normalized to 414x896 logical; multiply by (828,1792) for pixels) with times_ms.
+  - Frames come from <sample_dir>/clip.mp4. Commanded position at frame time t: elapsed_ms = (t-onset_s)/clock_rate*1000, then linear interpolation between command_points by times_ms.
+- The main session built an offline timing-blind trail tracker in scratchpad/lag/: profile.py, viterbi_lag.py, trail_lag.py, render_check.py. It assumes a cap radius R_CAP = 24 px, a glow ridge wider than ±9 px, a trail lifetime FADE_MS = 200 and a scenery-persistence test of 500 ms. Those parameters are guesses. Your job is to measure them properly.
+- The design doc for context is scratchpad/design/EXEC-TRANSFER-DESIGN.md. Read it, but don't redo it.
+
+QUESTION
+Characterise the trail as a measurement instrument:
+- display latency from touch to first visible glow;
+- fade lifetime at a fixed spot;
+- end-cap radius, from stationary holds (some clips start or end with a zero-length segment, i.e. the touch is stationary);
+- cross-section and width;
+- whether it is smoothed or interpolated relative to the command (corner cutting at kinks);
+- occlusion by the board and scenery, and how often each happens.
+Bottom line: can the trail serve as a timing reference to within one native frame (16.7 ms), and under what conditions?
+
+METHOD (free, laptop only)
+- Offline analysis of the 100 clips with OpenCV and numpy from the project venv. Copy anything from scratchpad/lag/ you want to reuse, but never edit it.
+- Web: True Skate trail and touch-indicator settings, if anything is documented.
+- Budget: about 1.5 hours.
+
+RULES (hard)
+- No rig, devices, ssh or paid services. Don't edit or commit to the repo worktree /Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/curved-model1-v1 (read-only).
+- Write only under scratchpad/research/2-trail-model/ (full path prefix /private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad/). scratchpad/lag/, scratchpad/audit6-mirror/ and scratchpad/design/ are read-only.
+- Python: "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/.venv/bin/python".
+- Don't spawn subagents. For a blocking question, SendMessage(to="main"). Validate claims visually: render frames and look at them before trusting a number.
+
+DELIVERABLE
+Write REPORT.md in your folder, at most one page: a parameter table (value, method, n, uncertainty), the measurement limits it implies, recommended tracker parameter changes, evidence image and JSON paths, and confidence. Your final reply should be a terse summary in the form "finding, evidence path, confidence".

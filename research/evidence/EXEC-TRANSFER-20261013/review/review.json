@@ -1,0 +1,806 @@
+{
+  "manifest_sha256": "d2aabb9959b3a5de22d88dcbd3d224588321a019ee020fb685e6b0f55418bd69",
+  "round": 6,
+  "samples": [
+    {
+      "id": 51,
+      "rating": "unclear",
+      "systematic": false,
+      "reason": "It's pretty accurate. The weird thing i'm noticing now and that i've noticed before is that at each kink where one straight section ends and the next starts, the position circle will start moving kind've at the same instant as the trace but the trace end up leading but at the end they seem to meet at the same point in time or smth... idk how to explain it but if you go through this clip frame by frame maybe you'll see what I mean. Though sometimes it's not quite so simple.",
+      "onset_frame": 13,
+      "release_frame": null
+    },
+    {
+      "id": 52,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 22,
+      "release_frame": null
+    },
+    {
+      "id": 53,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 22,
+      "release_frame": null
+    },
+    {
+      "id": 54,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 32,
+      "release_frame": null
+    },
+    {
+      "id": 55,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 32,
+      "release_frame": null
+    },
+    {
+      "id": 56,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 46,
+      "release_frame": null
+    },
+    {
+      "id": 57,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "The actual trace lagged short of the target ring. And the two differed in current position by a bit... investigation needed.",
+      "onset_frame": 39,
+      "release_frame": null
+    },
+    {
+      "id": 58,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 35,
+      "release_frame": null
+    },
+    {
+      "id": 59,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 16,
+      "release_frame": null
+    },
+    {
+      "id": 60,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 50,
+      "release_frame": null
+    },
+    {
+      "id": 61,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 33,
+      "release_frame": null
+    },
+    {
+      "id": 62,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 70,
+      "release_frame": null
+    },
+    {
+      "id": 63,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 35,
+      "release_frame": null
+    },
+    {
+      "id": 64,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 6,
+      "release_frame": null
+    },
+    {
+      "id": 65,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 62,
+      "release_frame": null
+    },
+    {
+      "id": 66,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 73,
+      "release_frame": null
+    },
+    {
+      "id": 67,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "The target ring and trace head don't match. Probably/hopefully due to the first contact and target ring first frame not matching.",
+      "onset_frame": 33,
+      "release_frame": null
+    },
+    {
+      "id": 68,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 23,
+      "release_frame": null
+    },
+    {
+      "id": 69,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 57,
+      "release_frame": null
+    },
+    {
+      "id": 70,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 33,
+      "release_frame": null
+    },
+    {
+      "id": 71,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 42,
+      "release_frame": null
+    },
+    {
+      "id": 72,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 5,
+      "release_frame": null
+    },
+    {
+      "id": 73,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 27,
+      "release_frame": null
+    },
+    {
+      "id": 74,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 18,
+      "release_frame": null
+    },
+    {
+      "id": 75,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 5,
+      "release_frame": null
+    },
+    {
+      "id": 76,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 14,
+      "release_frame": null
+    },
+    {
+      "id": 77,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "They differ by about a frame or two worth of distance.",
+      "onset_frame": 50,
+      "release_frame": null
+    },
+    {
+      "id": 78,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 13,
+      "release_frame": null
+    },
+    {
+      "id": 79,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 82,
+      "release_frame": null
+    },
+    {
+      "id": 80,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 39,
+      "release_frame": null
+    },
+    {
+      "id": 81,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 69,
+      "release_frame": null
+    },
+    {
+      "id": 82,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 71,
+      "release_frame": null
+    },
+    {
+      "id": 83,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "They line up pretty well, especially in the last few segments. Though in the first few they don't line up very well.",
+      "onset_frame": 33,
+      "release_frame": null
+    },
+    {
+      "id": 84,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 41,
+      "release_frame": null
+    },
+    {
+      "id": 85,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 45,
+      "release_frame": null
+    },
+    {
+      "id": 86,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 70,
+      "release_frame": null
+    },
+    {
+      "id": 87,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 12,
+      "release_frame": null
+    },
+    {
+      "id": 88,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 23,
+      "release_frame": null
+    },
+    {
+      "id": 89,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 34,
+      "release_frame": null
+    },
+    {
+      "id": 90,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 41,
+      "release_frame": null
+    },
+    {
+      "id": 91,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 5,
+      "release_frame": null
+    },
+    {
+      "id": 92,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 49,
+      "release_frame": null
+    },
+    {
+      "id": 93,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 76,
+      "release_frame": null
+    },
+    {
+      "id": 94,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 50,
+      "release_frame": null
+    },
+    {
+      "id": 95,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 4,
+      "release_frame": null
+    },
+    {
+      "id": 96,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 44,
+      "release_frame": null
+    },
+    {
+      "id": 97,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 63,
+      "release_frame": null
+    },
+    {
+      "id": 98,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 57,
+      "release_frame": null
+    },
+    {
+      "id": 99,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 66,
+      "release_frame": null
+    },
+    {
+      "id": 100,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 54,
+      "release_frame": null
+    },
+    {
+      "id": 101,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 55,
+      "release_frame": null
+    },
+    {
+      "id": 102,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 68,
+      "release_frame": null
+    },
+    {
+      "id": 103,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 21,
+      "release_frame": null
+    },
+    {
+      "id": 104,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 40,
+      "release_frame": null
+    },
+    {
+      "id": 105,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 42,
+      "release_frame": null
+    },
+    {
+      "id": 106,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 7,
+      "release_frame": null
+    },
+    {
+      "id": 107,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 74,
+      "release_frame": null
+    },
+    {
+      "id": 108,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 47,
+      "release_frame": null
+    },
+    {
+      "id": 109,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "The difference is enough that i'm calling this a fail. Though it's still very minor \u2013 ",
+      "onset_frame": 14,
+      "release_frame": null
+    },
+    {
+      "id": 110,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 21,
+      "release_frame": null
+    },
+    {
+      "id": 111,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 47,
+      "release_frame": null
+    },
+    {
+      "id": 112,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 13,
+      "release_frame": null
+    },
+    {
+      "id": 113,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "The difference is quite large though not massive. At it's largest, it's like 35-50 logical pts.",
+      "onset_frame": 6,
+      "release_frame": null
+    },
+    {
+      "id": 114,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 25,
+      "release_frame": null
+    },
+    {
+      "id": 115,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 36,
+      "release_frame": null
+    },
+    {
+      "id": 116,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 67,
+      "release_frame": null
+    },
+    {
+      "id": 117,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 29,
+      "release_frame": null
+    },
+    {
+      "id": 118,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "Difference_max ~= 30 logical pts.",
+      "onset_frame": 8,
+      "release_frame": null
+    },
+    {
+      "id": 119,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "Difference_max ~= 20 to 30 logical pts",
+      "onset_frame": 79,
+      "release_frame": null
+    },
+    {
+      "id": 120,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 18,
+      "release_frame": null
+    },
+    {
+      "id": 121,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 47,
+      "release_frame": null
+    },
+    {
+      "id": 122,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 12,
+      "release_frame": null
+    },
+    {
+      "id": 123,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 23,
+      "release_frame": null
+    },
+    {
+      "id": 124,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 77,
+      "release_frame": null
+    },
+    {
+      "id": 125,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "Difference_max ~= 30 logical pts",
+      "onset_frame": 35,
+      "release_frame": null
+    },
+    {
+      "id": 126,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 5,
+      "release_frame": null
+    },
+    {
+      "id": 127,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "Difference_max ~= 15 logical pts.",
+      "onset_frame": 81,
+      "release_frame": null
+    },
+    {
+      "id": 128,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "Difference_max ~= 10 logical pts",
+      "onset_frame": 26,
+      "release_frame": null
+    },
+    {
+      "id": 129,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "Difference_max ~= 40 logical pts",
+      "onset_frame": 67,
+      "release_frame": null
+    },
+    {
+      "id": 130,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 8,
+      "release_frame": null
+    },
+    {
+      "id": 131,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "Difference_max ~= 20 logical pts in the first segment though the other segments were basically spot on.",
+      "onset_frame": 19,
+      "release_frame": null
+    },
+    {
+      "id": 132,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 81,
+      "release_frame": null
+    },
+    {
+      "id": 133,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 66,
+      "release_frame": null
+    },
+    {
+      "id": 134,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 42,
+      "release_frame": null
+    },
+    {
+      "id": 135,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 49,
+      "release_frame": null
+    },
+    {
+      "id": 136,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 4,
+      "release_frame": null
+    },
+    {
+      "id": 137,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 53,
+      "release_frame": null
+    },
+    {
+      "id": 138,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 68,
+      "release_frame": null
+    },
+    {
+      "id": 139,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 49,
+      "release_frame": null
+    },
+    {
+      "id": 140,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 51,
+      "release_frame": null
+    },
+    {
+      "id": 151,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "Difference_max ~= 15 logical pts",
+      "onset_frame": 46,
+      "release_frame": null
+    },
+    {
+      "id": 152,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 32,
+      "release_frame": null
+    },
+    {
+      "id": 153,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "Difference_max ~= 10 logical pts",
+      "onset_frame": 17,
+      "release_frame": null
+    },
+    {
+      "id": 154,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 7,
+      "release_frame": null
+    },
+    {
+      "id": 155,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "Difference_max ~= 10 logical pts",
+      "onset_frame": 47,
+      "release_frame": null
+    },
+    {
+      "id": 156,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 8,
+      "release_frame": null
+    },
+    {
+      "id": 157,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 25,
+      "release_frame": null
+    },
+    {
+      "id": 158,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 16,
+      "release_frame": null
+    },
+    {
+      "id": 159,
+      "rating": "fail",
+      "systematic": false,
+      "reason": "First segment difference is approx. zero. 2nd, 3rd and 4th: difference_max ~= 35 logical pts.",
+      "onset_frame": 6,
+      "release_frame": null
+    },
+    {
+      "id": 160,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 15,
+      "release_frame": null
+    }
+  ]
+}

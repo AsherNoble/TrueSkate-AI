@@ -1,0 +1,902 @@
+[
+  {
+    "id": 51,
+    "clock_rate": 0.9998633155189022,
+    "command_min_interval_ms": 111,
+    "onset_phase_ms": 6.308839001560429,
+    "release_phase_ms": 7.860707459843574,
+    "onset_target_override": 1.2336254821305045e-08,
+    "release_target_override": 0.013078535547537096
+  },
+  {
+    "id": 52,
+    "clock_rate": 0.9998633155189022,
+    "command_min_interval_ms": 323,
+    "onset_phase_ms": -5.0239202938975325,
+    "release_phase_ms": 1.2649306187064724,
+    "onset_target_override": 6.423557712676261e-05,
+    "release_target_override": 1.615986922613059e-05
+  },
+  {
+    "id": 53,
+    "clock_rate": 0.9998633155189022,
+    "command_min_interval_ms": 125,
+    "onset_phase_ms": 5.730973905285097,
+    "release_phase_ms": -3.012296035166173,
+    "onset_target_override": 9.623094954845392e-09,
+    "release_target_override": 5.669064052930453e-09
+  },
+  {
+    "id": 54,
+    "clock_rate": 0.9998633155189022,
+    "command_min_interval_ms": 212,
+    "onset_phase_ms": -0.28577540129504087,
+    "release_phase_ms": -2.7606971013085513,
+    "onset_target_override": 2.0882208535311965e-05,
+    "release_target_override": 1.078726211842526e-08
+  },
+  {
+    "id": 55,
+    "clock_rate": 0.9998633155189022,
+    "command_min_interval_ms": 378,
+    "onset_phase_ms": -3.9253079745833475,
+    "release_phase_ms": 5.57762743946455,
+    "onset_target_override": 1.849018029526435e-08,
+    "release_target_override": 0.0026316574415521563
+  },
+  {
+    "id": 56,
+    "clock_rate": 0.9998633155189022,
+    "command_min_interval_ms": 204,
+    "onset_phase_ms": 4.5742584805879005,
+    "release_phase_ms": -2.202455949102955,
+    "onset_target_override": 1.1726367164964543e-08,
+    "release_target_override": 3.0027128108808134e-08
+  },
+  {
+    "id": 57,
+    "clock_rate": 0.9998633155189022,
+    "command_min_interval_ms": 100,
+    "onset_phase_ms": 0.9786631446360161,
+    "release_phase_ms": 1.937521115820573,
+    "onset_target_override": 1.8488853293010296e-08,
+    "release_target_override": 0.012095160343012262
+  },
+  {
+    "id": 58,
+    "clock_rate": 0.9998633155189022,
+    "command_min_interval_ms": 585,
+    "onset_phase_ms": 5.23722372892621,
+    "release_phase_ms": 6.824263307478873,
+    "onset_target_override": 2.38622212111334e-08,
+    "release_target_override": 0.0018072451802120548
+  },
+  {
+    "id": 59,
+    "clock_rate": 0.9998633155189022,
+    "command_min_interval_ms": 127,
+    "onset_phase_ms": -4.796559744846718,
+    "release_phase_ms": -1.2371304314697795,
+    "onset_target_override": 0.002777965785794216,
+    "release_target_override": 1.3414873797372988e-08
+  },
+  {
+    "id": 60,
+    "clock_rate": 0.9998633155189022,
+    "command_min_interval_ms": 130,
+    "onset_phase_ms": 4.488169316900326,
+    "release_phase_ms": -0.9238343131698912,
+    "onset_target_override": 1.1805750932403214e-08,
+    "release_target_override": 9.244426646505148e-09
+  },
+  {
+    "id": 61,
+    "clock_rate": 1.0006219496230329,
+    "command_min_interval_ms": 196,
+    "onset_phase_ms": -1.3122774165976736,
+    "release_phase_ms": 2.6566120498188184,
+    "onset_target_override": 0.00173542910088146,
+    "release_target_override": 0.0054328843633366436
+  },
+  {
+    "id": 62,
+    "clock_rate": 1.0006219496230329,
+    "command_min_interval_ms": 107,
+    "onset_phase_ms": -4.596384117046881,
+    "release_phase_ms": 4.125334397349079,
+    "onset_target_override": 0.001610291031265613,
+    "release_target_override": 0.002040202806564635
+  },
+  {
+    "id": 63,
+    "clock_rate": 1.0006219496230329,
+    "command_min_interval_ms": 197,
+    "onset_phase_ms": 1.3599255302843005,
+    "release_phase_ms": 0.7620699847095125,
+    "onset_target_override": 2.1287373253020547e-09,
+    "release_target_override": 0.001128063611885307
+  },
+  {
+    "id": 64,
+    "clock_rate": 1.0006219496230329,
+    "command_min_interval_ms": 218,
+    "onset_phase_ms": 2.066074660380224,
+    "release_phase_ms": -3.941658739204712,
+    "onset_target_override": 2.7607552287537627e-08,
+    "release_target_override": 4.463149738676009e-09
+  },
+  {
+    "id": 65,
+    "clock_rate": 1.0006219496230329,
+    "command_min_interval_ms": 760,
+    "onset_phase_ms": -1.1698770750250276,
+    "release_phase_ms": -7.364195361518,
+    "onset_target_override": 0.0004905371453924166,
+    "release_target_override": 1.6603026313816404e-08
+  },
+  {
+    "id": 66,
+    "clock_rate": 1.0006219496230329,
+    "command_min_interval_ms": 106,
+    "onset_phase_ms": -1.9098834664461606,
+    "release_phase_ms": 5.7801156171706225,
+    "onset_target_override": 0.0007825526432945771,
+    "release_target_override": 0.0038823030855263977
+  },
+  {
+    "id": 67,
+    "clock_rate": 1.0006219496230329,
+    "command_min_interval_ms": 125,
+    "onset_phase_ms": 3.7358103081217564,
+    "release_phase_ms": -4.576313408804822,
+    "onset_target_override": 1.2093696044601643e-08,
+    "release_target_override": 9.301427741064792e-09
+  },
+  {
+    "id": 68,
+    "clock_rate": 1.0006219496230329,
+    "command_min_interval_ms": 110,
+    "onset_phase_ms": -7.120992212456656,
+    "release_phase_ms": -7.68624942595153,
+    "onset_target_override": 0.0037955622350423104,
+    "release_target_override": 1.4952523389809008e-08
+  },
+  {
+    "id": 69,
+    "clock_rate": 1.0006219496230329,
+    "command_min_interval_ms": 344,
+    "onset_phase_ms": -6.873403743973938,
+    "release_phase_ms": -0.7788804537085525,
+    "onset_target_override": 0.010429609632760387,
+    "release_target_override": 2.7551805638999698e-08
+  },
+  {
+    "id": 70,
+    "clock_rate": 1.0006219496230329,
+    "command_min_interval_ms": 1027,
+    "onset_phase_ms": -1.9109679950801706,
+    "release_phase_ms": -7.606225732224914,
+    "onset_target_override": 0.00024792061896281286,
+    "release_target_override": 1.108588804088484e-08
+  },
+  {
+    "id": 71,
+    "clock_rate": 0.9997596106614971,
+    "command_min_interval_ms": 134,
+    "onset_phase_ms": -6.615862452324706,
+    "release_phase_ms": 0.787872779368648,
+    "onset_target_override": 0.005214630398873566,
+    "release_target_override": 0.0033593119593646166
+  },
+  {
+    "id": 72,
+    "clock_rate": 0.9997596106614971,
+    "command_min_interval_ms": 991,
+    "onset_phase_ms": 0.06325624590530765,
+    "release_phase_ms": 7.491030411449273,
+    "onset_target_override": 2.7968675699230674e-08,
+    "release_target_override": 0.0013937552157103185
+  },
+  {
+    "id": 73,
+    "clock_rate": 0.9997596106614971,
+    "command_min_interval_ms": 121,
+    "onset_phase_ms": 7.5834974576718395,
+    "release_phase_ms": 2.476524202037922,
+    "onset_target_override": 2.7052867766100883e-08,
+    "release_target_override": 0.0036769760018740293
+  },
+  {
+    "id": 74,
+    "clock_rate": 0.9997596106614971,
+    "command_min_interval_ms": 109,
+    "onset_phase_ms": -3.5967221431043583,
+    "release_phase_ms": 5.9758048468623315,
+    "onset_target_override": 0.00020995173362289095,
+    "release_target_override": 0.0009451982844159425
+  },
+  {
+    "id": 75,
+    "clock_rate": 0.9997596106614971,
+    "command_min_interval_ms": 465,
+    "onset_phase_ms": -2.375832724485605,
+    "release_phase_ms": -5.932394809295971,
+    "onset_target_override": 0.000414733928061284,
+    "release_target_override": 2.2300189606374792e-08
+  },
+  {
+    "id": 76,
+    "clock_rate": 0.9997596106614971,
+    "command_min_interval_ms": 545,
+    "onset_phase_ms": 4.543899341953761,
+    "release_phase_ms": -1.4021926800538154,
+    "onset_target_override": 2.6965912072951278e-08,
+    "release_target_override": 2.1932797933194082e-08
+  },
+  {
+    "id": 77,
+    "clock_rate": 0.9997596106614971,
+    "command_min_interval_ms": 100,
+    "onset_phase_ms": -7.523706094360705,
+    "release_phase_ms": 0.3541761216823147,
+    "onset_target_override": 0.008767715175188266,
+    "release_target_override": 0.0004198471144917131
+  },
+  {
+    "id": 78,
+    "clock_rate": 0.9997596106614971,
+    "command_min_interval_ms": 122,
+    "onset_phase_ms": 7.6415046764140016,
+    "release_phase_ms": -4.279106075706807,
+    "onset_target_override": 1.4131496141301128e-08,
+    "release_target_override": 1.3231560690581298e-08
+  },
+  {
+    "id": 79,
+    "clock_rate": 0.9997596106614971,
+    "command_min_interval_ms": 490,
+    "onset_phase_ms": -4.107487317540404,
+    "release_phase_ms": 2.440721906594945,
+    "onset_target_override": 0.002537570171427496,
+    "release_target_override": 0.0015078444960157492
+  },
+  {
+    "id": 80,
+    "clock_rate": 0.9997596106614971,
+    "command_min_interval_ms": 122,
+    "onset_phase_ms": -3.088348573072608,
+    "release_phase_ms": -5.86688922614087,
+    "onset_target_override": 0.0003101779496394123,
+    "release_target_override": 8.517687469740915e-09
+  },
+  {
+    "id": 81,
+    "clock_rate": 0.9998154908212675,
+    "command_min_interval_ms": 458,
+    "onset_phase_ms": -1.2399874412061251,
+    "release_phase_ms": 6.675507354934496,
+    "onset_target_override": 0.00035055160031942107,
+    "release_target_override": 0.0018872013159148724
+  },
+  {
+    "id": 82,
+    "clock_rate": 0.9998154908212675,
+    "command_min_interval_ms": 135,
+    "onset_phase_ms": -5.26988582160115,
+    "release_phase_ms": 1.9397549919322188,
+    "onset_target_override": 0.00022481481797227842,
+    "release_target_override": 0.00041932819770928027
+  },
+  {
+    "id": 83,
+    "clock_rate": 0.9998154908212675,
+    "command_min_interval_ms": 105,
+    "onset_phase_ms": -5.113283247322187,
+    "release_phase_ms": -2.600532920741472,
+    "onset_target_override": 0.021552664101117232,
+    "release_target_override": 1.4673113270666624e-08
+  },
+  {
+    "id": 84,
+    "clock_rate": 0.9998154908212675,
+    "command_min_interval_ms": 198,
+    "onset_phase_ms": -1.131341903835903,
+    "release_phase_ms": -7.314744027496545,
+    "onset_target_override": 0.0007670667357530612,
+    "release_target_override": 1.3193637058738246e-08
+  },
+  {
+    "id": 85,
+    "clock_rate": 0.9998154908212675,
+    "command_min_interval_ms": 101,
+    "onset_phase_ms": -0.581502094298969,
+    "release_phase_ms": 5.636548687352416,
+    "onset_target_override": 0.00028086445222771624,
+    "release_target_override": 0.006987665484383282
+  },
+  {
+    "id": 86,
+    "clock_rate": 0.9998154908212675,
+    "command_min_interval_ms": 408,
+    "onset_phase_ms": 6.378225510708546,
+    "release_phase_ms": -2.3640542342207027,
+    "onset_target_override": 2.660787250994102e-08,
+    "release_target_override": 3.271299851090071e-08
+  },
+  {
+    "id": 87,
+    "clock_rate": 0.9998154908212675,
+    "command_min_interval_ms": 307,
+    "onset_phase_ms": 4.587039662290238,
+    "release_phase_ms": 1.8067510265495912,
+    "onset_target_override": 2.55449492223306e-08,
+    "release_target_override": 0.002732724555779848
+  },
+  {
+    "id": 88,
+    "clock_rate": 0.9998154908212675,
+    "command_min_interval_ms": 214,
+    "onset_phase_ms": 6.735209540927656,
+    "release_phase_ms": -1.3832453518176635,
+    "onset_target_override": 1.3169796938494454e-08,
+    "release_target_override": 2.542843276997114e-08
+  },
+  {
+    "id": 89,
+    "clock_rate": 0.9998154908212675,
+    "command_min_interval_ms": 229,
+    "onset_phase_ms": 6.5835538168883545,
+    "release_phase_ms": 2.372106298061283,
+    "onset_target_override": 1.8716434513343927e-09,
+    "release_target_override": 0.0013013536167684908
+  },
+  {
+    "id": 90,
+    "clock_rate": 0.9998154908212675,
+    "command_min_interval_ms": 342,
+    "onset_phase_ms": 3.4858320333128745,
+    "release_phase_ms": -3.0376588932412574,
+    "onset_target_override": 1.8120256687055765e-08,
+    "release_target_override": 1.9868214962137642e-08
+  },
+  {
+    "id": 91,
+    "clock_rate": 1.0000281939296256,
+    "command_min_interval_ms": 646,
+    "onset_phase_ms": -7.840956833678803,
+    "release_phase_ms": 4.84425644485853,
+    "onset_target_override": 0.007722519782509501,
+    "release_target_override": 0.004771109548268713
+  },
+  {
+    "id": 92,
+    "clock_rate": 1.0000281939296256,
+    "command_min_interval_ms": 114,
+    "onset_phase_ms": -4.976150113522593,
+    "release_phase_ms": 6.719312542935896,
+    "onset_target_override": 0.0036576773876024976,
+    "release_target_override": 0.003208728206013324
+  },
+  {
+    "id": 93,
+    "clock_rate": 1.0000281939296256,
+    "command_min_interval_ms": 133,
+    "onset_phase_ms": 0.994005677624088,
+    "release_phase_ms": -1.6608991265680828,
+    "onset_target_override": 3.1250841203711734e-08,
+    "release_target_override": 1.769970492610276e-08
+  },
+  {
+    "id": 94,
+    "clock_rate": 1.0000281939296256,
+    "command_min_interval_ms": 431,
+    "onset_phase_ms": 5.4686024528933785,
+    "release_phase_ms": 0.8259056202319925,
+    "onset_target_override": 1.8433274648651417e-08,
+    "release_target_override": 0.00019748399380931938
+  },
+  {
+    "id": 95,
+    "clock_rate": 1.0000281939296256,
+    "command_min_interval_ms": 888,
+    "onset_phase_ms": 2.38026446140438,
+    "release_phase_ms": 7.072300670913023,
+    "onset_target_override": 7.486573694315268e-09,
+    "release_target_override": 0.0006559704717123021
+  },
+  {
+    "id": 96,
+    "clock_rate": 1.0000281939296256,
+    "command_min_interval_ms": 189,
+    "onset_phase_ms": 3.161189383263263,
+    "release_phase_ms": -1.161125117405959,
+    "onset_target_override": 2.445990020657591e-08,
+    "release_target_override": 1.4964531613334156e-08
+  },
+  {
+    "id": 97,
+    "clock_rate": 1.0000281939296256,
+    "command_min_interval_ms": 142,
+    "onset_phase_ms": 4.547877295408398,
+    "release_phase_ms": -2.431174614876852,
+    "onset_target_override": 8.592494347671528e-09,
+    "release_target_override": 2.4105938045736617e-08
+  },
+  {
+    "id": 98,
+    "clock_rate": 1.0000281939296256,
+    "command_min_interval_ms": 198,
+    "onset_phase_ms": 6.394416821422055,
+    "release_phase_ms": 0.4125737121043471,
+    "onset_target_override": 2.6318602789740192e-08,
+    "release_target_override": 9.355089476042077e-05
+  },
+  {
+    "id": 99,
+    "clock_rate": 1.0000281939296256,
+    "command_min_interval_ms": 142,
+    "onset_phase_ms": 0.16794867757141674,
+    "release_phase_ms": -4.818095327266292,
+    "onset_target_override": 3.0519773652605145e-08,
+    "release_target_override": 2.445990020657591e-08
+  },
+  {
+    "id": 100,
+    "clock_rate": 1.0000281939296256,
+    "command_min_interval_ms": 109,
+    "onset_phase_ms": 6.409297359041943,
+    "release_phase_ms": 0.08451677403087388,
+    "onset_target_override": 1.950151408878835e-08,
+    "release_target_override": 2.287061118332944e-05
+  },
+  {
+    "id": 101,
+    "clock_rate": 1.0000022120813932,
+    "command_min_interval_ms": 420,
+    "onset_phase_ms": -1.1011177470052758,
+    "release_phase_ms": 5.5677404013652065,
+    "onset_target_override": 0.00046463427920842045,
+    "release_target_override": 0.00285783990000324
+  },
+  {
+    "id": 102,
+    "clock_rate": 1.0000022120813932,
+    "command_min_interval_ms": 498,
+    "onset_phase_ms": -0.3521314269008258,
+    "release_phase_ms": -2.3510298103666116,
+    "onset_target_override": 0.0005459224590851436,
+    "release_target_override": 4.594663983664018e-09
+  },
+  {
+    "id": 103,
+    "clock_rate": 1.0000022120813932,
+    "command_min_interval_ms": 155,
+    "onset_phase_ms": 1.242353061678969,
+    "release_phase_ms": 1.5763861036894866,
+    "onset_target_override": 2.670173015267637e-08,
+    "release_target_override": 0.0009349078588744295
+  },
+  {
+    "id": 104,
+    "clock_rate": 1.0000022120813932,
+    "command_min_interval_ms": 152,
+    "onset_phase_ms": 7.833722477677441,
+    "release_phase_ms": 2.5032177054882254,
+    "onset_target_override": 3.4981749735453315e-08,
+    "release_target_override": 0.0009960111276711735
+  },
+  {
+    "id": 105,
+    "clock_rate": 1.0000022120813932,
+    "command_min_interval_ms": 175,
+    "onset_phase_ms": 0.0954031758020335,
+    "release_phase_ms": 7.764816556601772,
+    "onset_target_override": 2.7155875093675053e-08,
+    "release_target_override": 0.0014032119211882235
+  },
+  {
+    "id": 106,
+    "clock_rate": 1.0000022120813932,
+    "command_min_interval_ms": 235,
+    "onset_phase_ms": -2.015083034059728,
+    "release_phase_ms": 3.986478695409801,
+    "onset_target_override": 0.0016921850179448528,
+    "release_target_override": 0.0029383618542184165
+  },
+  {
+    "id": 107,
+    "clock_rate": 1.0000022120813932,
+    "command_min_interval_ms": 134,
+    "onset_phase_ms": -1.2934717768828818,
+    "release_phase_ms": 3.040492690608687,
+    "onset_target_override": 0.0016030705035566552,
+    "release_target_override": 0.005256255202865145
+  },
+  {
+    "id": 108,
+    "clock_rate": 1.0000022120813932,
+    "command_min_interval_ms": 197,
+    "onset_phase_ms": 0.1634290680385675,
+    "release_phase_ms": -6.501557937895086,
+    "onset_target_override": 3.271299851090071e-08,
+    "release_target_override": 3.100980380645129e-08
+  },
+  {
+    "id": 109,
+    "clock_rate": 1.0000022120813932,
+    "command_min_interval_ms": 179,
+    "onset_phase_ms": -7.642404779893752,
+    "release_phase_ms": -0.3071350451691046,
+    "onset_target_override": 0.0062337191024343635,
+    "release_target_override": 1.7148765276736713e-08
+  },
+  {
+    "id": 110,
+    "clock_rate": 1.0000022120813932,
+    "command_min_interval_ms": 567,
+    "onset_phase_ms": 6.883337972688253,
+    "release_phase_ms": -6.1141468907734975,
+    "onset_target_override": 8.612483734727744e-09,
+    "release_target_override": 1.6700818394888017e-08
+  },
+  {
+    "id": 111,
+    "clock_rate": 1.000090894085118,
+    "command_min_interval_ms": 392,
+    "onset_phase_ms": 7.863051902968543,
+    "release_phase_ms": 3.2880367171079783,
+    "onset_target_override": 1.2546181252192107e-08,
+    "release_target_override": 0.001452028653092934
+  },
+  {
+    "id": 112,
+    "clock_rate": 1.000090894085118,
+    "command_min_interval_ms": 100,
+    "onset_phase_ms": -1.6018621163524926,
+    "release_phase_ms": -1.547325665281818,
+    "onset_target_override": 0.0014671968527265097,
+    "release_target_override": 8.055673098298464e-09
+  },
+  {
+    "id": 113,
+    "clock_rate": 1.000090894085118,
+    "command_min_interval_ms": 103,
+    "onset_phase_ms": 4.068661552754094,
+    "release_phase_ms": 1.824828650255128,
+    "onset_target_override": 1.3393492589481495e-08,
+    "release_target_override": 0.00509859177841479
+  },
+  {
+    "id": 114,
+    "clock_rate": 1.000090894085118,
+    "command_min_interval_ms": 120,
+    "onset_phase_ms": 3.3054471137994312,
+    "release_phase_ms": 2.078883922411734,
+    "onset_target_override": 1.5265083678041392e-08,
+    "release_target_override": 0.0006709507605582331
+  },
+  {
+    "id": 115,
+    "clock_rate": 1.000090894085118,
+    "command_min_interval_ms": 118,
+    "onset_phase_ms": 0.2822018763986023,
+    "release_phase_ms": 4.703460033045559,
+    "onset_target_override": 1.849018029526435e-08,
+    "release_target_override": 0.00874195992232968
+  },
+  {
+    "id": 116,
+    "clock_rate": 1.000090894085118,
+    "command_min_interval_ms": 301,
+    "onset_phase_ms": -4.897551068573591,
+    "release_phase_ms": -3.8701919489483316,
+    "onset_target_override": 0.008754639213458305,
+    "release_target_override": 2.5051227536820875e-08
+  },
+  {
+    "id": 117,
+    "clock_rate": 1.000090894085118,
+    "command_min_interval_ms": 899,
+    "onset_phase_ms": -5.008671414110211,
+    "release_phase_ms": -4.259957631582267,
+    "onset_target_override": 0.0008670742865332644,
+    "release_target_override": 2.4881655525113645e-08
+  },
+  {
+    "id": 118,
+    "clock_rate": 1.000090894085118,
+    "command_min_interval_ms": 499,
+    "onset_phase_ms": -7.992121027214694,
+    "release_phase_ms": 7.719235121257384,
+    "onset_target_override": 0.014152380985013374,
+    "release_target_override": 0.0136691365227822
+  },
+  {
+    "id": 119,
+    "clock_rate": 1.000090894085118,
+    "command_min_interval_ms": 107,
+    "onset_phase_ms": -4.599033065602498,
+    "release_phase_ms": 1.7633257238856004,
+    "onset_target_override": 0.018981603095832196,
+    "release_target_override": 0.0020539168796822127
+  },
+  {
+    "id": 120,
+    "clock_rate": 1.000090894085118,
+    "command_min_interval_ms": 195,
+    "onset_phase_ms": -4.483272598022836,
+    "release_phase_ms": -2.0621962295450658,
+    "onset_target_override": 0.0005062936635851962,
+    "release_target_override": 3.1500140856713385e-08
+  },
+  {
+    "id": 121,
+    "clock_rate": 1.0004991731776032,
+    "command_min_interval_ms": 152,
+    "onset_phase_ms": -5.644979667283501,
+    "release_phase_ms": -6.221181639499029,
+    "onset_target_override": 0.0023610820712599676,
+    "release_target_override": 8.638354198620135e-10
+  },
+  {
+    "id": 122,
+    "clock_rate": 1.0004991731776032,
+    "command_min_interval_ms": 216,
+    "onset_phase_ms": -4.066306476016024,
+    "release_phase_ms": -5.859700271026114,
+    "onset_target_override": 0.001459845296812918,
+    "release_target_override": 2.570662345445659e-08
+  },
+  {
+    "id": 123,
+    "clock_rate": 1.0004991731776032,
+    "command_min_interval_ms": 303,
+    "onset_phase_ms": -0.13459974377560968,
+    "release_phase_ms": 7.168398375029028,
+    "onset_target_override": 5.501109068496999e-05,
+    "release_target_override": 0.007491896830599987
+  },
+  {
+    "id": 124,
+    "clock_rate": 1.0004991731776032,
+    "command_min_interval_ms": 120,
+    "onset_phase_ms": -0.00921643628615243,
+    "release_phase_ms": -2.7611273670160585,
+    "onset_target_override": 4.971054199331991e-06,
+    "release_target_override": 1.7184988695343055e-08
+  },
+  {
+    "id": 125,
+    "clock_rate": 1.0004991731776032,
+    "command_min_interval_ms": 106,
+    "onset_phase_ms": -4.904291068104527,
+    "release_phase_ms": 7.276409622189561,
+    "onset_target_override": 0.016283710377208778,
+    "release_target_override": 0.032701776469470124
+  },
+  {
+    "id": 126,
+    "clock_rate": 1.0004991731776032,
+    "command_min_interval_ms": 106,
+    "onset_phase_ms": -3.024983393856928,
+    "release_phase_ms": 7.81273217923939,
+    "onset_target_override": 0.0006163111588226154,
+    "release_target_override": 0.0008127390898101287
+  },
+  {
+    "id": 127,
+    "clock_rate": 1.0004991731776032,
+    "command_min_interval_ms": 156,
+    "onset_phase_ms": -1.3163862604557153,
+    "release_phase_ms": 0.5168367540377972,
+    "onset_target_override": 0.0024160340942823433,
+    "release_target_override": 3.1500140856713385e-08
+  },
+  {
+    "id": 128,
+    "clock_rate": 1.0004991731776032,
+    "command_min_interval_ms": 1088,
+    "onset_phase_ms": 3.6816365359300107,
+    "release_phase_ms": -7.775263046838177,
+    "onset_target_override": 2.9581199750923592e-08,
+    "release_target_override": 8.545324109989692e-09
+  },
+  {
+    "id": 129,
+    "clock_rate": 1.0004991731776032,
+    "command_min_interval_ms": 109,
+    "onset_phase_ms": 6.7108905786739115,
+    "release_phase_ms": 7.227087134857868,
+    "onset_target_override": 2.5982920376527456e-08,
+    "release_target_override": 0.019607792726309383
+  },
+  {
+    "id": 130,
+    "clock_rate": 1.0004991731776032,
+    "command_min_interval_ms": 115,
+    "onset_phase_ms": -8.045770486347692,
+    "release_phase_ms": -6.3294054859568405,
+    "onset_target_override": 0.0022984327313048097,
+    "release_target_override": 4.267200790190984e-09
+  },
+  {
+    "id": 131,
+    "clock_rate": 0.9998986422838619,
+    "command_min_interval_ms": 114,
+    "onset_phase_ms": -5.666811050016207,
+    "release_phase_ms": -2.7634049534963623,
+    "onset_target_override": 0.013312490445961842,
+    "release_target_override": 1.1805750932403214e-08
+  },
+  {
+    "id": 132,
+    "clock_rate": 0.9998986422838619,
+    "command_min_interval_ms": 127,
+    "onset_phase_ms": -0.557161800097461,
+    "release_phase_ms": 7.060071561278747,
+    "onset_target_override": 0.00018141236503918051,
+    "release_target_override": 0.0018581091995839927
+  },
+  {
+    "id": 133,
+    "clock_rate": 0.9998986422838619,
+    "command_min_interval_ms": 108,
+    "onset_phase_ms": -3.2514731632549143,
+    "release_phase_ms": 3.008245207977822,
+    "onset_target_override": 5.483199478613511e-09,
+    "release_target_override": 0.011596122128350449
+  },
+  {
+    "id": 134,
+    "clock_rate": 0.9998986422838619,
+    "command_min_interval_ms": 124,
+    "onset_phase_ms": 8.016824484236906,
+    "release_phase_ms": -7.705023617358364,
+    "onset_target_override": 2.4464964813669742e-08,
+    "release_target_override": 2.008791990586197e-08
+  },
+  {
+    "id": 135,
+    "clock_rate": 0.9998986422838619,
+    "command_min_interval_ms": 117,
+    "onset_phase_ms": 3.7366717058304744,
+    "release_phase_ms": 6.986558378599739,
+    "onset_target_override": 1.3159301394870096e-08,
+    "release_target_override": 0.0020759970106531867
+  },
+  {
+    "id": 136,
+    "clock_rate": 0.9998986422838619,
+    "command_min_interval_ms": 190,
+    "onset_phase_ms": 1.552362524073203,
+    "release_phase_ms": -5.563489345469463,
+    "onset_target_override": 2.2294128112696005e-08,
+    "release_target_override": 2.7825796727404745e-08
+  },
+  {
+    "id": 137,
+    "clock_rate": 0.9998986422838619,
+    "command_min_interval_ms": 173,
+    "onset_phase_ms": 1.9208468235021314,
+    "release_phase_ms": -5.8170157972341485,
+    "onset_target_override": 3.295918974965885e-08,
+    "release_target_override": 2.6539772082866327e-08
+  },
+  {
+    "id": 138,
+    "clock_rate": 0.9998986422838619,
+    "command_min_interval_ms": 115,
+    "onset_phase_ms": -5.121484321442438,
+    "release_phase_ms": -1.1675007245628422,
+    "onset_target_override": 0.0008603305246547804,
+    "release_target_override": 2.1485331575344085e-08
+  },
+  {
+    "id": 139,
+    "clock_rate": 0.9998986422838619,
+    "command_min_interval_ms": 163,
+    "onset_phase_ms": -6.125132137078992,
+    "release_phase_ms": 3.1758252474602955,
+    "onset_target_override": 0.003710861457434978,
+    "release_target_override": 2.082476413764887e-08
+  },
+  {
+    "id": 140,
+    "clock_rate": 0.9998986422838619,
+    "command_min_interval_ms": 140,
+    "onset_phase_ms": 0.0036975223522972556,
+    "release_phase_ms": 3.907002261151149,
+    "onset_target_override": 2.196870307482108e-08,
+    "release_target_override": 0.001281275297022933
+  },
+  {
+    "id": 151,
+    "clock_rate": 0.9996772552927992,
+    "command_min_interval_ms": 130,
+    "onset_phase_ms": 0.7270479784349249,
+    "release_phase_ms": -5.072600096225344,
+    "onset_target_override": 1.863344920952014e-08,
+    "release_target_override": 9.084974552323801e-09
+  },
+  {
+    "id": 152,
+    "clock_rate": 0.9996772552927992,
+    "command_min_interval_ms": 163,
+    "onset_phase_ms": -0.8695919840668864,
+    "release_phase_ms": -7.0774395755037744,
+    "onset_target_override": 6.374373882275635e-05,
+    "release_target_override": 3.517910153520233e-08
+  },
+  {
+    "id": 153,
+    "clock_rate": 0.9996772552927992,
+    "command_min_interval_ms": 478,
+    "onset_phase_ms": 1.9889155169945383,
+    "release_phase_ms": -3.49835645304708,
+    "onset_target_override": 1.7051793287151617e-08,
+    "release_target_override": 2.2412547284830844e-08
+  },
+  {
+    "id": 154,
+    "clock_rate": 0.9996772552927992,
+    "command_min_interval_ms": 163,
+    "onset_phase_ms": -3.2422891765762074,
+    "release_phase_ms": 4.265243172188349,
+    "onset_target_override": 0.0007234964482923189,
+    "release_target_override": 0.0007124530056837755
+  },
+  {
+    "id": 155,
+    "clock_rate": 0.9996772552927992,
+    "command_min_interval_ms": 139,
+    "onset_phase_ms": -6.154670997055689,
+    "release_phase_ms": 0.9930735410073055,
+    "onset_target_override": 0.014882818032055345,
+    "release_target_override": 0.002898008486591275
+  },
+  {
+    "id": 156,
+    "clock_rate": 0.9996772552927992,
+    "command_min_interval_ms": 108,
+    "onset_phase_ms": 0.3458227199573116,
+    "release_phase_ms": 5.886275028856858,
+    "onset_target_override": 1.4462236097909301e-08,
+    "release_target_override": 0.0015814584650672985
+  },
+  {
+    "id": 157,
+    "clock_rate": 0.9996772552927992,
+    "command_min_interval_ms": 210,
+    "onset_phase_ms": -7.518172303115023,
+    "release_phase_ms": -3.3210478248406616,
+    "onset_target_override": 0.004780547713962216,
+    "release_target_override": 8.062464029734429e-09
+  },
+  {
+    "id": 158,
+    "clock_rate": 0.9996772552927992,
+    "command_min_interval_ms": 138,
+    "onset_phase_ms": 3.875136366112031,
+    "release_phase_ms": 3.831493292814514,
+    "onset_target_override": 2.1729114672924123e-08,
+    "release_target_override": 0.0003262249524864222
+  },
+  {
+    "id": 159,
+    "clock_rate": 0.9996772552927992,
+    "command_min_interval_ms": 109,
+    "onset_phase_ms": -3.7056664214460966,
+    "release_phase_ms": -0.5404936691917328,
+    "onset_target_override": 0.016646044423309737,
+    "release_target_override": 2.8100066937485595e-08
+  },
+  {
+    "id": 160,
+    "clock_rate": 0.9996772552927992,
+    "command_min_interval_ms": 199,
+    "onset_phase_ms": -7.865383736223919,
+    "release_phase_ms": 5.607937673573815,
+    "onset_target_override": 0.0016829015433137361,
+    "release_target_override": 0.0013058595350026183
+  }
+]

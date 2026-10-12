@@ -1,0 +1,291 @@
+{
+  "source_sha256": "8d0ee92c8ce9235def4d56e49d14f8ad4281097c9b5e9f6a69d8f554aa7ed739",
+  "normalized_tolerance_logical_semiaxes_pt": [
+    12.42,
+    26.88
+  ],
+  "input_pixel_logical_pt": [
+    6.46875,
+    6.222222222222222
+  ],
+  "heatmap_grid_normalized_step": [
+    0.03225806451612903,
+    0.014084507042253521
+  ],
+  "interpretation": "Durations are trail-derived visible moving spans, not independently measured contact durations; endpoint holds are unknown. Window support is conditional on the extracted event partition. Local timing budgets assume exact path/speed, not empirical tolerance or error estimates.",
+  "samples": {
+    "push 1": {
+      "duration_ms": 115.0,
+      "distinct_samples": 8,
+      "within_current_duration": false,
+      "median_speed_pt_s": 4986.914972163823,
+      "peak_speed_pt_s": 6713.497187560121,
+      "median_local_003_timing_budget_ms": 5.378996363901374,
+      "tightest_local_003_timing_budget_ms": 3.787997877175272,
+      "segments": {
+        "tol0.01_min0.0": {
+          "segments": 6,
+          "residual": 0.0029761709730728616
+        },
+        "tol0.01_min16.0": null,
+        "tol0.01_min33.0": null,
+        "tol0.01_min100.0": null,
+        "tol0.03_min0.0": {
+          "segments": 3,
+          "residual": 0.027676813434660268
+        },
+        "tol0.03_min16.0": {
+          "segments": 3,
+          "residual": 0.027676813434660268
+        },
+        "tol0.03_min33.0": null,
+        "tol0.03_min100.0": null
+      },
+      "isolated_window_start_range_ms": null,
+      "isolated_window_caveat": "Source end must still be verified; negative starts forbidden."
+    },
+    "push 2": {
+      "duration_ms": 103.87799999999993,
+      "distinct_samples": 8,
+      "within_current_duration": false,
+      "median_speed_pt_s": 5339.318896025311,
+      "peak_speed_pt_s": 7253.224923147584,
+      "median_local_003_timing_budget_ms": 4.548547044552006,
+      "tightest_local_003_timing_budget_ms": 3.4505625971881053,
+      "segments": {
+        "tol0.01_min0.0": {
+          "segments": 6,
+          "residual": 0.005074964550778065
+        },
+        "tol0.01_min16.0": null,
+        "tol0.01_min33.0": null,
+        "tol0.01_min100.0": null,
+        "tol0.03_min0.0": {
+          "segments": 2,
+          "residual": 0.02780915000210547
+        },
+        "tol0.03_min16.0": {
+          "segments": 2,
+          "residual": 0.02780915000210547
+        },
+        "tol0.03_min33.0": {
+          "segments": 2,
+          "residual": 0.02780915000210547
+        },
+        "tol0.03_min100.0": null
+      },
+      "isolated_window_start_range_ms": null,
+      "isolated_window_caveat": "Source end must still be verified; negative starts forbidden."
+    },
+    "push 3": {
+      "duration_ms": 100.0,
+      "distinct_samples": 7,
+      "within_current_duration": false,
+      "median_speed_pt_s": 4946.995133274598,
+      "peak_speed_pt_s": 7286.041164591533,
+      "median_local_003_timing_budget_ms": 5.358288941614978,
+      "tightest_local_003_timing_budget_ms": 3.413291078692627,
+      "segments": {
+        "tol0.01_min0.0": {
+          "segments": 6,
+          "residual": 0.0
+        },
+        "tol0.01_min16.0": null,
+        "tol0.01_min33.0": null,
+        "tol0.01_min100.0": null,
+        "tol0.03_min0.0": {
+          "segments": 3,
+          "residual": 0.023080226160700656
+        },
+        "tol0.03_min16.0": {
+          "segments": 3,
+          "residual": 0.023080226160700656
+        },
+        "tol0.03_min33.0": {
+          "segments": 3,
+          "residual": 0.023080226160700656
+        },
+        "tol0.03_min100.0": null
+      },
+      "isolated_window_start_range_ms": null,
+      "isolated_window_caveat": "Source end must still be verified; negative starts forbidden."
+    },
+    "push 4": {
+      "duration_ms": 88.90699999999993,
+      "distinct_samples": 7,
+      "within_current_duration": false,
+      "median_speed_pt_s": 5020.384439298472,
+      "peak_speed_pt_s": 6278.2321586905055,
+      "median_local_003_timing_budget_ms": 5.114123014666557,
+      "tightest_local_003_timing_budget_ms": 4.185525876408167,
+      "segments": {
+        "tol0.01_min0.0": {
+          "segments": 5,
+          "residual": 0.0031749512323103264
+        },
+        "tol0.01_min16.0": {
+          "segments": 5,
+          "residual": 0.0031749512323103264
+        },
+        "tol0.01_min33.0": null,
+        "tol0.01_min100.0": null,
+        "tol0.03_min0.0": {
+          "segments": 2,
+          "residual": 0.0214589938703517
+        },
+        "tol0.03_min16.0": {
+          "segments": 2,
+          "residual": 0.0214589938703517
+        },
+        "tol0.03_min33.0": {
+          "segments": 2,
+          "residual": 0.0214589938703517
+        },
+        "tol0.03_min100.0": null
+      },
+      "isolated_window_start_range_ms": null,
+      "isolated_window_caveat": "Source end must still be verified; negative starts forbidden."
+    },
+    "push 5": {
+      "duration_ms": 115.0,
+      "distinct_samples": 8,
+      "within_current_duration": false,
+      "median_speed_pt_s": 4264.346185222702,
+      "peak_speed_pt_s": 5689.013289100187,
+      "median_local_003_timing_budget_ms": 6.303346547207144,
+      "tightest_local_003_timing_budget_ms": 4.499876449623569,
+      "segments": {
+        "tol0.01_min0.0": {
+          "segments": 5,
+          "residual": 0.007951563152184343
+        },
+        "tol0.01_min16.0": null,
+        "tol0.01_min33.0": null,
+        "tol0.01_min100.0": null,
+        "tol0.03_min0.0": {
+          "segments": 3,
+          "residual": 0.02507726366530331
+        },
+        "tol0.03_min16.0": {
+          "segments": 3,
+          "residual": 0.02507726366530331
+        },
+        "tol0.03_min33.0": null,
+        "tol0.03_min100.0": null
+      },
+      "isolated_window_start_range_ms": null,
+      "isolated_window_caveat": "Source end must still be verified; negative starts forbidden."
+    },
+    "flick A": {
+      "duration_ms": 56.5329999999999,
+      "distinct_samples": 5,
+      "within_current_duration": false,
+      "median_speed_pt_s": 4289.460775282539,
+      "peak_speed_pt_s": 4442.016335852302,
+      "median_local_003_timing_budget_ms": 3.8253003147987243,
+      "tightest_local_003_timing_budget_ms": 3.4159834675432474,
+      "segments": {
+        "tol0.01_min0.0": {
+          "segments": 3,
+          "residual": 0.009012795532885268
+        },
+        "tol0.01_min16.0": {
+          "segments": 3,
+          "residual": 0.009012795532885268
+        },
+        "tol0.01_min33.0": null,
+        "tol0.01_min100.0": null,
+        "tol0.03_min0.0": {
+          "segments": 2,
+          "residual": 0.015467172983115717
+        },
+        "tol0.03_min16.0": {
+          "segments": 2,
+          "residual": 0.015467172983115717
+        },
+        "tol0.03_min33.0": null,
+        "tol0.03_min100.0": null
+      },
+      "isolated_window_start_range_ms": null,
+      "isolated_window_caveat": "Source end must still be verified; negative starts forbidden."
+    },
+    "flick B": {
+      "duration_ms": 66.66699999999992,
+      "distinct_samples": 5,
+      "within_current_duration": false,
+      "median_speed_pt_s": 4324.405505280243,
+      "peak_speed_pt_s": 5688.058352801159,
+      "median_local_003_timing_budget_ms": 4.610462553131042,
+      "tightest_local_003_timing_budget_ms": 3.6082406774414335,
+      "segments": {
+        "tol0.01_min0.0": {
+          "segments": 3,
+          "residual": 0.008453447380745533
+        },
+        "tol0.01_min16.0": {
+          "segments": 3,
+          "residual": 0.008453447380745533
+        },
+        "tol0.01_min33.0": null,
+        "tol0.01_min100.0": null,
+        "tol0.03_min0.0": {
+          "segments": 2,
+          "residual": 0.023408081261482916
+        },
+        "tol0.03_min16.0": {
+          "segments": 2,
+          "residual": 0.023408081261482916
+        },
+        "tol0.03_min33.0": null,
+        "tol0.03_min100.0": null
+      },
+      "isolated_window_start_range_ms": null,
+      "isolated_window_caveat": "Source end must still be verified; negative starts forbidden."
+    },
+    "catch": {
+      "duration_ms": 550.0000000000005,
+      "distinct_samples": 34,
+      "within_current_duration": true,
+      "median_speed_pt_s": 241.93514907443878,
+      "peak_speed_pt_s": 1178.7824260597013,
+      "median_local_003_timing_budget_ms": 60.99113937660703,
+      "tightest_local_003_timing_budget_ms": 19.316912007186836,
+      "segments": {
+        "tol0.01_min0.0": {
+          "segments": 5,
+          "residual": 0.009869786807738071
+        },
+        "tol0.01_min16.0": {
+          "segments": 5,
+          "residual": 0.009869786807738071
+        },
+        "tol0.01_min33.0": {
+          "segments": 5,
+          "residual": 0.009869786807738071
+        },
+        "tol0.01_min100.0": null,
+        "tol0.03_min0.0": {
+          "segments": 2,
+          "residual": 0.014969234645827717
+        },
+        "tol0.03_min16.0": {
+          "segments": 2,
+          "residual": 0.014969234645827717
+        },
+        "tol0.03_min33.0": {
+          "segments": 2,
+          "residual": 0.014969234645827717
+        },
+        "tol0.03_min100.0": {
+          "segments": 2,
+          "residual": 0.014969234645827717
+        }
+      },
+      "isolated_window_start_range_ms": [
+        2535.000001,
+        3083.3336666666664
+      ],
+      "isolated_window_caveat": "Source end must still be verified; negative starts forbidden."
+    }
+  }
+}

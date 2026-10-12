@@ -1,0 +1,56 @@
+{
+  "audit": {
+    "baseline": {
+      "n": 100,
+      "passed": 95,
+      "compatibility_failures": [],
+      "compiled_payloads": 0
+    },
+    "refit_grid_coords100_quantized": {
+      "n": 100,
+      "passed": 100,
+      "compatibility_failures": [],
+      "compiled_payloads": 100
+    },
+    "fitted_integer100_quantized": {
+      "n": 100,
+      "passed": 100,
+      "compatibility_failures": [],
+      "compiled_payloads": 100
+    },
+    "interval_boundaries_integer100_quantized": {
+      "n": 100,
+      "passed": 100,
+      "compatibility_failures": [],
+      "compiled_payloads": 100
+    }
+  },
+  "synthetic": {
+    "baseline": {
+      "n": 864,
+      "passed": 810,
+      "compatibility_failures": [],
+      "compiled_payloads": 0
+    },
+    "refit_grid_coords100_quantized": {
+      "n": 864,
+      "passed": 838,
+      "compatibility_failures": [],
+      "compiled_payloads": 864
+    },
+    "fitted_integer100_quantized": {
+      "n": 864,
+      "passed": 851,
+      "compatibility_failures": [],
+      "compiled_payloads": 864
+    },
+    "interval_boundaries_integer100_quantized": {
+      "n": 864,
+      "passed": 858,
+      "compatibility_failures": [],
+      "compiled_payloads": 864
+    }
+  },
+  "deterministic_exact_repeats": 14,
+  "source_hashes_match_original_oracle": true
+}

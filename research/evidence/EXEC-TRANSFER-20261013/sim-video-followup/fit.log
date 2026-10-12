@@ -1,0 +1,22 @@
+fit 20 27 interpolate 4.780035144899668
+fit 20 27 hold -12.729385830008091
+fit 20 29 interpolate 6.943231190343553
+fit 20 29 hold -11.832349633103325
+fit 20 31 interpolate 4.376153491513953
+fit 20 31 hold -14.382678520989503
+fit 25 27 interpolate 4.46673647383851
+fit 25 27 hold -14.349316036542573
+fit 25 29 interpolate 5.795766341360725
+fit 25 29 hold -15.39584033237834
+fit 25 31 interpolate 3.67791432193982
+fit 25 31 hold -17.51538367749175
+fit 30 27 interpolate 3.714248004232724
+fit 30 27 hold -12.467434176799257
+fit 30 29 interpolate 3.3914921474107316
+fit 30 29 hold -12.790801906255448
+fit 30 31 interpolate 3.2433143202610744
+fit 30 31 hold -14.922038245138634
+/Users/ashernoble/.matplotlib is not a writable directory
+Matplotlib created a temporary cache directory at /var/folders/4d/1l7n9yp91cn6z6nxcjzh8hn40000gq/T/matplotlib-pmhikkn8 because there was an issue with the default path (/Users/ashernoble/.matplotlib); it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+Fontconfig warning: ignoring C.UTF-8: not a valid language tag
+Matplotlib is building the font cache; this may take a moment.

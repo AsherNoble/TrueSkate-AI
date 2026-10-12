@@ -1,0 +1,31 @@
+{
+  "round": 6,
+  "manifest_sha256": "d2aabb9959b3a5de22d88dcbd3d224588321a019ee020fb685e6b0f55418bd69",
+  "counts": {
+    "meet": 83,
+    "fail": 16,
+    "unclear": 1
+  },
+  "gross_or_systematic": [],
+  "reasons": {
+    "51": "It's pretty accurate. The weird thing i'm noticing now and that i've noticed before is that at each kink where one straight section ends and the next starts, the position circle will start moving kind've at the same instant as the trace but the trace end up leading but at the end they seem to meet at the same point in time or smth... idk how to explain it but if you go through this clip frame by frame maybe you'll see what I mean. Though sometimes it's not quite so simple.",
+    "57": "The actual trace lagged short of the target ring. And the two differed in current position by a bit... investigation needed.",
+    "67": "The target ring and trace head don't match. Probably/hopefully due to the first contact and target ring first frame not matching.",
+    "77": "They differ by about a frame or two worth of distance.",
+    "83": "They line up pretty well, especially in the last few segments. Though in the first few they don't line up very well.",
+    "109": "The difference is enough that i'm calling this a fail. Though it's still very minor \u2013",
+    "113": "The difference is quite large though not massive. At it's largest, it's like 35-50 logical pts.",
+    "118": "Difference_max ~= 30 logical pts.",
+    "119": "Difference_max ~= 20 to 30 logical pts",
+    "125": "Difference_max ~= 30 logical pts",
+    "127": "Difference_max ~= 15 logical pts.",
+    "128": "Difference_max ~= 10 logical pts",
+    "129": "Difference_max ~= 40 logical pts",
+    "131": "Difference_max ~= 20 logical pts in the first segment though the other segments were basically spot on.",
+    "151": "Difference_max ~= 15 logical pts",
+    "153": "Difference_max ~= 10 logical pts",
+    "155": "Difference_max ~= 10 logical pts",
+    "159": "First segment difference is approx. zero. 2nd, 3rd and 4th: difference_max ~= 35 logical pts."
+  },
+  "passed": false
+}

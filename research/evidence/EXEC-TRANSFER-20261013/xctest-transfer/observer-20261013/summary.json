@@ -1,0 +1,26 @@
+{
+  "synchronous-before": {
+    "requests": 30,
+    "callbacks": 1011,
+    "callback_lag_median_ms": 7.568999950308353,
+    "callback_lag_p95_ms": 17.09899998968467,
+    "callback_lag_max_ms": 23.78300001146272,
+    "callbacks_over50ms": 0
+  },
+  "buffered": {
+    "requests": 30,
+    "callbacks": 1010,
+    "callback_lag_median_ms": 11.207000003196299,
+    "callback_lag_p95_ms": 14.856049991794862,
+    "callback_lag_max_ms": 21.154000016395003,
+    "callbacks_over50ms": 0
+  },
+  "synchronous-after": {
+    "requests": 30,
+    "callbacks": 1004,
+    "callback_lag_median_ms": 10.543500015046448,
+    "callback_lag_p95_ms": 17.14630001806654,
+    "callback_lag_max_ms": 21.619999955873936,
+    "callbacks_over50ms": 0
+  }
+}

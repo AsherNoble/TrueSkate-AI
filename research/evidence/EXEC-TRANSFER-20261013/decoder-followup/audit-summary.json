@@ -1,0 +1,249 @@
+{
+  "baseline": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 95,
+    "fit_001": 71,
+    "max_fit_residual": 0.048351506578564823,
+    "failed_ids": [
+      51,
+      77,
+      83,
+      113,
+      133
+    ],
+    "median_good_contact_fraction": 1.0
+  },
+  "exact_boundary_fitted100_ORACLE": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 100,
+    "max_fit_residual": 0.009685250634061964,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "exact_boundary_grid_100_ORACLE": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 94,
+    "fit_001": 74,
+    "max_fit_residual": 0.19939019102476366,
+    "failed_ids": [
+      51,
+      57,
+      77,
+      83,
+      113,
+      133
+    ],
+    "median_good_contact_fraction": 1.0
+  },
+  "exact_boundary_rate_fitted100_ORACLE": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 100,
+    "max_fit_residual": 0.00968525043360945,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "exact_command_ORACLE": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 88,
+    "max_fit_residual": 0.032701776469470124,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "fitted_fractional_100": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 86,
+    "max_fit_residual": 0.03149974453125622,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "fitted_integer100_quantized": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 87,
+    "max_fit_residual": 0.030685364994326628,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "fitted_integer_100": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 86,
+    "max_fit_residual": 0.03149974453125622,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "fractional_grid_100": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 95,
+    "fit_001": 71,
+    "max_fit_residual": 0.048351506578564823,
+    "failed_ids": [
+      51,
+      77,
+      83,
+      113,
+      133
+    ],
+    "median_good_contact_fraction": 1.0
+  },
+  "fractional_grid_rate100": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 93,
+    "fit_001": 71,
+    "max_fit_residual": 0.19881552383916623,
+    "failed_ids": [
+      51,
+      77,
+      83,
+      113,
+      119,
+      125,
+      133
+    ],
+    "median_good_contact_fraction": 1.0
+  },
+  "grid_min33_INCOMPATIBLE": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 87,
+    "max_fit_residual": 0.038176809328108845,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "grid_min66_INCOMPATIBLE": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 96,
+    "fit_001": 74,
+    "max_fit_residual": 0.04520019793143488,
+    "failed_ids": [
+      51,
+      77,
+      83,
+      113
+    ],
+    "median_good_contact_fraction": 1.0
+  },
+  "grid_min83_INCOMPATIBLE": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 95,
+    "fit_001": 72,
+    "max_fit_residual": 0.048351506578564823,
+    "failed_ids": [
+      51,
+      77,
+      83,
+      113,
+      133
+    ],
+    "median_good_contact_fraction": 1.0
+  },
+  "grid_min95_INCOMPATIBLE": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 95,
+    "fit_001": 71,
+    "max_fit_residual": 0.048351506578564823,
+    "failed_ids": [
+      51,
+      77,
+      83,
+      113,
+      133
+    ],
+    "median_good_contact_fraction": 1.0
+  },
+  "grid_min99_INCOMPATIBLE": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 95,
+    "fit_001": 71,
+    "max_fit_residual": 0.048351506578564823,
+    "failed_ids": [
+      51,
+      77,
+      83,
+      113,
+      133
+    ],
+    "median_good_contact_fraction": 1.0
+  },
+  "interval_boundaries_fitted100": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 96,
+    "max_fit_residual": 0.015727565891497947,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "interval_boundaries_integer100": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 96,
+    "max_fit_residual": 0.015727565891497947,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "interval_boundaries_integer100_quantized": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 96,
+    "max_fit_residual": 0.01807266744147554,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "refit_grid_coords100_quantized": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 73,
+    "max_fit_residual": 0.03280744733105636,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "refit_grid_coords_100": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 100,
+    "fit_001": 74,
+    "max_fit_residual": 0.03503262594355089,
+    "failed_ids": [],
+    "median_good_contact_fraction": 1.0
+  },
+  "rounded_grid_rate100": {
+    "n": 100,
+    "feasible": 100,
+    "passed": 93,
+    "fit_001": 71,
+    "max_fit_residual": 0.19881552383916623,
+    "failed_ids": [
+      51,
+      77,
+      83,
+      113,
+      119,
+      125,
+      133
+    ],
+    "median_good_contact_fraction": 1.0
+  }
+}

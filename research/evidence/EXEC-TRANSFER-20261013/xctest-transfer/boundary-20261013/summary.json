@@ -1,0 +1,410 @@
+{
+  "boundary_total300_n20": {
+    "n": 5,
+    "command_ms": 300,
+    "native_ms": 300.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d20_n2": {
+    "n": 5,
+    "command_ms": 40,
+    "native_ms": 40.0,
+    "delivered_median_ms": 66.66700000641868,
+    "delivered_sd_ms": 0.000400003045797348,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d33_n20": {
+    "n": 5,
+    "command_ms": 660,
+    "native_ms": 660.0,
+    "delivered_median_ms": 666.6669999831356,
+    "delivered_sd_ms": 0.0004898969270525727,
+    "all_native_offsets_exact": true
+  },
+  "mixed_100_15": {
+    "n": 5,
+    "command_ms": 115,
+    "native_ms": 115.0,
+    "delivered_median_ms": 116.66699999477714,
+    "delivered_sd_ms": 0.0004000088671987,
+    "all_native_offsets_exact": true
+  },
+  "boundary_hold_mid17": {
+    "n": 5,
+    "command_ms": 217,
+    "native_ms": 217.0,
+    "delivered_median_ms": 250.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d15_n2": {
+    "n": 5,
+    "command_ms": 30,
+    "native_ms": 30.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d15_n20": {
+    "n": 5,
+    "command_ms": 300,
+    "native_ms": 300.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "boundary_total300_n18": {
+    "n": 5,
+    "command_ms": 300,
+    "native_ms": 300.0,
+    "delivered_median_ms": 400.00000002328306,
+    "delivered_sd_ms": 2.3283064365386963e-08,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d16_n10": {
+    "n": 5,
+    "command_ms": 160,
+    "native_ms": 160.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d25_n2": {
+    "n": 5,
+    "command_ms": 50,
+    "native_ms": 50.0,
+    "delivered_median_ms": 66.66700000641868,
+    "delivered_sd_ms": 2.3283064365386963e-08,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d33_n1": {
+    "n": 5,
+    "command_ms": 33,
+    "native_ms": 33.0,
+    "delivered_median_ms": 33.33300002850592,
+    "delivered_sd_ms": 0.1289005737867816,
+    "all_native_offsets_exact": true
+  },
+  "boundary_total300_n17": {
+    "n": 5,
+    "command_ms": 300,
+    "native_ms": 300.0,
+    "delivered_median_ms": 566.6670000064187,
+    "delivered_sd_ms": 0.0004899016788813169,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d15_n10": {
+    "n": 5,
+    "command_ms": 150,
+    "native_ms": 150.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "mixed_15_100": {
+    "n": 5,
+    "command_ms": 115,
+    "native_ms": 115.0,
+    "delivered_median_ms": 116.66699999477714,
+    "delivered_sd_ms": 0.0004898874213202882,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d20_n10": {
+    "n": 5,
+    "command_ms": 200,
+    "native_ms": 200.0,
+    "delivered_median_ms": 333.3339999662712,
+    "delivered_sd_ms": 0.000489906432323781,
+    "all_native_offsets_exact": true
+  },
+  "boundary_hold_mid15": {
+    "n": 5,
+    "command_ms": 215,
+    "native_ms": 215.0,
+    "delivered_median_ms": 216.66699997149408,
+    "delivered_sd_ms": 0.3227002274394397,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d16_n10": {
+    "n": 5,
+    "command_ms": 160,
+    "native_ms": 160.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "mixed_15_100_15": {
+    "n": 5,
+    "command_ms": 130,
+    "native_ms": 130.0,
+    "delivered_median_ms": 116.66699999477714,
+    "delivered_sd_ms": 0.00039998558413437157,
+    "all_native_offsets_exact": true
+  },
+  "mixed_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16": {
+    "n": 5,
+    "command_ms": 330,
+    "native_ms": 330.0,
+    "delivered_median_ms": 333.3330000168644,
+    "delivered_sd_ms": 2.8515813671787947e-08,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d15_n10": {
+    "n": 5,
+    "command_ms": 150,
+    "native_ms": 150.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d17_n2": {
+    "n": 5,
+    "command_ms": 34,
+    "native_ms": 34.0,
+    "delivered_median_ms": 66.66700000641868,
+    "delivered_sd_ms": 0.0003999972256665358,
+    "all_native_offsets_exact": true
+  },
+  "mixed_100_15_100": {
+    "n": 5,
+    "command_ms": 215,
+    "native_ms": 215.0,
+    "delivered_median_ms": 216.66599996387959,
+    "delivered_sd_ms": 0.3465002064184339,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d25_n20": {
+    "n": 5,
+    "command_ms": 500,
+    "native_ms": 500.0,
+    "delivered_median_ms": 666.6669999831356,
+    "delivered_sd_ms": 0.34230023530097176,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d20_n1": {
+    "n": 5,
+    "command_ms": 20,
+    "native_ms": 20.0,
+    "delivered_median_ms": 16.666000010445714,
+    "delivered_sd_ms": 0.0004899206898848097,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d17_n2": {
+    "n": 5,
+    "command_ms": 34,
+    "native_ms": 34.0,
+    "delivered_median_ms": 66.66700000641868,
+    "delivered_sd_ms": 0.000400003045797348,
+    "all_native_offsets_exact": true
+  },
+  "boundary_total300_n19": {
+    "n": 5,
+    "command_ms": 300,
+    "native_ms": 300.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d20_n20": {
+    "n": 5,
+    "command_ms": 400,
+    "native_ms": 400.0,
+    "delivered_median_ms": 666.6669999831356,
+    "delivered_sd_ms": 0.1475004907491227,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d20_n2": {
+    "n": 5,
+    "command_ms": 40,
+    "native_ms": 40.0,
+    "delivered_median_ms": 66.66699994821101,
+    "delivered_sd_ms": 0.0004898921740711647,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d15_n1": {
+    "n": 5,
+    "command_ms": 15,
+    "native_ms": 15.0,
+    "delivered_median_ms": 16.667000018060207,
+    "delivered_sd_ms": 2.8515813671787947e-08,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d25_n2": {
+    "n": 5,
+    "command_ms": 50,
+    "native_ms": 50.0,
+    "delivered_median_ms": 66.66599999880418,
+    "delivered_sd_ms": 0.18420054850143297,
+    "all_native_offsets_exact": true
+  },
+  "mixed_100_16_100": {
+    "n": 5,
+    "command_ms": 216,
+    "native_ms": 216.0,
+    "delivered_median_ms": 216.66600002208725,
+    "delivered_sd_ms": 0.04410171050925663,
+    "all_native_offsets_exact": true
+  },
+  "mixed_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17_16_17": {
+    "n": 5,
+    "command_ms": 330,
+    "native_ms": 330.0,
+    "delivered_median_ms": 333.3330000168644,
+    "delivered_sd_ms": 2.3283064365386963e-08,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d33_n10": {
+    "n": 5,
+    "command_ms": 330,
+    "native_ms": 330.0,
+    "delivered_median_ms": 333.3339999662712,
+    "delivered_sd_ms": 0.000489906432323781,
+    "all_native_offsets_exact": true
+  },
+  "mixed_100_17_100": {
+    "n": 5,
+    "command_ms": 217,
+    "native_ms": 217.0,
+    "delivered_median_ms": 250.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d16_n20": {
+    "n": 5,
+    "command_ms": 320,
+    "native_ms": 320.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d33_n2": {
+    "n": 5,
+    "command_ms": 66,
+    "native_ms": 66.0,
+    "delivered_median_ms": 66.66700000641868,
+    "delivered_sd_ms": 0.0003999972256665358,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d16_n1": {
+    "n": 5,
+    "command_ms": 16,
+    "native_ms": 16.0,
+    "delivered_median_ms": 16.666999959852546,
+    "delivered_sd_ms": 0.0004898921740711647,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d25_n10": {
+    "n": 5,
+    "command_ms": 250,
+    "native_ms": 250.0,
+    "delivered_median_ms": 333.3329999586567,
+    "delivered_sd_ms": 0.2101003269686056,
+    "all_native_offsets_exact": true
+  },
+  "boundary_hold_mid16": {
+    "n": 5,
+    "command_ms": 216,
+    "native_ms": 216.0,
+    "delivered_median_ms": 216.66600002208725,
+    "delivered_sd_ms": 0.04940201626659688,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d33_n2": {
+    "n": 5,
+    "command_ms": 66,
+    "native_ms": 66.0,
+    "delivered_median_ms": 66.66700000641868,
+    "delivered_sd_ms": 0.0004899016788813169,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d25_n10": {
+    "n": 5,
+    "command_ms": 250,
+    "native_ms": 250.0,
+    "delivered_median_ms": 333.0619999906048,
+    "delivered_sd_ms": 0.2338397821487756,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d16_n2": {
+    "n": 5,
+    "command_ms": 32,
+    "native_ms": 32.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d17_n10": {
+    "n": 5,
+    "command_ms": 170,
+    "native_ms": 170.0,
+    "delivered_median_ms": 333.3330000168644,
+    "delivered_sd_ms": 0.10410070981677451,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d17_n1": {
+    "n": 5,
+    "command_ms": 17,
+    "native_ms": 17.0,
+    "delivered_median_ms": 16.667000018060207,
+    "delivered_sd_ms": 0.0004899016788813169,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d20_n10": {
+    "n": 5,
+    "command_ms": 200,
+    "native_ms": 200.0,
+    "delivered_median_ms": 333.3339999662712,
+    "delivered_sd_ms": 0.0004898921740711647,
+    "all_native_offsets_exact": true
+  },
+  "boundary_zig_d33_n10": {
+    "n": 5,
+    "command_ms": 330,
+    "native_ms": 330.0,
+    "delivered_median_ms": 333.3330000168644,
+    "delivered_sd_ms": 2.8515813671787947e-08,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d17_n10": {
+    "n": 5,
+    "command_ms": 170,
+    "native_ms": 170.0,
+    "delivered_median_ms": 333.3330000168644,
+    "delivered_sd_ms": 0.11711258513009212,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d25_n1": {
+    "n": 5,
+    "command_ms": 25,
+    "native_ms": 25.0,
+    "delivered_median_ms": 33.33299997029826,
+    "delivered_sd_ms": 2.3283064365386963e-08,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d17_n20": {
+    "n": 5,
+    "command_ms": 340,
+    "native_ms": 340.0,
+    "delivered_median_ms": 666.6660000337288,
+    "delivered_sd_ms": 0.1626006074870619,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d16_n2": {
+    "n": 5,
+    "command_ms": 32,
+    "native_ms": 32.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  },
+  "boundary_d15_n2": {
+    "n": 5,
+    "command_ms": 30,
+    "native_ms": 30.0,
+    "delivered_median_ms": 0.0,
+    "delivered_sd_ms": 0.0,
+    "all_native_offsets_exact": true
+  }
+}

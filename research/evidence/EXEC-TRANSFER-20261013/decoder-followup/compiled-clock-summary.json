@@ -1,0 +1,84 @@
+{
+  "audit": {
+    "refit_grid_coords100_quantized": {
+      "n": 100,
+      "passed": 100,
+      "failed_ids": []
+    },
+    "fitted_integer100_quantized": {
+      "n": 100,
+      "passed": 100,
+      "failed_ids": []
+    },
+    "interval_boundaries_integer100_quantized": {
+      "n": 100,
+      "passed": 100,
+      "failed_ids": []
+    }
+  },
+  "synthetic": {
+    "refit_grid_coords100_quantized": {
+      "n": 864,
+      "passed": 838,
+      "failed_ids": [
+        "kink-s100-a0.48-p8.0-r0.999",
+        "kink-s100-a0.48-p8.0-r1.0",
+        "kink-s100-a0.48-p8.0-r1.001",
+        "kink-s100-a0.48-p11.0-r0.999",
+        "kink-s100-a0.48-p11.0-r1.0",
+        "kink-s100-a0.48-p11.0-r1.001",
+        "zigzag-s100-a0.48-p5.0-r0.999",
+        "zigzag-s100-a0.48-p5.0-r1.0",
+        "zigzag-s100-a0.48-p5.0-r1.001",
+        "zigzag-s100-a0.48-p8.0-r0.999",
+        "zigzag-s100-a0.48-p8.0-r1.0",
+        "zigzag-s100-a0.48-p8.0-r1.001",
+        "zigzag-s100-a0.48-p11.0-r0.999",
+        "zigzag-s100-a0.48-p11.0-r1.0",
+        "zigzag-s100-a0.48-p11.0-r1.001",
+        "zigzag-s103-a0.48-p2.0-r1.0",
+        "zigzag-s103-a0.48-p2.0-r1.001",
+        "zigzag-s103-a0.48-p5.0-r0.999",
+        "zigzag-s103-a0.48-p5.0-r1.0",
+        "zigzag-s103-a0.48-p5.0-r1.001",
+        "zigzag-s117-a0.48-p8.0-r0.999",
+        "zigzag-s117-a0.48-p8.0-r1.0",
+        "zigzag-s117-a0.48-p8.0-r1.001",
+        "hold-s100-a0.48-p8.0-r0.999",
+        "hold-s100-a0.48-p8.0-r1.0",
+        "hold-s100-a0.48-p8.0-r1.001"
+      ]
+    },
+    "fitted_integer100_quantized": {
+      "n": 864,
+      "passed": 851,
+      "failed_ids": [
+        "kink-s100-a0.48-p8.0-r0.999",
+        "zigzag-s100-a0.48-p5.0-r0.999",
+        "zigzag-s100-a0.48-p5.0-r1.0",
+        "zigzag-s100-a0.48-p5.0-r1.001",
+        "zigzag-s100-a0.48-p8.0-r0.999",
+        "zigzag-s100-a0.48-p8.0-r1.0",
+        "zigzag-s100-a0.48-p8.0-r1.001",
+        "zigzag-s100-a0.48-p11.0-r0.999",
+        "zigzag-s100-a0.48-p11.0-r1.0",
+        "zigzag-s100-a0.48-p11.0-r1.001",
+        "hold-s100-a0.48-p8.0-r0.999",
+        "hold-s100-a0.48-p8.0-r1.0",
+        "hold-s100-a0.48-p8.0-r1.001"
+      ]
+    },
+    "interval_boundaries_integer100_quantized": {
+      "n": 864,
+      "passed": 858,
+      "failed_ids": [
+        "zigzag-s100-a0.48-p8.0-r0.999",
+        "zigzag-s100-a0.48-p8.0-r1.0",
+        "zigzag-s100-a0.48-p8.0-r1.001",
+        "hold-s100-a0.48-p8.0-r0.999",
+        "hold-s100-a0.48-p8.0-r1.0",
+        "hold-s100-a0.48-p8.0-r1.001"
+      ]
+    }
+  }
+}

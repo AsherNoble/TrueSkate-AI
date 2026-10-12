@@ -1,0 +1,38 @@
+{
+  "all_inputs_match": true,
+  "all_selected_media_match": true,
+  "n_input_hashes": 102,
+  "n_selected_media_hashes": 7,
+  "exact_command_count": 100,
+  "max_command_difference_logical_pt": 5.684341886080802e-14,
+  "development_and_heldout_recordings_disjoint": true,
+  "no_clip67_selected": true,
+  "no_endpoint_or_hold_time_inversion": "The analysis uses forward XY schedules; profile geometry excludes stationary locations and finite endpoints.",
+  "arithmetic": {
+    "linear": {
+      "recomputed": 18.79464496187075,
+      "stored": 18.79464496187075,
+      "match": true
+    },
+    "simulator": {
+      "recomputed": 12.998878620510025,
+      "stored": 12.998878620510025,
+      "match": true
+    }
+  },
+  "software": {
+    "python": "3.11.0",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "opencv": "4.13.0.92",
+    "matplotlib": "3.10.9",
+    "ffmpeg": "ffmpeg version 9.0.1 Copyright (c) 2000-2026 the FFmpeg developers"
+  },
+  "output_hashes": {
+    "PLAN-FROZEN.md": "0acf575322a7705c38ca5c0eb5f9f3e35c50f27f190d5a5e5ae4db58fd69c056",
+    "study.py": "d170a3a7c4be4b4fe702e7ba6db0ab506c4597e73260479d91717d74a8330d76",
+    "visual-review.json": "fef07c69df3788ad2b417ce9dad7cc15a7dd4ed1abe773c1c65f92442b5977fd",
+    "results.json": "5299abeb860bd3dcb42854a2dd5ff08ed553024695993b0fe71e8b9eda5d73b3",
+    "primary-rows.json": "9a21f6375584a0642b4bb8ebe6be1c27f1ab2db97fc6dcbe217ac190fdb62df6"
+  }
+}

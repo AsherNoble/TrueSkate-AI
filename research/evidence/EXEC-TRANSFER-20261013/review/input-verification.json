@@ -1,0 +1,709 @@
+{
+  "samples": 100,
+  "all_frozen_hashes_match": true,
+  "bytes_checked": 178022307,
+  "elapsed_s": 0.20822341699386016,
+  "manifest_file_sha256": "b3daad332ce5b1f575f83b73acc4fc34af429c50003dd5ea95a28a78286bcfca",
+  "samples_checked": [
+    {
+      "id": 51,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 52,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 53,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 54,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 55,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 56,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 57,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 58,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 59,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 60,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 61,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 62,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 63,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 64,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 65,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 66,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 67,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 68,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 69,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 70,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 71,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 72,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 73,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 74,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 75,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 76,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 77,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 78,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 79,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 80,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 81,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 82,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 83,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 84,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 85,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 86,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 87,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 88,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 89,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 90,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 91,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 92,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 93,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 94,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 95,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 96,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 97,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 98,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 99,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 100,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 101,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 102,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 103,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 104,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 105,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 106,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 107,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 108,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 109,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 110,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 111,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 112,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 113,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 114,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 115,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 116,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 117,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 118,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 119,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 120,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 121,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 122,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 123,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 124,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 125,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 126,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 127,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 128,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 129,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 130,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 131,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 132,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 133,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 134,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 135,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 136,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 137,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 138,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 139,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 140,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 151,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 152,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 153,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 154,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 155,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 156,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 157,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 158,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 159,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    },
+    {
+      "id": 160,
+      "matches": {
+        "meta.json": true,
+        "clip.mp4": true
+      }
+    }
+  ]
+}

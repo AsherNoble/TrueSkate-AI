@@ -1,0 +1,14 @@
+{
+  "WebDriverAgentLib/Utilities/FBW3CActionsSynthesizer.m": {
+    "export_sha256": "fd4dd3de3086d5586aab2663b542cef021a637384dcdcedf5587d23e0f603f64",
+    "git_blob_sha256": "fd4dd3de3086d5586aab2663b542cef021a637384dcdcedf5587d23e0f603f64",
+    "matches": true,
+    "git_show_return": 0
+  },
+  "WebDriverAgentLib/Utilities/FBBaseActionsSynthesizer.m": {
+    "export_sha256": "f6c5d07ce75659a0d02dc618b8e69f2c3695b864dc367c49586f0f927f607ba0",
+    "git_blob_sha256": "f6c5d07ce75659a0d02dc618b8e69f2c3695b864dc367c49586f0f927f607ba0",
+    "matches": true,
+    "git_show_return": 0
+  }
+}

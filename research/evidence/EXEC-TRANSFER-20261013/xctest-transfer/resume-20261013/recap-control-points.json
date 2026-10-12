@@ -1,0 +1,19 @@
+{
+  "runtime_path": "/Library/Developer/CoreSimulator/Volumes/iOS_22G86/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 18.6.simruntime/Contents/Resources/RuntimeRoot/System/Library/PrivateFrameworks/Recap.framework/Recap",
+  "sha256": "db82fc6a55ad90089b56207840d24013137f78ef5372b63f8fa319aef863bb0d",
+  "arm64_slice_offset": 540672,
+  "constant_virtual_address": "0x24090",
+  "touch_control_points": [
+    0.2620539963245392,
+    0.17945900559425354,
+    0.7582859992980957,
+    0.8902440071105957
+  ],
+  "other_input_control_points": [
+    0.48429301381111145,
+    0.04198199883103371,
+    0.5157070159912109,
+    0.9580180048942566
+  ],
+  "interpretation": "RCPMediaTimingFunctionForInputType input0 flag0 selects first four; touchCurveFunction passes input0, flag0."
+}

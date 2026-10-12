@@ -1,0 +1,6 @@
+{
+  "requests_checked": 255,
+  "matching_record_points": 2555,
+  "all_timestamps_and_positions_match_commands": true,
+  "event_types": "1 down,2 move,3 up"
+}

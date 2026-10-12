@@ -1,0 +1,19 @@
+{
+  "checked_at_utc": "2026-10-12T22:58:46.166683+00:00",
+  "original_scratchpad": "/private/tmp/claude-503/-Users-ashernoble-Projects-Robotics---hardware-TrueSkate-AI/e0f1c48e-973a-4ff3-a26a-f5f2350d9a43/scratchpad",
+  "original_scratchpad_exists": false,
+  "deletion_cause": "unknown; no research agent intentionally removed it",
+  "external_manifest_backup": {
+    "path": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/executor-research-preserved-20261013/manifest.json.gz",
+    "exists": true,
+    "sha256": "c9b82383793f43413692ea70bae9810aaa7cde9ef13d8248e5eaafe3df6de693",
+    "outside_research_worktree": true
+  },
+  "saved_evidence_note": "Selected reports, raw simulator requests, schedules, numeric outputs, exact review export and selected visual checks were copied before disappearance. Raw movies/metadata, original profile npz caches, WDA checkout/builds and full disassembly are not backed up in Git.",
+  "verification_status": {
+    "original_all100_media_and_metadata_hashes": "passed before disappearance; review/input-verification.json",
+    "original_sim_video_input_and_media_hashes": "passed before disappearance; sim-video-followup/verification.json",
+    "preserved_command_and_arithmetic_checks": "passed after disappearance; sim-video-followup/verification-preserved.json",
+    "original_source_recheck": "incomplete: inputs missing"
+  }
+}

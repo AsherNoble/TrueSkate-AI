@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-10-11. Behavioural cloning is the development direction.
+Updated 2026-10-13. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -13,13 +13,31 @@ before Appium's 60 s idle timeout ended the session during extraction. The
 operator allowed the idle-navigation signature and only reviewed rounds now
 count toward five; encodes keep the source time base, the collector holds its
 Appium session, clip checks run in parallel (3x on the rig) and the minute is
-spaced for measured worst-case overheads. 39 dispatches spent; round 6 next.
+spaced for measured worst-case overheads. Round 6 was reviewed and failed:
+83 Meet, 16 Fail and 1 Unclear. Its imported review is preserved; one of five
+reviewed rounds and 144 of 20,000 dispatches were spent. Nothing is qualified.
 The agreed gate is ≥95/100 human-reviewed clips,
 at most five reviewed rounds, then a separate 14,000-clip pool and seeded 12,500 selection
 across five parks, with a global 20,000-dispatch ceiling. No passing curved
 qualification or trained curved result is claimed. See
 [M1-CURVED-20261011](experiments/M1-CURVED-20261011.md) and the
 [current protocol](protocols/model1_curved_collection_v1.md).
+
+The interrupted research session has been resumed as a laptop-only investigation
+of executor timing, trail measurement, label semantics and decoder capacity.
+The trail tracker cannot substantiate clip 67's apparent 170 ms lead: retracing,
+old glow and endpoint scoring create false evidence. Simulator measurements
+identify repeatable non-linear XCTest interpolation; transfer to the physical
+XRs remains unverified. A synthetic inverse-model study supports learning a
+deterministic warp for same-executor replay, while independent random timing
+noise remains harmful. Refitting decoder coordinates at existing knot times
+removes five perfect-target audit failures without changing the gesture
+contract; predicted-input robustness and physical execution remain untested.
+The simulator-to-phone-video comparison is inconclusive. The expert extraction
+contains seven 57–115 ms visible moving spans, raising a fast-motion support
+concern; it does not independently measure their complete contact durations.
+These findings do not qualify collection or change its frozen gates. See
+[EXEC-TRANSFER-20261013](experiments/EXEC-TRANSFER-20261013.md).
 
 Current work is calibrated linear clip regression and scaling. The current
 best is **91.04%** test recovery: the 64×144 input, seed 2, trained on
