@@ -1,7 +1,8 @@
 # PHYSICAL-TRANSFER-20261013 — physical XR input repeatability
 
 Status: **helper cohort executed 2026-10-13; frozen helper gate failed on hold
-observability only; game cohort not run; awaiting operator decision**.
+observability only; operator-approved post-hoc hold amendment passes; game cohort
+next**.
 The original pre-execution record follows unchanged, then the helper result.
 The operator authorized the parallel physical, decoder and simulator diagnostics
 on 2026-10-13. The physical prerequisite cannot currently be measured without a
@@ -90,3 +91,17 @@ Evidence: [helper cohort](../evidence/PHYSICAL-TRANSFER-20261013/helper-cohort-2
 [provenance](../evidence/PHYSICAL-TRANSFER-20261013/helper-cohort-20261013T121131Z/provenance.json)).
 Runner `run_helper.py` at `f311c399` dispatched; `6d3b3ebc --finish` retrieved and
 analysed. The game cohort and learning/replay pilot remain gated.
+
+### Post-hoc hold amendment (operator-approved 2026-10-13)
+
+After seeing the failure, the operator approved replacing only the hold check, so
+the **frozen gate remains the decision of record (failed)**.
+[`amend_holds.py`](../evidence/PHYSICAL-TRANSFER-20261013/amend_holds.py) passes a
+hold if its point is observed, no sample in the commanded hold window is over 0.5 pt
+from it, and post-hold motion (samples after the window that have left the hold
+point) equals the path's modal run within 1 ms. Two implementation choices were made
+after seeing the data. A first draft wrongly counted the stationary hold-point
+sample as motion. Motion compares distinct consecutive positions because one run
+(`helper-013`) carries an extra stationary endpoint sample. **Amended gate: passed,
+30/30 holds.** Under the literal sample-by-sample wording, `helper-013` alone fails.
+See [`helper-gate-amended.json`](../evidence/PHYSICAL-TRANSFER-20261013/helper-cohort-20261013T121131Z/helper-gate-amended.json).

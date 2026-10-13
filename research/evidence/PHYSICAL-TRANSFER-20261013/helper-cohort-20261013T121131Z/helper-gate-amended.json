@@ -1,0 +1,540 @@
+{
+  "schema": "physical-transfer-helper-gate-amended-v1",
+  "frozen_gate": {
+    "passed": false,
+    "failures": [
+      "helper-007: hold occupancy unmeasured/too short",
+      "helper-023: hold occupancy unmeasured/too short",
+      "helper-036: hold occupancy unmeasured/too short",
+      "helper-058: hold occupancy unmeasured/too short",
+      "helper-034: hold occupancy unmeasured/too short",
+      "helper-065: hold occupancy unmeasured/too short"
+    ],
+    "interpretation": "frozen pragmatic diagnostic thresholds; n10/path does not bound rare failure rates",
+    "learning_pilot_gate": "closed until helper AND separate True Skate observation/context gate pass"
+  },
+  "frozen_gate_is_decision_of_record": true,
+  "amendment": "post hoc, operator-approved 2026-10-13; see module docstring",
+  "amended_gate": {
+    "passed": true,
+    "failures": []
+  },
+  "literal_wording_gate": {
+    "passed": false,
+    "failures": [
+      "helper-013: literal post-hold samples differ"
+    ]
+  },
+  "holds": [
+    {
+      "request_id": "helper-007",
+      "path_id": "initial_hold_600",
+      "hold_knot": 0,
+      "window_ms": [
+        0,
+        200
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.8289999677799642,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-013",
+      "path_id": "initial_hold_600",
+      "hold_knot": 0,
+      "window_ms": [
+        0,
+        200
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.8976259850896895,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": false
+    },
+    {
+      "request_id": "helper-023",
+      "path_id": "initial_hold_600",
+      "hold_knot": 0,
+      "window_ms": [
+        0,
+        200
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.4937915364280343,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-025",
+      "path_id": "initial_hold_600",
+      "hold_knot": 0,
+      "window_ms": [
+        0,
+        200
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.289416522718966,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-036",
+      "path_id": "initial_hold_600",
+      "hold_knot": 0,
+      "window_ms": [
+        0,
+        200
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.845917034894228,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-048",
+      "path_id": "initial_hold_600",
+      "hold_knot": 0,
+      "window_ms": [
+        0,
+        200
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.9717499488033354,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-055",
+      "path_id": "initial_hold_600",
+      "hold_knot": 0,
+      "window_ms": [
+        0,
+        200
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 1.0186340659856796e-06,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-058",
+      "path_id": "initial_hold_600",
+      "hold_knot": 0,
+      "window_ms": [
+        0,
+        200
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.7955830369610339,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-072",
+      "path_id": "initial_hold_600",
+      "hold_knot": 0,
+      "window_ms": [
+        0,
+        200
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.8560834685340524,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-074",
+      "path_id": "initial_hold_600",
+      "hold_knot": 0,
+      "window_ms": [
+        0,
+        200
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.8639160078018904,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-002",
+      "path_id": "middle_hold_800",
+      "hold_knot": 1,
+      "window_ms": [
+        200,
+        400
+      ],
+      "samples_in_window": 2,
+      "post_hold_max_time_difference_ms": 0.9485000045970082,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-009",
+      "path_id": "middle_hold_800",
+      "hold_knot": 1,
+      "window_ms": [
+        200,
+        400
+      ],
+      "samples_in_window": 0,
+      "post_hold_max_time_difference_ms": 0.48783206148073077,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-021",
+      "path_id": "middle_hold_800",
+      "hold_knot": 1,
+      "window_ms": [
+        200,
+        400
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.5026659928262234,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-028",
+      "path_id": "middle_hold_800",
+      "hold_knot": 1,
+      "window_ms": [
+        200,
+        400
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.9111664840020239,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-034",
+      "path_id": "middle_hold_800",
+      "hold_knot": 1,
+      "window_ms": [
+        200,
+        400
+      ],
+      "samples_in_window": 2,
+      "post_hold_max_time_difference_ms": 0.7984159747138619,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-041",
+      "path_id": "middle_hold_800",
+      "hold_knot": 1,
+      "window_ms": [
+        200,
+        400
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.5103749572299421,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-054",
+      "path_id": "middle_hold_800",
+      "hold_knot": 1,
+      "window_ms": [
+        200,
+        400
+      ],
+      "samples_in_window": 0,
+      "post_hold_max_time_difference_ms": 0.5488329916261137,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-064",
+      "path_id": "middle_hold_800",
+      "hold_knot": 1,
+      "window_ms": [
+        200,
+        400
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.7440834597218782,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-065",
+      "path_id": "middle_hold_800",
+      "hold_knot": 1,
+      "window_ms": [
+        200,
+        400
+      ],
+      "samples_in_window": 2,
+      "post_hold_max_time_difference_ms": 9.89530235528946e-07,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-076",
+      "path_id": "middle_hold_800",
+      "hold_knot": 1,
+      "window_ms": [
+        200,
+        400
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.8609580108895898,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-004",
+      "path_id": "final_hold_600",
+      "hold_knot": 1,
+      "window_ms": [
+        400,
+        600
+      ],
+      "samples_in_window": 2,
+      "post_hold_max_time_difference_ms": 0.0,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-014",
+      "path_id": "final_hold_600",
+      "hold_knot": 1,
+      "window_ms": [
+        400,
+        600
+      ],
+      "samples_in_window": 2,
+      "post_hold_max_time_difference_ms": 0.0,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-019",
+      "path_id": "final_hold_600",
+      "hold_knot": 1,
+      "window_ms": [
+        400,
+        600
+      ],
+      "samples_in_window": 2,
+      "post_hold_max_time_difference_ms": 0.0,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-027",
+      "path_id": "final_hold_600",
+      "hold_knot": 1,
+      "window_ms": [
+        400,
+        600
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.0,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-037",
+      "path_id": "final_hold_600",
+      "hold_knot": 1,
+      "window_ms": [
+        400,
+        600
+      ],
+      "samples_in_window": 2,
+      "post_hold_max_time_difference_ms": 0.0,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-047",
+      "path_id": "final_hold_600",
+      "hold_knot": 1,
+      "window_ms": [
+        400,
+        600
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.0,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-056",
+      "path_id": "final_hold_600",
+      "hold_knot": 1,
+      "window_ms": [
+        400,
+        600
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.0,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-060",
+      "path_id": "final_hold_600",
+      "hold_knot": 1,
+      "window_ms": [
+        400,
+        600
+      ],
+      "samples_in_window": 2,
+      "post_hold_max_time_difference_ms": 0.0,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-066",
+      "path_id": "final_hold_600",
+      "hold_knot": 1,
+      "window_ms": [
+        400,
+        600
+      ],
+      "samples_in_window": 2,
+      "post_hold_max_time_difference_ms": 0.0,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    },
+    {
+      "request_id": "helper-077",
+      "path_id": "final_hold_600",
+      "hold_knot": 1,
+      "window_ms": [
+        400,
+        600
+      ],
+      "samples_in_window": 1,
+      "post_hold_max_time_difference_ms": 0.0,
+      "observed": true,
+      "stationary_in_window": true,
+      "post_hold_motion_equals_modal": true,
+      "post_hold_time_within_1ms": true,
+      "passed": true,
+      "literal_post_hold_samples_equal_modal": true
+    }
+  ]
+}
