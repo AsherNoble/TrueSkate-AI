@@ -1,0 +1,38 @@
+{
+  "verified_at": 1791213273.957021,
+  "synthetic_tests": {
+    "passed": 8,
+    "seconds": 6.3,
+    "includes": "actual frozen trainer epoch-5 to epoch-6 optimizer/model/RNG/shuffle/cosine restoration"
+  },
+  "existing_tests": {
+    "passed": 66,
+    "seconds": 10.05,
+    "files": [
+      "tests/test_basic_linear_experiment.py",
+      "tests/test_model1_scaling_protocol.py"
+    ]
+  },
+  "notebook_code_cells_compile": true,
+  "production_trainer_changed": false,
+  "tracked_checkout_changes": false,
+  "gpu_allocation_started": false,
+  "files": {
+    "benchmark.py": {
+      "sha256": "8b98294a9b0b2061dc2d47427ecf23e558cebc338e03789f84549317cc09f65e",
+      "bytes": 25753
+    },
+    "supervisor.py": {
+      "sha256": "b7afe55fe5160973a2e360c3c7311a12a467191f431ff42cd9fe5712c0193208",
+      "bytes": 8543
+    },
+    "test_benchmark.py": {
+      "sha256": "9b4b4f62d18d3d1abc5ebb65bcc8b0995cae939539b4ce364aacfdf36875b5ac",
+      "bytes": 5619
+    },
+    "Model1-Colab-benchmark-20261006.ipynb": {
+      "sha256": "6d27a613d693833ad07f805ac465ee6d8a6a0df271ddbb935108889cd8e02dce",
+      "bytes": 53181
+    }
+  }
+}

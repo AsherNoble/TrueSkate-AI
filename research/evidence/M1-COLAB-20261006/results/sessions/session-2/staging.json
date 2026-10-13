@@ -1,0 +1,13 @@
+{
+  "cache_frames": false,
+  "content_verified": true,
+  "experiment_fingerprint": "sha256:82e323f94bd8dc4db2f223da9a563570bbd3d72169d7819579d0645add1268b4",
+  "seconds": 509.588887006,
+  "shard_count": 44,
+  "shard_fingerprint": "sha256:85e6a84418fa1eab5c8b951fcc1e690f66cfcceee5fd1cc8200bb1123cd8da28",
+  "split_sizes": {
+    "test": 1965,
+    "train": 18394,
+    "validation": 1965
+  }
+}

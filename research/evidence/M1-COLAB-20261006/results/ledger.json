@@ -1,0 +1,39 @@
+{
+  "cause": "epoch 5 verified; awaiting recreated runtime",
+  "connection_attempts": [
+    {
+      "at": 1791782734.0281475,
+      "utc_day": "2026-10-12"
+    },
+    {
+      "at": 1791789255.359827,
+      "utc_day": "2026-10-12"
+    }
+  ],
+  "sessions": [
+    {
+      "allocated_at": 1791783056.0,
+      "allocation_time_basis": "conservative VM boot timestamp",
+      "attempt_at": 1791782734.0281475,
+      "boot_id": "32691140-efe8-40e8-9f27-490b3fc4b44d",
+      "gpu_identity": "Tesla T4, GPU-2969743c-73e8-0024-f303-6bd0278be10a, 580.82.07, 15360 MiB",
+      "id": "session-1",
+      "outcome": "awaiting_runtime_deletion",
+      "phase": "timing",
+      "release_requested_at": 1791789065.9306471,
+      "release_verified": true,
+      "released_at": 1791789233.7424011
+    },
+    {
+      "allocated_at": 1791789180.0,
+      "allocation_time_basis": "conservative VM boot timestamp",
+      "attempt_at": 1791789255.359827,
+      "boot_id": "fd228490-4891-4c47-b146-2c8864a62398",
+      "gpu_identity": "Tesla T4, GPU-5dba74c1-3333-ba45-263c-ba889d1fe262, 580.82.07, 15360 MiB",
+      "id": "session-2",
+      "phase": "completion",
+      "release_verified": true,
+      "released_at": 1791804397.4155054
+    }
+  ]
+}
