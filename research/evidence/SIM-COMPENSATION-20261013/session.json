@@ -1,0 +1,23 @@
+{
+  "session": {
+    "value": {
+      "sessionId": "6911E978-1CDE-43B3-AC40-FC33E3DC1315",
+      "capabilities": {
+        "sdkVersion": "18.6",
+        "device": "iphone"
+      }
+    },
+    "sessionId": "6911E978-1CDE-43B3-AC40-FC33E3DC1315"
+  },
+  "timing": {
+    "value": {
+      "capacity": 256,
+      "records": [],
+      "enabled": 1,
+      "dropped_records": 0,
+      "build_revision": "ae50404aac12d9f8c41f6c3fa8776e97975eaef5",
+      "schema_version": 1
+    },
+    "sessionId": "6911E978-1CDE-43B3-AC40-FC33E3DC1315"
+  }
+}

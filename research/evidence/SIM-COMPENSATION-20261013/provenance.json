@@ -1,0 +1,20 @@
+{
+  "base_commit": "dc159db075f60336ba2543fc7e607c00f5188c51",
+  "versions": {
+    "xcode": "Xcode 26.6\nBuild version 17F113",
+    "clang": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+    "simulator_sdk": "26.5"
+  },
+  "wda_revision": "ae50404aac12d9f8c41f6c3fa8776e97975eaef5",
+  "source_sha256": {
+    "WebDriverAgentLib/Utilities/FBW3CActionsSynthesizer.m": "fd4dd3de3086d5586aab2663b542cef021a637384dcdcedf5587d23e0f603f64",
+    "WebDriverAgentLib/Utilities/FBBaseActionsSynthesizer.m": "f6c5d07ce75659a0d02dc618b8e69f2c3695b864dc367c49586f0f927f607ba0"
+  },
+  "recap_binary_sha256": "db82fc6a55ad90089b56207840d24013137f78ef5372b63f8fa319aef863bb0d",
+  "simulator_udid": "A0EF1497-8235-4DAE-855A-16FDF8D60796",
+  "initial_simulator_state": "Shutdown",
+  "raw_artifact_root": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/sim-compensation-20261013/tmp/sim-compensation",
+  "frozen_sha256": "f16652ecf696b50aa6a3811a750ef93b50c598cc979d4b6dc25de80291a96379",
+  "plan_sha256_before_scoring": "87d0093757935e5fc0c873b494b9baade9f32a2574f9e7945254e215cfcab20c",
+  "logger_sha256": "345e0b700880d424f49cb3e7290ac99b0c9c7ae67e68b7239fbcfc63666d4fbf"
+}

@@ -1,0 +1,26 @@
+{
+  "wda_revision": "ae50404aac12d9f8c41f6c3fa8776e97975eaef5",
+  "export_git_archive": true,
+  "logger_compile_command": [
+    "xcrun",
+    "clang",
+    "-target",
+    "arm64-apple-ios18.0-simulator",
+    "-isysroot",
+    "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk",
+    "-fobjc-arc",
+    "-fblocks",
+    "-framework",
+    "UIKit",
+    "-framework",
+    "QuartzCore",
+    "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/sim-compensation-20261013/tmp/sim-compensation/logger.m",
+    "-o",
+    "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/worktrees/sim-compensation-20261013/tmp/sim-compensation/TouchLogger.app/TouchLogger"
+  ],
+  "original_simulator_state": "Shutdown",
+  "setup_attempts": [
+    "Initial safe-tar filter unsupported by Python3.11; no source extracted. Initial build exit66 missingproject.",
+    "Adapted extraction using explicit pathvalidation; sourceexport andloggercompile succeeded."
+  ]
+}
