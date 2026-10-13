@@ -1,0 +1,50 @@
+[
+  {
+    "step": "list",
+    "args": [
+      "xcrun",
+      "devicectl",
+      "device",
+      "info",
+      "files",
+      "--device",
+      "<XR1-UDID>",
+      "--domain-type",
+      "appDataContainer",
+      "--domain-identifier",
+      "com.ashernoble.touchlogger.physical20261013",
+      "--subdirectory",
+      "Documents",
+      "--json-output",
+      "/Users/training-server/trueskate-ai-runtime/tmp/physical-transfer-helper-cohort-20261013T121131Z/finish/device-files.json"
+    ],
+    "exit_code": 0,
+    "stdout": "05:19:43  Enabling developer disk image services.\n05:19:43  Acquired usage assertion.\n1 file:\nName                                              \n--------------------------------------------------\ntouches-6316423D-7B0B-4721-8D12-94B88062B3CE.jsonl\n",
+    "stderr": ""
+  },
+  {
+    "step": "copy",
+    "name": "touches-6316423D-7B0B-4721-8D12-94B88062B3CE.jsonl",
+    "args": [
+      "xcrun",
+      "devicectl",
+      "device",
+      "copy",
+      "from",
+      "--device",
+      "<XR1-UDID>",
+      "--domain-type",
+      "appDataContainer",
+      "--domain-identifier",
+      "com.ashernoble.touchlogger.physical20261013",
+      "--source",
+      "Documents/touches-6316423D-7B0B-4721-8D12-94B88062B3CE.jsonl",
+      "--destination",
+      "/Users/training-server/trueskate-ai-runtime/tmp/physical-transfer-helper-cohort-20261013T121131Z/finish/device-documents/touches-6316423D-7B0B-4721-8D12-94B88062B3CE.jsonl"
+    ],
+    "exit_code": 0,
+    "stdout": "05:19:45  Enabling developer disk image services.\n05:19:46  Acquired usage assertion.\n",
+    "stderr": "",
+    "sha256": "43d6c039f2d6aa532a74b0e2f834b6ad6e2c14d5a22804b84a814d8093d6ea47"
+  }
+]

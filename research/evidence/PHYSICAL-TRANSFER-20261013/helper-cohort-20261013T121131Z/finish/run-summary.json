@@ -1,0 +1,19 @@
+{
+  "error": null,
+  "spent": 80,
+  "completed": 80,
+  "log": "/Users/training-server/trueskate-ai-runtime/tmp/physical-transfer-helper-cohort-20261013T121131Z/finish/device-documents/touches-6316423D-7B0B-4721-8D12-94B88062B3CE.jsonl",
+  "gate": {
+    "passed": false,
+    "failures": [
+      "helper-007: hold occupancy unmeasured/too short",
+      "helper-023: hold occupancy unmeasured/too short",
+      "helper-036: hold occupancy unmeasured/too short",
+      "helper-058: hold occupancy unmeasured/too short",
+      "helper-034: hold occupancy unmeasured/too short",
+      "helper-065: hold occupancy unmeasured/too short"
+    ],
+    "interpretation": "frozen pragmatic diagnostic thresholds; n10/path does not bound rare failure rates",
+    "learning_pilot_gate": "closed until helper AND separate True Skate observation/context gate pass"
+  }
+}

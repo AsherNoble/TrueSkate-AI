@@ -1,0 +1,36 @@
+{
+  "schema": "physical-transfer-helper-signing-v1",
+  "created_at": "2026-10-13T08:24:26.607821+00:00",
+  "bundle_id": "com.ashernoble.touchlogger.physical20261013",
+  "primary_bundle_id": false,
+  "team": "BK75JV5YK4",
+  "team_matches_wda": true,
+  "profile": {
+    "name": "iOS Team Provisioning Profile: com.ashernoble.touchlogger.physical20261013",
+    "uuid": "5e252d11-6d11-44a2-af43-1f0756edb922",
+    "path": "/Users/training-server/Library/Developer/Xcode/UserData/Provisioning Profiles/5e252d11-6d11-44a2-af43-1f0756edb922.mobileprovision",
+    "sha256": "6dacc6d975b3965e576675b3e201ff9d69f5b67bdb2c27cea59ed9a472c031dd",
+    "created": "2026-10-13T08:22:56",
+    "expires": "2026-10-20T08:22:56+00:00",
+    "device_count": 2,
+    "xr1_included": true,
+    "xr1_udid_sha256": "e5184f9180b442bd21c65705b13b6817497b566b36aeee46663758153f3bf2ef"
+  },
+  "certificate": {
+    "sha1": "89B514EA64656FBCC8A21004723D3823E085C33E",
+    "subject_and_expiry": "subject=UID=887LHCYA82, CN=Apple Development: <apple-id> (5X2Y92A36W), OU=BK75JV5YK4, O=Asher Noble, C=US\nnotAfter=Jul 12 07:55:42 2027 GMT"
+  },
+  "entitlements": {
+    "application-identifier": "BK75JV5YK4.com.ashernoble.touchlogger.physical20261013",
+    "com.apple.developer.team-identifier": "BK75JV5YK4",
+    "get-task-allow": true
+  },
+  "unsigned_executable_sha256": "17948b3bc5ba092018cb9bda2a7689d0553945139e1f7fcb98370b3ae732202e",
+  "signed_executable_sha256": "d336d2ec77de3b9397c951f94f6fe23f362c8851c161a82ac99a2b6d69d43858",
+  "info_plist_sha256": "fd48869a13f8136f01e9fd599d2c39c48af7d6505d028b4740f628ffa036c237",
+  "codesign_verify": "/Users/training-server/trueskate-ai-runtime/tmp/touchlogger-signing/signed-20261013T082426Z/PhysicalTouchLogger.app: valid on disk\n/Users/training-server/trueskate-ai-runtime/tmp/touchlogger-signing/signed-20261013T082426Z/PhysicalTouchLogger.app: satisfies its Designated Requirement",
+  "codesign_details": "Executable=/Users/training-server/trueskate-ai-runtime/tmp/touchlogger-signing/signed-20261013T082426Z/PhysicalTouchLogger.app/PhysicalTouchLogger\nIdentifier=com.ashernoble.touchlogger.physical20261013\nFormat=app bundle with Mach-O thin (arm64)\nCodeDirectory v=20400 size=975 flags=0x0(none) hashes=19+7 location=embedded\nSignature size=4793\nAuthority=Apple Development: <apple-id> (5X2Y92A36W)\nAuthority=Apple Worldwide Developer Relations Certification Authority\nAuthority=Apple Root CA\nSigned Time=13 Oct 2026 at 1:24:28\u202fAM\nInfo.plist entries=13\nTeamIdentifier=BK75JV5YK4\nSealed Resources version=2 rules=10 files=1\nInternal requirements count=1 size=220",
+  "app": "/Users/training-server/trueskate-ai-runtime/tmp/touchlogger-signing/signed-20261013T082426Z/PhysicalTouchLogger.app",
+  "installed": false,
+  "launched": false
+}

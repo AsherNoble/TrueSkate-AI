@@ -1,6 +1,8 @@
 # PHYSICAL-TRANSFER-20261013 — physical XR input repeatability
 
-Status: **blocked before execution; zero touch requests and recordings**.
+Status: **helper cohort executed 2026-10-13; frozen helper gate failed on hold
+observability only; game cohort not run; awaiting operator decision**.
+The original pre-execution record follows unchanged, then the helper result.
 The operator authorized the parallel physical, decoder and simulator diagnostics
 on 2026-10-13. The physical prerequisite cannot currently be measured without a
 separately signed UIKit logger. Healthy WDA remains running and collection is off.
@@ -42,3 +44,49 @@ See the [full report](../evidence/PHYSICAL-TRANSFER-20261013/REPORT.md),
 Only valid separate helper signing and verified current context can unblock the
 next bounded step. No device touch, recording, rig service restart, production
 source change, paid compute or human notification occurred.
+
+## Helper cohort, 2026-10-13
+
+The operator signed the helper under the free Personal Team (`BK75JV5YK4`, fallback
+bundle `com.ashernoble.touchlogger.physical20261013`; the first profile covered only
+XR2 until XR1 was selected in Xcode). It was installed on XR1 without touching WDA.
+A first launch attempt was refused (developer not yet trusted; **0 touches spent**).
+After the operator trusted it, all **80/80 frozen requests completed**, in order,
+spend-before-RPC, with no retry. Directory copy of the logs timed out; exact-path
+copy retrieved the single launch log (SHA `43d6c039…`), which holds exactly 80
+batches, all bound to their own request windows. WDA stayed healthy throughout.
+
+**Frozen helper gate: failed.** All 80 contacts are complete, uncancelled and
+unoverflowed; every waypoint was observed within 0 pt; position and release
+criteria pass on every path. The only failures are 6/30 hold runs whose hold
+occupancy spanned 0 ms (4/10 `initial_hold_600`) or 8.3 ms (2/10 `middle_hold_800`),
+below the frozen 50 ms. Those runs lack UIKit's stationary end-of-hold sample; their
+post-hold sample positions equal the path's modal run, with timestamps within
+0.85 ms. This is a sampling/observability difference, not different delivered
+motion, but the frozen rule counts unobservable as failure and is not re-thresholded.
+
+| Path | Requested ms | Delivered ms (SD) | p95 / worst normalised repeat deviation | Max spatial SD pt |
+|---|---:|---:|---:|---:|
+| single_400 | 400 | 400.0 (0.00) | 0.0002 / 0.0010 | 0.20 |
+| single_800 | 800 | 800.0 (0.00) | 0.0001 / 0.0005 | 0.08 |
+| split_800 | 800 | 808.3 (0.00) | 0.0001 / 0.0004 | 0.09 |
+| corner_600 | 600 | 600.0 (0.00) | 0.0002 / 0.0008 | 0.26 |
+| unequal_600 | 600 | 600.0 (0.00) | 0.0002 / 0.0017 | 0.21 |
+| initial_hold_600 | 600 | 608.3 (0.00) | 0.0035 / 0.0054 | 1.51 |
+| middle_hold_800 | 800 | 816.7 (0.00) | 0.0004 / 0.0028 | 0.69 |
+| final_hold_600 | 600 | 600.0 (0.13) | 0.0002 / 0.0010 | 0.19 |
+
+Gate limits: p95 ≤0.01, worst ≤0.03, release p95 deviation ≤8.333 ms (observed
+≤0.25 ms). Durations sit on the 8.33 ms digitizer grid; three hold/split paths gain
+a fixed +8.3 or +16.7 ms. Each path departs from the linearly time-parameterised
+command by a repeatable 4.8–9.9 pt (median per-run maximum), consistent with a
+deterministic delivery warp. UIKit touch-began minus WDA `submitted_to_ios` (phone
+clocks) is 12.75 ms median, SD 1.94 ms, p05–p95 10.6–15.5 ms, maximum 24.3 ms.
+Ten repeats per path do not bound rare failures; no True Skate rendering, game
+timing or learnability is established by the helper.
+
+Evidence: [helper cohort](../evidence/PHYSICAL-TRANSFER-20261013/helper-cohort-20261013T121131Z/)
+(redacted receipts, spend log, compressed touch log, [summary](../evidence/PHYSICAL-TRANSFER-20261013/helper-cohort-20261013T121131Z/summary.json),
+[provenance](../evidence/PHYSICAL-TRANSFER-20261013/helper-cohort-20261013T121131Z/provenance.json)).
+Runner `run_helper.py` at `f311c399` dispatched; `6d3b3ebc --finish` retrieved and
+analysed. The game cohort and learning/replay pilot remain gated.

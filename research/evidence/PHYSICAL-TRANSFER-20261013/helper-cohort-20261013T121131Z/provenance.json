@@ -1,0 +1,22 @@
+{
+  "touch_log": {
+    "name": "touches-6316423D-7B0B-4721-8D12-94B88062B3CE.jsonl",
+    "sha256": "43d6c039f2d6aa532a74b0e2f834b6ad6e2c14d5a22804b84a814d8093d6ea47",
+    "bytes": 2197085,
+    "stored_as": "finish/touches-6316423D-7B0B-4721-8D12-94B88062B3CE.jsonl.gz"
+  },
+  "helper_result": {
+    "sha256": "12be2e6b1afff4eb71db646e1961e1ab938d59df2c1c751a406dc5b135df9687",
+    "regenerate": "analyze.py over the stored log and finish/receipts.json; not stored (800 KB)"
+  },
+  "rig_locations": {
+    "run": "/Users/training-server/trueskate-ai-runtime/tmp/physical-transfer-helper-cohort-20261013T121131Z",
+    "first_attempt": "/Users/training-server/trueskate-ai-runtime/tmp/physical-transfer-helper-cohort-20261013T082620Z",
+    "signed_app": "/Users/training-server/trueskate-ai-runtime/tmp/touchlogger-signing/signed-20261013T082426Z"
+  },
+  "runner_commits": {
+    "dispatch": "f311c399",
+    "finish": "6d3b3ebc"
+  },
+  "redactions": "XR1 UDID, CoreDevice identifier and Apple ID email replaced with placeholders"
+}

@@ -1,0 +1,4642 @@
+[
+  {
+    "host_call_return": {
+      "epoch_s": 1791893528.08888,
+      "monotonic_s": 525824.06507944
+    },
+    "host_call_start": {
+      "epoch_s": 1791893527.196778,
+      "monotonic_s": 525823.172980067
+    },
+    "path_id": "single_400",
+    "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35",
+    "repeat": 1,
+    "request_id": "helper-001",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893528.661386,
+        "monotonic_s": 390771.36311308335
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893528.026273,
+        "monotonic_s": 390770.72801383334
+      },
+      "preparation_started": {
+        "epoch_s": 1791893527.943075,
+        "monotonic_s": 390770.6448142917
+      },
+      "request_entered": {
+        "epoch_s": 1791893527.923228,
+        "monotonic_s": 390770.62496833334
+      },
+      "request_finished": {
+        "epoch_s": 1791893528.789195,
+        "monotonic_s": 390771.49092116667
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893528.788776,
+        "monotonic_s": 390771.4905018334
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893528.7535992,
+        "monotonic_s": 390771.4553232917
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893528.0277162,
+        "monotonic_s": 390770.7294560417
+      }
+    },
+    "log_batch": 1,
+    "touch_began_minus_submitted_s": 0.02429676055908203
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893530.589202,
+      "monotonic_s": 525826.565393675
+    },
+    "host_call_start": {
+      "epoch_s": 1791893529.296888,
+      "monotonic_s": 525825.273083551
+    },
+    "path_id": "middle_hold_800",
+    "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c",
+    "repeat": 1,
+    "request_id": "helper-002",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893531.153349,
+        "monotonic_s": 390773.85502791667
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893530.1160378,
+        "monotonic_s": 390772.8177397917
+      },
+      "preparation_started": {
+        "epoch_s": 1791893530.039057,
+        "monotonic_s": 390772.74075908336
+      },
+      "request_entered": {
+        "epoch_s": 1791893530.021183,
+        "monotonic_s": 390772.7228852084
+      },
+      "request_finished": {
+        "epoch_s": 1791893531.292356,
+        "monotonic_s": 390773.9940359167
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893531.292331,
+        "monotonic_s": 390773.9940113333
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893531.2580519,
+        "monotonic_s": 390773.9597300417
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893530.116047,
+        "monotonic_s": 390772.8177492917
+      }
+    },
+    "log_batch": 2,
+    "touch_began_minus_submitted_s": 0.01320505142211914
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893532.839343,
+      "monotonic_s": 525828.815526634
+    },
+    "host_call_start": {
+      "epoch_s": 1791893531.807296,
+      "monotonic_s": 525827.783482308
+    },
+    "path_id": "unequal_600",
+    "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17",
+    "repeat": 1,
+    "request_id": "helper-003",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893533.4778209,
+        "monotonic_s": 390776.1794530834
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893532.653624,
+        "monotonic_s": 390775.3552786667
+      },
+      "preparation_started": {
+        "epoch_s": 1791893532.584775,
+        "monotonic_s": 390775.28643000004
+      },
+      "request_entered": {
+        "epoch_s": 1791893532.559679,
+        "monotonic_s": 390775.2613264167
+      },
+      "request_finished": {
+        "epoch_s": 1791893533.530035,
+        "monotonic_s": 390776.23167370836
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893533.530014,
+        "monotonic_s": 390776.23165279167
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893533.49369,
+        "monotonic_s": 390776.1953276667
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893532.653638,
+        "monotonic_s": 390775.3552927917
+      }
+    },
+    "log_batch": 3,
+    "touch_began_minus_submitted_s": 0.01289987564086914
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893535.0888488,
+      "monotonic_s": 525831.065025529
+    },
+    "host_call_start": {
+      "epoch_s": 1791893534.094233,
+      "monotonic_s": 525830.070413329
+    },
+    "path_id": "final_hold_600",
+    "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc",
+    "repeat": 1,
+    "request_id": "helper-004",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893535.753001,
+        "monotonic_s": 390778.45459566667
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893534.929173,
+        "monotonic_s": 390777.6307862084
+      },
+      "preparation_started": {
+        "epoch_s": 1791893534.846544,
+        "monotonic_s": 390777.54815720837
+      },
+      "request_entered": {
+        "epoch_s": 1791893534.823443,
+        "monotonic_s": 390777.5250559167
+      },
+      "request_finished": {
+        "epoch_s": 1791893535.79649,
+        "monotonic_s": 390778.49808725005
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893535.796445,
+        "monotonic_s": 390778.49803995836
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893535.7602239,
+        "monotonic_s": 390778.4618206667
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893534.929183,
+        "monotonic_s": 390777.63079583336
+      }
+    },
+    "log_batch": 4,
+    "touch_began_minus_submitted_s": 0.015558958053588867
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893537.290339,
+      "monotonic_s": 525833.266508514
+    },
+    "host_call_start": {
+      "epoch_s": 1791893536.298833,
+      "monotonic_s": 525832.275006172
+    },
+    "path_id": "corner_600",
+    "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795",
+    "repeat": 1,
+    "request_id": "helper-005",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893537.944199,
+        "monotonic_s": 390780.6457519167
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893537.122785,
+        "monotonic_s": 390779.8243571667
+      },
+      "preparation_started": {
+        "epoch_s": 1791893537.046073,
+        "monotonic_s": 390779.747645125
+      },
+      "request_entered": {
+        "epoch_s": 1791893537.026225,
+        "monotonic_s": 390779.72779725003
+      },
+      "request_finished": {
+        "epoch_s": 1791893537.9955769,
+        "monotonic_s": 390780.69713333336
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893537.9955359,
+        "monotonic_s": 390780.6970912917
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893537.9601579,
+        "monotonic_s": 390780.66171358334
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893537.122793,
+        "monotonic_s": 390779.82436562504
+      }
+    },
+    "log_batch": 5,
+    "touch_began_minus_submitted_s": 0.01606154441833496
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893539.850386,
+      "monotonic_s": 525835.826547375
+    },
+    "host_call_start": {
+      "epoch_s": 1791893538.536016,
+      "monotonic_s": 525834.512180964
+    },
+    "path_id": "single_800",
+    "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2",
+    "repeat": 1,
+    "request_id": "helper-006",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893540.5109391,
+        "monotonic_s": 390783.21244595834
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893539.483741,
+        "monotonic_s": 390782.1852696667
+      },
+      "preparation_started": {
+        "epoch_s": 1791893539.287383,
+        "monotonic_s": 390781.988914125
+      },
+      "request_entered": {
+        "epoch_s": 1791893539.262573,
+        "monotonic_s": 390781.96410320833
+      },
+      "request_finished": {
+        "epoch_s": 1791893540.558546,
+        "monotonic_s": 390783.26005520835
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893540.558526,
+        "monotonic_s": 390783.26003458333
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893540.5266209,
+        "monotonic_s": 390783.2281229167
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893539.4837499,
+        "monotonic_s": 390782.185278875
+      }
+    },
+    "log_batch": 6,
+    "touch_began_minus_submitted_s": 0.015326499938964844
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893542.191055,
+      "monotonic_s": 525838.167209029
+    },
+    "host_call_start": {
+      "epoch_s": 1791893541.105952,
+      "monotonic_s": 525837.082109792
+    },
+    "path_id": "initial_hold_600",
+    "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354",
+    "repeat": 1,
+    "request_id": "helper-007",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893542.7745209,
+        "monotonic_s": 390785.47598750005
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893541.940037,
+        "monotonic_s": 390784.64151987503
+      },
+      "preparation_started": {
+        "epoch_s": 1791893541.879092,
+        "monotonic_s": 390784.5805744167
+      },
+      "request_entered": {
+        "epoch_s": 1791893541.858135,
+        "monotonic_s": 390784.5596172084
+      },
+      "request_finished": {
+        "epoch_s": 1791893542.897934,
+        "monotonic_s": 390785.59939933335
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893542.8979092,
+        "monotonic_s": 390785.59937400004
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893542.869355,
+        "monotonic_s": 390785.5708170417
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893541.9400458,
+        "monotonic_s": 390784.64152916666
+      }
+    },
+    "log_batch": 7,
+    "touch_began_minus_submitted_s": 0.01546478271484375
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893544.640482,
+      "monotonic_s": 525840.616624788
+    },
+    "host_call_start": {
+      "epoch_s": 1791893543.408702,
+      "monotonic_s": 525839.384849729
+    },
+    "path_id": "split_800",
+    "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3",
+    "repeat": 1,
+    "request_id": "helper-008",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893545.308917,
+        "monotonic_s": 390788.0103331667
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893544.274869,
+        "monotonic_s": 390786.9763084167
+      },
+      "preparation_started": {
+        "epoch_s": 1791893544.189207,
+        "monotonic_s": 390786.89064708335
+      },
+      "request_entered": {
+        "epoch_s": 1791893544.163261,
+        "monotonic_s": 390786.8647011667
+      },
+      "request_finished": {
+        "epoch_s": 1791893545.3461308,
+        "monotonic_s": 390788.04755075
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893545.346109,
+        "monotonic_s": 390788.04752875003
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893545.312691,
+        "monotonic_s": 390788.01411004167
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893544.2748818,
+        "monotonic_s": 390786.9763218334
+      }
+    },
+    "log_batch": 8,
+    "touch_began_minus_submitted_s": 0.014896869659423828
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893547.185106,
+      "monotonic_s": 525843.161241694
+    },
+    "host_call_start": {
+      "epoch_s": 1791893545.885521,
+      "monotonic_s": 525841.861661003
+    },
+    "path_id": "middle_hold_800",
+    "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c",
+    "repeat": 2,
+    "request_id": "helper-009",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893547.7437701,
+        "monotonic_s": 390790.4451429584
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893546.705532,
+        "monotonic_s": 390789.4069271667
+      },
+      "preparation_started": {
+        "epoch_s": 1791893546.6369638,
+        "monotonic_s": 390789.33835933334
+      },
+      "request_entered": {
+        "epoch_s": 1791893546.61441,
+        "monotonic_s": 390789.3158048334
+      },
+      "request_finished": {
+        "epoch_s": 1791893547.86825,
+        "monotonic_s": 390790.56962308334
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893547.868229,
+        "monotonic_s": 390790.56960258336
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893547.8319268,
+        "monotonic_s": 390790.533298
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893546.7055411,
+        "monotonic_s": 390789.40693604166
+      }
+    },
+    "log_batch": 9,
+    "touch_began_minus_submitted_s": 0.012932062149047852
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893549.7883992,
+      "monotonic_s": 525845.764526268
+    },
+    "host_call_start": {
+      "epoch_s": 1791893548.435912,
+      "monotonic_s": 525844.412043087
+    },
+    "path_id": "split_800",
+    "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3",
+    "repeat": 2,
+    "request_id": "helper-010",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893550.423152,
+        "monotonic_s": 390793.12447620835
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893549.386826,
+        "monotonic_s": 390792.0881717917
+      },
+      "preparation_started": {
+        "epoch_s": 1791893549.186135,
+        "monotonic_s": 390791.88748283335
+      },
+      "request_entered": {
+        "epoch_s": 1791893549.1634278,
+        "monotonic_s": 390791.8647709167
+      },
+      "request_finished": {
+        "epoch_s": 1791893550.475985,
+        "monotonic_s": 390793.17731062503
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893550.475964,
+        "monotonic_s": 390793.17728837504
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893550.4393802,
+        "monotonic_s": 390793.14069920836
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893549.386836,
+        "monotonic_s": 390792.0881819167
+      }
+    },
+    "log_batch": 10,
+    "touch_began_minus_submitted_s": 0.015310525894165039
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893552.100312,
+      "monotonic_s": 525848.076432047
+    },
+    "host_call_start": {
+      "epoch_s": 1791893551.00281,
+      "monotonic_s": 525846.978934176
+    },
+    "path_id": "unequal_600",
+    "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17",
+    "repeat": 2,
+    "request_id": "helper-011",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893552.6698031,
+        "monotonic_s": 390795.3710857084
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893551.845203,
+        "monotonic_s": 390794.5465028334
+      },
+      "preparation_started": {
+        "epoch_s": 1791893551.785269,
+        "monotonic_s": 390794.48656825
+      },
+      "request_entered": {
+        "epoch_s": 1791893551.7567291,
+        "monotonic_s": 390794.45802716666
+      },
+      "request_finished": {
+        "epoch_s": 1791893552.806754,
+        "monotonic_s": 390795.5080357917
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893552.806705,
+        "monotonic_s": 390795.5079842917
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893552.77089,
+        "monotonic_s": 390795.4721704167
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893551.845213,
+        "monotonic_s": 390794.546512625
+      }
+    },
+    "log_batch": 11,
+    "touch_began_minus_submitted_s": 0.011770486831665039
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893554.290576,
+      "monotonic_s": 525850.266688926
+    },
+    "host_call_start": {
+      "epoch_s": 1791893553.385195,
+      "monotonic_s": 525849.361310239
+    },
+    "path_id": "single_400",
+    "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35",
+    "repeat": 2,
+    "request_id": "helper-012",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893554.8414922,
+        "monotonic_s": 390797.54273362504
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893554.2156792,
+        "monotonic_s": 390796.9169345417
+      },
+      "preparation_started": {
+        "epoch_s": 1791893554.135176,
+        "monotonic_s": 390796.836432875
+      },
+      "request_entered": {
+        "epoch_s": 1791893554.112499,
+        "monotonic_s": 390796.81375470833
+      },
+      "request_finished": {
+        "epoch_s": 1791893554.974945,
+        "monotonic_s": 390797.67618675
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893554.974924,
+        "monotonic_s": 390797.67616587505
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893554.938542,
+        "monotonic_s": 390797.63978233334
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893554.215688,
+        "monotonic_s": 390796.9169444584
+      }
+    },
+    "log_batch": 12,
+    "touch_began_minus_submitted_s": 0.012871026992797852
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893556.537521,
+      "monotonic_s": 525852.513627102
+    },
+    "host_call_start": {
+      "epoch_s": 1791893555.507643,
+      "monotonic_s": 525851.483751387
+    },
+    "path_id": "initial_hold_600",
+    "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354",
+    "repeat": 2,
+    "request_id": "helper-013",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893557.1830602,
+        "monotonic_s": 390799.8842579583
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893556.3512402,
+        "monotonic_s": 390799.0524564167
+      },
+      "preparation_started": {
+        "epoch_s": 1791893556.281101,
+        "monotonic_s": 390798.9823174167
+      },
+      "request_entered": {
+        "epoch_s": 1791893556.2597198,
+        "monotonic_s": 390798.96093037503
+      },
+      "request_finished": {
+        "epoch_s": 1791893557.222632,
+        "monotonic_s": 390799.9238322084
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893557.222612,
+        "monotonic_s": 390799.9238115
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893557.188632,
+        "monotonic_s": 390799.88983033336
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893556.3512502,
+        "monotonic_s": 390799.0524664167
+      }
+    },
+    "log_batch": 13,
+    "touch_began_minus_submitted_s": 0.01393890380859375
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893558.8360069,
+      "monotonic_s": 525854.812105417
+    },
+    "host_call_start": {
+      "epoch_s": 1791893557.750405,
+      "monotonic_s": 525853.726506996
+    },
+    "path_id": "final_hold_600",
+    "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc",
+    "repeat": 2,
+    "request_id": "helper-014",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893559.390245,
+        "monotonic_s": 390802.0914037084
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893558.565061,
+        "monotonic_s": 390801.26623683335
+      },
+      "preparation_started": {
+        "epoch_s": 1791893558.49152,
+        "monotonic_s": 390801.19269550004
+      },
+      "request_entered": {
+        "epoch_s": 1791893558.4743,
+        "monotonic_s": 390801.175473875
+      },
+      "request_finished": {
+        "epoch_s": 1791893559.52023,
+        "monotonic_s": 390802.2213872917
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893559.520189,
+        "monotonic_s": 390802.2213449167
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893559.484216,
+        "monotonic_s": 390802.1853672084
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893558.5650702,
+        "monotonic_s": 390801.26624570834
+      }
+    },
+    "log_batch": 14,
+    "touch_began_minus_submitted_s": 0.012287139892578125
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893561.387409,
+      "monotonic_s": 525857.363498934
+    },
+    "host_call_start": {
+      "epoch_s": 1791893560.0525608,
+      "monotonic_s": 525856.028655248
+    },
+    "path_id": "single_800",
+    "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2",
+    "repeat": 2,
+    "request_id": "helper-015",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893562.0147638,
+        "monotonic_s": 390804.715871375
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893560.9912848,
+        "monotonic_s": 390803.6924151667
+      },
+      "preparation_started": {
+        "epoch_s": 1791893560.795649,
+        "monotonic_s": 390803.49678187503
+      },
+      "request_entered": {
+        "epoch_s": 1791893560.777874,
+        "monotonic_s": 390803.47900595836
+      },
+      "request_finished": {
+        "epoch_s": 1791893562.074106,
+        "monotonic_s": 390804.77521658334
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893562.074085,
+        "monotonic_s": 390804.7751952917
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893562.0391831,
+        "monotonic_s": 390804.74029212503
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893560.991294,
+        "monotonic_s": 390803.69242425
+      }
+    },
+    "log_batch": 15,
+    "touch_began_minus_submitted_s": 0.014717817306518555
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893563.7372532,
+      "monotonic_s": 525859.71333455
+    },
+    "host_call_start": {
+      "epoch_s": 1791893562.603311,
+      "monotonic_s": 525858.579397307
+    },
+    "path_id": "corner_600",
+    "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795",
+    "repeat": 2,
+    "request_id": "helper-016",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893564.28271,
+        "monotonic_s": 390806.98377720837
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893563.456397,
+        "monotonic_s": 390806.1574817917
+      },
+      "preparation_started": {
+        "epoch_s": 1791893563.381925,
+        "monotonic_s": 390806.08301037503
+      },
+      "request_entered": {
+        "epoch_s": 1791893563.355711,
+        "monotonic_s": 390806.056795625
+      },
+      "request_finished": {
+        "epoch_s": 1791893564.424426,
+        "monotonic_s": 390807.1254927917
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893564.4244099,
+        "monotonic_s": 390807.12547666667
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893564.382487,
+        "monotonic_s": 390807.083551625
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893563.456407,
+        "monotonic_s": 390806.1574915417
+      }
+    },
+    "log_batch": 16,
+    "touch_began_minus_submitted_s": 0.01448822021484375
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893565.789807,
+      "monotonic_s": 525861.765881032
+    },
+    "host_call_start": {
+      "epoch_s": 1791893564.957247,
+      "monotonic_s": 525860.933325193
+    },
+    "path_id": "single_400",
+    "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35",
+    "repeat": 3,
+    "request_id": "helper-017",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893566.435915,
+        "monotonic_s": 390809.1369411667
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893565.81313,
+        "monotonic_s": 390808.51417150005
+      },
+      "preparation_started": {
+        "epoch_s": 1791893565.7335129,
+        "monotonic_s": 390808.43455350003
+      },
+      "request_entered": {
+        "epoch_s": 1791893565.710792,
+        "monotonic_s": 390808.4118317917
+      },
+      "request_finished": {
+        "epoch_s": 1791893566.482166,
+        "monotonic_s": 390809.18319529167
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893566.4821448,
+        "monotonic_s": 390809.18317325
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893566.442121,
+        "monotonic_s": 390809.14314895833
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893565.8131409,
+        "monotonic_s": 390808.51418237505
+      }
+    },
+    "log_batch": 17,
+    "touch_began_minus_submitted_s": 0.011713981628417969
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893568.2089431,
+      "monotonic_s": 525864.185010286
+    },
+    "host_call_start": {
+      "epoch_s": 1791893567.034959,
+      "monotonic_s": 525863.011029927
+    },
+    "path_id": "single_800",
+    "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2",
+    "repeat": 3,
+    "request_id": "helper-018",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893568.8635678,
+        "monotonic_s": 390811.56455020834
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893567.844945,
+        "monotonic_s": 390810.54594883334
+      },
+      "preparation_started": {
+        "epoch_s": 1791893567.7841,
+        "monotonic_s": 390810.48510341666
+      },
+      "request_entered": {
+        "epoch_s": 1791893567.761379,
+        "monotonic_s": 390810.46237766667
+      },
+      "request_finished": {
+        "epoch_s": 1791893568.918334,
+        "monotonic_s": 390811.6193174167
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893568.918313,
+        "monotonic_s": 390811.619296375
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893568.882804,
+        "monotonic_s": 390811.58378700004
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893567.844954,
+        "monotonic_s": 390810.5459580417
+      }
+    },
+    "log_batch": 18,
+    "touch_began_minus_submitted_s": 0.0149993896484375
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893570.48716,
+      "monotonic_s": 525866.463219391
+    },
+    "host_call_start": {
+      "epoch_s": 1791893569.454769,
+      "monotonic_s": 525865.430831744
+    },
+    "path_id": "final_hold_600",
+    "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc",
+    "repeat": 3,
+    "request_id": "helper-019",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893571.115108,
+        "monotonic_s": 390813.8160471667
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893570.2965841,
+        "monotonic_s": 390812.99754270836
+      },
+      "preparation_started": {
+        "epoch_s": 1791893570.229247,
+        "monotonic_s": 390812.9302028334
+      },
+      "request_entered": {
+        "epoch_s": 1791893570.205821,
+        "monotonic_s": 390812.90677762503
+      },
+      "request_finished": {
+        "epoch_s": 1791893571.1690311,
+        "monotonic_s": 390813.86997312505
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893571.169011,
+        "monotonic_s": 390813.8699522917
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893571.1314259,
+        "monotonic_s": 390813.83236683335
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893570.2965941,
+        "monotonic_s": 390812.99755220837
+      }
+    },
+    "log_batch": 19,
+    "touch_began_minus_submitted_s": 0.012106657028198242
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893572.691206,
+      "monotonic_s": 525868.667257934
+    },
+    "host_call_start": {
+      "epoch_s": 1791893571.7029471,
+      "monotonic_s": 525867.679003012
+    },
+    "path_id": "corner_600",
+    "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795",
+    "repeat": 3,
+    "request_id": "helper-020",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893573.333807,
+        "monotonic_s": 390816.03470687504
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893572.512176,
+        "monotonic_s": 390815.21309333335
+      },
+      "preparation_started": {
+        "epoch_s": 1791893572.446784,
+        "monotonic_s": 390815.1477014167
+      },
+      "request_entered": {
+        "epoch_s": 1791893572.428331,
+        "monotonic_s": 390815.1292470833
+      },
+      "request_finished": {
+        "epoch_s": 1791893573.375169,
+        "monotonic_s": 390816.0760705417
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893573.37515,
+        "monotonic_s": 390816.076050875
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893573.339715,
+        "monotonic_s": 390816.04061545833
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893572.512185,
+        "monotonic_s": 390815.2131022917
+      }
+    },
+    "log_batch": 20,
+    "touch_began_minus_submitted_s": 0.012334108352661133
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893575.189365,
+      "monotonic_s": 525871.165409021
+    },
+    "host_call_start": {
+      "epoch_s": 1791893573.897913,
+      "monotonic_s": 525869.873961693
+    },
+    "path_id": "middle_hold_800",
+    "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c",
+    "repeat": 3,
+    "request_id": "helper-021",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893575.7591882,
+        "monotonic_s": 390818.4600436667
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893574.717791,
+        "monotonic_s": 390817.41866712505
+      },
+      "preparation_started": {
+        "epoch_s": 1791893574.6414452,
+        "monotonic_s": 390817.3423225
+      },
+      "request_entered": {
+        "epoch_s": 1791893574.622254,
+        "monotonic_s": 390817.32312645833
+      },
+      "request_finished": {
+        "epoch_s": 1791893575.892626,
+        "monotonic_s": 390818.59348083334
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893575.8926039,
+        "monotonic_s": 390818.59345783334
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893575.8584309,
+        "monotonic_s": 390818.55928295833
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893574.717804,
+        "monotonic_s": 390817.4186802084
+      }
+    },
+    "log_batch": 21,
+    "touch_began_minus_submitted_s": 0.014216899871826172
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893577.494314,
+      "monotonic_s": 525873.470349022
+    },
+    "host_call_start": {
+      "epoch_s": 1791893576.406089,
+      "monotonic_s": 525872.382129046
+    },
+    "path_id": "unequal_600",
+    "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17",
+    "repeat": 3,
+    "request_id": "helper-022",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893578.073575,
+        "monotonic_s": 390820.7743862917
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893577.2484179,
+        "monotonic_s": 390819.949247875
+      },
+      "preparation_started": {
+        "epoch_s": 1791893577.1805959,
+        "monotonic_s": 390819.88142550003
+      },
+      "request_entered": {
+        "epoch_s": 1791893577.157393,
+        "monotonic_s": 390819.858220375
+      },
+      "request_finished": {
+        "epoch_s": 1791893578.2015672,
+        "monotonic_s": 390820.90237920836
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893578.201535,
+        "monotonic_s": 390820.90234645834
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893578.165793,
+        "monotonic_s": 390820.8666033333
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893577.2484279,
+        "monotonic_s": 390819.9492576667
+      }
+    },
+    "log_batch": 22,
+    "touch_began_minus_submitted_s": 0.014299631118774414
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893579.937969,
+      "monotonic_s": 525875.913997314
+    },
+    "host_call_start": {
+      "epoch_s": 1791893578.707474,
+      "monotonic_s": 525874.68350652
+    },
+    "path_id": "initial_hold_600",
+    "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354",
+    "repeat": 3,
+    "request_id": "helper-023",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893580.523429,
+        "monotonic_s": 390823.2241950417
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893579.68905,
+        "monotonic_s": 390822.38983425003
+      },
+      "preparation_started": {
+        "epoch_s": 1791893579.4842892,
+        "monotonic_s": 390822.1850759167
+      },
+      "request_entered": {
+        "epoch_s": 1791893579.4602718,
+        "monotonic_s": 390822.1610535417
+      },
+      "request_finished": {
+        "epoch_s": 1791893580.642909,
+        "monotonic_s": 390823.3436760417
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893580.642887,
+        "monotonic_s": 390823.34365370835
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893580.6081161,
+        "monotonic_s": 390823.30888150004
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893579.689059,
+        "monotonic_s": 390822.38984325004
+      }
+    },
+    "log_batch": 23,
+    "touch_began_minus_submitted_s": 0.014010190963745117
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893582.3391428,
+      "monotonic_s": 525878.315163572
+    },
+    "host_call_start": {
+      "epoch_s": 1791893581.152969,
+      "monotonic_s": 525877.128993369
+    },
+    "path_id": "split_800",
+    "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3",
+    "repeat": 3,
+    "request_id": "helper-024",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893583.006771,
+        "monotonic_s": 390825.7074899167
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893581.966786,
+        "monotonic_s": 390824.6675277917
+      },
+      "preparation_started": {
+        "epoch_s": 1791893581.894341,
+        "monotonic_s": 390824.5950842917
+      },
+      "request_entered": {
+        "epoch_s": 1791893581.876715,
+        "monotonic_s": 390824.57745237503
+      },
+      "request_finished": {
+        "epoch_s": 1791893583.044524,
+        "monotonic_s": 390825.74524583336
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893583.0445008,
+        "monotonic_s": 390825.7452225417
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893583.010968,
+        "monotonic_s": 390825.7116899167
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893581.966795,
+        "monotonic_s": 390824.66753700003
+      }
+    },
+    "log_batch": 24,
+    "touch_began_minus_submitted_s": 0.014123201370239258
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893584.639644,
+      "monotonic_s": 525880.615655629
+    },
+    "host_call_start": {
+      "epoch_s": 1791893583.553183,
+      "monotonic_s": 525879.529198569
+    },
+    "path_id": "initial_hold_600",
+    "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354",
+    "repeat": 4,
+    "request_id": "helper-025",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893585.191252,
+        "monotonic_s": 390827.891932125
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893584.364643,
+        "monotonic_s": 390827.0653412917
+      },
+      "preparation_started": {
+        "epoch_s": 1791893584.296952,
+        "monotonic_s": 390826.9976491667
+      },
+      "request_entered": {
+        "epoch_s": 1791893584.27759,
+        "monotonic_s": 390826.978286375
+      },
+      "request_finished": {
+        "epoch_s": 1791893585.328419,
+        "monotonic_s": 390828.029098875
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893585.328399,
+        "monotonic_s": 390828.029079
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893585.2913442,
+        "monotonic_s": 390827.9920215417
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893584.364653,
+        "monotonic_s": 390827.06535050005
+      }
+    },
+    "log_batch": 25,
+    "touch_began_minus_submitted_s": 0.012026786804199219
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893587.090494,
+      "monotonic_s": 525883.066498225
+    },
+    "host_call_start": {
+      "epoch_s": 1791893585.858571,
+      "monotonic_s": 525881.834579103
+    },
+    "path_id": "split_800",
+    "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3",
+    "repeat": 4,
+    "request_id": "helper-026",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893587.741976,
+        "monotonic_s": 390830.44260833337
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893586.712702,
+        "monotonic_s": 390829.4133559167
+      },
+      "preparation_started": {
+        "epoch_s": 1791893586.637289,
+        "monotonic_s": 390829.33794420835
+      },
+      "request_entered": {
+        "epoch_s": 1791893586.611785,
+        "monotonic_s": 390829.31243887503
+      },
+      "request_finished": {
+        "epoch_s": 1791893587.785187,
+        "monotonic_s": 390830.4858211667
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893587.7851648,
+        "monotonic_s": 390830.48579925
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893587.7486901,
+        "monotonic_s": 390830.4493231667
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893586.7127109,
+        "monotonic_s": 390829.4133651667
+      }
+    },
+    "log_batch": 26,
+    "touch_began_minus_submitted_s": 0.012434005737304688
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893589.402119,
+      "monotonic_s": 525885.378116277
+    },
+    "host_call_start": {
+      "epoch_s": 1791893588.3349462,
+      "monotonic_s": 525884.310945541
+    },
+    "path_id": "final_hold_600",
+    "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc",
+    "repeat": 4,
+    "request_id": "helper-027",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893589.974719,
+        "monotonic_s": 390832.67531195836
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893589.154774,
+        "monotonic_s": 390831.85538333334
+      },
+      "preparation_started": {
+        "epoch_s": 1791893589.081061,
+        "monotonic_s": 390831.78166975
+      },
+      "request_entered": {
+        "epoch_s": 1791893589.059719,
+        "monotonic_s": 390831.76032887504
+      },
+      "request_finished": {
+        "epoch_s": 1791893590.110859,
+        "monotonic_s": 390832.81145083334
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893590.110837,
+        "monotonic_s": 390832.8114277917
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893590.0748038,
+        "monotonic_s": 390832.7753903334
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893589.154784,
+        "monotonic_s": 390831.8553929167
+      }
+    },
+    "log_batch": 27,
+    "touch_began_minus_submitted_s": 0.012104988098144531
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893591.990121,
+      "monotonic_s": 525887.966109452
+    },
+    "host_call_start": {
+      "epoch_s": 1791893590.6855092,
+      "monotonic_s": 525886.661500641
+    },
+    "path_id": "middle_hold_800",
+    "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c",
+    "repeat": 4,
+    "request_id": "helper-028",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893592.541617,
+        "monotonic_s": 390835.24216120836
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893591.506048,
+        "monotonic_s": 390834.20661387505
+      },
+      "preparation_started": {
+        "epoch_s": 1791893591.437783,
+        "monotonic_s": 390834.1383481667
+      },
+      "request_entered": {
+        "epoch_s": 1791893591.414377,
+        "monotonic_s": 390834.11493775004
+      },
+      "request_finished": {
+        "epoch_s": 1791893592.677689,
+        "monotonic_s": 390835.37823283335
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893592.677669,
+        "monotonic_s": 390835.3782124167
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893592.641098,
+        "monotonic_s": 390835.3416358334
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893591.506057,
+        "monotonic_s": 390834.206622625
+      }
+    },
+    "log_batch": 28,
+    "touch_began_minus_submitted_s": 0.011876583099365234
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893594.4415848,
+      "monotonic_s": 525890.417564398
+    },
+    "host_call_start": {
+      "epoch_s": 1791893593.2348852,
+      "monotonic_s": 525889.210867816
+    },
+    "path_id": "single_800",
+    "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2",
+    "repeat": 4,
+    "request_id": "helper-029",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893595.085578,
+        "monotonic_s": 390837.78607275005
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893594.059963,
+        "monotonic_s": 390836.76048162504
+      },
+      "preparation_started": {
+        "epoch_s": 1791893593.985456,
+        "monotonic_s": 390836.685974375
+      },
+      "request_entered": {
+        "epoch_s": 1791893593.9625878,
+        "monotonic_s": 390836.66310604167
+      },
+      "request_finished": {
+        "epoch_s": 1791893595.1340399,
+        "monotonic_s": 390837.8345389167
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893595.134019,
+        "monotonic_s": 390837.8345175417
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893595.100017,
+        "monotonic_s": 390837.8005129584
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893594.059972,
+        "monotonic_s": 390836.76049091667
+      }
+    },
+    "log_batch": 29,
+    "touch_began_minus_submitted_s": 0.011897802352905273
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893596.6591082,
+      "monotonic_s": 525892.635080942
+    },
+    "host_call_start": {
+      "epoch_s": 1791893595.6588778,
+      "monotonic_s": 525891.634854083
+    },
+    "path_id": "corner_600",
+    "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795",
+    "repeat": 4,
+    "request_id": "helper-030",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893597.324736,
+        "monotonic_s": 390840.0251910417
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893596.499289,
+        "monotonic_s": 390839.1997620417
+      },
+      "preparation_started": {
+        "epoch_s": 1791893596.435701,
+        "monotonic_s": 390839.13617370836
+      },
+      "request_entered": {
+        "epoch_s": 1791893596.412164,
+        "monotonic_s": 390839.1126358334
+      },
+      "request_finished": {
+        "epoch_s": 1791893597.368754,
+        "monotonic_s": 390840.069211375
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893597.3687348,
+        "monotonic_s": 390840.0691915417
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893597.332602,
+        "monotonic_s": 390840.0330572917
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893596.499298,
+        "monotonic_s": 390839.19977133337
+      }
+    },
+    "log_batch": 30,
+    "touch_began_minus_submitted_s": 0.014074325561523438
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893598.8389308,
+      "monotonic_s": 525894.81489702
+    },
+    "host_call_start": {
+      "epoch_s": 1791893597.945245,
+      "monotonic_s": 525893.921214191
+    },
+    "path_id": "single_400",
+    "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35",
+    "repeat": 4,
+    "request_id": "helper-031",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893599.40147,
+        "monotonic_s": 390842.10188720835
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893598.773567,
+        "monotonic_s": 390841.47399775
+      },
+      "preparation_started": {
+        "epoch_s": 1791893598.695447,
+        "monotonic_s": 390841.39587808336
+      },
+      "request_entered": {
+        "epoch_s": 1791893598.671773,
+        "monotonic_s": 390841.3721990417
+      },
+      "request_finished": {
+        "epoch_s": 1791893599.542221,
+        "monotonic_s": 390842.24263758335
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893599.542194,
+        "monotonic_s": 390842.24261008337
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893599.505189,
+        "monotonic_s": 390842.2056035
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893598.773576,
+        "monotonic_s": 390841.47400675004
+      }
+    },
+    "log_batch": 31,
+    "touch_began_minus_submitted_s": 0.013865947723388672
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893601.039288,
+      "monotonic_s": 525897.015209351
+    },
+    "host_call_start": {
+      "epoch_s": 1791893600.052535,
+      "monotonic_s": 525896.028496014
+    },
+    "path_id": "unequal_600",
+    "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17",
+    "repeat": 4,
+    "request_id": "helper-032",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893601.691228,
+        "monotonic_s": 390844.391603125
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893600.867346,
+        "monotonic_s": 390843.5677385
+      },
+      "preparation_started": {
+        "epoch_s": 1791893600.7965078,
+        "monotonic_s": 390843.4968996667
+      },
+      "request_entered": {
+        "epoch_s": 1791893600.7781482,
+        "monotonic_s": 390843.4785399167
+      },
+      "request_finished": {
+        "epoch_s": 1791893601.732151,
+        "monotonic_s": 390844.432527375
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893601.732131,
+        "monotonic_s": 390844.4325071667
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893601.6959472,
+        "monotonic_s": 390844.3963230834
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893600.8673549,
+        "monotonic_s": 390843.5677475834
+      }
+    },
+    "log_batch": 32,
+    "touch_began_minus_submitted_s": 0.011829137802124023
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893603.498461,
+      "monotonic_s": 525899.474410681
+    },
+    "host_call_start": {
+      "epoch_s": 1791893602.300777,
+      "monotonic_s": 525898.276730623
+    },
+    "path_id": "single_800",
+    "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2",
+    "repeat": 5,
+    "request_id": "helper-033",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893604.1555672,
+        "monotonic_s": 390846.8558933334
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893603.129844,
+        "monotonic_s": 390845.83019470837
+      },
+      "preparation_started": {
+        "epoch_s": 1791893603.0514898,
+        "monotonic_s": 390845.751839875
+      },
+      "request_entered": {
+        "epoch_s": 1791893603.026689,
+        "monotonic_s": 390845.72703895834
+      },
+      "request_finished": {
+        "epoch_s": 1791893604.207501,
+        "monotonic_s": 390846.90783104167
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893604.20748,
+        "monotonic_s": 390846.90781012503
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893604.1736832,
+        "monotonic_s": 390846.87400841666
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893603.129853,
+        "monotonic_s": 390845.8302039167
+      }
+    },
+    "log_batch": 33,
+    "touch_began_minus_submitted_s": 0.013773918151855469
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893606.041815,
+      "monotonic_s": 525902.017756525
+    },
+    "host_call_start": {
+      "epoch_s": 1791893604.735479,
+      "monotonic_s": 525900.711424341
+    },
+    "path_id": "middle_hold_800",
+    "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c",
+    "repeat": 5,
+    "request_id": "helper-034",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893606.599947,
+        "monotonic_s": 390849.30022950005
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893605.554637,
+        "monotonic_s": 390848.2549426667
+      },
+      "preparation_started": {
+        "epoch_s": 1791893605.486372,
+        "monotonic_s": 390848.1866740417
+      },
+      "request_entered": {
+        "epoch_s": 1791893605.464896,
+        "monotonic_s": 390848.165201375
+      },
+      "request_finished": {
+        "epoch_s": 1791893606.7235851,
+        "monotonic_s": 390849.42386879167
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893606.723556,
+        "monotonic_s": 390849.4238392084
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893606.688236,
+        "monotonic_s": 390849.3885177917
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893605.554651,
+        "monotonic_s": 390848.2549568334
+      }
+    },
+    "log_batch": 34,
+    "touch_began_minus_submitted_s": 0.01488351821899414
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893608.205756,
+      "monotonic_s": 525904.181691259
+    },
+    "host_call_start": {
+      "epoch_s": 1791893607.2443461,
+      "monotonic_s": 525903.220282766
+    },
+    "path_id": "unequal_600",
+    "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17",
+    "repeat": 5,
+    "request_id": "helper-035",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893608.872165,
+        "monotonic_s": 390851.57240604167
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893608.0450149,
+        "monotonic_s": 390850.745274875
+      },
+      "preparation_started": {
+        "epoch_s": 1791893607.989029,
+        "monotonic_s": 390850.68928754167
+      },
+      "request_entered": {
+        "epoch_s": 1791893607.970428,
+        "monotonic_s": 390850.6706817084
+      },
+      "request_finished": {
+        "epoch_s": 1791893608.915734,
+        "monotonic_s": 390851.6159772917
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893608.9157128,
+        "monotonic_s": 390851.61595579167
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893608.883072,
+        "monotonic_s": 390851.58331308333
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893608.0450249,
+        "monotonic_s": 390850.7452845417
+      }
+    },
+    "log_batch": 35,
+    "touch_began_minus_submitted_s": 0.014213800430297852
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893610.5910559,
+      "monotonic_s": 525906.566982594
+    },
+    "host_call_start": {
+      "epoch_s": 1791893609.4574249,
+      "monotonic_s": 525905.433354951
+    },
+    "path_id": "initial_hold_600",
+    "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354",
+    "repeat": 5,
+    "request_id": "helper-036",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893611.138739,
+        "monotonic_s": 390853.8389354167
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893610.306336,
+        "monotonic_s": 390853.0065535
+      },
+      "preparation_started": {
+        "epoch_s": 1791893610.235519,
+        "monotonic_s": 390852.9357365
+      },
+      "request_entered": {
+        "epoch_s": 1791893610.210565,
+        "monotonic_s": 390852.91078154166
+      },
+      "request_finished": {
+        "epoch_s": 1791893611.274472,
+        "monotonic_s": 390853.97467170836
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893611.274458,
+        "monotonic_s": 390853.974657125
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893611.240025,
+        "monotonic_s": 390853.94022391667
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893610.306345,
+        "monotonic_s": 390853.0065625417
+      }
+    },
+    "log_batch": 36,
+    "touch_began_minus_submitted_s": 0.011939764022827148
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893612.789161,
+      "monotonic_s": 525908.765080375
+    },
+    "host_call_start": {
+      "epoch_s": 1791893611.7994418,
+      "monotonic_s": 525907.77536379
+    },
+    "path_id": "final_hold_600",
+    "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc",
+    "repeat": 5,
+    "request_id": "helper-037",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893613.4457312,
+        "monotonic_s": 390856.14588275005
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893612.623738,
+        "monotonic_s": 390855.3239125
+      },
+      "preparation_started": {
+        "epoch_s": 1791893612.543416,
+        "monotonic_s": 390855.2435911667
+      },
+      "request_entered": {
+        "epoch_s": 1791893612.524432,
+        "monotonic_s": 390855.224602375
+      },
+      "request_finished": {
+        "epoch_s": 1791893613.497558,
+        "monotonic_s": 390856.1977160834
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893613.4974751,
+        "monotonic_s": 390856.1976317917
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893613.462082,
+        "monotonic_s": 390856.162238
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893612.6237469,
+        "monotonic_s": 390855.32392220834
+      }
+    },
+    "log_batch": 37,
+    "touch_began_minus_submitted_s": 0.011708736419677734
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893614.896415,
+      "monotonic_s": 525910.872327446
+    },
+    "host_call_start": {
+      "epoch_s": 1791893614.0079942,
+      "monotonic_s": 525909.983908468
+    },
+    "path_id": "single_400",
+    "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35",
+    "repeat": 5,
+    "request_id": "helper-038",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893615.4738898,
+        "monotonic_s": 390858.17400983337
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893614.849184,
+        "monotonic_s": 390857.54931720835
+      },
+      "preparation_started": {
+        "epoch_s": 1791893614.7824678,
+        "monotonic_s": 390857.4826017084
+      },
+      "request_entered": {
+        "epoch_s": 1791893614.759849,
+        "monotonic_s": 390857.45998125
+      },
+      "request_finished": {
+        "epoch_s": 1791893615.604487,
+        "monotonic_s": 390858.304606625
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893615.6044421,
+        "monotonic_s": 390858.30455941666
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893615.571292,
+        "monotonic_s": 390858.271409125
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893614.849194,
+        "monotonic_s": 390857.54932720837
+      }
+    },
+    "log_batch": 38,
+    "touch_began_minus_submitted_s": 0.013626575469970703
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893617.342141,
+      "monotonic_s": 525913.318045355
+    },
+    "host_call_start": {
+      "epoch_s": 1791893616.107467,
+      "monotonic_s": 525912.08337505
+    },
+    "path_id": "split_800",
+    "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3",
+    "repeat": 5,
+    "request_id": "helper-039",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893617.995185,
+        "monotonic_s": 390860.69525704166
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893616.964735,
+        "monotonic_s": 390859.66482916666
+      },
+      "preparation_started": {
+        "epoch_s": 1791893616.883995,
+        "monotonic_s": 390859.58408995834
+      },
+      "request_entered": {
+        "epoch_s": 1791893616.861038,
+        "monotonic_s": 390859.5611317084
+      },
+      "request_finished": {
+        "epoch_s": 1791893618.05092,
+        "monotonic_s": 390860.750994
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893618.0509,
+        "monotonic_s": 390860.75097341667
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893618.014456,
+        "monotonic_s": 390860.714528875
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893616.964744,
+        "monotonic_s": 390859.664838375
+      }
+    },
+    "log_batch": 39,
+    "touch_began_minus_submitted_s": 0.013536214828491211
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893619.5898979,
+      "monotonic_s": 525915.565790794
+    },
+    "host_call_start": {
+      "epoch_s": 1791893618.586699,
+      "monotonic_s": 525914.562595458
+    },
+    "path_id": "corner_600",
+    "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795",
+    "repeat": 5,
+    "request_id": "helper-040",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893620.2339911,
+        "monotonic_s": 390862.9340209584
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893619.409406,
+        "monotonic_s": 390862.1094542917
+      },
+      "preparation_started": {
+        "epoch_s": 1791893619.3388739,
+        "monotonic_s": 390862.0389231667
+      },
+      "request_entered": {
+        "epoch_s": 1791893619.3149738,
+        "monotonic_s": 390862.01502287504
+      },
+      "request_finished": {
+        "epoch_s": 1791893620.2785711,
+        "monotonic_s": 390862.9786037917
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893620.278549,
+        "monotonic_s": 390862.9785815
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893620.2444,
+        "monotonic_s": 390862.94443095836
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893619.409419,
+        "monotonic_s": 390862.1094684167
+      }
+    },
+    "log_batch": 40,
+    "touch_began_minus_submitted_s": 0.01427602767944336
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893622.1903071,
+      "monotonic_s": 525918.166194338
+    },
+    "host_call_start": {
+      "epoch_s": 1791893620.798072,
+      "monotonic_s": 525916.773964622
+    },
+    "path_id": "middle_hold_800",
+    "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c",
+    "repeat": 6,
+    "request_id": "helper-041",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893622.773437,
+        "monotonic_s": 390865.4734216667
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893621.732926,
+        "monotonic_s": 390864.43293166667
+      },
+      "preparation_started": {
+        "epoch_s": 1791893621.541542,
+        "monotonic_s": 390864.24155050004
+      },
+      "request_entered": {
+        "epoch_s": 1791893621.523044,
+        "monotonic_s": 390864.223052125
+      },
+      "request_finished": {
+        "epoch_s": 1791893622.898257,
+        "monotonic_s": 390865.59824150003
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893622.898234,
+        "monotonic_s": 390865.59821820835
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893622.865244,
+        "monotonic_s": 390865.5652258333
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893621.732936,
+        "monotonic_s": 390864.4329419167
+      }
+    },
+    "log_batch": 41,
+    "touch_began_minus_submitted_s": 0.014278173446655273
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893624.508205,
+      "monotonic_s": 525920.48408607
+    },
+    "host_call_start": {
+      "epoch_s": 1791893623.4068139,
+      "monotonic_s": 525919.382697574
+    },
+    "path_id": "unequal_600",
+    "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17",
+    "repeat": 6,
+    "request_id": "helper-042",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893625.0795279,
+        "monotonic_s": 390867.779471
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893624.258529,
+        "monotonic_s": 390866.9584884167
+      },
+      "preparation_started": {
+        "epoch_s": 1791893624.184963,
+        "monotonic_s": 390866.884923
+      },
+      "request_entered": {
+        "epoch_s": 1791893624.161213,
+        "monotonic_s": 390866.86117004167
+      },
+      "request_finished": {
+        "epoch_s": 1791893625.2168741,
+        "monotonic_s": 390867.9168150417
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893625.2168531,
+        "monotonic_s": 390867.9167945834
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893625.179558,
+        "monotonic_s": 390867.87949670834
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893624.258539,
+        "monotonic_s": 390866.958498375
+      }
+    },
+    "log_batch": 42,
+    "touch_began_minus_submitted_s": 0.012325525283813477
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893626.9981701,
+      "monotonic_s": 525922.974043208
+    },
+    "host_call_start": {
+      "epoch_s": 1791893625.800596,
+      "monotonic_s": 525921.776470078
+    },
+    "path_id": "split_800",
+    "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3",
+    "repeat": 6,
+    "request_id": "helper-043",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893627.661093,
+        "monotonic_s": 390870.360986625
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893626.6293359,
+        "monotonic_s": 390869.3292515834
+      },
+      "preparation_started": {
+        "epoch_s": 1791893626.54924,
+        "monotonic_s": 390869.2491556667
+      },
+      "request_entered": {
+        "epoch_s": 1791893626.52847,
+        "monotonic_s": 390869.22838462505
+      },
+      "request_finished": {
+        "epoch_s": 1791893627.706742,
+        "monotonic_s": 390870.40663700004
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893627.7067041,
+        "monotonic_s": 390870.4065977917
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893627.672587,
+        "monotonic_s": 390870.3724821667
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893626.629346,
+        "monotonic_s": 390869.329261125
+      }
+    },
+    "log_batch": 43,
+    "touch_began_minus_submitted_s": 0.01328134536743164
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893629.240004,
+      "monotonic_s": 525925.215868249
+    },
+    "host_call_start": {
+      "epoch_s": 1791893628.208607,
+      "monotonic_s": 525924.184475669
+    },
+    "path_id": "corner_600",
+    "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795",
+    "repeat": 6,
+    "request_id": "helper-044",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893629.89599,
+        "monotonic_s": 390872.59584150004
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893629.0725489,
+        "monotonic_s": 390871.77241950005
+      },
+      "preparation_started": {
+        "epoch_s": 1791893628.9901528,
+        "monotonic_s": 390871.69001945836
+      },
+      "request_entered": {
+        "epoch_s": 1791893628.961667,
+        "monotonic_s": 390871.66153695836
+      },
+      "request_finished": {
+        "epoch_s": 1791893629.943503,
+        "monotonic_s": 390872.6433565834
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893629.9434772,
+        "monotonic_s": 390872.64333075
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893629.909137,
+        "monotonic_s": 390872.6089884167
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893629.072558,
+        "monotonic_s": 390871.7724285417
+      }
+    },
+    "log_batch": 44,
+    "touch_began_minus_submitted_s": 0.01302790641784668
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893631.690132,
+      "monotonic_s": 525927.665987798
+    },
+    "host_call_start": {
+      "epoch_s": 1791893630.4996212,
+      "monotonic_s": 525926.475481363
+    },
+    "path_id": "single_800",
+    "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2",
+    "repeat": 6,
+    "request_id": "helper-045",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893632.3465729,
+        "monotonic_s": 390875.04637883336
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893631.319241,
+        "monotonic_s": 390874.01906945836
+      },
+      "preparation_started": {
+        "epoch_s": 1791893631.248073,
+        "monotonic_s": 390873.94790225005
+      },
+      "request_entered": {
+        "epoch_s": 1791893631.226464,
+        "monotonic_s": 390873.9262909167
+      },
+      "request_finished": {
+        "epoch_s": 1791893632.395011,
+        "monotonic_s": 390875.094819375
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893632.39497,
+        "monotonic_s": 390875.09477695834
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893632.365125,
+        "monotonic_s": 390875.06493370835
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893631.3192492,
+        "monotonic_s": 390874.019078125
+      }
+    },
+    "log_batch": 45,
+    "touch_began_minus_submitted_s": 0.013005733489990234
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893633.739064,
+      "monotonic_s": 525929.714913931
+    },
+    "host_call_start": {
+      "epoch_s": 1791893632.9082692,
+      "monotonic_s": 525928.884121409
+    },
+    "path_id": "single_400",
+    "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35",
+    "repeat": 6,
+    "request_id": "helper-046",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893634.3876061,
+        "monotonic_s": 390877.087371125
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893633.761946,
+        "monotonic_s": 390876.46172925003
+      },
+      "preparation_started": {
+        "epoch_s": 1791893633.686945,
+        "monotonic_s": 390876.386729
+      },
+      "request_entered": {
+        "epoch_s": 1791893633.6615,
+        "monotonic_s": 390876.36128320836
+      },
+      "request_finished": {
+        "epoch_s": 1791893634.433126,
+        "monotonic_s": 390877.1328964584
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893634.433105,
+        "monotonic_s": 390877.13287525
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893634.3951921,
+        "monotonic_s": 390877.0949630417
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893633.761955,
+        "monotonic_s": 390876.461738625
+      }
+    },
+    "log_batch": 46,
+    "touch_began_minus_submitted_s": 0.012740135192871094
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893635.9894269,
+      "monotonic_s": 525931.96526892
+    },
+    "host_call_start": {
+      "epoch_s": 1791893634.958807,
+      "monotonic_s": 525930.934652727
+    },
+    "path_id": "final_hold_600",
+    "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc",
+    "repeat": 6,
+    "request_id": "helper-047",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893636.622994,
+        "monotonic_s": 390879.32272225
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893635.801786,
+        "monotonic_s": 390878.50153195835
+      },
+      "preparation_started": {
+        "epoch_s": 1791893635.736308,
+        "monotonic_s": 390878.436053625
+      },
+      "request_entered": {
+        "epoch_s": 1791893635.713624,
+        "monotonic_s": 390878.41336887504
+      },
+      "request_finished": {
+        "epoch_s": 1791893636.673723,
+        "monotonic_s": 390879.373452625
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893636.673707,
+        "monotonic_s": 390879.37343675003
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893636.638933,
+        "monotonic_s": 390879.338656625
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893635.801796,
+        "monotonic_s": 390878.50154125004
+      }
+    },
+    "log_batch": 47,
+    "touch_began_minus_submitted_s": 0.013633012771606445
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893638.3430898,
+      "monotonic_s": 525934.318924332
+    },
+    "host_call_start": {
+      "epoch_s": 1791893637.234988,
+      "monotonic_s": 525933.21082456
+    },
+    "path_id": "initial_hold_600",
+    "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354",
+    "repeat": 6,
+    "request_id": "helper-048",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893639.016386,
+        "monotonic_s": 390881.71606375003
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893638.184832,
+        "monotonic_s": 390880.88453308336
+      },
+      "preparation_started": {
+        "epoch_s": 1791893637.989527,
+        "monotonic_s": 390880.68923020834
+      },
+      "request_entered": {
+        "epoch_s": 1791893637.9633908,
+        "monotonic_s": 390880.6630943334
+      },
+      "request_finished": {
+        "epoch_s": 1791893639.050054,
+        "monotonic_s": 390881.7497391667
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893639.050015,
+        "monotonic_s": 390881.7496997917
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893639.0200229,
+        "monotonic_s": 390881.71970837505
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893638.184846,
+        "monotonic_s": 390880.88454725
+      }
+    },
+    "log_batch": 48,
+    "touch_began_minus_submitted_s": 0.011615991592407227
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893640.587699,
+      "monotonic_s": 525936.563526468
+    },
+    "host_call_start": {
+      "epoch_s": 1791893639.5570261,
+      "monotonic_s": 525935.532856793
+    },
+    "path_id": "unequal_600",
+    "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17",
+    "repeat": 7,
+    "request_id": "helper-049",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893641.239403,
+        "monotonic_s": 390883.9390455
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893640.4146419,
+        "monotonic_s": 390883.1143017917
+      },
+      "preparation_started": {
+        "epoch_s": 1791893640.334927,
+        "monotonic_s": 390883.0345881667
+      },
+      "request_entered": {
+        "epoch_s": 1791893640.3096619,
+        "monotonic_s": 390883.00931754167
+      },
+      "request_finished": {
+        "epoch_s": 1791893641.29183,
+        "monotonic_s": 390883.99147383333
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893641.29181,
+        "monotonic_s": 390883.9914534167
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893641.255306,
+        "monotonic_s": 390883.95494850003
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893640.414655,
+        "monotonic_s": 390883.1143152917
+      }
+    },
+    "log_batch": 49,
+    "touch_began_minus_submitted_s": 0.0115203857421875
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893642.6534111,
+      "monotonic_s": 525938.629231346
+    },
+    "host_call_start": {
+      "epoch_s": 1791893641.797107,
+      "monotonic_s": 525937.772930667
+    },
+    "path_id": "single_400",
+    "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35",
+    "repeat": 7,
+    "request_id": "helper-050",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893643.239316,
+        "monotonic_s": 390885.93892079167
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893642.612098,
+        "monotonic_s": 390885.31171750004
+      },
+      "preparation_started": {
+        "epoch_s": 1791893642.537663,
+        "monotonic_s": 390885.2372781667
+      },
+      "request_entered": {
+        "epoch_s": 1791893642.52092,
+        "monotonic_s": 390885.22053970833
+      },
+      "request_finished": {
+        "epoch_s": 1791893643.3635988,
+        "monotonic_s": 390886.06320437504
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893643.3635821,
+        "monotonic_s": 390886.063186875
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893643.331193,
+        "monotonic_s": 390886.030795875
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893642.612107,
+        "monotonic_s": 390885.31172708335
+      }
+    },
+    "log_batch": 50,
+    "touch_began_minus_submitted_s": 0.013415098190307617
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893645.041146,
+      "monotonic_s": 525941.016958748
+    },
+    "host_call_start": {
+      "epoch_s": 1791893643.9357061,
+      "monotonic_s": 525939.911521352
+    },
+    "path_id": "corner_600",
+    "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795",
+    "repeat": 7,
+    "request_id": "helper-051",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893645.7058458,
+        "monotonic_s": 390888.4054057917
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893644.881959,
+        "monotonic_s": 390887.58153666666
+      },
+      "preparation_started": {
+        "epoch_s": 1791893644.687813,
+        "monotonic_s": 390887.3873926667
+      },
+      "request_entered": {
+        "epoch_s": 1791893644.6639252,
+        "monotonic_s": 390887.3635004167
+      },
+      "request_finished": {
+        "epoch_s": 1791893645.750325,
+        "monotonic_s": 390888.449886
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893645.750304,
+        "monotonic_s": 390888.44986525003
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893645.714892,
+        "monotonic_s": 390888.41445275
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893644.881969,
+        "monotonic_s": 390887.5815466667
+      }
+    },
+    "log_batch": 51,
+    "touch_began_minus_submitted_s": 0.01340341567993164
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893647.4884899,
+      "monotonic_s": 525943.464294106
+    },
+    "host_call_start": {
+      "epoch_s": 1791893646.2580092,
+      "monotonic_s": 525942.233817238
+    },
+    "path_id": "single_800",
+    "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2",
+    "repeat": 7,
+    "request_id": "helper-052",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893648.122466,
+        "monotonic_s": 390890.82198020833
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893647.097388,
+        "monotonic_s": 390889.79692420835
+      },
+      "preparation_started": {
+        "epoch_s": 1791893647.034217,
+        "monotonic_s": 390889.73375358334
+      },
+      "request_entered": {
+        "epoch_s": 1791893647.010703,
+        "monotonic_s": 390889.7102337917
+      },
+      "request_finished": {
+        "epoch_s": 1791893648.175445,
+        "monotonic_s": 390890.8749619167
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893648.1754231,
+        "monotonic_s": 390890.8749394167
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893648.138266,
+        "monotonic_s": 390890.83778145834
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893647.097398,
+        "monotonic_s": 390889.79693408334
+      }
+    },
+    "log_batch": 52,
+    "touch_began_minus_submitted_s": 0.011319160461425781
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893649.947495,
+      "monotonic_s": 525945.923290665
+    },
+    "host_call_start": {
+      "epoch_s": 1791893648.747519,
+      "monotonic_s": 525944.72331988
+    },
+    "path_id": "split_800",
+    "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3",
+    "repeat": 7,
+    "request_id": "helper-053",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893650.605643,
+        "monotonic_s": 390893.3051122917
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893649.573368,
+        "monotonic_s": 390892.272859
+      },
+      "preparation_started": {
+        "epoch_s": 1791893649.494955,
+        "monotonic_s": 390892.19444500003
+      },
+      "request_entered": {
+        "epoch_s": 1791893649.474102,
+        "monotonic_s": 390892.1735915417
+      },
+      "request_finished": {
+        "epoch_s": 1791893650.655797,
+        "monotonic_s": 390893.355267625
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893650.655777,
+        "monotonic_s": 390893.3552469584
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893650.621628,
+        "monotonic_s": 390893.3210970417
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893649.5733771,
+        "monotonic_s": 390892.272867625
+      }
+    },
+    "log_batch": 53,
+    "touch_began_minus_submitted_s": 0.010900020599365234
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893652.492844,
+      "monotonic_s": 525948.468631951
+    },
+    "host_call_start": {
+      "epoch_s": 1791893651.1581042,
+      "monotonic_s": 525947.133896352
+    },
+    "path_id": "middle_hold_800",
+    "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c",
+    "repeat": 7,
+    "request_id": "helper-054",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893653.070113,
+        "monotonic_s": 390895.76953258336
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893652.02513,
+        "monotonic_s": 390894.72457533336
+      },
+      "preparation_started": {
+        "epoch_s": 1791893651.9438229,
+        "monotonic_s": 390894.6432679167
+      },
+      "request_entered": {
+        "epoch_s": 1791893651.9184198,
+        "monotonic_s": 390894.61785800004
+      },
+      "request_finished": {
+        "epoch_s": 1791893653.200418,
+        "monotonic_s": 390895.8998412917
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893653.200372,
+        "monotonic_s": 390895.89979395835
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893653.169414,
+        "monotonic_s": 390895.8688348334
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893652.0251431,
+        "monotonic_s": 390894.72458850004
+      }
+    },
+    "log_batch": 54,
+    "touch_began_minus_submitted_s": 0.0157010555267334
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893654.838928,
+      "monotonic_s": 525950.814707666
+    },
+    "host_call_start": {
+      "epoch_s": 1791893653.747443,
+      "monotonic_s": 525949.72322663
+    },
+    "path_id": "initial_hold_600",
+    "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354",
+    "repeat": 7,
+    "request_id": "helper-055",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893655.405432,
+        "monotonic_s": 390898.10481262504
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893654.575665,
+        "monotonic_s": 390897.2750632917
+      },
+      "preparation_started": {
+        "epoch_s": 1791893654.495028,
+        "monotonic_s": 390897.1944259584
+      },
+      "request_entered": {
+        "epoch_s": 1791893654.474683,
+        "monotonic_s": 390897.174075625
+      },
+      "request_finished": {
+        "epoch_s": 1791893655.541625,
+        "monotonic_s": 390898.24100525
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893655.5416021,
+        "monotonic_s": 390898.24098166666
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893655.509651,
+        "monotonic_s": 390898.20902841666
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893654.575674,
+        "monotonic_s": 390897.2750716667
+      }
+    },
+    "log_batch": 55,
+    "touch_began_minus_submitted_s": 0.013417482376098633
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893657.0910459,
+      "monotonic_s": 525953.066817956
+    },
+    "host_call_start": {
+      "epoch_s": 1791893656.085974,
+      "monotonic_s": 525952.061747501
+    },
+    "path_id": "final_hold_600",
+    "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc",
+    "repeat": 7,
+    "request_id": "helper-056",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893657.738883,
+        "monotonic_s": 390900.43821500003
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893656.916986,
+        "monotonic_s": 390899.6163404167
+      },
+      "preparation_started": {
+        "epoch_s": 1791893656.8396811,
+        "monotonic_s": 390899.5390360417
+      },
+      "request_entered": {
+        "epoch_s": 1791893656.8140821,
+        "monotonic_s": 390899.513434375
+      },
+      "request_finished": {
+        "epoch_s": 1791893657.7907329,
+        "monotonic_s": 390900.49007187504
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893657.7907128,
+        "monotonic_s": 390900.4900506667
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893657.754661,
+        "monotonic_s": 390900.4539976667
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893656.916995,
+        "monotonic_s": 390899.6163499167
+      }
+    },
+    "log_batch": 56,
+    "touch_began_minus_submitted_s": 0.011041641235351562
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893659.539744,
+      "monotonic_s": 525955.515508309
+    },
+    "host_call_start": {
+      "epoch_s": 1791893658.308882,
+      "monotonic_s": 525954.284650452
+    },
+    "path_id": "split_800",
+    "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3",
+    "repeat": 8,
+    "request_id": "helper-057",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893660.1967,
+        "monotonic_s": 390902.8959907084
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893659.1632261,
+        "monotonic_s": 390901.8625392917
+      },
+      "preparation_started": {
+        "epoch_s": 1791893659.0861158,
+        "monotonic_s": 390901.78542950004
+      },
+      "request_entered": {
+        "epoch_s": 1791893659.0626369,
+        "monotonic_s": 390901.76195016666
+      },
+      "request_finished": {
+        "epoch_s": 1791893660.24487,
+        "monotonic_s": 390902.94416320836
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893660.244823,
+        "monotonic_s": 390902.944114
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893660.211195,
+        "monotonic_s": 390902.91048145836
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893659.163235,
+        "monotonic_s": 390901.8625482917
+      }
+    },
+    "log_batch": 57,
+    "touch_began_minus_submitted_s": 0.0117340087890625
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893661.8388119,
+      "monotonic_s": 525957.814566042
+    },
+    "host_call_start": {
+      "epoch_s": 1791893660.753563,
+      "monotonic_s": 525956.729322219
+    },
+    "path_id": "initial_hold_600",
+    "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354",
+    "repeat": 8,
+    "request_id": "helper-058",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893662.4030452,
+        "monotonic_s": 390905.10229141667
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893661.567725,
+        "monotonic_s": 390904.2669937084
+      },
+      "preparation_started": {
+        "epoch_s": 1791893661.496063,
+        "monotonic_s": 390904.19533220836
+      },
+      "request_entered": {
+        "epoch_s": 1791893661.4789162,
+        "monotonic_s": 390904.1781845417
+      },
+      "request_finished": {
+        "epoch_s": 1791893662.535831,
+        "monotonic_s": 390905.23508116667
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893662.535802,
+        "monotonic_s": 390905.2350525417
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893662.499016,
+        "monotonic_s": 390905.19825995836
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893661.567734,
+        "monotonic_s": 390904.26700287504
+      }
+    },
+    "log_batch": 58,
+    "touch_began_minus_submitted_s": 0.012734651565551758
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893664.359027,
+      "monotonic_s": 525960.334775887
+    },
+    "host_call_start": {
+      "epoch_s": 1791893663.05394,
+      "monotonic_s": 525959.029692762
+    },
+    "path_id": "single_800",
+    "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2",
+    "repeat": 8,
+    "request_id": "helper-059",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893665.016741,
+        "monotonic_s": 390907.71594300005
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893663.9939718,
+        "monotonic_s": 390906.6931952917
+      },
+      "preparation_started": {
+        "epoch_s": 1791893663.79535,
+        "monotonic_s": 390906.494575875
+      },
+      "request_entered": {
+        "epoch_s": 1791893663.778008,
+        "monotonic_s": 390906.47723379167
+      },
+      "request_finished": {
+        "epoch_s": 1791893665.069994,
+        "monotonic_s": 390907.76919745834
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893665.069973,
+        "monotonic_s": 390907.7691760834
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893665.0336242,
+        "monotonic_s": 390907.7328258334
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893663.993981,
+        "monotonic_s": 390906.69320445834
+      }
+    },
+    "log_batch": 59,
+    "touch_began_minus_submitted_s": 0.01050114631652832
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893666.638301,
+      "monotonic_s": 525962.614041681
+    },
+    "host_call_start": {
+      "epoch_s": 1791893665.636061,
+      "monotonic_s": 525961.611804255
+    },
+    "path_id": "final_hold_600",
+    "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc",
+    "repeat": 8,
+    "request_id": "helper-060",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893667.288451,
+        "monotonic_s": 390909.98761012504
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893666.4654732,
+        "monotonic_s": 390909.1646505417
+      },
+      "preparation_started": {
+        "epoch_s": 1791893666.3861241,
+        "monotonic_s": 390909.0853021667
+      },
+      "request_entered": {
+        "epoch_s": 1791893666.3648229,
+        "monotonic_s": 390909.0640008334
+      },
+      "request_finished": {
+        "epoch_s": 1791893667.3332381,
+        "monotonic_s": 390910.032400375
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893667.333219,
+        "monotonic_s": 390910.0323802084
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893667.2960792,
+        "monotonic_s": 390909.99523920834
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893666.465482,
+        "monotonic_s": 390909.1646597917
+      }
+    },
+    "log_batch": 60,
+    "touch_began_minus_submitted_s": 0.012789011001586914
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893668.891381,
+      "monotonic_s": 525964.867114517
+    },
+    "host_call_start": {
+      "epoch_s": 1791893667.898064,
+      "monotonic_s": 525963.873799791
+    },
+    "path_id": "corner_600",
+    "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795",
+    "repeat": 8,
+    "request_id": "helper-061",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893669.546781,
+        "monotonic_s": 390912.24589950003
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893668.722239,
+        "monotonic_s": 390911.42137520836
+      },
+      "preparation_started": {
+        "epoch_s": 1791893668.6454191,
+        "monotonic_s": 390911.3445550417
+      },
+      "request_entered": {
+        "epoch_s": 1791893668.62498,
+        "monotonic_s": 390911.3241153334
+      },
+      "request_finished": {
+        "epoch_s": 1791893669.596047,
+        "monotonic_s": 390912.29516670835
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893669.595999,
+        "monotonic_s": 390912.29511325003
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893669.562314,
+        "monotonic_s": 390912.2614336667
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893668.722248,
+        "monotonic_s": 390911.42138458334
+      }
+    },
+    "log_batch": 61,
+    "touch_began_minus_submitted_s": 0.011191129684448242
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893670.903986,
+      "monotonic_s": 525966.879712354
+    },
+    "host_call_start": {
+      "epoch_s": 1791893670.135762,
+      "monotonic_s": 525966.111490114
+    },
+    "path_id": "single_400",
+    "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35",
+    "repeat": 8,
+    "request_id": "helper-062",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893671.5758982,
+        "monotonic_s": 390914.2749782917
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893670.953566,
+        "monotonic_s": 390913.6526608334
+      },
+      "preparation_started": {
+        "epoch_s": 1791893670.888956,
+        "monotonic_s": 390913.5880509167
+      },
+      "request_entered": {
+        "epoch_s": 1791893670.8641438,
+        "monotonic_s": 390913.5632376667
+      },
+      "request_finished": {
+        "epoch_s": 1791893671.613865,
+        "monotonic_s": 390914.31294750003
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893671.613796,
+        "monotonic_s": 390914.3128767917
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893671.5808191,
+        "monotonic_s": 390914.27989891666
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893670.953579,
+        "monotonic_s": 390913.65267387504
+      }
+    },
+    "log_batch": 62,
+    "touch_began_minus_submitted_s": 0.010818958282470703
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893673.208863,
+      "monotonic_s": 525969.184583014
+    },
+    "host_call_start": {
+      "epoch_s": 1791893672.1534169,
+      "monotonic_s": 525968.129132399
+    },
+    "path_id": "unequal_600",
+    "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17",
+    "repeat": 8,
+    "request_id": "helper-063",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893673.782388,
+        "monotonic_s": 390916.4814282917
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893672.95363,
+        "monotonic_s": 390915.6526880417
+      },
+      "preparation_started": {
+        "epoch_s": 1791893672.8959022,
+        "monotonic_s": 390915.59495995834
+      },
+      "request_entered": {
+        "epoch_s": 1791893672.87893,
+        "monotonic_s": 390915.5779870417
+      },
+      "request_finished": {
+        "epoch_s": 1791893673.919527,
+        "monotonic_s": 390916.6185674167
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893673.919507,
+        "monotonic_s": 390916.61854658334
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893673.88448,
+        "monotonic_s": 390916.5835175
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893672.95364,
+        "monotonic_s": 390915.65269741666
+      }
+    },
+    "log_batch": 63,
+    "touch_began_minus_submitted_s": 0.010604143142700195
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893675.889413,
+      "monotonic_s": 525971.865122862
+    },
+    "host_call_start": {
+      "epoch_s": 1791893674.458296,
+      "monotonic_s": 525970.434010895
+    },
+    "path_id": "middle_hold_800",
+    "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c",
+    "repeat": 8,
+    "request_id": "helper-064",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893676.476887,
+        "monotonic_s": 390919.17587358336
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893675.432705,
+        "monotonic_s": 390918.1317169167
+      },
+      "preparation_started": {
+        "epoch_s": 1791893675.2354941,
+        "monotonic_s": 390917.93450775003
+      },
+      "request_entered": {
+        "epoch_s": 1791893675.211759,
+        "monotonic_s": 390917.910773125
+      },
+      "request_finished": {
+        "epoch_s": 1791893676.596171,
+        "monotonic_s": 390919.2951616667
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893676.59615,
+        "monotonic_s": 390919.29514008336
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893676.563025,
+        "monotonic_s": 390919.262014125
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893675.432713,
+        "monotonic_s": 390918.13172533334
+      }
+    },
+    "log_batch": 64,
+    "touch_began_minus_submitted_s": 0.012913703918457031
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893678.547029,
+      "monotonic_s": 525974.522730549
+    },
+    "host_call_start": {
+      "epoch_s": 1791893677.107929,
+      "monotonic_s": 525973.083635752
+    },
+    "path_id": "middle_hold_800",
+    "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c",
+    "repeat": 9,
+    "request_id": "helper-065",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893679.1277661,
+        "monotonic_s": 390921.826707625
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893678.0843,
+        "monotonic_s": 390920.7832625
+      },
+      "preparation_started": {
+        "epoch_s": 1791893677.886773,
+        "monotonic_s": 390920.58573833335
+      },
+      "request_entered": {
+        "epoch_s": 1791893677.8620281,
+        "monotonic_s": 390920.5609879167
+      },
+      "request_finished": {
+        "epoch_s": 1791893679.2555962,
+        "monotonic_s": 390921.95453708334
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893679.2555552,
+        "monotonic_s": 390921.9544942917
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893679.2203379,
+        "monotonic_s": 390921.9192774167
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893678.084309,
+        "monotonic_s": 390920.78327225003
+      }
+    },
+    "log_batch": 65,
+    "touch_began_minus_submitted_s": 0.013843536376953125
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893680.840169,
+      "monotonic_s": 525976.815841367
+    },
+    "host_call_start": {
+      "epoch_s": 1791893679.75264,
+      "monotonic_s": 525975.728337453
+    },
+    "path_id": "final_hold_600",
+    "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc",
+    "repeat": 9,
+    "request_id": "helper-066",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893681.385538,
+        "monotonic_s": 390924.0844374167
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893680.559669,
+        "monotonic_s": 390923.2585859167
+      },
+      "preparation_started": {
+        "epoch_s": 1791893680.4957361,
+        "monotonic_s": 390923.19465300004
+      },
+      "request_entered": {
+        "epoch_s": 1791893680.478508,
+        "monotonic_s": 390923.17742512503
+      },
+      "request_finished": {
+        "epoch_s": 1791893681.526751,
+        "monotonic_s": 390924.2256502917
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893681.52673,
+        "monotonic_s": 390924.22562925
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893681.487006,
+        "monotonic_s": 390924.1859034167
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893680.559678,
+        "monotonic_s": 390923.258595
+      }
+    },
+    "log_batch": 66,
+    "touch_began_minus_submitted_s": 0.012560367584228516
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893683.203896,
+      "monotonic_s": 525979.179581929
+    },
+    "host_call_start": {
+      "epoch_s": 1791893682.058123,
+      "monotonic_s": 525978.033813129
+    },
+    "path_id": "corner_600",
+    "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795",
+    "repeat": 9,
+    "request_id": "helper-067",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893683.871001,
+        "monotonic_s": 390926.5698495417
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893683.045435,
+        "monotonic_s": 390925.7443060417
+      },
+      "preparation_started": {
+        "epoch_s": 1791893682.839174,
+        "monotonic_s": 390925.53804758337
+      },
+      "request_entered": {
+        "epoch_s": 1791893682.812592,
+        "monotonic_s": 390925.5114651667
+      },
+      "request_finished": {
+        "epoch_s": 1791893683.9140558,
+        "monotonic_s": 390926.6129105
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893683.9140348,
+        "monotonic_s": 390926.61288925004
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893683.8768148,
+        "monotonic_s": 390926.575669375
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893683.045445,
+        "monotonic_s": 390925.7443155834
+      }
+    },
+    "log_batch": 67,
+    "touch_began_minus_submitted_s": 0.012150049209594727
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893685.3549702,
+      "monotonic_s": 525981.330649189
+    },
+    "host_call_start": {
+      "epoch_s": 1791893684.458692,
+      "monotonic_s": 525980.434373788
+    },
+    "path_id": "single_400",
+    "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35",
+    "repeat": 9,
+    "request_id": "helper-068",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893685.9270449,
+        "monotonic_s": 390928.62585695833
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893685.3043609,
+        "monotonic_s": 390928.00318970834
+      },
+      "preparation_started": {
+        "epoch_s": 1791893685.237467,
+        "monotonic_s": 390927.936296375
+      },
+      "request_entered": {
+        "epoch_s": 1791893685.2135901,
+        "monotonic_s": 390927.9124186667
+      },
+      "request_finished": {
+        "epoch_s": 1791893686.064941,
+        "monotonic_s": 390928.76375595835
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893686.064917,
+        "monotonic_s": 390928.76373145834
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893686.0300078,
+        "monotonic_s": 390928.72882258333
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893685.304374,
+        "monotonic_s": 390928.00320337503
+      }
+    },
+    "log_batch": 68,
+    "touch_began_minus_submitted_s": 0.012753009796142578
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893687.990649,
+      "monotonic_s": 525983.966319135
+    },
+    "host_call_start": {
+      "epoch_s": 1791893686.644806,
+      "monotonic_s": 525982.620479906
+    },
+    "path_id": "single_800",
+    "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2",
+    "repeat": 9,
+    "request_id": "helper-069",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893688.620852,
+        "monotonic_s": 390931.319614375
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893687.597683,
+        "monotonic_s": 390930.2964694167
+      },
+      "preparation_started": {
+        "epoch_s": 1791893687.393276,
+        "monotonic_s": 390930.0920649167
+      },
+      "request_entered": {
+        "epoch_s": 1791893687.3725262,
+        "monotonic_s": 390930.071313875
+      },
+      "request_finished": {
+        "epoch_s": 1791893688.678474,
+        "monotonic_s": 390931.3772405417
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893688.6784601,
+        "monotonic_s": 390931.3772260417
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893688.641868,
+        "monotonic_s": 390931.34063345834
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893687.5976958,
+        "monotonic_s": 390930.29648225004
+      }
+    },
+    "log_batch": 69,
+    "touch_began_minus_submitted_s": 0.011442422866821289
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893690.541077,
+      "monotonic_s": 525986.516738561
+    },
+    "host_call_start": {
+      "epoch_s": 1791893689.208674,
+      "monotonic_s": 525985.184338239
+    },
+    "path_id": "split_800",
+    "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3",
+    "repeat": 9,
+    "request_id": "helper-070",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893691.0997338,
+        "monotonic_s": 390933.79845370835
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893690.061242,
+        "monotonic_s": 390932.759983125
+      },
+      "preparation_started": {
+        "epoch_s": 1791893689.9876509,
+        "monotonic_s": 390932.6863927917
+      },
+      "request_entered": {
+        "epoch_s": 1791893689.9622998,
+        "monotonic_s": 390932.6610365417
+      },
+      "request_finished": {
+        "epoch_s": 1791893691.2413611,
+        "monotonic_s": 390933.9400805833
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893691.241341,
+        "monotonic_s": 390933.94005954167
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893691.2031069,
+        "monotonic_s": 390933.9018246667
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893690.0612512,
+        "monotonic_s": 390932.759992
+      }
+    },
+    "log_batch": 70,
+    "touch_began_minus_submitted_s": 0.010326623916625977
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893692.789875,
+      "monotonic_s": 525988.765529369
+    },
+    "host_call_start": {
+      "epoch_s": 1791893691.757458,
+      "monotonic_s": 525987.733113014
+    },
+    "path_id": "unequal_600",
+    "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17",
+    "repeat": 9,
+    "request_id": "helper-071",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893693.427105,
+        "monotonic_s": 390936.12578070833
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893692.6049771,
+        "monotonic_s": 390935.3036711667
+      },
+      "preparation_started": {
+        "epoch_s": 1791893692.532,
+        "monotonic_s": 390935.23069470836
+      },
+      "request_entered": {
+        "epoch_s": 1791893692.51022,
+        "monotonic_s": 390935.2089131667
+      },
+      "request_finished": {
+        "epoch_s": 1791893693.475779,
+        "monotonic_s": 390936.17445670837
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893693.475759,
+        "monotonic_s": 390936.17443675
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893693.440798,
+        "monotonic_s": 390936.1394744167
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893692.6049929,
+        "monotonic_s": 390935.30368695833
+      }
+    },
+    "log_batch": 71,
+    "touch_began_minus_submitted_s": 0.010677576065063477
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893695.2479832,
+      "monotonic_s": 525991.223628669
+    },
+    "host_call_start": {
+      "epoch_s": 1791893694.006424,
+      "monotonic_s": 525989.982074881
+    },
+    "path_id": "initial_hold_600",
+    "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354",
+    "repeat": 9,
+    "request_id": "helper-072",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893695.814517,
+        "monotonic_s": 390938.513149
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893694.9807239,
+        "monotonic_s": 390937.6793742917
+      },
+      "preparation_started": {
+        "epoch_s": 1791893694.782964,
+        "monotonic_s": 390937.4816157084
+      },
+      "request_entered": {
+        "epoch_s": 1791893694.7601218,
+        "monotonic_s": 390937.458774
+      },
+      "request_finished": {
+        "epoch_s": 1791893695.955348,
+        "monotonic_s": 390938.6539795417
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893695.955327,
+        "monotonic_s": 390938.65395833337
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893695.917543,
+        "monotonic_s": 390938.6161679167
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893694.9807339,
+        "monotonic_s": 390937.67938383337
+      }
+    },
+    "log_batch": 72,
+    "touch_began_minus_submitted_s": 0.009894609451293945
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893697.4903412,
+      "monotonic_s": 525993.465979814
+    },
+    "host_call_start": {
+      "epoch_s": 1791893696.4592,
+      "monotonic_s": 525992.434842709
+    },
+    "path_id": "corner_600",
+    "payload_sha256": "5b0fdbc2835dfca3c215528cb7d176b64449d13c2092b5524912d2180e513795",
+    "repeat": 10,
+    "request_id": "helper-073",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893698.1367269,
+        "monotonic_s": 390940.83531625004
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893697.315887,
+        "monotonic_s": 390940.014493625
+      },
+      "preparation_started": {
+        "epoch_s": 1791893697.2375932,
+        "monotonic_s": 390939.9362002917
+      },
+      "request_entered": {
+        "epoch_s": 1791893697.214432,
+        "monotonic_s": 390939.9130385417
+      },
+      "request_finished": {
+        "epoch_s": 1791893698.175838,
+        "monotonic_s": 390940.8744285
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893698.175815,
+        "monotonic_s": 390940.87440537504
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893698.143018,
+        "monotonic_s": 390940.8416072917
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893697.3158998,
+        "monotonic_s": 390940.014506875
+      }
+    },
+    "log_batch": 73,
+    "touch_began_minus_submitted_s": 0.011191368103027344
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893699.7900648,
+      "monotonic_s": 525995.765696009
+    },
+    "host_call_start": {
+      "epoch_s": 1791893698.704298,
+      "monotonic_s": 525994.679932577
+    },
+    "path_id": "initial_hold_600",
+    "payload_sha256": "24c2f969ef9cd94a162b4e62a168be8720177ba623ca8caf6fdae85f15b07354",
+    "repeat": 10,
+    "request_id": "helper-074",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893700.357269,
+        "monotonic_s": 390943.05581775005
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893699.52496,
+        "monotonic_s": 390942.2235254167
+      },
+      "preparation_started": {
+        "epoch_s": 1791893699.449173,
+        "monotonic_s": 390942.14773925004
+      },
+      "request_entered": {
+        "epoch_s": 1791893699.429871,
+        "monotonic_s": 390942.1284361667
+      },
+      "request_finished": {
+        "epoch_s": 1791893700.492262,
+        "monotonic_s": 390943.1908102084
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893700.492213,
+        "monotonic_s": 390943.19075891667
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893700.4582648,
+        "monotonic_s": 390943.1568105834
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893699.524969,
+        "monotonic_s": 390942.2235352084
+      }
+    },
+    "log_batch": 74,
+    "touch_began_minus_submitted_s": 0.012710809707641602
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893701.854625,
+      "monotonic_s": 525997.830227602
+    },
+    "host_call_start": {
+      "epoch_s": 1791893700.994445,
+      "monotonic_s": 525996.970072338
+    },
+    "path_id": "single_400",
+    "payload_sha256": "747c9a96c71a3617d5780c6b282b2baa7375ea2e2a9b3c6940a317c45a48db35",
+    "repeat": 10,
+    "request_id": "helper-075",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893702.436296,
+        "monotonic_s": 390945.13480604166
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893701.814815,
+        "monotonic_s": 390944.51333875
+      },
+      "preparation_started": {
+        "epoch_s": 1791893701.739924,
+        "monotonic_s": 390944.43844733335
+      },
+      "request_entered": {
+        "epoch_s": 1791893701.720381,
+        "monotonic_s": 390944.4189045
+      },
+      "request_finished": {
+        "epoch_s": 1791893702.5653238,
+        "monotonic_s": 390945.2638335417
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893702.56531,
+        "monotonic_s": 390945.26381904166
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893702.531821,
+        "monotonic_s": 390945.2303284167
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893701.814824,
+        "monotonic_s": 390944.51334783336
+      }
+    },
+    "log_batch": 75,
+    "touch_began_minus_submitted_s": 0.0092315673828125
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893704.4386282,
+      "monotonic_s": 526000.414243065
+    },
+    "host_call_start": {
+      "epoch_s": 1791893703.1088908,
+      "monotonic_s": 525999.08451117
+    },
+    "path_id": "middle_hold_800",
+    "payload_sha256": "47f812f1a5a0cf3aa3913a2e1182540f9580765c60cf0fafeeb373b4d6fb6b3c",
+    "repeat": 10,
+    "request_id": "helper-076",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893705.003041,
+        "monotonic_s": 390947.70150254166
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893703.96139,
+        "monotonic_s": 390946.6598739584
+      },
+      "preparation_started": {
+        "epoch_s": 1791893703.887795,
+        "monotonic_s": 390946.5862791667
+      },
+      "request_entered": {
+        "epoch_s": 1791893703.861965,
+        "monotonic_s": 390946.5604475834
+      },
+      "request_finished": {
+        "epoch_s": 1791893705.132433,
+        "monotonic_s": 390947.83089466667
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893705.13241,
+        "monotonic_s": 390947.83087195834
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893705.0955281,
+        "monotonic_s": 390947.79398775
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893703.961399,
+        "monotonic_s": 390946.65988333337
+      }
+    },
+    "log_batch": 76,
+    "touch_began_minus_submitted_s": 0.01229548454284668
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893706.640586,
+      "monotonic_s": 526002.616187909
+    },
+    "host_call_start": {
+      "epoch_s": 1791893705.649725,
+      "monotonic_s": 526001.625336619
+    },
+    "path_id": "final_hold_600",
+    "payload_sha256": "9647825fd7dfcae3cda446b35b68b5366385a54530ea03d5ed963539f977e0cc",
+    "repeat": 10,
+    "request_id": "helper-077",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893707.286598,
+        "monotonic_s": 390949.9850125417
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893706.465877,
+        "monotonic_s": 390949.164313875
+      },
+      "preparation_started": {
+        "epoch_s": 1791893706.3940759,
+        "monotonic_s": 390949.09251370834
+      },
+      "request_entered": {
+        "epoch_s": 1791893706.375225,
+        "monotonic_s": 390949.07366270834
+      },
+      "request_finished": {
+        "epoch_s": 1791893707.32719,
+        "monotonic_s": 390950.0256113334
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893707.32717,
+        "monotonic_s": 390950.02559075004
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893707.2931151,
+        "monotonic_s": 390949.99153583334
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893706.46589,
+        "monotonic_s": 390949.16432720836
+      }
+    },
+    "log_batch": 77,
+    "touch_began_minus_submitted_s": 0.012054204940795898
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893709.039423,
+      "monotonic_s": 526005.015022923
+    },
+    "host_call_start": {
+      "epoch_s": 1791893707.849207,
+      "monotonic_s": 526003.824811952
+    },
+    "path_id": "single_800",
+    "payload_sha256": "26deee3a1e8d29f9f353819ff728d7eae566f0e5b4fcdb35b56cf1a795da01c2",
+    "repeat": 10,
+    "request_id": "helper-078",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893709.684438,
+        "monotonic_s": 390952.382813
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893708.657576,
+        "monotonic_s": 390951.35597283335
+      },
+      "preparation_started": {
+        "epoch_s": 1791893708.59273,
+        "monotonic_s": 390951.2911237917
+      },
+      "request_entered": {
+        "epoch_s": 1791893708.574713,
+        "monotonic_s": 390951.27310933336
+      },
+      "request_finished": {
+        "epoch_s": 1791893709.7231731,
+        "monotonic_s": 390952.421550125
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893709.723153,
+        "monotonic_s": 390952.421529375
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893709.685557,
+        "monotonic_s": 390952.38393425004
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893708.6575851,
+        "monotonic_s": 390951.35598158336
+      }
+    },
+    "log_batch": 78,
+    "touch_began_minus_submitted_s": 0.011328458786010742
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893711.607394,
+      "monotonic_s": 526007.582985482
+    },
+    "host_call_start": {
+      "epoch_s": 1791893710.2539809,
+      "monotonic_s": 526006.229576307
+    },
+    "path_id": "split_800",
+    "payload_sha256": "ff88728138ac8d06ca7eebf2ff3fa0052286bffc3a6c53ecdf142dd0d012f8a3",
+    "repeat": 10,
+    "request_id": "helper-079",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893712.269709,
+        "monotonic_s": 390954.96803545835
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893711.234395,
+        "monotonic_s": 390953.932743875
+      },
+      "preparation_started": {
+        "epoch_s": 1791893711.031423,
+        "monotonic_s": 390953.7297752917
+      },
+      "request_entered": {
+        "epoch_s": 1791893711.009939,
+        "monotonic_s": 390953.70828795835
+      },
+      "request_finished": {
+        "epoch_s": 1791893712.3187962,
+        "monotonic_s": 390955.01712533337
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893712.3187819,
+        "monotonic_s": 390955.01711091667
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893712.280415,
+        "monotonic_s": 390954.9787435834
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893711.234408,
+        "monotonic_s": 390953.93275750004
+      }
+    },
+    "log_batch": 79,
+    "touch_began_minus_submitted_s": 0.012480974197387695
+  },
+  {
+    "host_call_return": {
+      "epoch_s": 1791893713.889517,
+      "monotonic_s": 526009.865101033
+    },
+    "host_call_start": {
+      "epoch_s": 1791893712.857588,
+      "monotonic_s": 526008.833175827
+    },
+    "path_id": "unequal_600",
+    "payload_sha256": "239af509086e6f250d03b74092bdc4cb0f7a09425673cc17c289bdfbccf9df17",
+    "repeat": 10,
+    "request_id": "helper-080",
+    "response": {
+      "value": null
+    },
+    "wda": {
+      "ios_callback_result": true,
+      "ios_completion_callback": {
+        "epoch_s": 1791893714.527497,
+        "monotonic_s": 390957.2257824584
+      },
+      "missing_ios_callback": 0,
+      "outcome": "success",
+      "preparation_finished": {
+        "epoch_s": 1791893713.705924,
+        "monotonic_s": 390956.4042270834
+      },
+      "preparation_started": {
+        "epoch_s": 1791893713.6365461,
+        "monotonic_s": 390956.33485000004
+      },
+      "request_entered": {
+        "epoch_s": 1791893713.6109052,
+        "monotonic_s": 390956.3092075
+      },
+      "request_finished": {
+        "epoch_s": 1791893714.584161,
+        "monotonic_s": 390957.28244808334
+      },
+      "sequence": 0,
+      "session_id": "BDBB6036-606D-4A92-A1EA-0D8B37D753E7",
+      "stability_wait_finished": {
+        "epoch_s": 1791893714.5841398,
+        "monotonic_s": 390957.28242658335
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791893714.549969,
+        "monotonic_s": 390957.24825533334
+      },
+      "submitted_to_ios": {
+        "epoch_s": 1791893713.705933,
+        "monotonic_s": 390956.40423620836
+      }
+    },
+    "log_batch": 80,
+    "touch_began_minus_submitted_s": 0.011680364608764648
+  }
+]

@@ -1,0 +1,46 @@
+{
+  "info" : {
+    "arguments" : [
+      "devicectl",
+      "device",
+      "info",
+      "apps",
+      "--device",
+      "<XR1-UDID>",
+      "--bundle-id",
+      "com.ashernoble.touchlogger.physical20261013",
+      "--json-output",
+      "/Users/training-server/trueskate-ai-runtime/tmp/physical-transfer-helper-cohort-20261013T082620Z/installed-app.json"
+    ],
+    "commandType" : "devicectl.device.info.apps",
+    "environment" : {
+      "TERM" : "su"
+    },
+    "jsonVersion" : 2,
+    "outcome" : "success",
+    "version" : "397.28"
+  },
+  "result" : {
+    "apps" : [
+      {
+        "appClip" : false,
+        "builtByDeveloper" : true,
+        "bundleIdentifier" : "com.ashernoble.touchlogger.physical20261013",
+        "bundleVersion" : "1",
+        "defaultApp" : false,
+        "hidden" : false,
+        "internalApp" : false,
+        "name" : "Physical Touch Logger",
+        "removable" : true,
+        "url" : "file:///private/var/containers/Bundle/Application/93D925D2-DFBB-46FD-A244-98A5C409D167/PhysicalTouchLogger.app/",
+        "version" : "1.0"
+      }
+    ],
+    "defaultAppsIncluded" : false,
+    "deviceIdentifier" : "<XR1-COREDEVICE-ID>",
+    "hiddenAppsIncluded" : false,
+    "internalAppsIncluded" : false,
+    "matchingBundleIdentifier" : "com.ashernoble.touchlogger.physical20261013",
+    "removableAppsIncluded" : true
+  }
+}

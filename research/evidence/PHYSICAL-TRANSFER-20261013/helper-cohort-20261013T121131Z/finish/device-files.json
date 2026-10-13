@@ -1,0 +1,37 @@
+{
+  "info" : {
+    "arguments" : [
+      "devicectl",
+      "device",
+      "info",
+      "files",
+      "--device",
+      "<XR1-UDID>",
+      "--domain-type",
+      "appDataContainer",
+      "--domain-identifier",
+      "com.ashernoble.touchlogger.physical20261013",
+      "--subdirectory",
+      "Documents",
+      "--json-output",
+      "/Users/training-server/trueskate-ai-runtime/tmp/physical-transfer-helper-cohort-20261013T121131Z/finish/device-files.json"
+    ],
+    "commandType" : "devicectl.device.info.files",
+    "environment" : {
+      "TERM" : "su"
+    },
+    "jsonVersion" : 2,
+    "outcome" : "success",
+    "version" : "397.28"
+  },
+  "result" : {
+    "deviceIdentifier" : "<XR1-COREDEVICE-ID>",
+    "domain" : "appDataContainer",
+    "domainIdentifier" : "com.ashernoble.touchlogger.physical20261013",
+    "files" : [
+      {
+        "name" : "touches-6316423D-7B0B-4721-8D12-94B88062B3CE.jsonl"
+      }
+    ]
+  }
+}

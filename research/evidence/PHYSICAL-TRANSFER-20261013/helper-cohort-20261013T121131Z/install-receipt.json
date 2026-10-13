@@ -1,0 +1,52 @@
+{
+  "schema": "physical-transfer-helper-install-v1",
+  "started": "2026-10-13T08:25:49.022845+00:00",
+  "finished": "2026-10-13T08:26:01.930017+00:00",
+  "device_env_key": "IPHONE_XR_UDID",
+  "xr1_udid_sha256": "e5184f9180b442bd21c65705b13b6817497b566b36aeee46663758153f3bf2ef",
+  "sign_receipt": "/Users/training-server/trueskate-ai-runtime/tmp/touchlogger-signing/signed-20261013T082426Z/sign-receipt.json",
+  "signed_executable_sha256": "d336d2ec77de3b9397c951f94f6fe23f362c8851c161a82ac99a2b6d69d43858",
+  "install": {
+    "args": [
+      "xcrun",
+      "devicectl",
+      "device",
+      "install",
+      "app",
+      "--device",
+      "<XR1>",
+      "/Users/training-server/trueskate-ai-runtime/tmp/touchlogger-signing/signed-20261013T082426Z/PhysicalTouchLogger.app"
+    ],
+    "exit_code": 0,
+    "stdout": "01:25:49  Acquired tunnel connection to device.\n01:25:49  Enabling developer disk image services.\n01:25:49  Acquired usage assertion.\n35%... 59%... 60%... 62%... 66%... 68%... 72%... 76%... 80%... 84%... 88%... 92%... 96%... Complete!\nApp installed:\n\u2022 bundleID: com.ashernoble.touchlogger.physical20261013\n\u2022 installationURL: file:///private/var/containers/Bundle/Application/93D925D2-DFBB-46FD-A244-98A5C409D167/PhysicalTouchLogger.app/\n\u2022 launchServicesIdentifier: unknown\n\u2022 databaseUUID: 0D03DF36-419E-4761-BB4A-EAED4A62485B\n\u2022 databaseSequenceNumber: 29728\n\u2022 options: \n",
+    "stderr": ""
+  },
+  "info": {
+    "args": [
+      "xcrun",
+      "devicectl",
+      "device",
+      "info",
+      "apps",
+      "--device",
+      "<XR1>",
+      "--bundle-id",
+      "com.ashernoble.touchlogger.physical20261013",
+      "--json-output",
+      "/Users/training-server/trueskate-ai-runtime/tmp/touchlogger-signing/signed-20261013T082426Z/installed-apps.json"
+    ],
+    "exit_code": 0,
+    "stdout": "01:26:01  Acquired tunnel connection to device.\n01:26:01  Enabling developer disk image services.\n01:26:01  Acquired usage assertion.\nApps installed:\nName                    Bundle Identifier                             Version   Bundle Version\n---------------------   -------------------------------------------   -------   --------------\nPhysical Touch Logger   com.ashernoble.touchlogger.physical20261013   1.0       1             \n",
+    "stderr": ""
+  },
+  "installed": [
+    {
+      "name": "Physical Touch Logger",
+      "bundleIdentifier": "com.ashernoble.touchlogger.physical20261013",
+      "version": "1.0",
+      "builtByDeveloper": true,
+      "url": "file:///private/var/containers/Bundle/Application/93D925D2-DFBB-46FD-A244-98A5C409D167/PhysicalTouchLogger.app/"
+    }
+  ],
+  "launched": false
+}

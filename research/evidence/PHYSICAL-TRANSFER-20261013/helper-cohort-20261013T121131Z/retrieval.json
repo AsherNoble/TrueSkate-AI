@@ -1,0 +1,22 @@
+{
+  "args": [
+    "xcrun",
+    "devicectl",
+    "device",
+    "copy",
+    "from",
+    "--device",
+    "<XR1-UDID>",
+    "--domain-type",
+    "appDataContainer",
+    "--domain-identifier",
+    "com.ashernoble.touchlogger.physical20261013",
+    "--source",
+    "Documents",
+    "--destination",
+    "/Users/training-server/trueskate-ai-runtime/tmp/physical-transfer-helper-cohort-20261013T121131Z/device-documents"
+  ],
+  "exit_code": 1,
+  "stdout": "05:15:18  Enabling developer disk image services.\n05:15:18  Acquired usage assertion.\n",
+  "stderr": "ERROR: The specified file could not be transferred. (com.apple.dt.CoreDeviceError error 7000 (0x1B58))\n       NSURL = file:///Users/training-server/trueskate-ai-runtime/tmp/physical-transfer-helper-cohort-20261013T121131Z/device-documents\n       ----------------------------------------\n           The operation couldn\u2019t be completed. The file service client failed to read data from the network socket because we timed out when waiting for data to become available. (NSPOSIXErrorDomain error 60 (0x3C))\n           NSLocalizedFailureReason = The file service client failed to read data from the network socket because we timed out when waiting for data to become available.\n"
+}
