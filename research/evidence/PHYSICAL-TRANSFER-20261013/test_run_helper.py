@@ -183,3 +183,37 @@ def test_select_log_refuses_launch_after_first_request(tmp_path):
     write_log(tmp_path/"touches-a.jsonl", 101., batches_at([10.03]))
     with pytest.raises(ValueError, match="launched after"):
         select_log(tmp_path, 100.)
+
+
+def fake_devicectl(files, *, fail_copy=()):
+    calls = []
+
+    def runner(args, timeout):
+        calls.append(args)
+        if args[3] == "info":
+            out = Path(args[args.index("--json-output")+1])
+            out.write_text(json.dumps(dict(result=dict(files=[dict(name=n) for n in files]))))
+            return dict(args=args, exit_code=0, stdout="", stderr="")
+        source = args[args.index("--source")+1]
+        if source.split("/")[-1] in fail_copy:
+            return dict(args=args, exit_code=1, stdout="", stderr="timed out")
+        Path(args[args.index("--destination")+1]).write_text("{}\n")
+        return dict(args=args, exit_code=0, stdout="", stderr="")
+    return runner, calls
+
+
+def test_retrieve_copies_each_touch_log_by_exact_path(tmp_path):
+    runner, calls = fake_devicectl(["touches-b.jsonl", "notes.txt", "touches-a.jsonl"])
+    records, retrieved = run_helper.retrieve("udid", BUNDLE, tmp_path/"docs", runner=runner)
+    assert retrieved
+    sources = [c[c.index("--source")+1] for c in calls if c[3] == "copy"]
+    assert sources == ["Documents/touches-a.jsonl", "Documents/touches-b.jsonl"]
+    assert sorted(p.name for p in (tmp_path/"docs").iterdir()) == ["touches-a.jsonl", "touches-b.jsonl"]
+    assert all(r["sha256"] for r in records if r["step"] == "copy")
+
+
+@pytest.mark.parametrize("files,fail", [([], ()), (["touches-a.jsonl"], ("touches-a.jsonl",))])
+def test_retrieve_reports_missing_or_failed_logs(tmp_path, files, fail):
+    runner, _ = fake_devicectl(files, fail_copy=fail)
+    _, retrieved = run_helper.retrieve("udid", BUNDLE, tmp_path/"docs", runner=runner)
+    assert not retrieved

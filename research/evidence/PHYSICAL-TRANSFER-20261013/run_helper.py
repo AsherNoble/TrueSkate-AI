@@ -4,7 +4,8 @@ Runs on training-server from a staged checkout with the runtime .venv. One W3C
 request per contact, in frozen order, with spending made durable before every RPC.
 The first error, foreground loss or timing-validation failure stops the cohort; no
 request is retried or replaced. Never restarts WDA, starts the recorder or touches
-True Skate beyond activating it again at the end.
+True Skate beyond activating it again at the end. ``--finish`` retrieves and
+analyses an already dispatched cohort into ``OUT/finish`` without sending a touch.
 """
 from __future__ import annotations
 
@@ -148,6 +149,65 @@ def rig_state(port, udid):
                 xr1_udid_sha256=hashlib.sha256(udid.encode()).hexdigest())
 
 
+def retrieve(udid, bundle, destination, *, runner=run):
+    """Copy each touch log by exact path; devicectl timed out copying the Documents directory."""
+    destination.mkdir(exist_ok=False)
+    listing = destination.parent/"device-files.json"
+    container = ["--device", udid, "--domain-type", "appDataContainer", "--domain-identifier", bundle]
+    result = runner(["xcrun", "devicectl", "device", "info", "files", *container,
+                     "--subdirectory", "Documents", "--json-output", str(listing)], timeout=180)
+    records = [dict(step="list", **result)]
+    if result["exit_code"]:
+        return records, False
+    names = sorted(f["name"] for f in json.loads(listing.read_text())["result"]["files"]
+                   if f["name"].startswith("touches-") and f["name"].endswith(".jsonl"))
+    retrieved = bool(names)
+    for name in names:
+        copy = runner(["xcrun", "devicectl", "device", "copy", "from", *container,
+                       "--source", "Documents/"+name, "--destination", str(destination/name)], timeout=300)
+        copied = (destination/name).is_file()
+        records.append(dict(step="copy", name=name, **copy,
+                            sha256=hashlib.sha256((destination/name).read_bytes()).hexdigest() if copied else None))
+        retrieved = retrieved and not copy["exit_code"] and copied
+    return records, retrieved
+
+
+def read_receipts(out):
+    path = out/"receipts.jsonl"
+    return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+
+
+def finish(plan, *, out, evidence, udid, bundle, port, error, receipts):
+    """Retrieve, bind and analyse into ``evidence``; never dispatches. Prints the gate marker."""
+    from trueskate_ai.model1.curved.collection import attachment_guard
+    retrieval, retrieved = retrieve(udid, bundle, evidence/"device-documents")
+    (evidence/"retrieval.json").write_text(json.dumps(retrieval, indent=2)+"\n")
+    result = dict(error=error, spent=len((out/"spend.jsonl").read_text().splitlines())
+                  if (out/"spend.jsonl").exists() else 0, completed=len(receipts))
+    if not retrieved:
+        result["analysis_error"] = "logger retrieval failed"
+    elif receipts:
+        sys.path.insert(0, str(HERE))
+        from analyze import analyze
+        try:
+            log, header, batches = select_log(evidence/"device-documents",
+                                              receipts[0]["wda"]["submitted_to_ios"]["epoch_s"])
+            bound = bind(receipts, header, batches)
+            (evidence/"receipts.json").write_text(json.dumps(bound, indent=2, default=str)+"\n")
+            analysis = analyze(plan, bound, header, batches)
+            (evidence/"helper-result.json").write_text(json.dumps(analysis, indent=2)+"\n")
+            result.update(log=str(log), gate=analysis["helper_gate"])
+        except ValueError as exc:
+            result["analysis_error"] = str(exc)
+    postflight = rig_state(port, udid)
+    attachment_guard(udid)
+    (evidence/"postflight.json").write_text(json.dumps(postflight, indent=2)+"\n")
+    (evidence/"run-summary.json").write_text(json.dumps(result, indent=2)+"\n")
+    passed = bool(result.get("gate", {}).get("passed")) and not error
+    print(f"HELPER_COHORT_DONE gate={'passed' if passed else 'failed'} "
+          f"spent={result['spent']} completed={result['completed']}", flush=True)
+
+
 def installed(udid, bundle, out):
     listing = out/"installed-app.json"
     result = run(["xcrun", "devicectl", "device", "info", "apps", "--device", udid,
@@ -162,6 +222,9 @@ def main(argv=None):
     parser.add_argument("--sign-receipt", type=Path, required=True)
     parser.add_argument("--wda-revision", required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--finish", action="store_true",
+                        help="retrieve and analyse an already dispatched --out cohort into --out/finish; "
+                             "sends no touch")
     args = parser.parse_args(argv)
     if "training-server" not in socket.gethostname():
         raise SystemExit("the helper cohort runs on training-server")
@@ -170,7 +233,12 @@ def main(argv=None):
     bundle = sign["bundle_id"]
     if bundle not in (plan["helper_bundle_id"], FALLBACK_BUNDLE):
         raise SystemExit("signed helper bundle is not the frozen helper")
-    args.out.mkdir(parents=True, exist_ok=False)
+    if args.finish:
+        # The dispatched run's own evidence stays untouched; only a completed run is finished.
+        previous = json.loads((args.out/"run-summary.json").read_text())
+        (args.out/"finish").mkdir(exist_ok=False)
+    else:
+        args.out.mkdir(parents=True, exist_ok=False)
     descriptor = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)  # Refuses a busy rig.
     with os.fdopen(descriptor, "w") as handle:
         json.dump(dict(owner="physical-transfer helper cohort", pid=os.getpid(),
@@ -186,6 +254,10 @@ def main(argv=None):
         cfg = next(d for d in DEVICES if d["name"] == plan["device"])
         udid = os.environ[plan["device_env_key"]]
         port = plan["wda_port"]
+        if args.finish:
+            finish(plan, out=args.out, evidence=args.out/"finish", udid=udid, bundle=bundle, port=port,
+                   error=previous["error"], receipts=read_receipts(args.out))
+            return
         state = rig_state(port, udid)
         (args.out/"preflight.json").write_text(json.dumps(state, indent=2)+"\n")
         if (not state["tunnel_running"] or state["recorder"].get("value") is not None
@@ -223,36 +295,9 @@ def main(argv=None):
         finally:
             worker.disconnect()
         if error:  # The completed receipts are still analysed; the gate cannot pass.
-            receipts = [json.loads(line) for line in (args.out/"receipts.jsonl").read_text().splitlines()] \
-                if (args.out/"receipts.jsonl").exists() else []
-        copy = run(["xcrun", "devicectl", "device", "copy", "from", "--device", udid,
-                    "--domain-type", "appDataContainer", "--domain-identifier", bundle,
-                    "--source", "Documents", "--destination", str(args.out/"device-documents")], timeout=300)
-        (args.out/"retrieval.json").write_text(json.dumps(copy, indent=2)+"\n")
-        result = dict(error=error, spent=len((args.out/"spend.jsonl").read_text().splitlines())
-                      if (args.out/"spend.jsonl").exists() else 0, completed=len(receipts))
-        if copy["exit_code"]:
-            result["analysis_error"] = "logger retrieval failed"
-        elif receipts:
-            sys.path.insert(0, str(HERE))
-            from analyze import analyze
-            try:
-                log, header, batches = select_log(args.out/"device-documents",
-                                                  receipts[0]["wda"]["submitted_to_ios"]["epoch_s"])
-                bound = bind(receipts, header, batches)
-                (args.out/"receipts.json").write_text(json.dumps(bound, indent=2, default=str)+"\n")
-                analysis = analyze(plan, bound, header, batches)
-                (args.out/"helper-result.json").write_text(json.dumps(analysis, indent=2)+"\n")
-                result.update(log=str(log), gate=analysis["helper_gate"])
-            except ValueError as exc:
-                result["analysis_error"] = str(exc)
-        postflight = rig_state(port, udid)
-        attachment_guard(udid)
-        (args.out/"postflight.json").write_text(json.dumps(postflight, indent=2)+"\n")
-        (args.out/"run-summary.json").write_text(json.dumps(result, indent=2)+"\n")
-        passed = bool(result.get("gate", {}).get("passed")) and not error
-        print(f"HELPER_COHORT_DONE gate={'passed' if passed else 'failed'} "
-              f"spent={result['spent']} completed={result['completed']}", flush=True)
+            receipts = read_receipts(args.out)
+        finish(plan, out=args.out, evidence=args.out, udid=udid, bundle=bundle, port=port,
+               error=error, receipts=receipts)
     finally:
         LOCK.unlink(missing_ok=True)
 
