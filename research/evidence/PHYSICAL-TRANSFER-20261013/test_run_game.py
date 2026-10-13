@@ -123,3 +123,13 @@ def test_game_gate_refuses_a_review_of_another_manifest(plan, tmp_path):
     review["manifest_sha256"] = "other"
     with pytest.raises(ValueError, match="different manifest"):
         analyze_game.gate(plan, game_cohort(tmp_path), review)
+
+
+def test_preparation_skips_only_the_first_marker(plan):
+    calls = []
+    prepare = run_game.preparation(lambda: calls.append(1))
+    schedule = run_game.commands(plan, plan["game_recordings"][0])
+    for spec in schedule:
+        prepare(spec)
+    assert len(calls) == len(schedule)-1
+    assert schedule[0]["kind"] == "control" and schedule[0]["role"] == "start"

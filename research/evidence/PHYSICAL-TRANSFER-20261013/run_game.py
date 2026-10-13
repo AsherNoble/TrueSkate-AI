@@ -46,6 +46,20 @@ def commands(plan, recording):
     return out
 
 
+def preparation(gameplay):
+    """Screenshot check before each touch except the first marker (deviation approved 2026-10-13).
+
+    At Macba the check takes ~1.1 s, leaving ~0.4 s of the 1.5 s first slot for recorder
+    start; two attempts overran there. gameplay() runs just before the recorder starts,
+    and run_recording's foreground guard still precedes every touch.
+    """
+    def prepare(spec):
+        if spec["kind"] == "control" and spec.get("role") == "start":
+            return
+        gameplay()
+    return prepare
+
+
 class ResearchLedger:
     """What extract_recording needs from a ledger: session context and durable settlement."""
 
@@ -165,7 +179,7 @@ def main(argv=None):
                     timing=WDAActionTimingCapture(wda_port=port, expected_revision=args.wda_revision),
                     commands=commands(plan, recording),
                     perform=lambda spec: touch(spec["kind"], spec.get("request_id", spec.get("role")), spec["payload"]),
-                    guard=guard, out=out, prepare=lambda spec: gameplay(),
+                    guard=guard, out=out, prepare=preparation(gameplay),
                     prepare_lead_s=recording["prepare_lead_s"], guard_lead_s=recording["guard_lead_s"],
                     revision=args.wda_revision,
                     metadata=dict(schema="physical-transfer-game-v1", seed=plan["seed"], session=rid,
