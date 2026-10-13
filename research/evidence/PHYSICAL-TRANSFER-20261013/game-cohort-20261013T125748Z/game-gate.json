@@ -1,0 +1,261 @@
+{
+  "schema": "physical-transfer-game-gate-v1",
+  "passed": true,
+  "failures": [],
+  "admitted": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20
+  ],
+  "families": {
+    "corner_600": {
+      "clips": 5,
+      "interpretable": 5,
+      "offset_range_frames": 1
+    },
+    "middle_hold_800": {
+      "clips": 5,
+      "interpretable": 5,
+      "offset_range_frames": 1
+    },
+    "single_800": {
+      "clips": 5,
+      "interpretable": 5,
+      "offset_range_frames": 1
+    },
+    "unequal_600": {
+      "clips": 5,
+      "interpretable": 5,
+      "offset_range_frames": 0
+    }
+  },
+  "offset_range_frames": 1,
+  "offset_counts": {
+    "-1": 11,
+    "0": 9
+  },
+  "clips": [
+    {
+      "id": 1,
+      "path_id": "unequal_600",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "interpretable": true,
+      "onset_frame": 46,
+      "onset_offset_frames": -1
+    },
+    {
+      "id": 2,
+      "path_id": "corner_600",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "interpretable": true,
+      "onset_frame": 27,
+      "onset_offset_frames": 0
+    },
+    {
+      "id": 3,
+      "path_id": "middle_hold_800",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "interpretable": true,
+      "onset_frame": 20,
+      "onset_offset_frames": 0
+    },
+    {
+      "id": 4,
+      "path_id": "single_800",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "interpretable": true,
+      "onset_frame": 8,
+      "onset_offset_frames": 0
+    },
+    {
+      "id": 5,
+      "path_id": "middle_hold_800",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "interpretable": true,
+      "onset_frame": 46,
+      "onset_offset_frames": 0
+    },
+    {
+      "id": 6,
+      "path_id": "corner_600",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "interpretable": true,
+      "onset_frame": 29,
+      "onset_offset_frames": -1
+    },
+    {
+      "id": 7,
+      "path_id": "single_800",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "interpretable": true,
+      "onset_frame": 18,
+      "onset_offset_frames": 0
+    },
+    {
+      "id": 8,
+      "path_id": "unequal_600",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Good, though target ring appears to lag behind trace ever so slightly (~5 logical pts) in the 2nd segment. Barely notifcable.",
+      "interpretable": true,
+      "onset_frame": 67,
+      "onset_offset_frames": -1
+    },
+    {
+      "id": 9,
+      "path_id": "unequal_600",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Same as 8",
+      "interpretable": true,
+      "onset_frame": 21,
+      "onset_offset_frames": -1
+    },
+    {
+      "id": 10,
+      "path_id": "middle_hold_800",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "interpretable": true,
+      "onset_frame": 19,
+      "onset_offset_frames": 0
+    },
+    {
+      "id": 11,
+      "path_id": "single_800",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "interpretable": true,
+      "onset_frame": 48,
+      "onset_offset_frames": -1
+    },
+    {
+      "id": 12,
+      "path_id": "corner_600",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "interpretable": true,
+      "onset_frame": 36,
+      "onset_offset_frames": 0
+    },
+    {
+      "id": 13,
+      "path_id": "middle_hold_800",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "interpretable": true,
+      "onset_frame": 40,
+      "onset_offset_frames": -1
+    },
+    {
+      "id": 14,
+      "path_id": "unequal_600",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "interpretable": true,
+      "onset_frame": 42,
+      "onset_offset_frames": -1
+    },
+    {
+      "id": 15,
+      "path_id": "single_800",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "interpretable": true,
+      "onset_frame": 47,
+      "onset_offset_frames": -1
+    },
+    {
+      "id": 16,
+      "path_id": "corner_600",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "interpretable": true,
+      "onset_frame": 25,
+      "onset_offset_frames": -1
+    },
+    {
+      "id": 17,
+      "path_id": "unequal_600",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "interpretable": true,
+      "onset_frame": 5,
+      "onset_offset_frames": -1
+    },
+    {
+      "id": 18,
+      "path_id": "single_800",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "interpretable": true,
+      "onset_frame": 45,
+      "onset_offset_frames": 0
+    },
+    {
+      "id": 19,
+      "path_id": "middle_hold_800",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "interpretable": true,
+      "onset_frame": 64,
+      "onset_offset_frames": -1
+    },
+    {
+      "id": 20,
+      "path_id": "corner_600",
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "interpretable": true,
+      "onset_frame": 73,
+      "onset_offset_frames": 0
+    }
+  ],
+  "limitations": [
+    "rendered start/path observability only; no glow-derived release or hold timing",
+    "reset/settle does not establish identical board state",
+    "five clips per family do not bound rare failures"
+  ]
+}

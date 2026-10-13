@@ -2,7 +2,8 @@
 
 Status: **helper cohort executed 2026-10-13; frozen helper gate failed on hold
 observability only; operator-approved post-hoc hold amendment passes; game cohort
-stopped in three attempts (schedule overruns; 1 of 20 scientific requests spent)**.
+completed on the fourth attempt (20/20 admitted) and frozen Gate 4 passed at its
+one-frame limit**.
 The original pre-execution record follows unchanged, then the helper result.
 The operator authorized the parallel physical, decoder and simulator diagnostics
 on 2026-10-13. The physical prerequisite cannot currently be measured without a
@@ -135,3 +136,41 @@ preparation took 1.71 s and 1.78 s against the 1.75 s lead (Macba round-6 median
 and editor checks took 0.41–0.60 s and 0.47–0.50 s. An active Screen Sharing session
 (ScreensharingAgent ~45% CPU, WindowServer 26–29%, video wallpaper 21–29%) is the
 leading, untested explanation. The rig was verified clean afterwards.
+
+### Fourth attempt: completed, Gate 4 passed
+
+The operator disconnected Screen Sharing (the video wallpaper is unchanged; changing
+it by script timed out). Host checks then took 0.25–0.39 s (menu) and 0.27–0.29 s
+(editor). Run `20261013T125748Z` used the unchanged attempt-3 runner, re-sending
+`game-001` under the frozen schedule. Both recordings calibrated (held-out middle
+anchor −8.3 and +7.0 ms) and **all 20 scientific requests were admitted** as
+native-frame clips. Margins stayed thin: sample-slot preparation took a median of
+1.34/1.40 s and a maximum of 1.49/1.58 s against the 1.75 s lead, and recorder start
+latency was still 0.86 s, so the Screen Sharing explanation is supported by one run,
+not established. All four attempts spent **37 touches**: the frozen game cohort's
+32, plus 3 pre-roll resets, 1 start marker and the spent `game-001` request.
+
+The operator reviewed the 20 clips in the temporary review page (server stopped on
+import). **Frozen Gate 4: passed.** All 20 clips were rated meet, with none flagged
+systematic, so every family had 5/5 interpretable clips. The marked first-contact
+frame minus the first frame at or after the calibrated onset was −1 for 11 clips
+and 0 for 9: a range of exactly one native frame, **the limit, with no margin**.
+Per-family ranges were 0–1. The reviewer noted that on two `unequal_600` clips
+(8, 9) the target ring trails the trace by about 5 logical points in the second
+segment. That is the same order as the helper's 4.8–9.9 pt delivery warp.
+
+Exploratory, post-review and not gated: the −1/0 split follows where the calibrated
+onset falls within its frame interval. Clips at −1 have onset phase 0.02–0.67;
+clips at 0 have 0.34–0.97. The overlap band is about a third of a frame (~5.5 ms),
+the same order as the helper's 1.94 ms touch-began SD. Rendered contact therefore
+leads the calibrated onset by roughly half a frame, with jitter of a few
+milliseconds. Twenty clips at one park bound neither rare failures nor other parks.
+
+Evidence: [game cohort](../evidence/PHYSICAL-TRANSFER-20261013/game-cohort-20261013T125748Z/)
+(context, spend and settlement logs, per-recording plans/execution/calibration,
+clip metadata, review manifest and export, [gate](../evidence/PHYSICAL-TRANSFER-20261013/game-cohort-20261013T125748Z/game-gate.json),
+[summary](../evidence/PHYSICAL-TRANSFER-20261013/game-cohort-20261013T125748Z/summary.json),
+[provenance](../evidence/PHYSICAL-TRANSFER-20261013/game-cohort-20261013T125748Z/provenance.json)).
+Clips and originals stay on the rig, pinned by SHA-256. Gate 1 is now with the
+operator: the frozen helper gate failed (hold observability), the amended hold
+check passed 30/30, and Gate 4 passed. The learning/replay pilot has not started.

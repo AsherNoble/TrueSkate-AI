@@ -1,0 +1,15 @@
+{
+  "rig_locations": {
+    "run": "/Users/training-server/trueskate-ai-runtime/tmp/physical-transfer-game-cohort-20261013T125748Z",
+    "originals_sha256": {
+      "game-01/original.mov": "52d5b01d350fc1af79d32e1560e1d77855ba55174694aa369c895b09a6f3ac65",
+      "game-02/original.mov": "f031bfcfd81de0ba074bf8ea9c9bd6c536808c7322c3154e3e22808397542b9a"
+    }
+  },
+  "clips": "20 native-frame clip.mp4 files are not stored here; audit-20261013/manifest.json pins each meta and media SHA-256",
+  "runner_commit": "a56f52f2 (staged as learn-replay-pilot-a56f52f2)",
+  "gate_commit": "122c6a6a (analyze_game.py, committed before any game touch)",
+  "review": "operator review in the temporary local review.html; export copied unchanged to audit-20261013/review.json; server stopped on import",
+  "gate_regenerate": "python research/evidence/PHYSICAL-TRANSFER-20261013/analyze_game.py --cohort <this dir> --review <this dir>/audit-20261013/review.json --out <new file>",
+  "redactions": "none needed: no device UDID, CoreDevice identifier or Apple ID appears in these files"
+}

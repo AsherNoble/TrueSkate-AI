@@ -1,0 +1,3 @@
+{"recording": "game-01", "admitted": 10}
+{"recording": "game-02", "admitted": 10}
+GAME_COHORT_DONE admitted=20 spent=32 error=no

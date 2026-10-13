@@ -1,0 +1,211 @@
+{
+  "run": "20261013T125748Z",
+  "deviation": "re-sends game-001 (spent without a clip in attempt 3) under the frozen schedule; first-marker screenshot check skipped as in attempt 3",
+  "host_state": "Screen Sharing disconnected by the operator before the run; video wallpaper unchanged (osascript change timed out)",
+  "host_checks_after_disconnect_s": {
+    "menu": [
+      0.25,
+      0.39
+    ],
+    "editor": [
+      0.27,
+      0.29
+    ]
+  },
+  "admitted": 20,
+  "touches_spent": 32,
+  "timing": {
+    "game-01": {
+      "recorder_started_minus_host_start_s": 0.855,
+      "sample_preparation_s": {
+        "median": 1.335,
+        "max": 1.489,
+        "n": 10
+      },
+      "max_submission_lateness_s": 0.0106,
+      "calibration_heldout_middle_error_ms": -8.34,
+      "calibration_rate": 1.0002150246101669
+    },
+    "game-02": {
+      "recorder_started_minus_host_start_s": 0.856,
+      "sample_preparation_s": {
+        "median": 1.402,
+        "max": 1.58,
+        "n": 10
+      },
+      "max_submission_lateness_s": 0.0318,
+      "calibration_heldout_middle_error_ms": 6.97,
+      "calibration_rate": 0.9997335217792659
+    }
+  },
+  "prepare_lead_s": 1.75,
+  "gate4": {
+    "passed": true,
+    "offset_range_frames": 1,
+    "offset_counts": {
+      "-1": 11,
+      "0": 9
+    },
+    "families": {
+      "corner_600": {
+        "clips": 5,
+        "interpretable": 5,
+        "offset_range_frames": 1
+      },
+      "middle_hold_800": {
+        "clips": 5,
+        "interpretable": 5,
+        "offset_range_frames": 1
+      },
+      "single_800": {
+        "clips": 5,
+        "interpretable": 5,
+        "offset_range_frames": 1
+      },
+      "unequal_600": {
+        "clips": 5,
+        "interpretable": 5,
+        "offset_range_frames": 0
+      }
+    },
+    "limit_native_frames": 1
+  },
+  "onset_phase_observation": {
+    "status": "exploratory, computed after the review; not gated",
+    "definition": "phase = (calibrated onset - start time of the frame before the predicted frame) / frame interval",
+    "offset_minus_1_phase_range": [
+      0.019,
+      0.668
+    ],
+    "offset_0_phase_range": [
+      0.336,
+      0.973
+    ],
+    "per_clip": [
+      {
+        "id": 1,
+        "phase": 0.209,
+        "offset": -1
+      },
+      {
+        "id": 2,
+        "phase": 0.873,
+        "offset": 0
+      },
+      {
+        "id": 3,
+        "phase": 0.917,
+        "offset": 0
+      },
+      {
+        "id": 4,
+        "phase": 0.434,
+        "offset": 0
+      },
+      {
+        "id": 5,
+        "phase": 0.479,
+        "offset": 0
+      },
+      {
+        "id": 6,
+        "phase": 0.342,
+        "offset": -1
+      },
+      {
+        "id": 7,
+        "phase": 0.847,
+        "offset": 0
+      },
+      {
+        "id": 8,
+        "phase": 0.076,
+        "offset": -1
+      },
+      {
+        "id": 9,
+        "phase": 0.519,
+        "offset": -1
+      },
+      {
+        "id": 10,
+        "phase": 0.973,
+        "offset": 0
+      },
+      {
+        "id": 11,
+        "phase": 0.192,
+        "offset": -1
+      },
+      {
+        "id": 12,
+        "phase": 0.965,
+        "offset": 0
+      },
+      {
+        "id": 13,
+        "phase": 0.668,
+        "offset": -1
+      },
+      {
+        "id": 14,
+        "phase": 0.349,
+        "offset": -1
+      },
+      {
+        "id": 15,
+        "phase": 0.019,
+        "offset": -1
+      },
+      {
+        "id": 16,
+        "phase": 0.173,
+        "offset": -1
+      },
+      {
+        "id": 17,
+        "phase": 0.482,
+        "offset": -1
+      },
+      {
+        "id": 18,
+        "phase": 0.591,
+        "offset": 0
+      },
+      {
+        "id": 19,
+        "phase": 0.258,
+        "offset": -1
+      },
+      {
+        "id": 20,
+        "phase": 0.336,
+        "offset": 0
+      }
+    ]
+  },
+  "review": {
+    "export_sha256": "2907f4738f00fdf68aec69792b78ab8a1ca2a42cd28b8c69d68742af29a2b626",
+    "manifest_sha256": "96949dda4bf61afedf3ea92056a3b37dbe8d21372cd7f8c2820693e388a3e023",
+    "reviewer_notes": {
+      "8": "Good, though target ring appears to lag behind trace ever so slightly (~5 logical pts) in the 2nd segment. Barely notifcable.",
+      "9": "Same as 8"
+    }
+  },
+  "cumulative_spend_all_attempts": {
+    "total_touches": 37,
+    "by_kind": {
+      "sample": 21,
+      "control": 7,
+      "pre_roll_reset": 5,
+      "reset": 4
+    },
+    "frozen_game_budget": 32,
+    "beyond_frozen": {
+      "pre_roll_reset": 3,
+      "start_marker": 1,
+      "sample_resend": "game-001"
+    },
+    "source": "spend.jsonl of attempts 20261013T123538Z, T124206Z, T124924Z, T125748Z"
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "manifest_sha256": "96949dda4bf61afedf3ea92056a3b37dbe8d21372cd7f8c2820693e388a3e023",
+  "round": 20261013,
+  "samples": [
+    {
+      "id": 1,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "onset_frame": 46,
+      "release_frame": null
+    },
+    {
+      "id": 2,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "onset_frame": 27,
+      "release_frame": null
+    },
+    {
+      "id": 3,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "onset_frame": 20,
+      "release_frame": null
+    },
+    {
+      "id": 4,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "onset_frame": 8,
+      "release_frame": null
+    },
+    {
+      "id": 5,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "onset_frame": 46,
+      "release_frame": null
+    },
+    {
+      "id": 6,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "onset_frame": 29,
+      "release_frame": null
+    },
+    {
+      "id": 7,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "onset_frame": 18,
+      "release_frame": null
+    },
+    {
+      "id": 8,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Good, though target ring appears to lag behind trace ever so slightly (~5 logical pts) in the 2nd segment. Barely notifcable.",
+      "onset_frame": 67,
+      "release_frame": null
+    },
+    {
+      "id": 9,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Same as 8",
+      "onset_frame": 21,
+      "release_frame": null
+    },
+    {
+      "id": 10,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "Perfect",
+      "onset_frame": 19,
+      "release_frame": null
+    },
+    {
+      "id": 11,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 48,
+      "release_frame": null
+    },
+    {
+      "id": 12,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 36,
+      "release_frame": null
+    },
+    {
+      "id": 13,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 40,
+      "release_frame": null
+    },
+    {
+      "id": 14,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 42,
+      "release_frame": null
+    },
+    {
+      "id": 15,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 47,
+      "release_frame": null
+    },
+    {
+      "id": 16,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 25,
+      "release_frame": null
+    },
+    {
+      "id": 17,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 5,
+      "release_frame": null
+    },
+    {
+      "id": 18,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 45,
+      "release_frame": null
+    },
+    {
+      "id": 19,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 64,
+      "release_frame": null
+    },
+    {
+      "id": 20,
+      "rating": "meet",
+      "systematic": false,
+      "reason": "",
+      "onset_frame": 73,
+      "release_frame": null
+    }
+  ]
+}
