@@ -203,12 +203,14 @@ def main(argv=None):
         worker.connect()
         try:
             driver = worker.driver
-            driver.execute_script("mobile: activateApp", {"bundleId": bundle})
-            time.sleep(2)
-            if foreground() != bundle:
-                raise RuntimeError("helper did not come to the foreground (untrusted developer?)")
-            timing = WDAActionTimingCapture(wda_port=port, expected_revision=args.wda_revision)
+            # A refused launch (e.g. an untrusted developer) still leaves SpringBoard in front,
+            # so it sits inside the block that brings True Skate back.
             try:
+                driver.execute_script("mobile: activateApp", {"bundleId": bundle})
+                time.sleep(2)
+                if foreground() != bundle:
+                    raise RuntimeError("helper did not come to the foreground (untrusted developer?)")
+                timing = WDAActionTimingCapture(wda_port=port, expected_revision=args.wda_revision)
                 receipts = dispatch(plan, bundle=bundle, foreground=foreground, timing=timing,
                                     revision=args.wda_revision, out=args.out,
                                     perform=lambda payload: driver.execute("actions", payload))
