@@ -1,0 +1,14 @@
+{
+  "checked_at_utc": "2026-10-12T23:50:34.853337+00:00",
+  "initial_simulator_state": "Shutdown",
+  "final_simulator_state": "Shutdown",
+  "owned_logger_terminated": true,
+  "owned_WDA_terminated": true,
+  "owned_xcodebuild_remaining": [],
+  "localhost8199_listeners": "",
+  "runner_exit65_after_intentional_stop": true,
+  "new_action_requests": 162,
+  "measurement_requests": 160,
+  "setup_smokes": 2,
+  "automatic_retries": 0
+}

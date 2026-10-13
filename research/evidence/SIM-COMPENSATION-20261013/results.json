@@ -1,0 +1,3575 @@
+{
+  "measurement_requests": 160,
+  "setup_requests": 2,
+  "heldout_macro_rms_nominal": 0.019443153279950408,
+  "heldout_macro_rms_adjusted": 0.016608601427492622,
+  "heldout_macro_rms_reduction": 0.14578663304479267,
+  "heldout_full_pass_nominal": 0,
+  "heldout_full_pass_adjusted": 2,
+  "cases": {
+    "dev_straight": {
+      "nominal": {
+        "rms_normalized": 0.013386625083959554,
+        "max_normalized": 0.02308159361925744,
+        "release_error_ms": -9.094947017729282e-11,
+        "max_boundary_abs_ms": 2.2737367544323206e-10,
+        "callback_lag_max_ms": 12.228000000050088,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.004034506043823065,
+        "max_normalized": 0.008320037444182048,
+        "release_error_ms": 1.3642420526593924e-10,
+        "max_boundary_abs_ms": 3.637978807091713e-10,
+        "callback_lag_max_ms": 13.556999999991604,
+        "passes_full_trajectory": true
+      },
+      "payload_changed": true,
+      "split": "development"
+    },
+    "dev_corner": {
+      "nominal": {
+        "rms_normalized": 0.008095241627417319,
+        "max_normalized": 0.01842481830433569,
+        "release_error_ms": -9.094947017729282e-11,
+        "max_boundary_abs_ms": 0.05500000015672413,
+        "callback_lag_max_ms": 12.559000000010201,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.005966790007533599,
+        "max_normalized": 0.015459999978693337,
+        "release_error_ms": -9.094947017729282e-11,
+        "max_boundary_abs_ms": 9.094947017729282e-11,
+        "callback_lag_max_ms": 5.115499999874373,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "development"
+    },
+    "dev_hold": {
+      "nominal": {
+        "rms_normalized": 0.009253535115738301,
+        "max_normalized": 0.01932413849197833,
+        "release_error_ms": 16.666500000064843,
+        "max_boundary_abs_ms": 16.666500000155793,
+        "callback_lag_max_ms": 13.367500000185828,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.008323542814665241,
+        "max_normalized": 0.018478223913121684,
+        "release_error_ms": -9.094947017729282e-11,
+        "max_boundary_abs_ms": 16.666999999961263,
+        "callback_lag_max_ms": 11.124999999992724,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "development"
+    },
+    "dev_unequal": {
+      "nominal": {
+        "rms_normalized": 0.01309453608563229,
+        "max_normalized": 0.027896860762122215,
+        "release_error_ms": 33.33299999967494,
+        "max_boundary_abs_ms": 33.33299999967494,
+        "callback_lag_max_ms": 11.091500000247834,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.00835891744596872,
+        "max_normalized": 0.02303704596919766,
+        "release_error_ms": -1.8189894035458565e-10,
+        "max_boundary_abs_ms": 3.3329999999477877,
+        "callback_lag_max_ms": 10.165000000142754,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "development"
+    },
+    "straight317": {
+      "nominal": {
+        "rms_normalized": 0.011973020567664718,
+        "max_normalized": 0.020725704445358754,
+        "release_error_ms": -0.33299999994778773,
+        "max_boundary_abs_ms": 0.33299999994778773,
+        "callback_lag_max_ms": 14.914999999973588,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.008439267104217808,
+        "max_normalized": 0.016645790310895376,
+        "release_error_ms": -0.33349999988968193,
+        "max_boundary_abs_ms": 0.33349999988968193,
+        "callback_lag_max_ms": 11.620999999877313,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "heldout"
+    },
+    "straight463": {
+      "nominal": {
+        "rms_normalized": 0.012693273330167745,
+        "max_normalized": 0.021920772741364503,
+        "release_error_ms": 3.666499999973894,
+        "max_boundary_abs_ms": 3.666499999973894,
+        "callback_lag_max_ms": 12.07750000003216,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.004536452908585474,
+        "max_normalized": 0.006757791498538864,
+        "release_error_ms": 3.6670000001431617,
+        "max_boundary_abs_ms": 3.6670000001431617,
+        "callback_lag_max_ms": 13.068999999859443,
+        "passes_full_trajectory": true
+      },
+      "payload_changed": true,
+      "split": "heldout"
+    },
+    "straight739": {
+      "nominal": {
+        "rms_normalized": 0.011691053615287146,
+        "max_normalized": 0.020255721824134078,
+        "release_error_ms": -5.79399999989073,
+        "max_boundary_abs_ms": 5.79399999989073,
+        "callback_lag_max_ms": 11.078499999939595,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.0033953282502135326,
+        "max_normalized": 0.00867421811350081,
+        "release_error_ms": -5.666500000155793,
+        "max_boundary_abs_ms": 5.666500000155793,
+        "callback_lag_max_ms": 16.011500000104206,
+        "passes_full_trajectory": true
+      },
+      "payload_changed": true,
+      "split": "heldout"
+    },
+    "corner137_241": {
+      "nominal": {
+        "rms_normalized": 0.009273096338662813,
+        "max_normalized": 0.016522300994374153,
+        "release_error_ms": 21.999999999863576,
+        "max_boundary_abs_ms": 21.999999999863576,
+        "callback_lag_max_ms": 17.448000000058528,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.009538204545716692,
+        "max_normalized": 0.018283822916910254,
+        "release_error_ms": 21.749500000098124,
+        "max_boundary_abs_ms": 21.749500000098124,
+        "callback_lag_max_ms": 8.368499999733103,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": false,
+      "split": "heldout"
+    },
+    "corner219_163": {
+      "nominal": {
+        "rms_normalized": 0.014840023756183353,
+        "max_normalized": 0.02790520924627517,
+        "release_error_ms": 17.999999999863576,
+        "max_boundary_abs_ms": 17.999999999863576,
+        "callback_lag_max_ms": 11.23450000000048,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.015016644986161915,
+        "max_normalized": 0.029027164677872783,
+        "release_error_ms": 1.3330000002206361,
+        "max_boundary_abs_ms": 2.333000000084212,
+        "callback_lag_max_ms": 16.434000000344895,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "heldout"
+    },
+    "corner281_357": {
+      "nominal": {
+        "rms_normalized": 0.010926426809623364,
+        "max_normalized": 0.021728883368538676,
+        "release_error_ms": 12.00000000009095,
+        "max_boundary_abs_ms": 12.00000000009095,
+        "callback_lag_max_ms": 5.666500000188535,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.007773797268947842,
+        "max_normalized": 0.01613516845350075,
+        "release_error_ms": -4.6670000000067375,
+        "max_boundary_abs_ms": 4.6670000000067375,
+        "callback_lag_max_ms": 12.873500000068816,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "heldout"
+    },
+    "three123_197_261": {
+      "nominal": {
+        "rms_normalized": 0.012839741711754544,
+        "max_normalized": 0.02527172557989932,
+        "release_error_ms": 19.000000000136424,
+        "max_boundary_abs_ms": 19.000000000136424,
+        "callback_lag_max_ms": 12.798500000144486,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.012843814493985608,
+        "max_normalized": 0.02527171554994006,
+        "release_error_ms": 18.99999999990905,
+        "max_boundary_abs_ms": 18.99999999990905,
+        "callback_lag_max_ms": 10.792499999979555,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": false,
+      "split": "heldout"
+    },
+    "four109_157_193_227": {
+      "nominal": {
+        "rms_normalized": 0.014149976026002811,
+        "max_normalized": 0.02580785719144042,
+        "release_error_ms": 30.666999999688414,
+        "max_boundary_abs_ms": 30.666999999688414,
+        "callback_lag_max_ms": 11.543999999958032,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.007020550611803846,
+        "max_normalized": 0.015194183149830311,
+        "release_error_ms": -2.6670000000522123,
+        "max_boundary_abs_ms": 7.666500000019369,
+        "callback_lag_max_ms": 16.950500000120883,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "heldout"
+    },
+    "initial_hold117": {
+      "nominal": {
+        "rms_normalized": 0.013185944756493897,
+        "max_normalized": 0.025718918627754567,
+        "release_error_ms": 24.0,
+        "max_boundary_abs_ms": 33.00000000009095,
+        "callback_lag_max_ms": 9.18750000005275,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.005800484253072875,
+        "max_normalized": 0.013737905533131948,
+        "release_error_ms": 7.333500000071581,
+        "max_boundary_abs_ms": 16.333499999935157,
+        "callback_lag_max_ms": 12.177000000065163,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "heldout"
+    },
+    "middle_hold131": {
+      "nominal": {
+        "rms_normalized": 0.007336899893647311,
+        "max_normalized": 0.01585657667886556,
+        "release_error_ms": 12.333000000220636,
+        "max_boundary_abs_ms": 22.66600000012295,
+        "callback_lag_max_ms": 12.42950000005294,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.00880340331274487,
+        "max_normalized": 0.0206874462450547,
+        "release_error_ms": -4.3340000001044245,
+        "max_boundary_abs_ms": 22.665999999895575,
+        "callback_lag_max_ms": 8.107999999992899,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "heldout"
+    },
+    "final_hold149": {
+      "nominal": {
+        "rms_normalized": 0.010408887211480075,
+        "max_normalized": 0.02144016465443318,
+        "release_error_ms": 3.2450000003063906,
+        "max_boundary_abs_ms": 3.2450000003063906,
+        "callback_lag_max_ms": 8.34949999989476,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.0049476266716535185,
+        "max_normalized": 0.010014572222650236,
+        "release_error_ms": 3.3339999999680003,
+        "max_boundary_abs_ms": 3.3339999999680003,
+        "callback_lag_max_ms": 13.477000000193584,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "heldout"
+    },
+    "all_holds": {
+      "nominal": {
+        "rms_normalized": 0.011004769830356064,
+        "max_normalized": 0.0237388537091817,
+        "release_error_ms": 41.66599999994105,
+        "max_boundary_abs_ms": 41.66599999994105,
+        "callback_lag_max_ms": 15.106999999943582,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.010225301986023106,
+        "max_normalized": 0.024600511407182623,
+        "release_error_ms": -8.333000000129687,
+        "max_boundary_abs_ms": 1000.0,
+        "callback_lag_max_ms": 14.355999999906999,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "heldout"
+    },
+    "initial_final_holds": {
+      "nominal": {
+        "rms_normalized": 0.00981345442219149,
+        "max_normalized": 0.02200458806516953,
+        "release_error_ms": 31.000000000045475,
+        "max_boundary_abs_ms": 31.000000000045475,
+        "callback_lag_max_ms": 8.231999999907202,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.0065810949770670635,
+        "max_normalized": 0.015900020987780247,
+        "release_error_ms": -2.350000000109503,
+        "max_boundary_abs_ms": 12.604999999837673,
+        "callback_lag_max_ms": 9.606999999959953,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": true,
+      "split": "heldout"
+    },
+    "minimum_turns": {
+      "nominal": {
+        "rms_normalized": 0.03489013259278771,
+        "max_normalized": 0.06521777777031326,
+        "release_error_ms": 16.667000000052212,
+        "max_boundary_abs_ms": 16.667000000097687,
+        "callback_lag_max_ms": 8.638999999902808,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.035099560679071315,
+        "max_normalized": 0.06521777777031326,
+        "release_error_ms": 16.496000000142885,
+        "max_boundary_abs_ms": 16.66700000014316,
+        "callback_lag_max_ms": 11.882000000014159,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": false,
+      "split": "heldout"
+    },
+    "minimum_holds": {
+      "nominal": {
+        "rms_normalized": 0.03051099802021992,
+        "max_normalized": 0.06561868762622161,
+        "release_error_ms": 16.666500000110318,
+        "max_boundary_abs_ms": 33.33299999999326,
+        "callback_lag_max_ms": 7.612500000050204,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.030403988861989067,
+        "max_normalized": 0.0656194575407769,
+        "release_error_ms": 16.666500000110318,
+        "max_boundary_abs_ms": 33.33350000016253,
+        "callback_lag_max_ms": 9.230999999999767,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": false,
+      "split": "heldout"
+    },
+    "ten_minimum_legs": {
+      "nominal": {
+        "rms_normalized": 0.09555275359668358,
+        "max_normalized": 0.18217006407271716,
+        "release_error_ms": 66.66599999994105,
+        "max_boundary_abs_ms": 66.66599999994105,
+        "callback_lag_max_ms": 14.90050000006704,
+        "passes_full_trajectory": false
+      },
+      "adjusted": {
+        "rms_normalized": 0.09531210192862744,
+        "max_normalized": 0.18217006407357664,
+        "release_error_ms": 66.66649999988294,
+        "max_boundary_abs_ms": 66.66649999988294,
+        "callback_lag_max_ms": 10.26550000028692,
+        "passes_full_trajectory": false
+      },
+      "payload_changed": false,
+      "split": "heldout"
+    }
+  },
+  "metrics": [
+    {
+      "case": "final_hold149",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.0103477891314446,
+      "max_normalized": 0.021339566167216002,
+      "waypoint_arrival_errors_ms": [
+        2.3340000001044245
+      ],
+      "hold_boundary_errors_ms": [
+        2.3340000001044245,
+        3.334000000195374
+      ],
+      "release_error_ms": 3.334000000195374,
+      "max_boundary_abs_ms": 3.334000000195374,
+      "contact_duration_ms": 533.3340000001954,
+      "callbacks": 25,
+      "callback_lag_max_ms": 9.628999999677035
+    },
+    {
+      "case": "dev_corner",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.00825232144029711,
+      "max_normalized": 0.019269297529898012,
+      "waypoint_arrival_errors_ms": [
+        0.0,
+        -9.094947017729282e-11
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -9.094947017729282e-11,
+      "max_boundary_abs_ms": 9.094947017729282e-11,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 37,
+      "callback_lag_max_ms": 18.82400000022244
+    },
+    {
+      "case": "initial_hold117",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.01319023513600871,
+      "max_normalized": 0.025718918627754567,
+      "waypoint_arrival_errors_ms": [
+        24.0
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        33.00000000009095
+      ],
+      "release_error_ms": 24.0,
+      "max_boundary_abs_ms": 33.00000000009095,
+      "contact_duration_ms": 500.0,
+      "callbacks": 24,
+      "callback_lag_max_ms": 4.3459999997139676
+    },
+    {
+      "case": "corner281_357",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.007921968633217648,
+      "max_normalized": 0.016491068140990425,
+      "waypoint_arrival_errors_ms": [
+        2.3329999998568383,
+        -4.667000000234111
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -4.667000000234111,
+      "max_boundary_abs_ms": 4.667000000234111,
+      "contact_duration_ms": 633.3329999997659,
+      "callbacks": 40,
+      "callback_lag_max_ms": 12.082000000191329
+    },
+    {
+      "case": "initial_final_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.006581023589950954,
+      "max_normalized": 0.016180336621713268,
+      "waypoint_arrival_errors_ms": [
+        -6.000000000272848
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        12.70599999969636,
+        -6.000000000272848,
+        -2.334000000377273
+      ],
+      "release_error_ms": -2.334000000377273,
+      "max_boundary_abs_ms": 12.70599999969636,
+      "contact_duration_ms": 666.6659999996227,
+      "callbacks": 27,
+      "callback_lag_max_ms": 10.36100000010265
+    },
+    {
+      "case": "minimum_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.031233030809899216,
+      "max_normalized": 0.06562022745445897,
+      "waypoint_arrival_errors_ms": [
+        15.728000000126485
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        33.334000000104425,
+        15.728000000126485,
+        16.43900000017311
+      ],
+      "release_error_ms": 16.43900000017311,
+      "max_boundary_abs_ms": 33.334000000104425,
+      "contact_duration_ms": 316.4390000001731,
+      "callbacks": 8,
+      "callback_lag_max_ms": 11.572999999771127
+    },
+    {
+      "case": "all_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.009168812086656614,
+      "max_normalized": 0.024600511407182623,
+      "waypoint_arrival_errors_ms": [
+        -4.666000000077474,
+        -5.146999999931722
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        23.3909999996431,
+        1000.0,
+        1000.0,
+        -5.146999999931722,
+        -8.333000000129687
+      ],
+      "release_error_ms": -8.333000000129687,
+      "max_boundary_abs_ms": 1000.0,
+      "contact_duration_ms": 766.6669999998703,
+      "callbacks": 23,
+      "callback_lag_max_ms": 18.365999999787164
+    },
+    {
+      "case": "minimum_turns",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.03480775590671604,
+      "max_normalized": 0.06521942024931716,
+      "waypoint_arrival_errors_ms": [
+        -0.8929999999963911,
+        16.66700000014316,
+        16.667000000052212
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 16.667000000052212,
+      "max_boundary_abs_ms": 16.66700000014316,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 20,
+      "callback_lag_max_ms": 15.503000000080647
+    },
+    {
+      "case": "corner219_163",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.015108045537515932,
+      "max_normalized": 0.02790520924627517,
+      "waypoint_arrival_errors_ms": [
+        -2.3339999997406267,
+        17.74900000015623
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 17.800000000141154,
+      "max_boundary_abs_ms": 17.800000000141154,
+      "contact_duration_ms": 399.80000000014115,
+      "callbacks": 26,
+      "callback_lag_max_ms": 9.074000000055094
+    },
+    {
+      "case": "corner219_163",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.014801483354695059,
+      "max_normalized": 0.02790520924627517,
+      "waypoint_arrival_errors_ms": [
+        -2.3330000003115856,
+        17.999999999636202
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 17.999999999636202,
+      "max_boundary_abs_ms": 17.999999999636202,
+      "contact_duration_ms": 399.9999999996362,
+      "callbacks": 26,
+      "callback_lag_max_ms": 13.394999999945867
+    },
+    {
+      "case": "three123_197_261",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.01283527367285529,
+      "max_normalized": 0.025271725579339196,
+      "waypoint_arrival_errors_ms": [
+        9.865999999921769,
+        13.04199999975026,
+        18.99999999990905
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 18.99999999990905,
+      "max_boundary_abs_ms": 18.99999999990905,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 38,
+      "callback_lag_max_ms": 6.639000000177475
+    },
+    {
+      "case": "dev_hold",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.008297028390683827,
+      "max_normalized": 0.018478223913121684,
+      "waypoint_arrival_errors_ms": [
+        -1.8189894035458565e-10
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        16.666999999961263,
+        -1.8189894035458565e-10,
+        -9.094947017729282e-11
+      ],
+      "release_error_ms": -9.094947017729282e-11,
+      "max_boundary_abs_ms": 16.666999999961263,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 20,
+      "callback_lag_max_ms": 14.8549999998977
+    },
+    {
+      "case": "final_hold149",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.0049636715662321074,
+      "max_normalized": 0.010355274041196212,
+      "waypoint_arrival_errors_ms": [
+        2.3340000001044245
+      ],
+      "hold_boundary_errors_ms": [
+        2.3340000001044245,
+        3.334000000195374
+      ],
+      "release_error_ms": 3.334000000195374,
+      "max_boundary_abs_ms": 3.334000000195374,
+      "contact_duration_ms": 533.3340000001954,
+      "callbacks": 25,
+      "callback_lag_max_ms": 12.457000000267726
+    },
+    {
+      "case": "four109_157_193_227",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.006995137233976951,
+      "max_normalized": 0.015194183149830311,
+      "waypoint_arrival_errors_ms": [
+        7.6659999998955755,
+        0.6659999999865249,
+        7.665999999804626,
+        -2.6670000000522123
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -2.6670000000522123,
+      "max_boundary_abs_ms": 7.6659999998955755,
+      "contact_duration_ms": 683.3329999999478,
+      "callbacks": 43,
+      "callback_lag_max_ms": 16.358000000309403
+    },
+    {
+      "case": "ten_minimum_legs",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.09513356914206195,
+      "max_normalized": 0.18217184531924907,
+      "waypoint_arrival_errors_ms": [
+        3.637978807091713e-10,
+        16.66700000014316,
+        16.667000000052212,
+        15.663000000222382,
+        33.334000000195374,
+        33.334000000104425,
+        33.334000000013475,
+        33.33400000037727,
+        50.00000000027285,
+        50.0000000001819
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 66.66700000005221,
+      "max_boundary_abs_ms": 66.66700000005221,
+      "contact_duration_ms": 1066.6670000000522,
+      "callbacks": 62,
+      "callback_lag_max_ms": 8.641999999781547
+    },
+    {
+      "case": "dev_hold",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.00920461417243386,
+      "max_normalized": 0.019322657024961474,
+      "waypoint_arrival_errors_ms": [
+        -0.6059999997887644
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        16.666999999961263,
+        -0.6059999997887644,
+        16.666999999779364
+      ],
+      "release_error_ms": 16.666999999779364,
+      "max_boundary_abs_ms": 16.666999999961263,
+      "contact_duration_ms": 616.6669999997794,
+      "callbacks": 20,
+      "callback_lag_max_ms": 16.97600000034072
+    },
+    {
+      "case": "middle_hold131",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.0088215547659869,
+      "max_normalized": 0.020685779611914413,
+      "waypoint_arrival_errors_ms": [
+        3.6660000002593733,
+        -5.18199999978242
+      ],
+      "hold_boundary_errors_ms": [
+        3.6660000002593733,
+        22.665999999895575
+      ],
+      "release_error_ms": -5.078999999928783,
+      "max_boundary_abs_ms": 22.665999999895575,
+      "contact_duration_ms": 615.9210000000712,
+      "callbacks": 31,
+      "callback_lag_max_ms": 8.830000000216387
+    },
+    {
+      "case": "four109_157_193_227",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.006920932199753975,
+      "max_normalized": 0.015192665323195964,
+      "waypoint_arrival_errors_ms": [
+        7.666999999779364,
+        0.6669999998703133,
+        7.667000000143162,
+        -2.666000000168424
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -2.666000000168424,
+      "max_boundary_abs_ms": 7.667000000143162,
+      "contact_duration_ms": 683.3339999998316,
+      "callbacks": 40,
+      "callback_lag_max_ms": 17.93400000042311
+    },
+    {
+      "case": "dev_straight",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.013420384231399853,
+      "max_normalized": 0.02335173736667185,
+      "waypoint_arrival_errors_ms": [
+        -9.094947017729282e-11
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -9.094947017729282e-11,
+      "max_boundary_abs_ms": 9.094947017729282e-11,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 37,
+      "callback_lag_max_ms": 9.02300000007017
+    },
+    {
+      "case": "corner137_241",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.009260563282085401,
+      "max_normalized": 0.016522300993056113,
+      "waypoint_arrival_errors_ms": [
+        13.00000000009095,
+        22.00000000009095
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 22.00000000009095,
+      "max_boundary_abs_ms": 22.00000000009095,
+      "contact_duration_ms": 400.00000000009095,
+      "callbacks": 26,
+      "callback_lag_max_ms": 6.15399999969668
+    },
+    {
+      "case": "corner281_357",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.010945327480104601,
+      "max_normalized": 0.022439126558985795,
+      "waypoint_arrival_errors_ms": [
+        2.3329999998568383,
+        12.00000000009095
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 12.00000000009095,
+      "max_boundary_abs_ms": 12.00000000009095,
+      "contact_duration_ms": 650.000000000091,
+      "callbacks": 41,
+      "callback_lag_max_ms": 15.970999999808555
+    },
+    {
+      "case": "corner281_357",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.010879164637945084,
+      "max_normalized": 0.02104027743868118,
+      "waypoint_arrival_errors_ms": [
+        2.3329999998568383,
+        12.00000000009095
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 12.00000000009095,
+      "max_boundary_abs_ms": 12.00000000009095,
+      "contact_duration_ms": 650.000000000091,
+      "callbacks": 41,
+      "callback_lag_max_ms": 5.751000000145723
+    },
+    {
+      "case": "minimum_turns",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.03491770142373452,
+      "max_normalized": 0.06521613528959588,
+      "waypoint_arrival_errors_ms": [
+        -9.094947017729282e-11,
+        16.666999999688414,
+        16.667000000052212
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 16.667000000052212,
+      "max_boundary_abs_ms": 16.667000000052212,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 20,
+      "callback_lag_max_ms": 16.262000000097032
+    },
+    {
+      "case": "dev_straight",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.004043120673918023,
+      "max_normalized": 0.008320040000831244,
+      "waypoint_arrival_errors_ms": [
+        -0.6770000000869913
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.6269999999858555,
+      "max_boundary_abs_ms": 0.6770000000869913,
+      "contact_duration_ms": 599.3730000000141,
+      "callbacks": 38,
+      "callback_lag_max_ms": 16.502999999829626
+    },
+    {
+      "case": "dev_hold",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.008336367304308832,
+      "max_normalized": 0.018478223913121684,
+      "waypoint_arrival_errors_ms": [
+        -0.7939999997688574
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        16.666999999961263,
+        -0.7939999997688574,
+        -0.45599999984915485
+      ],
+      "release_error_ms": -0.45599999984915485,
+      "max_boundary_abs_ms": 16.666999999961263,
+      "contact_duration_ms": 599.5440000001508,
+      "callbacks": 20,
+      "callback_lag_max_ms": 7.395000000087748
+    },
+    {
+      "case": "ten_minimum_legs",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.09541949909290343,
+      "max_normalized": 0.1821718453178269,
+      "waypoint_arrival_errors_ms": [
+        -9.094947017729282e-11,
+        16.666999999688414,
+        16.666999999597465,
+        16.666999999961263,
+        33.33299999985684,
+        33.33299999976589,
+        33.33299999967494,
+        33.33299999958399,
+        49.9999999998181,
+        49.99999999972715
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 66.66699999959746,
+      "max_boundary_abs_ms": 66.66699999959746,
+      "contact_duration_ms": 1066.6669999995975,
+      "callbacks": 56,
+      "callback_lag_max_ms": 18.23500000000422
+    },
+    {
+      "case": "four109_157_193_227",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.014053725364913727,
+      "max_normalized": 0.02597180058882759,
+      "waypoint_arrival_errors_ms": [
+        7.269999999985885,
+        17.333999999740627,
+        24.334000000013475,
+        30.666999999688414
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 30.666999999688414,
+      "max_boundary_abs_ms": 30.666999999688414,
+      "contact_duration_ms": 716.6669999996884,
+      "callbacks": 45,
+      "callback_lag_max_ms": 12.17499999984284
+    },
+    {
+      "case": "initial_hold117",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.013248676569615684,
+      "max_normalized": 0.02571891862826204,
+      "waypoint_arrival_errors_ms": [
+        24.0
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        33.00000000009095
+      ],
+      "release_error_ms": 24.0,
+      "max_boundary_abs_ms": 33.00000000009095,
+      "contact_duration_ms": 500.0,
+      "callbacks": 24,
+      "callback_lag_max_ms": 6.877999999687745
+    },
+    {
+      "case": "corner281_357",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.0077698232148330545,
+      "max_normalized": 0.015977483097261436,
+      "waypoint_arrival_errors_ms": [
+        2.3329999998568383,
+        -4.667000000234111
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -4.667000000234111,
+      "max_boundary_abs_ms": 4.667000000234111,
+      "contact_duration_ms": 633.3329999997659,
+      "callbacks": 37,
+      "callback_lag_max_ms": 18.141000000014174
+    },
+    {
+      "case": "dev_unequal",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.008431830617920206,
+      "max_normalized": 0.023037045968209144,
+      "waypoint_arrival_errors_ms": [
+        3.3329999999477877,
+        3.3329999999477877,
+        2.7284841053187847e-10
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 2.7284841053187847e-10,
+      "max_boundary_abs_ms": 3.3329999999477877,
+      "contact_duration_ms": 700.0000000002728,
+      "callbacks": 44,
+      "callback_lag_max_ms": 5.873999999948865
+    },
+    {
+      "case": "corner281_357",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.007762979198988625,
+      "max_normalized": 0.015977483097261436,
+      "waypoint_arrival_errors_ms": [
+        2.3339999997406267,
+        -4.666000000350323
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -4.666000000350323,
+      "max_boundary_abs_ms": 4.666000000350323,
+      "contact_duration_ms": 633.3339999996497,
+      "callbacks": 40,
+      "callback_lag_max_ms": 13.187000000016269
+    },
+    {
+      "case": "corner137_241",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.009527843711268509,
+      "max_normalized": 0.017938103942318442,
+      "waypoint_arrival_errors_ms": [
+        13.00000000009095,
+        21.409000000105152
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 21.47100000017599,
+      "max_boundary_abs_ms": 21.47100000017599,
+      "contact_duration_ms": 399.471000000176,
+      "callbacks": 26,
+      "callback_lag_max_ms": 6.788999999571388
+    },
+    {
+      "case": "dev_straight",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.013407779874995281,
+      "max_normalized": 0.023081603781461478,
+      "waypoint_arrival_errors_ms": [
+        -0.567999999566382
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.567999999566382,
+      "max_boundary_abs_ms": 0.567999999566382,
+      "contact_duration_ms": 599.4320000004336,
+      "callbacks": 37,
+      "callback_lag_max_ms": 9.28699999985838
+    },
+    {
+      "case": "four109_157_193_227",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.014305509983335987,
+      "max_normalized": 0.025643913794053248,
+      "waypoint_arrival_errors_ms": [
+        7.6659999998955755,
+        16.352999999602616,
+        24.33299999967494,
+        30.17999999989479
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 30.21899999991001,
+      "max_boundary_abs_ms": 30.21899999991001,
+      "contact_duration_ms": 716.21899999991,
+      "callbacks": 45,
+      "callback_lag_max_ms": 9.308000000146421
+    },
+    {
+      "case": "dev_straight",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.013365470292923825,
+      "max_normalized": 0.0230815834570534,
+      "waypoint_arrival_errors_ms": [
+        -9.094947017729282e-11
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -9.094947017729282e-11,
+      "max_boundary_abs_ms": 9.094947017729282e-11,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 36,
+      "callback_lag_max_ms": 17.73800000000847
+    },
+    {
+      "case": "dev_corner",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.005962872370770846,
+      "max_normalized": 0.015458309191891081,
+      "waypoint_arrival_errors_ms": [
+        0.0,
+        -9.094947017729282e-11
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -9.094947017729282e-11,
+      "max_boundary_abs_ms": 9.094947017729282e-11,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 38,
+      "callback_lag_max_ms": 13.58299999992596
+    },
+    {
+      "case": "straight463",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.012679240504179118,
+      "max_normalized": 0.021920772741364503,
+      "waypoint_arrival_errors_ms": [
+        3.665999999804626
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.665999999804626,
+      "max_boundary_abs_ms": 3.665999999804626,
+      "contact_duration_ms": 466.6659999998046,
+      "callbacks": 29,
+      "callback_lag_max_ms": 13.676999999916006
+    },
+    {
+      "case": "four109_157_193_227",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.014159830796820554,
+      "max_normalized": 0.025971808916117486,
+      "waypoint_arrival_errors_ms": [
+        7.666999999779364,
+        17.33299999985684,
+        24.333000000129687,
+        30.66700000014316
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 30.66700000014316,
+      "max_boundary_abs_ms": 30.66700000014316,
+      "contact_duration_ms": 716.6670000001432,
+      "callbacks": 45,
+      "callback_lag_max_ms": 10.913000000073225
+    },
+    {
+      "case": "corner137_241",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.00926735416839062,
+      "max_normalized": 0.016522300994374153,
+      "waypoint_arrival_errors_ms": [
+        12.999999999636202,
+        21.999999999636202
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 21.999999999636202,
+      "max_boundary_abs_ms": 21.999999999636202,
+      "contact_duration_ms": 399.9999999996362,
+      "callbacks": 26,
+      "callback_lag_max_ms": 17.131000000063068
+    },
+    {
+      "case": "corner219_163",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.015387664263509937,
+      "max_normalized": 0.029027158962331205,
+      "waypoint_arrival_errors_ms": [
+        -2.3329999998568383,
+        0.5620000002345478
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 0.6039999999011343,
+      "max_boundary_abs_ms": 2.3329999998568383,
+      "contact_duration_ms": 382.60399999990113,
+      "callbacks": 25,
+      "callback_lag_max_ms": 7.540999999946507
+    },
+    {
+      "case": "ten_minimum_legs",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.09570609812154254,
+      "max_normalized": 0.1821718453178269,
+      "waypoint_arrival_errors_ms": [
+        -0.856000000203494,
+        16.666999999688414,
+        16.665999999713677,
+        16.665999999622727,
+        33.33299999985684,
+        33.33299999976589,
+        33.33299999967494,
+        33.33300000003874,
+        49.9999999998181,
+        49.99999999972715
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 66.27600000001621,
+      "max_boundary_abs_ms": 66.27600000001621,
+      "contact_duration_ms": 1066.2760000000162,
+      "callbacks": 62,
+      "callback_lag_max_ms": 17.53000000007887
+    },
+    {
+      "case": "corner219_163",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.015021676765789898,
+      "max_normalized": 0.029027158962331205,
+      "waypoint_arrival_errors_ms": [
+        -2.3329999998568383,
+        1.3330000002206361
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 1.3330000002206361,
+      "max_boundary_abs_ms": 2.3329999998568383,
+      "contact_duration_ms": 383.33300000022064,
+      "callbacks": 23,
+      "callback_lag_max_ms": 17.90099999971062
+    },
+    {
+      "case": "corner137_241",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.009236784371957702,
+      "max_normalized": 0.016522300993056113,
+      "waypoint_arrival_errors_ms": [
+        13.00000000009095,
+        22.00000000009095
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 22.00000000009095,
+      "max_boundary_abs_ms": 22.00000000009095,
+      "contact_duration_ms": 400.00000000009095,
+      "callbacks": 25,
+      "callback_lag_max_ms": 18.214000000170927
+    },
+    {
+      "case": "straight317",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.008579402604326583,
+      "max_normalized": 0.01664427051398346,
+      "waypoint_arrival_errors_ms": [
+        -0.33299999994778773
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.33299999994778773,
+      "max_boundary_abs_ms": 0.33299999994778773,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 21,
+      "callback_lag_max_ms": 17.299000000093656
+    },
+    {
+      "case": "final_hold149",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.010538460047205154,
+      "max_normalized": 0.02154076314165036,
+      "waypoint_arrival_errors_ms": [
+        2.333000000220636
+      ],
+      "hold_boundary_errors_ms": [
+        2.333000000220636,
+        3.1570000003011955
+      ],
+      "release_error_ms": 3.1570000003011955,
+      "max_boundary_abs_ms": 3.1570000003011955,
+      "contact_duration_ms": 533.1570000003012,
+      "callbacks": 25,
+      "callback_lag_max_ms": 4.1570000003048335
+    },
+    {
+      "case": "ten_minimum_legs",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.09576314316101209,
+      "max_normalized": 0.18216828282760741,
+      "waypoint_arrival_errors_ms": [
+        -9.094947017729282e-11,
+        16.665999999804626,
+        16.666000000168424,
+        16.666000000077474,
+        33.33299999985684,
+        33.33299999976589,
+        33.33300000012969,
+        33.33300000003874,
+        49.9999999998181,
+        49.99999999972715
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 66.66600000016842,
+      "max_boundary_abs_ms": 66.66600000016842,
+      "contact_duration_ms": 1066.6660000001684,
+      "callbacks": 57,
+      "callback_lag_max_ms": 19.513999999617226
+    },
+    {
+      "case": "dev_hold",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.00837230470122041,
+      "max_normalized": 0.018478223913121684,
+      "waypoint_arrival_errors_ms": [
+        -1.8189894035458565e-10
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        16.666999999961263,
+        -1.8189894035458565e-10,
+        -9.094947017729282e-11
+      ],
+      "release_error_ms": -9.094947017729282e-11,
+      "max_boundary_abs_ms": 16.666999999961263,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 19,
+      "callback_lag_max_ms": 19.236000000091735
+    },
+    {
+      "case": "dev_unequal",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.008402475968105389,
+      "max_normalized": 0.02303704596919766,
+      "waypoint_arrival_errors_ms": [
+        3.3329999999477877,
+        3.3329999999477877,
+        -1.8189894035458565e-10
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -1.8189894035458565e-10,
+      "max_boundary_abs_ms": 3.3329999999477877,
+      "contact_duration_ms": 699.9999999998181,
+      "callbacks": 44,
+      "callback_lag_max_ms": 16.027000000121916
+    },
+    {
+      "case": "four109_157_193_227",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.007045963989630742,
+      "max_normalized": 0.015194183149830311,
+      "waypoint_arrival_errors_ms": [
+        7.666999999779364,
+        0.6669999998703133,
+        7.667000000143162,
+        -2.6670000000522123
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -2.6670000000522123,
+      "max_boundary_abs_ms": 7.667000000143162,
+      "contact_duration_ms": 683.3329999999478,
+      "callbacks": 43,
+      "callback_lag_max_ms": 17.542999999932363
+    },
+    {
+      "case": "initial_hold117",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.005813629298510996,
+      "max_normalized": 0.013737957050230778,
+      "waypoint_arrival_errors_ms": [
+        7.332999999674939
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        16.33299999976589
+      ],
+      "release_error_ms": 7.332999999674939,
+      "max_boundary_abs_ms": 16.33299999976589,
+      "contact_duration_ms": 483.33299999967494,
+      "callbacks": 24,
+      "callback_lag_max_ms": 7.708999999977095
+    },
+    {
+      "case": "minimum_turns",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.03558546148494547,
+      "max_normalized": 0.06521613529130935,
+      "waypoint_arrival_errors_ms": [
+        -9.094947017729282e-11,
+        16.666000000259373,
+        16.27200000002631
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 16.32500000023356,
+      "max_boundary_abs_ms": 16.666000000259373,
+      "contact_duration_ms": 316.32500000023356,
+      "callbacks": 20,
+      "callback_lag_max_ms": 16.253999999662483
+    },
+    {
+      "case": "minimum_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.03055252538916244,
+      "max_normalized": 0.0656186876253484,
+      "waypoint_arrival_errors_ms": [
+        16.665999999804626
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        33.33299999976589,
+        16.665999999804626,
+        16.647999999986496
+      ],
+      "release_error_ms": 16.647999999986496,
+      "max_boundary_abs_ms": 33.33299999976589,
+      "contact_duration_ms": 316.6479999999865,
+      "callbacks": 8,
+      "callback_lag_max_ms": 4.716999999800464
+    },
+    {
+      "case": "minimum_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.030340485223004362,
+      "max_normalized": 0.06554329368490348,
+      "waypoint_arrival_errors_ms": [
+        16.66700000014316
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        33.31400000015492,
+        16.66700000014316,
+        16.667000000052212
+      ],
+      "release_error_ms": 16.667000000052212,
+      "max_boundary_abs_ms": 33.31400000015492,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 8,
+      "callback_lag_max_ms": 20.661999999902037
+    },
+    {
+      "case": "minimum_turns",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.034862563761840895,
+      "max_normalized": 0.06521942024931716,
+      "waypoint_arrival_errors_ms": [
+        -9.094947017729282e-11,
+        16.66700000014316,
+        16.667000000052212
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 16.667000000052212,
+      "max_boundary_abs_ms": 16.66700000014316,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 20,
+      "callback_lag_max_ms": 11.60200000003897
+    },
+    {
+      "case": "straight317",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.011989895401545905,
+      "max_normalized": 0.020725704445358754,
+      "waypoint_arrival_errors_ms": [
+        -0.33299999994778773
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.33299999994778773,
+      "max_boundary_abs_ms": 0.33299999994778773,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 20,
+      "callback_lag_max_ms": 17.348000000311004
+    },
+    {
+      "case": "dev_unequal",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.013093906669802447,
+      "max_normalized": 0.027464376453892284,
+      "waypoint_arrival_errors_ms": [
+        3.3329999999477877,
+        3.3329999999477877,
+        16.666000000259373
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 32.86099999995713,
+      "max_boundary_abs_ms": 32.86099999995713,
+      "contact_duration_ms": 732.8609999999571,
+      "callbacks": 45,
+      "callback_lag_max_ms": 15.626000000338536
+    },
+    {
+      "case": "straight739",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.0033595203973005466,
+      "max_normalized": 0.008629542222511654,
+      "waypoint_arrival_errors_ms": [
+        -6.37600000024031
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -6.233999999916705,
+      "max_boundary_abs_ms": 6.37600000024031,
+      "contact_duration_ms": 732.7660000000833,
+      "callbacks": 46,
+      "callback_lag_max_ms": 10.89799999999741
+    },
+    {
+      "case": "initial_hold117",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.005787339207634755,
+      "max_normalized": 0.013737854016033188,
+      "waypoint_arrival_errors_ms": [
+        7.334000000013475
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        16.334000000104425
+      ],
+      "release_error_ms": 7.334000000013475,
+      "max_boundary_abs_ms": 16.334000000104425,
+      "contact_duration_ms": 483.3340000000135,
+      "callbacks": 24,
+      "callback_lag_max_ms": 6.386000000020431
+    },
+    {
+      "case": "final_hold149",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.0049415400055047584,
+      "max_normalized": 0.010014572222650236,
+      "waypoint_arrival_errors_ms": [
+        2.332999999765889
+      ],
+      "hold_boundary_errors_ms": [
+        2.332999999765889,
+        3.3329999998568383
+      ],
+      "release_error_ms": 3.3329999998568383,
+      "max_boundary_abs_ms": 3.3329999998568383,
+      "contact_duration_ms": 533.3329999998568,
+      "callbacks": 22,
+      "callback_lag_max_ms": 18.533999999817752
+    },
+    {
+      "case": "dev_corner",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.005953134649296429,
+      "max_normalized": 0.015459999978330858,
+      "waypoint_arrival_errors_ms": [
+        -0.5160000000614673,
+        -0.3189999998539861
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.26199999965683674,
+      "max_boundary_abs_ms": 0.5160000000614673,
+      "contact_duration_ms": 599.7380000003432,
+      "callbacks": 38,
+      "callback_lag_max_ms": 4.920999999740161
+    },
+    {
+      "case": "dev_straight",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.01334852061165181,
+      "max_normalized": 0.0230807622171594,
+      "waypoint_arrival_errors_ms": [
+        3.637978807091713e-10
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.637978807091713e-10,
+      "max_boundary_abs_ms": 3.637978807091713e-10,
+      "contact_duration_ms": 600.0000000003638,
+      "callbacks": 37,
+      "callback_lag_max_ms": 15.169000000241795
+    },
+    {
+      "case": "straight317",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.00843429959772035,
+      "max_normalized": 0.0171018846081966,
+      "waypoint_arrival_errors_ms": [
+        -0.33399999983157613
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.33399999983157613,
+      "max_boundary_abs_ms": 0.33399999983157613,
+      "contact_duration_ms": 316.6660000001684,
+      "callbacks": 21,
+      "callback_lag_max_ms": 10.874000000058004
+    },
+    {
+      "case": "straight463",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.012691455306622227,
+      "max_normalized": 0.021920772741364503,
+      "waypoint_arrival_errors_ms": [
+        3.6669999996884144
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.6669999996884144,
+      "max_boundary_abs_ms": 3.6669999996884144,
+      "contact_duration_ms": 466.6669999996884,
+      "callbacks": 29,
+      "callback_lag_max_ms": 12.717000000066037
+    },
+    {
+      "case": "dev_corner",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.006033268062098082,
+      "max_normalized": 0.015580455869503473,
+      "waypoint_arrival_errors_ms": [
+        0.0,
+        -9.094947017729282e-11
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -9.094947017729282e-11,
+      "max_boundary_abs_ms": 9.094947017729282e-11,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 38,
+      "callback_lag_max_ms": 5.310000000008586
+    },
+    {
+      "case": "corner219_163",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.014878564157671645,
+      "max_normalized": 0.02790520924627517,
+      "waypoint_arrival_errors_ms": [
+        -3.2270000001008157,
+        18.00000000009095
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 18.00000000009095,
+      "max_boundary_abs_ms": 18.00000000009095,
+      "contact_duration_ms": 400.00000000009095,
+      "callbacks": 26,
+      "callback_lag_max_ms": 7.219000000077358
+    },
+    {
+      "case": "minimum_turns",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.03539136545142659,
+      "max_normalized": 0.06221657147698177,
+      "waypoint_arrival_errors_ms": [
+        3.637978807091713e-10,
+        16.66700000014316,
+        15.665000000080909
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 15.719000000171945,
+      "max_boundary_abs_ms": 16.66700000014316,
+      "contact_duration_ms": 315.71900000017195,
+      "callbacks": 20,
+      "callback_lag_max_ms": 8.260999999947671
+    },
+    {
+      "case": "dev_corner",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.008036245875625795,
+      "max_normalized": 0.018357487922968922,
+      "waypoint_arrival_errors_ms": [
+        -0.10999999994965037,
+        -9.094947017729282e-11
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -9.094947017729282e-11,
+      "max_boundary_abs_ms": 0.10999999994965037,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 38,
+      "callback_lag_max_ms": 13.113999999859516
+    },
+    {
+      "case": "dev_corner",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.008093604504011432,
+      "max_normalized": 0.018357487922250552,
+      "waypoint_arrival_errors_ms": [
+        0.0,
+        3.637978807091713e-10
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.637978807091713e-10,
+      "max_boundary_abs_ms": 3.637978807091713e-10,
+      "contact_duration_ms": 600.0000000003638,
+      "callbacks": 38,
+      "callback_lag_max_ms": 9.495999999671767
+    },
+    {
+      "case": "corner281_357",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.00777777132306263,
+      "max_normalized": 0.016292853809740063,
+      "waypoint_arrival_errors_ms": [
+        2.3330000003115856,
+        -4.666999999779364
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -4.666999999779364,
+      "max_boundary_abs_ms": 4.666999999779364,
+      "contact_duration_ms": 633.3330000002206,
+      "callbacks": 40,
+      "callback_lag_max_ms": 12.560000000121363
+    },
+    {
+      "case": "straight739",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.011699607204579293,
+      "max_normalized": 0.02020767460546478,
+      "waypoint_arrival_errors_ms": [
+        -5.920999999911146
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -5.920999999911146,
+      "max_boundary_abs_ms": 5.920999999911146,
+      "contact_duration_ms": 733.0790000000889,
+      "callbacks": 45,
+      "callback_lag_max_ms": 5.11899999992238
+    },
+    {
+      "case": "final_hold149",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.004933041072953216,
+      "max_normalized": 0.010014572222650236,
+      "waypoint_arrival_errors_ms": [
+        2.333999999649677
+      ],
+      "hold_boundary_errors_ms": [
+        2.333999999649677,
+        3.3339999997406267
+      ],
+      "release_error_ms": 3.3339999997406267,
+      "max_boundary_abs_ms": 3.3339999997406267,
+      "contact_duration_ms": 533.3339999997406,
+      "callbacks": 25,
+      "callback_lag_max_ms": 14.497000000119442
+    },
+    {
+      "case": "corner219_163",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.014941653296648766,
+      "max_normalized": 0.029028898057781957,
+      "waypoint_arrival_errors_ms": [
+        -2.435999999710475,
+        1.3330000002206361
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 1.3330000002206361,
+      "max_boundary_abs_ms": 2.435999999710475,
+      "contact_duration_ms": 383.33300000022064,
+      "callbacks": 25,
+      "callback_lag_max_ms": 15.388000000257307
+    },
+    {
+      "case": "straight739",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.011705012092271554,
+      "max_normalized": 0.02036797754537186,
+      "waypoint_arrival_errors_ms": [
+        -5.9629999995777325
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -5.9629999995777325,
+      "max_boundary_abs_ms": 5.9629999995777325,
+      "contact_duration_ms": 733.0370000004223,
+      "callbacks": 45,
+      "callback_lag_max_ms": 6.421000000045751
+    },
+    {
+      "case": "three123_197_261",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.012779275383711004,
+      "max_normalized": 0.025271702381549157,
+      "waypoint_arrival_errors_ms": [
+        10.333000000220636,
+        13.333000000038737,
+        18.99999999990905
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 18.99999999990905,
+      "max_boundary_abs_ms": 18.99999999990905,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 38,
+      "callback_lag_max_ms": 18.61700000017663
+    },
+    {
+      "case": "all_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.011015052383210698,
+      "max_normalized": 0.02373999207914831,
+      "waypoint_arrival_errors_ms": [
+        11.756999999954132,
+        28.666999999961263
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        23.76499999983571,
+        11.756999999954132,
+        35.0,
+        28.666999999961263,
+        41.66700000005221
+      ],
+      "release_error_ms": 41.66700000005221,
+      "max_boundary_abs_ms": 41.66700000005221,
+      "contact_duration_ms": 816.6670000000522,
+      "callbacks": 27,
+      "callback_lag_max_ms": 15.17199999989316
+    },
+    {
+      "case": "middle_hold131",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.008842748628074014,
+      "max_normalized": 0.022147264059845698,
+      "waypoint_arrival_errors_ms": [
+        3.665999999804626,
+        -4.3340000001044245
+      ],
+      "hold_boundary_errors_ms": [
+        3.665999999804626,
+        22.665999999895575
+      ],
+      "release_error_ms": -4.3340000001044245,
+      "max_boundary_abs_ms": 22.665999999895575,
+      "contact_duration_ms": 616.6659999998956,
+      "callbacks": 31,
+      "callback_lag_max_ms": 7.38599999976941
+    },
+    {
+      "case": "minimum_turns",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.03484355089599406,
+      "max_normalized": 0.06521942024931716,
+      "waypoint_arrival_errors_ms": [
+        3.637978807091713e-10,
+        16.66700000014316,
+        16.667000000052212
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 16.667000000052212,
+      "max_boundary_abs_ms": 16.66700000014316,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 20,
+      "callback_lag_max_ms": 5.3039999997963605
+    },
+    {
+      "case": "dev_hold",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.009484987671899463,
+      "max_normalized": 0.01932414655803036,
+      "waypoint_arrival_errors_ms": [
+        2.7284841053187847e-10
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        15.597000000161643,
+        2.7284841053187847e-10,
+        16.543999999976222
+      ],
+      "release_error_ms": 16.543999999976222,
+      "max_boundary_abs_ms": 16.543999999976222,
+      "contact_duration_ms": 616.5439999999762,
+      "callbacks": 20,
+      "callback_lag_max_ms": 9.759000000030937
+    },
+    {
+      "case": "straight739",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.003395925261535415,
+      "max_normalized": 0.00871847393508568,
+      "waypoint_arrival_errors_ms": [
+        -5.665999999986525
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -5.665999999986525,
+      "max_boundary_abs_ms": 5.665999999986525,
+      "contact_duration_ms": 733.3340000000135,
+      "callbacks": 43,
+      "callback_lag_max_ms": 18.553999999767257
+    },
+    {
+      "case": "three123_197_261",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.012994208355283619,
+      "max_normalized": 0.025271705520540918,
+      "waypoint_arrival_errors_ms": [
+        10.333999999649677,
+        13.333999999922526,
+        18.811999999928958
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 18.866999999903783,
+      "max_boundary_abs_ms": 18.866999999903783,
+      "contact_duration_ms": 599.8669999999038,
+      "callbacks": 38,
+      "callback_lag_max_ms": 14.059999999972206
+    },
+    {
+      "case": "straight739",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.0034514486766630543,
+      "max_normalized": 0.008864308232943846,
+      "waypoint_arrival_errors_ms": [
+        -5.665999999986525
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -5.665999999986525,
+      "max_boundary_abs_ms": 5.665999999986525,
+      "contact_duration_ms": 733.3340000000135,
+      "callbacks": 46,
+      "callback_lag_max_ms": 16.243999999915104
+    },
+    {
+      "case": "final_hold149",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.01046998529151555,
+      "max_normalized": 0.020729646961199555,
+      "waypoint_arrival_errors_ms": [
+        2.1689999997252016
+      ],
+      "hold_boundary_errors_ms": [
+        2.1689999997252016,
+        2.794999999623542
+      ],
+      "release_error_ms": 2.794999999623542,
+      "max_boundary_abs_ms": 2.794999999623542,
+      "contact_duration_ms": 532.7949999996235,
+      "callbacks": 25,
+      "callback_lag_max_ms": 7.070000000112486
+    },
+    {
+      "case": "initial_final_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.006581166364183173,
+      "max_normalized": 0.01590001730701672,
+      "waypoint_arrival_errors_ms": [
+        -6.000000000272848
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        11.953999999775988,
+        -6.000000000272848,
+        -2.3339999999225256
+      ],
+      "release_error_ms": -2.3339999999225256,
+      "max_boundary_abs_ms": 11.953999999775988,
+      "contact_duration_ms": 666.6660000000775,
+      "callbacks": 27,
+      "callback_lag_max_ms": 7.918000000245229
+    },
+    {
+      "case": "initial_final_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.00980637831300168,
+      "max_normalized": 0.022004588065387874,
+      "waypoint_arrival_errors_ms": [
+        10.667000000052212
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        29.66700000041601,
+        10.667000000052212,
+        31.00000000027285
+      ],
+      "release_error_ms": 31.00000000027285,
+      "max_boundary_abs_ms": 31.00000000027285,
+      "contact_duration_ms": 700.0000000002728,
+      "callbacks": 28,
+      "callback_lag_max_ms": 4.217999999582389
+    },
+    {
+      "case": "straight739",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.011673371578099171,
+      "max_normalized": 0.020303769042803375,
+      "waypoint_arrival_errors_ms": [
+        -5.666999999870313
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -5.666999999870313,
+      "max_boundary_abs_ms": 5.666999999870313,
+      "contact_duration_ms": 733.3330000001297,
+      "callbacks": 45,
+      "callback_lag_max_ms": 16.024000000015803
+    },
+    {
+      "case": "three123_197_261",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.012852355315115927,
+      "max_normalized": 0.025271725579899252,
+      "waypoint_arrival_errors_ms": [
+        10.333000000220636,
+        13.333000000038737,
+        18.99999999990905
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 18.99999999990905,
+      "max_boundary_abs_ms": 18.99999999990905,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 38,
+      "callback_lag_max_ms": 7.524999999986903
+    },
+    {
+      "case": "corner281_357",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.010907526139142126,
+      "max_normalized": 0.02103858863372969,
+      "waypoint_arrival_errors_ms": [
+        1.6500000001033186,
+        12.00000000009095
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 12.00000000009095,
+      "max_boundary_abs_ms": 12.00000000009095,
+      "contact_duration_ms": 650.000000000091,
+      "callbacks": 41,
+      "callback_lag_max_ms": 4.922999999962485
+    },
+    {
+      "case": "corner137_241",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.009566403288231757,
+      "max_normalized": 0.01937880835435376,
+      "waypoint_arrival_errors_ms": [
+        12.026000000048953,
+        22.00000000009095
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 22.00000000009095,
+      "max_boundary_abs_ms": 22.00000000009095,
+      "contact_duration_ms": 400.00000000009095,
+      "callbacks": 26,
+      "callback_lag_max_ms": 9.947999999894819
+    },
+    {
+      "case": "initial_hold117",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.013181654376979083,
+      "max_normalized": 0.025718918627754567,
+      "waypoint_arrival_errors_ms": [
+        24.0
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        33.00000000009095
+      ],
+      "release_error_ms": 24.0,
+      "max_boundary_abs_ms": 33.00000000009095,
+      "contact_duration_ms": 500.0,
+      "callbacks": 24,
+      "callback_lag_max_ms": 11.497000000417756
+    },
+    {
+      "case": "dev_unequal",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.013220420394059088,
+      "max_normalized": 0.02823959735176267,
+      "waypoint_arrival_errors_ms": [
+        3.3329999999477877,
+        3.3329999999477877,
+        16.666999999688414
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 33.33299999967494,
+      "max_boundary_abs_ms": 33.33299999967494,
+      "contact_duration_ms": 733.3329999996749,
+      "callbacks": 45,
+      "callback_lag_max_ms": 4.194999999981519
+    },
+    {
+      "case": "three123_197_261",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.012843690563084412,
+      "max_normalized": 0.02515206410139252,
+      "waypoint_arrival_errors_ms": [
+        10.333000000220636,
+        13.333000000038737,
+        18.99999999990905
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 18.99999999990905,
+      "max_boundary_abs_ms": 18.99999999990905,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 38,
+      "callback_lag_max_ms": 16.775000000052387
+    },
+    {
+      "case": "final_hold149",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.010326419979481583,
+      "max_normalized": 0.021898747606314675,
+      "waypoint_arrival_errors_ms": [
+        2.333000000220636
+      ],
+      "hold_boundary_errors_ms": [
+        2.333000000220636,
+        3.3330000003115856
+      ],
+      "release_error_ms": 3.3330000003115856,
+      "max_boundary_abs_ms": 3.3330000003115856,
+      "contact_duration_ms": 533.3330000003116,
+      "callbacks": 25,
+      "callback_lag_max_ms": 16.026000000238128
+    },
+    {
+      "case": "dev_unequal",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.013014246041092543,
+      "max_normalized": 0.02823960876264568,
+      "waypoint_arrival_errors_ms": [
+        3.3329999999477877,
+        3.176000000003114,
+        16.666999999688414
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 33.33299999967494,
+      "max_boundary_abs_ms": 33.33299999967494,
+      "contact_duration_ms": 733.3329999996749,
+      "callbacks": 43,
+      "callback_lag_max_ms": 19.201999999950203
+    },
+    {
+      "case": "ten_minimum_legs",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.09535521878455604,
+      "max_normalized": 0.18217184531924907,
+      "waypoint_arrival_errors_ms": [
+        3.637978807091713e-10,
+        16.66700000014316,
+        16.667000000052212,
+        16.666999999961263,
+        33.334000000195374,
+        33.334000000104425,
+        33.334000000013475,
+        33.33400000037727,
+        50.00000000027285,
+        50.0000000001819
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 66.66700000005221,
+      "max_boundary_abs_ms": 66.66700000005221,
+      "contact_duration_ms": 1066.6670000000522,
+      "callbacks": 62,
+      "callback_lag_max_ms": 13.858000000254833
+    },
+    {
+      "case": "initial_final_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.009820530531381301,
+      "max_normalized": 0.022004588065387874,
+      "waypoint_arrival_errors_ms": [
+        10.667000000052212
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        29.666999999961263,
+        10.667000000052212,
+        31.00000000027285
+      ],
+      "release_error_ms": 31.00000000027285,
+      "max_boundary_abs_ms": 31.00000000027285,
+      "contact_duration_ms": 700.0000000002728,
+      "callbacks": 28,
+      "callback_lag_max_ms": 6.667000000106782
+    },
+    {
+      "case": "straight739",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.011682500025994998,
+      "max_normalized": 0.02020767460515861,
+      "waypoint_arrival_errors_ms": [
+        -5.665999999986525
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -5.665999999986525,
+      "max_boundary_abs_ms": 5.665999999986525,
+      "contact_duration_ms": 733.3340000000135,
+      "callbacks": 45,
+      "callback_lag_max_ms": 15.735999999833439
+    },
+    {
+      "case": "dev_straight",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.003984362395677914,
+      "max_normalized": 0.008320034887532851,
+      "waypoint_arrival_errors_ms": [
+        3.637978807091713e-10
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.637978807091713e-10,
+      "max_boundary_abs_ms": 3.637978807091713e-10,
+      "contact_duration_ms": 600.0000000003638,
+      "callbacks": 38,
+      "callback_lag_max_ms": 7.372000000032131
+    },
+    {
+      "case": "corner219_163",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.014729207588285125,
+      "max_normalized": 0.02790520924627517,
+      "waypoint_arrival_errors_ms": [
+        -3.3480000001363805,
+        18.00000000009095
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 18.00000000009095,
+      "max_boundary_abs_ms": 18.00000000009095,
+      "contact_duration_ms": 400.00000000009095,
+      "callbacks": 26,
+      "callback_lag_max_ms": 15.606000000389031
+    },
+    {
+      "case": "all_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.010396645409293538,
+      "max_normalized": 0.0237388537091817,
+      "waypoint_arrival_errors_ms": [
+        11.99999999990905,
+        28.24599999977363
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        23.892999999967287,
+        11.99999999990905,
+        35.0,
+        28.24599999977363,
+        41.66599999971368
+      ],
+      "release_error_ms": 41.66599999971368,
+      "max_boundary_abs_ms": 41.66599999971368,
+      "contact_duration_ms": 816.6659999997137,
+      "callbacks": 26,
+      "callback_lag_max_ms": 19.072000000051048
+    },
+    {
+      "case": "middle_hold131",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.007277099452135394,
+      "max_normalized": 0.01585488589162174,
+      "waypoint_arrival_errors_ms": [
+        3.6670000001431617,
+        12.334000000104425
+      ],
+      "hold_boundary_errors_ms": [
+        3.6670000001431617,
+        22.66700000023411
+      ],
+      "release_error_ms": 12.334000000104425,
+      "max_boundary_abs_ms": 22.66700000023411,
+      "contact_duration_ms": 633.3340000001044,
+      "callbacks": 32,
+      "callback_lag_max_ms": 9.919000000081724
+    },
+    {
+      "case": "straight317",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.008439288445043477,
+      "max_normalized": 0.016645790310895376,
+      "waypoint_arrival_errors_ms": [
+        -0.33399999983157613
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.33399999983157613,
+      "max_boundary_abs_ms": 0.33399999983157613,
+      "contact_duration_ms": 316.6660000001684,
+      "callbacks": 21,
+      "callback_lag_max_ms": 12.367999999696622
+    },
+    {
+      "case": "corner281_357",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.010947894051106181,
+      "max_normalized": 0.02241748929839617,
+      "waypoint_arrival_errors_ms": [
+        2.3339999997406267,
+        11.989000000005035
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 12.00000000009095,
+      "max_boundary_abs_ms": 12.00000000009095,
+      "contact_duration_ms": 650.000000000091,
+      "callbacks": 41,
+      "callback_lag_max_ms": 5.582000000231346
+    },
+    {
+      "case": "straight739",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.0033947312388916497,
+      "max_normalized": 0.008629962291915939,
+      "waypoint_arrival_errors_ms": [
+        -5.667000000325061
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -5.667000000325061,
+      "max_boundary_abs_ms": 5.667000000325061,
+      "contact_duration_ms": 733.3329999996749,
+      "callbacks": 46,
+      "callback_lag_max_ms": 15.779000000293308
+    },
+    {
+      "case": "straight463",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.0045554265640021996,
+      "max_normalized": 0.006757792207838197,
+      "waypoint_arrival_errors_ms": [
+        3.6670000001431617
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.6670000001431617,
+      "max_boundary_abs_ms": 3.6670000001431617,
+      "contact_duration_ms": 466.66700000014316,
+      "callbacks": 30,
+      "callback_lag_max_ms": 12.053999999807274
+    },
+    {
+      "case": "ten_minimum_legs",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.09526898507269883,
+      "max_normalized": 0.18216828282932637,
+      "waypoint_arrival_errors_ms": [
+        -0.0009999999747378752,
+        16.11300000040501,
+        16.666000000168424,
+        16.666000000077474,
+        33.333000000311586,
+        33.333000000220636,
+        33.33300000012969,
+        33.33300000003874,
+        49.99900000038906,
+        49.99900000029811
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 66.66600000016842,
+      "max_boundary_abs_ms": 66.66600000016842,
+      "contact_duration_ms": 1066.6660000001684,
+      "callbacks": 62,
+      "callback_lag_max_ms": 6.673000000319007
+    },
+    {
+      "case": "four109_157_193_227",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.007093280390460111,
+      "max_normalized": 0.016139400562638517,
+      "waypoint_arrival_errors_ms": [
+        7.4259999995920225,
+        0.6659999999865249,
+        7.665999999804626,
+        -2.6670000000522123
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -2.6670000000522123,
+      "max_boundary_abs_ms": 7.665999999804626,
+      "contact_duration_ms": 683.3329999999478,
+      "callbacks": 43,
+      "callback_lag_max_ms": 5.703000000266911
+    },
+    {
+      "case": "straight317",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.01192137287374931,
+      "max_normalized": 0.020725704445358754,
+      "waypoint_arrival_errors_ms": [
+        -0.33299999994778773
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.33299999994778773,
+      "max_boundary_abs_ms": 0.33299999994778773,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 20,
+      "callback_lag_max_ms": 14.271999999891705
+    },
+    {
+      "case": "straight317",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.011959350638529013,
+      "max_normalized": 0.020725704445358754,
+      "waypoint_arrival_errors_ms": [
+        -0.3330000004025351
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.3330000004025351,
+      "max_boundary_abs_ms": 0.3330000004025351,
+      "contact_duration_ms": 316.66699999959746,
+      "callbacks": 20,
+      "callback_lag_max_ms": 12.780999999904452
+    },
+    {
+      "case": "minimum_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.03020866201387852,
+      "max_normalized": 0.0656186876253484,
+      "waypoint_arrival_errors_ms": [
+        16.666999999688414
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        33.33299999976589,
+        16.666999999688414,
+        16.667000000052212
+      ],
+      "release_error_ms": 16.667000000052212,
+      "max_boundary_abs_ms": 33.33299999976589,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 8,
+      "callback_lag_max_ms": 16.82100000016362
+    },
+    {
+      "case": "all_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.01026314848746957,
+      "max_normalized": 0.024600511408006304,
+      "waypoint_arrival_errors_ms": [
+        -4.666000000077474,
+        -4.666000000350323
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        24.333999999649677,
+        1000.0,
+        1000.0,
+        -4.666000000350323,
+        -8.333000000129687
+      ],
+      "release_error_ms": -8.333000000129687,
+      "max_boundary_abs_ms": 1000.0,
+      "contact_duration_ms": 766.6669999998703,
+      "callbacks": 25,
+      "callback_lag_max_ms": 6.526000000121712
+    },
+    {
+      "case": "dev_hold",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.009253551249825222,
+      "max_normalized": 0.01932415386803526,
+      "waypoint_arrival_errors_ms": [
+        -0.0009999996109399945
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        16.560000000117725,
+        -0.0009999996109399945,
+        16.666000000350323
+      ],
+      "release_error_ms": 16.666000000350323,
+      "max_boundary_abs_ms": 16.666000000350323,
+      "contact_duration_ms": 616.6660000003503,
+      "callbacks": 20,
+      "callback_lag_max_ms": 7.11200000023382
+    },
+    {
+      "case": "dev_hold",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.00925351898165138,
+      "max_normalized": 0.019324130425926303,
+      "waypoint_arrival_errors_ms": [
+        -1.8189894035458565e-10
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        16.666999999961263,
+        -1.8189894035458565e-10,
+        16.666999999779364
+      ],
+      "release_error_ms": 16.666999999779364,
+      "max_boundary_abs_ms": 16.666999999961263,
+      "contact_duration_ms": 616.6669999997794,
+      "callbacks": 20,
+      "callback_lag_max_ms": 17.897000000175467
+    },
+    {
+      "case": "three123_197_261",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.012835792860424676,
+      "max_normalized": 0.025271725579899252,
+      "waypoint_arrival_errors_ms": [
+        10.334000000104425,
+        13.333999999922526,
+        18.99999999990905
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 18.99999999990905,
+      "max_boundary_abs_ms": 18.99999999990905,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 38,
+      "callback_lag_max_ms": 11.279000000286032
+    },
+    {
+      "case": "minimum_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.030469470651277406,
+      "max_normalized": 0.06561868762709483,
+      "waypoint_arrival_errors_ms": [
+        16.665999999804626
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        33.333000000220636,
+        16.665999999804626,
+        16.666000000168424
+      ],
+      "release_error_ms": 16.666000000168424,
+      "max_boundary_abs_ms": 33.333000000220636,
+      "contact_duration_ms": 316.6660000001684,
+      "callbacks": 8,
+      "callback_lag_max_ms": 7.581999999729305
+    },
+    {
+      "case": "straight317",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.011986690496800423,
+      "max_normalized": 0.020725704445358754,
+      "waypoint_arrival_errors_ms": [
+        -0.33299999994778773
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.33299999994778773,
+      "max_boundary_abs_ms": 0.33299999994778773,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 20,
+      "callback_lag_max_ms": 15.558000000055472
+    },
+    {
+      "case": "initial_hold117",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.013142958635901621,
+      "max_normalized": 0.025331662354772487,
+      "waypoint_arrival_errors_ms": [
+        24.0
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        32.43799999991825
+      ],
+      "release_error_ms": 24.0,
+      "max_boundary_abs_ms": 32.43799999991825,
+      "contact_duration_ms": 500.0,
+      "callbacks": 24,
+      "callback_lag_max_ms": 19.653000000289467
+    },
+    {
+      "case": "minimum_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.030502132429682523,
+      "max_normalized": 0.06561868762709483,
+      "waypoint_arrival_errors_ms": [
+        16.666000000259373
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        33.333000000220636,
+        16.666000000259373,
+        16.666000000168424
+      ],
+      "release_error_ms": 16.666000000168424,
+      "max_boundary_abs_ms": 33.333000000220636,
+      "contact_duration_ms": 316.6660000001684,
+      "callbacks": 8,
+      "callback_lag_max_ms": 6.32099999984348
+    },
+    {
+      "case": "middle_hold131",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.008751728323892823,
+      "max_normalized": 0.0206874462450547,
+      "waypoint_arrival_errors_ms": [
+        2.9470000001419976,
+        -4.333999999649677
+      ],
+      "hold_boundary_errors_ms": [
+        2.9470000001419976,
+        22.666000000350323
+      ],
+      "release_error_ms": -4.333999999649677,
+      "max_boundary_abs_ms": 22.666000000350323,
+      "contact_duration_ms": 616.6660000003503,
+      "callbacks": 31,
+      "callback_lag_max_ms": 6.5129999998134736
+    },
+    {
+      "case": "straight463",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.00453587290202631,
+      "max_normalized": 0.0067577914980654725,
+      "waypoint_arrival_errors_ms": [
+        3.6670000001431617
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.6670000001431617,
+      "max_boundary_abs_ms": 3.6670000001431617,
+      "contact_duration_ms": 466.66700000014316,
+      "callbacks": 29,
+      "callback_lag_max_ms": 4.070999999839842
+    },
+    {
+      "case": "ten_minimum_legs",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.0953994090718246,
+      "max_normalized": 0.18216828282760741,
+      "waypoint_arrival_errors_ms": [
+        -9.094947017729282e-11,
+        16.665999999804626,
+        16.665999999713677,
+        16.666000000077474,
+        33.33299999985684,
+        33.33299999976589,
+        33.33299999967494,
+        33.07599999989179,
+        49.9999999998181,
+        49.99999999972715
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 66.66599999971368,
+      "max_boundary_abs_ms": 66.66599999971368,
+      "contact_duration_ms": 1066.6659999997137,
+      "callbacks": 62,
+      "callback_lag_max_ms": 12.27100000005521
+    },
+    {
+      "case": "straight463",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.004475802727823475,
+      "max_normalized": 0.006757791498538864,
+      "waypoint_arrival_errors_ms": [
+        3.6670000001431617
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.6670000001431617,
+      "max_boundary_abs_ms": 3.6670000001431617,
+      "contact_duration_ms": 466.66700000014316,
+      "callbacks": 28,
+      "callback_lag_max_ms": 17.93299999962983
+    },
+    {
+      "case": "dev_unequal",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.008292131248147013,
+      "max_normalized": 0.02303704596919766,
+      "waypoint_arrival_errors_ms": [
+        3.3329999999477877,
+        3.3329999999477877,
+        -1.8189894035458565e-10
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -1.8189894035458565e-10,
+      "max_boundary_abs_ms": 3.3329999999477877,
+      "contact_duration_ms": 699.9999999998181,
+      "callbacks": 44,
+      "callback_lag_max_ms": 14.44900000024063
+    },
+    {
+      "case": "dev_straight",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.00405538970002207,
+      "max_normalized": 0.008386938743714215,
+      "waypoint_arrival_errors_ms": [
+        3.637978807091713e-10
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.637978807091713e-10,
+      "max_boundary_abs_ms": 3.637978807091713e-10,
+      "contact_duration_ms": 600.0000000003638,
+      "callbacks": 38,
+      "callback_lag_max_ms": 10.611000000153581
+    },
+    {
+      "case": "straight463",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.004537032915144638,
+      "max_normalized": 0.006757791498538864,
+      "waypoint_arrival_errors_ms": [
+        3.6669999996884144
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.6669999996884144,
+      "max_boundary_abs_ms": 3.6669999996884144,
+      "contact_duration_ms": 466.6669999996884,
+      "callbacks": 30,
+      "callback_lag_max_ms": 14.083999999911612
+    },
+    {
+      "case": "corner137_241",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.009448457247901915,
+      "max_normalized": 0.016524716403602136,
+      "waypoint_arrival_errors_ms": [
+        12.855000000115979,
+        20.906000000351924
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 21.07400000038251,
+      "max_boundary_abs_ms": 21.07400000038251,
+      "contact_duration_ms": 399.0740000003825,
+      "callbacks": 26,
+      "callback_lag_max_ms": 17.19199999979537
+    },
+    {
+      "case": "straight317",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.00843924576339214,
+      "max_normalized": 0.016645790310895376,
+      "waypoint_arrival_errors_ms": [
+        -0.33299999994778773
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.33299999994778773,
+      "max_boundary_abs_ms": 0.33299999994778773,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 21,
+      "callback_lag_max_ms": 6.163000000015018
+    },
+    {
+      "case": "final_hold149",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.0049537133378022786,
+      "max_normalized": 0.01001457222204113,
+      "waypoint_arrival_errors_ms": [
+        2.0960000000231958
+      ],
+      "hold_boundary_errors_ms": [
+        2.0960000000231958,
+        3.334000000195374
+      ],
+      "release_error_ms": 3.334000000195374,
+      "max_boundary_abs_ms": 3.334000000195374,
+      "contact_duration_ms": 533.3340000001954,
+      "callbacks": 25,
+      "callback_lag_max_ms": 10.985999999775231
+    },
+    {
+      "case": "dev_corner",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.008096878750823204,
+      "max_normalized": 0.018492148685702457,
+      "waypoint_arrival_errors_ms": [
+        0.0,
+        -0.41100000007645576
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -0.21500000011656084,
+      "max_boundary_abs_ms": 0.41100000007645576,
+      "contact_duration_ms": 599.7849999998834,
+      "callbacks": 38,
+      "callback_lag_max_ms": 12.004000000160886
+    },
+    {
+      "case": "straight463",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.012765428257396958,
+      "max_normalized": 0.021920772741364503,
+      "waypoint_arrival_errors_ms": [
+        3.6660000002593733
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.6660000002593733,
+      "max_boundary_abs_ms": 3.6660000002593733,
+      "contact_duration_ms": 466.6660000002594,
+      "callbacks": 29,
+      "callback_lag_max_ms": 11.437999999998283
+    },
+    {
+      "case": "corner219_163",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.015011613206533932,
+      "max_normalized": 0.02902717039341436,
+      "waypoint_arrival_errors_ms": [
+        -2.3330000003115856,
+        1.3339999996496772
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 1.3339999996496772,
+      "max_boundary_abs_ms": 2.3330000003115856,
+      "contact_duration_ms": 383.3339999996497,
+      "callbacks": 25,
+      "callback_lag_max_ms": 17.480000000432483
+    },
+    {
+      "case": "all_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.01100615841654373,
+      "max_normalized": 0.023738821090607192,
+      "waypoint_arrival_errors_ms": [
+        11.99999999990905,
+        28.326999999910186
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        24.33299999976589,
+        11.99999999990905,
+        35.0,
+        28.326999999910186,
+        41.66599999971368
+      ],
+      "release_error_ms": 41.66599999971368,
+      "max_boundary_abs_ms": 41.66599999971368,
+      "contact_duration_ms": 816.6659999997137,
+      "callbacks": 27,
+      "callback_lag_max_ms": 15.041999999994005
+    },
+    {
+      "case": "dev_hold",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.008310718325021648,
+      "max_normalized": 0.018478223913121684,
+      "waypoint_arrival_errors_ms": [
+        -1.8189894035458565e-10
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        16.666999999961263,
+        -1.8189894035458565e-10,
+        -9.094947017729282e-11
+      ],
+      "release_error_ms": -9.094947017729282e-11,
+      "max_boundary_abs_ms": 16.666999999961263,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 20,
+      "callback_lag_max_ms": 6.706000000122003
+    },
+    {
+      "case": "initial_hold117",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.005778226177433449,
+      "max_normalized": 0.013737854016080008,
+      "waypoint_arrival_errors_ms": [
+        7.334000000013475
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        16.333999999649677
+      ],
+      "release_error_ms": 7.334000000013475,
+      "max_boundary_abs_ms": 16.333999999649677,
+      "contact_duration_ms": 483.3340000000135,
+      "callbacks": 24,
+      "callback_lag_max_ms": 16.955999999936466
+    },
+    {
+      "case": "initial_hold117",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.005814638762426249,
+      "max_normalized": 0.013737957050183889,
+      "waypoint_arrival_errors_ms": [
+        7.333000000129687
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        16.333000000220636
+      ],
+      "release_error_ms": 7.333000000129687,
+      "max_boundary_abs_ms": 16.333000000220636,
+      "contact_duration_ms": 483.3330000001297,
+      "callbacks": 24,
+      "callback_lag_max_ms": 16.64500000015323
+    },
+    {
+      "case": "all_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.010225922724095959,
+      "max_normalized": 0.024600511407182623,
+      "waypoint_arrival_errors_ms": [
+        -4.666000000077474,
+        -4.6659999998955755
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        24.334000000104425,
+        1000.0,
+        1000.0,
+        -4.6659999998955755,
+        -8.333000000129687
+      ],
+      "release_error_ms": -8.333000000129687,
+      "max_boundary_abs_ms": 1000.0,
+      "contact_duration_ms": 766.6669999998703,
+      "callbacks": 25,
+      "callback_lag_max_ms": 16.572999999880267
+    },
+    {
+      "case": "three123_197_261",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.012954034227045556,
+      "max_normalized": 0.02527172557989939,
+      "waypoint_arrival_errors_ms": [
+        10.334000000104425,
+        13.334000000377273,
+        19.000000000363798
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 19.000000000363798,
+      "max_boundary_abs_ms": 19.000000000363798,
+      "contact_duration_ms": 600.0000000003638,
+      "callbacks": 38,
+      "callback_lag_max_ms": 13.171999999940454
+    },
+    {
+      "case": "initial_final_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.006618285178561679,
+      "max_normalized": 0.01590001939955697,
+      "waypoint_arrival_errors_ms": [
+        -6.239000000237866
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        13.00000000009095,
+        -6.239000000237866,
+        -2.372999999937747
+      ],
+      "release_error_ms": -2.372999999937747,
+      "max_boundary_abs_ms": 13.00000000009095,
+      "contact_duration_ms": 666.6270000000623,
+      "callbacks": 27,
+      "callback_lag_max_ms": 8.852999999817257
+    },
+    {
+      "case": "ten_minimum_legs",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.09512606259796107,
+      "max_normalized": 0.18216828282932637,
+      "waypoint_arrival_errors_ms": [
+        3.637978807091713e-10,
+        16.666000000259373,
+        16.666000000168424,
+        16.666000000077474,
+        32.726000000366184,
+        33.333000000220636,
+        33.33300000012969,
+        33.33300000003874,
+        50.00000000027285,
+        50.0000000001819
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 66.66600000016842,
+      "max_boundary_abs_ms": 66.66600000016842,
+      "contact_duration_ms": 1066.6660000001684,
+      "callbacks": 62,
+      "callback_lag_max_ms": 6.018000000040047
+    },
+    {
+      "case": "middle_hold131",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.007384390850315059,
+      "max_normalized": 0.01585657667886556,
+      "waypoint_arrival_errors_ms": [
+        3.6660000002593733,
+        12.333000000220636
+      ],
+      "hold_boundary_errors_ms": [
+        3.6660000002593733,
+        22.665999999895575
+      ],
+      "release_error_ms": 12.333000000220636,
+      "max_boundary_abs_ms": 22.665999999895575,
+      "contact_duration_ms": 633.3330000002206,
+      "callbacks": 32,
+      "callback_lag_max_ms": 5.991999999878317
+    },
+    {
+      "case": "three123_197_261",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.01282832578532059,
+      "max_normalized": 0.02527172557989939,
+      "waypoint_arrival_errors_ms": [
+        10.334000000104425,
+        13.334000000377273,
+        19.000000000363798
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 19.000000000363798,
+      "max_boundary_abs_ms": 19.000000000363798,
+      "contact_duration_ms": 600.0000000003638,
+      "callbacks": 38,
+      "callback_lag_max_ms": 12.425000000348518
+    },
+    {
+      "case": "all_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.010224681247950253,
+      "max_normalized": 0.024600511407182623,
+      "waypoint_arrival_errors_ms": [
+        -4.701999999986583,
+        -4.6659999998955755
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        24.334000000104425,
+        1000.0,
+        1000.0,
+        -4.6659999998955755,
+        -8.333000000129687
+      ],
+      "release_error_ms": -8.333000000129687,
+      "max_boundary_abs_ms": 1000.0,
+      "contact_duration_ms": 766.6669999998703,
+      "callbacks": 25,
+      "callback_lag_max_ms": 12.13899999993373
+    },
+    {
+      "case": "straight463",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.012695091353713264,
+      "max_normalized": 0.021920772741364503,
+      "waypoint_arrival_errors_ms": [
+        3.6670000001431617
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 3.6670000001431617,
+      "max_boundary_abs_ms": 3.6670000001431617,
+      "contact_duration_ms": 466.66700000014316,
+      "callbacks": 29,
+      "callback_lag_max_ms": 5.737999999837484
+    },
+    {
+      "case": "minimum_turns",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.03476587104295119,
+      "max_normalized": 0.06521942024931716,
+      "waypoint_arrival_errors_ms": [
+        3.637978807091713e-10,
+        16.66700000014316,
+        16.667000000052212
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 16.667000000052212,
+      "max_boundary_abs_ms": 16.66700000014316,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 20,
+      "callback_lag_max_ms": 4.911999999876571
+    },
+    {
+      "case": "dev_straight",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.0040258914137281075,
+      "max_normalized": 0.0083193344185319,
+      "waypoint_arrival_errors_ms": [
+        -9.094947017729282e-11
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -9.094947017729282e-11,
+      "max_boundary_abs_ms": 9.094947017729282e-11,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 38,
+      "callback_lag_max_ms": 17.608000000109314
+    },
+    {
+      "case": "initial_final_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 0,
+      "rms_normalized": 0.009806355117811244,
+      "max_normalized": 0.02200458806495119,
+      "waypoint_arrival_errors_ms": [
+        9.918999999666994
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        29.666999999961263,
+        9.918999999666994,
+        30.9999999998181
+      ],
+      "release_error_ms": 30.9999999998181,
+      "max_boundary_abs_ms": 30.9999999998181,
+      "contact_duration_ms": 699.9999999998181,
+      "callbacks": 28,
+      "callback_lag_max_ms": 13.269000000036613
+    },
+    {
+      "case": "middle_hold131",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.0073775145643526704,
+      "max_normalized": 0.01637531766959807,
+      "waypoint_arrival_errors_ms": [
+        3.6660000002593733,
+        12.333000000220636
+      ],
+      "hold_boundary_errors_ms": [
+        3.6660000002593733,
+        22.666000000350323
+      ],
+      "release_error_ms": 12.333000000220636,
+      "max_boundary_abs_ms": 22.666000000350323,
+      "contact_duration_ms": 633.3330000002206,
+      "callbacks": 31,
+      "callback_lag_max_ms": 19.008000000212633
+    },
+    {
+      "case": "corner137_241",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.009548565380164875,
+      "max_normalized": 0.018629541891502066,
+      "waypoint_arrival_errors_ms": [
+        13.00000000009095,
+        21.44100000002436
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 21.499000000105298,
+      "max_boundary_abs_ms": 21.499000000105298,
+      "contact_duration_ms": 399.4990000001053,
+      "callbacks": 26,
+      "callback_lag_max_ms": 15.533000000232278
+    },
+    {
+      "case": "all_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.011003381244168399,
+      "max_normalized": 0.0237388537091817,
+      "waypoint_arrival_errors_ms": [
+        11.99999999990905,
+        28.345000000092114
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        24.201000000099157,
+        11.99999999990905,
+        35.0,
+        28.345000000092114,
+        41.666000000168424
+      ],
+      "release_error_ms": 41.666000000168424,
+      "max_boundary_abs_ms": 41.666000000168424,
+      "contact_duration_ms": 816.6660000001684,
+      "callbacks": 27,
+      "callback_lag_max_ms": 8.89599999982238
+    },
+    {
+      "case": "initial_final_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.009893401470365383,
+      "max_normalized": 0.02192392294865999,
+      "waypoint_arrival_errors_ms": [
+        10.667000000052212
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        29.20100000000093,
+        10.667000000052212,
+        30.54299999972136
+      ],
+      "release_error_ms": 30.54299999972136,
+      "max_boundary_abs_ms": 30.54299999972136,
+      "contact_duration_ms": 699.5429999997214,
+      "callbacks": 28,
+      "callback_lag_max_ms": 9.796999999707623
+    },
+    {
+      "case": "minimum_turns",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 1,
+      "rms_normalized": 0.03584202527565138,
+      "max_normalized": 0.06521613529130935,
+      "waypoint_arrival_errors_ms": [
+        3.637978807091713e-10,
+        16.666000000259373,
+        16.406000000370113
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 16.449000000375236,
+      "max_boundary_abs_ms": 16.666000000259373,
+      "contact_duration_ms": 316.44900000037524,
+      "callbacks": 20,
+      "callback_lag_max_ms": 5.6759999997666455
+    },
+    {
+      "case": "dev_unequal",
+      "split": "development",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.013095165501462135,
+      "max_normalized": 0.027554124172481757,
+      "waypoint_arrival_errors_ms": [
+        3.333999999831576,
+        3.333999999831576,
+        16.666999999688414
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 33.334000000013475,
+      "max_boundary_abs_ms": 33.334000000013475,
+      "contact_duration_ms": 733.3340000000135,
+      "callbacks": 45,
+      "callback_lag_max_ms": 6.557000000157132
+    },
+    {
+      "case": "dev_corner",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.005970707644296353,
+      "max_normalized": 0.015459999979055816,
+      "waypoint_arrival_errors_ms": [
+        0.0,
+        -9.094947017729282e-11
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -9.094947017729282e-11,
+      "max_boundary_abs_ms": 9.094947017729282e-11,
+      "contact_duration_ms": 599.999999999909,
+      "callbacks": 38,
+      "callback_lag_max_ms": 4.639000000224769
+    },
+    {
+      "case": "middle_hold131",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.007296285222941951,
+      "max_normalized": 0.01585657667886556,
+      "waypoint_arrival_errors_ms": [
+        3.6660000002593733,
+        12.333000000220636
+      ],
+      "hold_boundary_errors_ms": [
+        3.6660000002593733,
+        22.665999999895575
+      ],
+      "release_error_ms": 12.333000000220636,
+      "max_boundary_abs_ms": 22.665999999895575,
+      "contact_duration_ms": 633.3330000002206,
+      "callbacks": 32,
+      "callback_lag_max_ms": 14.940000000024156
+    },
+    {
+      "case": "minimum_holds",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 3,
+      "rms_normalized": 0.030553280245585436,
+      "max_normalized": 0.06562022745445897,
+      "waypoint_arrival_errors_ms": [
+        16.66700000014316
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        33.334000000104425,
+        16.66700000014316,
+        16.667000000052212
+      ],
+      "release_error_ms": 16.667000000052212,
+      "max_boundary_abs_ms": 33.334000000104425,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 8,
+      "callback_lag_max_ms": 7.643000000371103
+    },
+    {
+      "case": "initial_final_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 2,
+      "rms_normalized": 0.006529841682432753,
+      "max_normalized": 0.015900022576003522,
+      "waypoint_arrival_errors_ms": [
+        -6.589000000036322
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        12.503999999978987,
+        -6.589000000036322,
+        -2.3659999998417334
+      ],
+      "release_error_ms": -2.3659999998417334,
+      "max_boundary_abs_ms": 12.503999999978987,
+      "contact_duration_ms": 666.6340000001583,
+      "callbacks": 27,
+      "callback_lag_max_ms": 15.408000000206812
+    },
+    {
+      "case": "dev_unequal",
+      "split": "development",
+      "variant": "adjusted",
+      "repeat": 0,
+      "rms_normalized": 0.008315358923832051,
+      "max_normalized": 0.02303704596919766,
+      "waypoint_arrival_errors_ms": [
+        3.3329999999477877,
+        3.3329999999477877,
+        -1.8189894035458565e-10
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": -1.8189894035458565e-10,
+      "max_boundary_abs_ms": 3.3329999999477877,
+      "contact_duration_ms": 699.9999999998181,
+      "callbacks": 44,
+      "callback_lag_max_ms": 5.881000000044878
+    },
+    {
+      "case": "middle_hold131",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 3,
+      "rms_normalized": 0.00878525185950284,
+      "max_normalized": 0.0206874462450547,
+      "waypoint_arrival_errors_ms": [
+        3.665999999804626,
+        -4.3340000001044245
+      ],
+      "hold_boundary_errors_ms": [
+        3.665999999804626,
+        22.665999999895575
+      ],
+      "release_error_ms": -4.3340000001044245,
+      "max_boundary_abs_ms": 22.665999999895575,
+      "contact_duration_ms": 616.6659999998956,
+      "callbacks": 30,
+      "callback_lag_max_ms": 18.941000000268104
+    },
+    {
+      "case": "corner137_241",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.009278838508935006,
+      "max_normalized": 0.016522300994374153,
+      "waypoint_arrival_errors_ms": [
+        13.00000000009095,
+        22.00000000009095
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 22.00000000009095,
+      "max_boundary_abs_ms": 22.00000000009095,
+      "contact_duration_ms": 400.00000000009095,
+      "callbacks": 25,
+      "callback_lag_max_ms": 17.704000000321685
+    },
+    {
+      "case": "four109_157_193_227",
+      "split": "heldout",
+      "variant": "nominal",
+      "repeat": 2,
+      "rms_normalized": 0.014140121255185068,
+      "max_normalized": 0.025643913794040685,
+      "waypoint_arrival_errors_ms": [
+        7.666999999779364,
+        17.33299999985684,
+        24.33299999967494,
+        30.666999999688414
+      ],
+      "hold_boundary_errors_ms": [],
+      "release_error_ms": 30.666999999688414,
+      "max_boundary_abs_ms": 30.666999999688414,
+      "contact_duration_ms": 716.6669999996884,
+      "callbacks": 45,
+      "callback_lag_max_ms": 19.297000000278786
+    },
+    {
+      "case": "minimum_holds",
+      "split": "heldout",
+      "variant": "adjusted",
+      "repeat": 1,
+      "rms_normalized": 0.03030584529429561,
+      "max_normalized": 0.06562022745445897,
+      "waypoint_arrival_errors_ms": [
+        16.66700000014316
+      ],
+      "hold_boundary_errors_ms": [
+        0.0,
+        33.334000000104425,
+        16.66700000014316,
+        16.667000000052212
+      ],
+      "release_error_ms": 16.667000000052212,
+      "max_boundary_abs_ms": 33.334000000104425,
+      "contact_duration_ms": 316.6670000000522,
+      "callbacks": 8,
+      "callback_lag_max_ms": 6.889000000228407
+    }
+  ],
+  "frozen_sha256": "f16652ecf696b50aa6a3811a750ef93b50c598cc979d4b6dc25de80291a96379",
+  "raw_requests_sha256": "09cdbdc3480c4f2caf778027952e172f5a17a22b716bb6af3e9ff91a40c57fde"
+}
