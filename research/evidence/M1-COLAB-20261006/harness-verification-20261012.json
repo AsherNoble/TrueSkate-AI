@@ -1,0 +1,44 @@
+{
+  "change": "scoped drive.file storage replaces drive.mount (before any GPU allocation)",
+  "files": {
+    "scripts/colab/Model1-Colab-benchmark-20261006.ipynb": {
+      "bytes": 19281,
+      "sha256": "d1f458d32a43918ee563127a512137bd1a7978668addb9a621a63c7d05b12400"
+    },
+    "scripts/colab/benchmark.py": {
+      "bytes": 29067,
+      "sha256": "fd8d34a6496ffa14ab58565e372c8a7f8dd350042a419b263685cf2149494ac2"
+    },
+    "scripts/colab/build_notebook.py": {
+      "bytes": 6436,
+      "sha256": "a7df795ea05c0b941e437b7c8e571c85def9b24399346e745a599ad1569eb70e"
+    },
+    "scripts/colab/supervisor.py": {
+      "bytes": 11200,
+      "sha256": "81fbaf4df576dc8fc3046dcc3ad9dfd1b31802cee425879b35dc592542509c0b"
+    },
+    "tests/test_colab_benchmark.py": {
+      "bytes": 12279,
+      "sha256": "bc41cfd2419bb96173357892446f07b0ac2d33bdadade09f558deddf0d1d3192"
+    }
+  },
+  "gpu_allocation_started": false,
+  "notebook_matches_builder": true,
+  "production_trainer_changed": false,
+  "rclone": {
+    "checksum_list_signature": "good (Nick Craig-Wood, FBF737ECE9F8AB18604BD2AC93935E02FF3B54FA)",
+    "linux_amd64_zip_sha256": "982b5aa772841168f8e380f139e9e787b2a105403e32b94da8676a0e1c0a13ab",
+    "version": "v1.75.1"
+  },
+  "tests": {
+    "colab_harness_tests": 13,
+    "files": [
+      "tests/test_colab_benchmark.py",
+      "tests/test_basic_linear_experiment.py",
+      "tests/test_model1_scaling_protocol.py"
+    ],
+    "includes": "real frozen-trainer epoch-5 to epoch-6 restoration; fake-remote checksum, ordering, ledger and notebook tests",
+    "passed": 79
+  },
+  "verified_at": "2026-10-12"
+}

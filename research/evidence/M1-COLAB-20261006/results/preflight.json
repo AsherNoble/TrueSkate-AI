@@ -1,0 +1,36 @@
+{
+  "batch_shape": [
+    8,
+    32,
+    3,
+    144,
+    64
+  ],
+  "difference_pp": 0.0,
+  "loss": 0.9653470516204834,
+  "passed": true,
+  "reference_epoch": 39,
+  "reference_sha256": "e5ccb3fe84d3ca982edc3556e0db16a47fc321ea8bc12f0d173f1390fb436211",
+  "reference_validation": {
+    "duration_mae": 0.019037359998426366,
+    "duration_p90": 0.03634943962097168,
+    "duration_recovery_accuracy": 0.9837150127226463,
+    "end_coordinate_median": 0.010263806208968163,
+    "end_recovery_accuracy": 0.9318066157760814,
+    "endpoint_coordinate_median": 0.00891627511009574,
+    "endpoint_coordinate_p90": 0.02025758102536201,
+    "gesture_recovery_accuracy": 0.9124681933842239,
+    "gesture_recovery_one_sided_95_lower": 0.9012643575360857,
+    "gesture_recovery_successes": 1793.0,
+    "knot0_coordinate_median": 0.007797694765031338,
+    "knot0_recovery_accuracy": 0.9776081424936387,
+    "knot1_coordinate_median": 0.010263806208968163,
+    "knot1_recovery_accuracy": 0.9318066157760814,
+    "knots": 2.0,
+    "recovery_duration_tolerance_s": 0.1,
+    "recovery_endpoint_tolerance": 0.03,
+    "samples": 1965.0,
+    "start_coordinate_median": 0.007797694765031338,
+    "start_recovery_accuracy": 0.9776081424936387
+  }
+}

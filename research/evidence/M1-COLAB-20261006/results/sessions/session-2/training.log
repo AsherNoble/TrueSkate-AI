@@ -1,0 +1,30 @@
+device=cuda name=Tesla T4
+resuming_from_epoch=5
+epoch=6 val_start_med=0.0106 val_end_med=0.0144 val_duration_mae=0.0296 val_recovery=80.1% secs=937.4
+DRIVE_VERIFIED epoch=6 sha256=4ea2e8cb30a550db038edfcb21bd4ac4607977c4ff7f59b3327a2cfbae25d575
+epoch=7 val_start_med=0.0104 val_end_med=0.0133 val_duration_mae=0.0269 val_recovery=82.6% secs=944.4
+DRIVE_VERIFIED epoch=7 sha256=22f296713faa8a664d3d62ae62478130c85a1cddb1934eba4d0d050bc4e06877
+epoch=8 val_start_med=0.0099 val_end_med=0.0134 val_duration_mae=0.0273 val_recovery=82.4% secs=941.6
+DRIVE_VERIFIED epoch=8 sha256=c80fa2666077224cabe51777edb4e9c4518d0917532178482bd6d26413dc1902
+epoch=9 val_start_med=0.0103 val_end_med=0.0134 val_duration_mae=0.0271 val_recovery=82.0% secs=947.9
+DRIVE_VERIFIED epoch=9 sha256=58a5e62cbf77677053bc3c50074a6c81abd52707760502e8cbed7ad97ac86a1e
+epoch=10 val_start_med=0.0104 val_end_med=0.0140 val_duration_mae=0.0262 val_recovery=80.6% secs=938.2
+DRIVE_VERIFIED epoch=10 sha256=381f9bc0e40fd301d65b0c616346f9889004812f36482ee824dd7affb031749b
+epoch=11 val_start_med=0.0097 val_end_med=0.0122 val_duration_mae=0.0277 val_recovery=84.1% secs=945.0
+DRIVE_VERIFIED epoch=11 sha256=f823378c6e678df5f37e6711fbccade06f90947dfd4faa2ae9dc3c734158227b
+epoch=12 val_start_med=0.0102 val_end_med=0.0133 val_duration_mae=0.0247 val_recovery=83.1% secs=950.9
+DRIVE_VERIFIED epoch=12 sha256=e1c213b085090b8784cf09c9bea0de3160bfec41f270e0f48c987ade3519b516
+epoch=13 val_start_med=0.0091 val_end_med=0.0125 val_duration_mae=0.0237 val_recovery=86.6% secs=946.0
+DRIVE_VERIFIED epoch=13 sha256=b3e5bf56c51ca09914d6540174493f5845d983e33284681d7286bed9e4604c93
+epoch=14 val_start_med=0.0096 val_end_med=0.0124 val_duration_mae=0.0240 val_recovery=87.1% secs=952.9
+DRIVE_VERIFIED epoch=14 sha256=f7a327fcc4c4ada044de7925ff1e062b9fd197498f7e260064ab228367bb2a04
+epoch=15 val_start_med=0.0092 val_end_med=0.0131 val_duration_mae=0.0233 val_recovery=86.7% secs=944.7
+DRIVE_VERIFIED epoch=15 sha256=7fa8bae8dfac374d9d5ec5b9a0b214178de18b2460c9d628488b82e563a0d1d2
+epoch=16 val_start_med=0.0090 val_end_med=0.0124 val_duration_mae=0.0222 val_recovery=87.4% secs=948.9
+DRIVE_VERIFIED epoch=16 sha256=e1101c5f7f5199b8626d32bbe9fe927b29e9ee744e2c4b09a89ece980522162c
+epoch=17 val_start_med=0.0091 val_end_med=0.0130 val_duration_mae=0.0244 val_recovery=86.4% secs=937.2
+DRIVE_VERIFIED epoch=17 sha256=43090a7b19cd176c8eea3348e0429d9ef8bdaf29a5fba79840d5238d47744cbf
+epoch=18 val_start_med=0.0090 val_end_med=0.0118 val_duration_mae=0.0232 val_recovery=88.7% secs=932.9
+DRIVE_VERIFIED epoch=18 sha256=d8852a41e1f1a31ce522134b4be3eab2e320503630f5238852f7edee91d51ba7
+epoch=19 val_start_med=0.0089 val_end_med=0.0119 val_duration_mae=0.0223 val_recovery=87.9% secs=925.5
+DRIVE_VERIFIED epoch=19 sha256=5904f1e9c7a662174d53f7cb27cb6fbc6ee471305b54585141f3ec2ccc113d4f

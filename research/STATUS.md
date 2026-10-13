@@ -1,6 +1,6 @@
 # Current research status
 
-Updated 2026-10-09. Behavioural cloning is the development direction.
+Updated 2026-10-13. Behavioural cloning is the development direction.
 
 ## Model 1
 
@@ -45,6 +45,21 @@ The [scaling protocol](protocols/model1_scaling.md) defines frozen cohorts,
 nested subsets, validation-only selection, interrupted-run resume and separate
 certification. Its historical cost figures are dated estimates, not current
 quotes or authorization for cloud work.
+
+## Training compute (2026-10-13)
+
+- **Modal remains the training platform.** Three seeds run in parallel in about
+  3.3 h, at a $12.46 list price (L4 plus a 64 GiB memory request).
+- **Free Colab reproduces the training** but not the turnaround (19/40 epochs,
+  then stopped):
+  - The T4 cannot hold the frame cache, so epochs take 943 s against 270 s.
+  - Sessions run one at a time and were cut at 4.15 h.
+  - A 3-seed batch would take five or more days.
+  - [M1-COLAB-20261006](experiments/M1-COLAB-20261006.md).
+- **Open:**
+  - Which Modal plan the account is on and its credit balance.
+  - Whether to lower the 64 GiB request for 64×144 runs (about −16% cost).
+  - Whether a paid Colab L4 session (53 GB RAM) survives a 3.7 h run.
 
 ## Gameplay repeatability (2026-10-09)
 
