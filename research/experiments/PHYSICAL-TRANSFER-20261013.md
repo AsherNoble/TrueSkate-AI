@@ -2,7 +2,7 @@
 
 Status: **helper cohort executed 2026-10-13; frozen helper gate failed on hold
 observability only; operator-approved post-hoc hold amendment passes; game cohort
-next**.
+stopped twice before its first touch (recorder start/preparation overrun)**.
 The original pre-execution record follows unchanged, then the helper result.
 The operator authorized the parallel physical, decoder and simulator diagnostics
 on 2026-10-13. The physical prerequisite cannot currently be measured without a
@@ -105,3 +105,23 @@ sample as motion. Motion compares distinct consecutive positions because one run
 (`helper-013`) carries an extra stationary endpoint sample. **Amended gate: passed,
 30/30 holds.** Under the literal sample-by-sample wording, `helper-013` alone fails.
 See [`helper-gate-amended.json`](../evidence/PHYSICAL-TRANSFER-20261013/helper-cohort-20261013T121131Z/helper-gate-amended.json).
+
+## Game cohort attempts, 2026-10-13
+
+Context, verbatim from the operator: park `Macba`; settings note `none`. True Skate
+waypoints are not numbered: each park has a few built-in waypoints and reset returns
+the board to the nearest one. The run records the waypoint as that description.
+The "waypoint 1–5" request came from the curved CLI and collector, which require an
+integer 1–5 (`scripts/collection/curved_model1.py`, `collection.py`); that is an
+agent invention, not an operator convention.
+
+Both attempts stopped with `preparation overrun` at the first control slot (1.5 s),
+before any calibration or scientific touch: one pre-roll reset each, **2 support
+touches total, 0 of 20 scientific**. The operator approved the single retry. The
+recorder took 1.40 s and 0.85 s from host start to its own start timestamp, against
+a rig median of 0.067 s (p90 0.258 s, previous maximum 0.672 s, n=307). At Macba the
+pre-touch screenshot check already takes 1.07 s median (1.25 s maximum, n=3 curved
+recordings, one of which hit the same error), so the inherited production schedule
+leaves about 0.4 s for recorder start. Recorder idle, zero attachments, True Skate
+frontmost and the lock released were verified afterwards. No further attempt was made.
+Evidence: [attempts](../evidence/PHYSICAL-TRANSFER-20261013/game-cohort-attempts-20261013/summary.json).

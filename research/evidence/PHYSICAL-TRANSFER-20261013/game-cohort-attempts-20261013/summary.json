@@ -1,0 +1,35 @@
+{
+  "attempts": [
+    {
+      "run": "20261013T123538Z",
+      "error": "RuntimeError: preparation overrun",
+      "touches_spent": 1,
+      "scientific_spent": 0,
+      "recorder_started_minus_host_start_s": 1.398348093032837,
+      "recording_host_span_s": 6.954164028167725
+    },
+    {
+      "run": "20261013T124206Z",
+      "error": "RuntimeError: preparation overrun",
+      "touches_spent": 1,
+      "scientific_spent": 0,
+      "recorder_started_minus_host_start_s": 0.8461670875549316,
+      "recording_host_span_s": 4.6577348709106445
+    }
+  ],
+  "rig_context": {
+    "curved_macba_first_slot_preparation_s": {
+      "median": 1.07,
+      "max": 1.25,
+      "n": 3
+    },
+    "rig_recorder_start_latency_s": {
+      "median": 0.067,
+      "p90": 0.258,
+      "max": 0.672,
+      "n": 307,
+      "scope": "all earlier rig execution.json files with recorder timestamps, excluding these two attempts"
+    }
+  },
+  "interpretation": "first control slot at 1.5 s leaves ~0.4 s for recorder start at Macba; both attempts overran before any scientific or calibration touch"
+}

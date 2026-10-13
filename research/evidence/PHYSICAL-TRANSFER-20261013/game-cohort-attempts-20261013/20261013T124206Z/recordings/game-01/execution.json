@@ -1,0 +1,34 @@
+{
+  "schema": "physical-transfer-game-v1",
+  "seed": 20261013,
+  "session": "game-01",
+  "device": "iPhone_XR",
+  "park": "Macba",
+  "park_source": "operator verbatim confirmation",
+  "fingerprint": "physical-transfer-20261013:0c02c970e82d754fc90903dddc92431b678131b5aad9edb71f422a084a1970ed",
+  "waypoint": "unnumbered built-in park waypoint; reset returns the board to the nearest one (operator, 2026-10-13)",
+  "settings_note": "none",
+  "plan_sha256": "0c02c970e82d754fc90903dddc92431b678131b5aad9edb71f422a084a1970ed",
+  "wda_revision": "ae50404aac12d9f8c41f6c3fa8776e97975eaef5",
+  "events": [],
+  "video": {
+    "mov_path": "/Users/training-server/trueskate-ai-runtime/tmp/physical-transfer-game-cohort-20261013T124206Z/recordings/game-01/original.mov",
+    "started_at_epoch_s": 1791895389.3846102,
+    "fps": 60,
+    "codec": "?",
+    "uuid": "FE63D2B3-26EA-474B-8A3C-25DB990BAA0B",
+    "n_bytes": 2290905,
+    "host_start_epoch_s": 1791895388.538443,
+    "host_stop_epoch_s": 1791895393.196178
+  },
+  "schedule": [],
+  "error": "RuntimeError: preparation overrun",
+  "failures": [
+    {
+      "phase": "execution",
+      "error": "RuntimeError: preparation overrun"
+    }
+  ],
+  "execution_schema": "research-execution-v2",
+  "training_admission": false
+}

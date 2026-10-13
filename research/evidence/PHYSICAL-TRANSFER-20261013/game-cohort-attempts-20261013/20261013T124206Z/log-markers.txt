@@ -1,0 +1,2 @@
+GAME_COHORT_STOPPED RuntimeError: RuntimeError: preparation overrun
+GAME_COHORT_DONE admitted=0 spent=1 error=yes

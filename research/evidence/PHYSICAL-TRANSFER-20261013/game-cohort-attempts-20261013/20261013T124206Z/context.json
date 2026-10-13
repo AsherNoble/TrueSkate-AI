@@ -1,0 +1,8 @@
+{
+  "park": "Macba",
+  "waypoint": "unnumbered built-in park waypoint; reset returns the board to the nearest one (operator, 2026-10-13)",
+  "settings_note": "none",
+  "source": "operator verbatim confirmation",
+  "plan_sha256": "0c02c970e82d754fc90903dddc92431b678131b5aad9edb71f422a084a1970ed",
+  "fingerprint": "physical-transfer-20261013:0c02c970e82d754fc90903dddc92431b678131b5aad9edb71f422a084a1970ed"
+}
