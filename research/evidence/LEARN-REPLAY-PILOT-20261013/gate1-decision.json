@@ -1,0 +1,17 @@
+{
+  "decided_utc_date": "2026-10-14",
+  "physical_plan_sha256": "0c02c970e82d754fc90903dddc92431b678131b5aad9edb71f422a084a1970ed",
+  "evidence_commit": "792a2aa3",
+  "results": {
+    "helper_frozen_gate": "failed: 6/30 holds lacked UIKit's stationary end-of-hold sample; every other criterion passed",
+    "helper_amended_hold_check": "passed 30/30 (post-hoc, operator-approved 2026-10-13; the frozen result stays the decision of record)",
+    "game_gate4": "passed: 20/20 admitted and interpretable; onset-offset range 1 native frame, at the frozen limit"
+  },
+  "operator_decision": "go: capture, training and replay on XR1",
+  "conditions": [
+    "preparation starts 2.25 s ahead of each slot instead of 1.75 s (chosen before any pilot touch)",
+    "the screenshot check before each recording's first marker is skipped, as in game attempts 3-4; the foreground guard still precedes every touch",
+    "XR1 only; adding XR2 was declined (its delivery is unmeasured and its WDA is not running)",
+    "training venue (local CPU or Modal) is decided by the operator after capture, from a measured local epoch and a Modal quote"
+  ]
+}

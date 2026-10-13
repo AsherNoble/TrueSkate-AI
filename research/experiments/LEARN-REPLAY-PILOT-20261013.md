@@ -1,6 +1,8 @@
 # LEARN-REPLAY-PILOT-20261013 — prospective small learning/replay diagnostic
 
-Status: prepared; execution blocked by the physical repeatability prerequisite.
+Status: **Gate 1 go (operator, 2026-10-14); capture tooling ready; capture not
+started because XR1's RemoteXPC tunnel and WDA have been down since 2026-10-13
+13:32 UTC.** The original prepared record follows unchanged.
 The operator authorized the parallel experiments and dependent stages on
 2026-10-13. This is an isolated diagnostic, with no production qualification,
 bulk collection, paid training or human-demonstration claim.
@@ -107,3 +109,40 @@ requests have been executed. See
 [PHYSICAL-TRANSFER-20261013](PHYSICAL-TRANSFER-20261013.md) for the measured
 preflight and unsigned helper. A separate valid helper identity/profile is the
 required external prerequisite; WDA is not restarted or rebuilt.
+
+## Gate 1 and capture tooling, 2026-10-14
+
+The physical measurement is recorded in
+[PHYSICAL-TRANSFER-20261013](PHYSICAL-TRANSFER-20261013.md). The frozen helper gate
+failed only on hold observability, the operator-approved post-hoc hold check passed
+30/30, and Gate 4 passed at its one-frame limit. The operator chose **go** on XR1,
+with these conditions ([decision](../evidence/LEARN-REPLAY-PILOT-20261013/gate1-decision.json)):
+
+- Preparation starts 2.25 s ahead of each slot instead of 1.75 s, set before any
+  pilot touch. Game attempt 4 needed up to 1.58 s. A later start cannot shorten any
+  margin, and admission is unchanged.
+- The screenshot check before each recording's first marker is skipped, as in
+  game attempts 3–4. The foreground guard still precedes every touch.
+- XR2 stays out: its delivery is unmeasured and its WDA is not running.
+- The training venue is chosen after capture, from a measured local epoch and a
+  Modal quote.
+
+[`bind_context.py`](../evidence/LEARN-REPLAY-PILOT-20261013/bind_context.py) writes a
+new bound file, read-only on the rig. It pins the plan digest, the operator's verbatim
+context, device/iOS/True Skate/WDA versions, the schedule, the curved pipeline
+fingerprint and the runner hashes. [`capture_pilot.py`](../evidence/LEARN-REPLAY-PILOT-20261013/capture_pilot.py)
+captures one session (five recordings) per invocation through the game cohort's
+path. Sessions run in plan order and spending is written before every RPC. It
+refuses a rerun, an out-of-order session or a budget overrun. A recording failure
+or any rejected candidate stops the pilot for diagnosis (Gate 2). At the measured
+rate of about 13.5 min of extraction per recording, capture needs about 15 h of rig
+time. Its 13 synthetic checks pass with the 5 preparation checks.
+
+**Rig incident.** At 2026-10-13 13:32:52 UTC, about three minutes after the game
+cohort's last clip was settled, the root RemoteXPC tunnel logged `SSL read failed in
+device-to-tun loop` and removed XR1's tunnel. The tunnel service kept running with
+zero tunnels. The services supervisor relaunched WDA once from the existing build
+(`test-without-building`, timing revision unchanged). It then reported WDA wedged
+and looped through more than 120 restart attempts, while XR1 remained visible on
+USB and to CoreDevice. The cause is unknown. No pilot touch has been sent. The
+operator is restarting the tunnel service.

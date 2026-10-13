@@ -1,8 +1,14 @@
 # Prospective learning/replay pilot
 
-Prepared only. No physical request, pilot collection, training or replay occurred.
-The physical helper/signing prerequisite remains blocked. This directory has no
-device-control entry point.
+Gate 1 passed to a go on 2026-10-14 ([decision](gate1-decision.json)). No pilot
+touch, training or replay has occurred yet.
+
+- `bind_context.py`: read-only rig binding of verified context to the plan.
+- `capture_pilot.py`: one bounded session per invocation on training-server.
+- `test_capture_pilot.py`: 13 synthetic checks (no device).
+
+The original preparation notes follow.
+
 
 - `plan.json.gz`: 600 prospective legal commands, twelve whole sessions,
   preselected 20 test IDs and 200 randomized paired replay jobs.
