@@ -2,7 +2,7 @@
 
 Status: **helper cohort executed 2026-10-13; frozen helper gate failed on hold
 observability only; operator-approved post-hoc hold amendment passes; game cohort
-stopped twice before its first touch (recorder start/preparation overrun)**.
+stopped in three attempts (schedule overruns; 1 of 20 scientific requests spent)**.
 The original pre-execution record follows unchanged, then the helper result.
 The operator authorized the parallel physical, decoder and simulator diagnostics
 on 2026-10-13. The physical prerequisite cannot currently be measured without a
@@ -125,3 +125,13 @@ recordings, one of which hit the same error), so the inherited production schedu
 leaves about 0.4 s for recorder start. Recorder idle, zero attachments, True Skate
 frontmost and the lock released were verified afterwards. No further attempt was made.
 Evidence: [attempts](../evidence/PHYSICAL-TRANSFER-20261013/game-cohort-attempts-20261013/summary.json).
+
+A third attempt (operator-approved, skipping only the redundant screenshot check
+before the first marker) delivered the start marker and `game-001`, then stopped
+with `schedule overrun after foreground guard` at the 9 s slot: sample-slot
+preparation took 1.71 s and 1.78 s against the 1.75 s lead (Macba round-6 median
+1.07 s). Spent across attempts: 3 pre-roll resets, 1 marker, **1 scientific request
+(`game-001`, no clip)**. Raw WDA screenshots took 0.40–0.43 s; the host-side menu
+and editor checks took 0.41–0.60 s and 0.47–0.50 s. An active Screen Sharing session
+(ScreensharingAgent ~45% CPU, WindowServer 26–29%, video wallpaper 21–29%) is the
+leading, untested explanation. The rig was verified clean afterwards.

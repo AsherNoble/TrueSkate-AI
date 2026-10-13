@@ -1,0 +1,2 @@
+GAME_COHORT_STOPPED RuntimeError: RuntimeError: schedule overrun after foreground guard
+GAME_COHORT_DONE admitted=0 spent=3 error=yes

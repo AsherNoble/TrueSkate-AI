@@ -1,0 +1,87 @@
+{
+  "capacity": 256,
+  "records": [
+    {
+      "submitted_to_ios": {
+        "epoch_s": 1791895836.564993,
+        "monotonic_s": 393079.2239785417
+      },
+      "preparation_started": {
+        "epoch_s": 1791895836.4642692,
+        "monotonic_s": 393079.12325579167
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791895836.873173,
+        "monotonic_s": 393079.532150375
+      },
+      "preparation_finished": {
+        "epoch_s": 1791895836.564983,
+        "monotonic_s": 393079.22396800003
+      },
+      "stability_wait_finished": {
+        "epoch_s": 1791895836.903749,
+        "monotonic_s": 393079.5627270417
+      },
+      "request_entered": {
+        "epoch_s": 1791895836.464151,
+        "monotonic_s": 393079.12313645834
+      },
+      "ios_completion_callback": {
+        "epoch_s": 1791895836.848839,
+        "monotonic_s": 393079.50781620835
+      },
+      "request_finished": {
+        "epoch_s": 1791895836.903774,
+        "monotonic_s": 393079.56275308336
+      },
+      "ios_callback_result": true,
+      "session_id": "EE244C1A-AAF0-46CB-AB97-4EBFAF52D37E",
+      "sequence": 0,
+      "outcome": "success",
+      "missing_ios_callback": 0
+    },
+    {
+      "submitted_to_ios": {
+        "epoch_s": 1791895839.8046432,
+        "monotonic_s": 393082.46356762503
+      },
+      "preparation_started": {
+        "epoch_s": 1791895839.7287831,
+        "monotonic_s": 393082.3877091667
+      },
+      "stability_wait_started": {
+        "epoch_s": 1791895840.629487,
+        "monotonic_s": 393083.2883954167
+      },
+      "preparation_finished": {
+        "epoch_s": 1791895839.804632,
+        "monotonic_s": 393082.4635571667
+      },
+      "stability_wait_finished": {
+        "epoch_s": 1791895840.657565,
+        "monotonic_s": 393083.3164726667
+      },
+      "request_entered": {
+        "epoch_s": 1791895839.7285938,
+        "monotonic_s": 393082.38751800003
+      },
+      "ios_completion_callback": {
+        "epoch_s": 1791895840.621072,
+        "monotonic_s": 393083.27998029167
+      },
+      "request_finished": {
+        "epoch_s": 1791895840.6576009,
+        "monotonic_s": 393083.3165105417
+      },
+      "ios_callback_result": true,
+      "session_id": "EE244C1A-AAF0-46CB-AB97-4EBFAF52D37E",
+      "sequence": 1,
+      "outcome": "success",
+      "missing_ios_callback": 0
+    }
+  ],
+  "enabled": 0,
+  "dropped_records": 0,
+  "build_revision": "ae50404aac12d9f8c41f6c3fa8776e97975eaef5",
+  "schema_version": 1
+}

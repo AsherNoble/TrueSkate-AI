@@ -15,6 +15,22 @@
       "scientific_spent": 0,
       "recorder_started_minus_host_start_s": 0.8461670875549316,
       "recording_host_span_s": 4.6577348709106445
+    },
+    {
+      "run": "20261013T124924Z",
+      "error": "RuntimeError: schedule overrun after foreground guard",
+      "touches_spent": 3,
+      "scientific_spent": 1,
+      "scientific_requests": [
+        "game-001"
+      ],
+      "calibration_spent": 1,
+      "deviation": "first-marker screenshot check skipped (operator-approved)",
+      "recorder_started_minus_host_start_s": 0.8489868640899658,
+      "sample_slot_preparation_s": [
+        1.7050367030315101,
+        1.7823938039364293
+      ]
     }
   ],
   "rig_context": {
@@ -31,5 +47,29 @@
       "scope": "all earlier rig execution.json files with recorder timestamps, excluding these two attempts"
     }
   },
-  "interpretation": "first control slot at 1.5 s leaves ~0.4 s for recorder start at Macba; both attempts overran before any scientific or calibration touch"
+  "interpretation": "first control slot at 1.5 s leaves ~0.4 s for recorder start at Macba; both attempts overran before any scientific or calibration touch",
+  "host_diagnosis": {
+    "raw_wda_screenshot_s": [
+      0.432,
+      0.402,
+      0.399
+    ],
+    "menu_check_s": [
+      0.597,
+      0.445,
+      0.406
+    ],
+    "editor_check_s": [
+      0.466,
+      0.503,
+      0.494
+    ],
+    "concurrent_cpu_percent": {
+      "ScreensharingAgent": 44.7,
+      "WindowServer": "26-29",
+      "WallpaperVideoExtension": "21-29"
+    },
+    "screen_sharing_session_age": "about 1 h (operator signing session)",
+    "interpretation": "hypothesis: Screen Sharing and the video wallpaper slow host-side checks; untested"
+  }
 }

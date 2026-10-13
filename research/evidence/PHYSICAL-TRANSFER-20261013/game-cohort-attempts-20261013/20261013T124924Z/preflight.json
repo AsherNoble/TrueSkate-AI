@@ -1,0 +1,52 @@
+{
+  "utc": "2026-10-13T12:49:36.697270+00:00",
+  "wda_status": {
+    "value": {
+      "build": {
+        "version": "12.2.0",
+        "time": "Oct  2 2026 22:04:17",
+        "productBundleIdentifier": "com.facebook.WebDriverAgentRunner"
+      },
+      "os": {
+        "testmanagerdVersion": 65535,
+        "name": "iOS",
+        "sdkVersion": "18.0",
+        "version": "18.7.6"
+      },
+      "device": "iphone",
+      "ios": {
+        "ip": "172.19.182.159"
+      },
+      "message": "WebDriverAgent is ready to accept commands",
+      "state": "success",
+      "ready": true
+    },
+    "sessionId": null
+  },
+  "foreground": {
+    "value": {
+      "processArguments": {
+        "env": {},
+        "args": []
+      },
+      "name": "",
+      "pid": 460,
+      "bundleId": "com.trueaxis.skate"
+    },
+    "sessionId": null
+  },
+  "recorder": {
+    "value": null,
+    "sessionId": null
+  },
+  "tunnel_running": true,
+  "collector_and_watchdog_disabled_lines": [
+    "\"com.trueskate.collect.xr2\" => disabled",
+    "\"com.trueskate.watchdog.xr1\" => disabled",
+    "\"com.trueskate.watchdog.xr2\" => disabled",
+    "\"com.trueskate.collect.xr1\" => disabled"
+  ],
+  "release": "/Users/training-server/trueskate-ai-releases/189dfde",
+  "release_sha": "189dfded0e1de31794d7dd9b88773dd3abfc8ba8",
+  "xr1_udid_sha256": "e5184f9180b442bd21c65705b13b6817497b566b36aeee46663758153f3bf2ef"
+}
