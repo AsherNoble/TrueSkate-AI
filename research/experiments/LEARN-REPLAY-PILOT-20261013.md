@@ -144,5 +144,17 @@ device-to-tun loop` and removed XR1's tunnel. The tunnel service kept running wi
 zero tunnels. The services supervisor relaunched WDA once from the existing build
 (`test-without-building`, timing revision unchanged). It then reported WDA wedged
 and looped through more than 120 restart attempts, while XR1 remained visible on
-USB and to CoreDevice. The cause is unknown. No pilot touch has been sent. The
-operator is restarting the tunnel service.
+USB and to CoreDevice. The cause of the tunnel failure is unknown. No pilot touch
+has been sent.
+
+The operator restarted the tunnel service; XR1's tunnel returned, but WDA did not.
+The runner's 7-day profile (`com.asher.WebDriverAgentRunner.xctrunner`, team
+`BK75JV5YK4`) expired on 2026-10-10, and the healthy runner had survived only
+because it was never relaunched. The supervisor's first restart ended it. Every
+relaunch since fails with `0xe8008011 (This provisioning profile has expired.)`. The
+supervisor's headless `build-for-testing` fallback exited 65: Xcode could not
+register that app identifier for the team and found no profile for it. The operator
+chose to rebuild WDA at `ae50404a` with the timing-revision define, the 2026-10-07
+procedure, from the rig's desktop Terminal using
+[`rebuild_wda.sh`](../evidence/LEARN-REPLAY-PILOT-20261013/rebuild_wda.sh). The
+script pauses and restores the supervisor, which then installs and launches the build.
