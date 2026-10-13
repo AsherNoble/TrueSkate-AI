@@ -32,12 +32,40 @@ XRs remains unverified. A synthetic inverse-model study supports learning a
 deterministic warp for same-executor replay, while independent random timing
 noise remains harmful. Refitting decoder coordinates at existing knot times
 removes five perfect-target audit failures without changing the gesture
-contract; predicted-input robustness and physical execution remain untested.
+contract; robustness on trained predictions and physical execution remain untested.
 The simulator-to-phone-video comparison is inconclusive. The expert extraction
 contains seven 57–115 ms visible moving spans, raising a fast-motion support
 concern; it does not independently measure their complete contact durations.
 These findings do not qualify collection or change its frozen gates. See
 [EXEC-TRANSFER-20261013](experiments/EXEC-TRANSFER-20261013.md).
+
+The authorized parallel follow-up now tests synthetic prediction corruption:
+fixed-knot coordinate refitting improves guarded passes from 15,992 to 17,127
+across 43,200 paired stress cases, with 1,467 gains and 332 regressions. Gains
+concentrate in independent coordinate noise; correlated drift and endpoint bias
+remain weaknesses, and protected-control rejections increase overall. This is
+candidate evidence for a guarded pilot, not a trained-model or deployment result.
+See [DECODER-NOISE-20261013](experiments/DECODER-NOISE-20261013.md).
+
+Prospective simulator compensation completed 160 measurements plus two setup
+requests. Held-out macro trajectory RMS fell 14.58%, below the frozen 25% target;
+only 2/16 cases passed the full position/waypoint/hold/release gate, against a
+required 16/16. The candidate fails as a general compensation method. Its two
+passing cases are straight trajectories; corners, holds and minimum-length
+constraints remain unresolved. See
+[SIM-COMPENSATION-20261013](experiments/SIM-COMPENSATION-20261013.md).
+
+Physical preflight found healthy XR1 WDA on iOS 18.7.6, a running root tunnel and
+disabled collection jobs, but no installed raw-touch logger or usable signing
+credentials. The unsigned helper builds and its synthetic analysis checks pass;
+zero physical requests were dispatched. The frozen 80-helper/20-gameplay study
+has a 112-request total cap including calibration/reset support. See
+[PHYSICAL-TRANSFER-20261013](experiments/PHYSICAL-TRANSFER-20261013.md).
+The dependent learning/replay pilot is prepared (600 prospective commands in
+whole-session splits and 200 paired replay requests) but remains blocked on that
+physical prerequisite. No pilot collection or training has begun; qualification
+and the original dispatch ledger remain unchanged. See
+[LEARN-REPLAY-PILOT-20261013](experiments/LEARN-REPLAY-PILOT-20261013.md).
 
 Current work is calibrated linear clip regression and scaling. The current
 best is **91.04%** test recovery: the 64×144 input, seed 2, trained on

@@ -17,6 +17,10 @@ bulk collection, paid training or human-demonstration claim.
    label tolerance from simulator determinism. Any numeric go/no-go thresholds
    must be frozen before the first physical request, alongside the physical
    experiment; a failed measurement cannot be repaired by changing a threshold.
+   Those pragmatic criteria are now frozen in the physical plan, digest
+   `0c02c970e82d754fc90903dddc92431b678131b5aad9edb71f422a084a1970ed`.
+   Its current gate is closed and unmeasured; threshold fields describe required
+   evidence, not completed physical observations.
 3. Bind a verified current park, waypoint, settings, device/iOS/WDA versions and
    isolated capture fingerprint to the frozen command plan before dispatch.
    Unknown context remains unknown; stale heartbeats or old screenshots are
