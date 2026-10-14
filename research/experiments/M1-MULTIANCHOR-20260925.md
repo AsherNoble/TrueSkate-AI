@@ -102,7 +102,7 @@ production single-control mids. A labelled production-path run is still
 needed.
 
 Frozen before any label exists:
-[score_multianchor_against_labels.py](../../scripts/inspect/score_multianchor_against_labels.py)
+[score_multianchor_against_labels.py](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/scripts/inspect/score_multianchor_against_labels.py)
 scores the Phase 3 labels in two ways:
 
 - the outlier decision against A's gross error;

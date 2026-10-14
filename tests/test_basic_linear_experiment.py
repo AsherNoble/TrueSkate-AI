@@ -834,7 +834,7 @@ def test_checkpoint_evaluation_honours_the_trained_dataset_shape():
     # otherwise a clip can fail on a knot the report says nothing about.
     assert 'f"trail_gap_knot{knot}"' in autopsy
     assert 'f"trail_frame_knot{knot}"' in autopsy
-    # The k=2 keys stay, so existing artefacts and render_linear_failures keep working.
+    # The k=2 keys stay, so existing artefacts keep working.
     for retained in ("trail_gap_start", "trail_gap_end", "trail_frame_start", "trail_frame_end"):
         assert f'"{retained}"' in autopsy
     assert "commanded_start, commanded_end = per_knot_trail[0], per_knot_trail[-1]" in autopsy
