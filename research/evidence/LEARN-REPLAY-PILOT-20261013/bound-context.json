@@ -1,0 +1,141 @@
+{
+  "kind": "learn-replay-pilot-bound-context-v1",
+  "plan_sha256": "f06fce86b507533e64b84520fb6c6719f0d9df99bd00c36913390a526bb1be6c",
+  "device": "iPhone_XR",
+  "device_env_key": "IPHONE_XR_UDID",
+  "wda_port": 8100,
+  "wda_revision": "ae50404aac12d9f8c41f6c3fa8776e97975eaef5",
+  "context": {
+    "park": "Macba",
+    "waypoint": "unnumbered built-in park waypoint; reset returns the board to the nearest one (operator, 2026-10-13)",
+    "settings_note": "none",
+    "source": "operator verbatim confirmation",
+    "confirmed": "park: operator, 2026-10-14 after the tunnel restart (\"XR1 is on Macba\"); settings note \"none\": operator, 2026-10-13, not restated",
+    "bound_utc": "2026-10-14T01:32:46.327564+00:00"
+  },
+  "gate1": {
+    "decided_utc_date": "2026-10-14",
+    "physical_plan_sha256": "0c02c970e82d754fc90903dddc92431b678131b5aad9edb71f422a084a1970ed",
+    "evidence_commit": "792a2aa3",
+    "results": {
+      "helper_frozen_gate": "failed: 6/30 holds lacked UIKit's stationary end-of-hold sample; every other criterion passed",
+      "helper_amended_hold_check": "passed 30/30 (post-hoc, operator-approved 2026-10-13; the frozen result stays the decision of record)",
+      "game_gate4": "passed: 20/20 admitted and interpretable; onset-offset range 1 native frame, at the frozen limit"
+    },
+    "operator_decision": "go: capture, training and replay on XR1",
+    "conditions": [
+      "preparation starts 2.25 s ahead of each slot instead of 1.75 s (chosen before any pilot touch)",
+      "the screenshot check before each recording's first marker is skipped, as in game attempts 3-4; the foreground guard still precedes every touch",
+      "XR1 only; adding XR2 was declined (its delivery is unmeasured and its WDA is not running)",
+      "training venue (local CPU or Modal) is decided by the operator after capture, from a measured local epoch and a Modal quote"
+    ]
+  },
+  "device_facts": {
+    "ios_version": "18.7.6",
+    "ios_build": "22H320",
+    "true_skate_version": "1.6.11"
+  },
+  "preflight": {
+    "utc": "2026-10-14T01:32:45.921581+00:00",
+    "wda_status": {
+      "value": {
+        "build": {
+          "version": "12.2.0",
+          "time": "Oct 13 2026 18:27:49",
+          "productBundleIdentifier": "com.facebook.WebDriverAgentRunner"
+        },
+        "os": {
+          "testmanagerdVersion": 65535,
+          "name": "iOS",
+          "sdkVersion": "18.0",
+          "version": "18.7.6"
+        },
+        "device": "iphone",
+        "ios": {
+          "ip": "172.19.182.159"
+        },
+        "message": "WebDriverAgent is ready to accept commands",
+        "state": "success",
+        "ready": true
+      },
+      "sessionId": null
+    },
+    "foreground": {
+      "value": {
+        "processArguments": {
+          "env": {},
+          "args": []
+        },
+        "name": "",
+        "pid": 460,
+        "bundleId": "com.trueaxis.skate"
+      },
+      "sessionId": null
+    },
+    "recorder": {
+      "value": null,
+      "sessionId": null
+    },
+    "tunnel_running": true,
+    "collector_and_watchdog_disabled_lines": [
+      "\"com.trueskate.collect.xr2\" => disabled",
+      "\"com.trueskate.watchdog.xr1\" => disabled",
+      "\"com.trueskate.watchdog.xr2\" => disabled",
+      "\"com.trueskate.collect.xr1\" => disabled"
+    ],
+    "release": "/Users/training-server/trueskate-ai-releases/189dfde",
+    "release_sha": "189dfded0e1de31794d7dd9b88773dd3abfc8ba8",
+    "xr1_udid_sha256": "e5184f9180b442bd21c65705b13b6817497b566b36aeee46663758153f3bf2ef"
+  },
+  "capture": {
+    "sample_slots_s": [
+      4.75,
+      9,
+      13.25,
+      17.5,
+      21.75,
+      32.25,
+      36.5,
+      40.75,
+      45,
+      49.25
+    ],
+    "control_slots_s": [
+      [
+        "start",
+        1.5
+      ],
+      [
+        "middle",
+        29
+      ],
+      [
+        "end",
+        57
+      ]
+    ],
+    "reset_slots_s": [
+      26,
+      53.5
+    ],
+    "prepare_lead_s": 2.25,
+    "guard_lead_s": 0.25,
+    "pre_roll_settle_s": 3,
+    "recordings_per_session": 5,
+    "first_marker_screenshot_check": false,
+    "stop_rules": [
+      "first recording failure stops the pilot (Gate 2)",
+      "any rejected candidate stops the pilot after its recording (Gate 2)",
+      "no retry, replacement or reordering; sessions run in plan order"
+    ]
+  },
+  "curved_pipeline_fingerprint": "7b7b8d9a26db126f8b94705017077ea3dcb53117d31bedd8ad4b17a25fca74fd",
+  "runner_sources": {
+    "bind_context.py": "f4bc3744367a3d8386b18ce70ea59c0c7739e5ccd600ca89425f75bc94e7b466",
+    "capture_pilot.py": "6c4da361692a702145eb393f4d1e52df3109f7278b0257f517e2898983704888",
+    "prepare.py": "cc4fc1740daf2247ef5f74e3d0fb9d807b3888d41eabc2069be86483ec86e3f3",
+    "run_helper.py": "ba8335c5efc3ab227479d62ab2efbe3077665a050544007f14a17e608afbf75c",
+    "run_game.py": "9b8b1c474c8b9070b2e4435c12e2eace6c999f9e2d7c2cdb4e21c7dce50e2cb2"
+  },
+  "sha256": "ce6caa3876a34d8f96e04f98f2241e615753125bc0802f5b0c1ac41d68aaf6e0"
+}

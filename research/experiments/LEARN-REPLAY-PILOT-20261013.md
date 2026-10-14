@@ -1,8 +1,8 @@
 # LEARN-REPLAY-PILOT-20261013 — prospective small learning/replay diagnostic
 
-Status: **Gate 1 go (operator, 2026-10-14); capture tooling ready; capture not
-started because XR1's RemoteXPC tunnel and WDA have been down since 2026-10-13
-13:32 UTC.** The original prepared record follows unchanged.
+Status: **Gate 1 go (operator, 2026-10-14); XR1 WDA rebuilt under a new bundle ID
+after a tunnel/WDA outage; context bound; capture session `pilot-00` started
+2026-10-14 01:34 UTC.** The original prepared record follows unchanged.
 The operator authorized the parallel experiments and dependent stages on
 2026-10-13. This is an isolated diagnostic, with no production qualification,
 bulk collection, paid training or human-demonstration claim.
@@ -158,3 +158,24 @@ chose to rebuild WDA at `ae50404a` with the timing-revision define, the 2026-10-
 procedure, from the rig's desktop Terminal using
 [`rebuild_wda.sh`](../evidence/LEARN-REPLAY-PILOT-20261013/rebuild_wda.sh). The
 script pauses and restores the supervisor, which then installs and launches the build.
+
+The first rebuild failed the same way: Apple would not register
+`com.asher.WebDriverAgentRunner` for the operator's only team, the free Personal Team
+`BK75JV5YK4` that had issued the expired profiles. With the operator's approval, the
+expired runner was uninstalled from XR1, keeping it within the free three-app limit.
+WDA was then rebuilt at `ae50404a` with the timing define and the command-line
+override `PRODUCT_BUNDLE_IDENTIFIER=com.ashernoble.WebDriverAgentRunner`. No source
+changed. The first attempt at that build ran full-width and starved WindowServer into
+a watchdog logout of the desktop session (the rig did not reboot; tunnel and supervisor
+recovered). The script now builds with two low-priority jobs. The second attempt
+succeeded: profile `com.ashernoble.WebDriverAgentRunner.xctrunner`, two devices,
+expiring **2026-10-21 00:57 UTC**. The supervisor installed and launched it, and WDA
+reported `build_revision` `ae50404a`. Appium attaches by URL, so the pilot path does
+not depend on the bundle ID. Only the XR2 Wi-Fi diagnostic script names the old one.
+
+The operator confirmed XR1 on Macba after the tunnel restart. The settings note
+`none` dates from 2026-10-13 and was not restated. The operator set a still wallpaper
+and disconnected Screen Sharing. The read-only binding
+([`bound-context.json`](../evidence/LEARN-REPLAY-PILOT-20261013/bound-context.json),
+digest `ce6caa38…`) records XR1 on iOS 18.7.6 (22H320), True Skate 1.6.11, WDA
+`ae50404a`, the 2.25 s schedule and runner hashes, which match commit `fd2f6ee6`.
