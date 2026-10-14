@@ -23,7 +23,7 @@ probably mildly early even inside the current 0.002 screen.
 
 ## Screen options
 
-Script: [calibration_clip_screen.py](../../scripts/inspect/calibration_clip_screen.py),
+Script: [calibration_clip_screen.py](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/scripts/inspect/calibration_clip_screen.py),
 run read-only on the rig over the 13,592-clip replacement pool plus the
 310-clip exact-PTS baseline (13,902 clips). "Clip ≤1 frame" keeps clips in
 flagged segments whose predicted onset error is at most one native frame.
@@ -53,7 +53,7 @@ The error formula is unvalidated between 0.0008 and 0.002, and that is where
 the threshold choice matters. A sealed blind 24-clip check is prepared and
 **not labelled**.
 
-- **Selector:** [select_midband_onset_validation.py](../../scripts/inspect/select_midband_onset_validation.py),
+- **Selector:** [select_midband_onset_validation.py](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/scripts/inspect/select_midband_onset_validation.py),
   draw 4, seed 2509250455. It excludes all audit and earlier validation
   sessions, and every clip is XR1 SLS 2015 Los Angeles.
 - **Mid-high** (`1.0012 < rate ≤ 1.002`): all 6 available recordings. Early

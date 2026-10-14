@@ -51,7 +51,7 @@ Also report, descriptively:
 
 ## Script
 
-[timing_gate_corpus_check.py](../../scripts/inspect/timing_gate_corpus_check.py),
+[timing_gate_corpus_check.py](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/scripts/inspect/timing_gate_corpus_check.py),
 run read-only on the rig.
 
 ## Results (2026-09-26) — supported

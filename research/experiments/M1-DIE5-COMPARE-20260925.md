@@ -66,7 +66,7 @@ A pass does not certify untested parks or repair the existing corpus.
 
 Prevalence, read-only over all 1,409 aligned segments / 13,592 clips of
 `model1_linear_replacement_20260922` ([fit-prevalence.json](../evidence/M1-DIE5-COMPARE-20260925/fit-prevalence.json),
-[script](../../scripts/inspect/calibration_fit_prevalence.py)):
+[script](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/scripts/inspect/calibration_fit_prevalence.py)):
 
 | Device / park | Segments | High rate (start implicated) | Low rate (end implicated) |
 |---|---:|---:|---:|
@@ -111,7 +111,7 @@ sub-minute recordings of four markers per XR, reset before recording. All four
 recordings ended in gameplay.
 
 [Analysis](../evidence/M1-DIE5-COMPARE-20260925/phase1-feasibility.json)
-([script](../../scripts/inspect/analyze_die_five_feasibility.py)): detector B
+([script](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/scripts/inspect/analyze_die_five_feasibility.py)): detector B
 accepted 16/16 markers with **5/5 votes on the same frame** every time. Mean
 grey change outside the marker area from onset−1 to onset+15 frames was
 0.002–0.069 levels, no larger than the pre-marker change (0.006–0.385), so the
@@ -146,7 +146,7 @@ Protocol clarification before labelling: single-touch mid markers enter the
 blind set at 25% (min 20) for the corner check. Viewer items are frame-exact
 native crops (±90 pt around centre) with seeded ±0.3 s window jitter and a
 difference-view toggle; the key is stored outside the served directory
-([builder](../../scripts/inspect/build_die_five_label_viewer.py)).
+([builder](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/scripts/inspect/build_die_five_label_viewer.py)).
 
 Mechanism observation (not a Phase 2 result): the retained M1-LA-ORIGINALS
 XR2 segment 3 (start score 10.8, rate 1.0018) shows the board still rotating

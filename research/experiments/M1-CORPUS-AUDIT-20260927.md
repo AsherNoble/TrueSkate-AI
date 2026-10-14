@@ -26,7 +26,7 @@ On `model1_linear_replacement_20260922` this keeps 12,113 of 13,592 clips
 
 - **Sample:** 100 clips drawn uniformly from all clips that pass
   `corpus-screen-v1`. Seed 2509270100 with
-  [select_corpus_audit.py](../../scripts/inspect/select_corpus_audit.py). The
+  [select_corpus_audit.py](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/scripts/inspect/select_corpus_audit.py). The
   310-clip exact-PTS baseline is a separate root and is not in this audit.
 - **Blinding:** the viewer shows no park, rate, expected frame or overlay.
   Expected frames go to a separate `expected.json`, sealed by SHA-256 before
@@ -40,7 +40,7 @@ On `model1_linear_replacement_20260922` this keeps 12,113 of 13,592 clips
   One displayed frame is ~67–100 ms, about 2–3 native frames.
 - **Pass:** all 100 satisfactory. Exact matches are reported as a secondary
   measure.
-- **Scorer:** [score_corpus_audit.py](../../scripts/inspect/score_corpus_audit.py),
+- **Scorer:** [score_corpus_audit.py](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/scripts/inspect/score_corpus_audit.py),
   frozen now.
 
 ## Decision rule

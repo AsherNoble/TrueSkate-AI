@@ -96,4 +96,4 @@ abs(rate - 1) > 0.002 remains a risk estimate, not an exclusion decision.
 Rig viewer:
 /Users/training-server/trueskate-ai-runtime/tmp/model1-24-onset-validation-20260924/viewer/
 (served on Tailscale port 8771). The viewer generator is
-[build_linear_onset_validation_viewer.py](../../scripts/inspect/build_linear_onset_validation_viewer.py).
+[build_linear_onset_validation_viewer.py](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/scripts/inspect/build_linear_onset_validation_viewer.py).
