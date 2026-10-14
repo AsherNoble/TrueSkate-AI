@@ -175,3 +175,12 @@ To restore a whole historical environment without modifying the active checkout:
 - Paths: [complete journal](https://github.com/AsherNoble/TrueSkate-AI/blob/5ff12564d6fc50d92686d553867bef85924197af/research/JOURNAL.md)
 - Recovery: `git show 5ff12564d6fc50d92686d553867bef85924197af:research/JOURNAL.md`
 - Artifacts: Journal text only.
+
+## ARCH-020 — Correction to ARCH-004, ARCH-006 and ARCH-010 to ARCH-017 locations
+
+- Description: Those entries remain byte-for-byte unchanged. On 2026-10-14 the laptop `tmp/` tidy moved the ignored artifacts they cite, unchanged, into the evidence folder `/Users/ashernoble/TrueSkate-evidence/from-tmp-20261014/`: `tmp/worktree-retention-20261005/` (ARCH-010 to ARCH-017; its `manifest.json` still matches the SHA-256 recorded in `worktree-integration-20261005.json`) and `tmp/com.trueskate.xrwatchdog.retired-20260909.plist` (ARCH-006). `/Users/ashernoble/TrueSkate-evidence/INDEX.md` maps each old path to its new one. ARCH-004's `RIG_RECONCILIATION.md` and the other one-off rig, storage and integration notes moved from `research/` to `research/history/`.
+- Commit: `c905d19b57f5e1d4b010db128aaed12c2dbdf0a3`
+- Tag: None; the commit is on `main`, which is never rewritten.
+- Paths: [RIG_RECONCILIATION.md before the move](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/research/RIG_RECONCILIATION.md), [integration note before the move](https://github.com/AsherNoble/TrueSkate-AI/blob/c905d19b57f5e1d4b010db128aaed12c2dbdf0a3/research/RESEARCH_INTEGRATION_20261005.md)
+- Recovery: Notes: `research/history/` on `main`, or `git show c905d19b57f5e1d4b010db128aaed12c2dbdf0a3:research/RIG_RECONCILIATION.md`. Artifacts: read in place at the new paths.
+- Artifacts: `/Users/ashernoble/TrueSkate-evidence/from-tmp-20261014/worktree-retention-20261005/` (4.4 GB) and `/Users/ashernoble/TrueSkate-evidence/from-tmp-20261014/com.trueskate.xrwatchdog.retired-20260909.plist`, laptop only. Neither is a corpus backup.

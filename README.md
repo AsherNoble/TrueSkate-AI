@@ -21,7 +21,7 @@ useful results remain accessible.
 - [Rig deployment and rollback](DEPLOYMENT.md)
 - [Private XR remote-control UI](docs/XR_CONTROL.md)
 - [Research archive and recovery](research/ARCHIVE.md)
-- [Rig reconciliation](research/RIG_RECONCILIATION.md)
+- [Rig reconciliation](research/history/RIG_RECONCILIATION.md)
 
 ## Setup
 

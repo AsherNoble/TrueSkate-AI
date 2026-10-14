@@ -31,7 +31,7 @@ operator has now explicitly clarified that collection should remain stopped.
   was found. Moved its installed plist out of LaunchAgents into the repository's
   ignored `tmp/com.trueskate.xrwatchdog.retired-20260909.plist`.
 - Removed the fixer script, prompt and launchd template from active source after
-  publishing a protected archive tag. [Recovery/provenance: ARCH-006](ARCHIVE.md).
+  publishing a protected archive tag. [Recovery/provenance: ARCH-006](../ARCHIVE.md).
 - Kept the dashboard, WDA services, recording tunnel and existing storage/offload
   schedules separate. No open-ended collector was started during this investigation.
 

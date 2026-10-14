@@ -9,10 +9,10 @@ dashboard reports the loaded/disk revisions, and `readlink` shows its directory.
 Runtime data/environment live separately at
 `/Users/training-server/trueskate-ai-runtime`; release-local links select them.
 The original dirty checkout and its original storage remain preserved separately.
-See the [2026-09-08 rollout record](research/RIG_ROLLOUT_20260908.md) for exact
+See the [2026-09-08 rollout record](research/history/RIG_ROLLOUT_20260908.md) for exact
 paths, loaded-service exceptions and rollback. Do not delete the preserved
 directory or edit/pull into the active release. See
-[storage separation and backup limits](research/RIG_STORAGE_20260909.md).
+[storage separation and backup limits](research/history/RIG_STORAGE_20260909.md).
 
 ## Services
 
@@ -20,7 +20,7 @@ Collection is intentionally **off**. Both collector jobs and collection-only
 watchdogs are persistently disabled. The laptop agent-based autofixer has been
 removed. Maintenance checks must be bounded; do not enable ongoing collection
 or interpret intentional inactivity as a fault without explicit authorization.
-See [autostart investigation](research/COLLECTION_AUTOSTART_20260909.md).
+See [autostart investigation](research/history/COLLECTION_AUTOSTART_20260909.md).
 
 | Service | Purpose |
 |---|---|

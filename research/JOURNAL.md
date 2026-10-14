@@ -120,7 +120,7 @@ them. Link a record only when one exists. Current state lives in
 - **Deleted `trueskate-corpus`** (operator-approved). ≈ 364 GiB remain, so
   storage is now free. The loss is permanent: no other copy existed.
   Recollect with the calibrated pipeline instead.
-  [MODAL_STORAGE_20261001](MODAL_STORAGE_20261001.md).
+  [MODAL_STORAGE_20261001](history/MODAL_STORAGE_20261001.md).
 
 ## 2026-10-01 — Doubling the data still helps, but less
 

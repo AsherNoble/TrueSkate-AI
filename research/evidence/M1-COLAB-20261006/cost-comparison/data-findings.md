@@ -48,7 +48,7 @@ estimate (epoch seconds × list rates), not an invoice. It leaves out:
 - Realistic bill (E): **$4.25–4.50 per seed, $12.8–13.5 for three.** M1-EXPAND itself reported
   "≈ $12.8 against the $12.50 approval" including the autopsy.
 - Volume storage: ~364 GiB after the 2026-10-01 deletion, under the free 1 TiB → $0
-  (`research/MODAL_STORAGE_20261001.md`).
+  (`research/history/MODAL_STORAGE_20261001.md`).
 - Plan / free-credit balance: **not established in the repo.**
 
 ### Colab free T4 (M1-COLAB-20261006, stopped after epoch 19)
