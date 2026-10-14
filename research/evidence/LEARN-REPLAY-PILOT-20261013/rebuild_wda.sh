@@ -3,8 +3,11 @@
 # Run from the rig's desktop Terminal: SSH has no signing keychain. It builds for a
 # generic device only, in WDA's default DerivedData, so the paused services
 # supervisor installs and launches it with test-without-building once restored.
-# No device touch, install, recording or source change happens here.
+# No device touch, install, recording or source change happens here. An optional
+# bundle ID argument overrides PRODUCT_BUNDLE_IDENTIFIER on the command line only:
+# Apple no longer issues the free team a profile for com.asher.WebDriverAgentRunner.
 set -u
+BUNDLE=${1:-}
 REV=ae50404aac12d9f8c41f6c3fa8776e97975eaef5
 WDA=/Users/training-server/WebDriverAgent
 PLIST=/Users/training-server/Library/LaunchAgents/com.trueskate.services.plist
@@ -18,6 +21,9 @@ if [ -e /Users/training-server/trueskate-ai-runtime/tmp/RIG-BUSY-curved-recordin
   echo "REBUILD_FAIL: rig busy lock present"; exit 1
 fi
 echo "$REV" > "$OUT/source-sha.txt"
+echo "${BUNDLE:-project default}" > "$OUT/bundle-id.txt"
+OVERRIDE=()
+[ -n "$BUNDLE" ] && OVERRIDE=("PRODUCT_BUNDLE_IDENTIFIER=$BUNDLE")
 
 restore() {
   launchctl bootstrap "gui/$(id -u)" "$PLIST" 2>&1 | tail -1
@@ -33,10 +39,13 @@ if pgrep -f "xcodebuild -project $WDA" >/dev/null; then
   echo "REBUILD_FAIL: a supervisor xcodebuild is still running"; exit 1
 fi
 
-echo "building (a few minutes; macOS may ask to allow codesign to use your key)..."
-xcodebuild build-for-testing -project "$WDA/WebDriverAgent.xcodeproj" -scheme WebDriverAgentRunner \
-  -destination generic/platform=iOS -allowProvisioningUpdates \
-  "GCC_PREPROCESSOR_DEFINITIONS=\$(inherited) WDA_TIMING_BUILD_REVISION=$REV" > "$OUT/build.log" 2>&1
+echo "building (about 10 minutes; macOS may ask to allow codesign to use your key)..."
+# A full-width build starved WindowServer into a watchdog logout on 2026-10-14;
+# two low-priority jobs leave the desktop session responsive.
+nice -n 10 xcodebuild build-for-testing -project "$WDA/WebDriverAgent.xcodeproj" -scheme WebDriverAgentRunner \
+  -destination generic/platform=iOS -allowProvisioningUpdates -jobs 2 \
+  "GCC_PREPROCESSOR_DEFINITIONS=\$(inherited) WDA_TIMING_BUILD_REVISION=$REV" ${OVERRIDE[@]+"${OVERRIDE[@]}"} \
+  > "$OUT/build.log" 2>&1
 status=$?
 grep -E "error:|BUILD (SUCCEEDED|FAILED)|TEST BUILD (SUCCEEDED|FAILED)" "$OUT/build.log" | sort -u | tail -8 > "$OUT/summary.txt"
 cat "$OUT/summary.txt"
