@@ -1,8 +1,9 @@
 # Recent research and engineering journal
 
-Keep at most 30 dated entries. Before trimming, tag the complete version and
-append its commit-pinned recovery entry to [ARCHIVE.md](ARCHIVE.md).
-Put substantial experiments in individual records and current facts in STATUS.
+One entry per result, newest first: **Ran**, **Result**, **Decision**, at most
+six lines. Keep 30 entries and drop the oldest freely; main's history keeps
+them. Link a record only when one exists. Current state lives in
+[SYSTEM_MAP.md](SYSTEM_MAP.md).
 
 
 ## 2026-10-13 — Free Colab reproduces Model 1 training but not Modal's turnaround

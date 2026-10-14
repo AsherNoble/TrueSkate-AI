@@ -5,14 +5,17 @@ touch gestures from gameplay clips; Model 2 learns a gameplay policy from
 expert recordings labelled by Model 1. Collection runs on physical iPhones
 through Appium/WebDriverAgent and bounded XCTest screen recordings.
 
-**Current work:** Model 1 linear gesture recovery and scaling. Hold, heatmap
-and temporal variants remain runnable experiments. Model 2 is implemented
-but unfinished; this repository does not claim an expert gameplay policy.
-CMA-ES and PPO are retired; their history and useful results remain accessible.
+**Current work:** the first end-to-end kickflip in Workshop, which needs a rough
+curved Model 1 that can read real trick-speed strokes. Linear Model 1 is the
+current trained model; hold, heatmap and temporal variants remain runnable
+experiments. Model 2 is implemented but unfinished; this repository does not
+claim an expert gameplay policy. CMA-ES and PPO are retired; their history and
+useful results remain accessible.
 
 ## Start here
 
-- [Current research status](research/STATUS.md) and [recent journal](research/JOURNAL.md)
+- [System map](research/SYSTEM_MAP.md): what we're building, what's blocking, the open decision
+- [Recent journal](research/JOURNAL.md)
 - [Workflow commands](docs/WORKFLOWS.md)
 - [Gesture and coordinate contract](GESTURES.md)
 - [Rig deployment and rollback](DEPLOYMENT.md)
