@@ -21,6 +21,21 @@ jobs:
             base=origin/main
           fi
           python scripts/ops/check_archive.py --base "$base"
+  public-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check bulk files and personal identifiers
+        env:
+          EVENT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          base="$EVENT_BASE"
+          if [ -z "$base" ] || [ "$base" = 0000000000000000000000000000000000000000 ]; then
+            base=origin/main
+          fi
+          python scripts/ops/check_public_safety.py --base "$base"
   offline-tests:
     runs-on: ubuntu-latest
     steps:

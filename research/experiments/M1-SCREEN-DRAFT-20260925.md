@@ -79,7 +79,7 @@ validate the 0.002 screen.
   labelling (see [hashes](../evidence/M1-SCREEN-DRAFT-20260925/midband-sealed-sha256.txt)).
   Draw 1 predicted too little contrast. Draw 3 used other-park ordinary
   controls, so the park would have revealed the category.
-- **Viewer:** `http://100.113.165.56:8772/`, serving only `viewer/`. The export
+- **Viewer:** `http://training-server:8772/`, serving only `viewer/`. The export
   downloads as `model1-onset-validation-20260924.json` (reused builder); its seed
   field reads 2509250455.
 

@@ -8,7 +8,7 @@
     "simulator_route_tests": "15 passed, iOS 18.2, including timing test with synthetic application",
     "python_probe_tests": "4 passed"
   },
-  "remote_signing": "BLOCKED: Xcode 16.2 reports No Accounts, missing com.asher.WebDriverAgentRunner.xctrunner profile, no team BK75JV5YK4 iOS Development certificate/private key",
+  "remote_signing": "BLOCKED: Xcode 16.2 reports No Accounts, missing com.asher.WebDriverAgentRunner.xctrunner profile, no team <team-id> iOS Development certificate/private key",
   "signed_build_log": "/Users/ashernoble/Projects/Robotics & hardware/TrueSkate-AI/tmp/wda-timing-signed-build-remote.log",
   "signed_build_log_sha256": "7c09692706d3ce90e2ddcd7fa63dc46eeb46a35818e49bd928978f36ee86151c",
   "deployment": "not attempted; existing XR2 WDA remains ready on 8103",

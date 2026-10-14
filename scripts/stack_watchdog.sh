@@ -15,10 +15,17 @@
 
 APPIUM_BIN="$HOME/.nvm/versions/node/v22.22.0/bin/appium"
 
+# UDIDs come from the repository .env (IPHONE_XR_UDID, IPHONE_XR2_UDID).
+ENV_FILE="${0:A:h:h}/.env"
+env_value() { sed -n "s/^$1=//p" "$ENV_FILE" | tail -1; }
+XR1_UDID="${IPHONE_XR_UDID:-$(env_value IPHONE_XR_UDID)}"
+XR2_UDID="${IPHONE_XR2_UDID:-$(env_value IPHONE_XR2_UDID)}"
+: "${XR1_UDID:?IPHONE_XR_UDID is missing from $ENV_FILE}" "${XR2_UDID:?IPHONE_XR2_UDID is missing from $ENV_FILE}"
+
 # name:udid:wda_port:mjpeg_port:appium_port
 DEVICES=(
-  "XR1:00008020-001D2C843A78002E:8100:9100:4723"
-  "XR2:00008020-001E759E3A60802E:8103:9103:4726"
+  "XR1:$XR1_UDID:8100:9100:4723"
+  "XR2:$XR2_UDID:8103:9103:4726"
 )
 
 typeset -A wda_down

@@ -57,7 +57,7 @@ On `model1_linear_replacement_20260922` this keeps 12,113 of 13,592 clips
   Super Crown 11 and Skateboard GB 7.
 - **Sealed hashes:**
   [audit1-sealed-sha256.txt](../evidence/M1-CORPUS-AUDIT-20260927/audit1-sealed-sha256.txt).
-- **Viewer:** `http://100.113.165.56:8773/`, serving only `viewer/`;
+- **Viewer:** `http://training-server:8773/`, serving only `viewer/`;
   `expected.json` returns 404. The export downloads as
   `model1-corpus-audit-2509270100.json`.
 
@@ -89,7 +89,7 @@ audit 1, on a fresh draw.
   Workshop 26, Skateboard GB 20, Super Crown 14, Los Angeles 10.
 - **Sealed hashes:**
   [audit2-sealed-sha256.txt](../evidence/M1-CORPUS-AUDIT-20260927/audit2-sealed-sha256.txt).
-- **Viewer:** `http://100.113.165.56:8774/`; the export downloads as
+- **Viewer:** `http://training-server:8774/`; the export downloads as
   `model1-corpus-audit-2509270200.json`.
 
 The corpus is "13,100 good labels" only if all 100 clips are satisfactory.
