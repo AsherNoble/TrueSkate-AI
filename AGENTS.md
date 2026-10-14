@@ -122,13 +122,16 @@ scripts need none).
 ## Commit hygiene
 
 - Each PR lands on `main` as one commit. Split a PR only when it holds
-  independent changes. Working commits stay on the branch until merge.
-- Before squashing, push an annotated tag at the branch tip:
-  `archive/squash-YYYYMMDD/<branch>`. Research records and rig evidence
-  directories cite branch SHAs; the tag keeps them reachable. Squashing is
-  not a retirement, so it needs no `research/ARCHIVE.md` entry.
-- Squashed message: `type: message`, a short context paragraph, the tag and
-  full tip SHA, then one bullet per squashed commit: `- <short SHA> <subject>`.
+  independent changes. WIP and other working commits stay on the branch and
+  never reach `main`.
+- Tag a branch only when a research record or evidence folder cites one of
+  its commits. Then, before rebasing or squashing it, push an annotated tag
+  at the branch tip, `archive/squash-YYYYMMDD/<branch>`, so the cited SHAs
+  stay reachable. Squashing is not a retirement, so it needs no
+  `research/ARCHIVE.md` entry.
+- Squashed message: `type: message`, a short context paragraph, then one
+  bullet per change. WIP commits never appear in it or in the PR
+  description. If you tagged the branch, add the tag and its full tip SHA.
 - Squash locally, force-push the one-commit branch, then use GitHub "Squash
   and merge"; the `main` ruleset requires a PR and allows no bypass. Merge
   stacked PRs in order, rebasing each next branch onto the new `main` first.
