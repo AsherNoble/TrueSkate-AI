@@ -6,6 +6,15 @@ them. Link a record only when one exists. Current state lives in
 [SYSTEM_MAP.md](SYSTEM_MAP.md).
 
 
+## 2026-10-14 — Model 1's 32-frame sampling is too sparse for trick strokes
+
+- **Ran:** filmed kickflip (60 fps) through linear Model 1's frame picks
+  (~73 ms apart) at five phases; about an hour, laptop only.
+- **Result:** each stroke's motion lands in ~1 picked frame and its trail in
+  1–2 (rule: ≥2); at 60 Hz, 3 (pop) and 5 (flick). The flick holds ~70 ms first.
+- **Decision:** trick models read every 60 Hz frame, as curved v1 does.
+  [Contact sheet](evidence/SAMPLING-CHECK-20261014/contact-sheet.jpg).
+
 ## 2026-10-13 — Free Colab reproduces Model 1 training but not Modal's turnaround
 
 - **What ran:** one Model 1 seed on a free Colab T4, with the reference recipe
@@ -438,10 +447,3 @@ them. Link a record only when one exists. Current state lives in
   and withheld the affected attempt; the segment then failed calibration and
   retained its raw recording without contributing clips.
   [Experiment record](experiments/M1-20260921-direct-video-phase.md).
-
-## 2026-09-20 — Replacement corpus park provenance corrected
-
-- The operator identified the XR2 park as Skateboard GB 2024. Corrected the
-  erroneous `The Workshop` label in all 910 admitted clip records and their
-  segment manifests, and renamed 86 park directories to `skateboard_gb_2024`.
-  The paused collector was not relaunched.
