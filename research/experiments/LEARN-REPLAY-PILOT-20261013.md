@@ -1,8 +1,9 @@
 # LEARN-REPLAY-PILOT-20261013 — prospective small learning/replay diagnostic
 
-Status: **Gate 1 go (operator, 2026-10-14); XR1 WDA rebuilt under a new bundle ID
-after a tunnel/WDA outage; context bound; capture session `pilot-00` started
-2026-10-14 01:34 UTC.** The original prepared record follows unchanged.
+Status: **capturing under a post-hoc stop-rule amendment (2026-10-14).** `pilot-00`
+admitted 50/50. `pilot-01-r1` failed die-five calibration (Gate 2), and the operator
+chose to continue with calibration losses capped at 30 candidates. The original
+prepared record follows unchanged.
 The operator authorized the parallel experiments and dependent stages on
 2026-10-13. This is an isolated diagnostic, with no production qualification,
 bulk collection, paid training or human-demonstration claim.
@@ -179,3 +180,32 @@ and disconnected Screen Sharing. The read-only binding
 ([`bound-context.json`](../evidence/LEARN-REPLAY-PILOT-20261013/bound-context.json),
 digest `ce6caa38…`) records XR1 on iOS 18.7.6 (22H320), True Skate 1.6.11, WDA
 `ae50404a`, the 2.25 s schedule and runner hashes, which match commit `fd2f6ee6`.
+
+## Capture, 2026-10-14
+
+`pilot-00` (train) ran 01:34–02:44 UTC and admitted **50/50** with no error, spending
+80 touches. All five recordings calibrated (held-out middle error −21.9 to +6.6 ms).
+Sample-slot preparation peaked at 1.79 s in its first recording, above the old 1.75 s
+lead, and at 1.29–1.40 s in the others. Recorder start latency was 0.17–0.67 s. The rig
+then sat idle for about 1 h 40 min because the session monitor missed the end; an
+exclusive XR2 slot granted to a Codex session went unused.
+
+**Gate 2.** `pilot-01` (validation) admitted 10/10 in `r0`. `r1` ran all 15 touches on
+schedule, but **die-five calibration failed at the middle marker**: two of five points
+voted. About 2 s after the 26 s reset, True Skate swung its camera roughly 180°
+around the stationary board with no touch, just after the idle navigation bar
+appeared. The swing was still settling when the 29 s marker landed, so the reference
+window was moving. The start and end markers detected 5/5. It is the first such
+failure in about 25 recordings that reached calibration. That recording's 10
+validation candidates are spent without clips. Totals at the stop: 60 admitted,
+70 sample and 42 support touches. See the [diagnosis](../evidence/LEARN-REPLAY-PILOT-20261013/gate2-pilot-01-r1/diagnosis.json).
+
+**Post-hoc amendment (operator, 2026-10-14).** The frozen rule stopped the pilot. The
+operator chose to continue: a recording whose only failure is die-five calibration
+loses its ten candidates without replacement, and capture continues while total
+losses stay within 30 candidates (5%). Any other failure or any rejected candidate
+still stops it. `pilot-01` resumes with `r2`–`r4` in a new run directory. The corpus is
+at most 590 clips and validation at most 90. Clips captured after the amendment
+carry a new bound-context fingerprint. The amendment is recorded in
+[`amendment-20261014.json`](../evidence/LEARN-REPLAY-PILOT-20261013/amendment-20261014.json),
+and its 25 synthetic checks pass.

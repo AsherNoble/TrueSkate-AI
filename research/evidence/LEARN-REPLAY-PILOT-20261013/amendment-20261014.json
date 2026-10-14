@@ -1,0 +1,10 @@
+{
+  "date": "2026-10-14",
+  "post_hoc": true,
+  "previous_bound_sha256": "ce6caa3876a34d8f96e04f98f2241e615753125bc0802f5b0c1ac41d68aaf6e0",
+  "trigger": "pilot-01-r1 (validation) failed die-five calibration at the middle marker: about 2 s after the 26 s reset, True Skate swung its camera ~180 degrees around the stationary board with no touch, just after the idle navigation bar appeared, and was still settling when the 29 s marker landed. All 15 touches were on schedule; the start and end markers detected 5/5. It is the first die-five failure in about 25 recordings that reached calibration.",
+  "state_at_amendment": {"admitted": 60, "sample_spent": 70, "support_spent": 42, "lost": 10},
+  "operator_decision": "continue, cap losses",
+  "rule": "A recording whose only failure is die-five calibration loses its ten candidates without replacement and capture continues while total losses stay within 30 candidates (5%). Any other failure or any rejected candidate still stops the pilot for diagnosis. pilot-01 resumes with its unattempted recordings r2-r4.",
+  "consequences": "Corpus at most 590 clips; validation at most 90. Clips captured after this amendment carry a new bound-context fingerprint."
+}

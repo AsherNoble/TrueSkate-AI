@@ -55,13 +55,27 @@ def test_preparation_lead_fits_after_the_longest_previous_touch(plan):
         assert current["slot_s"]-previous["slot_s"]-busy >= bind_context.PREPARE_LEAD_S
 
 
-def write_session(root, session, *, error=None, admitted=50, kinds=None):
-    out = root/"sessions"/session
+CALIBRATION_STOP = "ValueError: die-five calibration failed: middle"
+
+
+def write_run(root, session, *, run=None, recordings=range(5), lost=(), rejected=(), error=None, extra=()):
+    """A finished run: spend and settlement per recording; lost recordings stay unsettled."""
+    out = root/"sessions"/(run or session)
     out.mkdir(parents=True)
-    (out/"run-summary.json").write_text(json.dumps(dict(error=error, admitted=admitted)))
-    rows = [dict(kind=k) for k, n in (kinds or dict(sample=50, control=15, reset=10, pre_roll_reset=5)).items()
-            for _ in range(n)]
-    (out/"spend.jsonl").write_text("".join(json.dumps(r)+"\n" for r in rows))
+    base = 50*capture_pilot.SESSIONS.index(session)
+    spend, settled = [], []
+    for r in recordings:
+        (out/"recordings"/f"{session}-r{r}").mkdir(parents=True)
+        spend += [dict(kind="pre_roll_reset", request_id="p")]+[dict(kind="control", request_id="c")]*3
+        spend += [dict(kind="reset", request_id="reset-26")]*2
+        for c in range(base+10*r+1, base+10*r+11):
+            spend.append(dict(kind="sample", request_id=f"candidate-{c}"))
+            if r not in lost:
+                settled.append(dict(candidate_id=c, admitted=c not in rejected))
+    spend += list(extra)
+    (out/"spend.jsonl").write_text("".join(json.dumps(r)+"\n" for r in spend))
+    (out/"settled.jsonl").write_text("".join(json.dumps(s)+"\n" for s in settled))
+    (out/"run-summary.json").write_text(json.dumps(dict(error=error)))
 
 
 def test_first_session_is_admissible(plan, tmp_path):
@@ -69,12 +83,16 @@ def test_first_session_is_admissible(plan, tmp_path):
 
 
 @pytest.mark.parametrize("setup,session,message", [
-    (lambda r: write_session(r, "pilot-00"), "pilot-00", "already started"),
+    (lambda r: write_run(r, "pilot-00"), "pilot-00", "already started"),
     (lambda r: None, "pilot-01", "pilot-00 has not completed"),
-    (lambda r: write_session(r, "pilot-00", error="RuntimeError: x"), "pilot-01", "Gate 2"),
-    (lambda r: write_session(r, "pilot-00", admitted=49), "pilot-01", "Gate 2"),
-    (lambda r: write_session(r, "pilot-00", kinds=dict(sample=560)), "pilot-01", "budget"),
-    (lambda r: write_session(r, "pilot-00", kinds=dict(support=331)), "pilot-01", "budget"),
+    (lambda r: write_run(r, "pilot-00", error="RuntimeError: x"), "pilot-01", "Gate 2"),
+    (lambda r: write_run(r, "pilot-00", rejected={7}), "pilot-01", "Gate 2"),
+    (lambda r: write_run(r, "pilot-00", recordings=range(2), lost={1}, error=CALIBRATION_STOP),
+     "pilot-01", "pilot-00 has not completed"),
+    (lambda r: write_run(r, "pilot-00", lost={0, 1, 2, 3}), "pilot-01", "losses exceed 30"),
+    (lambda r: write_run(r, "pilot-00", extra=[dict(kind="sample", request_id="candidate-999")]*510),
+     "pilot-01", "budget"),
+    (lambda r: write_run(r, "pilot-00", extra=[dict(kind="control", request_id="c")]*301), "pilot-01", "budget"),
 ])
 def test_admission_refusals(plan, tmp_path, setup, session, message):
     setup(tmp_path)
@@ -83,8 +101,50 @@ def test_admission_refusals(plan, tmp_path, setup, session, message):
 
 
 def test_completed_sessions_allow_the_next_and_count_spend(plan, tmp_path):
-    write_session(tmp_path, "pilot-00")
+    write_run(tmp_path, "pilot-00")
     assert capture_pilot.admissible(plan, tmp_path, "pilot-01") == {"sample": 50, "support": 30}
+
+
+def test_calibration_losses_within_the_cap_complete_a_session(plan, tmp_path):
+    write_run(tmp_path, "pilot-00", lost={1, 3})
+    state = capture_pilot.session_state(tmp_path, "pilot-00")
+    assert state["lost"] == list(range(11, 21))+list(range(31, 41)) and state["admitted"] == 30
+    assert capture_pilot.admissible(plan, tmp_path, "pilot-01") == {"sample": 50, "support": 30}
+
+
+def test_a_calibration_only_stop_resumes_its_unattempted_recordings(plan, tmp_path):
+    write_run(tmp_path, "pilot-00")
+    write_run(tmp_path, "pilot-01", recordings=range(2), lost={1}, error=CALIBRATION_STOP)
+    with pytest.raises(RuntimeError, match="already started"):
+        capture_pilot.admissible(plan, tmp_path, "pilot-01")
+    assert capture_pilot.admissible(plan, tmp_path, "pilot-01", resume=True) == {"sample": 70, "support": 42}
+    state = capture_pilot.session_state(tmp_path, "pilot-01")
+    assert state["attempted"] == ["pilot-01-r0", "pilot-01-r1"] and state["runs"] == 1
+    write_run(tmp_path, "pilot-01", run="pilot-01+1", recordings=range(2, 5))
+    state = capture_pilot.session_state(tmp_path, "pilot-01")
+    assert len(state["attempted"]) == 5 and state["lost"] == list(range(61, 71)) and state["admitted"] == 40
+    assert capture_pilot.total_lost(tmp_path) == 10
+    with pytest.raises(RuntimeError, match="no unattempted"):
+        capture_pilot.admissible(plan, tmp_path, "pilot-01", resume=True)
+    assert capture_pilot.admissible(plan, tmp_path, "pilot-02") == {"sample": 100, "support": 60}
+
+
+@pytest.mark.parametrize("error,rejected,message", [
+    ("RuntimeError: menu/editor detected before touch", (), "Gate 2 is open in pilot-01"),
+    (CALIBRATION_STOP, {55}, "Gate 2 is open in pilot-01"),
+])
+def test_only_a_clean_calibration_stop_resumes(plan, tmp_path, error, rejected, message):
+    write_run(tmp_path, "pilot-00")
+    write_run(tmp_path, "pilot-01", recordings=range(2), lost={1}, rejected=rejected, error=error)
+    with pytest.raises(RuntimeError, match=message):
+        capture_pilot.admissible(plan, tmp_path, "pilot-01", resume=True)
+
+
+def test_runs_are_ordered_original_then_resumptions(tmp_path):
+    for name in ("pilot-03+2", "pilot-03", "pilot-03+10", "pilot-03+1", "pilot-030"):
+        (tmp_path/"sessions"/name).mkdir(parents=True)
+    assert [p.name for p in capture_pilot.runs(tmp_path, "pilot-03")] == [
+        "pilot-03", "pilot-03+1", "pilot-03+2", "pilot-03+10"]
 
 
 def test_bound_context_is_tamper_evident(plan):

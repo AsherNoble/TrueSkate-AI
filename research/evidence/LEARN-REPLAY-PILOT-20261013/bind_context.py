@@ -46,9 +46,13 @@ def schedule():
                 guard_lead_s=GUARD_LEAD_S, pre_roll_settle_s=PRE_ROLL_SETTLE_S,
                 recordings_per_session=RECORDINGS_PER_SESSION,
                 first_marker_screenshot_check=False,
-                stop_rules=["first recording failure stops the pilot (Gate 2)",
+                stop_rules=["any recording failure other than die-five calibration stops the pilot (Gate 2)",
+                            "a die-five calibration failure loses that recording's candidates without "
+                            "replacement; capture continues while total losses stay within 30 candidates "
+                            "(operator amendment 2026-10-14)",
                             "any rejected candidate stops the pilot after its recording (Gate 2)",
-                            "no retry, replacement or reordering; sessions run in plan order"])
+                            "no retry, replacement or reordering; sessions run in plan order; a session "
+                            "stopped only by calibration resumes with its unattempted recordings"])
 
 
 def source_hashes():
@@ -71,11 +75,13 @@ def device_facts(udid, scratch):
                 true_skate_version=app.get("version"))
 
 
-def bind(plan, *, context, gate1, facts, state, wda_revision, fingerprint, sources):
+def bind(plan, *, context, gate1, facts, state, wda_revision, fingerprint, sources, amendment=None):
     bound = dict(kind=KIND, plan_sha256=plan["sha256"], device=DEVICE, device_env_key=DEVICE_ENV_KEY,
                  wda_port=WDA_PORT, wda_revision=wda_revision, context=context, gate1=gate1,
                  device_facts=facts, preflight=state, capture=schedule(),
                  curved_pipeline_fingerprint=fingerprint, runner_sources=sources)
+    if amendment is not None:
+        bound["amendment"] = amendment
     bound["sha256"] = digest(bound)
     return bound
 
@@ -99,6 +105,7 @@ def main(argv=None):
     parser.add_argument("--confirmed", required=True, help="when and how the operator confirmed the context")
     parser.add_argument("--gate1", type=Path, required=True, help="JSON: gate results and operator decision")
     parser.add_argument("--wda-revision", required=True)
+    parser.add_argument("--amendment", type=Path, help="JSON: a post-hoc operator amendment to the stop rules")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
     plan = load_plan(args.plan)
@@ -118,7 +125,8 @@ def main(argv=None):
                    bound_utc=datetime.now(timezone.utc).isoformat())
     bound = bind(plan, context=context, gate1=json.loads(args.gate1.read_text()),
                  facts=device_facts(udid, scratch), state=state, wda_revision=args.wda_revision,
-                 fingerprint=pipeline_fingerprint(args.wda_revision), sources=source_hashes())
+                 fingerprint=pipeline_fingerprint(args.wda_revision), sources=source_hashes(),
+                 amendment=json.loads(args.amendment.read_text()) if args.amendment else None)
     with args.out.open("x") as handle:  # Never overwrite a binding.
         json.dump(bound, handle, indent=2)
         handle.write("\n")

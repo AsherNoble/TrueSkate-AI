@@ -5,8 +5,14 @@ same path as the physical game cohort: run_recording with the 60 fps XCTest reco
 WDA action timing, foreground/menu/editor guards and die-five calibration, then
 native-frame clip extraction into a research ledger. No production source or
 pipeline fingerprint changes. Sessions run in plan order. Every touch is recorded
-as spent before its RPC. A recording failure or any rejected candidate stops the
-pilot for diagnosis (Gate 2); nothing is retried, replaced or reordered.
+as spent before its RPC. Nothing is retried, replaced or reordered.
+
+Stop rules, as amended by the operator on 2026-10-14 after pilot-01-r1: a recording
+whose only failure is die-five calibration loses its ten candidates and capture
+continues, while total losses stay within LOSS_CAP. Any other failure or any
+rejected candidate stops the pilot for diagnosis (Gate 2). A session stopped only by
+calibration (pilot-01, before the amendment) resumes with --resume, which runs its
+unattempted recordings in a new run directory.
 """
 from __future__ import annotations
 
@@ -32,6 +38,8 @@ from run_helper import ENV_FILE, LOCK, TRUE_SKATE, append_durable, digest, rig_s
 SESSIONS = [f"pilot-{i:02}" for i in range(12)]
 SLOTS_PER_RECORDING = 10
 SUPPORT_PER_RECORDING = 6  # Three markers, two in-recording resets, one pre-roll reset.
+LOSS_CAP = 30  # Candidates lost to calibration-only failures (5% of 600); more stops the pilot.
+CALIBRATION_FAILURE = "die-five calibration failed"
 
 
 def recordings(plan, session):
@@ -63,22 +71,64 @@ def spent(root):
     return counts
 
 
-def admissible(plan, root, session):
-    """Refuse a rerun, an out-of-order session, an open Gate 2 or a budget overrun."""
+def rows(path):
+    return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+
+
+def runs(root, session):
+    """A session's run directories: the original, then numbered resumptions."""
+    base = Path(root)/"sessions"
+    found = [base/session] if (base/session).exists() else []
+    return found+sorted(base.glob(session+"+*"), key=lambda p: int(p.name.split("+")[1]))
+
+
+def session_state(root, session):
+    """Attempted recordings, outcomes and calibration losses across a session's runs."""
+    dirs = runs(root, session)
+    spent_ids = {int(r["request_id"].split("-")[1]) for d in dirs for r in rows(d/"spend.jsonl")
+                 if r["kind"] == "sample"}
+    settled = [s for d in dirs for s in rows(d/"settled.jsonl")]
+    summaries = [json.loads((d/"run-summary.json").read_text()) for d in dirs if (d/"run-summary.json").exists()]
+    errors = [s["error"] for s in summaries if s["error"]]
+    return dict(started=bool(dirs), finished=len(summaries) == len(dirs),
+                attempted=sorted({p.name for d in dirs for p in (d/"recordings").glob(session+"-r*")}),
+                admitted=sum(1 for s in settled if s["admitted"]),
+                rejected=sorted(s["candidate_id"] for s in settled if not s["admitted"]),
+                lost=sorted(spent_ids-{s["candidate_id"] for s in settled}),
+                calibration_only=all(e.startswith("ValueError: "+CALIBRATION_FAILURE) for e in errors),
+                runs=len(dirs))
+
+
+def total_lost(root):
+    return sum(len(session_state(root, s)["lost"]) for s in SESSIONS)
+
+
+def admissible(plan, root, session, *, resume=False):
+    """Refuse a rerun, an out-of-order session, an open Gate 2, the loss cap or the budget."""
     if session not in SESSIONS:
         raise ValueError("unknown pilot session")
-    if (Path(root)/"sessions"/session).exists():
+    state = session_state(root, session)
+    if resume:
+        if not state["started"] or not state["finished"]:
+            raise RuntimeError(f"{session} has no finished run to resume")
+        if state["rejected"] or not state["calibration_only"]:
+            raise RuntimeError(f"Gate 2 is open in {session}; only a calibration-only stop resumes")
+        if len(state["attempted"]) == RECORDINGS_PER_SESSION:
+            raise RuntimeError(f"{session} has no unattempted recording")
+    elif state["started"]:
         raise RuntimeError(f"{session} already started; no retry or replacement")
     for previous in SESSIONS[:SESSIONS.index(session)]:
-        path = Path(root)/"sessions"/previous/"run-summary.json"
-        if not path.exists():
+        prior = session_state(root, previous)
+        if not prior["finished"] or len(prior["attempted"]) != RECORDINGS_PER_SESSION:
             raise RuntimeError(f"{previous} has not completed; sessions run in plan order")
-        summary = json.loads(path.read_text())
-        if summary["error"] or summary["admitted"] != RECORDINGS_PER_SESSION*SLOTS_PER_RECORDING:
+        if prior["rejected"] or not prior["calibration_only"]:
             raise RuntimeError(f"Gate 2 is open after {previous}; the pilot stops for diagnosis")
+    if total_lost(root) > LOSS_CAP:
+        raise RuntimeError(f"calibration losses exceed {LOSS_CAP} candidates; the pilot stops (Gate 2)")
+    remaining = RECORDINGS_PER_SESSION-len(state["attempted"])
     used = spent(root)
-    if (used["sample"]+RECORDINGS_PER_SESSION*SLOTS_PER_RECORDING > plan["candidate_dispatch_limit"]
-            or used["support"]+RECORDINGS_PER_SESSION*SUPPORT_PER_RECORDING > plan["capture_support_limit"]):
+    if (used["sample"]+remaining*SLOTS_PER_RECORDING > plan["candidate_dispatch_limit"]
+            or used["support"]+remaining*SUPPORT_PER_RECORDING > plan["capture_support_limit"]):
         raise RuntimeError("frozen capture budget would be exceeded")
     return used
 
@@ -111,13 +161,16 @@ def main(argv=None):
     parser.add_argument("--bound", type=Path, required=True, help="bound context from bind_context.py")
     parser.add_argument("--session", required=True, choices=SESSIONS)
     parser.add_argument("--root", type=Path, required=True, help="pilot capture root on the rig")
+    parser.add_argument("--resume", action="store_true",
+                        help="run the unattempted recordings of a session stopped only by calibration")
     args = parser.parse_args(argv)
     if "training-server" not in socket.gethostname():
         raise SystemExit("pilot capture runs on training-server")
     plan = load_plan(args.plan)
     bound = verify_bound(json.loads(args.bound.read_text()), plan)
-    admissible(plan, args.root, args.session)
-    out = args.root/"sessions"/args.session
+    admissible(plan, args.root, args.session, resume=args.resume)
+    progress = session_state(args.root, args.session)
+    out = args.root/"sessions"/(args.session+(f"+{progress['runs']}" if args.resume else ""))
     # A busy rig is refused before the session exists, so nothing marks it started.
     descriptor = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     with os.fdopen(descriptor, "w") as handle:
@@ -182,6 +235,8 @@ def main(argv=None):
 
             for recording in recordings(plan, args.session):
                 rid = recording["recording_id"]
+                if rid in progress["attempted"]:
+                    continue  # Resumption: earlier runs already spent this recording.
                 if shutil.disk_usage(out).free < 8*2**30:
                     raise RuntimeError("less than 8 GiB free; capture stopped")
                 attachment_guard(udid)
@@ -206,7 +261,19 @@ def main(argv=None):
                 if _http_json(base+"/wda/video").get("value") is not None:
                     raise RuntimeError("recorder did not return idle")
                 attachment_guard(udid)
-                accepted = extract_recording(target, ledger, revision=bound["wda_revision"])
+                try:
+                    accepted = extract_recording(target, ledger, revision=bound["wda_revision"])
+                except ValueError as exc:
+                    if not str(exc).startswith(CALIBRATION_FAILURE):
+                        raise
+                    # Amended rule: the recording's candidates are lost, never replaced.
+                    append_durable(out/"losses.jsonl", dict(recording=rid, candidate_ids=recording["candidate_ids"],
+                                                            reason=str(exc), at=time.time()))
+                    print(json.dumps(dict(recording=rid, admitted=0, lost=SLOTS_PER_RECORDING,
+                                          reason=str(exc))), flush=True)
+                    if total_lost(args.root) > LOSS_CAP:
+                        raise RuntimeError(f"calibration losses exceed {LOSS_CAP} candidates (Gate 2)") from exc
+                    continue
                 admitted += accepted
                 print(json.dumps(dict(recording=rid, admitted=len(accepted))), flush=True)
                 if len(accepted) != SLOTS_PER_RECORDING:
@@ -221,8 +288,9 @@ def main(argv=None):
         LOCK.unlink(missing_ok=True)
     kinds = Counter(json.loads(line)["kind"] for line in (out/"spend.jsonl").read_text().splitlines()) \
         if (out/"spend.jsonl").exists() else Counter()
-    summary = dict(session=args.session, error=error, admitted=len(admitted), spent=dict(kinds),
-                   cumulative=dict(spent(args.root)))
+    summary = dict(session=args.session, run=out.name, resume=args.resume, error=error, admitted=len(admitted),
+                   lost=[r for line in rows(out/"losses.jsonl") for r in line["candidate_ids"]],
+                   spent=dict(kinds), cumulative=dict(spent(args.root)), cumulative_lost=total_lost(args.root))
     (out/"run-summary.json").write_text(json.dumps(summary, indent=2)+"\n")
     print(f"PILOT_SESSION_DONE session={args.session} admitted={len(admitted)} "
           f"spent={sum(kinds.values())} error={'yes' if error else 'no'}", flush=True)

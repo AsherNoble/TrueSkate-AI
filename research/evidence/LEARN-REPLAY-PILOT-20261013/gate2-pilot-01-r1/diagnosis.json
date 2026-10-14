@@ -1,0 +1,16 @@
+{
+  "recording": "pilot-01-r1",
+  "split": "validation",
+  "rig_path": "/Users/training-server/trueskate-ai-runtime/tmp/learn-replay-pilot-20261013/sessions/pilot-01/recordings/pilot-01-r1",
+  "original_mov_sha256_prefix": "81c65d41b6c3e234",
+  "error": "ValueError: die-five calibration failed: middle",
+  "execution": "error null; all 15 events succeeded (start 1.5 s, reset 26 s, middle 29 s, reset 53.5 s, end 57 s); 3527 frames over 58.912 s, maximum gap 33.3 ms",
+  "detections_rerun_locally": {
+    "start": {"approx_s": 1.519, "point_frames": [52, 52, 52, 52, 52], "votes": 5, "onset_s": 1.651667},
+    "middle": {"approx_s": 28.985, "point_frames": [1, 52, 52, 1, 11], "votes": 2, "onset_s": null},
+    "end": {"approx_s": 57.304, "point_frames": [54, 54, 54, 54, 54], "votes": 5, "onset_s": 57.465}
+  },
+  "visual": "frames-25.6-29.6s-4fps.jpg (left to right, top then bottom row, 0.25 s apart from 25.6 s): the 26 s reset leaves the board still at 0 mph; the idle navigation bar appears at about 27.4 s; from about 28.1 s the camera swings about 180 degrees around the stationary board with no touch, still settling at 29 s, where the marker contacts appear faintly.",
+  "interpretation": "Three of five marker points changed before the marker because the scene was moving; the detector correctly refused. Touch delivery and timing were on schedule.",
+  "base_rate": "first die-five failure in about 25 recordings that reached calibration (12 curved-round, 2 game-cohort, 6 pilot before this one)"
+}
