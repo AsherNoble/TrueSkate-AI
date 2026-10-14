@@ -1,6 +1,9 @@
 # Debug/temp output
 tmp/
 
+# One worktree per session (AGENTS.md)
+.claude/worktrees/
+
 # Python
 *.py[cod]
 *$py.class

@@ -32,6 +32,7 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m pytest -q
+git config core.hooksPath .githooks   # refuse commits on main
 ```
 
 For offline training/tests only: `python -m pip install -e '.[training,test]'`.

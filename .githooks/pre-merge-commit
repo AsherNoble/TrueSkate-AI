@@ -1,0 +1,3 @@
+#!/bin/sh
+# Merge commits on main are refused too; see pre-commit.
+exec "$(dirname "$0")/pre-commit"
