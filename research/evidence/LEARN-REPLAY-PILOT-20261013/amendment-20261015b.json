@@ -1,0 +1,10 @@
+{
+  "date": "2026-10-15",
+  "post_hoc": true,
+  "follows": "amendment-20261015.json",
+  "trigger": "pilot-04+1 (resumed 20:52 UTC 14 Oct): r1 and r2 lost to die-five calibration (end; the 53.5 s reset spawned at the MACBA-wall waypoint and the board turned through the 57 s marker). r3 ran every touch, then the recorder stop failed with 'Unable to locate XCTest screen recording'; one UUID attachment stayed on XR1. Tunnel daemon running, XR1 in the tunnel registry, WDA and Appium ready, recorder idle.",
+  "state_at_amendment": {"admitted": 130, "train": 120, "validation": 10, "test": 0, "sample_spent": 240, "support_spent": 144, "lost": 110},
+  "operator_decision": "recover, clean up, continue (Gate 2, 2026-10-15 about 00:00 UTC)",
+  "rule": "Copy the surviving attachment to host storage with devicectl and record its size, duration and SHA-256; remove it with scripts/recover_remotexpc_attachments.sh --delete xr1, which must list zero afterwards. r3 counts as a technical failure: its 10 candidates are lost without replacement. pilot-04 resumes with r4 as pilot-04+2, then pilot-05..pilot-11 in plan order. All other stop rules are unchanged.",
+  "precedent": "KICKFLIP-REPEATABILITY-20261009 repeat 15: same recorder error, attachment recovered with devicectl, then cleaned up."
+}

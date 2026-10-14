@@ -26,6 +26,11 @@ waypoint in about a third of recordings. The operator lifted the loss cap: a
 calibration-only failure loses its recording's candidates and capture continues to
 the end of the plan. Calibration, the stillness check and every other stop rule are
 unchanged. The operator's decision closes pilot-04's cap stop.
+
+Gate 2, 2026-10-15, after pilot-04+1: r3 ran every touch, but the recorder stop could
+not retrieve its video, which stayed on XR1. The operator chose to copy it to host
+storage, clean up with the documented wrapper and continue. r3 counts as a technical
+failure (its candidates lost); pilot-04 resumes with r4.
 """
 from __future__ import annotations
 
@@ -52,7 +57,7 @@ SESSIONS = [f"pilot-{i:02}" for i in range(12)]
 SLOTS_PER_RECORDING = 10
 SUPPORT_PER_RECORDING = 6  # Three markers, two in-recording resets, one pre-roll reset.
 LOSSES_BEFORE_REANCHOR = 40  # pilot-01 r1-r4; reported apart from later losses (second amendment).
-ACKNOWLEDGED_RUNS = {"pilot-01+1", "pilot-04"}  # Cap stops the operator reviewed and closed.
+ACKNOWLEDGED_RUNS = {"pilot-01+1", "pilot-04", "pilot-04+1"}  # Stops the operator reviewed and closed.
 CALIBRATION_FAILURE = "die-five calibration failed"
 
 

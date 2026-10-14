@@ -218,6 +218,20 @@ def test_the_lifted_cap_lets_heavy_losses_continue_and_resumes_pilot_04(plan, tm
     assert capture_pilot.admissible(plan, tmp_path, "pilot-05") == {"sample": 250, "support": 150}
 
 
+def test_the_reviewed_recorder_failure_resumes_pilot_04_with_r4(plan, tmp_path):
+    for session in capture_pilot.SESSIONS[:4]:
+        write_run(tmp_path, session)
+    write_run(tmp_path, "pilot-04", recordings=range(1), lost={0},
+              error="RuntimeError: calibration losses exceed 30 candidates (Gate 2)")
+    write_run(tmp_path, "pilot-04", run="pilot-04+1", recordings=range(1, 4), lost={1, 2, 3},
+              error="RuntimeError: recorder stop failed: WebDriverException: Message: Unable to locate")
+    state = capture_pilot.session_state(tmp_path, "pilot-04")
+    assert state["runs"] == 2 and state["calibration_only"] and len(state["attempted"]) == 4
+    assert capture_pilot.admissible(plan, tmp_path, "pilot-04", resume=True) == {"sample": 240, "support": 144}
+    write_run(tmp_path, "pilot-04", run="pilot-04+2", recordings=range(4, 5))
+    assert capture_pilot.admissible(plan, tmp_path, "pilot-05") == {"sample": 250, "support": 150}
+
+
 def png(seed, size=(828, 1792)):
     import io
     import numpy as np
