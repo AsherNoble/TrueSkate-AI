@@ -27,6 +27,7 @@ python -m pytest -q
 python scripts/model1/train_trace_extractor.py --smoke
 python scripts/model2/train_sequence_model.py --help
 python scripts/ops/check_archive.py --base origin/main
+python scripts/ops/check_public_safety.py --base origin/main
 ```
 
 For real training, use the relevant trainer's `--help` and provide the existing

@@ -150,8 +150,11 @@ scripts need none).
   locations. Verify GitHub preservation before deleting source. Deleting single
   files from `main` needs only a clear commit message: `main` is never rewritten.
   Journal trims need no tag or ARCHIVE entry.
-- Run `python scripts/ops/check_archive.py --base origin/main` before merging.
-  Changing the checker/workflow is a deliberate policy change requiring review.
+- Run `python scripts/ops/check_archive.py --base origin/main` and
+  `python scripts/ops/check_public_safety.py --base origin/main` before merging.
+  The second blocks files over 500 KB, JSON over 2,000 lines, UDIDs, Tailscale
+  addresses and personal email addresses. Changing the checkers/workflow is a
+  deliberate policy change requiring review.
 - Git tags do not back up ignored datasets, local logs, `.env`, or cloud volumes.
 - Research holdouts are not refactor tests. Use synthetic fixtures and existing
   offline tests; preserve model/checkpoint and dataset schema compatibility.
