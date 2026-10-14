@@ -16,6 +16,8 @@ Copies were independently hashed and source hashes rechecked after copying.
 Only caches and virtual-environment contents were excluded. The curved audit's
 untracked `.venv` is a symlink to the root sole environment and is separately recorded.
 This is a local retention copy, not a backup of external rig or cloud artifacts.
+On 2026-10-14 the directory moved, unchanged, to the laptop evidence folder
+`/Users/ashernoble/TrueSkate-evidence/from-tmp-20261014/worktree-retention-20261005/` (ARCH-020).
 
 `worktree-integration-20261005.json` indexes refs, original paths and retention totals.
 Before removal, recheck clean tracked/untracked state, every source and retained

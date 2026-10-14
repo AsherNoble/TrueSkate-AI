@@ -12,7 +12,7 @@ XR1's later signing issue is separate operational recovery.
 - Tested cleanup candidate: `f39201dfbf700965655984c49e6c9aa05da038cb`,
   [PR #15](https://github.com/AsherNoble/TrueSkate-AI/pull/15).
 - Original sources, journals and installed service definitions are preserved
-  through [ARCHIVE.md](ARCHIVE.md). Archive tags have active update/deletion
+  through [ARCHIVE.md](../ARCHIVE.md). Archive tags have active update/deletion
   protection. Main's required-check rules are active (ruleset 22508756):
   PRs, strict `archive-integrity`/`offline-tests`, no force-push or deletion.
 - BC promotion #14 merged normally as
@@ -87,7 +87,7 @@ Commit `292838de27cbf24ee8f39d378d7884ddc3044827` adds explicit
 and editor checks remain active, and dataset filtering and calibration are
 unchanged. Local tests: 259 passed; both Linux CI runs passed. Rig guard tests:
 five passed, two optional visual-fixture skips. See the operating guidance in
-[DEPLOYMENT.md](../DEPLOYMENT.md#idle-navigation-versus-blocking-menus).
+[DEPLOYMENT.md](../../DEPLOYMENT.md#idle-navigation-versus-blocking-menus).
 
 Both WDA endpoints recovered through the existing supervisor. XR1's original
 collector resumed and was left undisturbed during the XR2 retry.
@@ -128,4 +128,4 @@ There is no outstanding merge/refactor acceptance gate. XR1's later reboot
 exposed an Xcode account/provisioning failure; its bounded recovery check is
 deferred to operator signing work. Collection is intentionally off, including
 after any future recovery probe. See [autostart investigation](COLLECTION_AUTOSTART_20260909.md)
-and [current deployment guidance](../DEPLOYMENT.md).
+and [current deployment guidance](../../DEPLOYMENT.md).
