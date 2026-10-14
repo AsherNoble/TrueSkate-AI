@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-14",
+  "post_hoc": true,
+  "follows": "amendment-20261014.json",
+  "trigger": "pilot-01+1 lost r2-r4 to die-five calibration (r2/r3 end, r4 middle); losses reached 40 and the 30-candidate cap stopped capture. Resets had drifted from the street waypoint used throughout pilot-00 and pilot-01-r0 to a MACBA-wall waypoint, where the game turns the board and camera ~180 degrees about 2.3 s after each reset, settling about 1 s later. That motion falls inside the middle (reset+3.0 s) and end (reset+3.5 s) marker reference windows.",
+  "evidence": {
+    "post_reset_motion_mean_abs_diff_0.5s": "still views <= 3.4 (pilot-00 r0-r4, pilot-01-r0 and unaffected windows); turnaround windows 17.0-26.3 (pilot-01-r1 26 s; r2/r3 53.5 s; r4 26 s and 53.5 s)",
+    "detections": "failing markers had 2-3 of 5 points fire early (frames 1-34); passing markers fired together"
+  },
+  "state_at_amendment": {"admitted": 60, "sample_spent": 100, "support_spent": 60, "lost": 40},
+  "operator_decision": "re-anchor, guard, continue",
+  "rule": "The operator returns XR1 to the street waypoint. After every pre-roll reset, screenshots across 1.0-4.5 s must change by at most 10 (mean absolute grey difference, 64x144, rows 24-120); otherwise the pilot stops before any scientific touch (Gate 2). The 30-candidate cap counts only losses after the re-anchor; pilot-01+1's cap stop is reviewed and closed. pilot-01 remains 10/50; validation is at most 60.",
+  "limitations": "The guard checks only the pre-roll reset. A drift during a recording still costs that recording's candidates and counts toward the cap."
+}

@@ -75,7 +75,7 @@ def write_run(root, session, *, run=None, recordings=range(5), lost=(), rejected
     spend += list(extra)
     (out/"spend.jsonl").write_text("".join(json.dumps(r)+"\n" for r in spend))
     (out/"settled.jsonl").write_text("".join(json.dumps(s)+"\n" for s in settled))
-    (out/"run-summary.json").write_text(json.dumps(dict(error=error)))
+    (out/"run-summary.json").write_text(json.dumps(dict(error=error, run=out.name)))
 
 
 def test_first_session_is_admissible(plan, tmp_path):
@@ -89,7 +89,8 @@ def test_first_session_is_admissible(plan, tmp_path):
     (lambda r: write_run(r, "pilot-00", rejected={7}), "pilot-01", "Gate 2"),
     (lambda r: write_run(r, "pilot-00", recordings=range(2), lost={1}, error=CALIBRATION_STOP),
      "pilot-01", "pilot-00 has not completed"),
-    (lambda r: write_run(r, "pilot-00", lost={0, 1, 2, 3}), "pilot-01", "losses exceed 30"),
+    (lambda r: (write_run(r, "pilot-00", lost=set(range(5))), write_run(r, "pilot-01", lost={0, 1, 2})),
+     "pilot-02", "losses exceed 30"),
     (lambda r: write_run(r, "pilot-00", extra=[dict(kind="sample", request_id="candidate-999")]*510),
      "pilot-01", "budget"),
     (lambda r: write_run(r, "pilot-00", extra=[dict(kind="control", request_id="c")]*301), "pilot-01", "budget"),
@@ -197,3 +198,67 @@ def test_pilot_ledger_extracts_clips_with_the_frozen_split(plan, tmp_path, monke
     assert [m["candidate_id"] for m in metas] == [c["candidate_id"] for c in samples]
     settled = [json.loads(line) for line in (root/"settled.jsonl").read_text().splitlines()]
     assert [s["admitted"] for s in settled] == [True, True]
+
+
+def test_the_reviewed_cap_stop_closes_pilot_01_and_the_cap_restarts(plan, tmp_path):
+    write_run(tmp_path, "pilot-00")
+    write_run(tmp_path, "pilot-01", recordings=range(2), lost={1}, error=CALIBRATION_STOP)
+    write_run(tmp_path, "pilot-01", run="pilot-01+1", recordings=range(2, 5), lost={2, 3, 4},
+              error="RuntimeError: calibration losses exceed 30 candidates (Gate 2)")
+    assert capture_pilot.total_lost(tmp_path) == 40 and capture_pilot.new_losses(tmp_path) == 0
+    assert capture_pilot.admissible(plan, tmp_path, "pilot-02") == {"sample": 100, "support": 60}
+
+
+def png(seed, size=(828, 1792)):
+    import io
+    import numpy as np
+    from PIL import Image
+    pixels = np.random.default_rng(seed).integers(0, 255, (size[1]//16, size[0]//16), dtype=np.uint8)
+    buffer = io.BytesIO()
+    Image.fromarray(pixels).resize(size, Image.NEAREST).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+class FakeClock:
+    def __init__(self):
+        self.t = 100.
+
+    def __call__(self):
+        return self.t
+
+    def sleep(self, seconds):
+        self.t += seconds
+
+
+def screenshots(frames, clock, step=.45):
+    def take():
+        clock.t += step
+        return frames(clock.t)
+    return take
+
+
+def test_stillness_passes_a_still_view_after_the_nav_bar_appears():
+    import io
+    import numpy as np
+    from PIL import Image
+    still = png(1)
+    image = np.asarray(Image.open(io.BytesIO(still))).copy()
+    image[-200:] = 0  # Idle navigation bar: cropped out of the comparison.
+    buffer = io.BytesIO(); Image.fromarray(image).save(buffer, format="PNG")
+    clock = FakeClock()
+    diffs = capture_pilot.assert_still(screenshots(lambda t: still if t < 102 else buffer.getvalue(), clock),
+                                       start=100., clock=clock, sleep=clock.sleep)
+    assert len(diffs) >= 6 and max(diffs) == 0
+
+
+def test_stillness_refuses_a_turning_view():
+    clock = FakeClock()
+    with pytest.raises(RuntimeError, match="still moving"):
+        capture_pilot.assert_still(screenshots(lambda t: png(int(t*10)), clock), start=100., clock=clock,
+                                   sleep=clock.sleep)
+
+
+def test_stillness_is_in_the_bound_schedule():
+    rule = bind_context.schedule()["pre_roll_stillness"]
+    assert rule["window_s"] == [1.0, 4.5] and rule["max_mean_abs_diff"] == 10.0
+

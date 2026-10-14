@@ -29,6 +29,11 @@ DEVICE, DEVICE_ENV_KEY, WDA_PORT = "iPhone_XR", "IPHONE_XR_UDID", 8100
 # to 1.58 s; a later start cannot shorten any margin, and admission is unchanged.
 PREPARE_LEAD_S, GUARD_LEAD_S, PRE_ROLL_SETTLE_S = 2.25, .25, 3
 RECORDINGS_PER_SESSION = 5
+# Second amendment (2026-10-14): stillness after each pre-roll reset. Mean |difference|
+# of consecutive 64x144 grey screenshots, rows 24-120 (HUD and idle navigation bar
+# cropped). Still post-reset views measured <= 3.4; the MACBA-wall waypoint's
+# turnaround measured 17-26.
+STILL_WINDOW_S, STILL_MAX_DIFF = (1.0, 4.5), 10.0
 RUNNERS = ("bind_context.py", "capture_pilot.py", "prepare.py")
 SHARED = ("run_helper.py", "run_game.py")
 
@@ -46,10 +51,14 @@ def schedule():
                 guard_lead_s=GUARD_LEAD_S, pre_roll_settle_s=PRE_ROLL_SETTLE_S,
                 recordings_per_session=RECORDINGS_PER_SESSION,
                 first_marker_screenshot_check=False,
+                pre_roll_stillness=dict(window_s=list(STILL_WINDOW_S), max_mean_abs_diff=STILL_MAX_DIFF,
+                                        grey_size=[64, 144], rows=[24, 120]),
                 stop_rules=["any recording failure other than die-five calibration stops the pilot (Gate 2)",
                             "a die-five calibration failure loses that recording's candidates without "
-                            "replacement; capture continues while total losses stay within 30 candidates "
-                            "(operator amendment 2026-10-14)",
+                            "replacement; capture continues while losses after the re-anchor stay within "
+                            "30 candidates (operator amendments 2026-10-14)",
+                            "a view still moving after a pre-roll reset stops the pilot before any "
+                            "scientific touch (Gate 2)",
                             "any rejected candidate stops the pilot after its recording (Gate 2)",
                             "no retry, replacement or reordering; sessions run in plan order; a session "
                             "stopped only by calibration resumes with its unattempted recordings"])

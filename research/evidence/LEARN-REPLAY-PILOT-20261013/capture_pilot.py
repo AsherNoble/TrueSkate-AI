@@ -13,6 +13,13 @@ continues, while total losses stay within LOSS_CAP. Any other failure or any
 rejected candidate stops the pilot for diagnosis (Gate 2). A session stopped only by
 calibration (pilot-01, before the amendment) resumes with --resume, which runs its
 unattempted recordings in a new run directory.
+
+Second amendment, 2026-10-14, after pilot-01+1: resets had drifted to a MACBA-wall
+waypoint where the game turns the board around ~2.3 s after spawning, which defeated
+calibration. The operator re-anchored XR1 at the street waypoint. Each pre-roll reset
+is now followed by a stillness check that stops before any scientific touch if the
+view is still moving. The loss cap counts only losses after the re-anchor, and the
+operator's review closes pilot-01+1's cap stop.
 """
 from __future__ import annotations
 
@@ -31,7 +38,7 @@ HERE = Path(__file__).resolve().parent
 PHYSICAL = HERE.parent/"PHYSICAL-TRANSFER-20261013"
 sys.path[:0] = [str(HERE), str(PHYSICAL)]
 from bind_context import (GUARD_LEAD_S, PRE_ROLL_SETTLE_S, PREPARE_LEAD_S,  # noqa: E402
-                          RECORDINGS_PER_SESSION, load_plan, verify_bound)
+                          RECORDINGS_PER_SESSION, STILL_MAX_DIFF, STILL_WINDOW_S, load_plan, verify_bound)
 from run_game import preparation  # noqa: E402
 from run_helper import ENV_FILE, LOCK, TRUE_SKATE, append_durable, digest, rig_state  # noqa: E402
 
@@ -39,6 +46,8 @@ SESSIONS = [f"pilot-{i:02}" for i in range(12)]
 SLOTS_PER_RECORDING = 10
 SUPPORT_PER_RECORDING = 6  # Three markers, two in-recording resets, one pre-roll reset.
 LOSS_CAP = 30  # Candidates lost to calibration-only failures (5% of 600); more stops the pilot.
+LOSSES_BEFORE_REANCHOR = 40  # pilot-01 r1-r4; the cap counts only later losses (second amendment).
+ACKNOWLEDGED_RUNS = {"pilot-01+1"}  # Stops the operator reviewed and closed (second amendment).
 CALIBRATION_FAILURE = "die-five calibration failed"
 
 
@@ -89,7 +98,7 @@ def session_state(root, session):
                  if r["kind"] == "sample"}
     settled = [s for d in dirs for s in rows(d/"settled.jsonl")]
     summaries = [json.loads((d/"run-summary.json").read_text()) for d in dirs if (d/"run-summary.json").exists()]
-    errors = [s["error"] for s in summaries if s["error"]]
+    errors = [s["error"] for s in summaries if s["error"] and s.get("run") not in ACKNOWLEDGED_RUNS]
     return dict(started=bool(dirs), finished=len(summaries) == len(dirs),
                 attempted=sorted({p.name for d in dirs for p in (d/"recordings").glob(session+"-r*")}),
                 admitted=sum(1 for s in settled if s["admitted"]),
@@ -101,6 +110,34 @@ def session_state(root, session):
 
 def total_lost(root):
     return sum(len(session_state(root, s)["lost"]) for s in SESSIONS)
+
+
+def new_losses(root):
+    """Losses the cap counts: those after the re-anchor."""
+    return total_lost(root)-LOSSES_BEFORE_REANCHOR
+
+
+def grey(png):
+    from PIL import Image
+    import io
+    import numpy as np
+    image = Image.open(io.BytesIO(png)).convert("L").resize((64, 144), Image.BOX)
+    return np.asarray(image, dtype=float)[24:120]
+
+
+def assert_still(screenshot, *, start, clock=time.monotonic, sleep=time.sleep, window=STILL_WINDOW_S):
+    """Sample screenshots across the post-reset window; refuse a view that is still moving."""
+    import numpy as np
+    sleep(max(0., start+window[0]-clock()))
+    previous, diffs = grey(screenshot()), []
+    while clock()-start < window[1]:
+        current = grey(screenshot())
+        diffs.append(float(np.mean(np.abs(current-previous))))
+        previous = current
+    if not diffs or max(diffs) > STILL_MAX_DIFF:
+        raise RuntimeError(f"view still moving after the pre-roll reset (max diff "
+                           f"{max(diffs) if diffs else 'n/a'}); waypoint drift? (Gate 2)")
+    return diffs
 
 
 def admissible(plan, root, session, *, resume=False):
@@ -123,7 +160,7 @@ def admissible(plan, root, session, *, resume=False):
             raise RuntimeError(f"{previous} has not completed; sessions run in plan order")
         if prior["rejected"] or not prior["calibration_only"]:
             raise RuntimeError(f"Gate 2 is open after {previous}; the pilot stops for diagnosis")
-    if total_lost(root) > LOSS_CAP:
+    if new_losses(root) > LOSS_CAP:
         raise RuntimeError(f"calibration losses exceed {LOSS_CAP} candidates; the pilot stops (Gate 2)")
     remaining = RECORDINGS_PER_SESSION-len(state["attempted"])
     used = spent(root)
@@ -242,7 +279,10 @@ def main(argv=None):
                 attachment_guard(udid)
                 gameplay()
                 touch("pre_roll_reset", rid+"-pre-roll", reset_payload())
-                time.sleep(PRE_ROLL_SETTLE_S)
+                reset_at = time.monotonic()
+                diffs = assert_still(driver.get_screenshot_as_png, start=reset_at)
+                append_durable(out/"stillness.jsonl", dict(recording=rid, diffs=diffs, at=time.time()))
+                time.sleep(max(0., reset_at+PRE_ROLL_SETTLE_S-time.monotonic()))
                 gameplay()
                 target = out/"recordings"/rid
                 run_recording(
@@ -271,7 +311,7 @@ def main(argv=None):
                                                             reason=str(exc), at=time.time()))
                     print(json.dumps(dict(recording=rid, admitted=0, lost=SLOTS_PER_RECORDING,
                                           reason=str(exc))), flush=True)
-                    if total_lost(args.root) > LOSS_CAP:
+                    if new_losses(args.root) > LOSS_CAP:
                         raise RuntimeError(f"calibration losses exceed {LOSS_CAP} candidates (Gate 2)") from exc
                     continue
                 admitted += accepted
@@ -290,7 +330,8 @@ def main(argv=None):
         if (out/"spend.jsonl").exists() else Counter()
     summary = dict(session=args.session, run=out.name, resume=args.resume, error=error, admitted=len(admitted),
                    lost=[r for line in rows(out/"losses.jsonl") for r in line["candidate_ids"]],
-                   spent=dict(kinds), cumulative=dict(spent(args.root)), cumulative_lost=total_lost(args.root))
+                   spent=dict(kinds), cumulative=dict(spent(args.root)), cumulative_lost=total_lost(args.root),
+                   losses_after_reanchor=new_losses(args.root))
     (out/"run-summary.json").write_text(json.dumps(summary, indent=2)+"\n")
     print(f"PILOT_SESSION_DONE session={args.session} admitted={len(admitted)} "
           f"spent={sum(kinds.values())} error={'yes' if error else 'no'}", flush=True)

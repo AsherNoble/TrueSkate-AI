@@ -1,9 +1,10 @@
 # LEARN-REPLAY-PILOT-20261013 — prospective small learning/replay diagnostic
 
-Status: **capturing under a post-hoc stop-rule amendment (2026-10-14).** `pilot-00`
-admitted 50/50. `pilot-01-r1` failed die-five calibration (Gate 2), and the operator
-chose to continue with calibration losses capped at 30 candidates. The original
-prepared record follows unchanged.
+Status: **capture paused at a second Gate 2 (2026-10-14).** 60 clips admitted (50 train,
+10 validation) and 40 validation candidates lost. Resets had drifted to a waypoint
+whose automatic turnaround defeats calibration. The operator chose to re-anchor at the
+street waypoint and continue under a second amendment with a pre-roll stillness guard.
+The original prepared record follows unchanged.
 The operator authorized the parallel experiments and dependent stages on
 2026-10-13. This is an isolated diagnostic, with no production qualification,
 bulk collection, paid training or human-demonstration claim.
@@ -209,3 +210,25 @@ at most 590 clips and validation at most 90. Clips captured after the amendment
 carry a new bound-context fingerprint. The amendment is recorded in
 [`amendment-20261014.json`](../evidence/LEARN-REPLAY-PILOT-20261013/amendment-20261014.json),
 and its 25 synthetic checks pass.
+
+**Second Gate 2.** The `pilot-01` resume (06:41–07:10 UTC) lost all of `r2`–`r4` to
+die-five calibration: `r2` and `r3` at the end marker, `r4` at the middle. Losses
+reached 40 and the cap stopped the run. The touches were again on schedule. The cause
+is waypoint drift. Throughout `pilot-00` and `pilot-01-r0`, every reset placed the
+board on a street with lane lines, and the view stayed still. From `pilot-01-r1`, the
+random gestures had moved the board nearer a MACBA-wall waypoint. There the game turns
+board and camera about 180° roughly 2.3 s after each reset, settling about a second
+later. The middle marker (reset + 3.0 s) and the end marker (reset + 3.5 s) fall inside
+or at the tail of that turn. Comparing grey frames 0.5 s apart, still post-reset views
+changed by at most 3.4 and turnaround windows by 17–26. See the
+[frames](../evidence/LEARN-REPLAY-PILOT-20261013/gate2-pilot-01-resume/). Totals: 60 admitted,
+100 sample and 60 support touches, 40 lost.
+
+**Second amendment (operator, 2026-10-14).** XR1 is re-anchored at the street waypoint.
+After every pre-roll reset, consecutive screenshots across 1.0–4.5 s must differ by at
+most 10. Otherwise the pilot stops before any scientific touch. The cap counts only
+losses after the re-anchor, and `pilot-01+1`'s cap stop is closed. `pilot-01` stays at
+10/50, so validation is at most 60. The guard checks only pre-roll resets, so drift
+during a recording can still cost candidates. See
+[`amendment-20261014b.json`](../evidence/LEARN-REPLAY-PILOT-20261013/amendment-20261014b.json).
+The 29 synthetic checks pass.
