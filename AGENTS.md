@@ -81,17 +81,43 @@ scripts need none).
 - `README.md`: architecture; `docs/WORKFLOWS.md`: runnable commands.
 - `GESTURES.md`: authoritative gesture, bounds, timing and schema contracts.
 - `DEPLOYMENT.md`: rig operation, compatibility launchers and rollback.
-- `.venv` is the only virtual environment; run `python -m pytest` from repo root.
+- `.venv` in the main checkout is the only virtual environment. Run
+  `python -m pytest` from your worktree's root with that `.venv`'s Python;
+  scripts also need `PYTHONPATH=src` to import the worktree's code.
 - Temporary output goes in `tmp/` (scratch; see "Writing it down");
   corpus/checkpoint artifacts stay out of Git.
 - Use absolute filesystem paths in tools. Do not rely on tilde expansion.
 - Commit messages: `type: message`, one coherent commit at a time.
 - Prefer terse factual updates: what changed, evidence, next step.
-- Preserve dirty work. Make agent changes in separate worktrees/branches;
-  treat the rig checkout as deployment state, not an untracked development line.
+- Preserve dirty work, including another session's. Treat the rig checkout as
+  deployment state, not an untracked development line.
 - Once a feature branch is merged into the default branch, delete it: local
   branch, remote branch and worktree. This applies here and to the WDA fork.
   Preserve/archive refs (`preserve/*`, `archive/*` tags) are exempt.
+
+## Sessions and worktrees
+
+- The main checkout belongs to the user. Agents only read it: no edits,
+  commits, checkouts or pulls there.
+- One worktree per session, at `.claude/worktrees/<name>` on its own branch
+  from `origin/main`. Claude Code sessions start with `claude -w <name>`, which
+  creates the worktree and blocks edits to the main checkout. A session that
+  starts in the main checkout moves to a new worktree before changing anything
+  (Claude Code: `EnterWorktree`; Codex: `git worktree add
+  .claude/worktrees/<name> -b <branch> origin/main`). Existing worktrees
+  elsewhere, such as `tmp/worktrees/`, stay where they are.
+- `.githooks/` refuses commits and merge commits on `main`. Enable it once per
+  clone with `git config core.hooksPath .githooks`. Never bypass it with
+  `--no-verify`.
+- **Handoffs.** A session can be cut off by usage limits without warning; the
+  user then continues the task in the other tool (Claude Code ↔ Codex), which
+  reads the previous session's transcript.
+  - Commit small WIP commits on your branch after each working step, so git
+    always holds the current state. They are squashed at merge.
+  - A session continuing another's work uses that session's worktree
+    (`claude -w <name>` reopens `.claude/worktrees/<name>`; start Codex in
+    that directory). Begin with `git status` and `git log` there, and trust git
+    over the transcript or any handoff note where they disagree.
 
 ## Commit hygiene
 

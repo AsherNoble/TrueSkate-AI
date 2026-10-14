@@ -1,0 +1,9 @@
+#!/bin/sh
+# Refuse commits on main. Every session works on its own branch in its own
+# worktree (AGENTS.md, "Sessions and worktrees"). Enabled per clone with
+# `git config core.hooksPath .githooks`. Detached HEADs (rebase, bisect) pass.
+branch=$(git symbolic-ref --quiet --short HEAD) || exit 0
+[ "$branch" = main ] || exit 0
+echo "pre-commit: commits on main are refused; work on a branch in your own worktree:" >&2
+echo "  claude -w <name>   or   git worktree add .claude/worktrees/<name> -b <branch> origin/main" >&2
+exit 1

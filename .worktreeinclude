@@ -1,0 +1,2 @@
+# Gitignored files that Claude Code copies into each new worktree (claude -w).
+.env
