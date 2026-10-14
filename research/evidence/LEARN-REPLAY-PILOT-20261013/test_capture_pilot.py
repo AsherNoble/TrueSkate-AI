@@ -89,8 +89,6 @@ def test_first_session_is_admissible(plan, tmp_path):
     (lambda r: write_run(r, "pilot-00", rejected={7}), "pilot-01", "Gate 2"),
     (lambda r: write_run(r, "pilot-00", recordings=range(2), lost={1}, error=CALIBRATION_STOP),
      "pilot-01", "pilot-00 has not completed"),
-    (lambda r: (write_run(r, "pilot-00", lost=set(range(5))), write_run(r, "pilot-01", lost={0, 1, 2})),
-     "pilot-02", "losses exceed 30"),
     (lambda r: write_run(r, "pilot-00", extra=[dict(kind="sample", request_id="candidate-999")]*510),
      "pilot-01", "budget"),
     (lambda r: write_run(r, "pilot-00", extra=[dict(kind="control", request_id="c")]*301), "pilot-01", "budget"),
@@ -106,7 +104,7 @@ def test_completed_sessions_allow_the_next_and_count_spend(plan, tmp_path):
     assert capture_pilot.admissible(plan, tmp_path, "pilot-01") == {"sample": 50, "support": 30}
 
 
-def test_calibration_losses_within_the_cap_complete_a_session(plan, tmp_path):
+def test_calibration_losses_complete_a_session(plan, tmp_path):
     write_run(tmp_path, "pilot-00", lost={1, 3})
     state = capture_pilot.session_state(tmp_path, "pilot-00")
     assert state["lost"] == list(range(11, 21))+list(range(31, 41)) and state["admitted"] == 30
@@ -207,6 +205,17 @@ def test_the_reviewed_cap_stop_closes_pilot_01_and_the_cap_restarts(plan, tmp_pa
               error="RuntimeError: calibration losses exceed 30 candidates (Gate 2)")
     assert capture_pilot.total_lost(tmp_path) == 40 and capture_pilot.new_losses(tmp_path) == 0
     assert capture_pilot.admissible(plan, tmp_path, "pilot-02") == {"sample": 100, "support": 60}
+
+
+def test_the_lifted_cap_lets_heavy_losses_continue_and_resumes_pilot_04(plan, tmp_path):
+    for session in capture_pilot.SESSIONS[:4]:
+        write_run(tmp_path, session, lost={0, 1, 2})
+    write_run(tmp_path, "pilot-04", recordings=range(1), lost={0},
+              error="RuntimeError: calibration losses exceed 30 candidates (Gate 2)")
+    assert capture_pilot.new_losses(tmp_path) == 90
+    assert capture_pilot.admissible(plan, tmp_path, "pilot-04", resume=True) == {"sample": 210, "support": 126}
+    write_run(tmp_path, "pilot-04", run="pilot-04+1", recordings=range(1, 5), lost={1, 2, 3, 4})
+    assert capture_pilot.admissible(plan, tmp_path, "pilot-05") == {"sample": 250, "support": 150}
 
 
 def png(seed, size=(828, 1792)):

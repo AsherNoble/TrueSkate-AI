@@ -20,6 +20,12 @@ calibration. The operator re-anchored XR1 at the street waypoint. Each pre-roll 
 is now followed by a stillness check that stops before any scientific touch if the
 view is still moving. The loss cap counts only losses after the re-anchor, and the
 operator's review closes pilot-01+1's cap stop.
+
+Gate 2, 2026-10-15, after pilot-04-r0: mid-recording resets still drift to the wall
+waypoint in about a third of recordings. The operator lifted the loss cap: a
+calibration-only failure loses its recording's candidates and capture continues to
+the end of the plan. Calibration, the stillness check and every other stop rule are
+unchanged. The operator's decision closes pilot-04's cap stop.
 """
 from __future__ import annotations
 
@@ -45,9 +51,8 @@ from run_helper import ENV_FILE, LOCK, TRUE_SKATE, append_durable, digest, rig_s
 SESSIONS = [f"pilot-{i:02}" for i in range(12)]
 SLOTS_PER_RECORDING = 10
 SUPPORT_PER_RECORDING = 6  # Three markers, two in-recording resets, one pre-roll reset.
-LOSS_CAP = 30  # Candidates lost to calibration-only failures (5% of 600); more stops the pilot.
-LOSSES_BEFORE_REANCHOR = 40  # pilot-01 r1-r4; the cap counts only later losses (second amendment).
-ACKNOWLEDGED_RUNS = {"pilot-01+1"}  # Stops the operator reviewed and closed (second amendment).
+LOSSES_BEFORE_REANCHOR = 40  # pilot-01 r1-r4; reported apart from later losses (second amendment).
+ACKNOWLEDGED_RUNS = {"pilot-01+1", "pilot-04"}  # Cap stops the operator reviewed and closed.
 CALIBRATION_FAILURE = "die-five calibration failed"
 
 
@@ -141,7 +146,7 @@ def assert_still(screenshot, *, start, clock=time.monotonic, sleep=time.sleep, w
 
 
 def admissible(plan, root, session, *, resume=False):
-    """Refuse a rerun, an out-of-order session, an open Gate 2, the loss cap or the budget."""
+    """Refuse a rerun, an out-of-order session, an open Gate 2 or the budget."""
     if session not in SESSIONS:
         raise ValueError("unknown pilot session")
     state = session_state(root, session)
@@ -160,8 +165,6 @@ def admissible(plan, root, session, *, resume=False):
             raise RuntimeError(f"{previous} has not completed; sessions run in plan order")
         if prior["rejected"] or not prior["calibration_only"]:
             raise RuntimeError(f"Gate 2 is open after {previous}; the pilot stops for diagnosis")
-    if new_losses(root) > LOSS_CAP:
-        raise RuntimeError(f"calibration losses exceed {LOSS_CAP} candidates; the pilot stops (Gate 2)")
     remaining = RECORDINGS_PER_SESSION-len(state["attempted"])
     used = spent(root)
     if (used["sample"]+remaining*SLOTS_PER_RECORDING > plan["candidate_dispatch_limit"]
@@ -311,8 +314,6 @@ def main(argv=None):
                                                             reason=str(exc), at=time.time()))
                     print(json.dumps(dict(recording=rid, admitted=0, lost=SLOTS_PER_RECORDING,
                                           reason=str(exc))), flush=True)
-                    if new_losses(args.root) > LOSS_CAP:
-                        raise RuntimeError(f"calibration losses exceed {LOSS_CAP} candidates (Gate 2)") from exc
                     continue
                 admitted += accepted
                 print(json.dumps(dict(recording=rid, admitted=len(accepted))), flush=True)

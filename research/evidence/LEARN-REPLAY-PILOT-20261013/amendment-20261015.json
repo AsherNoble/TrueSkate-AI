@@ -1,0 +1,10 @@
+{
+  "date": "2026-10-15",
+  "post_hoc": true,
+  "follows": "amendment-20261014b.json",
+  "trigger": "pilot-04-r0 lost its 10 candidates to die-five calibration (middle). By 25.5 s the gestures had pushed the board to the kerb; the 26 s reset spawned it at the MACBA-wall waypoint and the game turned board and camera around through the 29 s marker. Losses after the re-anchor reached 40, over the 30-candidate cap. Since the re-anchor, 4 of 11 recordings were lost this way (pilot-02 r3, pilot-03 r0 and r2, pilot-04 r0); every pre-roll stillness check passed (max 1.18).",
+  "state_at_amendment": {"admitted": 130, "train": 120, "validation": 10, "test": 0, "sample_spent": 210, "support_spent": 126, "lost": 80},
+  "operator_decision": "lift the cap and finish all sessions in plan order (Gate 2, 2026-10-15 about 14:30 UTC)",
+  "rule": "No loss cap. A die-five calibration-only failure loses its recording's candidates without replacement and capture continues. Calibration, the pre-roll stillness check, plan order and every other stop rule are unchanged. pilot-04's cap stop is closed; it resumes with r1-r4.",
+  "limitations": "Mid-recording resets still reach the wall waypoint; expect about a third of the remaining recordings to be lost, for about 380 admitted candidates in total."
+}

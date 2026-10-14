@@ -55,8 +55,8 @@ def schedule():
                                         grey_size=[64, 144], rows=[24, 120]),
                 stop_rules=["any recording failure other than die-five calibration stops the pilot (Gate 2)",
                             "a die-five calibration failure loses that recording's candidates without "
-                            "replacement; capture continues while losses after the re-anchor stay within "
-                            "30 candidates (operator amendments 2026-10-14)",
+                            "replacement and capture continues; no loss cap (operator amendments "
+                            "2026-10-14, cap lifted at Gate 2 on 2026-10-15)",
                             "a view still moving after a pre-roll reset stops the pilot before any "
                             "scientific touch (Gate 2)",
                             "any rejected candidate stops the pilot after its recording (Gate 2)",
