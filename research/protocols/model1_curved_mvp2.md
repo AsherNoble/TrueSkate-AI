@@ -1,7 +1,25 @@
 # Model 1 MVP 2.0 — arbitrary single-drag recovery
 
 Operator requirements recorded 2026-10-03. This is a design record, not a
-collection/training launch or a frozen workload.
+collection/training launch or a frozen workload. Explore mode applies
+(AGENTS.md); audit sizes marked certify-mode apply only on request.
+
+## Success criterion
+
+The MVP succeeds when the intended trick lands (the AGENTS.md north star). The
+operator's practical test is an expert demonstration of a single trick, the
+kickflip first, followed by Model 1 gesture inference and execution of the
+inferred gestures in the Workshop. Score whether the intended trick is
+reproduced; Model 2 is not required. Retain positional accuracy and human
+overlay review alongside this end-to-end outcome so failures can be diagnosed.
+
+Use demonstrations whose strokes are single-finger and sequential, such as the
+kickflip's pop then flick, and recover each stroke separately. Overlapping
+contacts exceed the current scope. Flatground reduces obstacle/location
+variation, but compare reasonably matched initial speed, heading and
+grounded/airborne state. This replay-test control does not impose a
+stationary-start restriction on the training corpus. Choose the held-out
+demonstrations and repetitions before evaluating a trained candidate.
 
 ## Scope and representation
 
@@ -59,10 +77,14 @@ Coverage means avoiding accidental concentration of generated examples in easy
 shapes or screen regions. A sampler should cover locations, orientations,
 lengths, straight and curved portions, corners, loops/reversals, timing/speed
 profiles, and gameplay states. These are sampling dimensions rather than a
-closed vocabulary or restrictions on recovered expert gestures. The operator prioritizes the widest useful variety, including simple/common
-motions and complex paths across moving gameplay states. Exact quotas, initial
-sample count and park/session mix remain to be chosen; begin with broad coverage
-and refine using observed omissions rather than requiring an expert-video survey.
+closed vocabulary or restrictions on recovered expert gestures. Real trick
+strokes are fast: the filmed kickflip's pop takes 75 ms and its flick 100 ms
+([record](../experiments/KICKFLIP-REPEATABILITY-20261009.md)), so the speed
+range must reach them (SYSTEM_MAP, blocker 1). The operator prioritizes the
+widest useful variety, including simple/common motions and complex paths across
+moving gameplay states. Exact quotas, initial sample count and park/session mix
+remain to be chosen; begin with broad coverage and refine using observed
+omissions rather than requiring an expert-video survey.
 
 ## Accuracy and audits
 
@@ -71,11 +93,13 @@ and measure ||p_pred(t_f) - p_target(t_f)||_2. The operator requests the closest
 practical equivalent to the linear model's accepted error, with perfection
 deferred if the MVP works. The current linear scorer uses normalized Euclidean
 position tolerance **0.03** and absolute duration tolerance **0.10 s**
-(`model1/linear/training.py`). Reuse these as provisional MVP tolerances, applying
-position comparisons along the whole path, including endpoints, rather than
-only to start/end. Report per-frame distributions and per-gesture pass rates,
-plus touch-down/up timing errors; final aggregation/contact-boundary treatment
-needs an explicit implementation contract before scoring.
+(`model1/linear/training.py`). Reuse these as provisional MVP tolerances until
+the outcome-tolerance test (AGENTS.md, "Precision from outcomes") gives a
+measured bound, applying position comparisons along the whole path, including
+endpoints, rather than only to start/end. Report per-frame distributions and
+per-gesture pass rates, plus touch-down/up timing errors; final
+aggregation/contact-boundary treatment needs an explicit implementation contract
+before scoring.
 
 The inherited normalized metric is anisotropic: a pure 0.03 x displacement is
 12.42 logical points on XR, a pure y displacement is 26.88. Also report isotropic
@@ -83,28 +107,14 @@ logical-point errors for interpretation; do not call 0.03 a single pixel radius.
 Parameter-vector error is not the primary metric: different parameterizations
 can describe the same trajectory.
 
-Keep two checks distinct: operator audit establishes that generated labels
-agree with visible execution; model evaluation compares predictions to those
-verified targets. Continue approximately 100-clip held-out human audits. Keep
-recording/session splits independent, avoid reusing final audit clips to tune
-the compiler or scorer, and preserve raw video, commands, calibration and human
-labels. A passing finite audit supplies evidence, not universal certification.
-
-## Practical MVP replay test
-
-The operator's practical test is an expert demonstration of a single trick
-(e.g. ollie or kickflip), followed by Model 1 gesture inference and execution
-of that inferred gesture in the Workshop. Score whether the intended trick is
-reproduced; Model 2 is not required. Retain positional accuracy and human
-overlay review alongside this end-to-end outcome so failures can be diagnosed.
-
-Select demonstrations containing one continuous drag for this single-drag MVP.
-A single trick is not itself a guarantee of one contact; multiple-contact demos
-would exceed the current scope. Flatground reduces obstacle/location variation,
-but compare reasonably matched initial speed, heading and grounded/airborne
-state. This replay-test control does not impose a stationary-start restriction
-on the training corpus. Choose the held-out demonstrations and repetitions
-before evaluating a trained candidate.
+Keep two checks distinct: operator audit establishes that generated labels agree
+with visible execution; model evaluation compares predictions to those verified
+targets. In explore mode an operator spot-check of about 20 clips is enough
+unless a decision depends on an exact rate; certify-mode audits use about 100
+held-out clips. Keep recording/session splits independent, avoid reusing final
+audit clips to tune the compiler or scorer, and preserve raw video, commands,
+calibration and human labels. A passing finite audit supplies evidence, not
+universal certification.
 
 ## Meaning of WDA subdivision
 

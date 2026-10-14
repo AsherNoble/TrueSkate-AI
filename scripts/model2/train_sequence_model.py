@@ -3,7 +3,7 @@
 `(n frames + m past strokes) -> next strokes`, trained on Asher's expert play
 auto-labeled by Model 1 (the trace extractor). This is the VPT second stage /
 the "sequence leap". See research/ARCHIVE.md (ARCH-001) and
-research/STATUS.md.
+research/SYSTEM_MAP.md.
 
 Run modes:
     --smoke           prove the full pipeline (dataset->model->loss->step) on

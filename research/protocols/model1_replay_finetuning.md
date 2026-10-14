@@ -3,10 +3,11 @@
 Proposed follow-on to known-gesture training; implementation and optimizer are
 not settled. This records a possible build, not authorization to collect or train.
 
-- **Objective:** recover gestures that reproduce the full observed gameplay.
-  Matching a trick name is insufficient: pop/flick speed and timing change the
-  visible motion even when the named trick is the same. Do not assume different
-  gestures are interchangeable for video matching.
+- **Objective:** the replay grade is whether the intended trick lands (the
+  AGENTS.md north star). Full-motion matching is an optional finer signal, worth
+  adding only if trick-lands is too coarse to learn from: pop/flick speed and
+  timing change the visible motion even when the named trick is the same, so do
+  not assume different gestures are interchangeable for video matching.
 - **Replay loop:** generate a gesture sequence, execute it through Appium from a
   waypoint, and collect its reference video. Model 1 predicts gestures from that
   video; reset to the same waypoint, execute the prediction through the same
@@ -25,6 +26,9 @@ not settled. This records a possible build, not authorization to collect or trai
   or initial state. Existing [Bluetooth repeats](../experiments/HID-POINTER-20261004.md#7-repeatability-identical-schedules-different-tricks)
   produced different trick/landing outcomes, but do not isolate intrinsic game
   randomness from input delivery, reset differences or sensitivity to tiny errors.
+  Since then, 20 WDA repeats of one kickflip landed 19/19 admitted
+  ([record](../experiments/KICKFLIP-REPEATABILITY-20261009.md)); the heading
+  after landing still varied.
 - **Noise and feedback:** human playability supports the possibility of reliable
   control, not elimination of unpredictable noise. Determine whether variation
   needs correction between gestures or during a gesture, and whether a correction

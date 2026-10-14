@@ -1,7 +1,8 @@
 # Model 1 linear scaling protocol
 
-Frozen 2026-09-04. This operationalises the scaling/generalisation plan without
-authorising collection or Modal spend.
+Certify-mode procedure, written 2026-09-04. Explore-mode runs may deviate from
+it if they say how in one line; they still select checkpoints on validation and
+leave the test split alone. Nothing here authorises collection or Modal spend.
 
 ## Experimental authority
 
@@ -89,6 +90,9 @@ PYTHONPATH=src:. .venv/bin/python scripts/model1/estimate_model1_scaling_cost.py
 
 ## Certification
 
+- The 99.9% target at 0.03 position / 0.10 s duration predates any measured
+  outcome tolerance. Re-derive the tolerance from the trick-outcome test
+  (AGENTS.md, "Precision from outcomes") before a certification run.
 - Tune thresholds and checkpoints only on validation.
 - Certify linear, curved, and curved+spin independently on at least 30,000
   untouched samples each.

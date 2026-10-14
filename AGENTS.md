@@ -6,10 +6,75 @@ directly; `.github/copilot-instructions.md` forwards here. Do not add a
 
 ## Current direction
 
-Behavioural cloning is authoritative. Read `research/STATUS.md` and the short
-`research/JOURNAL.md` for relevant research work. Model 1 linear/scaling is
-current; hold, heatmap and temporal variants remain runnable experiments.
+Behavioural cloning is authoritative. Read `research/SYSTEM_MAP.md` first, then
+the short `research/JOURNAL.md`. Near-term target: a rough curved Model 1 MVP
+and the first end-to-end kickflip in Workshop. Linear Model 1 is the current
+trained model; hold, heatmap and temporal variants remain runnable experiments.
 Model 2 is unfinished. PPO/CMA-ES implementations are retired in tagged history.
+
+## How research runs here
+
+Explore is the default. Certify only when the user says a result is going into
+the arXiv preprint or another public claim.
+
+- **Explore:** fast, rough, disposable. No blinding, frozen protocols, digests
+  or hash manifests, research attempt ceilings, no-replacement rules, amendment
+  records or red-team reviews. Automated data checks and rig safety caps stay.
+  Record what ran, the result and the decision in a few journal lines.
+- **Certify:** the existing rigour (frozen protocol, blinded human judgement,
+  untouched test data, pass rule stated in advance, red-team review, retained
+  evidence). If you think something needs it, ask. Never escalate on your own.
+- **North star:** the intended trick lands when a predicted gesture or policy
+  runs on the phone. Model 1 recovery % is a proxy. Every proposal names the
+  link in the SYSTEM_MAP chain it unblocks and how that moves toward the north
+  star. Near-term target: a rough curved Model 1 MVP, even a bad one, because
+  the end-to-end loop is blocked on it.
+- **Thin slice:** one trick (kickflip), one park (Workshop), end to end, before
+  widening. Don't polish a component past what the next link needs.
+- **Precision from outcomes:** before chasing timing or position accuracy, find
+  how much error the outcome tolerates (e.g. add 0/50/100/200 ms jitter or
+  position noise to a known-good kickflip and see where it stops landing).
+  Labels are accurate enough when their error is smaller than the smallest
+  gesture change that alters the outcome. That threshold is also the robotic
+  hand's spec. "Within one frame" is not a default target.
+- **Proposals:** anything bigger than a quick check (offline, under about an
+  hour, no rig time or spend) needs a short proposal the user approves or edits
+  first: the question; the link it unblocks; a time/cost box; "if X then A,
+  else B".
+- **Finish with a recommendation.** Never stop at "inconclusive, needs more
+  data"; say what to do next.
+- **The user architects; agents execute.** Update `research/SYSTEM_MAP.md` in
+  the same commit as any finding that changes the latency chain, a model's
+  inputs or outputs, the blocker or the open decision. Explain plainly, without
+  ML-lab jargon. A decision the user can't follow from that page isn't ready.
+
+Kept in both modes: select checkpoints on validation and never re-score the
+test split; honest park/device provenance; the rig invariants below; check
+JOURNAL, GESTURES and the archive before re-testing an execution idea; tests for
+the rig control path, data contracts and training loaders (one-off analysis
+scripts need none).
+
+## Writing it down
+
+- `research/SYSTEM_MAP.md`: the one page to read first; at most ~150 lines.
+- `research/JOURNAL.md`: one entry per result (**Ran**, **Result**,
+  **Decision**), at most six lines. Keep 30 entries; drop the oldest freely
+  (main's history keeps them). Preserve existing experiment IDs.
+- Experiment records only when a journal entry can't hold the result. Open with
+  a five-line summary (question, result, decision, next step, link). Aim for
+  150 lines or fewer; no separate `REPORT.md`.
+- Git holds code, tests, records, decisions, short summaries and the review
+  exports a decision rests on. No committed file over 500 KB or JSON over 2,000
+  lines. Images only as small JPGs, and only when a human judgement rests on them.
+- Bulk output, and anything a record cites, lives in the evidence folder:
+  `/Users/ashernoble/TrueSkate-evidence/<ID>/` on the laptop,
+  `/Users/training-server/trueskate-evidence/<ID>/` on the rig. Each folder's
+  `INDEX.md` maps old paths to new ones.
+- `tmp/` is scratch that may be cleared at any time. Remove your own `tmp/`
+  output when your branch merges.
+- The repo is public. Never commit UDIDs, IP or email addresses, Apple Team IDs
+  or personal device names. Use `.env` key names and the `training-server`
+  hostname.
 
 ## Navigation and conventions
 
@@ -17,7 +82,8 @@ Model 2 is unfinished. PPO/CMA-ES implementations are retired in tagged history.
 - `GESTURES.md`: authoritative gesture, bounds, timing and schema contracts.
 - `DEPLOYMENT.md`: rig operation, compatibility launchers and rollback.
 - `.venv` is the only virtual environment; run `python -m pytest` from repo root.
-- Temporary output goes in `tmp/`; corpus/checkpoint artifacts stay out of Git.
+- Temporary output goes in `tmp/` (scratch; see "Writing it down");
+  corpus/checkpoint artifacts stay out of Git.
 - Use absolute filesystem paths in tools. Do not rely on tilde expansion.
 - Commit messages: `type: message`, one coherent commit at a time.
 - Prefer terse factual updates: what changed, evidence, next step.
@@ -74,16 +140,16 @@ Model 2 is unfinished. PPO/CMA-ES implementations are retired in tagged history.
 
 ## Research hygiene
 
-- `research/STATUS.md`: current evidence, supported variants, open questions.
-- `research/JOURNAL.md`: at most 30 short chronological entries. Tag and index
-  the complete previous journal before trimming. Link substantial experiments
-  to individual records; preserve existing experiment IDs.
-- Durable findings update reference docs or individual experiment records.
-  Historical events do not become current operating instructions automatically.
+- Durable findings update `research/SYSTEM_MAP.md`, reference docs or
+  individual experiment records. Historical events do not become current
+  operating instructions automatically.
 - `research/ARCHIVE.md` is byte-for-byte append-only. Append corrections that
   reference an existing ID; never edit/reorder/delete published entries.
-- Every retirement records full SHA, tag, original paths, recovery command and
-  external artifact locations. Verify GitHub preservation before deleting source.
+- Retiring a whole system, research direction or batch of tools gets an ARCHIVE
+  entry: full SHA, tag, original paths, recovery command and external artifact
+  locations. Verify GitHub preservation before deleting source. Deleting single
+  files from `main` needs only a clear commit message: `main` is never rewritten.
+  Journal trims need no tag or ARCHIVE entry.
 - Run `python scripts/ops/check_archive.py --base origin/main` before merging.
   Changing the checker/workflow is a deliberate policy change requiring review.
 - Git tags do not back up ignored datasets, local logs, `.env`, or cloud volumes.
