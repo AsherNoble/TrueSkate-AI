@@ -28,9 +28,9 @@ phone records the video, and the known gesture becomes the label. Model 2
 | Back-to-back WDA gestures | the next starts at least ~0.25–0.3 s after the last ends, with ~100 ms jitter ([kickflip](experiments/KICKFLIP-REPEATABILITY-20261009.md)) | No, it's an XCTest limit. The Pico avoids it, and the kickflip lands anyway |
 | Pico USB mouse → touch | ≤32 µs board lateness at 3 ms reports; 1 ms unvalidated ([HID-USB](experiments/HID-USB-20261006.md)) | Timing yes; visible contact accuracy unproven |
 | Video capture | 30 fps for collection (33 ms per frame); 60 fps for diagnostics and curved v1 | Choice made |
-| What linear Model 1 sees | 32 frames over 2.3 s: one frame every ~72 ms | **Open**: see blockers |
+| What linear Model 1 sees | 32 frames over 2.3 s: one frame every ~73 ms | Too sparse for trick strokes ([check](JOURNAL.md)); tricks use every 60 Hz frame, as curved v1 does |
 | Shortest gesture the game counts | the board moves at ≥15 ms, not at 10 ms ([length](experiments/LINEAR-LENGTH-20261003.md)) | Known |
-| Finger trail on screen | fades to half in ~92 ms, gone by ~194 ms (branch record EXEC-TRANSFER-20261013) | Known, rough |
+| Finger trail on screen | fades to half in ~92 ms, gone by ~194 ms (branch record EXEC-TRANSFER-20261013); on your filmed kickflip, visible by eye for ~130–150 ms | Known, rough |
 | **Kickflip outcome tolerance** | landed 19/19 with pop→flick starts 322–429 ms apart (you: ~205 ms) and ~100 ms jitter ([kickflip](experiments/KICKFLIP-REPEATABILITY-20261009.md)) | Timing tolerance is wide. **Position tolerance is unknown; measure it next** |
 
 ## Models: what goes in, what comes out
@@ -84,14 +84,15 @@ phone records the video, and the known gesture becomes the label. Model 2
 
 ## What's blocking the end-to-end loop
 
-1. **Speed gap (primary).**
+1. **Speed gap (primary): no training data at trick speeds.**
    - Your filmed kickflip's pop takes 75 ms and its flick 100 ms (a 60 ms arc,
      then 40 ms outward) ([kickflip](experiments/KICKFLIP-REPEATABILITY-20261009.md)).
+     `[by eye]` The flick starts with a ~70 ms stationary touch.
    - Both Model 1 training sets start at 0.30 s, and curved v1 needs every
      piece to last at least 100 ms.
-   - Linear Model 1 also sees only one frame every ~72 ms, so a 75 ms stroke
-     shows up in one or two frames. The fading trail may help.
-   - Curved v1 already reads every 60 Hz frame.
+   - Frame sampling is settled: one frame every ~73 ms catches each stroke's
+     motion in about one frame, so trick models read every 60 Hz frame, as
+     curved v1 already does ([check](JOURNAL.md)).
 2. **No curved Model 1.** The kickflip's flick is curved, so linear Model 1
    can't express it. Curved v1 stopped at its data gate (83/100 against 95).
 3. `[unsure]` **Ground truth from your own play.** It isn't known whether
@@ -104,34 +105,18 @@ phone records the video, and the known gesture becomes the label. Model 2
 
 ## Next steps
 
-You approved the frame-sampling check (proposal below) on 2026-10-14; it runs
-first. After it, my recommended order is below; each step is a separate
-proposal for you to approve.
+My recommended order; each step is a separate proposal for you to approve.
 
-1. The frame-sampling check.
+1. Done 2026-10-14: the frame-sampling check. Trick models read every 60 Hz
+   frame ([journal](JOURNAL.md)).
 2. A time-boxed check of whether touches from your own play can be captured on
    a stock iPhone. If they can, your play becomes the real test set.
 3. Curved data at trick speeds, shaped like your real play: strokes from about
-   60 ms and pieces down to about 40 ms, collected as a small XR1 Workshop batch
-   (this needs rig time).
+   60 ms, pieces down to about 40 ms and short stationary touches before a move,
+   collected as a small XR1 Workshop batch (this needs rig time).
 4. A rough curved MVP: train it, read your filmed kickflip with it, replay the
    result in Workshop and count landings
    ([MVP test](protocols/model1_curved_mvp2.md)).
-
-**Proposal: frame-sampling check**
-- **Question:** at one frame every ~72 ms, how much of a 75–100 ms trick stroke
-  can Model 1 see?
-- **Link:** video → Model 1. If the strokes aren't visible, no amount of data
-  will help.
-- **Box:** laptop only, about two hours, $0. It uses existing footage: your
-  filmed kickflip at 60 fps and the repeat recordings.
-- **Method:** pick frames at Model 1's spacing from every possible starting
-  offset. For each stroke, count how many sampled frames show it (trail
-  included) and how much of its path they show.
-- **If** each stroke shows clearly in at least two sampled frames, sampling is
-  fine and the fix is trick-speed data (step 3). **Else** fast-stroke models use
-  dense 60 Hz frames, as curved v1 does, and the 32-frame recipe isn't used for
-  tricks.
 
 ## Parked
 
