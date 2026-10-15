@@ -127,6 +127,48 @@ def test_review_server_serves_the_picks_native_frames_and_stops_on_import(tmp_pa
         review.serve(root, port=0)
 
 
+def test_export_saves_a_checked_report_and_stops_the_server(tmp_path):
+    import socket
+    import threading
+    from urllib.error import HTTPError
+    from urllib.request import Request, urlopen
+    root = native_root(tmp_path)
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    result = {}
+    server = threading.Thread(target=lambda: result.update(path=review.serve(root, port=port)), daemon=True)
+    server.start()
+    base = f"http://127.0.0.1:{port}"
+    for _ in range(100):
+        try:
+            sha = json.loads(urlopen(base+"/manifest", timeout=5).read())["sha256"]
+            break
+        except OSError:
+            server.join(.05)
+
+    def post(value, raw=None):
+        data = raw if raw is not None else json.dumps(value).encode()
+        return urlopen(Request(base+"/export", data=data, headers={"Content-Type": "application/json"}), timeout=5)
+    # Refused reports leave the server running and save nothing.
+    for bad, message in (({"selection_sha256": sha, "clips": [dict(code="01", verdict="F")]}, b"needs what was seen"),
+                         ({"selection_sha256": "0"*64, "clips": []}, b"another pick"),
+                         (None, b"not an exported")):
+        with pytest.raises(HTTPError) as refused:
+            post(bad, raw=b"[1]" if bad is None else None)
+        assert refused.value.code == 400 and message in refused.value.read()
+    assert server.is_alive() and not list((root/"review").glob("report-*.json"))
+    report = dict(experiment="TRICK-SPEED-20261015", selection_sha256=sha,
+                  clips=[dict(code="01", verdict="U", reason="trail too faint")])
+    saved = Path(json.loads(post(report).read())["path"])
+    server.join(5)
+    assert not server.is_alive() and result["path"] == saved
+    assert saved.parent == (root/"review").resolve() and json.loads(saved.read_text()) == report
+    assert not list(root.glob("spot-check-*"))
+    assert review.import_report(root, saved) == 1
+    assert json.loads((root/"review"/"verdicts.json").read_text())["verdicts"]["01"]["reason"] == "trail too faint"
+
+
 def test_import_report_needs_the_whole_pick_and_what_was_seen(root, tmp_path):
     review.review_manifest(root, count=2)
     sha = review.load_selection(root)["sha256"]

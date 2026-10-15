@@ -82,8 +82,10 @@ scripts need none).
 - `GESTURES.md`: authoritative gesture, bounds, timing and schema contracts.
 - Human-review pages build on the curved audit review UI
   (`src/trueskate_ai/model1/curved/review.py`, `review.html`): a temporary
-  local server, native frames, keyboard-first controls, and a JSON export whose
-  path the reviewer sends back for import. No one-off static pages.
+  local server, native frames and keyboard-first controls. Run the server as a
+  background job. Export saves the checked report in the run folder and stops
+  the server, so the job's end tells the agent where the report is (see
+  `src/trueskate_ai/model1/trick/review.py`). No one-off static pages.
 - `DEPLOYMENT.md`: rig operation, compatibility launchers and rollback.
 - `.venv` in the main checkout is the only virtual environment. Run
   `python -m pytest` from your worktree's root with that `.venv`'s Python;

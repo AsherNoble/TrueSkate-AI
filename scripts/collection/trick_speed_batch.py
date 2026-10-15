@@ -54,7 +54,8 @@ def main():
     sub.add_parser('status', help='recordings, runs and strokes so far (rig or laptop)')
     admit = sub.add_parser('admit', help='calibrate fetched recordings and cut one clip per run (laptop)')
     admit.add_argument('--jobs', type=int, default=4)
-    page = sub.add_parser('review', help='serve the spot check of a seeded pick of admitted clips until it is imported')
+    page = sub.add_parser('review', help='serve the spot check of a seeded pick of admitted clips until it is '
+                                         'exported; run it as a background job, whose end prints the report path')
     page.add_argument('--count', type=int, default=review.DEFAULT_COUNT)
     page.add_argument('--reselect', action='store_true', help='make a new pick (refused once verdicts exist)')
     page.add_argument('--port', type=int, default=8766)
@@ -83,7 +84,9 @@ def main():
         print(json.dumps(results, indent=2))
         print(f"admitted {sum(len(r['admitted']) for r in results.values())} clips from {len(results)} recording(s)")
     elif args.command == 'review':
-        review.serve(root, count=args.count, reselect=args.reselect, port=args.port, open_browser=args.open)
+        report = review.serve(root, count=args.count, reselect=args.reselect, port=args.port, open_browser=args.open)
+        if report:
+            print(f'REVIEW_EXPORTED {report}\nimport it: verdicts --report {report}', flush=True)
     elif args.command == 'verdicts':
         if args.report:
             recorded = review.import_report(root, args.report, replace=args.replace)

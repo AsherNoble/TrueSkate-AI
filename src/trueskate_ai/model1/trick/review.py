@@ -3,8 +3,9 @@
 The spot check reuses the curved audit review UI (curved/review.py and review.html): a
 temporary 127.0.0.1 server shows each picked clip's native frames, keyboard-first, with a
 ring at the commanded position of whichever stroke is active, so gross faults show: a
-missing or extra touch, a trail far from its ring, a menu. The reviewer exports a JSON
-report and sends its path; importing it records the verdicts and closes the server.
+missing or extra touch, a trail far from its ring, a menu. Pressing Export saves the
+checked report in the run's review folder and stops the server, so an agent running it
+as a background job is told where the report is; importing it records the verdicts.
 """
 from __future__ import annotations
 
@@ -29,6 +30,7 @@ from trueskate_ai.model1.curved.review import FRAMES, FrameCache
 from .contract import EXPERIMENT, SEED
 
 DEFAULT_COUNT = 20
+MAX_REPORT_BYTES = 2**20
 RING_PT = 10
 VERDICTS = dict(K="ok", F="fault", U="unsure")
 TOKEN = re.compile(r"(\d{1,2})\s*([KFU])", re.IGNORECASE)
@@ -106,8 +108,19 @@ def review_manifest(root, *, count: int = DEFAULT_COUNT, reselect: bool = False)
     return manifest, folders
 
 
-def serve(root, *, count: int = DEFAULT_COUNT, reselect: bool = False, port: int = 8766, open_browser=False):
-    """Serve the spot check until its report is imported (review/verdicts.json exists) or SIGINT/SIGTERM."""
+def save_report(root, exported) -> Path:
+    """Check an exported review against the pick and keep it in the run's review folder."""
+    root = Path(root)
+    check_report(load_selection(root), exported)
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    path = root/"review"/f"report-{stamp}.json"
+    save_json(path, exported)
+    return path
+
+
+def serve(root, *, count: int = DEFAULT_COUNT, reselect: bool = False, port: int = 8766,
+          open_browser=False) -> Path | None:
+    """Serve the spot check until it is exported (returns the saved report), imported, or SIGINT/SIGTERM."""
     root = Path(root).resolve()
     done = root/"review"/"verdicts.json"
     if done.exists():
@@ -115,10 +128,34 @@ def serve(root, *, count: int = DEFAULT_COUNT, reselect: bool = False, port: int
     manifest, folders = review_manifest(root, count=count, reselect=reselect)
     page = Path(__file__).with_name("review.html").read_bytes()
     body = json.dumps(manifest).encode()
+    saved = []
     with tempfile.TemporaryDirectory(prefix="spot-check-", dir=root) as temporary:
         cache = FrameCache(Path(temporary), folders)
 
         class Handler(BaseHTTPRequestHandler):
+            def reply(self, status: int, value: dict):
+                data = json.dumps(value).encode()
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(data)
+
+            def do_POST(self):
+                if urlparse(self.path).path != "/export" or saved:
+                    self.send_error(404)
+                    return
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                    if not 0 < length <= MAX_REPORT_BYTES:
+                        raise ValueError("the report is missing or too large")
+                    path = save_report(root, json.loads(self.rfile.read(length)))
+                except (ValueError, OSError) as exc:  # a malformed report is a ValueError too
+                    self.reply(400, dict(error=str(exc)))
+                    return
+                self.reply(200, dict(path=str(path)))
+                saved.append(path)  # after the reply, so the page hears before the server stops
             def do_GET(self):
                 route = urlparse(self.path).path
                 try:
@@ -150,7 +187,7 @@ def serve(root, *, count: int = DEFAULT_COUNT, reselect: bool = False, port: int
         server.daemon_threads = True
         server.timeout = .5
         url = f"http://127.0.0.1:{server.server_port}"
-        print(f"Spot check: {url} (temporary; export the review, then import it)", flush=True)
+        print(f"Spot check: {url} (temporary; it stops when the review is exported)", flush=True)
         if open_browser:
             subprocess.run(["open", "-a", "Google Chrome", url], check=True)
 
@@ -162,7 +199,7 @@ def serve(root, *, count: int = DEFAULT_COUNT, reselect: bool = False, port: int
         if threading.current_thread() is threading.main_thread():
             previous = {s: signal.signal(s, interrupt) for s in (signal.SIGINT, signal.SIGTERM)}
         try:
-            while not done.exists():
+            while not (saved or done.exists()):
                 server.handle_request()
         except KeyboardInterrupt:
             pass
@@ -170,6 +207,7 @@ def serve(root, *, count: int = DEFAULT_COUNT, reselect: bool = False, port: int
             server.server_close()
             for s, handler in previous.items():
                 signal.signal(s, handler)
+    return saved[0] if saved else None
 
 
 def _write_verdicts(root: Path, selection: dict, checked: list, *, replace: bool, source: str) -> int:
@@ -212,16 +250,17 @@ def record_verdicts(root, codes: str, *, replace: bool = False) -> int:
     return _write_verdicts(root, selection, checked, replace=replace, source="codes")
 
 
-def import_report(root, report, *, replace: bool = False) -> int:
-    """Record the page's exported review: the whole pick, with what was seen for every Fault or Unsure."""
-    root = Path(root)
-    selection = load_selection(root)
-    exported = _read(report)
+def check_report(selection: dict, exported) -> list[tuple[str, str, str]]:
+    """(code, verdict, reason) rows of an exported review: the whole pick, with what was seen for every Fault or Unsure."""
+    if not isinstance(exported, dict) or not isinstance(exported.get("clips"), list):
+        raise ValueError("not an exported spot-check review")
     if exported.get("selection_sha256") != selection["sha256"]:
         raise ValueError("the report belongs to another pick")
     rows = [row["code"] for row in selection["clips"]]
     judged = {}
-    for clip in exported.get("clips", []):
+    for clip in exported["clips"]:
+        if not isinstance(clip, dict):
+            raise ValueError("not an exported spot-check review")
         key, code, reason = clip.get("code"), clip.get("verdict"), str(clip.get("reason") or "").strip()
         if key not in rows or key in judged:
             raise ValueError(f"clip {key} is not in the pick or is listed twice")
@@ -233,7 +272,14 @@ def import_report(root, report, *, replace: bool = False) -> int:
     missing = [key for key in rows if key not in judged]
     if missing:
         raise ValueError(f"the report misses clip(s) {' '.join(missing)}")
-    return _write_verdicts(root, selection, [judged[key] for key in rows], replace=replace,
+    return [judged[key] for key in rows]
+
+
+def import_report(root, report, *, replace: bool = False) -> int:
+    """Record the page's exported review once it passes check_report."""
+    root = Path(root)
+    selection = load_selection(root)
+    return _write_verdicts(root, selection, check_report(selection, _read(report)), replace=replace,
                            source=Path(report).name)
 
 

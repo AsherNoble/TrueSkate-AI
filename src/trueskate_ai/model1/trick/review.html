@@ -370,7 +370,7 @@ function renderProgress(){
  $('progress').textContent=`${doneCount} / ${n} complete`;
  for(const v of ['K','F','U']){$('n'+v).textContent=c[v];$('bar'+v).style.width=(100*c[v]/n)+'%'}
  $('export').classList.toggle('ready',doneCount===n);
- $('export').textContent=doneCount===n?'Export review ✓':`Export review (${n-doneCount} left)`;
+ if(!$('export').disabled)$('export').textContent=doneCount===n?'Export review ✓':`Export review (${n-doneCount} left)`;
  for(const cell of document.querySelectorAll('.cell')){
   const i=Number(cell.dataset.index),r=rows[sample(i).code];
   cell.className='cell'+(complete(i)?' '+r.verdict:touched(r)?' touched':'')+(i===current?' current':'');
@@ -435,15 +435,31 @@ function setVerdict(value){
 }
 
 // ---------- export ----------
-function exportReview(){
+// The server checks the report, saves it in the run's review folder and stops, which tells the
+// agent running it where the report is. A download remains the fallback when the server is gone.
+async function exportReview(){
  const missing=manifest.samples.map((_,i)=>i).filter(i=>!complete(i));
  if(missing.length){toast(`${missing.length} clip${missing.length===1?' is':'s are'} incomplete. Showing clip ${sample(missing[0]).code}.`);if(missing[0]!==current)openClip(missing[0]);else saveAndNext();return}
  const report={experiment:manifest.experiment,selection_sha256:manifest.sha256,clips:manifest.samples.map(s=>{
   const r=rows[s.code];return {code:s.code,verdict:r.verdict,reason:r.reason.trim()}})};
+ $('export').disabled=true;
+ let reply=null;
+ try{reply=await fetch('/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(report)})}catch{}
+ if(reply?.ok){
+  const {path}=await reply.json();stop();
+  $('export').textContent='Exported ✓';
+  toast(`Saved to ${path}. Claude has been told; you can close this tab.`,600000);
+  return;
+ }
+ $('export').disabled=false;
+ if(reply?.status===400){
+  const {error}=await reply.json().catch(()=>({error:'unreadable reply'}));
+  toast(`The server refused the review: ${error}. Tell Claude.`,15000);return;
+ }
  const name='trick-speed-spot-check-'+manifest.sha256.slice(0,12)+'.json';
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));
  a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
- toast(`Downloaded ${name}. Send Claude its path (usually ~/Downloads/${name}).`,9000);
+ toast(`The review server is gone, so ${name} was downloaded instead. Send Claude its path (usually ~/Downloads/${name}).`,15000);
 }
 let toastTimer;
 function toast(text,ms=4500){const t=$('toast');t.textContent=text;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),ms)}
