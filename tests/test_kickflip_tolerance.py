@@ -328,7 +328,7 @@ def test_review_page_shows_attempt_numbers_but_not_distances(experiment, monkeyp
     for word in ('level', 'distance', '0.02', '0.05', '0.1'):
         assert word not in text
     sheet = cv2.imread(str(page.parent / 'attempt_01.jpg'))
-    assert sheet.shape[:2] == (474, 1059)
+    assert sheet.shape[:2] == (module.SHEET_SIZE[1], module.SHEET_SIZE[0]) == (623, 1404)
     labels = [f['label'] for f in recipe.read_json(page.parent / 'sheets.json')['sheets']['1']]
     assert labels[0] == 'before pop' and len(labels) == 5
     # Before the pop (14.6 s) through 3 s after the flick's end (15.1 s): one decode per attempt.

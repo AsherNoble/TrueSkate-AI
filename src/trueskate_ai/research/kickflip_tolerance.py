@@ -36,7 +36,10 @@ MAX_REDRAWS = 1000
 METRIC = 'Euclidean distance in normalized screen coordinates (x/414, y/896), as Model 1 recovery'
 # Review frames: just before the pop, then after the flick's encoded end, where the banner shows.
 SHEET_OFFSETS_S = (.5, 1., 2., 3.)
-SHEET_FRAME = (207, 448)  # A quarter of the 828x1792 native frame.
+SHEET_FRAME = (276, 597)  # A third of the 828x1792 native frame, so banner text stays legible.
+SHEET_LABEL_PX, SHEET_GAP_PX = 26, 6
+SHEET_SIZE = ((len(SHEET_OFFSETS_S) + 1) * (SHEET_FRAME[0] + SHEET_GAP_PX) - SHEET_GAP_PX,
+              SHEET_FRAME[1] + SHEET_LABEL_PX)
 VERDICTS = {'L': 'landed kickflip', 'F': 'not a landed kickflip', 'U': 'unsure'}
 FAILED_STATES = ('technical failure', 'incomplete')
 
@@ -223,11 +226,11 @@ def contact_sheet(root, number, out_dir):
                           keep=False, inspect=keep)
     tiles = []
     for (label, _), index in zip(targets, indices):
-        tile = np.full((SHEET_FRAME[1] + 26, SHEET_FRAME[0], 3), 255, np.uint8)
-        tile[26:] = frames[index]
-        cv2.putText(tile, label, (5, 18), cv2.FONT_HERSHEY_SIMPLEX, .45, (0, 0, 0), 1, cv2.LINE_AA)
+        tile = np.full((SHEET_FRAME[1] + SHEET_LABEL_PX, SHEET_FRAME[0], 3), 255, np.uint8)
+        tile[SHEET_LABEL_PX:] = frames[index]
+        cv2.putText(tile, label, (5, 18), cv2.FONT_HERSHEY_SIMPLEX, .5, (0, 0, 0), 1, cv2.LINE_AA)
         tiles.append(tile)
-    gap = np.full((tiles[0].shape[0], 6, 3), 255, np.uint8)
+    gap = np.full((tiles[0].shape[0], SHEET_GAP_PX, 3), 255, np.uint8)
     sheet = np.hstack([part for tile in tiles for part in (tile, gap)][:-1])
     Path(out_dir).mkdir(parents=True, exist_ok=True)
     path = Path(out_dir) / f'attempt_{number:02d}.jpg'
@@ -294,8 +297,11 @@ def review_page(root):
         sheet, provenance[number] = contact_sheet(root, number, out)
         choices = ''.join(f'<label><input type="radio" name="a{number:02d}" value="{code}"> {html.escape(text.capitalize())}</label>'
                           for code, text in VERDICTS.items())
-        sections.append(f'<section><h2>{title}</h2><img src="{sheet.name}" alt="{title} frames" width="1059" height="474">'
-                        f'<div>{choices}</div></section>')
+        pop = next(g for g in recipe.read_json(attempt_dir(root, number) / 'admission.json')['gestures'] if g['role'] == 'pop')
+        sections.append(f'<section><h2>{title}</h2><a href="{sheet.name}"><img src="{sheet.name}" alt="{title} frames" '
+                        f'width="{SHEET_SIZE[0]}" height="{SHEET_SIZE[1]}"></a><div>{choices} '
+                        f'<a class="muted" href="../attempts/attempt_{number:02d}/original.mov">source movie</a> '
+                        f'<span class="muted">(pop at {pop["video_start_s"]:.1f} s)</span></div></section>')
         judged += 1
     page = out / 'index.html'
     page.write_text(PAGE.format(sections='\n'.join(sections), total=judged))
