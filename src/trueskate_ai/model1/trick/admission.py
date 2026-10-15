@@ -104,6 +104,20 @@ def trail_shift(rows) -> tuple[float, int] | None:
     return (float(np.median(kept)), len(kept)) if len(kept) >= MIN_PROBES else None
 
 
+def settle_shifts(shifts: dict) -> tuple[dict, float | None]:
+    """Strokes read from their own trail, less misreads, and the recording's median shift.
+
+    A stroke whose reading sits more than PROBE_SPREAD_S from its recording's median read
+    something else (one XR2 trial stroke read -158 ms against a +13 ms median); it takes the
+    median instead, like a stroke too faint to read.
+    """
+    if not shifts:
+        return {}, None
+    middle = float(np.median([shift for shift, _ in shifts.values()]))
+    kept = {key: value for key, value in shifts.items() if abs(value[0] - middle) <= PROBE_SPREAD_S}
+    return kept, float(np.median([shift for shift, _ in kept.values()])) if kept else middle
+
+
 def calibrate(out: Path, planned: dict, execution: dict):
     """Video clock from the three die-five markers (instrumented W3C requests)."""
     performed = [e for e in execution["events"] if not e.get("skipped")]
@@ -190,8 +204,8 @@ def calibrate(out: Path, planned: dict, execution: dict):
             visible[p["key"]] = seen
         if seen is not None:
             rows.setdefault(p["key"], []).append((p["ms"], seen - p["estimate"], p["speed"]))
-    shifts = {key: shift for key, shift in ((k, trail_shift(r)) for k, r in rows.items()) if shift is not None}
-    fallback = float(np.median([shift for shift, _ in shifts.values()])) if shifts else None
+    shifts, fallback = settle_shifts({key: shift for key, shift in ((k, trail_shift(r)) for k, r in rows.items())
+                                      if shift is not None})
     timing, retimed = {}, []
     for begin, end, run, event in contacts:
         if run is not None:

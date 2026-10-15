@@ -400,6 +400,12 @@ def test_trail_shift_corrects_the_glow_and_drops_misreads():
     assert admission.trail_shift(rows[:2]) is None
 
 
+def test_settle_shifts_sends_a_misread_stroke_to_its_recordings_median():
+    kept, median = admission.settle_shifts({"1:0": (.02, 5), "2:0": (.03, 5), "3:0": (-.15, 4)})
+    assert kept == {"1:0": (.02, 5), "2:0": (.03, 5)} and np.isclose(median, .025)
+    assert admission.settle_shifts({}) == ({}, None)
+
+
 def trail_video(path, strokes, size=(208, 448), seconds=10.):
     """Grey 60 fps video; each (points, duration_s, visible_from_s) draws a white trail along its path."""
     import cv2
