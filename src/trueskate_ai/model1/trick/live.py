@@ -120,8 +120,20 @@ def attachments_clear(udid: str, device: str = "iPhone_XR") -> None:
         raise RuntimeError(f"{found.group(1)} {device} recording attachment(s) remain; preserve/clean before recording")
 
 
+def start_positions(root: Path, first_run: int = 0) -> tuple[int, int]:
+    """Next recording index, and the next run number but never below ``first_run``.
+
+    Runs are seeded by number, so two run folders that both start at run 0 send the same
+    strokes (the XR1 and XR2 trials did). Give each phone's batch its own run range.
+    """
+    if type(first_run) is not int or first_run < 0:
+        raise ValueError("first run must be a whole number ≥ 0")
+    index, run = next_positions(root)
+    return index, max(run, first_run)
+
+
 def collect(root, *, minutes, env_file, ready_note, settings_note, park, appium_port=4725, device="iPhone_XR",
-            revision=WDA_REVISION, source_commit=None) -> None:
+            revision=WDA_REVISION, source_commit=None, first_run=0) -> None:
     """Record ``minutes`` one-minute recordings on one XR; stop at the first failure."""
     check_arguments(root, minutes=minutes, env_file=env_file, ready_note=ready_note,
                     settings_note=settings_note, park=park, device=device)
@@ -130,10 +142,12 @@ def collect(root, *, minutes, env_file, ready_note, settings_note, park, appium_
     if not env_file.is_file():
         raise ValueError("rig .env file not found")
     root.mkdir(parents=True, exist_ok=True)
+    start_positions(root, first_run)  # refuse a bad first run before touching anything
     context = fix_context(root, park=park, settings_note=settings_note, device=device)
     with (root/"sessions.jsonl").open("a") as handle:
         handle.write(json.dumps(dict(started=_now(), operator_ready_note=ready_note, minutes=minutes, device=device,
-                                     appium_port=appium_port, source_commit=source_commit, pid=os.getpid())) + "\n")
+                                     appium_port=appium_port, source_commit=source_commit, first_run=first_run,
+                                     pid=os.getpid())) + "\n")
     from dotenv import load_dotenv
     load_dotenv(env_file, override=True)
     from trueskate_ai.collection.wda_action_timing import WDAActionTimingCapture, _http_json
@@ -202,7 +216,7 @@ def collect(root, *, minutes, env_file, ready_note, settings_note, park, appium_
             with urllib.request.urlopen(request, timeout=10) as response:
                 return json.loads(response.read())
 
-        index, next_run = next_positions(root)
+        index, next_run = start_positions(root, first_run)
         for _ in range(minutes):
             if shutil.disk_usage(root).free < MIN_FREE_BYTES:
                 raise RuntimeError("less than 8 GiB free; capture stopped")

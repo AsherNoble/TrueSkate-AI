@@ -32,7 +32,7 @@ def run(args):
     with live.busy_lock(args.busy_lock, owner=f'{EXPERIMENT} trick-speed capture on {args.device}', out=args.root):
         live.collect(args.root, minutes=args.minutes, env_file=args.env_file, ready_note=args.operator_ready_note,
                      settings_note=args.settings_note, park=args.park, appium_port=args.appium_port,
-                     device=args.device, source_commit=args.source_commit)
+                     device=args.device, source_commit=args.source_commit, first_run=args.first_run)
 
 
 def main():
@@ -50,6 +50,8 @@ def main():
     live_run.add_argument('--appium-port', type=int, default=4725,
                           help='session-discovery-enabled Appium; the supervised 4723 lacks it, so use the temporary 4725')
     live_run.add_argument('--source-commit', help='commit this code was staged from')
+    live_run.add_argument('--first-run', type=int, default=0,
+                          help='lowest run number to send; runs are seeded by number, so give each phone its own range')
     live_run.add_argument('--busy-lock', type=Path, default=BUSY_LOCK)
     sub.add_parser('status', help='recordings, runs and strokes so far (rig or laptop)')
     admit = sub.add_parser('admit', help='calibrate fetched recordings and cut one clip per run (laptop)')

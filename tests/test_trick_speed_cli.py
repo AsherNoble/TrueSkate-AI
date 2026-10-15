@@ -297,6 +297,12 @@ def test_run_positions_and_fixed_context(tmp_path):
                   dict(runs=[dict(number=n) for n in runs], skipped_runs=skipped))
     (root/"recordings"/"m0005").mkdir()  # created, but stopped before its plan was written
     assert live.next_positions(root) == (6, 8)
+    # A phone's batch starts at its own first run, but never re-sends a run already planned.
+    assert live.start_positions(tmp_path/"fresh", 5000) == (1, 5000)
+    assert live.start_positions(root, 5) == (6, 8) and live.start_positions(root, 5000) == (6, 5000)
+    for bad in (-1, 1.5, "7"):
+        with pytest.raises(ValueError, match="first run"):
+            live.start_positions(root, bad)
     root.mkdir(exist_ok=True)
     context = live.fix_context(root, park="The Workshop", settings_note="flatground")
     assert live.fix_context(root, park="The Workshop", settings_note="flatground") == context
