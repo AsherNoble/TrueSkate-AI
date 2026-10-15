@@ -78,7 +78,8 @@ def main(argv=None):
             from trueskate_ai.model1.curved.audit import freeze_human
             result = freeze_human(a.clips_json, a.root/"human.json", ledger.definition["parks"])
         elif a.command == "view-audit":
-            from trueskate_ai.model1.curved.viewer import serve
+            # review.py replaces viewer.py; the latter stays byte-identical for the fingerprint.
+            from trueskate_ai.model1.curved.review import serve
             serve(a.root, a.round, port=a.port, open_browser=a.open)
             result = dict(viewer="stopped")
         elif a.command == "reconcile":
