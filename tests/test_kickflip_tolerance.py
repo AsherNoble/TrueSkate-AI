@@ -342,10 +342,16 @@ def test_admit_all_uses_the_plan_revision_for_recorded_attempts_only(experiment,
     def admit(trial, revision):
         calls.append((Path(trial).name, revision))
         if Path(trial).name == 'attempt_03':
-            raise ValueError('held-out middle calibration failed')
+            save_new(Path(trial) / 'admission.json', dict(accepted=False, error='disk full'))
+            raise ValueError('disk full')
+        save_new(Path(trial) / 'admission.json', dict(accepted=True))
         return dict(heldout_middle_error_s=.004)
     monkeypatch.setattr(recipe, 'admit_trial', admit)
     record(experiment, 3)
     results = module.admit_all(experiment, jobs=1)
     assert calls == [('attempt_01', recipe.WDA_REVISION), ('attempt_03', recipe.WDA_REVISION)]
     assert results['attempt_01']['admitted'] and not results['attempt_03']['admitted']
+    assert module.admit_all(experiment, jobs=1) == {}  # Nothing is re-admitted unless asked.
+    module.admit_all(experiment, jobs=1, retry_failed=True)
+    assert calls[-1] == ('attempt_03', recipe.WDA_REVISION) and len(calls) == 3
+    assert (module.attempt_dir(experiment, 3) / 'admission-failed-1.json').exists()

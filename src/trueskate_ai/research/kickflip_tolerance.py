@@ -190,10 +190,20 @@ def _admit(args):
         return Path(trial).name, dict(admitted=False, error=f'{type(exc).__name__}: {exc}')
 
 
-def admit_all(root, jobs=1):
-    """Admit every recorded attempt with the repeatability admission (same gates), off the rig."""
+def admit_all(root, jobs=1, retry_failed=False):
+    """Admit every recorded attempt with the repeatability admission (same gates), off the rig.
+
+    `retry_failed` reruns the same gates on the same video after a laptop-side fault (say a
+    full disk); the earlier result is kept beside it. A genuine rejection cannot change.
+    """
     plan = load_plan(root)
     current = states(root, plan)
+    if retry_failed:
+        for number in (n for n, s in current.items() if s == 'admission failed'):
+            trial = attempt_dir(root, number)
+            kept = len(list(trial.glob('admission-failed-*.json'))) + 1
+            (trial / 'admission.json').rename(trial / f'admission-failed-{kept}.json')
+            current[number] = 'recorded'
     todo = [(attempt_dir(root, n), plan['wda_revision']) for n, s in current.items() if s == 'recorded']
     if jobs > 1 and len(todo) > 1:
         with ProcessPoolExecutor(max_workers=jobs) as pool:

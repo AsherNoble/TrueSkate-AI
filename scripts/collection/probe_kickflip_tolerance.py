@@ -84,6 +84,8 @@ def main():
     live.add_argument('--busy-lock', type=Path, default=BUSY_LOCK)
     admission = sub.add_parser('admit', help='admit every recorded attempt (laptop; same gates as the repeatability run)')
     admission.add_argument('--jobs', type=int, default=4)
+    admission.add_argument('--retry-failed', action='store_true',
+                           help='rerun the same gates after a laptop-side fault; earlier results are kept')
     review = sub.add_parser('review', help='contact sheets and a static review page for admitted attempts')
     review.add_argument('--open', action='store_true', help='open the page in Google Chrome (laptop)')
     verdicts = sub.add_parser('verdicts', help='record operator verdicts, e.g. "01L 02F 03U"')
@@ -114,7 +116,7 @@ def main():
         run(root, env_file=args.env_file, ready_note=args.operator_ready_note, settings_note=args.settings_note,
             appium_port=args.appium_port, after_failure_reason=args.after_failure_reason, lock=args.busy_lock)
     elif args.command == 'admit':
-        results = tolerance.admit_all(root, jobs=args.jobs)
+        results = tolerance.admit_all(root, jobs=args.jobs, retry_failed=args.retry_failed)
         print(json.dumps(results, indent=2))
         print(f"admitted {sum(r['admitted'] for r in results.values())} of {len(results)} recorded attempts")
     elif args.command == 'review':
