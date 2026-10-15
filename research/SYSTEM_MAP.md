@@ -1,23 +1,28 @@
 # System map
 
-Updated 2026-10-14. Read this page first. It covers what we're building, how the
+Updated 2026-10-16. Read this page first. It covers what we're building, how the
 pieces connect, what's blocking, and the decision in front of you. Numbers link
 to their records, and `[unsure]` marks anything not yet checked. Work that
 exists only on an unmerged branch is named in plain text. This page replaced
 `STATUS.md`; its history lives in the records and the journal.
 
+**North star: by 2026-11-20, a working version of the whole project, even a
+crap one** (set by you on 2026-10-16). Model 2 plays True Skate live, and the
+intended trick lands through WDA or the robotic hand.
+
 ## The loop
 
-1. **Expert video** of you landing a trick.
-2. **Model 1** reads the touch gestures out of the video.
-3. An **executor** replays those gestures on the phone: WebDriverAgent (WDA)
-   today; a Pico USB mouse (pilot); a robotic hand later `[unsure: tracked
-   outside this repo]`.
-4. **Outcome:** did the intended trick land? This is the north star.
+1. **Expert video** of you playing.
+2. **Model 1**, offline, labels the touch gestures in that video.
+3. **Model 2** learns from those labels (behaviour cloning), then plays live:
+   recent screen frames plus its last gestures in, next gestures out.
+4. An **executor** plays the gestures on the phone: WebDriverAgent (WDA)
+   today. The robotic hand takes the same gestures through a WDA-shaped API; it
+   is being built in parallel in the hardware repo.
+5. **Outcome:** did the intended trick land?
 
 Model 1 learns from self-labelled data: the executor plays random gestures, the
-phone records the video, and the known gesture becomes the label. Model 2
-(later) would choose the next gesture itself from gameplay.
+phone records the video, and the known gesture becomes the label.
 
 ## Clock and latency chain
 
@@ -41,24 +46,22 @@ phone records the video, and the known gesture becomes the label. Model 2
     starting at a fixed frame.
   - Out: start point, end point and duration.
   - Training data: swipes of 0.30–1.20 s.
-  - Results: the best tested model recovers 91.04% of unseen test swipes, to
-    within 0.03 of the screen and 0.10 s
-    ([HALFRES](experiments/M1-HALFRES-20260928.md)). Doubling the data to
-    18,394 clips raised the held-out score to 91.37%; in parks it never saw
-    it scores 87.32% ([EXPAND](experiments/M1-EXPAND-20260929.md)). More data
-    still helps.
-  - Misses are mostly end points falling short, on fast swipes
-    ([DIAG](experiments/M1-DIAG-20260928.md)).
+  - Results: 91.04% of unseen test swipes within 0.03 of the screen and 0.10 s
+    ([HALFRES](experiments/M1-HALFRES-20260928.md)); 87.32% in unseen parks
+    ([EXPAND](experiments/M1-EXPAND-20260929.md)). Misses are mostly short end
+    points on fast swipes ([DIAG](experiments/M1-DIAG-20260928.md)).
 - **Curved Model 1 v1** (built, never trained; branch `codex/curved-model1-v1`).
   - In: 120 frames at 60 Hz (2 s).
   - Out: a timed path of up to 10 straight pieces, 0.3–1.2 s long, each piece
     at least 100 ms.
   - Its data check scored 83/100 against a 95/100 gate, so no training data
     was collected.
-- **Model 2** (unfinished).
+- **Model 2** (code from September, untrained; on the critical path for
+  2026-11-20).
   - In: recent frames plus your last strokes. Out: the next strokes.
-  - It would be trained on your play, labelled by Model 1. It isn't needed for
-    the first kickflip.
+  - Trained on your play, labelled by Model 1 (`scripts/model2/`). The code
+    still uses the old 9-number stroke and a retired executor path, so it
+    needs adapting to timed multi-piece strokes and today's WDA path.
 
 ## Executors
 
@@ -68,7 +71,9 @@ phone records the video, and the known gesture becomes the label. Model 2
 - **Pico USB mouse** (pilot): the phone treats it as a pointer. Its timing is
   precise and it has no gap limit, but contact accuracy isn't yet shown
   ([HID-USB](experiments/HID-USB-20261006.md)).
-- **Robotic hand** (later): its accuracy spec is the outcome tolerance above.
+- **Robotic hand** (in parallel, in the hardware repo): it takes the same
+  gestures through a WDA-shaped API, so Model 2 never knows which executor
+  played. Its accuracy spec is the outcome tolerance above.
 
 ## Data and rig
 
@@ -76,57 +81,73 @@ phone records the video, and the known gesture becomes the label. Model 2
   training clips. Timing checks screened it, and blind 100-clip audits passed it
   ([audit](experiments/M1-CORPUS-AUDIT-20260927.md)).
 - Collection is OFF unless you authorise a bounded run. Rig release `189dfde`.
-- Running now: the XR1 learn-replay pilot (branch
-  `codex/learn-replay-pilot-20261013`). It is a small curved
-  collect–train–replay test at 0.3–1.2 s speeds, capturing until about
-  2026-10-15 00:30 UTC. Its own session owns it.
+- The XR1 learn-replay pilot finished on 2026-10-15 (branch
+  `codex/learn-replay-pilot-20261013`). It collected 430 curved clips at
+  0.3–1.2 s and trained a curved Model 1 on 320, which passed 25% of 80 test
+  clips; replay was skipped. Its own session owns the record.
+- Trick-speed trials: 125 clips each on XR1 and XR2 (TRICK-SPEED-20261015),
+  with labels re-timed to the visible trail ([journal](JOURNAL.md)).
 - Training runs on Modal. Three seeds of linear Model 1 cost about $12.5 at
   list prices ([COLAB](experiments/M1-COLAB-20261006.md)).
 
 ## What's blocking the end-to-end loop
 
-1. **Speed gap (primary): no training data at trick speeds.**
-   - Your filmed kickflip's pop takes 75 ms and its flick 100 ms (a 60 ms arc,
-     then 40 ms outward) ([kickflip](experiments/KICKFLIP-REPEATABILITY-20261009.md)).
-     `[by eye]` The flick starts with a ~70 ms stationary touch.
-   - Both Model 1 training sets start at 0.30 s, and curved v1 needs every
-     piece to last at least 100 ms.
-   - Frame sampling is settled: one frame every ~73 ms catches each stroke's
-     motion in about one frame, so trick models read every 60 Hz frame, as
-     curved v1 already does ([check](JOURNAL.md)).
-2. **No curved Model 1.** The kickflip's flick is curved, so linear Model 1
-   can't express it. Curved v1 stopped at its data gate (83/100 against 95).
-3. **Ground truth from your own play (parked).** A stock iPhone has no way to
-   log touches. An Android phone probably could, but on 2026-10-15 you made
-   that a last resort.
+1. **Speed gap: trick-speed data is only in trial size.** Your kickflip's pop
+   takes 75 ms and its flick 100 ms
+   ([kickflip](experiments/KICKFLIP-REPEATABILITY-20261009.md)). Both
+   Model 1 training sets start at 0.30 s. Trick models read every 60 Hz
+   frame. The two 125-clip trials are in; the 1,000-clip batch is next.
+2. **No curved Model 1 that reads fast strokes.** Curved v1 stopped at its data
+   gate (83/100 against 95). The pilot's model passed 25% at 0.3–1.2 s.
+3. **Model 2 is untrained**, and its live frame feed is unmeasured.
+4. **Ground truth from your own play (parked).** A stock iPhone can't log
+   touches; an Android phone is a last resort (2026-10-15).
 
 ## Open decisions
 
 - **Curved v1's 95/100 data gate:** keep it, change it or drop it. You're
   deciding this in a separate session; no recommendation here.
 
-## Next steps
+## Next experiments, ranked (approved 2026-10-16; a living list)
 
-My recommended order; each step is a separate proposal for you to approve.
+Add items or reorder at any time. Each still comes to you as a short proposal
+before it runs. Rough calendar: items 1–3 and 6 by about Oct 24, 4–5 by Oct 31,
+7 by Nov 10, 8 by Nov 17.
 
-1. Done 2026-10-14: the frame-sampling check. Trick models read every 60 Hz
-   frame ([journal](JOURNAL.md)).
-2. Parked: capturing touches from your own play (blocker 3).
-3. Curved data at trick speeds, shaped like your real play: strokes from about
-   50 ms, pieces down to 40 ms and short holds before a move, collected as a
-   small XR1 Workshop batch. Approved 2026-10-15 and built; a 100-clip trial
-   comes first ([protocol](protocols/trick_speed_batch.md)).
-4. A rough curved MVP: train it, read your filmed kickflip with it, replay the
-   result in Workshop and count landings
-   ([MVP test](protocols/model1_curved_mvp2.md)).
+1. **Kickflip position tolerance:** review the 39 recorded attempts. Landings
+   hold at 5% noise → the current labels are good enough; else → item 10 first.
+2. **Trick-speed 1,000 clips on XR1 + XR2** ([protocol](protocols/trick_speed_batch.md)).
+   The XR1 trial's trail check finds nothing new and you call the remaining
+   faults minor → record; else → fix the cause and rerun a 100-clip trial.
+3. **Record your own play** in Workshop (30–60 min, the rig's 60 fps
+   recorder) as Model 2's data. The trail shows clearly → keep it; else →
+   change the settings and record again.
+4. **Rough curved Model 1 MVP v0:** up to 4 strokes per clip, pieces down to
+   40 ms, Modal under $5 ([MVP test](protocols/model1_curved_mvp2.md)). At
+   least half the validation strokes within item 1's tolerance → items 5 and 7;
+   else → sort failures into timing vs path.
+5. **Replay check of Model 1's labels:** your filmed kickflip, replayed by
+   WDA, 20 times. Lands in at least half → Model 1 can label Model 2's data;
+   else → fix the weakest link.
+6. **Live frames for Model 2:** frame rate and latency of WDA's MJPEG stream.
+   ≥20 fps with stable latency → Model 2 trains at that rate; else → another
+   capture route.
+7. **Model 2 v0 on your labelled play** (Modal under $10). Sensible offline
+   predictions → item 8; else → more play, or a simpler "kickflip now / wait"
+   target.
+8. **Model 2 plays live** through WDA, with a hand-ready interface. It lands a
+   kickflip → north star met; else → fix the failing link.
+9. Speed after a kink, only if items 1, 5 or 8 point to it: re-time each piece.
+10. Pops' missing end, only if item 1 says it matters: test a 16–33 ms end hold.
+11. Timing tolerance inside a stroke, only if item 5 fails with good positions.
 
 ## Parked
 
-- Model 2.
 - The Bluetooth mouse: a 15 ms radio interval and 3–5% late reports
   ([HID-POINTER](experiments/HID-POINTER-20261004.md)).
 - Multi-finger and spin gestures.
 - More linear scaling: data still helps, but the kickflip slice doesn't need it.
 - Replay fine-tuning ([note](protocols/model1_replay_finetuning.md)), which
   comes after the MVP.
-- Other parks and XR2, until the Workshop kickflip works.
+- WDA-side timestamps for direct strokes (needs a WDA rebuild); Pico contact
+  accuracy; other parks, until the Workshop kickflip works.

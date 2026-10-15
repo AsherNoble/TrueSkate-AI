@@ -57,7 +57,6 @@ curved MVP.
 
 - **Size:** a 100-clip trial (about 30 min of XR1), then about 1,000 clips
   (about 1–2 h of XR1, mostly unattended).
-- **Deadline:** before XR1's WDA signing expires (2026-10-21 00:57 UTC).
 - **Cost:** no spend. Training is a separate proposal (step 4).
 - **Decision:** if the trial keeps at least 70% of its clips and the spot check
   finds no gross faults, record the 1,000 and propose step 4. Otherwise, fix the
