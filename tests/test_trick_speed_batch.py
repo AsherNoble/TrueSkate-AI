@@ -351,8 +351,11 @@ def test_calibrate_maps_markers_and_direct_strokes_onto_the_video_clock(tmp_path
     tap_begin, tap_end, tap_run, _ = contacts[0]
     assert tap_run is None and np.isclose(tap_begin, 10.5 + .1 - 9. + RENDER_S) and np.isclose(tap_end - tap_begin, .05)
     begin, end, number, _ = contacts[1]
-    # Rig call start + median rig-to-WDA offset (request entry), through the marker fit.
-    assert number == 7 and np.isclose(begin, 14. + .005 - 9. + RENDER_S) and np.isclose(end - begin, .1)
+    # Rig call start + median rig-to-WDA offset (request entry), through the marker fit; then
+    # whatever shift the visible trail gives (none can be read reliably in a test pattern).
+    timing = evidence["stroke_timing"]["7:0"]
+    assert number == 7 and np.isclose(timing["estimated_onset_s"], 14. + .005 - 9. + RENDER_S)
+    assert np.isclose(begin, timing["estimated_onset_s"] + timing["shift_s"]) and np.isclose(end - begin, .1)
 
     def reject_middle(frames, times, *, command_s, **_):
         onset = None if 28 < command_s < 31 else command_s + RENDER_S  # the middle marker is at ~29.1 s
@@ -382,31 +385,71 @@ def test_probe_geometry_matches_the_tap_detector_and_clips_at_edges():
     assert edge is not None and edge[0][0].start == 0 and edge[0][1].start == 0
 
 
-def test_calibrate_measures_where_each_stroke_first_shows(tmp_path, monkeypatch):
+def test_path_samples_give_each_pieces_speed_in_points_per_ms():
+    hold = Stroke(((.5, .5), (.5, .5), (.6, .5)), (0, 50, 100), "random").to_dict()
+    ms, xy, speed = admission.path_samples(hold)
+    assert ms[0] == 0 and ms[-1] == 96 and np.allclose(xy[0], [.5, .5])
+    moved = np.hypot(*((np.asarray(hold["command_points"][2]) - hold["command_points"][1])*[414, 896]))
+    assert speed[0] == 0 and np.isclose(speed[list(ms).index(56)], moved/50)  # quantized points, per ms
+
+
+def test_trail_shift_corrects_the_glow_and_drops_misreads():
+    rows = [(0, .05, 0.), (8, .04, 2.), (16, .041, 2.), (24, .3, 2.), (32, .04, .2)]
+    shift, used = admission.trail_shift(rows)  # the slow probe is skipped, the 0.3 s misread dropped
+    assert used == 3 and np.isclose(shift, .041 + admission.GLOW_PT/2./1000)
+    assert admission.trail_shift(rows[:2]) is None
+
+
+def trail_video(path, strokes, size=(208, 448), seconds=10.):
+    """Grey 60 fps video; each (points, duration_s, visible_from_s) draws a white trail along its path."""
+    import cv2
+    width, height = size
+    frames = []
+    for i in range(int(seconds*60)):
+        frame = np.full((height, width), 100, np.uint8)
+        for points, duration, start in strokes:
+            u = min(1., (i/60 - start)/duration)
+            if u < 0:
+                continue
+            (x0, y0), (x1, y1) = points
+            head = (x0 + u*(x1 - x0), y0 + u*(y1 - y0))
+            cv2.line(frame, (round(x0*(width-1)), round(y0*(height-1))),
+                     (round(head[0]*(width-1)), round(head[1]*(height-1))), 255, 10)
+        frames.append(frame)
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "rawvideo", "-pix_fmt", "gray", "-s", f"{width}x{height}",
+                    "-r", "60", "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-threads", "1", str(path)],
+                   input=b"".join(f.tobytes() for f in frames), check=True)
+
+
+def test_calibrate_moves_strokes_onto_their_visible_trail(tmp_path, monkeypatch):
     from trueskate_ai.collection.die_five_calibration import DieFiveOnset
     out = tmp_path/"recordings"/"m0001"
     out.mkdir(parents=True)
-    # Grey video; a white square appears at the stroke's start point (centre) at 5.25 s.
-    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=gray:s=64x128:r=60", "-frames:v", "600",
-                    "-vf", "drawbox=x=28:y=60:w=8:h=8:color=white:t=fill:enable='gte(t,5.25)'",
-                    "-c:v", "libx264", "-threads", "1", str(out/"original.mov")], check=True)
-    run = fixed_run(7, 5., (100,))
+    path = ((.2, .3), (.8, .7))
+    shown = Stroke(path, (0, 300), "random").to_dict()
+    unseen = Stroke(((.7, .2), (.85, .3)), (0, 200), "random").to_dict()
+    runs = [dict(number=7, strokes=[shown]), dict(number=8, strokes=[unseen])]
+    # Estimates: 14 + 0.005 - 9 + 0.15 = 5.155 s and 7.155 s. Run 7's trail shows 60 ms late;
+    # run 8 draws nothing, so it takes the recording's median shift.
+    trail_video(out/"original.mov", [(path, .3, 5.155 + .06)])
     marks = [dict(kind="control", role="start", rig=10.5), dict(kind="control", role="middle", rig=38.),
              dict(kind="control", role="end", rig=66.)]
     events = [dict(kind=m["kind"], role=m["role"], instrumented=True, call_start_monotonic_s=m["rig"],
                    call_end_monotonic_s=m["rig"] + .6) for m in marks]
-    events.insert(1, dict(kind="stroke", instrumented=False, run=7, stroke=0, call_start_monotonic_s=14.,
-                          call_end_monotonic_s=14.45))
+    events[1:1] = [dict(kind="stroke", instrumented=False, run=n, stroke=0, call_start_monotonic_s=rig,
+                        call_end_monotonic_s=rig + .45) for n, rig in ((7, 14.), (8, 16.))]
     execution = dict(events=events, error=None, video=dict(started_at_epoch_s=1.7e9 + 9. + PHONE_OFFSET_S))
     save_json(out/"wda-timing.json", dict(schema_version=1, build_revision="rev", dropped_records=0,
                                           records=[phone_record(i, m["rig"]) for i, m in enumerate(marks)]))
     monkeypatch.setattr(admission, "detect_die_five_onset", lambda frames, times, *, command_s, **_: DieFiveOnset(
         point_frames=(0,) * 5, onset_frame=0, onset_s=command_s + RENDER_S, votes=5))
-    _, _, evidence, contacts = admission.calibrate(out, dict(wda_revision="rev", runs=[run]), execution)
-    estimate = contacts[1][0]  # 14 + 0.005 - 9 + 0.15 = 5.155 s
-    assert np.isclose(evidence["stroke_visible_onsets_s"]["7:0"], 5.25)
-    lag = evidence["stroke_visible_lag_s"]
-    assert lag["measured"] == lag["strokes"] == 1 and np.isclose(lag["median"], 5.25 - estimate)
+    _, _, evidence, contacts = admission.calibrate(out, dict(wda_revision="rev", runs=runs), execution)
+    seen, unread = evidence["stroke_timing"]["7:0"], evidence["stroke_timing"]["8:0"]
+    assert seen["source"] == "trail" and seen["probes"] >= 10 and abs(seen["shift_s"] - .06) < 1/60
+    assert unread["source"] == "recording" and unread["shift_s"] == seen["shift_s"] and unread["probes"] == 0
+    assert np.isclose(contacts[1][0], 5.155 + seen["shift_s"]) and np.isclose(contacts[2][0], 7.155 + seen["shift_s"])
+    assert abs(evidence["stroke_visible_onsets_s"]["7:0"] - (5.155 + .06)) < 1/60 + 1e-6
+    assert evidence["trail_timing"]["measured"] == 1 and evidence["trail_timing"]["strokes"] == 2
 
 
 def synthetic_recording(root, name="m0001"):
@@ -459,6 +502,8 @@ def test_admission_cuts_one_native_clip_per_run_and_explains_rejections(tmp_path
         assert np.allclose(clip - clip[0], meta["frame_times_s"], atol=.001)
         times = meta["frame_times_s"]
         assert all(times[4] < s["onset_s"] < s["release_s"] < times[-5] for s in meta["strokes"])
+        # No trail evidence here, so labels keep the rig-clock estimate.
+        assert all(s["retimed_by_s"] == 0 and np.isclose(s["estimated_onset_s"], s["onset_s"]) for s in meta["strokes"])
         assert all(s["timing_source"] == admission.TIMING_SOURCE and abs(s["call_s"] - .4) < 1e-9
                    for s in meta["strokes"])
         assert Stroke.from_dict({k: v for k, v in meta["strokes"][0].items()
