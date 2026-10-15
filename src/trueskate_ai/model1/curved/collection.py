@@ -144,7 +144,7 @@ def collect(ledger, *, session_id, park, device, revision, max_minutes, env_file
                 run_recording(recorder=XCTestScreenRecorder(driver, fps=60),
                               timing=WDAActionTimingCapture(wda_port=cfg["wda_port"], expected_revision=revision),
                               commands=commands, perform=perform, guard=guard, out=out,
-                              prepare=lambda spec: gameplay(), prepare_lead_s=1.25,
+                              prepare=lambda spec: gameplay(), prepare_lead_s=1.25, guard_lead_s=.25,
                               revision=revision,
                               metadata=dict(schema="model1_curved_v1", seed=ledger.definition["seed"],
                                             session=session_id, device=device, park=park,
