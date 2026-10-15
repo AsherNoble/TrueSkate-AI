@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from concurrent.futures import ProcessPoolExecutor
 import datetime as dt
-import html
 import json
 import math
 from pathlib import Path
@@ -22,7 +21,6 @@ import cv2
 import numpy as np
 
 from trueskate_ai.research import kickflip_repeatability as recipe
-from trueskate_ai.research.curve_measurement import _decode_source_frames
 from trueskate_ai.research.curve_protocol import save_new
 
 EXPERIMENT = 'KICKFLIP-TOLERANCE-20261015'
@@ -34,12 +32,7 @@ PER_LEVEL = 10
 SEED = 20261015
 MAX_REDRAWS = 1000
 METRIC = 'Euclidean distance in normalized screen coordinates (x/414, y/896), as Model 1 recovery'
-# Review frames: just before the pop, then after the flick's encoded end, where the banner shows.
-SHEET_OFFSETS_S = (.5, 1., 2., 3.)
-SHEET_FRAME = (276, 597)  # A third of the 828x1792 native frame, so banner text stays legible.
-SHEET_LABEL_PX, SHEET_GAP_PX = 26, 6
-SHEET_SIZE = ((len(SHEET_OFFSETS_S) + 1) * (SHEET_FRAME[0] + SHEET_GAP_PX) - SHEET_GAP_PX,
-              SHEET_FRAME[1] + SHEET_LABEL_PX)
+# Operator review: kickflip_review.py serves each attempt's native frames (the review UI).
 VERDICTS = {'L': 'landed kickflip', 'F': 'not a landed kickflip', 'U': 'unsure'}
 FAILED_STATES = ('technical failure', 'incomplete')
 
@@ -211,123 +204,33 @@ def admit_all(root, jobs=1, retry_failed=False):
     return dict(map(_admit, todo))
 
 
-def contact_sheet(root, number, out_dir):
-    """One JPG per attempt: the frame before the pop, then 0.5/1/2/3 s after the flick ends.
-
-    Labelled only with the attempt number, so the review does not show the level.
-    """
-    trial = attempt_dir(root, number)
-    admission = recipe.read_json(trial / 'admission.json')
-    if not admission['accepted']:
-        raise ValueError(f'attempt {number} has no admitted recording')
-    pts = np.array(admission['original_pts_s'])
-    gestures = {g['role']: g for g in admission['gestures']}
-    flick_end = gestures['flick']['video_start_s'] + gestures['flick']['encoded_duration_s']
-    targets = [('before pop', gestures['pop']['video_start_s'] - admission['native_frame_s'])]
-    targets += [(f'+{offset:g} s after flick', flick_end + offset) for offset in SHEET_OFFSETS_S]
-    indices = [int(np.argmin(np.abs(pts - t))) for _, t in targets]
-    selected = [i for i, t in enumerate(pts) if pts[min(indices)] <= t <= pts[max(indices)]]
-    frames, position = {}, iter(selected)
-    def keep(image):
-        index = next(position)
-        if index in indices:
-            frames[index] = cv2.resize(image, SHEET_FRAME, interpolation=cv2.INTER_AREA)
-    _decode_source_frames(trial / 'original.mov', pts, start=pts[min(indices)], end=pts[max(indices)],
-                          keep=False, inspect=keep)
-    tiles = []
-    for (label, _), index in zip(targets, indices):
-        tile = np.full((SHEET_FRAME[1] + SHEET_LABEL_PX, SHEET_FRAME[0], 3), 255, np.uint8)
-        tile[SHEET_LABEL_PX:] = frames[index]
-        cv2.putText(tile, label, (5, 18), cv2.FONT_HERSHEY_SIMPLEX, .5, (0, 0, 0), 1, cv2.LINE_AA)
-        tiles.append(tile)
-    gap = np.full((tiles[0].shape[0], SHEET_GAP_PX, 3), 255, np.uint8)
-    sheet = np.hstack([part for tile in tiles for part in (tile, gap)][:-1])
-    Path(out_dir).mkdir(parents=True, exist_ok=True)
-    path = Path(out_dir) / f'attempt_{number:02d}.jpg'
-    if not cv2.imwrite(str(path), sheet, [cv2.IMWRITE_JPEG_QUALITY, 85]):
-        raise ValueError('contact sheet write failed')
-    return path, [dict(label=label, target_s=float(t), source_frame=i, source_pts_s=float(pts[i]))
-                  for (label, t), i in zip(targets, indices)]
-
-
-PAGE = """<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kickflip review</title>
-<style>
-:root {{ --bg: #fff; --fg: #111; --muted: #666; --line: #ddd; --accent: #0b62d6; }}
-@media (prefers-color-scheme: dark) {{ :root {{ --bg: #111; --fg: #eee; --muted: #aaa; --line: #333; --accent: #6aa8ff; }} }}
-body {{ background: var(--bg); color: var(--fg); font: 15px/1.4 -apple-system, system-ui, sans-serif;
-       margin: 0 auto; max-width: 1120px; padding: 16px 16px 140px; }}
-section {{ border-top: 1px solid var(--line); padding: 12px 0; }}
-img {{ max-width: 100%; height: auto; display: block; margin: 6px 0; }}
-label {{ margin-right: 18px; cursor: pointer; }}
-.muted {{ color: var(--muted); }}
-footer {{ position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line);
-         padding: 10px 16px; }}
-textarea {{ width: 100%; box-sizing: border-box; font: 13px ui-monospace, monospace; background: var(--bg);
-           color: var(--fg); border: 1px solid var(--line); }}
-button {{ font: inherit; padding: 4px 12px; }}
-</style></head><body>
-<h1>Kickflip review</h1>
-<p>For each attempt: did the skater land a kickflip? Use the banner and the board in the frames after the flick.
-Choose <b>Unsure</b> if the frames don't settle it, and say so with the attempt number. When done, press
-<b>Copy</b> and paste the codes into the chat.</p>
-{sections}
-<footer><div><span id="count">0</span> of {total} judged <button id="copy" type="button">Copy</button></div>
-<textarea id="codes" rows="2" readonly></textarea></footer>
-<script>
-const codes = document.getElementById('codes');
-function update() {{
-  const picked = [...document.querySelectorAll('input[type=radio]:checked')]
-    .map(r => r.name.slice(1) + r.value).sort();
-  codes.value = picked.join(' ');
-  document.getElementById('count').textContent = picked.length;
-}}
-document.addEventListener('change', update);
-document.getElementById('copy').addEventListener('click', () => {{
-  codes.select(); navigator.clipboard ? navigator.clipboard.writeText(codes.value) : document.execCommand('copy');
-}});
-</script></body></html>
-"""
-
-
-def review_page(root):
-    """Contact sheets for every admitted attempt plus one static review page (no server)."""
-    root = Path(root)
-    plan = load_plan(root)
-    out = root / 'review'
-    sections, provenance, judged = [], {}, 0
-    for attempt in plan['attempts']:
-        number = attempt['number']
-        state = attempt_state(attempt_dir(root, number))
-        title = f'Attempt {number:02d}'
-        if state != 'admitted':
-            sections.append(f'<section><h2>{title}</h2><p class="muted">No admitted recording ({html.escape(state)}).</p></section>')
-            continue
-        sheet, provenance[number] = contact_sheet(root, number, out)
-        choices = ''.join(f'<label><input type="radio" name="a{number:02d}" value="{code}"> {html.escape(text.capitalize())}</label>'
-                          for code, text in VERDICTS.items())
-        pop = next(g for g in recipe.read_json(attempt_dir(root, number) / 'admission.json')['gestures'] if g['role'] == 'pop')
-        sections.append(f'<section><h2>{title}</h2><a href="{sheet.name}"><img src="{sheet.name}" alt="{title} frames" '
-                        f'width="{SHEET_SIZE[0]}" height="{SHEET_SIZE[1]}"></a><div>{choices} '
-                        f'<a class="muted" href="../attempts/attempt_{number:02d}/original.mov">source movie</a> '
-                        f'<span class="muted">(pop at {pop["video_start_s"]:.1f} s)</span></div></section>')
-        judged += 1
-    page = out / 'index.html'
-    page.write_text(PAGE.format(sections='\n'.join(sections), total=judged))
-    (out / 'sheets.json').write_text(json.dumps(dict(experiment=EXPERIMENT, sheets=provenance), indent=2))
-    return page
-
-
 TOKEN = re.compile(r'(\d{1,2})\s*([LFU])', re.IGNORECASE)
 
 
-def record_verdicts(root, codes, *, replace=False):
-    """Operator verdicts as `07L 08F 09U`: L landed kickflip, F not, U unsure.
+def write_verdicts(root, checked, *, replace=False, source='codes'):
+    """Write checked (attempt, code, note) rows, each tied to its admitted video's hash.
 
-    Every token is checked before any verdict is written. Each verdict is tied to its
-    admitted video's hash.
+    Every row is checked before any is written, and an existing verdict is never silently
+    replaced.
     """
+    root = Path(root)
+    for number, _, _ in checked:
+        trial = attempt_dir(root, number)
+        if attempt_state(trial) != 'admitted':
+            raise ValueError(f'attempt {number} has no admitted recording to judge')
+        if (trial / 'verdict.json').exists() and not replace:
+            raise ValueError(f'attempt {number} already has a verdict; pass --replace to change it')
+    now = dt.datetime.now(dt.timezone.utc).isoformat()
+    for number, code, note in checked:
+        trial = attempt_dir(root, number)
+        admission = recipe.read_json(trial / 'admission.json')
+        (trial / 'verdict.json').write_text(json.dumps(dict(attempt=number, code=code, verdict=VERDICTS[code],
+            note=note, source=source, video_sha256=admission['video_sha256'], recorded_at=now), indent=2) + '\n')
+    return len(checked)
+
+
+def record_verdicts(root, codes, *, replace=False):
+    """Operator verdicts as `07L 08F 09U`: L landed kickflip, F not, U unsure (when the review page is unavailable)."""
     root = Path(root)
     plan = load_plan(root)
     numbers = {a['number'] for a in plan['attempts']}
@@ -342,18 +245,8 @@ def record_verdicts(root, codes, *, replace=False):
         if number in seen:
             raise ValueError(f'attempt {number} is listed twice')
         seen.add(number)
-        trial = attempt_dir(root, number)
-        if attempt_state(trial) != 'admitted':
-            raise ValueError(f'attempt {number} has no admitted recording to judge')
-        if (trial / 'verdict.json').exists() and not replace:
-            raise ValueError(f'attempt {number} already has a verdict; pass --replace to change it')
-        checked.append((trial, number, code))
-    for trial, number, code in checked:
-        admission = recipe.read_json(trial / 'admission.json')
-        (trial / 'verdict.json').write_text(json.dumps(dict(attempt=number, code=code, verdict=VERDICTS[code],
-            video_sha256=admission['video_sha256'], recorded_at=dt.datetime.now(dt.timezone.utc).isoformat()),
-            indent=2) + '\n')
-    return len(checked)
+        checked.append((number, code, ''))
+    return write_verdicts(root, checked, replace=replace)
 
 
 def summarize(root):

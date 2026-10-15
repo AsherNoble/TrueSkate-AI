@@ -4,14 +4,15 @@ import importlib.util
 import json
 import math
 from pathlib import Path
+import subprocess
 from types import SimpleNamespace
 
-import cv2
 import numpy as np
 import pytest
 
 from trueskate_ai.collection.scene_settle import SettleResult
 from trueskate_ai.research import kickflip_repeatability as recipe
+from trueskate_ai.research import kickflip_review as review
 from trueskate_ai.research import kickflip_tolerance as module
 from trueskate_ai.research.curve_protocol import save_new
 
@@ -309,30 +310,128 @@ def test_verdicts_are_checked_together_and_bound_to_the_video(experiment):
     assert '| Distance |' in module.summary_markdown(summary)
 
 
-def test_review_page_shows_attempt_numbers_but_not_distances(experiment, monkeypatch):
+def real_attempt(root, number):
+    """An admitted attempt whose original.mov is a real 1,200-frame 60 fps video (testsrc2)."""
+    trial = admitted(root, number)
+    subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=s=32x64:r=60', '-frames:v', '1200',
+                    '-c:v', 'libx264', '-threads', '1', '-y', str(trial / 'original.mov')], check=True)
+    admission = recipe.read_json(trial / 'admission.json')
+    admission['video_sha256'] = recipe.file_sha(trial / 'original.mov')
+    (trial / 'admission.json').write_text(json.dumps(admission))
+    return trial
+
+
+def test_review_manifest_is_blind_and_bound_to_the_videos(experiment):
     for number in (1, 2):
         admitted(experiment, number)
     record(experiment, 3, error='synthetic', live_failure=True)
-    decoded = []
-    def decode(video, pts, *, start, end, keep, inspect):
-        selected = [i for i, t in enumerate(pts) if start <= t <= end]
-        decoded.append((selected[0], selected[-1]))
-        for i in selected:
-            inspect(np.full((1792, 828, 3), i % 255, np.uint8))
-        return [], [], selected
-    monkeypatch.setattr(module, '_decode_source_frames', decode)
-    page = module.review_page(experiment)
-    text = page.read_text()
-    assert 'Attempt 01' in text and 'Attempt 02' in text and 'technical failure' in text
-    assert 'name="a01"' in text and 'value="L"' in text
-    for word in ('level', 'distance', '0.02', '0.05', '0.1'):
+    manifest, sources = review.review_manifest(experiment)
+    assert [s['code'] for s in manifest['samples']] == ['01', '02'] and sorted(sources) == [1, 2]
+    sample, pts = manifest['samples'][0], np.arange(1200) / 60
+    # From 0.5 s before the pop (14.6 s) to 3 s after the flick ends (15.1 s), every native frame.
+    expected = [t for t in pts if 14.6 - .5 <= t <= 15.0 + .1 + 3.]
+    assert len(sample['frame_times_s']) == len(expected) == sources[1]['last'] - sources[1]['first'] + 1
+    assert sample['frame_times_s'][0] == 0 and [m['role'] for m in sample['marks']] == ['pop', 'flick']
+    assert sample['marks'][0]['start_s'] == pytest.approx(.5, abs=1 / 60)
+    assert sample['marks'][1]['end_s'] == pytest.approx(1., abs=1 / 60)
+    # Blind: nothing in the manifest or the page names or carries the distance.
+    text = json.dumps(manifest)
+    for word in ('level', 'distance', 'jitter', 'points', 'candidate'):
         assert word not in text
-    sheet = cv2.imread(str(page.parent / 'attempt_01.jpg'))
-    assert sheet.shape[:2] == (module.SHEET_SIZE[1], module.SHEET_SIZE[0]) == (623, 1404)
-    labels = [f['label'] for f in recipe.read_json(page.parent / 'sheets.json')['sheets']['1']]
-    assert labels[0] == 'before pop' and len(labels) == 5
-    # Before the pop (14.6 s) through 3 s after the flick's end (15.1 s): one decode per attempt.
-    assert decoded[0] == (round(14.6 * 60) - 1, round(18.1 * 60))
+    page = (REPO / 'src/trueskate_ai/research/kickflip_review.html').read_text().lower()
+    assert 'level' not in page and 'distance' not in page
+    # The hash binds the videos: a changed video makes a different review.
+    trial = module.attempt_dir(experiment, 1)
+    (trial / 'original.mov').write_bytes(b'another video')
+    admission = recipe.read_json(trial / 'admission.json')
+    admission['video_sha256'] = recipe.file_sha(trial / 'original.mov')
+    (trial / 'admission.json').write_text(json.dumps(admission))
+    assert review.review_manifest(experiment)[0]['sha256'] != manifest['sha256']
+
+
+def test_review_server_serves_native_frames_and_saves_a_checked_export(experiment):
+    import socket
+    import threading
+    import urllib.request
+    from urllib.error import HTTPError
+    for number in (1, 2):
+        real_attempt(experiment, number)
+    with socket.socket() as probe:
+        probe.bind(('127.0.0.1', 0))
+        port = probe.getsockname()[1]
+    result = []
+    server = threading.Thread(target=lambda: result.append(review.serve(experiment, port=port)), daemon=True)
+    server.start()
+    base = f'http://127.0.0.1:{port}'
+    for _ in range(200):
+        try:
+            page = urllib.request.urlopen(base + '/', timeout=5).read()
+            break
+        except OSError:
+            server.join(.05)
+    assert b'Kickflip review' in page and b'Save &amp; next' in page
+    manifest = json.loads(urllib.request.urlopen(base + '/manifest').read())
+    last = len(manifest['samples'][0]['frame_times_s']) - 1
+    frames = [urllib.request.urlopen(f"{base}/frame/1/{n}?m={manifest['sha256'][:16]}").read() for n in (0, last)]
+    assert all(f.startswith(b'\xff\xd8') for f in frames)
+    for bad in (f'/frame/1/{last + 1}', '/frame/3/0'):
+        with pytest.raises(HTTPError):
+            urllib.request.urlopen(base + bad)
+
+    def post(report):
+        return urllib.request.urlopen(urllib.request.Request(
+            base + '/export', data=json.dumps(report).encode(), headers={'Content-Type': 'application/json'}))
+    report = dict(experiment=module.EXPERIMENT, manifest_sha256=manifest['sha256'],
+                  attempts=[dict(code='01', verdict='L', note=''), dict(code='02', verdict='F', note='')])
+    with pytest.raises(HTTPError) as refused:
+        post(report)  # Not landed needs a note; the server says why and keeps running.
+    assert refused.value.code == 400 and server.is_alive()
+    report['attempts'][1]['note'] = 'bailed on the catch'
+    saved = Path(json.loads(post(report).read())['path'])
+    server.join(5)
+    assert not server.is_alive() and result == [saved]
+    assert saved.parent == experiment.resolve() / 'review' and json.loads(saved.read_text()) == report
+    assert not list(experiment.glob('kickflip-review-*'))  # The frame cache is removed.
+    assert review.import_report(experiment, saved) == 2
+    verdict = recipe.read_json(module.attempt_dir(experiment, 2) / 'verdict.json')
+    assert (verdict['code'], verdict['note'], verdict['source']) == ('F', 'bailed on the catch', saved.name)
+    with pytest.raises(ValueError, match='already have verdicts'):
+        review.serve(experiment, port=0)
+
+
+def test_import_report_needs_every_attempt_and_a_note_unless_landed(experiment, tmp_path):
+    for number in (1, 2):
+        admitted(experiment, number)
+    sha = review.review_manifest(experiment)[0]['sha256']
+    path = tmp_path / 'report.json'
+
+    def exported(*rows, digest=sha):
+        path.write_text(json.dumps(dict(manifest_sha256=digest, attempts=[dict(zip(('code', 'verdict', 'note'), r))
+                                                                        for r in rows])))
+        return path
+    for rows, digest, message in (((('01', 'L'), ('02', 'L')), '0' * 64, 'another set'),
+                                  ((('01', 'L'),), sha, 'misses attempt'),
+                                  ((('01', 'L'), ('01', 'L'), ('02', 'L')), sha, 'listed twice'),
+                                  ((('01', 'L'), ('03', 'L')), sha, 'not under review'),
+                                  ((('01', 'L'), ('02', 'X')), sha, 'no Landed'),
+                                  ((('01', 'L'), ('02', 'U', '  ')), sha, 'needs a note')):
+        with pytest.raises(ValueError, match=message):
+            review.import_report(experiment, exported(*rows, digest=digest))
+    assert not (module.attempt_dir(experiment, 1) / 'verdict.json').exists()
+    assert review.import_report(experiment, exported(('01', 'L'), ('02', 'U', 'banner hidden'))) == 2
+    with pytest.raises(ValueError, match='already has a verdict'):
+        review.import_report(experiment, path)
+    assert review.import_report(experiment, exported(('01', 'F', 'fell'), ('02', 'L')), replace=True) == 2
+    total = {k: sum(v[k] for v in module.summarize(experiment)['levels'].values()) for k in ('L', 'F', 'U')}
+    assert total == dict(L=1, F=1, U=0)
+
+
+def test_cli_serves_the_review_and_imports_reports():
+    import sys
+    script = REPO / 'scripts/collection/probe_kickflip_tolerance.py'
+    run = lambda *args: subprocess.run([sys.executable, str(script), '--root', '/tmp/x', *args],
+                                       capture_output=True, text=True, check=True).stdout
+    assert '--report' in run('verdicts', '--help') and '--port' in run('review', '--help')
 
 
 def test_admit_all_uses_the_plan_revision_for_recorded_attempts_only(experiment, monkeypatch):

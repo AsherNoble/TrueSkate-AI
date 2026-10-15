@@ -19,6 +19,7 @@ import sys
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / 'src'))
 
+from trueskate_ai.research import kickflip_review
 from trueskate_ai.research import kickflip_tolerance as tolerance
 
 # The rig's shared "recording in progress" flag (RIG-BOARD): other sessions avoid heavy work while it exists.
@@ -86,10 +87,13 @@ def main():
     admission.add_argument('--jobs', type=int, default=4)
     admission.add_argument('--retry-failed', action='store_true',
                            help='rerun the same gates after a laptop-side fault; earlier results are kept')
-    review = sub.add_parser('review', help='contact sheets and a static review page for admitted attempts')
+    review = sub.add_parser('review', help='serve the review of admitted attempts until it is exported (laptop)')
+    review.add_argument('--port', type=int, default=kickflip_review.PORT)
     review.add_argument('--open', action='store_true', help='open the page in Google Chrome (laptop)')
-    verdicts = sub.add_parser('verdicts', help='record operator verdicts, e.g. "01L 02F 03U"')
-    verdicts.add_argument('--codes', required=True)
+    verdicts = sub.add_parser('verdicts', help="import the review page's exported report, or record codes like \"01L 02F\"")
+    source = verdicts.add_mutually_exclusive_group(required=True)
+    source.add_argument('--report', type=Path, help='the JSON file the review page exported')
+    source.add_argument('--codes', help='L/F/U codes when the review page is unavailable')
     verdicts.add_argument('--replace', action='store_true', help='change verdicts already recorded')
     sub.add_parser('report', help='per-distance landing counts (writes summary.json and summary.md)')
     paths = sub.add_parser('render-paths', help='draw the planned pop/flick paths per distance (offline check)')
@@ -120,12 +124,15 @@ def main():
         print(json.dumps(results, indent=2))
         print(f"admitted {sum(r['admitted'] for r in results.values())} of {len(results)} recorded attempts")
     elif args.command == 'review':
-        page = tolerance.review_page(root)
-        print(page)
-        if args.open:
-            subprocess.run(['open', '-a', 'Google Chrome', str(page)], check=True)
+        report = kickflip_review.serve(root, port=args.port, open_browser=args.open)
+        if report:
+            print(f'REVIEW_EXPORTED {report}\nimport it: verdicts --report {report}', flush=True)
     elif args.command == 'verdicts':
-        print(f'recorded {tolerance.record_verdicts(root, args.codes, replace=args.replace)} verdict(s)')
+        if args.report:
+            recorded = kickflip_review.import_report(root, args.report, replace=args.replace)
+        else:
+            recorded = tolerance.record_verdicts(root, args.codes, replace=args.replace)
+        print(f'recorded {recorded} verdict(s)')
     elif args.command == 'report':
         summary = tolerance.summarize(root)
         (root / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
