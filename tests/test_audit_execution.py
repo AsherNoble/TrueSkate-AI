@@ -108,3 +108,23 @@ def test_invalid_schedule_is_rejected_before_recorder_start(tmp_path,slots):
         execution.run_recording(recorder=rec,timing=Timing(),commands=[dict(kind='sample',slot_s=s,payload={}) for s in slots],
             perform=lambda s:None,guard=lambda:None,out=tmp_path/'run',revision='fixture',metadata={})
     assert rec.starts==rec.stops==0
+
+
+@pytest.mark.parametrize('prep_seconds', [.8, 1.5])
+def test_screenshot_preparation_preserves_final_marker_deadline(tmp_path, monkeypatch, prep_seconds):
+    clock=Clock();rec=Recorder();calls=[]
+    monkeypatch.setattr(execution,'validate_action_timing_report',lambda *a,**k:None)
+    def perform(spec):
+        calls.append(clock());clock.sleep(.44)
+    kwargs=dict(recorder=rec,timing=Timing(),commands=[dict(kind='control',slot_s=58,payload={})],
+        prepare=lambda spec:clock.sleep(prep_seconds),prepare_lead_s=1.25,
+        perform=perform,guard=lambda:clock.sleep(.09),out=tmp_path/'run',revision='fixture',metadata={},
+        clock=clock,sleep=clock.sleep,epoch=clock)
+    if prep_seconds > 1.25:
+        with pytest.raises(RuntimeError,match='preparation overrun'):execution.run_recording(**kwargs)
+        assert calls==[]
+    else:
+        execution.run_recording(**kwargs)
+        assert calls==pytest.approx([58.18])  # Initial guard consumes .09 before recording origin.
+        assert clock.now==pytest.approx(59.09)
+    assert rec.stops==1

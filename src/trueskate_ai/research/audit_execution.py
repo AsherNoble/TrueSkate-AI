@@ -20,11 +20,13 @@ def deadline_sleep(seconds):
 
 def run_recording(*, recorder, timing, commands, perform, guard, out,
                   revision, metadata, clock=time.monotonic, sleep=deadline_sleep,
-                  epoch=time.time):
+                  epoch=time.time, prepare=None, prepare_lead_s=1.25):
     """Run one fixed minute; stop on first failure and retain complete/partial evidence."""
     slots = [c['slot_s'] for c in commands]
     if not slots or any(type(s) not in (int, float) or not math.isfinite(s) or not 0 <= s < 59 for s in slots) or any(b <= a for a, b in zip(slots, slots[1:])):
         raise ValueError('ordered commands inside the one-minute recording required')
+    if not math.isfinite(prepare_lead_s) or prepare_lead_s < 0:
+        raise ValueError('finite nonnegative preparation lead required')
     metadata = dict(metadata, wda_revision=revision)
     out = Path(out)
     out.mkdir(parents=True, exist_ok=False)
@@ -45,10 +47,20 @@ def run_recording(*, recorder, timing, commands, perform, guard, out,
             target = origin + spec['slot_s']
             if clock() > target + LATE_S:
                 raise RuntimeError('preparation/execution schedule overrun')
+            preparation = {}
+            if prepare is not None:
+                # Preserve the deadline while doing read-only screenshot work
+                # immediately ahead of the slot, rather than inside the touch RPC.
+                sleep(max(0., target-prepare_lead_s-clock()))
+                preparation['preparation_started_monotonic_s'] = clock()
+                prepare(spec)
+                preparation['preparation_finished_monotonic_s'] = clock()
+                if clock() > target + LATE_S:
+                    raise RuntimeError('preparation overrun')
             sleep(max(0., target-clock()))
             woke = clock()
             schedule.append(dict(kind=spec['kind'], slot_s=spec['slot_s'],
-                                 woke_monotonic_s=woke, lateness_s=woke-target))
+                                 woke_monotonic_s=woke, lateness_s=woke-target, **preparation))
             if woke > target + LATE_S:
                 raise RuntimeError('sleep overrun')
             guard()

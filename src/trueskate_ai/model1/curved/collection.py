@@ -21,7 +21,7 @@ SLOTS = (5, 10, 15, 20, 24, 35, 40, 45, 49, 52)
 def commands_for(ledger, session_id):
     from trueskate_ai.research.curved_audit import marker_payload, reset_payload
     commands = [dict(kind="control", role=role, slot_s=slot, payload=marker_payload())
-                for role, slot in (("start", 1), ("middle", 30), ("end", 58))]
+                for role, slot in (("start", 1.5), ("middle", 30), ("end", 58))]
     commands += [dict(kind="reset", slot_s=slot, payload=reset_payload()) for slot in (27, 55)]
     candidates = []
     try:
@@ -136,7 +136,6 @@ def collect(ledger, *, session_id, park, device, revision, max_minutes, env_file
             out = ledger.root/"recordings"/f"{session_id}-{uuid4().hex[:12]}"
 
             def perform(spec):
-                gameplay()
                 if spec["kind"] == "sample":
                     ledger.dispatch(spec["candidate_id"])  # Durable before RPC.
                 return driver.execute("actions", spec["payload"])
@@ -145,6 +144,7 @@ def collect(ledger, *, session_id, park, device, revision, max_minutes, env_file
                 run_recording(recorder=XCTestScreenRecorder(driver, fps=60),
                               timing=WDAActionTimingCapture(wda_port=cfg["wda_port"], expected_revision=revision),
                               commands=commands, perform=perform, guard=guard, out=out,
+                              prepare=lambda spec: gameplay(), prepare_lead_s=1.25,
                               revision=revision,
                               metadata=dict(schema="model1_curved_v1", seed=ledger.definition["seed"],
                                             session=session_id, device=device, park=park,
