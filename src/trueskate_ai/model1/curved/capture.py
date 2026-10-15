@@ -16,6 +16,11 @@ from trueskate_ai.research.audit_calibration import fit_markers
 from trueskate_ai.research.audit_video import _decode_source_frames
 from .contract import FRAME_COUNT, SCHEMA, Gesture, save_json
 
+# The neutral idle navigation bar slides over live gameplay when a touch begins or
+# the board idles; replay/menu colour, editor and foreground gates still apply.
+# Operator decision 2026-10-11 (round 3 evidence in M1-CURVED-20261011).
+MENU_POLICY = "allow_idle_navigation"
+
 
 def file_sha256(path: Path) -> str:
     value = hashlib.sha256()
@@ -34,6 +39,7 @@ def verify_sample(path: Path):
     if (meta.get("schema") != SCHEMA or not meta.get("calibration", {}).get("accepted")
             or admission.get("accepted") is not True or admission.get("frame_count") != 120
             or admission.get("menu_checked_frames") != 120 or admission.get("native_frame_selection") is not True
+            or admission.get("menu_policy") != MENU_POLICY
             or file_sha256(path/"clip.mp4") != meta.get("clip_sha256")):
         raise ValueError("incomplete or changed sample admission evidence")
     Gesture.from_dict(meta["gesture"])
@@ -66,6 +72,17 @@ def probe_pts(video: Path, *, recording: bool = True) -> np.ndarray:
         if not 58 <= effective <= 62 or not .015 <= median <= .018:
             raise ValueError("capture is not native approximately 60 fps")
     return pts
+
+
+def source_time_base(video: Path) -> str:
+    """The recording's native stream time base as an ffmpeg ratio, e.g. ``1:600``."""
+    value = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0",
+                            "-show_entries", "stream=time_base", "-of", "csv=p=0", str(video)],
+                           check=True, capture_output=True, text=True).stdout.strip()
+    num, den = (int(part) for part in value.split("/"))
+    if num <= 0 or den <= 0:
+        raise ValueError("invalid native time base")
+    return f"{num}:{den}"
 
 
 def window_start(pts, onset: float, release: float, *, contacts, own: int, seed: int) -> int:
@@ -157,8 +174,12 @@ def extract_recording(out: Path, ledger, *, revision: str) -> list[Path]:
         filters.append(f"[in{i}]select=between(n\\,{start}\\,{start+FRAME_COUNT-1}),setpts=PTS-STARTPTS[out{i}]")
     args = ["ffmpeg", "-v", "error", "-i", str(out/"original.mov"),
             "-filter_complex", ";".join(filters)]
+    # Without an explicit encoder time base, libx264 snaps PTS to a 1/60 s grid and
+    # shifts every frame after a native 15 ms interval by 1.67 ms.
+    time_base = source_time_base(out/"original.mov")
     for i, (_, _, _, sample) in enumerate(jobs):
         args += ["-map", f"[out{i}]", "-an", "-fps_mode", "passthrough",
+                 "-enc_time_base", time_base,
                  "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p",
                  "-threads", "2", str(sample/"clip.mp4")]
     subprocess.run(args, check=True, capture_output=True)
@@ -174,7 +195,7 @@ def extract_recording(out: Path, ledger, *, revision: str) -> list[Path]:
 
             def inspect(bgr):
                 rgb = bgr[..., ::-1]
-                if is_editor_frame(rgb) or is_menu_frame(rgb):
+                if is_editor_frame(rgb) or is_menu_frame(rgb, allow_idle_navigation=True):
                     contaminated.append(True)
 
             _decode_source_frames(sample/"clip.mp4", clip_pts, keep=False, inspect=inspect)
@@ -202,6 +223,7 @@ def extract_recording(out: Path, ledger, *, revision: str) -> list[Path]:
                         source_recording_id=out.name, calibration=evidence,
                         admission=dict(accepted=True, frame_count=FRAME_COUNT,
                                        menu_checked_frames=FRAME_COUNT,
+                                       menu_policy=MENU_POLICY,
                                        native_frame_selection=True))
             save_json(sample/"meta.json", meta)
             ledger.settle(candidate_id, sample_path=sample)
