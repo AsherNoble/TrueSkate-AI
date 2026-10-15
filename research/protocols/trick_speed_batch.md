@@ -49,7 +49,8 @@ curved MVP.
   checks run unattended on the laptop.
 - **Spot check:** the operator rates 20 clips as OK, Fault or Unsure, looking
   only for gross faults (missing or extra touches, menus). A ring drawn on each
-  clip marks the commanded position.
+  clip marks the commanded position. The page is the curved audit review UI;
+  its exported report is imported with `verdicts --report`.
 
 ## Box and decision
 
