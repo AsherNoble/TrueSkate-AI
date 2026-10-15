@@ -55,39 +55,107 @@ def root(tmp_path):
     return root
 
 
-def page_clips(page: Path):
-    text = page.read_text()
-    start = text.index("const CLIPS = ") + len("const CLIPS = ")
-    return json.loads(text[start:text.index(";\n", start)])
-
-
-def test_review_page_keeps_its_seeded_pick(root):
-    page = review.review_page(root, count=2)
+def test_review_manifest_keeps_its_seeded_pick(root):
+    manifest, folders = review.review_manifest(root, count=2)
     selection = review.load_selection(root)
     assert [c["code"] for c in selection["clips"]] == ["01", "02"] and selection["admitted"] == 3
     assert review.select(root, 2) == selection  # seeded
-    clips = page_clips(page)
-    assert [c["code"] for c in clips] == ["01", "02"]
-    text = page.read_text()
-    for row, clip in zip(selection["clips"], clips):
-        assert f'src="../recordings/{row["recording"]}/run-{row["run"]:05d}/clip.mp4"' in text
-        meta = json.loads((root/"recordings"/row["recording"]/f'run-{row["run"]:05d}'/"meta.json").read_text())
-        assert len(clip["strokes"]) == len(meta["strokes"]) and len(clip["frame_times_s"]) == 120
-        assert clip["strokes"][0]["times_s"] == [t/1000 for t in meta["strokes"][0]["times_ms"]]
+    assert manifest["sha256"] == selection["sha256"]
+    assert [s["code"] for s in manifest["samples"]] == ["01", "02"] and sorted(folders) == [1, 2]
+    for row, sample in zip(selection["clips"], manifest["samples"]):
+        folder = root/"recordings"/row["recording"]/f'run-{row["run"]:05d}'
+        meta = json.loads((folder/"meta.json").read_text())
+        assert folders[sample["id"]] == folder and len(sample["frame_times_s"]) == 120
+        assert [s["times_ms"] for s in sample["strokes"]] == [s["times_ms"] for s in meta["strokes"]]
+        assert sample["strokes"][0]["command_points"] == meta["strokes"][0]["command_points"]
     # A rebuild keeps the codes, whatever count is asked for.
-    review.review_page(root, count=3)
+    review.review_manifest(root, count=3)
     assert review.load_selection(root) == selection
-    # A clip that changes after the pick is refused.
+    # A clip whose bytes or metadata change after the pick is refused.
     row = selection["clips"][0]
-    meta_path = root/"recordings"/row["recording"]/f'run-{row["run"]:05d}'/"meta.json"
-    meta = json.loads(meta_path.read_text())
-    save_json(meta_path, dict(meta, clip_sha256="0"*64), exclusive=False)
+    folder = root/"recordings"/row["recording"]/f'run-{row["run"]:05d}'
+    (folder/"clip.mp4").write_bytes(b"changed")
     with pytest.raises(ValueError, match="changed after it was picked"):
-        review.review_page(root)
+        review.review_manifest(root)
+
+
+def native_root(tmp_path):
+    """One admitted run whose clip is a real 120-frame native video, as the review server expects."""
+    root = tmp_path/"run"
+    folder = recording(root, "m0001", runs=(1,), admitted=(1,), rejected={})/"run-00001"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=s=32x64:r=60", "-frames:v", "120",
+                    "-c:v", "libx264", "-threads", "1", "-y", str(folder/"clip.mp4")], check=True)
+    meta = json.loads((folder/"meta.json").read_text())
+    save_json(folder/"meta.json", dict(meta, clip_sha256=file_sha256(folder/"clip.mp4")), exclusive=False)
+    return root
+
+
+def test_review_server_serves_the_picks_native_frames_and_stops_on_import(tmp_path):
+    import socket
+    import threading
+    from urllib.error import HTTPError
+    from urllib.request import urlopen
+    root = native_root(tmp_path)
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    server = threading.Thread(target=review.serve, args=(root,), kwargs=dict(port=port), daemon=True)
+    server.start()
+    base = f"http://127.0.0.1:{port}"
+    for _ in range(100):
+        try:
+            page = urlopen(base+"/", timeout=5).read()
+            break
+        except OSError:
+            server.join(.05)
+    assert b"Save &amp; next" in page and b"Trick-speed spot check" in page
+    manifest = json.loads(urlopen(base+"/manifest").read())
+    assert manifest["sha256"] == review.load_selection(root)["sha256"] and manifest["samples"][0]["code"] == "01"
+    frames = [urlopen(f"{base}/frame/1/{n}?m={manifest['sha256'][:16]}").read() for n in (0, 119)]
+    assert all(f.startswith(b"\xff\xd8") for f in frames)
+    with pytest.raises(HTTPError):
+        urlopen(base+"/frame/1/120")
+    with pytest.raises(HTTPError):
+        urlopen(base+"/frame/2/0")
+    report = tmp_path/"report.json"
+    report.write_text(json.dumps(dict(selection_sha256=manifest["sha256"], clips=[dict(code="01", verdict="K")])))
+    assert review.import_report(root, report) == 1  # Importing the review closes the server.
+    server.join(5)
+    assert not server.is_alive()
+    assert not list(root.glob("spot-check-*"))
+    with pytest.raises(ValueError, match="already recorded"):
+        review.serve(root, port=0)
+
+
+def test_import_report_needs_the_whole_pick_and_what_was_seen(root, tmp_path):
+    review.review_manifest(root, count=2)
+    sha = review.load_selection(root)["sha256"]
+    report = tmp_path/"report.json"
+
+    def exported(*clips, selection=sha):
+        report.write_text(json.dumps(dict(selection_sha256=selection, clips=[dict(zip(("code", "verdict", "reason"), c))
+                                                                            for c in clips])))
+        return report
+    for clips, selection, message in (((("01", "K"), ("02", "K")), "0"*64, "another pick"),
+                                      ((("01", "K"),), sha, "misses clip"),
+                                      ((("01", "K"), ("01", "K"), ("02", "K")), sha, "listed twice"),
+                                      ((("01", "K"), ("03", "K")), sha, "not in the pick"),
+                                      ((("01", "K"), ("02", "X")), sha, "no OK, Fault or Unsure"),
+                                      ((("01", "K"), ("02", "F", "  ")), sha, "needs what was seen")):
+        with pytest.raises(ValueError, match=message):
+            review.import_report(root, exported(*clips, selection=selection))
+    assert not (root/"review"/"verdicts.json").exists()
+    assert review.import_report(root, exported(("01", "K"), ("02", "F", "extra touch at frame 40"))) == 2
+    recorded = json.loads((root/"review"/"verdicts.json").read_text())["verdicts"]
+    assert {k: (v["code"], v["reason"], v["source"]) for k, v in recorded.items()} == {
+        "01": ("K", "", "report.json"), "02": ("F", "extra touch at frame 40", "report.json")}
+    with pytest.raises(ValueError, match="already has a verdict"):
+        review.import_report(root, report)
+    assert review.import_report(root, exported(("01", "U", "too dark"), ("02", "K")), replace=True) == 2
 
 
 def test_verdicts_are_checked_before_writing_and_never_silently_replaced(root):
-    review.review_page(root, count=2)
+    review.review_manifest(root, count=2)
     for bad in ("", "hello", "01X", "03K", "01K 1F", "01K, oops"):
         with pytest.raises(ValueError):
             review.record_verdicts(root, bad)
@@ -99,11 +167,11 @@ def test_verdicts_are_checked_before_writing_and_never_silently_replaced(root):
         review.record_verdicts(root, "02K")
     assert review.record_verdicts(root, "02U", replace=True) == 1
     with pytest.raises(ValueError, match="verdicts already recorded"):
-        review.review_page(root, reselect=True)
+        review.review_manifest(root, reselect=True)
 
 
 def test_summary_counts_states_rejections_strokes_and_spot_check(root):
-    review.review_page(root, count=3)
+    review.review_manifest(root, count=3)
     review.record_verdicts(root, "01K 02F")
     summary = review.summarize(root)
     assert summary["recordings_by_state"] == {"admitted": 1, "recording failed": 1, "awaiting admission": 1}

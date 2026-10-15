@@ -1,23 +1,32 @@
-"""Operator spot check of admitted clips, verdict codes and the batch summary (laptop).
+"""Operator spot check of admitted clips, verdicts and the batch summary (laptop).
 
-The page plays each picked clip with a ring at the commanded position of whichever
-stroke is active, so gross faults show: a missing or extra touch, a trail far from its
-ring, a menu. It is one static file; open it in Chrome, no server.
+The spot check reuses the curved audit review UI (curved/review.py and review.html): a
+temporary 127.0.0.1 server shows each picked clip's native frames, keyboard-first, with a
+ring at the commanded position of whichever stroke is active, so gross faults show: a
+missing or extra touch, a trail far from its ring, a menu. The reviewer exports a JSON
+report and sends its path; importing it records the verdicts and closes the server.
 """
 from __future__ import annotations
 
 from collections import Counter
 import datetime as dt
-import html
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import re
+import signal
 import statistics
+import subprocess
+import tempfile
+import threading
+from urllib.parse import urlparse
 
 import numpy as np
 
+from trueskate_ai.model1.curved.capture import file_sha256
 from trueskate_ai.model1.curved.contract import digest, save_json
-from .contract import EXPERIMENT, HEIGHT, SEED, WIDTH
+from trueskate_ai.model1.curved.review import FRAMES, FrameCache
+from .contract import EXPERIMENT, SEED
 
 DEFAULT_COUNT = 20
 RING_PT = 10
@@ -65,133 +74,8 @@ def load_selection(root) -> dict:
     return selection
 
 
-PAGE = """<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Trick-speed spot check</title>
-<style>
-:root { --bg: #fff; --fg: #111; --muted: #666; --line: #ddd; }
-@media (prefers-color-scheme: dark) { :root { --bg: #111; --fg: #eee; --muted: #aaa; --line: #333; } }
-body { background: var(--bg); color: var(--fg); font: 15px/1.4 -apple-system, system-ui, sans-serif;
-       margin: 0 auto; max-width: 1120px; padding: 16px 16px 150px; }
-section { border-top: 1px solid var(--line); padding: 12px 0; display: flex; gap: 16px; flex-wrap: wrap; }
-.stage { position: relative; line-height: 0; }
-video { height: 70vh; max-width: 100%; background: #000; }
-canvas { position: absolute; left: 0; top: 0; pointer-events: none; }
-.side { flex: 1; min-width: 240px; }
-.muted { color: var(--muted); }
-label { display: block; margin: 4px 0; cursor: pointer; }
-button { font: inherit; padding: 3px 10px; margin: 2px 2px 2px 0; }
-footer { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line);
-         padding: 10px 16px; }
-textarea { width: 100%; box-sizing: border-box; font: 13px ui-monospace, monospace; background: var(--bg);
-           color: var(--fg); border: 1px solid var(--line); }
-</style></head><body>
-<h1>Trick-speed spot check</h1>
-<p>Each clip holds one run of 1–4 fast touches. The cyan ring marks where each touch was commanded, at the
-time it was commanded. Choose <b>OK</b> when every touch leaves its trail with its ring and nothing else
-touches the screen. Choose <b>Fault</b> for a missing or extra touch, a trail far from its ring, or a menu.
-Choose <b>Unsure</b> if you can't tell. Say what you saw for any Fault or Unsure. When done, press
-<b>Copy</b> and paste the codes into the chat.</p>
-<p><label style="display:inline"><input type="checkbox" id="paths"> Show full paths</label></p>
-__SECTIONS__
-<footer><div><span id="count">0</span> of __TOTAL__ judged <button id="copy" type="button">Copy</button></div>
-<textarea id="codes" rows="2" readonly></textarea></footer>
-<script>
-const CLIPS = __CLIPS__;
-const W = __WIDTH__, H = __HEIGHT__, RING = __RING__;
-const paths = document.getElementById('paths');
-function position(s, t) {
-  const e = t - s.onset_s, ts = s.times_s;
-  if (e < 0 || e > ts[ts.length - 1]) return null;
-  for (let i = 1; i < ts.length; i++) if (e <= ts[i]) {
-    const u = (e - ts[i - 1]) / (ts[i] - ts[i - 1]), a = s.points[i - 1], b = s.points[i];
-    return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
-  }
-  return s.points[s.points.length - 1];
-}
-function draw(clip, t) {
-  const v = clip.video, c = clip.canvas, ctx = c.getContext('2d');
-  const w = v.clientWidth, h = v.clientHeight;
-  if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
-  ctx.clearRect(0, 0, w, h);
-  ctx.lineWidth = 2;
-  if (paths.checked) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-    for (const s of clip.strokes) {
-      ctx.beginPath();
-      s.points.forEach((p, i) => i ? ctx.lineTo(p[0] * w, p[1] * h) : ctx.moveTo(p[0] * w, p[1] * h));
-      ctx.stroke();
-    }
-  }
-  ctx.strokeStyle = '#00e5ff';
-  for (const s of clip.strokes) {
-    const p = position(s, t);
-    if (p) { ctx.beginPath(); ctx.arc(p[0] * w, p[1] * h, RING * w / W, 0, 2 * Math.PI); ctx.stroke(); }
-  }
-  clip.time.textContent = t.toFixed(3) + ' s';
-}
-function frame(clip, step) {
-  const ft = clip.frame_times_s, t = clip.video.currentTime;
-  let i = 0;
-  while (i + 1 < ft.length && ft[i + 1] <= t + 1e-4) i++;
-  i = Math.max(0, Math.min(ft.length - 1, i + step));
-  clip.video.pause();
-  clip.video.currentTime = ft[i] + 1e-3;
-}
-for (const clip of CLIPS) {
-  clip.video = document.getElementById('v' + clip.code);
-  clip.canvas = document.getElementById('c' + clip.code);
-  clip.time = document.getElementById('t' + clip.code);
-  const redraw = () => draw(clip, clip.video.currentTime);
-  if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
-    const tick = (now, meta) => { draw(clip, meta.mediaTime); clip.video.requestVideoFrameCallback(tick); };
-    clip.video.requestVideoFrameCallback(tick);
-  } else {
-    const tick = () => { redraw(); requestAnimationFrame(tick); };
-    requestAnimationFrame(tick);
-  }
-  for (const name of ['loadedmetadata', 'seeked', 'pause']) clip.video.addEventListener(name, redraw);
-  window.addEventListener('resize', redraw);
-  paths.addEventListener('change', redraw);
-  document.getElementById('b' + clip.code).addEventListener('click', () => frame(clip, -1));
-  document.getElementById('f' + clip.code).addEventListener('click', () => frame(clip, 1));
-  for (const rate of [0.1, 0.25, 1]) document.getElementById('r' + clip.code + '_' + rate)
-    .addEventListener('click', () => { clip.video.playbackRate = rate; clip.video.play(); });
-}
-const codes = document.getElementById('codes');
-document.addEventListener('change', () => {
-  const picked = [...document.querySelectorAll('input[type=radio]:checked')]
-    .map(r => r.name.slice(1) + r.value).sort();
-  codes.value = picked.join(' ');
-  document.getElementById('count').textContent = picked.length;
-});
-document.getElementById('copy').addEventListener('click', () => {
-  codes.select(); navigator.clipboard ? navigator.clipboard.writeText(codes.value) : document.execCommand('copy');
-});
-</script></body></html>
-"""
-
-
-def _section(row, meta) -> tuple[str, dict]:
-    code = row["code"]
-    strokes = [dict(family=s["family"], points=s["command_points"], onset_s=s["onset_s"],
-                    times_s=[t*meta["clock_rate"]/1000 for t in s["times_ms"]]) for s in meta["strokes"]]
-    touches = ", ".join(f'{html.escape(s["family"])} {s["times_ms"][-1]} ms' for s in meta["strokes"])
-    src = f'../recordings/{row["recording"]}/run-{row["run"]:05d}/clip.mp4'
-    choices = "".join(f'<label><input type="radio" name="c{code}" value="{k}"> {v.capitalize()}</label>'
-                      for k, v in VERDICTS.items())
-    rates = "".join(f'<button type="button" id="r{code}_{r}">{r}×</button>' for r in ("0.1", "0.25", "1"))
-    section = (f'<section><div class="stage"><video id="v{code}" src="{src}" controls muted playsinline preload="auto">'
-               f'</video><canvas id="c{code}"></canvas></div><div class="side"><h2>Clip {code}</h2>'
-               f'<p class="muted">Recording {html.escape(row["recording"])}, run {row["run"]}. '
-               f'{len(meta["strokes"])} touch{"es" if len(meta["strokes"]) != 1 else ""}, in order: {touches}.</p>'
-               f'<p><button type="button" id="b{code}">◀ frame</button><button type="button" id="f{code}">frame ▶</button>'
-               f'{rates} <span class="muted" id="t{code}">0.000 s</span></p>{choices}</div></section>')
-    return section, dict(code=code, strokes=strokes, frame_times_s=meta["frame_times_s"])
-
-
-def review_page(root, *, count: int = DEFAULT_COUNT, reselect: bool = False) -> Path:
-    """Write review/index.html; the pick is kept so codes stay valid when the page is rebuilt."""
+def review_manifest(root, *, count: int = DEFAULT_COUNT, reselect: bool = False) -> tuple[dict, dict]:
+    """The page's manifest and each picked clip's folder; the pick is kept so codes stay valid."""
     root = Path(root)
     out = root/"review"
     out.mkdir(exist_ok=True)
@@ -203,35 +87,119 @@ def review_page(root, *, count: int = DEFAULT_COUNT, reselect: bool = False) -> 
             raise ValueError("verdicts already recorded for the current pick; keep it")
         selection = select(root, count)
         save_json(path, selection, exclusive=False)
-    sections, clips = [], []
+    samples, folders = [], {}
     for row in selection["clips"]:
-        meta = _read(root/"recordings"/row["recording"]/f'run-{row["run"]:05d}'/"meta.json")
-        if meta["clip_sha256"] != row["clip_sha256"]:
+        folder = root/"recordings"/row["recording"]/f'run-{row["run"]:05d}'
+        meta = _read(folder/"meta.json")
+        if meta["clip_sha256"] != row["clip_sha256"] or file_sha256(folder/"clip.mp4") != row["clip_sha256"]:
             raise ValueError(f'clip {row["code"]} changed after it was picked')
-        section, data = _section(row, meta)
-        sections.append(section)
-        clips.append(data)
-    page = PAGE
-    for token, value in (("__SECTIONS__", "\n".join(sections)), ("__TOTAL__", str(len(clips))),
-                         ("__CLIPS__", json.dumps(clips).replace("</", "<\\/")), ("__WIDTH__", str(WIDTH)),
-                         ("__HEIGHT__", str(HEIGHT)), ("__RING__", str(RING_PT))):
-        page = page.replace(token, value)
-    (out/"index.html").write_text(page)
-    return out/"index.html"
+        if len(meta["frame_times_s"]) != FRAMES:
+            raise ValueError(f'clip {row["code"]} does not hold {FRAMES} native frames')
+        identity = int(row["code"])
+        folders[identity] = folder
+        strokes = [{k: s[k] for k in ("family", "onset_s", "release_s", "times_ms", "command_points")}
+                   for s in meta["strokes"]]
+        samples.append(dict(id=identity, code=row["code"], recording=row["recording"], run=row["run"],
+                            run_kind=meta.get("run_kind"), park=meta.get("park"), device=meta.get("device"),
+                            clock_rate=meta["clock_rate"], frame_times_s=meta["frame_times_s"], strokes=strokes))
+    manifest = dict(experiment=EXPERIMENT, sha256=selection["sha256"], ring_pt=RING_PT, samples=samples)
+    return manifest, folders
+
+
+def serve(root, *, count: int = DEFAULT_COUNT, reselect: bool = False, port: int = 8766, open_browser=False):
+    """Serve the spot check until its report is imported (review/verdicts.json exists) or SIGINT/SIGTERM."""
+    root = Path(root).resolve()
+    done = root/"review"/"verdicts.json"
+    if done.exists():
+        raise ValueError("verdicts already recorded for this pick; the summary shows them")
+    manifest, folders = review_manifest(root, count=count, reselect=reselect)
+    page = Path(__file__).with_name("review.html").read_bytes()
+    body = json.dumps(manifest).encode()
+    with tempfile.TemporaryDirectory(prefix="spot-check-", dir=root) as temporary:
+        cache = FrameCache(Path(temporary), folders)
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                route = urlparse(self.path).path
+                try:
+                    if route == "/":
+                        data, mime, caching = page, "text/html; charset=utf-8", "no-store"
+                    elif route == "/manifest":
+                        data, mime, caching = body, "application/json", "no-store"
+                    elif route.startswith("/frame/"):
+                        _, _, identity, index = route.split("/")
+                        # URLs carry the pick's hash as a query, so frames are immutable.
+                        data, mime = cache.frame(int(identity), int(index)), "image/jpeg"
+                        caching = "private, max-age=86400, immutable"
+                    else:
+                        self.send_error(404)
+                        return
+                    self.send_response(200)
+                    self.send_header("Content-Type", mime)
+                    self.send_header("Content-Length", str(len(data)))
+                    self.send_header("Cache-Control", caching)
+                    self.end_headers()
+                    self.wfile.write(data)
+                except (ValueError, KeyError, OSError, subprocess.CalledProcessError) as exc:
+                    self.send_error(400, str(exc))
+
+            def log_message(self, *args):
+                pass
+
+        server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+        server.daemon_threads = True
+        server.timeout = .5
+        url = f"http://127.0.0.1:{server.server_port}"
+        print(f"Spot check: {url} (temporary; export the review, then import it)", flush=True)
+        if open_browser:
+            subprocess.run(["open", "-a", "Google Chrome", url], check=True)
+
+        def interrupt(signum, frame):
+            raise KeyboardInterrupt(f"signal {signum}")
+
+        # Background jobs inherit an ignored SIGINT; handle both so the frame cache is removed.
+        previous = {}
+        if threading.current_thread() is threading.main_thread():
+            previous = {s: signal.signal(s, interrupt) for s in (signal.SIGINT, signal.SIGTERM)}
+        try:
+            while not done.exists():
+                server.handle_request()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            server.server_close()
+            for s, handler in previous.items():
+                signal.signal(s, handler)
+
+
+def _write_verdicts(root: Path, selection: dict, checked: list, *, replace: bool, source: str) -> int:
+    """Write (code, verdict, reason) rows once all are checked; never silently replace one."""
+    path = root/"review"/"verdicts.json"
+    recorded = _read(path) if path.exists() else dict(selection_sha256=selection["sha256"], verdicts={})
+    if recorded["selection_sha256"] != selection["sha256"]:
+        raise ValueError("recorded verdicts belong to another pick")
+    for key, _, _ in checked:
+        if key in recorded["verdicts"] and not replace:
+            raise ValueError(f"clip {key} already has a verdict; pass --replace to change it")
+    rows = {row["code"]: row for row in selection["clips"]}
+    now = dt.datetime.now(dt.timezone.utc).isoformat()
+    for key, code, reason in checked:
+        row = rows[key]
+        recorded["verdicts"][key] = dict(code=code, verdict=VERDICTS[code], reason=reason, recording=row["recording"],
+                                         run=row["run"], clip_sha256=row["clip_sha256"], recorded_at=now,
+                                         source=source)
+    save_json(path, recorded, exclusive=False)
+    return len(checked)
 
 
 def record_verdicts(root, codes: str, *, replace: bool = False) -> int:
     """Operator verdicts as `01K 02F 03U` (OK, Fault, Unsure); every token is checked before any is written."""
     root = Path(root)
     selection = load_selection(root)
-    rows = {row["code"]: row for row in selection["clips"]}
+    rows = {row["code"] for row in selection["clips"]}
     tokens = TOKEN.findall(codes)
     if not tokens or TOKEN.sub("", codes).replace(",", " ").split():
         raise ValueError('codes look like "01K 02F 03U" (K OK, F fault, U unsure)')
-    path = root/"review"/"verdicts.json"
-    recorded = _read(path) if path.exists() else dict(selection_sha256=selection["sha256"], verdicts={})
-    if recorded["selection_sha256"] != selection["sha256"]:
-        raise ValueError("recorded verdicts belong to another pick")
     checked, seen = [], set()
     for number, code in tokens:
         key = f"{int(number):02d}"
@@ -240,16 +208,33 @@ def record_verdicts(root, codes: str, *, replace: bool = False) -> int:
         if key in seen:
             raise ValueError(f"clip {key} is listed twice")
         seen.add(key)
-        if key in recorded["verdicts"] and not replace:
-            raise ValueError(f"clip {key} already has a verdict; pass --replace to change it")
-        checked.append((key, code.upper()))
-    now = dt.datetime.now(dt.timezone.utc).isoformat()
-    for key, code in checked:
-        row = rows[key]
-        recorded["verdicts"][key] = dict(code=code, verdict=VERDICTS[code], recording=row["recording"],
-                                         run=row["run"], clip_sha256=row["clip_sha256"], recorded_at=now)
-    save_json(path, recorded, exclusive=False)
-    return len(checked)
+        checked.append((key, code.upper(), ""))
+    return _write_verdicts(root, selection, checked, replace=replace, source="codes")
+
+
+def import_report(root, report, *, replace: bool = False) -> int:
+    """Record the page's exported review: the whole pick, with what was seen for every Fault or Unsure."""
+    root = Path(root)
+    selection = load_selection(root)
+    exported = _read(report)
+    if exported.get("selection_sha256") != selection["sha256"]:
+        raise ValueError("the report belongs to another pick")
+    rows = [row["code"] for row in selection["clips"]]
+    judged = {}
+    for clip in exported.get("clips", []):
+        key, code, reason = clip.get("code"), clip.get("verdict"), str(clip.get("reason") or "").strip()
+        if key not in rows or key in judged:
+            raise ValueError(f"clip {key} is not in the pick or is listed twice")
+        if code not in VERDICTS:
+            raise ValueError(f"clip {key} has no OK, Fault or Unsure verdict")
+        if code != "K" and not reason:
+            raise ValueError(f"clip {key} needs what was seen")
+        judged[key] = (key, code, reason)
+    missing = [key for key in rows if key not in judged]
+    if missing:
+        raise ValueError(f"the report misses clip(s) {' '.join(missing)}")
+    return _write_verdicts(root, selection, [judged[key] for key in rows], replace=replace,
+                           source=Path(report).name)
 
 
 def summarize(root) -> dict:

@@ -9,7 +9,6 @@ import argparse
 import json
 from pathlib import Path
 import signal
-import subprocess
 import sys
 
 REPO = Path(__file__).resolve().parents[2]
@@ -55,12 +54,15 @@ def main():
     sub.add_parser('status', help='recordings, runs and strokes so far (rig or laptop)')
     admit = sub.add_parser('admit', help='calibrate fetched recordings and cut one clip per run (laptop)')
     admit.add_argument('--jobs', type=int, default=4)
-    page = sub.add_parser('review', help='write the spot-check page for a seeded pick of admitted clips')
+    page = sub.add_parser('review', help='serve the spot check of a seeded pick of admitted clips until it is imported')
     page.add_argument('--count', type=int, default=review.DEFAULT_COUNT)
     page.add_argument('--reselect', action='store_true', help='make a new pick (refused once verdicts exist)')
+    page.add_argument('--port', type=int, default=8766)
     page.add_argument('--open', action='store_true', help='open the page in Google Chrome (laptop)')
-    verdicts = sub.add_parser('verdicts', help='record spot-check codes, e.g. "01K 02F 03U"')
-    verdicts.add_argument('--codes', required=True)
+    verdicts = sub.add_parser('verdicts', help="import the page's exported review, or record codes like \"01K 02F\"")
+    source = verdicts.add_mutually_exclusive_group(required=True)
+    source.add_argument('--report', type=Path, help='the JSON file the spot-check page exported')
+    source.add_argument('--codes', help='OK/Fault/Unsure codes when the page is unavailable')
     verdicts.add_argument('--replace', action='store_true', help='change verdicts already recorded')
     sub.add_parser('summary', help='write summary.json and summary.md')
     args = parser.parse_args()
@@ -81,12 +83,13 @@ def main():
         print(json.dumps(results, indent=2))
         print(f"admitted {sum(len(r['admitted']) for r in results.values())} clips from {len(results)} recording(s)")
     elif args.command == 'review':
-        path = review.review_page(root, count=args.count, reselect=args.reselect)
-        print(path)
-        if args.open:
-            subprocess.run(['open', '-a', 'Google Chrome', str(path)], check=True)
+        review.serve(root, count=args.count, reselect=args.reselect, port=args.port, open_browser=args.open)
     elif args.command == 'verdicts':
-        print(f'recorded {review.record_verdicts(root, args.codes, replace=args.replace)} verdict(s)')
+        if args.report:
+            recorded = review.import_report(root, args.report, replace=args.replace)
+        else:
+            recorded = review.record_verdicts(root, args.codes, replace=args.replace)
+        print(f'recorded {recorded} verdict(s)')
     else:
         summary = review.summarize(root)
         (root / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
