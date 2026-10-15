@@ -84,8 +84,8 @@ before it starts, decodes each clip once (well under a second on an M2) and
 prefetches the next clips. A rig-hosted review still works through SSH
 forwarding, but it ships every full-resolution frame over the tunnel.
 
-Clips are grouped by park; marks (S/E), judgement (1/2/3), systemic flag (D)
-and reason save automatically in the browser under the manifest hash, and
+Clips are grouped by park; the first-contact mark (S), judgement (1/2/3),
+systemic flag (D) and reason save automatically in the browser under the manifest hash, and
 Save & next (Enter) moves to the next incomplete clip. Export is enabled once
 every clip satisfies the same completeness rules as import. A local server
 has no `review.json` to watch; stop it with Ctrl-C after the rig import.

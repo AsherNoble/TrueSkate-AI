@@ -160,6 +160,21 @@ def test_review_95_threshold_unclear_boundaries_and_systemic_veto():
         audit.score_review(manifest, review)
 
 
+def test_review_release_mark_is_optional_but_checked_when_given():
+    manifest, review = audit_fixture()
+    for row in review["samples"]:
+        row["release_frame"] = None
+    assert audit.score_review(manifest, review)["counts"]["meet"] == 100
+    review["samples"][0]["release_frame"] = 57
+    assert audit.score_review(manifest, review)["counts"]["fail"] == 1
+    review["samples"][0]["release_frame"] = 17
+    with pytest.raises(ValueError, match="follow onset"):
+        audit.score_review(manifest, review)
+    review["samples"][0].update(onset_frame=None, release_frame=54)
+    with pytest.raises(ValueError, match="onset frame mark"):
+        audit.score_review(manifest, review)
+
+
 def test_review_import_retries_after_files_written(tmp_path):
     ledger = Ledger.initialize(tmp_path/"run", [f"p{i}" for i in range(6)])
     ledger.start_round("v1")

@@ -8,7 +8,7 @@
  --bg:#101214;--panel:#15191d;--raised:#20252a;--hover:#2a3138;--line:#30363c;--line2:#46505a;
  --text:#edf0f2;--muted:#aeb8c2;--faint:#7d8892;--accent:#77b6f4;--accent-bg:#254d75;
  --meet:#4cc38a;--meet-bg:#1d4a36;--fail:#f07a6e;--fail-bg:#5a2622;--unclear:#e8b14f;--unclear-bg:#544119;
- --onset:#5fe0a5;--release:#c79bff}
+ --onset:#5fe0a5}
 *{box-sizing:border-box}[hidden]{display:none!important}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden}
@@ -67,9 +67,9 @@ p{margin:0;line-height:1.5}
 .track{position:absolute;left:0;right:0;top:13px;height:8px;border-radius:4px;background:#262c32;overflow:hidden}
 .track .fill{height:100%;background:#36414b;width:0}
 .flag{position:absolute;top:2px;width:3px;height:30px;margin-left:-1px;border-radius:2px}
-.flag.onset{background:var(--onset)}.flag.release{background:var(--release)}
+.flag.onset{background:var(--onset)}
 .flag::before{content:attr(data-label);position:absolute;top:-1px;left:5px;font:600 10px ui-monospace,Menlo,monospace;white-space:nowrap}
-.flag.onset::before{color:var(--onset)}.flag.release::before{color:var(--release)}
+.flag.onset::before{color:var(--onset)}
 .playhead{position:absolute;top:8px;width:14px;height:18px;margin-left:-7px;border-radius:4px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6)}
 .transport{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:8px}
 .transport button{padding:7px 11px}
@@ -88,7 +88,7 @@ p{margin:0;line-height:1.5}
 .marks{display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:stretch}
 .mark{display:flex;align-items:center;justify-content:space-between;text-align:left;font-weight:600;padding:10px 12px}
 .mark .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px}
-.mark.onset .dot{background:var(--onset)}.mark.release .dot{background:var(--release)}
+.mark.onset .dot{background:var(--onset)}
 .mark.here{border-color:#fff;box-shadow:inset 0 0 0 1px #fff}
 .value{min-width:118px;font:12px ui-monospace,Menlo,monospace;color:var(--muted);text-align:left;padding:6px 10px;font-variant-numeric:tabular-nums}
 .value.set{color:var(--text)}
@@ -158,7 +158,6 @@ details.keys summary{cursor:pointer;color:var(--muted)}
   <div class="timeline" id="timeline" role="slider" aria-label="Native frame" aria-valuemin="0" aria-valuemax="119" tabindex="0">
    <div class="track"><div class="fill" id="fill"></div></div>
    <div class="flag onset" id="flagOnset" data-label="contact" hidden></div>
-   <div class="flag release" id="flagRelease" data-label="clear" hidden></div>
    <div class="playhead" id="playhead"></div>
   </div>
   <div class="transport">
@@ -181,14 +180,12 @@ details.keys summary{cursor:pointer;color:var(--muted)}
   </div>
 
   <section class="block">
-   <h3>Contact boundaries</h3>
+   <h3>First contact</h3>
    <div class="marks">
     <button class="mark onset" id="markOnset"><span><span class="dot"></span>First contact</span><kbd>S</kbd></button>
     <button class="value" id="jumpOnset" title="Jump to this frame">—</button>
-    <button class="mark release" id="markRelease"><span><span class="dot"></span>First clear frame</span><kbd>E</kbd></button>
-    <button class="value" id="jumpRelease" title="Jump to this frame">—</button>
    </div>
-   <button class="link" id="clearMarks">Clear marks (X)</button>
+   <button class="link" id="clearMarks">Clear mark (X)</button>
    <p class="hint">Use the accessibility cursor when it represents contact.</p>
   </section>
 
@@ -225,8 +222,7 @@ details.keys summary{cursor:pointer;color:var(--muted)}
     <kbd>Home End</kbd><span>First / last frame</span>
     <kbd>R</kbd><span>Replay from the start</span>
     <kbd>S</kbd><span>First contact at this frame</span>
-    <kbd>E</kbd><span>First clear frame at this frame</span>
-    <kbd>X</kbd><span>Clear both marks</span>
+    <kbd>X</kbd><span>Clear the first-contact mark</span>
     <kbd>1 2 3</kbd><span>Meet / Fail / Unclear</span>
     <kbd>D</kbd><span>Toggle systemic defect</span>
     <kbd>↵</kbd><span>Save &amp; next incomplete clip (⌘↵ in the reason box)</span>
@@ -243,7 +239,7 @@ details.keys summary{cursor:pointer;color:var(--muted)}
 'use strict';
 const $=id=>document.getElementById(id);
 const FRAMES=120,KEEP_BEHIND=1,KEEP_AHEAD=2;
-let manifest,context={},rows={},key,uiKey='curved-audit-ui';
+let manifest,context={},rows={},key,uiKey='curved-audit-ui',readOnly=false;
 let current=0,frame=0,playing=false,playToken=0,clipToken=0;
 const clips=new Map();  // sample index -> {images, loaded, ready}
 
@@ -253,7 +249,7 @@ const ui=Object.assign({ring:true,grid:true,spacing:'10',speed:'.5',autoplay:tru
 
 const sample=(i=current)=>manifest.samples[i];
 function row(i=current){const id=sample(i).id;return rows[id]??={id,rating:'',systematic:false,reason:'',onset_frame:null,release_frame:null}}
-function persist(){storeSet(key,rows)}
+function persist(){if(!readOnly)storeSet(key,rows)}
 
 // Mirrors audit.score_review so an export never fails import on completeness.
 function problems(r){
@@ -261,8 +257,7 @@ function problems(r){
  if(!r.rating)out.push('Choose Meet, Fail or Unclear.');
  if(r.rating==='meet'){
   if(r.onset_frame==null)out.push('Mark the first contact frame (S).');
-  if(r.release_frame==null)out.push('Mark the first clear frame (E).');
-  if(r.onset_frame!=null&&r.release_frame!=null&&r.release_frame<=r.onset_frame)out.push('The first clear frame must come after first contact.');
+  if(r.onset_frame!=null&&r.release_frame!=null&&r.release_frame<=r.onset_frame)out.push('An old first-clear mark precedes first contact; press X and re-mark (S).');
  }
  if(((r.rating&&r.rating!=='meet')||r.systematic)&&!r.reason.trim())out.push('Give a reason for '+(r.systematic?'the systemic defect.':'this judgement.'));
  return out;
@@ -313,8 +308,8 @@ function draw(){
  const pct=f=>(100*(f+.5)/FRAMES)+'%';
  $('playhead').style.left=pct(frame);$('timeline').setAttribute('aria-valuenow',frame);
  const r=row();
- for(const [flag,value] of [['flagOnset',r.onset_frame],['flagRelease',r.release_frame]]){$(flag).hidden=value==null;if(value!=null)$(flag).style.left=pct(value)}
- $('markOnset').classList.toggle('here',r.onset_frame===frame);$('markRelease').classList.toggle('here',r.release_frame===frame);
+ $('flagOnset').hidden=r.onset_frame==null;if(r.onset_frame!=null)$('flagOnset').style.left=pct(r.onset_frame);
+ $('markOnset').classList.toggle('here',r.onset_frame===frame);
 }
 function drawGrid(){
  const step=Number(ui.spacing);let d='';
@@ -358,10 +353,8 @@ function renderPanel(){
  const needsReason=((r.rating&&r.rating!=='meet')||r.systematic);
  $('reasonReq').hidden=!needsReason;$('reason').classList.toggle('missing',needsReason&&!r.reason.trim());
  const times=s.frame_times_s;
- for(const [id,value] of [['jumpOnset',r.onset_frame],['jumpRelease',r.release_frame]]){
-  const b=$(id);b.classList.toggle('set',value!=null);b.disabled=value==null;
-  b.innerHTML=value==null?'not marked':`frame ${value}<small>${times[value].toFixed(4)} s</small>`;
- }
+ const b=$('jumpOnset'),value=r.onset_frame;b.classList.toggle('set',value!=null);b.disabled=value==null;
+ b.innerHTML=value==null?'not marked':`frame ${value}<small>${times[value].toFixed(4)} s</small>`;
  const list=problems(r);
  $('problems').className='problems'+(list.length?'':' ok');
  $('problems').textContent=list.length?(touched(r)?list.join(' '):''):'Ready. Save & next moves to the next incomplete clip.';
@@ -465,9 +458,7 @@ function bind(){
  $('timeline').onpointerdown=e=>{$('timeline').setPointerCapture(e.pointerId);scrub(e);$('timeline').onpointermove=scrub};
  $('timeline').onpointerup=()=>{$('timeline').onpointermove=null};
  $('markOnset').onclick=()=>{stop();edit(r=>{r.onset_frame=frame})};
- $('markRelease').onclick=()=>{stop();edit(r=>{r.release_frame=frame})};
  $('jumpOnset').onclick=()=>{stop();setFrame(row().onset_frame)};
- $('jumpRelease').onclick=()=>{stop();setFrame(row().release_frame)};
  $('clearMarks').onclick=()=>edit(r=>{r.onset_frame=null;r.release_frame=null});
  for(const b of document.querySelectorAll('.seg button'))b.onclick=()=>setRating(b.dataset.rating);
  $('systematic').onchange=()=>{edit(r=>{r.systematic=$('systematic').checked});if($('systematic').checked&&!row().reason.trim())$('reason').focus()};
@@ -492,7 +483,6 @@ function bind(){
   else if(k==='End'){stop();setFrame(FRAMES-1)}
   else if(k==='r'||k==='R'){stop();play(0)}
   else if(k==='s'||k==='S')$('markOnset').click();
-  else if(k==='e'||k==='E')$('markRelease').click();
   else if(k==='x'||k==='X')$('clearMarks').click();
   else if(k==='1')setRating('meet');
   else if(k==='2')setRating('fail');
@@ -515,7 +505,8 @@ async function start(){
                                         fetch('/context').then(r=>r.ok?r.json():{})]);
  }catch(e){document.body.innerHTML='<p class="fatal">The review server is unavailable: '+e.message+'</p>';return}
  key='curved-audit-'+manifest.sha256;  // Same key as viewer.html, so earlier marks carry over.
- rows=storeGet(key,{});
+ try{rows=JSON.parse(localStorage.getItem(key)||'{}')}
+ catch(e){readOnly=true;rows={};toast('Saved review could not be read; edits will not be saved. Reload or tell Claude.',60000)}
  $('round').textContent=manifest.round;$('hash').textContent='manifest '+manifest.sha256.slice(0,12);
  document.title=`Round ${manifest.round} · curved audit review`;
  buildClipList();drawGrid();bind();
