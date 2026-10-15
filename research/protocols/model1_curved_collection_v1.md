@@ -91,8 +91,10 @@ expert gestures remain later extensions.
 
 Each recording uses the established wide die-five start/end markers (71 logical
 point offsets), a held-out middle marker and per-recording affine clock fit.
-Read-only screenshot preparation runs immediately ahead of each touch slot;
-start/middle/end markers are at 1.5/30/58 s, preserving at least 55 s of span.
+Read-only screenshot preparation runs 1.75 s ahead of each touch slot;
+start/middle/end markers are at 1.5/29/57 s, preserving at least 55 s of span.
+Ten samples per minute are spaced at least 4.25 s apart and controls/resets at
+least 3 s after the previous command, budgeting measured live overheads.
 Require at least 55 s anchor separation, accepted marker consensus and middle
 error within two native frames. Store commands, actual WDA submission times,
 source timestamps, calibration, decoded counts, code fingerprint and park
