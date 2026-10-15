@@ -363,6 +363,52 @@ def test_calibrate_maps_markers_and_direct_strokes_onto_the_video_clock(tmp_path
         admission.calibrate(out, planned, execution)
 
 
+def test_first_brightening_needs_a_persistent_step_after_the_search_start():
+    times = np.arange(40) / 60
+    step = np.r_[np.zeros(20), np.full(20, 50.)]
+    assert admission.first_brightening(step, times, .1) == times[20]
+    assert admission.first_brightening(step, times, times[21]) is None  # the step precedes the search
+    spike = np.zeros(40)
+    spike[20] = 50.
+    assert admission.first_brightening(spike, times, 0.) is None  # one bright frame does not persist
+    assert admission.first_brightening(np.random.default_rng(0).normal(0, 1, 40), times, 0.) is None
+
+
+def test_probe_geometry_matches_the_tap_detector_and_clips_at_edges():
+    crop, core, ring = admission.probe_geometry(828, 1792, (.5, .5))
+    assert core.sum() and ring.sum() and not (core & ring).any()
+    assert crop[1].stop - crop[1].start <= 2 * 40 + 2  # outer ring radius 40 px at XR resolution
+    edge = admission.probe_geometry(828, 1792, (0., 0.))
+    assert edge is not None and edge[0][0].start == 0 and edge[0][1].start == 0
+
+
+def test_calibrate_measures_where_each_stroke_first_shows(tmp_path, monkeypatch):
+    from trueskate_ai.collection.die_five_calibration import DieFiveOnset
+    out = tmp_path/"recordings"/"m0001"
+    out.mkdir(parents=True)
+    # Grey video; a white square appears at the stroke's start point (centre) at 5.25 s.
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=gray:s=64x128:r=60", "-frames:v", "600",
+                    "-vf", "drawbox=x=28:y=60:w=8:h=8:color=white:t=fill:enable='gte(t,5.25)'",
+                    "-c:v", "libx264", "-threads", "1", str(out/"original.mov")], check=True)
+    run = fixed_run(7, 5., (100,))
+    marks = [dict(kind="control", role="start", rig=10.5), dict(kind="control", role="middle", rig=38.),
+             dict(kind="control", role="end", rig=66.)]
+    events = [dict(kind=m["kind"], role=m["role"], instrumented=True, call_start_monotonic_s=m["rig"],
+                   call_end_monotonic_s=m["rig"] + .6) for m in marks]
+    events.insert(1, dict(kind="stroke", instrumented=False, run=7, stroke=0, call_start_monotonic_s=14.,
+                          call_end_monotonic_s=14.45))
+    execution = dict(events=events, error=None, video=dict(started_at_epoch_s=1.7e9 + 9. + PHONE_OFFSET_S))
+    save_json(out/"wda-timing.json", dict(schema_version=1, build_revision="rev", dropped_records=0,
+                                          records=[phone_record(i, m["rig"]) for i, m in enumerate(marks)]))
+    monkeypatch.setattr(admission, "detect_die_five_onset", lambda frames, times, *, command_s, **_: DieFiveOnset(
+        point_frames=(0,) * 5, onset_frame=0, onset_s=command_s + RENDER_S, votes=5))
+    _, _, evidence, contacts = admission.calibrate(out, dict(wda_revision="rev", runs=[run]), execution)
+    estimate = contacts[1][0]  # 14 + 0.005 - 9 + 0.15 = 5.155 s
+    assert np.isclose(evidence["stroke_visible_onsets_s"]["7:0"], 5.25)
+    lag = evidence["stroke_visible_lag_s"]
+    assert lag["measured"] == lag["strokes"] == 1 and np.isclose(lag["median"], 5.25 - estimate)
+
+
 def synthetic_recording(root, name="m0001"):
     out = root/"recordings"/name
     out.mkdir(parents=True)

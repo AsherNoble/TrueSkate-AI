@@ -256,7 +256,7 @@ def summarize(root) -> dict:
     """Recordings, runs, admission, stroke mix and spot-check counts for one run directory."""
     root = Path(root)
     recordings, reasons, families, durations, touches = {}, Counter(), Counter(), [], Counter()
-    totals, states = Counter(), Counter()
+    totals, states, lags = Counter(), Counter(), []
     for execution_path in sorted(root.glob("recordings/*/execution.json")):
         folder = execution_path.parent
         planned, execution = _read(folder/"planned.json"), _read(execution_path)
@@ -274,6 +274,8 @@ def summarize(root) -> dict:
             row["clips_admitted"] = len(admission.get("admitted", []))
             row["error"] = admission.get("error")
             reasons.update(admission.get("rejected", {}).values())
+            # Visible minus estimated stroke start (diagnostic; positive means the trail shows later).
+            lags += (admission.get("calibration") or {}).get("stroke_visible_lags_s", {}).values()
         recordings[folder.name] = row
         totals.update({k: row[k] for k in ("runs_planned", "runs_sent", "strokes_sent", "strokes_dropped",
                                            "clips_admitted")})
@@ -297,6 +299,9 @@ def summarize(root) -> dict:
                                share_under_200=sum(d < 200 for d in durations)/len(durations)) if durations else None,
                 spot_check=dict(picked=picked, ok=spot["K"], fault=spot["F"], unsure=spot["U"],
                                 unjudged=picked-sum(spot.values())),
+                stroke_visible_lag_s=dict(measured=len(lags), median=statistics.median(lags),
+                                          p10=float(np.percentile(lags, 10)), p90=float(np.percentile(lags, 90)))
+                if lags else None,
                 recordings=recordings)
 
 
@@ -316,6 +321,10 @@ def summary_markdown(summary: dict) -> str:
         s = summary["stroke_ms"]
         lines.append(f"- Stroke durations: {s['min']}–{s['max']} ms, median {s['median']:g} ms, "
                      f"{s['share_under_200']:.0%} under 200 ms.")
+    if summary.get("stroke_visible_lag_s"):
+        g = summary["stroke_visible_lag_s"]
+        lines.append(f"- Trail shows {g['median']*1000:+.0f} ms after the estimated stroke start (median of "
+                     f"{g['measured']}; 10–90%: {g['p10']*1000:+.0f} to {g['p90']*1000:+.0f} ms). Labels unchanged.")
     if summary["rejection_reasons"]:
         lines += ["", "| Rejection reason | Runs |", "|---|---:|"]
         lines += [f"| {reason} | {n} |" for reason, n in summary["rejection_reasons"].items()]

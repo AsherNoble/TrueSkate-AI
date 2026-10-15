@@ -25,7 +25,7 @@ def strokes_for(number):
             dict(FLICK.to_dict(), onset_s=.85, release_s=1.02)][:1 + number % 2]
 
 
-def recording(root, name, *, runs=(), admitted=(), rejected=None, error=None):
+def recording(root, name, *, runs=(), admitted=(), rejected=None, error=None, lags=None):
     folder = root/"recordings"/name
     folder.mkdir(parents=True)
     save_json(folder/"planned.json", dict(runs=[dict(number=n, strokes=[]) for n in runs], skipped_runs=[]))
@@ -39,7 +39,8 @@ def recording(root, name, *, runs=(), admitted=(), rejected=None, error=None):
                                         frame_times_s=[i/60 for i in range(120)],
                                         clip_sha256=file_sha256(run/"clip.mp4")))
     if rejected is not None:
-        save_json(folder/"admission.json", dict(accepted=True, admitted=list(admitted), rejected=rejected))
+        save_json(folder/"admission.json", dict(accepted=True, admitted=list(admitted), rejected=rejected,
+                                                calibration=dict(stroke_visible_lags_s=lags or {})))
     return folder
 
 
@@ -47,7 +48,8 @@ def recording(root, name, *, runs=(), admitted=(), rejected=None, error=None):
 def root(tmp_path):
     root = tmp_path/"run"
     recording(root, "m0001", runs=(1, 2, 3, 4), admitted=(1, 2, 3),
-              rejected={"4": "no 120-frame window holds this run alone with five frames either side"})
+              rejected={"4": "no 120-frame window holds this run alone with five frames either side"},
+              lags={"1:0": .02, "2:0": .04, "2:1": .06})
     recording(root, "m0002", runs=(5,), error="RuntimeError: schedule overrun")
     recording(root, "m0003", runs=(6, 7))  # fetched, not yet admitted
     return root
@@ -113,8 +115,9 @@ def test_summary_counts_states_rejections_strokes_and_spot_check(root):
     assert summary["touches_per_clip"] == {"1": 1, "2": 2}
     assert summary["spot_check"] == dict(picked=3, ok=1, fault=1, unsure=0, unjudged=1)
     assert summary["recordings"]["m0002"]["error"] == "RuntimeError: schedule overrun"
+    assert summary["stroke_visible_lag_s"]["measured"] == 3 and summary["stroke_visible_lag_s"]["median"] == .04
     markdown = review.summary_markdown(summary)
-    assert "Clips admitted: 3" in markdown and "1 OK, 1 fault" in markdown
+    assert "Clips admitted: 3" in markdown and "1 OK, 1 fault" in markdown and "+40 ms" in markdown
 
 
 def test_busy_lock_is_exclusive_and_only_releases_its_own_stamp(tmp_path):

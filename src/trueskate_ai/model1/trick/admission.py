@@ -26,6 +26,40 @@ from .contract import EXPERIMENT, FRAME_COUNT, SCHEMA, SEED
 
 TAP_S = .05  # markers and resets are 50 ms taps
 TIMING_SOURCE = "rig clock + median rig-to-WDA offset of this recording's instrumented requests"
+# Diagnostic only, labels unchanged: the first frame each stroke's touch shows at its start
+# point, by the kickflip timing detector's disc-versus-ring test (detect_tap_onset). The
+# offset is measured on Appium requests, but strokes skip Appium, so the estimates may lag.
+PROBE_HALF_WINDOW_S = .35
+PROBE_LEAD_S = .3
+
+
+def probe_geometry(width: int, height: int, point):
+    """Crop and disc/ring masks at a normalized point, with detect_tap_onset's radii."""
+    cx, cy = point[0]*(width-1), point[1]*(height-1)
+    scale = max(width/828., .25)
+    core_radius = max(2., 10.*scale)
+    inner = max(core_radius+1., 10., 20.*scale)
+    outer = max(inner+2., 20., 40.*scale)
+    x0, x1 = max(0, int(cx-outer)), min(width, int(cx+outer)+2)
+    y0, y1 = max(0, int(cy-outer)), min(height, int(cy+outer)+2)
+    yy, xx = np.ogrid[y0:y1, x0:x1]
+    squared = (xx-cx)**2 + (yy-cy)**2
+    core, ring = squared <= core_radius**2, (squared > inner**2) & (squared <= outer**2)
+    return ((slice(y0, y1), slice(x0, x1)), core, ring) if core.any() and ring.any() else None
+
+
+def first_brightening(contrast, times, start_s: float, *, immediate=4., confirmation=6., history=3, lookahead=3):
+    """detect_tap_onset's decision on a precomputed contrast series; None if nothing persists."""
+    contrast, times = np.asarray(contrast, dtype=float), np.asarray(times, dtype=float)
+    changes = np.diff(contrast)
+    for index in np.flatnonzero(times[1:] >= start_s) + 1:
+        if changes[index-1] < immediate:
+            continue
+        before = np.median(contrast[max(0, index-history):index])
+        after = np.median(contrast[index:index+lookahead])
+        if after - before >= confirmation:
+            return float(times[index])
+    return None
 
 
 def calibrate(out: Path, planned: dict, execution: dict):
@@ -36,7 +70,6 @@ def calibrate(out: Path, planned: dict, execution: dict):
                                             expected_revision=planned["wda_revision"],
                                             expected_count=len(instrumented))
     pts = probe_pts(out/"original.mov")
-    _decode_source_frames(out/"original.mov", pts, keep=False)  # every frame decodes, counts agree
     stamps, onsets, detections = {}, {}, {}
     started = execution["video"]["started_at_epoch_s"]
     for event, record in zip(instrumented, records):
@@ -68,6 +101,37 @@ def calibrate(out: Path, planned: dict, execution: dict):
             stroke = next(r for r in planned["runs"] if r["number"] == event["run"])["strokes"][event["stroke"]]
             begin = fit.video_time_s(event["call_start_monotonic_s"] + offset)
             contacts.append((begin, begin + fit.rate*stroke["times_ms"][-1]/1000, event["run"], event))
+    # One full decode checks that every frame decodes and that counts agree, and measures
+    # each stroke's first visible frame around its estimated start.
+    probes, by_frame = [], {}
+    for begin, _, run, event in contacts:
+        if run is None:
+            continue
+        stroke = next(r for r in planned["runs"] if r["number"] == run)["strokes"][event["stroke"]]
+        lo, hi = (int(np.searchsorted(pts, begin + d)) for d in (-PROBE_HALF_WINDOW_S, PROBE_HALF_WINDOW_S))
+        probe = dict(key=f"{run}:{event['stroke']}", point=stroke["command_points"][0], estimate=begin,
+                     lo=lo, hi=hi, values=[], geometry=False)
+        probes.append(probe)
+        for i in range(lo, hi):
+            by_frame.setdefault(i, []).append(probe)
+    count = iter(range(len(pts)))
+
+    def inspect(frame):
+        for probe in by_frame.get(next(count), ()):
+            if probe["geometry"] is False:
+                probe["geometry"] = probe_geometry(frame.shape[1], frame.shape[0], probe["point"])
+            if probe["geometry"] is not None:
+                crop, core, ring = probe["geometry"]
+                patch = frame[crop].astype(np.float32).mean(axis=2)
+                probe["values"].append(float(patch[core].mean() - patch[ring].mean()))
+
+    _decode_source_frames(out/"original.mov", pts, keep=False, inspect=inspect)
+    visible = {p["key"]: first_brightening(p["values"], pts[p["lo"]:p["hi"]], p["estimate"] - PROBE_LEAD_S)
+               if len(p["values"]) == p["hi"] - p["lo"] > 1 else None for p in probes}
+    lags = {p["key"]: visible[p["key"]] - p["estimate"] for p in probes if visible[p["key"]] is not None}
+    evidence.update(stroke_visible_onsets_s=visible, stroke_visible_lags_s=lags,
+                    stroke_visible_lag_s=dict(measured=len(lags), strokes=len(probes),
+                                              median=float(np.median(list(lags.values()))) if lags else None))
     return pts, fit, evidence, contacts
 
 
@@ -138,10 +202,13 @@ def admit_recording(out: Path) -> dict:
             if not np.allclose(clip_pts-clip_pts[0], selected-selected[0], atol=.001):
                 raise ValueError("encoded clip changed native timestamps")
             strokes = []
+            visible = evidence.get("stroke_visible_onsets_s", {})
             for begin, end, _, event in own:
                 stroke = {k: v for k, v in run["strokes"][event["stroke"]].items()}
+                seen = visible.get(f"{run['number']}:{event['stroke']}")
                 strokes.append(dict(stroke, onset_s=begin-selected[0], release_s=end-selected[0],
                                     timing_source=TIMING_SOURCE,
+                                    visible_onset_s=None if seen is None else seen-selected[0],
                                     call_s=event["call_end_monotonic_s"]-event["call_start_monotonic_s"]))
             meta = dict(schema=SCHEMA, experiment=EXPERIMENT, recording=out.name, run=run["number"],
                         run_kind=run["kind"], strokes=strokes, sent_strokes=len(own),
