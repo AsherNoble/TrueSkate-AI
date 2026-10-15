@@ -46,16 +46,28 @@ def recording_cleanup_ready(udid):
 
 
 def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, settings_note, appium_port=4723,
-               defer_admission=False):
+               defer_admission=False, tolerance=False, after_failure_reason=None):
     if not ready_note.strip() or not settings_note.strip():
         raise ValueError('operator readiness and waypoint/settings notes are required')
     if 'training-server' not in socket.gethostname():
         raise ValueError('live runs belong on training-server, not laptop USB')
     root = Path(root)
-    manifest = experiment.load_manifest(root)
-    experiment.verify_implementation(manifest, REPO)
     # Review and limits are checked before contacting the phone.
-    if repeatability:
+    if tolerance:
+        # Explore-mode position tolerance (KICKFLIP-TOLERANCE-20261015): planned attempts in
+        # order, without the approval gate or setup cap. Every live guard below still applies.
+        from trueskate_ai.research import kickflip_tolerance
+        plan = kickflip_tolerance.load_plan(root)
+        pending = [a['number'] for a in kickflip_tolerance.pending_attempts(root, plan, after_failure_reason)]
+        revision = plan['wda_revision']
+        defer_admission = True  # Admission runs on the laptop (`admit`); ~17 min per recording on the rig.
+    else:
+        manifest = experiment.load_manifest(root)
+        experiment.verify_implementation(manifest, REPO)
+        revision = manifest['wda_revision']
+    if tolerance:
+        candidate = None  # Each planned attempt carries its own sealed candidate.
+    elif repeatability:
         candidate = experiment.approved_candidate(root)
         existing = sorted((root / 'repeats').glob('trial_*'))
         if existing:
@@ -129,7 +141,7 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
             raise RuntimeError('Appium session does not confirm configured XR1 UDID')
         def timing_preflight():
             metadata = _http_json(base + '/session/' + owned_wda_session + '/wda/actionTiming').get('value')
-            if not isinstance(metadata, dict) or metadata.get('schema_version') != 1 or metadata.get('build_revision') != manifest['wda_revision'] or metadata.get('enabled'):
+            if not isinstance(metadata, dict) or metadata.get('schema_version') != 1 or metadata.get('build_revision') != revision or metadata.get('enabled'):
                 raise RuntimeError('instrumented WDA identity/idle check failed before attempt reservation')
         timing_preflight()
         def screenshot():
@@ -157,7 +169,9 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
             with urllib.request.urlopen(request, timeout=10) as response:
                 return json.loads(response.read())
         guard()
-        for index in range(first_repeat, experiment.REPEATS + 1) if repeatability else (1,):
+        label = 'repeat' if repeatability else 'attempt' if tolerance else 'setup'
+        iterations = range(first_repeat, experiment.REPEATS + 1) if repeatability else pending if tolerance else (1,)
+        for index in iterations:
             if repeatability:
                 if experiment.approved_candidate(root)['sha256'] != candidate['sha256']:
                     raise ValueError('approval changed during batch')
@@ -165,6 +179,8 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
                 trial.mkdir(parents=True, exist_ok=False)
                 save_new(trial / 'reservation.json', dict(candidate_id=candidate['id'],
                     candidate_sha256=candidate['sha256'], repeat=index))
+            elif tolerance:
+                trial, candidate = kickflip_tolerance.reserve_attempt(root, plan, index)
             else:
                 trial, candidate = experiment.reserve_setup(root, candidate_id)
             guard()
@@ -179,18 +195,20 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
             save_new(trial / 'initial-settle.json', initial.summary())
             experiment.run_trial(out=trial, candidate=candidate,
                 recorder=XCTestScreenRecorder(driver, fps=experiment.FPS),
-                timing=WDAActionTimingCapture(wda_port=8100, expected_revision=manifest['wda_revision']),
+                timing=WDAActionTimingCapture(wda_port=8100, expected_revision=revision),
                 perform=perform, perform_direct=perform_direct, guard=guard, foreground_guard=foreground_guard,
-                settle=settle, revision=manifest['wda_revision'], context=context)
+                settle=settle, revision=revision, context=context)
             # Disconnect before lengthy native decoding; never leave a stale session.
             worker.disconnect()
             if defer_admission:
                 # Native-frame admission takes ~17 min on the rig; run `admit` elsewhere and copy it back.
-                print(f"{'repeat' if repeatability else 'setup'} {index}: recording complete; admission deferred: {trial}", flush=True)
+                print(f'{label} {index}: recording complete; admission deferred: {trial}', flush=True)
             else:
-                experiment.admit_trial(trial, manifest['wda_revision'])
-                print(f"{'repeat' if repeatability else 'setup'} {index}: recording complete and validated: {trial}", flush=True)
-            if repeatability and index < experiment.REPEATS:
+                experiment.admit_trial(trial, revision)
+                print(f'{label} {index}: recording complete and validated: {trial}', flush=True)
+            if tolerance:
+                trial = None  # A later reconnect failure must not mark this finished recording as failed.
+            if repeatability and index < experiment.REPEATS or tolerance and index != pending[-1]:
                 if sessions() or _http_json(base + '/status').get('sessionId'):
                     raise RuntimeError('session ownership changed between repeats')
                 recording_cleanup_ready(os.environ['IPHONE_XR_UDID'])
