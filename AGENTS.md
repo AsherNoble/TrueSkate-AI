@@ -151,8 +151,10 @@ scripts need none).
   attachment cleanup tool after confirming the daemon; never hammer recorder start.
 - Do not restart a healthy WDA service to test a hypothesis. A running WDA
   may survive an expired signing profile that prevents rebuilding it.
-- Respect recorder start-failure caps, gameplay/foreground guards, per-segment
-  calibration, and decoded frame-count checks. Never weaken admission to pass a smoke test.
+- Respect recorder start-failure caps, foreground guards, per-segment
+  calibration, and decoded frame-count checks. Screenshot menu checks are
+  optional where every gesture path avoids the protected controls
+  (`DEPLOYMENT.md`). Never weaken admission to pass a smoke test.
 - Training loaders exclude contamination markers. `.menu` is always excluded;
   stricter loaders also enforce their existing calibration and trace contracts.
 - Preserve normalised coordinates and curved/overlapping/spin gestures. iPhone

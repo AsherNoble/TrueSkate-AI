@@ -73,6 +73,26 @@ This option does not relax calibration or dataset admission and does not
 reclassify existing `.menu` samples. Frame filtering remains conservative;
 changing historical corpus labels requires a separate validated review.
 
+**Screenshot menu checks are optional (operator decision, 2026-10-15).**
+- **What the checks are:** `collection/gameplay_filter.py` holds colour rules
+  for:
+  - the bottom navigation sliver;
+  - the Replay editor;
+  - the park editor;
+  - the Bolt Challenges pop-up.
+- **Why they are no longer needed:** every one of those menus opens from a
+  button inside the protected control map. Since straight swipes started
+  avoiding the whole map on 2026-09-22, every recorded rejection has been a
+  false alarm: the sliver sliding away, a red ledge, or the red progress strip.
+- **What the trick-speed batch keeps instead:**
+  - It runs no screenshot menu check.
+  - The foreground guard runs before every run, and every path avoids the
+    controls.
+  - A full-screen menu would also fail the calibration markers, which rejects
+    the whole recording.
+- **Older collectors** keep their checks, and existing `.menu` markers stay as
+  they are.
+
 The foreground guard checks both Appium's True Skate process state and WDA's
 frontmost bundle. iOS Control Center can cover the game while Appium still calls
 True Skate foreground; WDA reports `com.apple.springboard` in that state. Treat

@@ -95,8 +95,9 @@ phone records the video, and the known gesture becomes the label. Model 2
      curved v1 already does ([check](JOURNAL.md)).
 2. **No curved Model 1.** The kickflip's flick is curved, so linear Model 1
    can't express it. Curved v1 stopped at its data gate (83/100 against 95).
-3. `[unsure]` **Ground truth from your own play.** It isn't known whether
-   touches during real play on a stock iPhone can be captured at all.
+3. **Ground truth from your own play (parked).** A stock iPhone has no way to
+   log touches. An Android phone probably could, but on 2026-10-15 you made
+   that a last resort.
 
 ## Open decisions
 
@@ -109,11 +110,11 @@ My recommended order; each step is a separate proposal for you to approve.
 
 1. Done 2026-10-14: the frame-sampling check. Trick models read every 60 Hz
    frame ([journal](JOURNAL.md)).
-2. A time-boxed check of whether touches from your own play can be captured on
-   a stock iPhone. If they can, your play becomes the real test set.
+2. Parked: capturing touches from your own play (blocker 3).
 3. Curved data at trick speeds, shaped like your real play: strokes from about
-   60 ms, pieces down to about 40 ms and short stationary touches before a move,
-   collected as a small XR1 Workshop batch (this needs rig time).
+   50 ms, pieces down to 40 ms and short holds before a move, collected as a
+   small XR1 Workshop batch. Approved 2026-10-15 and built; a 100-clip trial
+   comes first ([protocol](protocols/trick_speed_batch.md)).
 4. A rough curved MVP: train it, read your filmed kickflip with it, replay the
    result in Workshop and count landings
    ([MVP test](protocols/model1_curved_mvp2.md)).
