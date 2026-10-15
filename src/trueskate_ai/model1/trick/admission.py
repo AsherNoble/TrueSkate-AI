@@ -89,7 +89,8 @@ def encode_clips(original: Path, jobs) -> None:
     filters = [f"[0:v]split={len(jobs)}" + "".join(f"[in{i}]" for i in range(len(jobs)))]
     for i, (start, _) in enumerate(jobs):
         filters.append(f"[in{i}]select=between(n\\,{start}\\,{start+FRAME_COUNT-1}),setpts=PTS-STARTPTS[out{i}]")
-    args = ["ffmpeg", "-v", "error", "-i", str(original), "-filter_complex", ";".join(filters)]
+    # -y replaces a partial clip left by a crashed attempt (admit_recording never re-encodes a settled run).
+    args = ["ffmpeg", "-v", "error", "-y", "-i", str(original), "-filter_complex", ";".join(filters)]
     time_base = source_time_base(original)
     for i, (_, clip) in enumerate(jobs):
         args += ["-map", f"[out{i}]", "-an", "-fps_mode", "passthrough", "-enc_time_base", time_base,
@@ -118,7 +119,11 @@ def admit_recording(out: Path) -> dict:
             rejected[run["number"]] = str(exc)
             continue
         folder = out/f"run-{run['number']:05d}"
-        folder.mkdir(exist_ok=False)
+        # A crashed earlier attempt can leave this folder with a partial clip, which is
+        # re-encoded; a run that attempt already admitted or rejected is never redone.
+        if (folder/"meta.json").exists() or (folder/"rejected.json").exists():
+            raise ValueError(f"{folder.name} was already settled by an earlier admission")
+        folder.mkdir(exist_ok=True)
         jobs.append((run, own, start, folder))
     if jobs:
         encode_clips(out/"original.mov", [(start, folder/"clip.mp4") for _, _, start, folder in jobs])
@@ -170,5 +175,7 @@ def admit_all(root: Path, *, jobs: int = 4) -> dict:
     """Admit every recording that has no admission yet (rerun a failure by moving its admission.json)."""
     pending = sorted(str(p.parent) for p in Path(root).glob("recordings/*/execution.json")
                      if not (p.parent/"admission.json").exists())
-    with ProcessPoolExecutor(max_workers=max(1, jobs)) as pool:
+    if jobs <= 1:
+        return dict(map(_admit_one, pending))
+    with ProcessPoolExecutor(max_workers=jobs) as pool:
         return dict(pool.map(_admit_one, pending))
