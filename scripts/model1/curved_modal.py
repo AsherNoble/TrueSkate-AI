@@ -48,7 +48,7 @@ def execute(args):
     corpus = modal.Volume.from_name(CORPUS_VOLUME)
     models = modal.Volume.from_name(MODELS_VOLUME)
 
-    @app.function(image=image, gpu="L4", cpu=(4, 4), memory=(65536, 65536), timeout=seconds,
+    @app.function(image=image, gpu="L4", cpu=(4, 4), memory=(65536, 65536), timeout=seconds, serialized=True,
                   retries=0, max_containers=1, scaledown_window=2,
                   volumes={"/corpus": corpus, "/models": models})
     def worker(mode, bundle_hash, run, resume):
