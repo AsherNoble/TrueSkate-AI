@@ -24,16 +24,16 @@ BUSY_LOCK = Path('/Users/training-server/trueskate-ai-runtime/tmp/RIG-BUSY-curve
 
 def run(args):
     live.check_arguments(args.root, minutes=args.minutes, env_file=args.env_file, ready_note=args.operator_ready_note,
-                         settings_note=args.settings_note, park=args.park)
+                         settings_note=args.settings_note, park=args.park, device=args.device)
     live.require_rig()  # before the lock: its default path exists only on the rig
 
     def interrupted(signum, frame):
         raise KeyboardInterrupt(f'signal {signum}')
     signal.signal(signal.SIGTERM, interrupted)  # stop and retrieve the current recording, then release
-    with live.busy_lock(args.busy_lock, owner=f'{EXPERIMENT} trick-speed capture', out=args.root):
+    with live.busy_lock(args.busy_lock, owner=f'{EXPERIMENT} trick-speed capture on {args.device}', out=args.root):
         live.collect(args.root, minutes=args.minutes, env_file=args.env_file, ready_note=args.operator_ready_note,
                      settings_note=args.settings_note, park=args.park, appium_port=args.appium_port,
-                     source_commit=args.source_commit)
+                     device=args.device, source_commit=args.source_commit)
 
 
 def main():
@@ -46,6 +46,8 @@ def main():
     live_run.add_argument('--settings-note', required=True, help='fixed waypoint, stance, camera and physics settings')
     live_run.add_argument('--park', required=True, help="the park the operator confirmed, verbatim")
     live_run.add_argument('--minutes', type=int, required=True, help='one-minute recordings to make (1–60)')
+    live_run.add_argument('--device', choices=live.PHONES, default='iPhone_XR',
+                          help='XR2 runs alongside an XR1 capture only when its owner agrees; give it its own --busy-lock')
     live_run.add_argument('--appium-port', type=int, default=4725,
                           help='session-discovery-enabled Appium; the supervised 4723 lacks it, so use the temporary 4725')
     live_run.add_argument('--source-commit', help='commit this code was staged from')

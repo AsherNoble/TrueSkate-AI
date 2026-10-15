@@ -147,7 +147,8 @@ def test_collect_refuses_bad_arguments_and_laptops_before_touching_anything(tmp_
                 park="The Workshop")
     root = tmp_path/"run"
     for change in (dict(minutes=0), dict(minutes=61), dict(minutes="2"), dict(ready_note=" "),
-                   dict(settings_note=""), dict(park=""), dict(env_file=Path("rig.env"))):
+                   dict(settings_note=""), dict(park=""), dict(env_file=Path("rig.env")),
+                   dict(device="iPhone_11"), dict(device="XR2")):
         with pytest.raises(ValueError):
             live.collect(root, **dict(good, **change))
     with pytest.raises(ValueError, match="absolute run directory"):
@@ -166,7 +167,7 @@ def test_cli_run_refuses_off_rig_before_taking_the_lock(tmp_path, monkeypatch):
     lock = tmp_path/"RIG-BUSY"
     args = argparse.Namespace(root=tmp_path/"run", minutes=1, env_file=tmp_path/"rig.env", operator_ready_note="ready",
                               settings_note="flatground", park="The Workshop", appium_port=4725, source_commit=None,
-                              busy_lock=lock)
+                              busy_lock=lock, device="iPhone_XR2")
     with pytest.raises(ValueError, match="training-server"):
         cli.run(args)
     assert not lock.exists() and not (tmp_path/"run").exists()
@@ -185,6 +186,8 @@ def test_run_positions_and_fixed_context(tmp_path):
     assert live.fix_context(root, park="The Workshop", settings_note="flatground") == context
     with pytest.raises(ValueError, match="new --root"):
         live.fix_context(root, park="Inbound", settings_note="flatground")
+    with pytest.raises(ValueError, match="new --root"):  # each phone gets its own run directory
+        live.fix_context(root, park="The Workshop", settings_note="flatground", device="iPhone_XR2")
 
 
 def test_cli_help_status_and_summary(root):

@@ -1,4 +1,4 @@
-"""Bounded XR1 capture of trick-speed runs on the rig; recordings only (admission is on the laptop).
+"""Bounded XR capture of trick-speed runs on the rig; recordings only (admission is on the laptop).
 
 Modelled on the kickflip runner (scripts/collection/probe_kickflip_repeatability.live_batch):
 the same tunnel, attachment, session-ownership, recorder and timing-build checks. The
@@ -24,6 +24,8 @@ from .contract import EXPERIMENT, SCHEMA
 from .schedule import plan_minute
 
 WDA_REVISION = "ae50404aac12d9f8c41f6c3fa8776e97975eaef5"
+# Both XRs share the 414×896 layout and control map; XR2 runs alongside an XR1 capture when its owner agrees.
+PHONES = ("iPhone_XR", "iPhone_XR2")
 TUNNEL_REGISTRY = "http://127.0.0.1:42314/remotexpc/tunnels/"
 MIN_FREE_BYTES = 8 * 2**30
 PRE_ROLL_SETTLE_S = 3.  # after the reset before each recording, as in curved v1
@@ -60,9 +62,11 @@ def require_rig() -> None:
         raise ValueError("live runs belong on training-server, not laptop USB")
 
 
-def check_arguments(root, *, minutes, env_file, ready_note, settings_note, park) -> None:
+def check_arguments(root, *, minutes, env_file, ready_note, settings_note, park, device="iPhone_XR") -> None:
     if not Path(root).is_absolute():
         raise ValueError("absolute run directory required")
+    if device not in PHONES:
+        raise ValueError(f"device must be one of {', '.join(PHONES)}")
     if type(minutes) is not int or not 1 <= minutes <= 60:
         raise ValueError("minutes must be a whole number from 1 to 60")
     for name, value in (("operator readiness note", ready_note), ("settings note", settings_note), ("park", park)):
@@ -72,15 +76,15 @@ def check_arguments(root, *, minutes, env_file, ready_note, settings_note, park)
         raise ValueError("absolute rig .env path required")
 
 
-def fix_context(root: Path, *, park, settings_note) -> dict:
-    """Park and settings are fixed per run directory; a change needs a new directory."""
-    context = dict(experiment=EXPERIMENT, device="iPhone_XR", park=park, park_source="operator readiness statement",
+def fix_context(root: Path, *, park, settings_note, device="iPhone_XR") -> dict:
+    """Phone, park and settings are fixed per run directory; a change needs a new directory."""
+    context = dict(experiment=EXPERIMENT, device=device, park=park, park_source="operator readiness statement",
                    settings_note=settings_note, menu_checks=MENU_CHECKS)
     path = root/"context.json"
     if path.exists():
         recorded = json.loads(path.read_text())
         if any(recorded.get(k) != context[k] for k in FIXED_CONTEXT):
-            raise ValueError("park or settings differ from this run directory; use a new --root")
+            raise ValueError("phone, park or settings differ from this run directory; use a new --root")
         return recorded
     save_json(path, context)
     return context
@@ -98,56 +102,56 @@ def next_positions(root: Path) -> tuple[int, int]:
     return index, run
 
 
-def attachments_clear(udid: str) -> None:
-    """XR1's RemoteXPC tunnel is up and no XCTest attachment is left (KICKFLIP-REPEATABILITY-20261009)."""
+def attachments_clear(udid: str, device: str = "iPhone_XR") -> None:
+    """The phone's RemoteXPC tunnel is up and no XCTest attachment is left (KICKFLIP-REPEATABILITY-20261009)."""
     try:
         with urllib.request.urlopen(TUNNEL_REGISTRY + udid, timeout=5) as response:
             listed = response.read().decode()
     except OSError as exc:
-        raise RuntimeError(f"XR1 RemoteXPC tunnel unavailable; no start attempted ({exc})") from exc
+        raise RuntimeError(f"{device} RemoteXPC tunnel unavailable; no start attempted ({exc})") from exc
     if udid not in listed:
-        raise RuntimeError("tunnel registry did not return XR1; no start attempted")
+        raise RuntimeError(f"tunnel registry did not return {device}; no start attempted")
     listing = subprocess.run(["appium", "driver", "run", "xcuitest", "cleanup-videos", "--", "--udid", udid,
                               "--dry-run"], capture_output=True, text=True, timeout=180)
     found = re.search(r"Found (\d+) UUID-shaped attachment", listing.stdout + listing.stderr)
     if listing.returncode or not found:
-        raise RuntimeError("could not list XR1 recording attachments; no start attempted")
+        raise RuntimeError(f"could not list {device} recording attachments; no start attempted")
     if int(found.group(1)):
-        raise RuntimeError(f"{found.group(1)} XR1 recording attachment(s) remain; preserve/clean before recording")
+        raise RuntimeError(f"{found.group(1)} {device} recording attachment(s) remain; preserve/clean before recording")
 
 
-def collect(root, *, minutes, env_file, ready_note, settings_note, park, appium_port=4725,
+def collect(root, *, minutes, env_file, ready_note, settings_note, park, appium_port=4725, device="iPhone_XR",
             revision=WDA_REVISION, source_commit=None) -> None:
-    """Record ``minutes`` one-minute recordings on XR1; stop at the first failure."""
+    """Record ``minutes`` one-minute recordings on one XR; stop at the first failure."""
     check_arguments(root, minutes=minutes, env_file=env_file, ready_note=ready_note,
-                    settings_note=settings_note, park=park)
+                    settings_note=settings_note, park=park, device=device)
     require_rig()
     root, env_file = Path(root), Path(env_file)
     if not env_file.is_file():
         raise ValueError("rig .env file not found")
     root.mkdir(parents=True, exist_ok=True)
-    context = fix_context(root, park=park, settings_note=settings_note)
+    context = fix_context(root, park=park, settings_note=settings_note, device=device)
     with (root/"sessions.jsonl").open("a") as handle:
-        handle.write(json.dumps(dict(started=_now(), operator_ready_note=ready_note, minutes=minutes,
+        handle.write(json.dumps(dict(started=_now(), operator_ready_note=ready_note, minutes=minutes, device=device,
                                      appium_port=appium_port, source_commit=source_commit, pid=os.getpid())) + "\n")
     from dotenv import load_dotenv
     load_dotenv(env_file, override=True)
-    udid = os.environ.get("IPHONE_XR_UDID")
-    if not udid:
-        raise ValueError("XR1 UDID must come from the rig .env")
     from trueskate_ai.collection.wda_action_timing import WDAActionTimingCapture, _http_json
     from trueskate_ai.collection.xctest_capture import XCTestScreenRecorder
     from trueskate_ai.research.curved_audit import reset_payload
     from trueskate_ai.sim.device import BUNDLE_ID, DEVICES, DeviceSession
     from .recording import record_minute
+    cfg = dict(next(d for d in DEVICES if d["name"] == device), appium_port=appium_port)
+    udid = os.environ.get(cfg["env_key"])
+    if not udid:
+        raise ValueError(f"{device} UDID must come from the rig .env ({cfg['env_key']})")
     tunnel = subprocess.check_output(["launchctl", "print", "system/com.trueskate.remotexpc-tunnel"], text=True)
     if "state = running" not in tunnel:
         raise RuntimeError("root recording tunnel must be running; no start attempted")
-    attachments_clear(udid)
-    cfg = dict(next(d for d in DEVICES if d["name"] == "iPhone_XR"), appium_port=appium_port)
+    attachments_clear(udid, device)
     base = f"http://127.0.0.1:{cfg['wda_port']}"
     if _http_json(base + "/status").get("sessionId"):
-        raise RuntimeError("XR1 WDA session is already owned; do not disturb it")
+        raise RuntimeError(f"{device} WDA session is already owned; do not disturb it")
     if _http_json(base + "/wda/activeAppInfo")["value"]["bundleId"] != BUNDLE_ID:
         raise RuntimeError("True Skate must already be frontmost")
     if _http_json(base + "/wda/video").get("value") is not None:
@@ -160,7 +164,7 @@ def collect(root, *, minutes, env_file, ready_note, settings_note, park, appium_
         return [s["id"] for s in value]
 
     if sessions():
-        raise RuntimeError("XR1 Appium session is already owned; do not disturb it")
+        raise RuntimeError(f"{device} Appium session is already owned; do not disturb it")
     # Recordings issue commands continuously, but keep the session through slow stops.
     worker = DeviceSession(cfg, new_command_timeout_s=3600)
     try:
@@ -168,7 +172,7 @@ def collect(root, *, minutes, env_file, ready_note, settings_note, park, appium_
         driver = worker.driver
         owned = _http_json(base + "/status").get("sessionId")
         if (driver.capabilities.get("udid") or driver.capabilities.get("appium:udid")) != udid:
-            raise RuntimeError("Appium session does not confirm the configured XR1 UDID")
+            raise RuntimeError(f"Appium session does not confirm the configured {device} UDID")
         timing = _http_json(f"{base}/session/{owned}/wda/actionTiming").get("value")
         if (not isinstance(timing, dict) or timing.get("schema_version") != 1
                 or timing.get("build_revision") != revision or timing.get("enabled")):
@@ -202,7 +206,7 @@ def collect(root, *, minutes, env_file, ready_note, settings_note, park, appium_
         for _ in range(minutes):
             if shutil.disk_usage(root).free < MIN_FREE_BYTES:
                 raise RuntimeError("less than 8 GiB free; capture stopped")
-            attachments_clear(udid)
+            attachments_clear(udid, device)
             ownership()
             if _http_json(base + "/wda/video").get("value") is not None:
                 raise RuntimeError("recorder is not idle")
