@@ -25,6 +25,7 @@ phone records the video, and the known gesture becomes the label. Model 2
 |---|---|---|
 | WDA command → touch visible on video | 118–174 ms delay ([gate](experiments/M1-TIMING-GATE-20260926.md)) | Yes: calibration taps in every one-minute recording measure it |
 | Phone clock vs video clock | drifts about −1,900 ppm, one frame off after ~23 s ([ALIGN](experiments/ALIGN-20260913-wda-onset.md)) | Yes: start and end anchors; held-out middle checks land within ~6–25 ms ([length](experiments/LINEAR-LENGTH-20261003.md)) |
+| Stroke label time vs the visible trail | direct trick strokes timed by the rig clock sat −23 to +25 ms off their trail (10–90%), mostly a per-recording offset, and ran ~5% fast; the pilot's phone-timestamped touches sat −16 to +4 ms (middle half) at the commanded speed ([journal](JOURNAL.md)) | Yes for trick strokes: admission re-times each stroke to its own trail. Speed changes after kinks, and pops whose trail stops ~10–20 pt short, remain |
 | Back-to-back WDA gestures | the next starts at least ~0.25–0.3 s after the last ends, with ~100 ms jitter ([kickflip](experiments/KICKFLIP-REPEATABILITY-20261009.md)) | No, it's an XCTest limit. The Pico avoids it, and the kickflip lands anyway |
 | Pico USB mouse → touch | ≤32 µs board lateness at 3 ms reports; 1 ms unvalidated ([HID-USB](experiments/HID-USB-20261006.md)) | Timing yes; visible contact accuracy unproven |
 | Video capture | 30 fps for collection (33 ms per frame); 60 fps for diagnostics and curved v1 | Choice made |
