@@ -61,20 +61,19 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
         pending = [a['number'] for a in kickflip_tolerance.pending_attempts(root, plan, after_failure_reason)]
         revision = plan['wda_revision']
         defer_admission = True  # Admission runs on the laptop (`admit`); ~17 min per recording on the rig.
+        candidate = None  # Each planned attempt carries its own sealed candidate.
     else:
         manifest = experiment.load_manifest(root)
         experiment.verify_implementation(manifest, REPO)
         revision = manifest['wda_revision']
-    if tolerance:
-        candidate = None  # Each planned attempt carries its own sealed candidate.
-    elif repeatability:
+    if repeatability:
         candidate = experiment.approved_candidate(root)
         existing = sorted((root / 'repeats').glob('trial_*'))
         if existing:
             raise ValueError('repeatability batch already started; no automatic retry/replacement')
         # A continuation stage starts after the predecessor's repeats; none are replaced.
         first_repeat = 1 + len((manifest.get('prior_setup') or {}).get('repeats', []))
-    else:
+    elif not tolerance:
         if (root / 'approval.json').exists() or experiment.setup_attempt_count(root) >= experiment.SETUP_LIMIT:
             raise ValueError('setup is frozen or has reached its attempt limit')
         candidate = next((c for c in manifest['candidates'] if c['id'] == candidate_id), None)
