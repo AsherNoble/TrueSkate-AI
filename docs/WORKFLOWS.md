@@ -20,6 +20,7 @@ to test a refactor. `--help` on each entrypoint describes its existing flags.
 | Private XR menu control | Standalone; session discovery required | `scripts/control/serve.py` ([guide](XR_CONTROL.md)) |
 | Kickflip repeatability | Bounded diagnostic; operator review before 20 repeats | `scripts/collection/probe_kickflip_repeatability.py` ([procedure](../research/experiments/KICKFLIP-REPEATABILITY-20261009.md)) |
 | Trick-speed batch (XR1, Workshop) | Explore; each rig run needs operator authorization | `scripts/collection/trick_speed_batch.py` ([protocol](../research/protocols/trick_speed_batch.md)) |
+| Trick Model 1 MVP v0 (1–4 fast strokes per clip) | Explore; each Modal run needs an approved budget | `scripts/model1/train_trick_modal.py` (freeze, pack, upload, train, test once) |
 | Corpus preview/progress | Supported | `scripts/train_dashboard.py` |
 
 ## Offline verification
