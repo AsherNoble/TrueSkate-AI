@@ -1,0 +1,201 @@
+{
+  "experiment": "KICKFLIP-TOLERANCE-20261015",
+  "manifest_sha256": "2d23a7b65fbbc6782666c34c6379056eb3bcea7b26d1575224aea1798cb5b866",
+  "attempts": [
+    {
+      "code": "01",
+      "verdict": "F",
+      "note": "Didn't do anything"
+    },
+    {
+      "code": "02",
+      "verdict": "F",
+      "note": "Nada"
+    },
+    {
+      "code": "03",
+      "verdict": "L",
+      "note": "Fantastico. Spectacular."
+    },
+    {
+      "code": "04",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "05",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "06",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "07",
+      "verdict": "F",
+      "note": "Close, but caught a quarter of a rotation too late, resulting in a \"primo\" landing."
+    },
+    {
+      "code": "08",
+      "verdict": "F",
+      "note": "Didn't get off the ground"
+    },
+    {
+      "code": "09",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "10",
+      "verdict": "F",
+      "note": "Did a pop-shove-it"
+    },
+    {
+      "code": "11",
+      "verdict": "F",
+      "note": "Due to the dynamics it did not land but it was close and could've resulted in a landing. Like, basically, I could've caught this with my superior human reflexes."
+    },
+    {
+      "code": "12",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "13",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "14",
+      "verdict": "F",
+      "note": "Pretty close. Didn't land."
+    },
+    {
+      "code": "15",
+      "verdict": "F",
+      "note": "Caught half a flip too late and landed upside down"
+    },
+    {
+      "code": "16",
+      "verdict": "F",
+      "note": "Caught a quarter of a flip too late and landed primo"
+    },
+    {
+      "code": "17",
+      "verdict": "F",
+      "note": "Not close at all \u2013 but did something else that was a bit random and cool."
+    },
+    {
+      "code": "19",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "20",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "21",
+      "verdict": "F",
+      "note": "Caught a quarter of a flip too late resulting in a primo landing"
+    },
+    {
+      "code": "22",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "23",
+      "verdict": "F",
+      "note": "Flick didn't succeed resulting in it doing half a backflip (due to the pop motion)"
+    },
+    {
+      "code": "24",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "25",
+      "verdict": "L",
+      "note": "Close to not landing \u2013 was primo but not perfectly so and it tipped back up right."
+    },
+    {
+      "code": "26",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "27",
+      "verdict": "F",
+      "note": "Again, dk how to describe. Basically a rocket flip that ended up continuing it's pop motion and doing half a backflip plus a kickflip motion. kind've like an aerial flip or smth."
+    },
+    {
+      "code": "28",
+      "verdict": "F",
+      "note": "nada"
+    },
+    {
+      "code": "29",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "30",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "31",
+      "verdict": "F",
+      "note": "did a pop-shove-it \u2013 which is NOT similar, fyi."
+    },
+    {
+      "code": "32",
+      "verdict": "F",
+      "note": "bit of a soggy biscuit"
+    },
+    {
+      "code": "33",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "34",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "35",
+      "verdict": "F",
+      "note": "did the same neat skid thing. but did not get off the ground."
+    },
+    {
+      "code": "36",
+      "verdict": "F",
+      "note": "not close at all, didn't get off the ground"
+    },
+    {
+      "code": "37",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "38",
+      "verdict": "F",
+      "note": "flick didn't incur a flick. did a FS pop shove it."
+    },
+    {
+      "code": "39",
+      "verdict": "L",
+      "note": ""
+    },
+    {
+      "code": "40",
+      "verdict": "F",
+      "note": "Flipped half a rotation too far \u2013 landed upside down"
+    }
+  ]
+}
