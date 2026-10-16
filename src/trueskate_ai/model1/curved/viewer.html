@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Curved Model 1 audit</title>
+<style>
+body{background:#10151d;color:#edf1f7;font:16px system-ui;margin:24px}button,select,input{font:inherit;padding:6px;margin:4px}button{cursor:pointer}button:disabled{opacity:.45}main{display:flex;gap:24px;flex-wrap:wrap}canvas{max-height:78vh;max-width:70vw;background:black;object-fit:contain}aside{max-width:430px}label{display:block;margin:10px 0}textarea{width:100%;height:75px}#status{color:#9ed5ff}a{color:#9ed5ff}
+</style>
+<h1>Curved gesture qualification</h1><p>Review native frames. “Meet” means the whole contact follows the commanded ring within 0.03 normalized distance, with no extra contact, menu or truncation. If you cannot judge it, choose unclear.</p>
+<main><div><canvas id="screen"></canvas><div><button id="prev">← Frame</button><button id="play">Play</button><button id="next">Frame →</button><input id="frame" type="range" min="0" max="119" value="0"></div><div id="stamp"></div></div>
+<aside><div><button id="backClip">Previous clip</button><select id="clip"></select><button id="nextClip">Next clip</button></div><h2 id="title"></h2>
+<label><input id="ring" type="checkbox" checked> Show hollow target ring (10 logical points)</label>
+<label><input id="grid" type="checkbox" checked> Translucent logical grid</label><label>Grid spacing <select id="spacing"><option>1</option><option>5</option><option selected>10</option><option>25</option></select> logical points</label>
+<p>Mark the first frame with active contact, then the first frame where contact has ended. Use the accessibility cursor when you believe it is touching. No extra orange-trail confirmation is needed.</p>
+<button id="onset">First contact here</button><button id="release">First clear frame here</button><button id="clear">Clear marks</button><div id="marks"></div>
+<label>Whole-contact judgement <select id="rating"><option value="">Choose…</option><option value="meet">Meet</option><option value="fail">Fail</option><option value="unclear">Unclear</option></select></label>
+<label><input id="systematic" type="checkbox"> Gross or systematic defect</label><label>Reason (required for fail, unclear, or systemic defect)<textarea id="reason"></textarea></label>
+<button id="export">Export review</button><p id="status"></p><p>Space: play/pause. Arrow keys: native frame. No zoom controls are added. Normal browser zoom remains available.</p></aside></main>
+<script>
+const $=id=>document.getElementById(id);let manifest,rows={},selected=0,frame=0,images=[],playing=false,token=0;
+function sample(){return manifest.samples[selected]}function row(){let id=sample().id;return rows[id]??= {id,rating:'',systematic:false,reason:'',onset_frame:null,release_frame:null}}
+function store(){localStorage.setItem('curved-audit-'+manifest.sha256,JSON.stringify(rows));$('status').textContent=Object.values(rows).filter(r=>r.rating).length+'/100 rated';}
+function marks(){const r=row();$('marks').textContent='Contact frame: '+(r.onset_frame??'—')+'; first clear frame: '+(r.release_frame??'—');}
+function point(t){const s=sample(),g=s.gesture;let elapsed=(t-s.onset_s)/s.clock_rate*1000;if(elapsed<0||t>s.release_s)return null;let k=1;while(k<g.times_ms.length-1&&g.times_ms[k]<elapsed)k++;const u=Math.max(0,Math.min(1,(elapsed-g.times_ms[k-1])/(g.times_ms[k]-g.times_ms[k-1])));return g.command_points[k-1].map((x,a)=>x+u*(g.command_points[k][a]-x));}
+function draw(){if(!images[frame])return;const c=$('screen'),im=images[frame];c.width=im.naturalWidth;c.height=im.naturalHeight;const ctx=c.getContext('2d');ctx.drawImage(im,0,0);const sx=c.width/414,sy=c.height/896;
+if($('grid').checked){const step=+$('spacing').value;ctx.strokeStyle='rgba(120,210,255,.23)';ctx.lineWidth=1;ctx.beginPath();for(let x=0;x<414;x+=step){ctx.moveTo(x*sx,0);ctx.lineTo(x*sx,c.height)}for(let y=0;y<896;y+=step){ctx.moveTo(0,y*sy);ctx.lineTo(c.width,y*sy)}ctx.stroke();}
+const p=point(sample().frame_times_s[frame]);if(p&&$('ring').checked){ctx.strokeStyle='#6fffd1';ctx.lineWidth=Math.max(2,sx);ctx.beginPath();ctx.ellipse(p[0]*c.width,p[1]*c.height,10*sx,10*sy,0,0,2*Math.PI);ctx.stroke();}
+$('frame').value=frame;$('stamp').textContent='Native frame '+frame+' / 119 · PTS '+sample().frame_times_s[frame].toFixed(6)+' s';}
+function setFrame(n){frame=Math.max(0,Math.min(119,n));draw()}function stop(){playing=false;$('play').textContent='Play'}
+async function load(n){stop();const own=++token;selected=n;frame=0;images=[];$('clip').value=n;$('title').textContent=(n+1)+'/100 · '+sample().park+' · '+sample().gesture.sampler;const r=row();$('rating').value=r.rating;$('systematic').checked=r.systematic;$('reason').value=r.reason;marks();$('status').textContent='Loading 120 native frames…';
+try{const loaded=await Promise.all(Array.from({length:120},(_,i)=>new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('Native frame failed to load'));im.src='/frame/'+sample().id+'/'+i})));if(own!==token)return;images=loaded;draw();store()}catch(e){$('status').textContent=e.message;}}
+$('prev').onclick=()=>{stop();setFrame(frame-1)};$('next').onclick=()=>{stop();setFrame(frame+1)};$('frame').oninput=()=>{stop();setFrame(+$('frame').value)};
+$('play').onclick=()=>{if(playing){stop();return}if(images.length!==120)return;if(frame===119)frame=0;playing=true;$('play').textContent='Pause';const start=performance.now(),base=sample().frame_times_s[frame];function tick(now){if(!playing)return;const t=base+(now-start)/1000;while(frame<119&&sample().frame_times_s[frame+1]<=t)frame++;draw();if(frame===119)stop();else requestAnimationFrame(tick)}requestAnimationFrame(tick)};
+for(const id of ['ring','grid','spacing'])$(id).onchange=draw;
+$('onset').onclick=()=>{row().onset_frame=frame;marks();store()};$('release').onclick=()=>{row().release_frame=frame;marks();store()};$('clear').onclick=()=>{row().onset_frame=null;row().release_frame=null;marks();store()};
+for(const id of ['rating','systematic','reason'])$(id).onchange=()=>{row()[id]=id==='systematic'?$(id).checked:$(id).value;store()};
+$('clip').onchange=()=>load(+$('clip').value);$('backClip').onclick=()=>load(Math.max(0,selected-1));$('nextClip').onclick=()=>load(Math.min(99,selected+1));
+$('export').onclick=()=>{store();for(const s of manifest.samples){const r=rows[s.id];if(!r?.rating||((r.rating!=='meet'||r.systematic)&&!r.reason.trim())||(r.rating==='meet'&&(r.onset_frame===null||r.release_frame===null))){$('status').textContent='Complete rating, required reason and boundary marks for clip '+(manifest.samples.indexOf(s)+1);return}}const report={manifest_sha256:manifest.sha256,round:manifest.round,samples:manifest.samples.map(s=>rows[s.id])};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));a.download='curved-audit-'+manifest.round+'-'+manifest.sha256.slice(0,12)+'.json';a.click();URL.revokeObjectURL(a.href);};
+document.onkeydown=e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;if(e.code==='Space'){e.preventDefault();$('play').click()}if(e.code==='ArrowLeft')$('prev').click();if(e.code==='ArrowRight')$('next').click()};
+fetch('/manifest').then(r=>r.json()).then(m=>{manifest=m;rows=JSON.parse(localStorage.getItem('curved-audit-'+m.sha256)||'{}');m.samples.forEach((s,i)=>$('clip').add(new Option((i+1)+' · '+s.park,i)));load(0)});
+</script></html>

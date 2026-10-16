@@ -67,3 +67,28 @@ def test_active_app_query_failure_preserves_state_fallback(monkeypatch):
     monkeypatch.setattr(device.requests, "get", unavailable)
     assert not session.ensure_foreground()
     assert session.driver.activated == []
+
+
+def test_new_command_timeout_is_opt_in(monkeypatch):
+    class _Status:
+        status_code = 200
+
+    captured = []
+
+    class _Stop(Exception):
+        pass
+
+    def remote(_url, *, options):
+        captured.append(options.to_capabilities().get("appium:newCommandTimeout"))
+        raise _Stop
+
+    monkeypatch.setattr(device.requests, "get", lambda *_args, **_kwargs: _Status())
+    monkeypatch.setattr(device.webdriver, "Remote", remote)
+    cfg = {"name": "iPhone_XR", "env_key": "UNSET_TEST_UDID", "logical_w": 414, "logical_h": 896,
+           "wda_port": 8100, "appium_port": 4723, "mjpeg_port": 9100}
+    for session in (device.DeviceSession(cfg), device.DeviceSession(cfg, new_command_timeout_s=3600)):
+        try:
+            session.connect()
+        except _Stop:
+            pass
+    assert captured == [None, 3600]

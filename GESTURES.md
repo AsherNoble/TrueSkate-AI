@@ -296,6 +296,13 @@ Push constants are defined in `src/trueskate_ai/sim/gestures.py`. Both replay (`
 
 ### Timed waypoint execution audit
 
+The curved Model 1 collection schema `model1_curved_v1` uses a stricter subset:
+2–11 timed points (1–10 intervals), each interval at least 100 ms, total
+300–1200 ms, one continuous contact. Exact integer-coordinate commands define
+the labels; ideal arc geometry is separate. See the
+[current protocol](research/protocols/model1_curved_collection_v1.md).
+The broader `TimedWaypoints` interface below remains available to diagnostics.
+
 `sim/timed_waypoints.py::TimedWaypoints` is an additive interface: 2–15 normalized
 positions with strictly increasing integer millisecond timestamps starting at
 zero. Intervals interpolate linearly. Repeated positions represent pauses.
