@@ -6,14 +6,14 @@ them. Link a record only when one exists. Current state lives in
 [SYSTEM_MAP.md](SYSTEM_MAP.md).
 
 
-## 2026-10-16 — Live frames: WDA's MJPEG stream gives Model 2 about 28 frames a second at half size
+## 2026-10-16 — Live frames: WDA's MJPEG stream tops out at ~28 frames a second; Model 2 takes 30 fps at 207×448
 
-- **Ran:** XR1 Workshop, no gameplay touches: the stream read through 60 fps recorded minutes with die-five markers,
-  at 10 fps full size and 30 fps half size (LIVE-FRAMES-20261016). The 60 fps minute never started.
-- **Result:** 9.6 and 27.9 frames/s, none stale: repeats came only while the recording showed a still screen (0 of 128
-  moving spans). Recording held 59.9 fps. Frames show the screen ~0–45 ms late plus the wait for the next capture;
-  at 30 fps that delay grew ~60 ms over the minute `[unsure]`.
-- **Decision:** train Model 2 on 30 fps frames at half size or less; play live at 30 fps, 50%. No 60 fps retry.
+- **Ran:** XR1 Workshop, no gameplay touches: the stream read through 60 fps recorded minutes with die-five markers
+  (LIVE-FRAMES-20261016): 10 fps full size, then 30 and 60 fps at 50% and 25% size (six minutes; one never started).
+- **Result:** 9.6 fps at the 10 fps setting; 27.4–28.8 at every 30 or 60 fps setting and both sizes, so ~28 is WDA's
+  capture ceiling. None stale (0 of 374 spans where the screen moved); the recording held 59.9 fps. A tap shows in the
+  stream about as soon as in the recording (0.11–0.16 s); run2's delay creep didn't repeat (−52 to +24 ms/min).
+- **Decision:** Model 2 trains on 30 fps frames at 207×448; live play asks for 30 fps at 25%, taking the newest frame.
 
 ## 2026-10-15 — Trick-stroke labels re-timed to the visible trail
 
