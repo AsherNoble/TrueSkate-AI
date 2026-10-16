@@ -1,0 +1,29 @@
+{
+  "_comment": "Operator supplied installed park library, 2026-10-11. Names are verbatim UI strings. Inconsistent punctuation, spacing, and LosAngeles spellings are intentional. Never normalize, correct, or mutate these names. Preserve this list; append verified additions separately.",
+  "parks": [
+    "SLS 2015 Paris",
+    "Skateboard GB 2024",
+    "The Glass House",
+    "The Workshop",
+    "SLS 2016 Super Crown",
+    "Macba",
+    "The Berrics",
+    "SLS 2016 Newark",
+    "Havasu",
+    "SLS 2016 Munich",
+    "The Alley",
+    "SLS 2015: Super Crown",
+    "SLS 2015: New Jersey",
+    "Mondo Ramp",
+    "SLS 2015: LosAngeles",
+    "Skatepark: The Valley",
+    "SLS 2014: LosAngeles",
+    "SLS 2013: Super Crown",
+    "SLS 2013: Portland",
+    "SLS 2013: Kansas City",
+    "Skatepark: The Factory",
+    "Skatepark: Double Infinity",
+    "Skatepark: Inbound",
+    "Skatepark: Underpass"
+  ]
+}

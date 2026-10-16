@@ -199,10 +199,14 @@ class DeviceSession:
         device_cfg: dict,
         *,
         calibrate_touch_on_connect: bool = False,
+        new_command_timeout_s: int | None = None,
     ) -> None:
         self.device_id: str = device_cfg["name"]
         self._cfg = device_cfg
         self.calibrate_touch_on_connect = calibrate_touch_on_connect
+        # None keeps Appium's 60 s default; callers idle longer between commands
+        # (e.g. long offline extraction) must opt in or Appium ends the session.
+        self.new_command_timeout_s = new_command_timeout_s
         self.driver: webdriver.Remote | None = None
         self.mjpeg_url: str | None = None
         self._failure_streak: int = 0
@@ -266,6 +270,8 @@ class DeviceSession:
         options.use_prebuilt_wda = True
         options.skip_log_capture = True
         options.no_reset = True
+        if self.new_command_timeout_s is not None:
+            options.new_command_timeout = self.new_command_timeout_s
         options.set_capability("webDriverAgentUrl", f"http://127.0.0.1:{self._cfg['wda_port']}")
         appium_url = f"http://127.0.0.1:{self._cfg['appium_port']}"
 
