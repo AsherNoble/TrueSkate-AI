@@ -114,16 +114,16 @@ Add or reorder items at any time; each comes to you as a short proposal first.
 Rough calendar: 1–3 by about Oct 24, 4–5 by Oct 31, 7 by Nov 10, 8 by Nov 17.
 
 1. **Kickflip position tolerance: done 2026-10-16** ([record](experiments/KICKFLIP-TOLERANCE-20261015.md)):
-   lands 8/10 at 2%, 1/9 at 5%, so the bar is ~2% and item 10 comes first.
-2. **Trick-speed 1,000 clips on XR1 + XR2** ([protocol](protocols/trick_speed_batch.md)),
-   after item 10 and with its pop fix. You call the remaining faults minor →
-   record; else → fix the cause and rerun a 100-clip trial.
+   lands 8/10 at 2%, 1/9 at 5%, so the bar is ~2%.
+2. **Trick-speed 1,000 clips on XR1 + XR2** ([protocol](protocols/trick_speed_batch.md)).
+   You call the remaining faults minor → record; else → fix the cause and rerun
+   a 100-clip trial.
 3. **Record your own play** in Workshop (30–60 min, the rig's 60 fps
    recorder) as Model 2's data. The trail shows clearly → keep it; else →
    change the settings and record again.
 4. **Rough curved Model 1 MVP v0: done 2026-10-16** ([record](experiments/MODEL1-TRICK-MVP-20261016.md)):
-   90% of test gestures pass at 5%, 37% at 2%. Item 1 says 2%, so fix the gesture
-   ends first (pops' fall ~13 pt short; item 10), then retrain on the 1,000.
+   90% of test gestures pass at 5%, 37% at 2%. Item 1 says 2%, so retrain on the
+   1,000 next; predicted ends fall short, most on pops (~13 pt).
 5. **Replay check of Model 1's labels:** your filmed kickflip, replayed by
    WDA, 20 times. Lands in at least half → Model 1 can label Model 2's data;
    else → fix the weakest link.
@@ -135,8 +135,8 @@ Rough calendar: 1–3 by about Oct 24, 4–5 by Oct 31, 7 by Nov 10, 8 by Nov 17
 8. **Model 2 plays live** through WDA, with a hand-ready interface. It lands a
    kickflip → north star met; else → fix the failing link.
 9. Speed after a bend, only if items 1, 5 or 8 point to it: re-time each segment.
-10. **Pops' missing end (next):** a 16–33 ms pause at the end, ~15 min of XR1. The trail
-    shows the whole pop → add the pause; else → label pops' ends from the trail.
+10. Dropped 2026-10-16 (your call): a pause at each pop's end to make the game
+    draw its whole trail. More data should teach Model 1 that mapping instead.
 11. Timing tolerance inside a gesture, only if item 5 fails with good positions.
 
 ## Parked
