@@ -1,4 +1,4 @@
-"""Model 1 MVP v0 for trick clips: curved v1's network with three per-frame contact signals."""
+"""Model 1 MVP v0 for trick clips: curved v1's network with three per-frame touch signals."""
 from __future__ import annotations
 
 import torch
@@ -14,8 +14,9 @@ EVENT_POS_WEIGHT = 4.  # touch-down and lift frames are about 2% of all frames
 class TrickModel(CurvedModel):
     """CurvedModel's picture encoder, time layer and finger heatmap, unchanged.
 
-    Its one touch-down/lift choice per clip becomes three yes/no signals per frame (in
-    contact, touch-down here, lift here), so a clip can hold several strokes. The signal
+    Its one touch-down/lift choice per clip becomes three yes/no signals per frame
+    (touching, named "contact"; touch-down here; lift here), so a clip can hold several
+    gestures. The signal
     head also sees each frame's strongest feature, because a new trail is small, and a
     dilated layer widens its view to about seven frames either side.
     """
@@ -50,7 +51,7 @@ class TrickModel(CurvedModel):
 
 
 def loss_function(pred, batch):
-    """Contact and event cross-entropy, plus curved v1's position loss on contact frames."""
+    """Touching and event cross-entropy, plus curved v1's position loss on touching frames."""
     mask = batch["mask"]
     contact = F.binary_cross_entropy_with_logits(pred["contact"], batch["contact"])
     weight = torch.tensor(EVENT_POS_WEIGHT, device=mask.device)

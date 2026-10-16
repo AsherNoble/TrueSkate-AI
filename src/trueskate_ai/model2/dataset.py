@@ -1,6 +1,6 @@
 """Causal Model-2 examples built at executable action-group boundaries.
 
-Overlapping strokes form one action group.  A decision is made at clip start
+Overlapping gestures form one action group.  A decision is made at clip start
 (cold start) or when the preceding complete group finishes, matching deployment:
 observe -> predict a group (including its wait) -> execute it.
 """
@@ -15,7 +15,7 @@ import torch
 from torch.utils.data import Dataset
 
 from trueskate_ai.model2.frame_prep import prep_frame_rgb
-from trueskate_ai.model2.tokens import STROKE_DIM, encode
+from trueskate_ai.model2.tokens import GESTURE_DIM, encode
 from trueskate_ai.model2.policy import SequencePolicyConfig
 
 _MAX_CACHED_FRAMES = 20_000
@@ -45,24 +45,24 @@ def _load_frame(path: Path, h: int, w: int) -> np.ndarray:
     return prep_frame_rgb(img, h, w).transpose(2, 0, 1)
 
 
-def group_overlapping_strokes(strokes: list[dict]) -> list[list[dict]]:
+def group_overlapping_gestures(gestures: list[dict]) -> list[list[dict]]:
     """Return interval-connected groups, ordered by start time."""
-    ordered = sorted(strokes, key=lambda s: (float(s["t_start"]), float(s["t_end"])))
+    ordered = sorted(gestures, key=lambda s: (float(s["t_start"]), float(s["t_end"])))
     groups: list[list[dict]] = []
     group_end = float("-inf")
-    for stroke in ordered:
-        start, end = float(stroke["t_start"]), float(stroke["t_end"])
+    for gesture in ordered:
+        start, end = float(gesture["t_start"]), float(gesture["t_end"])
         if not groups or start > group_end:
-            groups.append([stroke])
+            groups.append([gesture])
             group_end = end
         else:
-            groups[-1].append(stroke)
+            groups[-1].append(gesture)
             group_end = max(group_end, end)
     return groups
 
 
 def _group_params(group: list[dict], decision_time: float) -> np.ndarray:
-    """Native tokens with delays relative to decision/previous stroke completion."""
+    """Native tokens with delays relative to decision/previous gesture completion."""
     out = np.array([s["params"] for s in group], dtype=np.float64)
     out[0, -1] = float(group[0]["t_start"]) - decision_time
     for i in range(1, len(group)):
@@ -75,7 +75,7 @@ class _Clip:
         meta = json.loads((clip_dir / "clip.json").read_text())
         self.path = clip_dir
         self.fps = float(meta["fps"])
-        self.groups = group_overlapping_strokes(meta["strokes"])
+        self.groups = group_overlapping_gestures(meta["strokes"])
         self.frame_paths = sorted(clip_dir.glob("frame_*.png"))
         self.frame_times = np.arange(len(self.frame_paths), dtype=np.float64) / self.fps
         self._h, self._w, self._clip_idx, self._cache = h, w, clip_idx, cache
@@ -149,17 +149,17 @@ class SequenceDataset(Dataset):
                                  max(float(s["t_end"]) for s in clip.groups[hist_i - 1]))
                 history.extend(_group_params(group, hist_decision))
         history = history[-cfg.m_past:]
-        past = np.zeros((cfg.m_past, STROKE_DIM), dtype=np.float32)
+        past = np.zeros((cfg.m_past, GESTURE_DIM), dtype=np.float32)
         past_mask = np.zeros(cfg.m_past, dtype=bool)
         if history:
             enc = encode(np.asarray(history)).astype(np.float32)
             past[-len(enc):], past_mask[-len(enc):] = enc, True
 
         native = _group_params(clip.groups[gi], decision)
-        target = np.zeros((cfg.m_out, STROKE_DIM), dtype=np.float32)
+        target = np.zeros((cfg.m_out, GESTURE_DIM), dtype=np.float32)
         target_mask = np.zeros(cfg.m_out, dtype=bool)
         target[:len(native)] = encode(native).astype(np.float32)
         target_mask[:len(native)] = True
-        return {"frames": torch.from_numpy(frames), "past_strokes": torch.from_numpy(past),
+        return {"frames": torch.from_numpy(frames), "past_gestures": torch.from_numpy(past),
                 "past_mask": torch.from_numpy(past_mask), "target": torch.from_numpy(target),
                 "target_mask": torch.from_numpy(target_mask)}

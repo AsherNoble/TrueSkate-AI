@@ -1,8 +1,8 @@
-"""Play strokes through the ESP32 Bluetooth pointer on one XR and record the screen.
+"""Play gestures through the ESP32 Bluetooth pointer on one XR and record the screen.
 
-Strokes come from an extracted-gestures file (--gestures: normalised x, y in clip
-seconds) or a strokes file (--strokes: {name: [[t_s, x_pt, y_pt], ...]}). The whole
-schedule (home, park, hover moves, presses, moves, lifts) is uploaded to the board
+Gestures come from an extracted-gestures file (--gestures: normalised x, y in clip
+seconds) or a gestures file (--gestures: {name: [[t_s, x_pt, y_pt], ...]}). The whole
+schedule (home, park, hover moves, touch-downs, moves, lifts) is uploaded to the board
 and played from its clock on the 15 ms Bluetooth grid; Python only sends GO, so
 every gap inside the schedule survives. Raw recordings only, no training
 admission; output goes to a new directory.
@@ -22,11 +22,11 @@ W, H = 414, 896
 RESET_POINT = (207, 49)                     # True Skate's reset-board button
 
 
-def load_strokes(path: Path, normalised: bool) -> list:
+def load_gestures(path: Path, normalised: bool) -> list:
     raw = json.loads(path.read_text())
     if normalised:
-        return [hp.Stroke(name, [(r['t'], r['x'] * W, r['y'] * H) for r in rows]) for name, rows in raw.items()]
-    return [hp.Stroke(name, [tuple(r[:3]) for r in rows]) for name, rows in raw.items()]
+        return [hp.Gesture(name, [(r['t'], r['x'] * W, r['y'] * H) for r in rows]) for name, rows in raw.items()]
+    return [hp.Gesture(name, [tuple(r[:3]) for r in rows]) for name, rows in raw.items()]
 
 
 def http_json(url, body=None, timeout=20):
@@ -203,14 +203,14 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     src = p.add_mutually_exclusive_group(required=True)
     src.add_argument('--gestures', type=Path, help='extracted-gestures JSON (normalised x, y)')
-    src.add_argument('--strokes', type=Path, help='strokes JSON in points: {name: [[t_s, x, y], ...]}')
+    src.add_argument('--gestures', type=Path, help='gestures JSON in points: {name: [[t_s, x, y], ...]}')
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--device', choices=['iPhone_XR2'], default='iPhone_XR2', help='only measured XR2 profile is validated')
     p.add_argument('--repeats', type=int, default=3)
     p.add_argument('--lift', choices=hp.LIFT_MODES, default='immediate',
                    help='lift report 1 ms after the last move, or on the next 15 ms slot')
-    p.add_argument('--lift-for', action='append', default=[], metavar='STROKE=MODE',
-                   help='per-stroke lift mode override (repeatable)')
+    p.add_argument('--lift-for', action='append', default=[], metavar='GESTURE=MODE',
+                   help='per-gesture lift mode override (repeatable)')
     p.add_argument('--bridge-port', type=int, default=8765)
     p.add_argument('--fps', type=int, default=30, help='XCTest recording frame rate')
     a = p.parse_args()
@@ -220,11 +220,11 @@ def main():
         p.error('run on the rig')
     if a.out.exists():
         raise SystemExit('output directory must be new')
-    strokes = load_strokes(a.gestures or a.strokes, normalised=a.gestures is not None)
+    gestures = load_gestures(a.gestures or a.gestures, normalised=a.gestures is not None)
     for item in a.lift_for:
         name, mode = item.split('=')
-        next(s for s in strokes if s.name == name).lift = mode
-    events, info = hp.build_schedule(strokes, lift=a.lift)
+        next(s for s in gestures if s.name == name).lift = mode
+    events, info = hp.build_schedule(gestures, lift=a.lift)
     validate_schedule(events)
 
     from trueskate_ai.sim.device import DeviceSession, DEVICES, BUNDLE_ID
@@ -241,8 +241,8 @@ def main():
     try:
         status = board_ready(client)
         a.out.mkdir(parents=True)
-        save_new(a.out / 'plan.json', dict(source=str(a.gestures or a.strokes), lift=a.lift, board_status=status,
-                                          strokes={s.name: s.samples for s in strokes}, schedule_info=info,
+        save_new(a.out / 'plan.json', dict(source=str(a.gestures or a.gestures), lift=a.lift, board_status=status,
+                                          strokes={s.name: s.samples for s in gestures}, schedule_info=info,
                                           events=events, protocol=2, training_admission=False))
         worker.connect()
         driver = worker.driver

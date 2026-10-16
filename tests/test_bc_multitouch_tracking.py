@@ -7,10 +7,10 @@ from scripts.model2.build_bc_clips import (
     TouchPeak,
     extract_touch_peaks,
     heatmaps_to_touch_tracks,
-    touch_tracks_to_strokes,
+    touch_tracks_to_gestures,
 )
-from trueskate_ai.model2.tokens import strokes_to_param_vector
-from trueskate_ai.model2.dataset import group_overlapping_strokes
+from trueskate_ai.model2.tokens import gestures_to_param_vector
+from trueskate_ai.model2.dataset import group_overlapping_gestures
 from trueskate_ai.sim.gesture_params import unpack_gesture_params
 from trueskate_ai.model1.heatmap.peaks import (
     TouchPeak as CanonicalTouchPeak,
@@ -119,33 +119,33 @@ def test_self_crossing_spline_remains_one_causal_track() -> None:
     assert (tracks[0].xs[-1], tracks[0].ys[-1]) == pytest.approx(points[-1], abs=0.02)
 
 
-def test_concurrent_tracks_assemble_as_overlapping_executable_strokes() -> None:
+def test_concurrent_tracks_assemble_as_overlapping_executable_gestures() -> None:
     times = np.arange(10, dtype=np.float64) / 30.0
     drag = np.linspace(0.20, 0.70, len(times))
     # Moving drag plus a held second finger: both must survive into clip.json's
-    # stroke schema, where interval-connected strokes become one action group.
+    # gesture schema, where interval-connected gestures become one action group.
     centers = [[(float(x), 0.65), (0.86, 0.18)] for x in drag]
     tracks = heatmaps_to_touch_tracks(_heatmap_sequence(centers), times)
-    strokes = touch_tracks_to_strokes(tracks)
+    gestures = touch_tracks_to_gestures(tracks)
 
-    assert len(strokes) == 2
-    assert strokes[0].t_start == pytest.approx(0.0)
-    assert strokes[1].t_start == pytest.approx(0.0)
-    assert strokes[0].t_end == pytest.approx(times[-1])
-    assert strokes[1].t_end == pytest.approx(times[-1])
-    assert strokes[1].params[-1] < 0.0
+    assert len(gestures) == 2
+    assert gestures[0].t_start == pytest.approx(0.0)
+    assert gestures[1].t_start == pytest.approx(0.0)
+    assert gestures[0].t_end == pytest.approx(times[-1])
+    assert gestures[1].t_end == pytest.approx(times[-1])
+    assert gestures[1].params[-1] < 0.0
 
     serialized = [
-        {"params": stroke.params.tolist(), "t_start": stroke.t_start, "t_end": stroke.t_end}
-        for stroke in strokes
+        {"params": gesture.params.tolist(), "t_start": gesture.t_start, "t_end": gesture.t_end}
+        for gesture in gestures
     ]
-    groups = group_overlapping_strokes(serialized)
+    groups = group_overlapping_gestures(serialized)
     assert len(groups) == 1
     assert len(groups[0]) == 2
 
-    vector, count = strokes_to_param_vector(np.stack([stroke.params for stroke in strokes]))
+    vector, count = gestures_to_param_vector(np.stack([gesture.params for gesture in gestures]))
     recipe = unpack_gesture_params(np.asarray(vector), num_gestures=count)
     assert count == 2
     assert len(recipe["gestures"]) == 2
-    assert recipe["delays"][0] == pytest.approx(strokes[1].params[-1])
+    assert recipe["delays"][0] == pytest.approx(gestures[1].params[-1])
     assert recipe["delays"][0] < 0.0

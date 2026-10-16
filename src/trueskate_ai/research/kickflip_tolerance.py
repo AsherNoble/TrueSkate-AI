@@ -44,24 +44,24 @@ def base_candidate(repo):
     return candidate
 
 
-def jitter_stroke(name, points, durations_s, distance, rng):
+def jitter_gesture(name, points, durations_s, distance, rng):
     """Move every point `distance` in a uniformly random direction.
 
-    The whole stroke is redrawn while any point leaves the screen or any segment crosses a
+    The whole gesture is redrawn while any point leaves the screen or any segment crosses a
     protected control (the recipe's own safety check), so the kept directions are uniform
-    among valid strokes. The redraw count is logged.
+    among valid gestures. The redraw count is logged.
     """
     if distance == 0:
-        return recipe.direct_stroke(name, points, durations_s), dict(
+        return recipe.direct_gesture(name, points, durations_s), dict(
             distance=0., angles_rad=None, redraws=0, base_points=points, points=points)
     for redraws in range(MAX_REDRAWS):
         angles = rng.uniform(0., 2 * math.pi, len(points))
         moved = [[x + distance * math.cos(a), y + distance * math.sin(a)] for (x, y), a in zip(points, angles)]
         try:
-            stroke = recipe.direct_stroke(name, moved, durations_s)
+            gesture = recipe.direct_gesture(name, moved, durations_s)
         except ValueError:
             continue
-        return stroke, dict(distance=distance, angles_rad=angles.tolist(), redraws=redraws,
+        return gesture, dict(distance=distance, angles_rad=angles.tolist(), redraws=redraws,
                             base_points=points, points=moved)
     raise ValueError(f'{name}: no valid directions within {MAX_REDRAWS} draws at distance {distance}')
 
@@ -69,7 +69,7 @@ def jitter_stroke(name, points, durations_s, distance, rng):
 def build_plan(repo, *, seed=SEED, levels=LEVELS, per_level=PER_LEVEL, source_commit=None):
     base = base_candidate(repo)
     params = base['parameters']
-    strokes = dict(pop=([params['pop_start'], params['pop_end']], [params['pop_s']]),
+    gestures = dict(pop=([params['pop_start'], params['pop_end']], [params['pop_s']]),
                    flick=(params['flick_points'], params['flick_durations_s']))
     # Blocks of one attempt per level, shuffled within each block, so drift and an early stop
     # affect every level alike.
@@ -79,8 +79,8 @@ def build_plan(repo, *, seed=SEED, levels=LEVELS, per_level=PER_LEVEL, source_co
     attempts = []
     for number, distance in enumerate(order, 1):
         rng = np.random.default_rng([seed, number])
-        pop, pop_jitter = jitter_stroke('pop', *strokes['pop'], distance, rng)
-        flick, flick_jitter = jitter_stroke('flick', *strokes['flick'], distance, rng)
+        pop, pop_jitter = jitter_gesture('pop', *gestures['pop'], distance, rng)
+        flick, flick_jitter = jitter_gesture('flick', *gestures['flick'], distance, rng)
         candidate = recipe.seal(dict(id=f'attempt_{number:02d}', experiment=EXPERIMENT, level=distance,
             contacts=[push, pop, flick, catch], pop_wait_s=base['pop_wait_s'], catch_wait_s=base['catch_wait_s'],
             base_candidate=BASE_CANDIDATE, base_sha256=base['sha256'], jitter=dict(pop=pop_jitter, flick=flick_jitter),
@@ -301,8 +301,8 @@ def render_paths(plan, out_dir):
     for level in plan['levels']:
         canvas = np.full((height, width, 3), 255, np.uint8)
         for attempt in (a for a in plan['attempts'] if a['level'] == level):
-            for stroke, colour in zip(attempt['candidate']['contacts'][1:3], ((40, 40, 220), (220, 120, 30))):
-                points = [(int(x * width), int(y * height)) for x, y in stroke['points']]
+            for gesture, colour in zip(attempt['candidate']['contacts'][1:3], ((40, 40, 220), (220, 120, 30))):
+                points = [(int(x * width), int(y * height)) for x, y in gesture['points']]
                 cv2.polylines(canvas, [np.array(points, np.int32)], False, colour, 1, cv2.LINE_AA)
                 cv2.circle(canvas, points[0], 3, colour, -1, cv2.LINE_AA)
         base = plan['attempts'][0]['candidate']['jitter']

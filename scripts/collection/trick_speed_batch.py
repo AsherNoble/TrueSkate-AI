@@ -53,7 +53,7 @@ def main():
     live_run.add_argument('--first-run', type=int, default=0,
                           help='lowest run number to send; runs are seeded by number, so give each phone its own range')
     live_run.add_argument('--busy-lock', type=Path, default=BUSY_LOCK)
-    sub.add_parser('status', help='recordings, runs and strokes so far (rig or laptop)')
+    sub.add_parser('status', help='recordings, runs and gestures so far (rig or laptop)')
     admit = sub.add_parser('admit', help='calibrate fetched recordings and cut one clip per run (laptop)')
     admit.add_argument('--jobs', type=int, default=4)
     page = sub.add_parser('review', help='serve the spot check of a seeded pick of admitted clips until it is '

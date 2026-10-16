@@ -2,7 +2,7 @@
 
 Closes the last BC gap (step H): load a trained SequencePolicy, and each decision
 sample the recent MJPEG window, predict the next action group, and execute it via the same
-`execute_gesture_params` device path CMA-ES uses. Predicted strokes are committed
+`execute_gesture_params` device path CMA-ES uses. Predicted gestures are committed
 back into the policy's history so the next decision conditions on what was played.
 
     resample MJPEG window -> runner.replace_window -> runner.act -> to_param_vector
@@ -44,8 +44,8 @@ def _device():
                         else "cuda" if torch.cuda.is_available() else "cpu")
 
 
-def _fmt(strokes: np.ndarray) -> str:
-    s = strokes[0]
+def _fmt(gestures: np.ndarray) -> str:
+    s = gestures[0]
     return (f"start=({s[0]:.2f},{s[1]:.2f}) end=({s[4]:.2f},{s[5]:.2f}) "
             f"dur={s[6]:.3f} ease={s[7]:.2f} delay={s[8]:.3f}")
 
@@ -71,10 +71,10 @@ def _dry_run(args) -> None:
     for step in range(args.steps):
         # synthetic BGR frame at the device's native-ish portrait size
         runner.observe(rng.integers(0, 255, (455, 210, 3), dtype=np.uint8))
-        strokes = runner.act()
-        vec, n, pre_delay = runner.to_param_vector(strokes)
-        print(f"  step {step + 1}: {_fmt(strokes)}  -> {n}-slot vec (len {len(vec)}), pre_delay={pre_delay:.3f}s")
-        runner.commit(strokes)
+        gestures = runner.act()
+        vec, n, pre_delay = runner.to_param_vector(gestures)
+        print(f"  step {step + 1}: {_fmt(gestures)}  -> {n}-slot vec (len {len(vec)}), pre_delay={pre_delay:.3f}s")
+        runner.commit(gestures)
     print("\nDRY-RUN OK — observe -> act -> decode -> param-vector -> commit all run.")
 
 
@@ -121,15 +121,15 @@ def _on_device(args) -> None:
             if not frames:
                 raise RuntimeError(f"no live MJPEG frame before decision (capture error: {capture.error!r})")
             runner.replace_window(frames)
-            strokes = runner.act()
-            vec, n, pre_delay = runner.to_param_vector(strokes)
+            gestures = runner.act()
+            vec, n, pre_delay = runner.to_param_vector(gestures)
             push = args.push_every > 0 and step % args.push_every == 0
-            print(f"[{dev['name']}] step {step + 1}: {_fmt(strokes)}  pre_delay={pre_delay:.3f}s push={push}")
+            print(f"[{dev['name']}] step {step + 1}: {_fmt(gestures)}  pre_delay={pre_delay:.3f}s push={push}")
             if pre_delay > 0:
-                time.sleep(min(pre_delay, 1.0))                     # honour predicted inter-stroke wait (capped)
+                time.sleep(min(pre_delay, 1.0))                     # honour predicted inter-gesture wait (capped)
             execute_gesture_params(worker.driver, np.asarray(vec, dtype=np.float64),
                                    worker.device_w, worker.device_h, static_push=push)
-            runner.commit(strokes)
+            runner.commit(gestures)
     finally:
         capture.stop()
         worker.disconnect()

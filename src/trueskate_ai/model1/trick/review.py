@@ -2,7 +2,7 @@
 
 The spot check reuses the curved audit review UI (curved/review.py and review.html): a
 temporary 127.0.0.1 server shows each picked clip's native frames, keyboard-first, with a
-ring at the commanded position of whichever stroke is active, so gross faults show: a
+ring at the commanded position of whichever gesture is active, so gross faults show: a
 missing or extra touch, a trail far from its ring, a menu. Pressing Export saves the
 checked report in the run's review folder and stops the server, so an agent running it
 as a background job is told where the report is; importing it records the verdicts.
@@ -27,7 +27,7 @@ import numpy as np
 from trueskate_ai.model1.curved.capture import file_sha256
 from trueskate_ai.model1.curved.contract import digest, save_json
 from trueskate_ai.model1.curved.review import FRAMES, FrameCache
-from .contract import EXPERIMENT, SEED
+from .contract import EXPERIMENT, GESTURE_EVENT, SEED
 
 DEFAULT_COUNT = 20
 MAX_REPORT_BYTES = 2**20
@@ -99,11 +99,11 @@ def review_manifest(root, *, count: int = DEFAULT_COUNT, reselect: bool = False)
             raise ValueError(f'clip {row["code"]} does not hold {FRAMES} native frames')
         identity = int(row["code"])
         folders[identity] = folder
-        strokes = [{k: s[k] for k in ("family", "onset_s", "release_s", "times_ms", "command_points")}
+        gestures = [{k: s[k] for k in ("family", "onset_s", "release_s", "times_ms", "command_points")}
                    for s in meta["strokes"]]
         samples.append(dict(id=identity, code=row["code"], recording=row["recording"], run=row["run"],
                             run_kind=meta.get("run_kind"), park=meta.get("park"), device=meta.get("device"),
-                            clock_rate=meta["clock_rate"], frame_times_s=meta["frame_times_s"], strokes=strokes))
+                            clock_rate=meta["clock_rate"], frame_times_s=meta["frame_times_s"], strokes=gestures))
     manifest = dict(experiment=EXPERIMENT, sha256=selection["sha256"], ring_pt=RING_PT, samples=samples)
     return manifest, folders
 
@@ -284,14 +284,14 @@ def import_report(root, report, *, replace: bool = False) -> int:
 
 
 def summarize(root) -> dict:
-    """Recordings, runs, admission, stroke mix and spot-check counts for one run directory."""
+    """Recordings, runs, admission, gesture mix and spot-check counts for one run directory."""
     root = Path(root)
     recordings, reasons, families, durations, touches = {}, Counter(), Counter(), [], Counter()
     totals, states, timings = Counter(), Counter(), []
     for execution_path in sorted(root.glob("recordings/*/execution.json")):
         folder = execution_path.parent
         planned, execution = _read(folder/"planned.json"), _read(execution_path)
-        sent = [e for e in execution["events"] if e["kind"] == "stroke" and not e.get("skipped")]
+        sent = [e for e in execution["events"] if e["kind"] == GESTURE_EVENT and not e.get("skipped")]
         row = dict(runs_planned=len(planned["runs"]), runs_sent=len({e["run"] for e in sent}),
                    strokes_sent=len(sent), strokes_dropped=sum(bool(e.get("skipped")) for e in execution["events"]),
                    clips_admitted=0, error=execution["error"])
@@ -305,7 +305,7 @@ def summarize(root) -> dict:
             row["clips_admitted"] = len(admission.get("admitted", []))
             row["error"] = admission.get("error")
             reasons.update(admission.get("rejected", {}).values())
-            # How each stroke's label was moved onto the visible trail (admission.calibrate).
+            # How each gesture's label was moved onto the visible trail (admission.calibrate).
             timings += (admission.get("calibration") or {}).get("stroke_timing", {}).values()
         recordings[folder.name] = row
         totals.update({k: row[k] for k in ("runs_planned", "runs_sent", "strokes_sent", "strokes_dropped",
@@ -314,9 +314,9 @@ def summarize(root) -> dict:
         states[row["state"]] += 1
     for clip in admitted_clips(root):
         touches[len(clip["meta"]["strokes"])] += 1
-        for stroke in clip["meta"]["strokes"]:
-            families[stroke["family"]] += 1
-            durations.append(stroke["times_ms"][-1])
+        for gesture in clip["meta"]["strokes"]:
+            families[gesture["family"]] += 1
+            durations.append(gesture["times_ms"][-1])
     spot = Counter()
     if (root/"review"/"verdicts.json").exists():
         spot.update(v["code"] for v in _read(root/"review"/"verdicts.json")["verdicts"].values())
@@ -334,7 +334,7 @@ def summarize(root) -> dict:
 
 
 def _retiming(timings) -> dict | None:
-    """Strokes by timing source and the shifts read straight from their own trail (seconds)."""
+    """Gestures by timing source and the shifts read straight from their own trail (seconds)."""
     if not timings:
         return None
     shifts = [t["shift_s"] for t in timings if t["source"] == "trail"]
@@ -351,17 +351,17 @@ def summary_markdown(summary: dict) -> str:
              f"- Recordings: {t.get('recordings', 0)} ({states}).",
              f"- Clips admitted: {t.get('clips_admitted', 0)}"
              f"{'' if share is None else f' ({share:.0%} of runs sent)'}.",
-             f"- Runs planned {t.get('runs_planned', 0)}, sent {t.get('runs_sent', 0)}; strokes sent "
+             f"- Runs planned {t.get('runs_planned', 0)}, sent {t.get('runs_sent', 0)}; gestures sent "
              f"{t.get('strokes_sent', 0)}, dropped at run time {t.get('strokes_dropped', 0)}.",
              f"- Spot check: {spot['picked']} picked, {spot['ok']} OK, {spot['fault']} fault, "
              f"{spot['unsure']} unsure, {spot['unjudged']} unjudged."]
     if summary["stroke_ms"]:
         s = summary["stroke_ms"]
-        lines.append(f"- Stroke durations: {s['min']}–{s['max']} ms, median {s['median']:g} ms, "
+        lines.append(f"- Gesture durations: {s['min']}–{s['max']} ms, median {s['median']:g} ms, "
                      f"{s['share_under_200']:.0%} under 200 ms.")
     if summary.get("retiming"):
         r, by = summary["retiming"], summary["retiming"]["by_source"]
-        line = f"- Labels on the visible trail: {by.get('trail', 0)} of {r['strokes']} strokes read from their own trail"
+        line = f"- Labels on the visible trail: {by.get('trail', 0)} of {r['strokes']} gestures read from their own trail"
         if r["trail_shift_s"]:
             g = r["trail_shift_s"]
             line += (f" (moved {g['median']*1000:+.0f} ms median; 10–90%: {g['p10']*1000:+.0f} to "

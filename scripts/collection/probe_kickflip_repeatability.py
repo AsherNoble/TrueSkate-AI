@@ -162,7 +162,7 @@ def live_batch(root, *, candidate_id, repeatability, env_file, ready_note, setti
         def perform(payload):
             return driver.execute('actions', payload)
         def perform_direct(payload):
-            # One stroke = one XCTest record via WDA's direct endpoint (no Appium hop).
+            # One gesture = one XCTest record via WDA's direct endpoint (no Appium hop).
             request = urllib.request.Request(base + '/wda/perform_trick_gestures', method='POST',
                 data=json.dumps(payload).encode(), headers={'Content-Type': 'application/json'})
             with urllib.request.urlopen(request, timeout=10) as response:
@@ -317,7 +317,7 @@ def main():
         manifest = experiment.load_manifest(root)
         print(json.dumps(dict(setup_attempts=experiment.setup_attempt_count(root), setup_limit=experiment.SETUP_LIMIT,
             review_approved=(root / 'approval.json').exists(), candidates=[dict(id=c['id'], varied=c['varied'],
-            strokes=[(x['name'], x['points'], x['encoded_duration_s']) for x in c['contacts']],
+            gestures=[(x['name'], x['points'], x['encoded_duration_s']) for x in c['contacts']],
             catch_wait_s=c['catch_wait_s']) for c in manifest['candidates']],
             rejected=manifest['rejected'], repeats=experiment.report(root)), indent=2))
 

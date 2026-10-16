@@ -60,12 +60,12 @@ def test_plan_is_deterministic_blocked_and_changes_only_pop_and_flick(plan):
 
 def test_every_pop_and_flick_point_moves_exactly_the_distance(plan):
     for attempt in plan['attempts']:
-        for key, stroke, count in zip(('pop', 'flick'), attempt['candidate']['contacts'][1:3], (2, 3)):
+        for key, gesture, count in zip(('pop', 'flick'), attempt['candidate']['contacts'][1:3], (2, 3)):
             jitter = attempt['candidate']['jitter'][key]
-            assert len(stroke['points']) == len(jitter['base_points']) == count
-            for moved, original in zip(stroke['points'], jitter['base_points']):
+            assert len(gesture['points']) == len(jitter['base_points']) == count
+            for moved, original in zip(gesture['points'], jitter['base_points']):
                 assert math.dist(moved, original) == pytest.approx(attempt['level'], abs=1e-12)
-            recipe.safe_scaled_path(stroke['points'])  # On screen and clear of protected controls.
+            recipe.safe_scaled_path(gesture['points'])  # On screen and clear of protected controls.
 
 
 class Directions:
@@ -80,10 +80,10 @@ class Directions:
                                         ([[.03, .6], [.2, .6]], math.pi)])          # Left off the screen.
 def test_jitter_redraws_directions_that_leave_the_screen_or_hit_controls(points, bad):
     up = 3 * math.pi / 2
-    stroke, jitter = module.jitter_stroke('pop', points, [.075], .05, Directions([bad, bad], [up, up]))
+    gesture, jitter = module.jitter_gesture('pop', points, [.075], .05, Directions([bad, bad], [up, up]))
     assert jitter['redraws'] == 1 and jitter['angles_rad'] == [up, up]
-    recipe.safe_scaled_path(stroke['points'])
-    for moved, original in zip(stroke['points'], points):
+    recipe.safe_scaled_path(gesture['points'])
+    for moved, original in zip(gesture['points'], points):
         assert moved == pytest.approx([original[0], original[1] - .05])
 
 
@@ -91,7 +91,7 @@ def test_jitter_gives_up_rather_than_clipping(monkeypatch):
     monkeypatch.setattr(module, 'MAX_REDRAWS', 20)
     # Inside the reset button every direction stays inside a control.
     with pytest.raises(ValueError, match='no valid directions'):
-        module.jitter_stroke('pop', [[.5, .03], [.5, .04]], [.075], .01, np.random.default_rng(0))
+        module.jitter_gesture('pop', [[.5, .03], [.5, .04]], [.075], .01, np.random.default_rng(0))
 
 
 def test_changed_base_recipe_is_refused(monkeypatch):

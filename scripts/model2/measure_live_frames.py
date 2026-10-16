@@ -2,7 +2,7 @@
 
 ``run`` (rig only): for each MJPEG config, one recorded minute on XR1 in The Workshop through the
 trick runner's ``record_minute``: five die-five markers, a reset 3 s before each later marker, and
-no gameplay strokes. The stream is read from a raw socket throughout, and each JPEG is stamped
+no gameplay gestures. The stream is read from a raw socket throughout, and each JPEG is stamped
 with the rig's monotonic clock when its last byte arrives. (A ``requests`` reader blocks until a
 full chunk arrives, so a frame's tail would wait for the next frame.) Every frame's arrival, size
 and hash are saved, plus the JPEGs around each marker. The reader stops before the recording is
@@ -41,7 +41,7 @@ import numpy as np
 EXPERIMENT = "LIVE-FRAMES"
 DEVICE = "iPhone_XR"
 PARK = "The Workshop"
-SETTINGS_NOTE = "Workshop saved flatground waypoint; die-five markers and resets only, no gameplay strokes"
+SETTINGS_NOTE = "Workshop saved flatground waypoint; die-five markers and resets only, no gameplay gestures"
 BUSY_LOCK = Path("/Users/training-server/trueskate-ai-runtime/tmp/RIG-BUSY-curved-recording")
 MARKER_SLOTS = (("start", 1.5), ("m1", 12.), ("middle", 29.), ("m2", 45.), ("end", 57.))
 RESET_SLOTS = (9., 26., 42., 54.)  # 3 s before each later marker, as in the trick minute
@@ -263,8 +263,8 @@ def run(args, configs) -> None:
         def perform(payload):
             return driver.execute("actions", payload)
 
-        def no_strokes(payload):
-            raise RuntimeError("this measurement sends no gameplay strokes")
+        def no_gestures(payload):
+            raise RuntimeError("this measurement sends no gameplay gestures")
 
         commands = sorted([dict(kind="control", role=role, slot_s=slot, payload=marker_payload())
                            for role, slot in MARKER_SLOTS]
@@ -303,7 +303,7 @@ def run(args, configs) -> None:
                                        recorder=StoppingRecorder(XCTestScreenRecorder(driver, fps=60), stream),
                                        timing=WDAActionTimingCapture(wda_port=cfg["wda_port"],
                                                                      expected_revision=live.WDA_REVISION),
-                                       perform=perform, perform_direct=no_strokes, guard=guard,
+                                       perform=perform, perform_direct=no_gestures, guard=guard,
                                        revision=live.WDA_REVISION, metadata=metadata)
             finally:
                 stream.stop()

@@ -55,9 +55,9 @@ def test_schedule_parser_and_sparse_budget(events):
     [(-1, 20, 200), (0, 21, 201)], [(0, 20, 200), (1e10, 21, 201)],
     [(0, 20, 200), (0, 21, 201)], [(0, 20, 200), (1, float('nan'), 201)],
 ])
-def test_invalid_strokes_refused_before_allocating_schedule(samples):
+def test_invalid_gestures_refused_before_allocating_schedule(samples):
     with pytest.raises(ValueError):
-        hp.build_schedule([hp.Stroke('bad', samples)])
+        hp.build_schedule([hp.Gesture('bad', samples)])
 
 
 @pytest.mark.parametrize('state,active', [(4, None), (4, 'com.apple.springboard'), (3, 'skate'), (None, 'skate')])

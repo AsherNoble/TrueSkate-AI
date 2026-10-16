@@ -6,7 +6,7 @@ expert recordings labelled by Model 1. Collection runs on physical iPhones
 through Appium/WebDriverAgent and bounded XCTest screen recordings.
 
 **Current work:** the first end-to-end kickflip in Workshop, which needs a rough
-curved Model 1 that can read real trick-speed strokes. Linear Model 1 is the
+curved Model 1 that can read real trick-speed gestures. Linear Model 1 is the
 current trained model; hold, heatmap and temporal variants remain runnable
 experiments. Model 2 is implemented but unfinished; this repository does not
 claim an expert gameplay policy. CMA-ES and PPO are retired; their history and
@@ -48,7 +48,7 @@ never commit credentials. XR phones normally live on `training-server`.
 | `collection` | XCTest capture, calibration, contamination guards and colour capture |
 | `data` | Sampling, clip decoding, labels, corpus audits/manifests and shards |
 | `model1` | Hold, heatmap, temporal and linear variants; scaling and certification |
-| `model2` | Gesture tokens, stroke assembly, sequence policy and inference |
+| `model2` | Gesture tokens, gesture assembly, sequence policy and inference |
 | `sim` | Device sessions, normalised gestures and touch execution |
 | `vision` | Shared scene, board and OCR utilities |
 | `monitoring`, `utils` | Monitoring and shared utilities |

@@ -13,9 +13,9 @@ import torch
 
 from trueskate_ai.model1.curved.capture import file_sha256
 from trueskate_ai.model1.curved.contract import save_json
-from trueskate_ai.model1.trick.contract import SCHEMA, Stroke
+from trueskate_ai.model1.trick.contract import SCHEMA, Gesture
 from trueskate_ai.model1.trick import dataset as data
-from trueskate_ai.model1.trick.decoder import decode, fit_pieces, score_clip, segment
+from trueskate_ai.model1.trick.decoder import decode, fit_segments, score_clip, gesture_spans
 
 POP = ((.50, .57), (.53, .77))
 FLICK = ((.40, .45), (.52, .43), (.60, .30))
@@ -23,16 +23,16 @@ PUSH = ((.45, .60), (.70, .62))
 
 
 def row(points, times_ms, family, onset):
-    stroke = Stroke(tuple(points), tuple(times_ms), family)
-    return dict(stroke.to_dict(), onset_s=onset, release_s=onset + times_ms[-1]/1000)
+    gesture = Gesture(tuple(points), tuple(times_ms), family)
+    return dict(gesture.to_dict(), onset_s=onset, release_s=onset + times_ms[-1]/1000)
 
 
-def meta_for(*strokes, recording="m0001", run=1):
-    strokes = strokes or (row(POP, (0, 75), "pop", .505), row(FLICK, (0, 60, 100), "flick", .90))
+def meta_for(*gestures, recording="m0001", run=1):
+    gestures = gestures or (row(POP, (0, 75), "pop", .505), row(FLICK, (0, 60, 100), "flick", .90))
     times = (np.arange(120)/60).tolist()
     return dict(schema=SCHEMA, recording=recording, run=run, device="iPhone_XR", park="The Workshop", clock_rate=1.,
                 frame_times_s=times, source_frame_pts_s=times, source_frame_numbers=list(range(120)),
-                strokes=list(strokes), admission=dict(accepted=True, frame_count=120))
+                strokes=list(gestures), admission=dict(accepted=True, frame_count=120))
 
 
 @pytest.fixture(scope="module")
@@ -52,14 +52,14 @@ def clip(data_root, native, root="trial", recording="m0001", run=1, meta=None):
     return folder
 
 
-def test_targets_mark_each_stroke_and_its_path():
+def test_targets_mark_each_gesture_and_its_path():
     meta = meta_for()
     label = data.targets(meta)
     assert label["count"] == 2 and label["contact"].sum() == (35 - 30 + 1) + (60 - 54 + 1)
     assert int(np.argmax(label["down"][:45])) == 30 and int(np.argmax(label["up"][:45])) == 35
     assert int(np.argmax(label["down"][45:])) + 45 == 54 and int(np.argmax(label["up"][45:])) + 45 == 60
-    np.testing.assert_allclose(label["xy"][30], Stroke(POP, (0, 75), "pop").command_points()[0], atol=1e-6)
-    np.testing.assert_allclose(label["xy"][60], Stroke(FLICK, (0, 60, 100), "flick").command_points()[-1], atol=1e-6)
+    np.testing.assert_allclose(label["xy"][30], Gesture(POP, (0, 75), "pop").command_points()[0], atol=1e-6)
+    np.testing.assert_allclose(label["xy"][60], Gesture(FLICK, (0, 60, 100), "flick").command_points()[-1], atol=1e-6)
     assert not label["mask"][36:54].any() and label["xy"][40].tolist() == [0, 0]
 
 
@@ -142,51 +142,51 @@ def logits_for(meta, sharp=8.):
             for k in ("contact", "down", "up")}, label
 
 
-def test_decoder_recovers_strokes_and_scores_them():
+def test_decoder_recovers_gestures_and_scores_them():
     meta = meta_for()
     signals, label = logits_for(meta)
-    strokes = decode(label["xy"], signals["contact"], signals["down"], signals["up"], label["times"])
-    assert [(s["onset_frame"], s["release_frame"]) for s in strokes] == [(30, 35), (54, 60)]
-    assert strokes[1]["pieces"] == 2 and abs(strokes[1]["onset_s"] - .9) < .01
-    score = score_clip(strokes, meta)
+    gestures = decode(label["xy"], signals["contact"], signals["down"], signals["up"], label["times"])
+    assert [(s["onset_frame"], s["release_frame"]) for s in gestures] == [(30, 35), (54, 60)]
+    assert gestures[1]["pieces"] == 2 and abs(gestures[1]["onset_s"] - .9) < .01
+    score = score_clip(gestures, meta)
     assert score["count_ok"] and score["clip_pass_0.02"] and all(s["timing_ok"] for s in score["strokes"])
-    late = [dict(s, onset_s=s["onset_s"] + .05, release_s=s["release_s"] + .05) for s in strokes]
+    late = [dict(s, onset_s=s["onset_s"] + .05, release_s=s["release_s"] + .05) for s in gestures]
     assert not any(s["timing_ok"] for s in score_clip(late, meta)["strokes"])
-    moved = [dict(s, points=(np.asarray(s["points"]) + [.03, 0]).tolist()) for s in strokes]
+    moved = [dict(s, points=(np.asarray(s["points"]) + [.03, 0]).tolist()) for s in gestures]
     result = score_clip(moved, meta)
     assert result["clip_pass_0.05"] and not result["clip_pass_0.02"]
-    missing = score_clip(strokes[:1], meta)
+    missing = score_clip(gestures[:1], meta)
     assert not missing["count_ok"] and not missing["strokes"][1]["matched"]
 
 
-def test_segment_limits_count_and_length():
+def test_gesture_spans_limit_count_and_length():
     times = np.arange(120)/60
     contact, down, up = (np.full(120, -6.) for _ in range(3))
-    assert segment(contact, down, up, times) == []
-    for start in (10, 30, 50, 70, 90):  # five clear strokes: only four are kept
+    assert gesture_spans(contact, down, up, times) == []
+    for start in (10, 30, 50, 70, 90):  # five clear gestures: only four are kept
         contact[start:start + 6] = 6.
         down[start], up[start + 5] = 6., 6.
-    assert len(segment(contact, down, up, times)) == 4
+    assert len(gesture_spans(contact, down, up, times)) == 4
     long = np.full(120, -6.)
-    long[10:60] = 6.  # 817 ms of contact cannot be one stroke
-    spans = segment(long, np.where(np.arange(120) == 10, 6., -6.), np.where(np.arange(120) == 59, 6., -6.), times)
+    long[10:60] = 6.  # 817 ms of contact cannot be one gesture
+    spans = gesture_spans(long, np.where(np.arange(120) == 10, 6., -6.), np.where(np.arange(120) == 59, 6., -6.), times)
     assert all(37 >= b - a >= 2 for a, b in spans)
     single = np.full(120, -6.)
-    single[20] = 6.  # one frame of contact is not a stroke
-    assert segment(single, single, single, times) == []
+    single[20] = 6.  # one frame of contact is not a gesture
+    assert gesture_spans(single, single, single, times) == []
 
 
-def test_fit_pieces_finds_a_kink_and_keeps_limits():
+def test_fit_segments_finds_a_kink_and_keeps_limits():
     times = np.arange(19)/60
-    stroke = Stroke(((.4, .4), (.6, .4), (.6, .6)), (0, 150, 300), "random")
-    xy = stroke.positions(times)
-    indices, ms, residual = fit_pieces(times, xy)
+    gesture = Gesture(((.4, .4), (.6, .4), (.6, .6)), (0, 150, 300), "random")
+    xy = gesture.positions(times)
+    indices, ms, residual = fit_segments(times, xy)
     assert len(indices) == 3 and residual < .01 and abs(ms[indices[1]] - 150) <= 17
     for seed in range(5):
         noisy = xy + np.random.default_rng(seed).normal(0, .05, xy.shape)
-        indices, ms, _ = fit_pieces(times, noisy)
+        indices, ms, _ = fit_segments(times, noisy)
         assert 1 <= len(indices) - 1 <= 4 and min(np.diff(ms[indices])) >= 40
-    indices, ms, _ = fit_pieces(times[:3], xy[:3])  # 33 ms: one piece
+    indices, ms, _ = fit_segments(times[:3], xy[:3])  # 33 ms: one segment
     assert indices == [0, 2]
 
 

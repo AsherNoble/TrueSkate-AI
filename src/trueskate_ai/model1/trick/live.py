@@ -20,7 +20,7 @@ import time
 import urllib.request
 
 from trueskate_ai.model1.curved.contract import save_json
-from .contract import EXPERIMENT, SCHEMA
+from .contract import EXPERIMENT, GESTURE_EVENT, SCHEMA
 from .schedule import plan_minute
 
 WDA_REVISION = "ae50404aac12d9f8c41f6c3fa8776e97975eaef5"
@@ -124,7 +124,7 @@ def start_positions(root: Path, first_run: int = 0) -> tuple[int, int]:
     """Next recording index, and the next run number but never below ``first_run``.
 
     Runs are seeded by number, so two run folders that both start at run 0 send the same
-    strokes (the XR1 and XR2 trials did). Give each phone's batch its own run range.
+    gestures (the XR1 and XR2 trials did). Give each phone's batch its own run range.
     """
     if type(first_run) is not int or first_run < 0:
         raise ValueError("first run must be a whole number ≥ 0")
@@ -209,7 +209,7 @@ def collect(root, *, minutes, env_file, ready_note, settings_note, park, appium_
             return driver.execute("actions", payload)
 
         def perform_direct(payload):
-            # One stroke = one XCTest record via WDA's direct endpoint (no Appium hop).
+            # One gesture = one XCTest record via WDA's direct endpoint (no Appium hop).
             request = urllib.request.Request(base + "/wda/perform_trick_gestures", method="POST",
                                              data=json.dumps(payload).encode(),
                                              headers={"Content-Type": "application/json"})
@@ -237,10 +237,10 @@ def collect(root, *, minutes, env_file, ready_note, settings_note, park, appium_
                                    perform=perform, perform_direct=perform_direct, guard=guard, revision=revision,
                                    metadata=metadata)
             ownership()
-            strokes = [e for e in events if e["kind"] == "stroke"]
+            gestures = [e for e in events if e["kind"] == GESTURE_EVENT]
             print(json.dumps(dict(recording=str(out), runs=len(plan["runs"]), runs_skipped=len(plan["skipped_runs"]),
-                                  strokes_sent=sum(not e.get("skipped") for e in strokes),
-                                  strokes_dropped=sum(bool(e.get("skipped")) for e in strokes),
+                                  strokes_sent=sum(not e.get("skipped") for e in gestures),
+                                  strokes_dropped=sum(bool(e.get("skipped")) for e in gestures),
                                   next_run=plan["next_run"])), flush=True)
             index, next_run = index + 1, plan["next_run"]
     finally:

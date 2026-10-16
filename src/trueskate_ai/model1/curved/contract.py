@@ -58,11 +58,11 @@ class Gesture:
         if not MIN_DURATION_MS <= self.times_ms[-1] <= MAX_DURATION_MS:
             raise ValueError("duration outside 300–1200 ms")
         if any(b-a < MIN_SEGMENT_MS for a, b in zip(self.times_ms, self.times_ms[1:])):
-            raise ValueError("every movement/pause must last at least 100 ms")
+            raise ValueError("every segment (moving or a pause) must last at least 100 ms")
         if self.sampler not in SAMPLERS:
             raise ValueError("unknown sampler")
         if all(p == self.points[0] for p in self.points):
-            raise ValueError("a gesture must contain movement")
+            raise ValueError("a curved gesture needs at least one moving segment")
 
     def payload(self) -> dict:
         return TimedWaypoints(self.points, self.times_ms).payload(WIDTH, HEIGHT)

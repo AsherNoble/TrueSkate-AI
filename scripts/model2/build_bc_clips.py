@@ -1,16 +1,16 @@
 """Build Model 2 training clips: run Model 1 over expert recordings -> clip.json.
 
 This is the missing bridge (step D+E) between the two BC models. Model 1 (the
-trained trace extractor) predicts zero or more touch peaks from each frame of an
+trained trail extractor) predicts zero or more touch peaks from each frame of an
 expert recording.  Peaks are associated causally across frames before
-`bc.assemble.assemble_strokes` turns each touch track into the discrete strokes
+`bc.assemble.assemble_gestures` turns each touch track into the discrete gestures
 Asher actually made; we write them as the `clip.json` that
 `bc.sequence_dataset.SequenceDataset` consumes to train Model 2.
 
     expert clip dir (frame_*.png @ fps)
         --[Model 1 per frame]-->  zero or more (x, y) peaks
         --[causal tracking]----->  concurrent touch tracks
-        --[assemble_strokes]---->  strokes [x0..y2,dur,easing,delay]
+        --[assemble_gestures]---->  gestures [x0..y2,dur,easing,delay]
         --[write_clip_json]----->  <out>/<clip>/{frame_000000.png(symlink), clip.json}
 
 The output clip dir is a valid SequenceDataset clip (frames named frame_%06d.png
@@ -45,9 +45,9 @@ _REPO_ROOT = _HERE.parent.parent
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from trueskate_ai.model2.assemble import Stroke, assemble_strokes  # noqa: E402
+from trueskate_ai.model2.assemble import Gesture, assemble_gestures  # noqa: E402
 from trueskate_ai.model2.frame_prep import prep_frame_rgb  # noqa: E402
-from trueskate_ai.model2.tokens import STROKE_BOUNDS  # noqa: E402
+from trueskate_ai.model2.tokens import GESTURE_BOUNDS  # noqa: E402
 from trueskate_ai.model1.heatmap.peaks import TouchPeak, extract_touch_peaks  # noqa: E402
 
 
@@ -239,11 +239,11 @@ def load_trace_extractor(model_path: Path, device) -> LoadedTraceExtractor:
 
 def resolve_latency_s(extractor: LoadedTraceExtractor,
                       explicit_latency_s: float | None) -> tuple[float, str]:
-    """Resolve touch/trace timing with explicit CLI precedence.
+    """Resolve touch/trail timing with explicit CLI precedence.
 
     Temporal checkpoints must carry their label latency (or receive an explicit
     override): silently borrowing the historical 0.45-second MJPEG value would
-    corrupt XCTest-labelled stroke timing.  The fallback remains only for old
+    corrupt XCTest-labelled gesture timing.  The fallback remains only for old
     single-frame checkpoints that could not have stored this metadata.
     """
 
@@ -529,20 +529,20 @@ def frames_to_touch_tracks(model, frame_paths: list[Path], times: np.ndarray,
                              max_match_distance=track_match_distance)
 
 
-def touch_tracks_to_strokes(tracks: list[TouchTrack], *, max_gap_s: float = 0.10,
-                            min_frames: int = 2) -> list[Stroke]:
+def touch_tracks_to_gestures(tracks: list[TouchTrack], *, max_gap_s: float = 0.10,
+                            min_frames: int = 2) -> list[Gesture]:
     """Fit every physical touch independently, then merge in execution order.
 
-    Fitting a track independently is what preserves overlapping strokes.  Once
+    Fitting a track independently is what preserves overlapping gestures.  Once
     merged by start time, `delay_before` is recomputed against the preceding
-    stroke, retaining a negative delay for concurrent W3C execution.
+    gesture, retaining a negative delay for concurrent W3C execution.
     """
-    strokes: list[Stroke] = []
+    gestures: list[Gesture] = []
     for track in tracks:
         if not track.times:
             continue
         observed = np.ones(len(track.times), dtype=bool)
-        strokes.extend(assemble_strokes(
+        gestures.extend(assemble_gestures(
             observed,
             np.asarray(track.xs, dtype=np.float64),
             np.asarray(track.ys, dtype=np.float64),
@@ -551,17 +551,17 @@ def touch_tracks_to_strokes(tracks: list[TouchTrack], *, max_gap_s: float = 0.10
             min_frames=min_frames,
         ))
 
-    strokes.sort(key=lambda stroke: (stroke.t_start, stroke.t_end,
-                                     float(stroke.params[0]), float(stroke.params[1])))
-    delay_lo, delay_hi = STROKE_BOUNDS[-1]
-    merged: list[Stroke] = []
+    gestures.sort(key=lambda gesture: (gesture.t_start, gesture.t_end,
+                                     float(gesture.params[0]), float(gesture.params[1])))
+    delay_lo, delay_hi = GESTURE_BOUNDS[-1]
+    merged: list[Gesture] = []
     prev_end: float | None = None
-    for stroke in strokes:
-        params = np.array(stroke.params, dtype=np.float64, copy=True)
+    for gesture in gestures:
+        params = np.array(gesture.params, dtype=np.float64, copy=True)
         params[-1] = (0.0 if prev_end is None else
-                      float(np.clip(stroke.t_start - prev_end, delay_lo, delay_hi)))
-        merged.append(Stroke(params=params, t_start=stroke.t_start, t_end=stroke.t_end))
-        prev_end = stroke.t_end
+                      float(np.clip(gesture.t_start - prev_end, delay_lo, delay_hi)))
+        merged.append(Gesture(params=params, t_start=gesture.t_start, t_end=gesture.t_end))
+        prev_end = gesture.t_end
     return merged
 
 
@@ -581,7 +581,7 @@ def _extracted_fps(clip_dir: Path) -> float | None:
     """True achieved fps from extract_expert_frames.py's `_extract_meta.json`
     sidecar, if present. Extraction never upsamples, so a source video whose
     native fps is below --fps is written out slower than requested; trusting
-    --fps blindly here would desync stroke t_start/t_end from the real frames."""
+    --fps blindly here would desync gesture t_start/t_end from the real frames."""
     meta_path = clip_dir / "_extract_meta.json"
     if not meta_path.exists():
         return None
@@ -591,7 +591,7 @@ def _extracted_fps(clip_dir: Path) -> float | None:
         return None
 
 
-def write_clip_json(out_dir: Path, fps: float, strokes: list[Stroke],
+def write_clip_json(out_dir: Path, fps: float, gestures: list[Gesture],
                     src_frames: list[Path]) -> Path:
     """Write a SequenceDataset clip: frame_%06d.png symlinks + clip.json."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -605,7 +605,7 @@ def write_clip_json(out_dir: Path, fps: float, strokes: list[Stroke],
         "fps": float(fps),
         "strokes": [
             {"params": [float(v) for v in s.params], "t_start": s.t_start, "t_end": s.t_end}
-            for s in strokes
+            for s in gestures
         ],
     }
     (out_dir / "clip.json").write_text(json.dumps(meta, indent=2))
@@ -619,12 +619,12 @@ def build_clip(clip_dir: Path, out_dir: Path, model, h: int, w: int, device,
                max_touches: int = 2, peak_nms_radius_px: int = 6,
                track_max_gap_s: float = 0.10,
                track_match_distance: float = 0.18) -> int:
-    """Label one expert clip dir -> its clip.json. Returns #strokes assembled.
+    """Label one expert clip dir -> its clip.json. Returns #gestures assembled.
 
     Model 1 is trained (self_label `latency_s`) to predict the LAGGING orange
-    trace — its touch at frame time `t` reflects the real finger at `t - latency`
+    trail — its touch at frame time `t` reflects the real finger at `t - latency`
     (see self_label.label_frames: `t = ft - latency_s`). So we place each frame's
-    touch at `t - latency_s`, otherwise every assembled stroke's t_start/t_end is
+    touch at `t - latency_s`, otherwise every assembled gesture's t_start/t_end is
     ~latency late and Model 2 would condition on post-touch frames. The shift is
     constant, so run-segmentation gaps/durations are unchanged.
     """
@@ -643,9 +643,9 @@ def build_clip(clip_dir: Path, out_dir: Path, model, h: int, w: int, device,
         track_max_gap_s=track_max_gap_s,
         track_match_distance=track_match_distance,
     )
-    strokes = touch_tracks_to_strokes(tracks, max_gap_s=track_max_gap_s)
-    write_clip_json(out_dir, clip_fps, strokes, frames)
-    return len(strokes)
+    gestures = touch_tracks_to_gestures(tracks, max_gap_s=track_max_gap_s)
+    write_clip_json(out_dir, clip_fps, gestures, frames)
+    return len(gestures)
 
 
 # --- entry points ----------------------------------------------------------
@@ -686,8 +686,8 @@ def _run(args) -> None:
                        track_max_gap_s=args.track_max_gap_s,
                        track_match_distance=args.track_match_distance)
         total += n
-        print(f"  {rel}: {n} strokes -> {out/'clip.json'}")
-    print(f"done: {len(clip_dirs)} clips, {total} strokes total")
+        print(f"  {rel}: {n} gestures -> {out/'clip.json'}")
+    print(f"done: {len(clip_dirs)} clips, {total} gestures total")
 
 
 def _smoke() -> None:
@@ -706,21 +706,21 @@ def _smoke() -> None:
     from trueskate_ai.model2.dataset import SequenceDataset
 
     fps = 30.0
-    g1 = dict(waypoints=[(0.30, 0.72), (0.46, 0.50), (0.74, 0.44)], dur=0.40)
-    g2 = dict(waypoints=[(0.60, 0.40), (0.50, 0.60), (0.40, 0.80)], dur=0.30)
+    g1 = dict(points=[(0.30, 0.72), (0.46, 0.50), (0.74, 0.44)], dur=0.40)
+    g2 = dict(points=[(0.60, 0.40), (0.50, 0.60), (0.40, 0.80)], dur=0.30)
     t1 = np.arange(0.10, 0.10 + g1["dur"] + 1e-9, 1 / fps)
     t2 = np.arange(0.80, 0.80 + g2["dur"] + 1e-9, 1 / fps)
     clip_t = np.concatenate([np.arange(0.0, 0.10, 1 / fps), t1, np.arange(0.55, 0.80, 1 / fps), t2,
                              np.arange(1.15, 1.30, 1 / fps)])
-    l1 = label_frames(g1["waypoints"], g1["dur"], 1.0, list(clip_t - t1[0]))
-    l2 = label_frames(g2["waypoints"], g2["dur"], 1.0, list(clip_t - t2[0]))
+    l1 = label_frames(g1["points"], g1["dur"], 1.0, list(clip_t - t1[0]))
+    l2 = label_frames(g2["points"], g2["dur"], 1.0, list(clip_t - t2[0]))
     active = np.array([a.active or b.active for a, b in zip(l1, l2)])
     xs = np.array([a.x if a.active else b.x for a, b in zip(l1, l2)])
     ys = np.array([a.y if a.active else b.y for a, b in zip(l1, l2)])
     times = clip_t
 
-    strokes = assemble_strokes(active, xs, ys, times)
-    assert len(strokes) == 2, f"expected 2 strokes, got {len(strokes)}"
+    gestures = assemble_gestures(active, xs, ys, times)
+    assert len(gestures) == 2, f"expected 2 gestures, got {len(gestures)}"
 
     with tempfile.TemporaryDirectory() as td:
         src = Path(td) / "src"
@@ -731,7 +731,7 @@ def _smoke() -> None:
             cv2.imwrite(str(p), np.zeros((208, 96, 3), dtype=np.uint8))  # blank portrait frames
             frame_paths.append(p)
         out = Path(td) / "clip0"
-        cj = write_clip_json(out, fps, strokes, frame_paths)
+        cj = write_clip_json(out, fps, gestures, frame_paths)
         assert cj.exists()
         loaded = json.loads(cj.read_text())
         assert loaded["fps"] == fps and len(loaded["strokes"]) == 2
@@ -744,7 +744,7 @@ def _smoke() -> None:
         assert tuple(item["frames"].shape) == (cfg.n_frames, 3, cfg.img_h, cfg.img_w), item["frames"].shape
         assert tuple(item["target"].shape) == (cfg.m_out, 9), item["target"].shape
     print("SMOKE OK — synthesized clip.json round-trips through SequenceDataset "
-          f"(2 strokes, frames {cfg.n_frames}×3×{cfg.img_h}×{cfg.img_w})")
+          f"(2 gestures, frames {cfg.n_frames}×3×{cfg.img_h}×{cfg.img_w})")
 
 
 def main() -> None:
@@ -772,7 +772,7 @@ def main() -> None:
     ap.add_argument("--track-match-distance", type=float, default=0.18,
                     help="Maximum normalised residual from a track's motion prediction.")
     ap.add_argument("--latency-s", type=float, default=None,
-                    help="Explicit trace-latency override. Default: checkpoint latency_s; only "
+                    help="Explicit trail-latency override. Default: checkpoint latency_s; only "
                          "metadata-free legacy checkpoints fall back to 0.45s. Temporal "
                          "checkpoints without metadata fail instead of assuming the wrong path.")
     args = ap.parse_args()

@@ -63,7 +63,7 @@ class Timing:
 
 
 def direct(clock, overhead, calls=None):
-    """Fake /wda/perform_trick_gestures: blocks for the stroke plus overhead; no WDA timing record."""
+    """Fake /wda/perform_trick_gestures: blocks for the gesture plus overhead; no WDA timing record."""
     def perform_direct(payload):
         if calls is not None:
             calls.append((payload, clock()))
@@ -72,7 +72,7 @@ def direct(clock, overhead, calls=None):
     return perform_direct
 
 
-def test_candidates_preserve_push_and_send_each_stroke_alone(experiment):
+def test_candidates_preserve_push_and_send_each_gesture_alone(experiment):
     manifest = module.load_manifest(experiment)
     assert len(manifest['candidates']) == 21 and manifest['rejected'] == []
     first = manifest['candidates'][0]
@@ -85,11 +85,11 @@ def test_candidates_preserve_push_and_send_each_stroke_alone(experiment):
         assert {k: v for k, v in candidate['parameters'].items() if k not in candidate['varied']} == \
             {k: v for k, v in module.KICKFLIP.items() if k not in candidate['varied']}
     for candidate in manifest['candidates']:
-        for stroke in candidate['contacts']:
+        for gesture in candidate['contacts']:
             # One gesture, one straight segment, one XCTest record (GESTURES.md hard rule).
-            assert stroke['transport'] == 'wda_perform_trick_gestures'
-            assert len(stroke['payload']['gestures']) == 1
-            assert len(stroke['payload']['gestures'][0]['waypoints']) in (2, 3)
+            assert gesture['transport'] == 'wda_perform_trick_gestures'
+            assert len(gesture['payload']['gestures']) == 1
+            assert len(gesture['payload']['gestures'][0]['waypoints']) in (2, 3)
     first['contacts'][0]['payload']['gestures'][0]['waypoints'][1]['duration_ms'] = 21
     with pytest.raises(ValueError, match='hash'):
         module.verify_seal(first)
@@ -98,7 +98,7 @@ def test_candidates_preserve_push_and_send_each_stroke_alone(experiment):
 @pytest.mark.parametrize('points', [[(.5, .5), (.05, .4)], [(.5, .5), (float('nan'), .6)], [(.5, .5), (1.1, .6)]])
 def test_unsafe_geometry_rejected(points):
     with pytest.raises(ValueError):
-        module.direct_stroke('bad', points, [.1])
+        module.direct_gesture('bad', points, [.1])
 
 
 @pytest.mark.parametrize('failure', [None, 'start', 'slow_start', 'execution', 'interrupt', 'exit',
@@ -141,9 +141,9 @@ def test_trial_retains_one_retrieval_and_all_failures(tmp_path, monkeypatch, fai
     monkeypatch.setattr(module, 'validate_action_timing_report', validate)
     def sleep(seconds):
         clock.sleep(seconds + (.2 if failure == 'sleep' else 0))
-    stroke = direct(clock, .27, calls)
+    gesture = direct(clock, .27, calls)
     def perform_direct(payload):
-        result = stroke(payload)
+        result = gesture(payload)
         if len(calls) == 3 and failure in ('execution', 'interrupt', 'exit'):  # The push.
             raise {'execution': OSError, 'interrupt': KeyboardInterrupt, 'exit': SystemExit}[failure]('synthetic failure')
         return result
@@ -489,7 +489,7 @@ def test_retrieved_pre_gameplay_movie_can_migrate_but_gameplay_cannot(experiment
         module.prepare_manifest(REPO, experiment)
 
 
-def test_full_screen_guards_do_not_stretch_stroke_gaps(tmp_path, monkeypatch):
+def test_full_screen_guards_do_not_stretch_gesture_gaps(tmp_path, monkeypatch):
     clock, recorder, timing = Clock(), Recorder(), Timing()
     candidate = module.prepare_manifest(REPO)['candidates'][0]
     def perform(payload):
@@ -509,7 +509,7 @@ def test_full_screen_guards_do_not_stretch_stroke_gaps(tmp_path, monkeypatch):
     assert clock() - 1.4 < 60  # Initial full guard occurs before recorder.start().
 
 
-def test_slow_wda_returns_never_overrun_the_strokes(tmp_path, monkeypatch):
+def test_slow_wda_returns_never_overrun_the_gestures(tmp_path, monkeypatch):
     # Trial 06: every call took ~0.69 s; a contact timed from a previous start was already late.
     clock, recorder, timing = Clock(), Recorder(), Timing()
     candidate = module.prepare_manifest(REPO)['candidates'][0]
@@ -603,7 +603,7 @@ def test_superseded_procedure_still_requires_assessed_gameplay(experiment):
         module.prepare_manifest(REPO, experiment, 'reason')
 
 
-def test_filmed_strokes_are_single_straight_contacts():
+def test_filmed_gestures_are_single_straight_contacts():
     pop, flick, catch = module.prepare_manifest(REPO)['candidates'][0]['contacts'][1:]
     assert pop['payload'] == {'gestures': [{'waypoints': [dict(x=209, y=501), dict(x=229, y=730, duration_ms=75)]}]}
     assert flick['payload']['gestures'][0]['waypoints'][-1]['duration_ms'] == 100
@@ -611,9 +611,9 @@ def test_filmed_strokes_are_single_straight_contacts():
     assert (hold[0]['x'], hold[0]['y']) == (hold[1]['x'], hold[1]['y']) and hold[1]['duration_ms'] == 520
 
 
-def test_strokes_cannot_reach_protected_controls():
+def test_gestures_cannot_reach_protected_controls():
     with pytest.raises(ValueError, match='protected'):
-        module.direct_stroke('pop', [[.505, .56], [.555, .98]], [.075])
+        module.direct_gesture('pop', [[.505, .56], [.555, .98]], [.075])
 
 
 def test_three_point_flick_presses_then_snaps():
@@ -621,7 +621,7 @@ def test_three_point_flick_presses_then_snaps():
     waypoints = flick['payload']['gestures'][0]['waypoints']
     assert [w.get('duration_ms') for w in waypoints] == [None, 50, 40] and flick['encoded_duration_s'] == .09
     with pytest.raises(ValueError, match='two or three points'):
-        module.direct_stroke('flick', [[.5, .5]] * 4, [.01] * 3)
+        module.direct_gesture('flick', [[.5, .5]] * 4, [.01] * 3)
 
 
 def add_recipe_attempt(root, relative, candidate, *, trick='KICKFLIP', status='landed', assessed=True):

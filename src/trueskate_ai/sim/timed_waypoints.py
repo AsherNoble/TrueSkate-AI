@@ -1,4 +1,4 @@
-"""Explicit normalized positions and integer millisecond timestamps; linear intervals."""
+"""Explicit normalized points and integer millisecond timestamps, joined by straight segments."""
 from dataclasses import dataclass
 import math
 from trueskate_ai.data.control_hitboxes import segment_is_safe

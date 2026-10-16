@@ -1,9 +1,9 @@
 """Plan board-timed schedules for the ESP32 Bluetooth pointer (iOS AssistiveTouch).
 
-Measured on XR2 (iOS 18.7.10, AssistiveTouch defaults) on 2026-10-04, 49 drags:
+Measured on XR2 (iOS 18.7.10, AssistiveTouch defaults) on 2026-10-04, 49 gestures:
 each relative report c = (dx, dy) counts moves the cursor D(|c|) points along c.
 D does not depend on report timing (15/30/60 ms gave the same result) or on earlier
-reports, and x and y behave the same. D is piecewise linear in |c|:
+reports, and x and y behave the same. D is segmentwise linear in |c|:
 
     |c| < 3     D = 0.2017 |c|
     |c| >= 3    D = min(max(1.0009|c| - 2.107, 2.4485|c| - 39.405), 0.965|c| + 66.997)
@@ -12,7 +12,7 @@ The fit is 0.14 pt rms per report (max 0.44). Reports reach the phone on the 15 
 Bluetooth connection interval, so schedules sit on a 15 ms grid: a whole schedule
 then shifts by one constant delay and the gaps inside it survive.
 
-A lift must be its own report: a report that both moves and releases loses its
+A lift must be its own report: a report that both moves and lifts loses its
 move (the touch ends one step short). "immediate" lifts follow the last move by
 1 ms, so both usually travel in the same connection event; "separate" lifts wait
 for the next slot, which holds the finger still for 15 ms before it leaves.
@@ -32,7 +32,7 @@ SLOW_LIMIT = 3.0
 SLOW_GAIN = 0.2017
 LINES = ((1.0009, -2.107), (2.4485, -39.405), (0.965, 66.997))
 # Home: 25 reports of (-127, -127) pin the cursor in the top-left corner. Park: 40
-# reports of (3, 11) then put it here, measured to +/-0.5 pt across 60 drags.
+# reports of (3, 11) then put it here, measured to +/-0.5 pt across 60 gestures.
 HOME_REPORTS = 25
 PARK_STEP = (3, 11)
 PARK_REPORTS = 40
@@ -119,10 +119,10 @@ def hover_slots(start: tuple[float, float], end: tuple[float, float]) -> int:
 
 
 @dataclass
-class Stroke:
-    """One touch contact: samples are (t_s, x_pt, y_pt); press at the first, lift at the last.
+class Gesture:
+    """One gesture: samples are (t_s, x_pt, y_pt); touch-down at the first, lift at the last.
 
-    lift overrides build_schedule's lift mode for this stroke when set.
+    lift overrides build_schedule's lift mode for this gesture when set.
     """
     name: str
     samples: list[tuple[float, float, float]]
@@ -139,41 +139,41 @@ def _position_at(samples, t):
     return samples[-1][1:]
 
 
-def grid_phase(strokes: list[Stroke], step_s: float = STEP_US / 1e6) -> float:
-    """Offset (s) of the 15 ms grid that best fits every stroke's press and lift times."""
-    times = [t for s in strokes for t in (s.samples[0][0], s.samples[-1][0])]
+def grid_phase(gestures: list[Gesture], step_s: float = STEP_US / 1e6) -> float:
+    """Offset (s) of the 15 ms grid that best fits every gesture's touch-down and lift times."""
+    times = [t for s in gestures for t in (s.samples[0][0], s.samples[-1][0])]
     candidates = [k * step_s / 30 for k in range(30)]
     return min(candidates, key=lambda ph: sum(((t - ph) / step_s - round((t - ph) / step_s)) ** 2 for t in times))
 
 
-def build_schedule(strokes: list[Stroke], lead_s: float = 1.0, lift: str = 'immediate'):
-    """Home, park, then play the strokes on the 15 ms grid with hover moves between them.
+def build_schedule(gestures: list[Gesture], lead_s: float = 1.0, lift: str = 'immediate'):
+    """Home, park, then play the gestures on the 15 ms grid with hover moves between them.
 
-    Stroke times are kept relative to each other (rounded to the grid); the first press
-    comes lead_s after parking ends. The press is a still report; moves follow on each
+    Gesture times are kept relative to each other (rounded to the grid); the first touch-down
+    comes lead_s after parking ends. The touch-down is a still report; moves follow on each
     slot and reach the last sample on the slot of its time. The lift is a still report
     1 ms after the last move ("immediate") or on the next slot ("separate").
     Returns (events, info) where events are (t_us, dx, dy, buttons) and info lists each
-    stroke's slots and modelled path.
+    gesture's slots and modelled path.
     """
-    if not strokes:
-        raise ValueError('no strokes')
-    if lift not in LIFT_MODES or any(s.lift not in (None,) + LIFT_MODES for s in strokes):
+    if not gestures:
+        raise ValueError('no gestures')
+    if lift not in LIFT_MODES or any(s.lift not in (None,) + LIFT_MODES for s in gestures):
         raise ValueError(f'lift must be one of {LIFT_MODES}')
     if not math.isfinite(lead_s) or not 0 <= lead_s <= 60:
         raise ValueError('invalid schedule lead time')
-    for stroke in strokes:
-        if len(stroke.samples) < 2:
-            raise ValueError('each stroke requires at least two samples')
+    for gesture in gestures:
+        if len(gesture.samples) < 2:
+            raise ValueError('each gesture requires at least two samples')
         previous = -1.0
-        for sample in stroke.samples:
+        for sample in gesture.samples:
             if len(sample) != 3 or not all(math.isfinite(v) for v in sample):
-                raise ValueError('finite stroke samples required')
+                raise ValueError('finite gesture samples required')
             t, x, y = sample
             if not 0 <= t <= 60 or t <= previous or not 0 <= x <= 414 or not 0 <= y <= 896:
-                raise ValueError('invalid stroke time or XR2 coordinates')
+                raise ValueError('invalid gesture time or XR2 coordinates')
             previous = t
-    strokes = sorted(strokes, key=lambda s: s.samples[0][0])
+    gestures = sorted(gestures, key=lambda s: s.samples[0][0])
     events: list[tuple[int, int, int, int]] = []
     slot = 0
     for _ in range(HOME_REPORTS):
@@ -182,9 +182,9 @@ def build_schedule(strokes: list[Stroke], lead_s: float = 1.0, lift: str = 'imme
     for _ in range(PARK_REPORTS):
         events.append((slot * STEP_US, PARK_STEP[0], PARK_STEP[1], 0)); slot += 1
     park_end = slot
-    phase = grid_phase(strokes)
+    phase = grid_phase(gestures)
     step_s = STEP_US / 1e6
-    origin_slot = round((strokes[0].samples[0][0] - phase) / step_s)
+    origin_slot = round((gestures[0].samples[0][0] - phase) / step_s)
     base = park_end + round(lead_s / step_s)
 
     def to_slot(t):                                       # clip time -> slot, on the best-fitting grid
@@ -193,14 +193,14 @@ def build_schedule(strokes: list[Stroke], lead_s: float = 1.0, lift: str = 'imme
     pos = PARK_POINT
     free_from = park_end                                      # first slot not yet used
     info = []
-    for s in strokes:
+    for s in gestures:
         press = to_slot(s.samples[0][0])
         lift_slot = max(press + 1, to_slot(s.samples[-1][0]))
         start_pt = s.samples[0][1:]
         need = hover_slots(pos, start_pt)
         if press - free_from < need:
             raise ValueError(f'{s.name}: {press - free_from} slots to reach the start, need {need}')
-        # spread the hover evenly over the slots just before the press (cursor arrives one slot early)
+        # spread the hover evenly over the slots just before the touch-down (cursor arrives one slot early)
         hover_n = min(press - free_from, max(need, 4))
         first = press - hover_n
         hover_targets = [(pos[0] + (start_pt[0] - pos[0]) * (k + 1) / hover_n,
@@ -210,7 +210,7 @@ def build_schedule(strokes: list[Stroke], lead_s: float = 1.0, lift: str = 'imme
             events.append(((first + k) * STEP_US, cx, cy, 0))
         pos = path[-1]
         events.append((press * STEP_US, 0, 0, 1))
-        # moves on the slots after the press, reaching the last sample on the lift slot
+        # moves on the slots after the touch-down, reaching the last sample on the lift slot
         mode = s.lift or lift
         t_press = s.samples[0][0]
         move_slots = list(range(press + 1, lift_slot + 1))

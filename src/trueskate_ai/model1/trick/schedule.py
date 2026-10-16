@@ -1,7 +1,7 @@
 """One recorded minute: die-five markers and resets as instrumented W3C requests, runs between.
 
 There is no screenshot before each touch. Menu checks were dropped for this batch
-(operator decision 2026-10-15): every stroke path avoids the protected controls, the
+(operator decision 2026-10-15): every gesture path avoids the protected controls, the
 foreground check runs before every run, and a full-screen menu would also fail the
 calibration markers, which rejects the whole recording.
 """

@@ -1,13 +1,13 @@
 """Model 2 — the vision-grounded gesture-sequence policy.
 
-`(n recent frames + m past strokes) -> next strokes`. A CNN frame encoder + a
+`(n recent frames + m past gestures) -> next gestures`. A CNN frame encoder + a
 Transformer set-encoder with a readout query token (decision/behaviour-transformer
 style), regressing a padded action group in normalised [0, 1] token space plus
 a contiguous slot-activity prefix
 (see `gesture_tokens.py`).
 
 Why a *readout* encoder and not a per-step causal decoder: our action is already
-a compact macro-stroke and we predict a short chunk per decision, then deploy
+a compact macro-gesture and we predict a short chunk per decision, then deploy
 receding-horizon (predict m_out, execute a few, re-observe). So a single readout
 step suffices for v1; swap in a causal decoder / CVAE / diffusion head later only
 if mode-averaging shows up. Pure torch — no device deps. See the plan + journal.
@@ -19,18 +19,18 @@ from dataclasses import dataclass, asdict
 import torch
 import torch.nn as nn
 
-from trueskate_ai.model2.tokens import STROKE_DIM
+from trueskate_ai.model2.tokens import GESTURE_DIM
 
 
 @dataclass
 class SequencePolicyConfig:
-    stroke_dim: int = STROKE_DIM
+    gesture_dim: int = GESTURE_DIM
     n_frames: int = 6          # recent visual history (≈0.2 s at 30 fps)
-    m_past: int = 4            # past strokes conditioned on
-    m_out: int = 1             # maximum strokes in one overlapping action group
+    m_past: int = 4            # past gestures conditioned on
+    m_out: int = 1             # maximum gestures in one overlapping action group
     img_ch: int = 3
     # Portrait, NOT square — the screen is ~2.16:1 (19.5:9) and must not be
-    # squished to 1:1 (that distorts board/trace geometry the encoder reads).
+    # squished to 1:1 (that distorts board/trail geometry the encoder reads).
     # 208×96 = 2.167:1, within 0.1% of the device 896/414 = 2.164:1; both ÷16.
     # FrameEncoder ends in AdaptiveAvgPool2d(1), so H≠W needs no arch change.
     img_h: int = 208
@@ -60,20 +60,20 @@ class FrameEncoder(nn.Module):
 
 
 class SequencePolicy(nn.Module):
-    """n frames + m past strokes -> next m_out strokes (normalised [0, 1])."""
+    """n frames + m past gestures -> next m_out gestures (normalised [0, 1])."""
 
     # token type ids
-    _FRAME, _STROKE, _QUERY = 0, 1, 2
+    _FRAME, _GESTURE, _QUERY = 0, 1, 2
 
     def __init__(self, cfg: SequencePolicyConfig):
         super().__init__()
         self.cfg = cfg
         d = cfg.d_model
         self.frame_encoder = FrameEncoder(cfg.img_ch, d)
-        self.stroke_embed = nn.Linear(cfg.stroke_dim, d)
+        self.gesture_embed = nn.Linear(cfg.gesture_dim, d)
         self.type_embed = nn.Embedding(3, d)
         self.frame_pos = nn.Embedding(max(1, cfg.n_frames), d)
-        self.stroke_pos = nn.Embedding(max(1, cfg.m_past), d)
+        self.gesture_pos = nn.Embedding(max(1, cfg.m_past), d)
         self.query = nn.Parameter(torch.zeros(1, 1, d))
         nn.init.normal_(self.query, std=0.02)
         layer = nn.TransformerEncoderLayer(
@@ -86,18 +86,18 @@ class SequencePolicy(nn.Module):
         # it crashed inference though training was fine. Disabling it is
         # numerically identical and removes that train/eval divergence.
         self.encoder = nn.TransformerEncoder(layer, num_layers=cfg.n_layers, enable_nested_tensor=False)
-        self.stroke_head = nn.Sequential(
+        self.gesture_head = nn.Sequential(
             nn.LayerNorm(d), nn.Linear(d, d), nn.GELU(),
-            nn.Linear(d, cfg.m_out * cfg.stroke_dim),
+            nn.Linear(d, cfg.m_out * cfg.gesture_dim),
         )
         self.activity_head = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, cfg.m_out))
 
     def forward(
         self,
         frames: torch.Tensor,          # (B, n_frames, C, H, W)
-        past_strokes: torch.Tensor,    # (B, m_past, stroke_dim) — normalised [0,1]
+        past_gestures: torch.Tensor,    # (B, m_past, gesture_dim) — normalised [0,1]
         past_mask: torch.Tensor | None = None,  # (B, m_past) True = real, False = pad
-    ) -> tuple[torch.Tensor, torch.Tensor]:  # strokes [0,1], activity logits
+    ) -> tuple[torch.Tensor, torch.Tensor]:  # gestures [0,1], activity logits
         B, nf = frames.shape[0], frames.shape[1]
         d = self.cfg.d_model
         dev = frames.device
@@ -110,11 +110,11 @@ class SequencePolicy(nn.Module):
         tokens = [fe]
         key_padding = [torch.zeros(B, nf, dtype=torch.bool, device=dev)]  # False = attend
 
-        mp = past_strokes.shape[1]
+        mp = past_gestures.shape[1]
         if mp > 0:
-            se = self.stroke_embed(past_strokes) \
-                + self.type_embed(torch.full((1,), self._STROKE, device=dev)) \
-                + self.stroke_pos(torch.arange(mp, device=dev))[None]
+            se = self.gesture_embed(past_gestures) \
+                + self.type_embed(torch.full((1,), self._GESTURE, device=dev)) \
+                + self.gesture_pos(torch.arange(mp, device=dev))[None]
             tokens.append(se)
             pad = (~past_mask) if past_mask is not None else torch.zeros(B, mp, dtype=torch.bool, device=dev)
             key_padding.append(pad)
@@ -127,7 +127,7 @@ class SequencePolicy(nn.Module):
         kpm = torch.cat(key_padding, dim=1)
         out = self.encoder(seq, src_key_padding_mask=kpm)
         readout = out[:, -1]  # the query token
-        pred = self.stroke_head(readout).view(B, self.cfg.m_out, self.cfg.stroke_dim)
+        pred = self.gesture_head(readout).view(B, self.cfg.m_out, self.cfg.gesture_dim)
         return torch.sigmoid(pred), self.activity_head(readout)
 
 
@@ -135,9 +135,9 @@ def build_policy(cfg: SequencePolicyConfig | None = None) -> SequencePolicy:
     return SequencePolicy(cfg or SequencePolicyConfig())
 
 
-def stroke_loss(pred: torch.Tensor, target: torch.Tensor, target_mask: torch.Tensor,
+def gesture_loss(pred: torch.Tensor, target: torch.Tensor, target_mask: torch.Tensor,
                 activity_logits: torch.Tensor, weights: torch.Tensor | None = None) -> torch.Tensor:
-    """Masked stroke regression plus supervised contiguous slot activity."""
+    """Masked gesture regression plus supervised contiguous slot activity."""
     error = (pred - target) ** 2
     if weights is not None:
         error = error * weights

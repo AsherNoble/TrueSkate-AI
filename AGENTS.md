@@ -157,7 +157,7 @@ scripts need none).
 - XRs normally attach to `training-server`; use
   `tailscale ssh training-server@training-server`. Do not assume local USB.
 - UDIDs come from `.env`. XR1 WDA/Appium: 8100/4723; XR2: 8103/4726.
-- Keep XCTest segments at one minute: stop returns the full recording as base64.
+- Keep XCTest recordings at one minute: stop returns the full recording as base64.
 - Root `com.trueskate.remotexpc-tunnel` must be running. Otherwise recording
   attachments accumulate and wedge the recorder. Recovery uses the documented
   attachment cleanup tool after confirming the daemon; never hammer recorder start.
@@ -168,7 +168,7 @@ scripts need none).
   optional where every gesture path avoids the protected controls
   (`DEPLOYMENT.md`). Never weaken admission to pass a smoke test.
 - Training loaders exclude contamination markers. `.menu` is always excluded;
-  stricter loaders also enforce their existing calibration and trace contracts.
+  stricter loaders also enforce their existing calibration and trail contracts.
 - Preserve normalised coordinates and curved/overlapping/spin gestures. iPhone
   11 Display Zoom yields 375×812; XR devices expect 414×896. No y offset.
 - Notifications belong to the fleet incident/recovery mechanism. No periodic

@@ -30,7 +30,7 @@ FPS = 60
 STOP_S = 59.
 LATE_S = .1
 # Operator's filmed kickflip (tmp/Example Kickflip.MP4, 60 fps), approximated with
-# straight, constant-speed strokes; normalized points; t = 0 at pop touch-down.
+# straight, constant-speed gestures; normalized points; t = 0 at pop touch-down.
 # The pop runs from mid-board down off the tail; the flick from the board's upper
 # half right and slightly down; the catch is a stationary hold on the upper half.
 # The historical 20 ms push is in the unreliable flicker range (LINEAR-LENGTH-20261003)
@@ -40,11 +40,11 @@ KICKFLIP = dict(push_start=[.813, .27], push_end=[.74, .522], push_s=.13, push_t
                 pop_start=[.505, .56], pop_end=[.555, .815], pop_s=.075, flick_gap_s=.13,
                 flick_start=[.537, .51], flick_end=[.715, .565], flick_s=.1, catch_gap_s=.43,
                 catch_point=[.5, .505], catch_s=.52)
-# One XCTest record per stroke (GESTURES.md hard rule): multi-path records conjoin
-# strokes and anchors draw lines (CURVE-AUDIT-20261003, attempts 08-12). Records
+# One XCTest record per gesture (GESTURES.md hard rule): multi-path records conjoin
+# gestures and anchors draw lines (CURVE-AUDIT-20261003, attempts 08-12). Records
 # cannot start within ~0.25 s of the previous gesture's end, so the flick is sent
 # as soon as the pop returns; flick_gap_s and catch_gap_s are filmed targets.
-# Strokes use WDA's direct endpoint (no W3C preparation or stability wait).
+# Gestures use WDA's direct endpoint (no W3C preparation or stability wait).
 DIRECT_RETURN_S = .25  # Typical end-of-gesture to endpoint return; sets the catch wait.
 VARIANTS = ({}, dict(pop_s=.05), dict(pop_s=.1), dict(flick_s=.06), dict(flick_s=.14),
             dict(catch_gap_s=.3), dict(catch_gap_s=.55),
@@ -53,15 +53,15 @@ VARIANTS = ({}, dict(pop_s=.05), dict(pop_s=.1), dict(flick_s=.06), dict(flick_s
             dict(flick_s=.06, flick_end=[.715, .51]), dict(flick_s=.06, flick_end=[.715, .48]),
             dict(flick_s=.04, flick_end=[.715, .51]),
             # Operator: the pop should be quick and shorter. Ending just past the tail tip
-            # (~0.70) removes post-pop stroke time that only delays the flick.
+            # (~0.70) removes post-pop gesture time that only delays the flick.
             dict(pop_end=[.52, .73], pop_s=.05, flick_s=.06, flick_end=[.715, .51]),
             dict(pop_end=[.52, .73], pop_s=.04, flick_s=.06, flick_end=[.715, .51]),
             dict(pop_end=[.52, .73], pop_s=.05, flick_s=.06),
             # Trials 17-18 (candidate_10) landed KICKFLIPs that the operator calls rocket
             # flips: the board flips nose-up. Angle the flick up the deck to level it.
             dict(flick_s=.04, flick_end=[.715, .46]), dict(flick_s=.04, flick_end=[.715, .42]),
-            # Operator now allows 2-3 point flicks. Their filmed flick presses almost still on
-            # the deck for ~50 ms (a likely levelling press), then snaps right in ~50 ms.
+            # Operator now allows 2-3 point flicks. Their filmed flick pauses almost still on
+            # the deck for ~50 ms (likely levelling the board), then snaps right in ~50 ms.
             dict(flick_points=[[.537, .51], [.545, .517], [.715, .51]], flick_durations_s=[.05, .04]),
             dict(flick_points=[[.537, .51], [.545, .517], [.715, .565]], flick_durations_s=[.05, .05]),
             dict(flick_points=[[.537, .51], [.545, .517], [.715, .51]], flick_durations_s=[.08, .04]),
@@ -123,15 +123,15 @@ def safe_scaled_path(points):
     return scaled
 
 
-def direct_stroke(name, points, durations_s):
-    """One contact for WDA's /wda/perform_trick_gestures: straight segments, one time each.
+def direct_gesture(name, points, durations_s):
+    """One gesture for WDA's /wda/perform_trick_gestures: straight segments, one time each.
 
-    Repeating a point holds it. The operator allows two or three points for the flick.
+    Repeating a point makes a pause. The operator allows two or three points for the flick.
     """
     if len(points) != len(durations_s) + 1 or not 2 <= len(points) <= 3:
-        raise ValueError('a stroke needs two or three points and one duration per segment')
+        raise ValueError('a gesture needs two or three points and one duration per segment')
     if any(not .005 <= d <= 1. for d in durations_s):
-        raise ValueError('invalid stroke duration')
+        raise ValueError('invalid gesture duration')
     scaled = safe_scaled_path(points)
     ms = [int(round(d * 1000)) for d in durations_s]
     waypoints = [dict(x=int(scaled[0][0]), y=int(scaled[0][1]))]
@@ -148,12 +148,12 @@ def prepare_manifest(repo, previous_setup=None, superseded_reason=None):
         candidate_id = f'candidate_{index:02d}'
         params = {**KICKFLIP, **change}
         try:
-            flick = (direct_stroke('flick', params['flick_points'], params['flick_durations_s'])
+            flick = (direct_gesture('flick', params['flick_points'], params['flick_durations_s'])
                      if 'flick_points' in params else
-                     direct_stroke('flick', [params['flick_start'], params['flick_end']], [params['flick_s']]))
-            push = direct_stroke('push', [params['push_start'], params['push_end']], [params['push_s']])
-            contacts = [push, direct_stroke('pop', [params['pop_start'], params['pop_end']], [params['pop_s']]),
-                        flick, direct_stroke('catch', [params['catch_point']] * 2, [params['catch_s']])]
+                     direct_gesture('flick', [params['flick_start'], params['flick_end']], [params['flick_s']]))
+            push = direct_gesture('push', [params['push_start'], params['push_end']], [params['push_s']])
+            contacts = [push, direct_gesture('pop', [params['pop_start'], params['pop_end']], [params['pop_s']]),
+                        flick, direct_gesture('catch', [params['catch_point']] * 2, [params['catch_s']])]
             candidates.append(seal(dict(id=candidate_id, seed='operator-filmed kickflip 2026-10-09',
                 parameters=params, varied=sorted(change), contacts=contacts,
                 catch_wait_s=round(max(0., params['catch_gap_s'] - DIRECT_RETURN_S), 3),
@@ -294,7 +294,7 @@ def marker():
 def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revision,
               context, clock=time.monotonic, sleep=deadline_sleep, epoch=time.time, foreground_guard=None,
               perform_direct=None):
-    """One start/one retrieval; exact separate contacts, including on interruption."""
+    """One start/one retrieval; one request per gesture, including on interruption."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     verify_seal(candidate)
@@ -363,7 +363,7 @@ def run_trial(*, out, candidate, recorder, timing, perform, guard, settle, revis
         # The full guard ran just before the push; a guard here would delay the pop.
         call('gesture', pop['payload'], clock() + candidate['pop_wait_s'], role='pop',
              encoded_duration_s=pop['encoded_duration_s'], direct=True, guarded=False)
-        # No guards between strokes: each would add ~0.2 s to an already late flick.
+        # No guards between gestures: each would add ~0.2 s to an already late flick.
         call('gesture', flick['payload'], clock(), role='flick',
              encoded_duration_s=flick['encoded_duration_s'], direct=True, guarded=False)
         call('gesture', catch['payload'], clock() + candidate['catch_wait_s'], role='catch',
@@ -456,7 +456,7 @@ def admit_trial(out, revision):
         residual = onsets['middle'] - fit.video_time_s(stamps['middle'])
         if not onsets['start'] < onsets['middle'] < onsets['end'] or abs(residual) > 2 * native:
             raise ValueError('held-out middle calibration failed')
-        # Direct strokes have no WDA timing record. Map their rig-clock call starts
+        # Direct gestures have no WDA timing record. Map their rig-clock call starts
         # with the median rig-to-WDA offset of the instrumented requests (approximate).
         offset = float(np.median([r['request_entered']['monotonic_s'] - e['call_start_monotonic_s']
                                   for e, r in zip(instrumented, records)]))

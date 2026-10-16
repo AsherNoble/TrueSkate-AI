@@ -1,6 +1,6 @@
 """Trick clips for Model 1 MVP v0: a split by minute, per-frame targets and a frame bundle.
 
-A clip holds one run of 1–4 strokes (contract.py), labelled from the visible trail at
+A clip holds one run of 1–4 gestures (contract.py), labelled from the visible trail at
 admission (admission.py). Copies of a seeded run stay in one split: recordings that share
 a run number form one group (both trial phones sent the same minutes), and the group takes
 the split of its earliest recording's minute number, earliest in the order the roots are
@@ -22,7 +22,7 @@ from torch.utils.data import Dataset
 
 from trueskate_ai.model1.curved.capture import file_sha256, probe_pts
 from trueskate_ai.model1.curved.contract import digest, save_json
-from .contract import FRAME_COUNT, MAX_STROKES, SCHEMA, Stroke
+from .contract import FRAME_COUNT, MAX_GESTURES, SCHEMA, Gesture
 
 KIND = "trick-model1-dataset"
 BUNDLE_KIND = "trick-model1-bundle"
@@ -48,8 +48,8 @@ def split_for(recording: str) -> str:
     return "validation" if rest == 6 else "test" if rest == 0 else "train"
 
 
-def check_clip(meta: dict) -> list[Stroke]:
-    """The data contract for one admitted clip. Returns its strokes; raises ValueError."""
+def check_clip(meta: dict) -> list[Gesture]:
+    """The data contract for one admitted clip. Returns its gestures; raises ValueError."""
     admission = meta.get("admission", {})
     if (meta.get("schema") != SCHEMA or admission.get("accepted") is not True
             or admission.get("frame_count") != FRAME_COUNT):
@@ -69,38 +69,38 @@ def check_clip(meta: dict) -> list[Stroke]:
     if not .98 <= rate <= 1.02:
         raise ValueError("implausible video clock rate")
     rows = meta["strokes"]
-    if not 1 <= len(rows) <= MAX_STROKES:
-        raise ValueError(f"a clip holds 1–{MAX_STROKES} strokes")
-    strokes, previous = [], -1
+    if not 1 <= len(rows) <= MAX_GESTURES:
+        raise ValueError(f"a clip holds 1–{MAX_GESTURES} gestures")
+    gestures, previous = [], -1
     for row in rows:
-        stroke = Stroke.from_dict(row)
+        gesture = Gesture.from_dict(row)
         down, up = row["onset_s"], row["release_s"]
-        if not np.isfinite([down, up]).all() or abs(up - down - rate*stroke.times_ms[-1]/1000) > 1e-6:
-            raise ValueError("stroke times and calibrated duration disagree")
+        if not np.isfinite([down, up]).all() or abs(up - down - rate*gesture.times_ms[-1]/1000) > 1e-6:
+            raise ValueError("gesture times and calibrated duration disagree")
         if not times[4] < down < up < times[-5]:
-            raise ValueError("missing five-frame contact buffers")
+            raise ValueError("missing five-frame buffers before touch-down and after lift")
         if nearest(times, down) <= previous:
-            raise ValueError("strokes overlap or touch")
+            raise ValueError("gestures overlap or touch")
         previous = nearest(times, up)
-        strokes.append(stroke)
-    return strokes
+        gestures.append(gesture)
+    return gestures
 
 
 def targets(meta: dict) -> dict:
-    """Per-frame targets: in contact, touch-down, lift, and the touching stroke's position."""
-    strokes = check_clip(meta)
+    """Per-frame targets: touching (the "contact" signal), touch-down, lift, and the gesture's position."""
+    gestures = check_clip(meta)
     times = np.asarray(meta["frame_times_s"], dtype=float)
     contact, down, up = (np.zeros(FRAME_COUNT) for _ in range(3))
     xy = np.zeros((FRAME_COUNT, 2))
-    for stroke, row in zip(strokes, meta["strokes"]):
+    for gesture, row in zip(gestures, meta["strokes"]):
         a, b = nearest(times, row["onset_s"]), nearest(times, row["release_s"])
         contact[a:b+1] = 1
-        xy[a:b+1] = stroke.positions(times[a:b+1] - row["onset_s"], rate=meta["clock_rate"])
+        xy[a:b+1] = gesture.positions(times[a:b+1] - row["onset_s"], rate=meta["clock_rate"])
         down = np.maximum(down, np.exp(-.5*((times - row["onset_s"])/EVENT_SIGMA_S)**2))
         up = np.maximum(up, np.exp(-.5*((times - row["release_s"])/EVENT_SIGMA_S)**2))
     return dict(times=times.astype(np.float32), contact=contact.astype(np.float32), down=down.astype(np.float32),
                 up=up.astype(np.float32), xy=xy.astype(np.float32), mask=contact.astype(bool),
-                count=np.int64(len(strokes)))
+                count=np.int64(len(gestures)))
 
 
 def read_frames(video: Path, width: int = IMAGE_WIDTH, height: int = IMAGE_HEIGHT) -> np.ndarray:
@@ -125,7 +125,7 @@ def clip_rows(data_root: Path, roots) -> tuple[list[dict], list[str]]:
                 excluded.append(str(folder.relative_to(data_root)))
                 continue
             meta = json.loads((folder/"meta.json").read_text())
-            strokes = check_clip(meta)
+            gestures = check_clip(meta)
             if meta["recording"] != folder.parent.name or folder.name != f"run-{meta['run']:05d}":
                 raise ValueError(f"{folder}: folder and metadata disagree")
             if file_sha256(folder/"clip.mp4") != meta["clip_sha256"]:
@@ -133,7 +133,7 @@ def clip_rows(data_root: Path, roots) -> tuple[list[dict], list[str]]:
             rows.append(dict(id=f"{root}/{meta['recording']}/{meta['run']:05d}",
                              sample_dir=str(folder.relative_to(data_root)), root=root,
                              recording=meta["recording"], run=meta["run"], device=meta["device"],
-                             park=meta["park"], strokes=len(strokes), meta_sha256=file_sha256(folder/"meta.json"),
+                             park=meta["park"], strokes=len(gestures), meta_sha256=file_sha256(folder/"meta.json"),
                              media_sha256=meta["clip_sha256"]))
     return rows, excluded
 
