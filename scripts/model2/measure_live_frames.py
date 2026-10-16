@@ -49,6 +49,9 @@ MJPEG_KEYS = ("mjpegServerFramerate", "mjpegScalingFactor", "mjpegServerScreensh
 STREAM_SETTLE_S = 2.     # read the stream this long before the recorder starts
 WINDOW_S = (-.75, 1.5)   # stream JPEGs kept around each marker call
 FRESH_SPAN_S = .3        # after a stream onset the screen changes; count repeated frames there
+CHANGE_LEVEL = 8         # grey levels: a pixel counts as changed (quarter-size recording frames)
+CHANGE_SHARE = .0005     # share of changed pixels for a recording frame to count as a screen change
+MARGIN_S = 1 / 60        # alignment margin when matching stream spans to recording frames
 PART_HEADER = re.compile(rb"Content-Length:\s*(\d+)\r\n\r\n", re.IGNORECASE)
 GATE = dict(min_fps=20., min_recording_fps=59.)
 
@@ -340,6 +343,52 @@ def _spread(values):
     return dict(n=len(values), min=min(values), median=statistics.median(values), max=max(values)) if values else None
 
 
+def recording_changes(video: Path, n_frames: int) -> np.ndarray:
+    """Per recording frame, the share of pixels that changed from the frame before (quarter size, grey)."""
+    width, height = 207, 448
+    process = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(video), "-map", "0:v:0",
+                                "-vf", f"scale={width}:{height},format=gray", "-fps_mode", "passthrough",
+                                "-f", "rawvideo", "pipe:1"], stdout=subprocess.PIPE)
+    shares, previous = [], None
+    while raw := process.stdout.read(width * height):
+        frame = np.frombuffer(raw, np.uint8).astype(np.int16)
+        shares.append(0. if previous is None else float(np.mean(np.abs(frame - previous) > CHANGE_LEVEL)))
+        previous = frame
+    if process.wait() or len(shares) != n_frames:
+        raise ValueError(f"recording decode gave {len(shares)} frames, expected {n_frames}")
+    return np.asarray(shares)
+
+
+def changed_share(a: np.ndarray, b: np.ndarray) -> float:
+    return float(np.mean(np.abs(a - b) > CHANGE_LEVEL))
+
+
+def freshness(pairs, arrivals, pts, changes, fit) -> dict:
+    """Split repeated stream frames into a still screen and stale captures, using the 60 fps recording.
+
+    ``pairs`` holds consecutive stream frames (a, b, whether the stream changed from a to b). Each
+    stream frame maps to the video time its content was on screen, by the marker fit (video onset
+    against stream onset). A pair is 'screen moved' when the recording changes inside the pair's
+    span shrunk by a margin, and 'screen still' when nothing changes in the span widened by the
+    margin; spans in between are left out. A stale pair is a repeat while the screen moved.
+    """
+    changed_frames = pts[changes > CHANGE_SHARE]
+    video = fit[0] + fit[1] * arrivals
+    counts = dict(pairs=len(pairs), fresh=0, stale=0, still_repeat=0, still_new=0, unclear=0)
+    for a, b, stream_changed in pairs:
+        core = np.any((changed_frames > video[a] + MARGIN_S) & (changed_frames <= video[b] - MARGIN_S))
+        wide = np.any((changed_frames > video[a] - MARGIN_S) & (changed_frames <= video[b] + MARGIN_S))
+        if core:
+            counts["fresh" if stream_changed else "stale"] += 1
+        elif not wide:
+            counts["still_new" if stream_changed else "still_repeat"] += 1
+        else:
+            counts["unclear"] += 1
+    moving = counts["fresh"] + counts["stale"]
+    counts["stale_share"] = counts["stale"] / moving if moving else None
+    return counts
+
+
 def analyse_minute(out: Path) -> dict:
     """Marker delays in the stream and the recording, plus stream and recording health."""
     import cv2
@@ -358,12 +407,11 @@ def analyse_minute(out: Path) -> dict:
                                             expected_revision=planned["wda_revision"],
                                             expected_count=len(instrumented))
     # Phone monotonic minus rig monotonic. One-sided (the trick admission's estimate) carries the
-    # Appium hop; two-sided (NTP-style) cancels it when the way there and back take equally long.
-    one_sided = statistics.median(r["request_entered"]["monotonic_s"] - e["call_start_monotonic_s"]
-                                  for e, r in zip(instrumented, records))
-    two_sided = statistics.median(((r["request_entered"]["monotonic_s"] - e["call_start_monotonic_s"])
-                                   + (r["request_finished"]["monotonic_s"] - e["call_end_monotonic_s"])) / 2
-                                  for e, r in zip(instrumented, records))
+    # Appium hop. Since neither hop can be negative, the true offset lies between the latest request's
+    # finish (minus its call end) and the earliest request's entry (minus its call start).
+    sent = [r["request_entered"]["monotonic_s"] - e["call_start_monotonic_s"] for e, r in zip(instrumented, records)]
+    back = [r["request_finished"]["monotonic_s"] - e["call_end_monotonic_s"] for e, r in zip(instrumented, records)]
+    one_sided, low, high = statistics.median(sent), max(back), min(sent)
     pts = probe_pts(out/"original.mov", recording=False)
     started = execution["video"]["started_at_epoch_s"]
     stream = np.load(out/"stream.npz")
@@ -372,7 +420,7 @@ def analyse_minute(out: Path) -> dict:
     grey = {int(i): cv2.imdecode(blob[offsets[k]:offsets[k + 1]], cv2.IMREAD_GRAYSCALE) for k, i in enumerate(saved)}
     hashes = stream["hashes"]
     points = die_five_points(71)
-    markers = []
+    markers, raw = [], []
     for event, record in zip(instrumented, records):
         if event["kind"] != "control":
             continue
@@ -393,55 +441,98 @@ def analyse_minute(out: Path) -> dict:
         stream_s = seen_stream.onset_s if seen_stream is not None and seen_stream.accepted else None
         if stream_s is not None and stream_s < call:
             stream_s, detector = None, "rejected: before the call"
-        rec_delay = None if seen_rec.onset_s is None else seen_rec.onset_s - approx
+        raw.append(dict(stream_s=stream_s, rec_s=seen_rec.onset_s, approx=approx,
+                        submit=record["submitted_to_ios"]["monotonic_s"]))
         row = dict(role=event["role"], recording_votes=seen_rec.votes,
                    stream_votes=None if seen_stream is None else seen_stream.votes, stream_detector=detector,
-                   call_return_ms=_ms(call_end - call), call_to_stream_ms=_ms(None if stream_s is None else stream_s - call),
-                   submit_to_recording_ms=_ms(rec_delay))
-        for name, offset in (("one_sided", one_sided), ("two_sided", two_sided)):
+                   call_return_ms=_ms(call_end - call), call_to_stream_ms=_ms(None if stream_s is None else stream_s - call))
+        for name, offset in (("one_sided", one_sided), ("low", low), ("high", high)):
             submit_rig = record["submitted_to_ios"]["monotonic_s"] - offset
-            to_stream = None if stream_s is None else stream_s - submit_rig
             row[f"call_to_submit_ms_{name}"] = _ms(submit_rig - call)
-            row[f"submit_to_stream_ms_{name}"] = _ms(to_stream)
-            row[f"stream_minus_recording_ms_{name}"] = _ms(None if to_stream is None or rec_delay is None
-                                                           else to_stream - rec_delay)
+            row[f"submit_to_stream_ms_{name}"] = _ms(None if stream_s is None else stream_s - submit_rig)
         if stream_s is not None:  # the screen changes here, so a repeated frame is a stale capture
             span = np.flatnonzero((arrivals >= stream_s) & (arrivals <= stream_s + FRESH_SPAN_S))
-            pairs = list(zip(span, span[1:]))
-            row["repeats_after_onset"] = f"{sum(hashes[a] == hashes[b] for a, b in pairs)}/{len(pairs)}"
+            row["repeats_after_onset"] = f"{sum(hashes[a] == hashes[b] for a, b in zip(span, span[1:]))}/{len(span) - 1}"
         markers.append(row)
+    # The video clock runs at a slightly different rate from the phone's (SYSTEM_MAP: about −1,900 ppm),
+    # so submit → visible in the recording uses the rate fitted through the markers.
+    both = [(r["submit"] - raw[0]["submit"], r["rec_s"]) for r in raw if r["rec_s"] is not None]
+    rate = float(np.polyfit(*zip(*both), 1)[0]) if len(both) >= 3 else 1.
+    for row, r in zip(markers, raw):
+        rec_delay = None if r["rec_s"] is None else r["rec_s"] / rate - r["approx"]
+        row["submit_to_recording_ms"] = _ms(rec_delay)
+        for name in ("one_sided", "low", "high"):
+            to_stream = row[f"submit_to_stream_ms_{name}"]
+            row[f"stream_minus_recording_ms_{name}"] = (None if to_stream is None or rec_delay is None
+                                                        else round(to_stream - rec_delay * 1000, 1))
+    # Stream arrival → the video time its content was on screen: a line through the markers. Its
+    # residuals show how steady the stream's delay is, with no clock offset involved.
+    pairs = [(r["stream_s"], r["rec_s"]) for r in raw if r["stream_s"] is not None and r["rec_s"] is not None]
+    fit, residual_ms = None, None
+    if len(pairs) >= 3:
+        x, y = (np.asarray(v, dtype=float) for v in zip(*pairs))
+        slope, intercept = np.polyfit(x - x[0], y, 1)
+        fit = (float(intercept - slope * x[0]), float(slope))
+        residual_ms = [round(float(v) * 1000, 1) for v in y - (fit[0] + fit[1] * x)]
     calls = [e["call_start_monotonic_s"] for e in instrumented if e["kind"] == "control"]
+    starts = [e["call_start_monotonic_s"] - instrumented[0]["call_start_monotonic_s"] for e in instrumented]
+    phone_rig = float(np.polyfit(starts, sent, 1)[0])  # phone clock rate against the rig's, from entry stamps
     inside = (arrivals >= calls[0] - 1.5) & (arrivals <= calls[-1] + 1.5)
     times = arrivals[inside]
     gaps = np.diff(times) * 1000
+    changes = recording_changes(out/"original.mov", len(pts))
+    small = {i: cv2.resize(g, (207, 448), interpolation=cv2.INTER_AREA).astype(np.int16) for i, g in grey.items()}
+    window_pairs = [(a, a + 1, changed_share(small[a], small[a + 1]) > CHANGE_SHARE)
+                    for a in sorted(small) if a + 1 in small and inside[a] and inside[a + 1]]
+    minute = np.flatnonzero(inside)
+    byte_pairs = [(a, b, bool(hashes[a] != hashes[b])) for a, b in zip(minute, minute[1:])]
     marker_keys = [k for k in markers[0] if "_ms" in k] if markers else []
     report.update(
-        rig_to_wda_offset_s=dict(one_sided=one_sided, two_sided=two_sided, difference_ms=_ms(one_sided - two_sided)),
+        rig_to_wda_offset_s=dict(one_sided=one_sided, low=low, high=high, bound_width_ms=_ms(high - low)),
+        video_rate_ppm=round((rate - 1) * 1e6), phone_rig_ppm=round(phone_rig * 1e6),
+        # How fast the stream delay grows: the stream fit's slope against the video clock's rate.
+        stream_delay_growth_ms_per_min=None if fit is None else round((rate * (1 + phone_rig) / fit[1] - 1) * 6e4, 1),
         stream=dict(frames=int(inside.sum()), fps=(len(times) - 1) / (times[-1] - times[0]),
                     gap_ms=dict(median=float(np.median(gaps)), p90=float(np.percentile(gaps, 90)),
                                 p99=float(np.percentile(gaps, 99)), max=float(gaps.max())),
                     repeated_share=float(np.mean(hashes[inside][1:] == hashes[inside][:-1])),
                     jpeg_kb_median=float(np.median(stream["sizes"][inside])) / 1024,
-                    resolution_hw=list(next(iter(grey.values())).shape) if grey else None),
+                    resolution_hw=list(next(iter(grey.values())).shape) if grey else None,
+                    video_fit=fit, fit_residual_ms=residual_ms,
+                    freshness=None if fit is None else dict(
+                        # Pixels, quarter size as in the recording, inside the saved marker windows.
+                        windows=freshness(window_pairs, arrivals, pts, changes, fit),
+                        # Bytes over the whole minute: any JPEG difference counts as a change.
+                        minute=freshness(byte_pairs, arrivals, pts, changes, fit),
+                        recording_changed_share=float(np.mean(changes > CHANGE_SHARE)))),
         recording=dict(decoded_frames=len(pts), fps=(len(pts) - 1) / (pts[-1] - pts[0]),
                        median_frame_ms=float(np.median(np.diff(pts))) * 1000, max_gap_ms=float(np.diff(pts).max()) * 1000),
         markers=markers, marker_summary={k: _spread([m[k] for m in markers]) for k in dict.fromkeys(marker_keys)})
-    fps, frame_ms = report["stream"]["fps"], 1000 / report["stream"]["fps"]
-    spread = report["marker_summary"].get("submit_to_stream_ms_two_sided")
+    s = report["stream"]
+    stale = ((s["freshness"] or {}).get("minute") or {}).get("stale_share")
+    fresh_fps = s["fps"] * (1 - stale) if stale is not None else None
+    frame_ms = 1000 / s["fps"]
     report["gate"] = dict(
-        fps_ok=bool(fps >= GATE["min_fps"]), recording_ok=bool(report["recording"]["fps"] >= GATE["min_recording_fps"]),
-        delay_steady=None if not spread or spread["n"] < 3 else bool(spread["max"] - spread["min"] <= frame_ms),
+        fresh_fps=fresh_fps, fps_ok=None if fresh_fps is None else bool(fresh_fps >= GATE["min_fps"]),
+        recording_ok=bool(report["recording"]["fps"] >= GATE["min_recording_fps"]),
+        # Both onsets are whole frames, so allow one stream frame plus one recording frame.
+        delay_steady=None if residual_ms is None else bool(max(residual_ms) - min(residual_ms)
+                                                           <= frame_ms + 1000 / 60),
         stream_frame_ms=float(frame_ms))
     report["gate"]["passes"] = all(report["gate"][k] is True for k in ("fps_ok", "recording_ok", "delay_steady"))
     return report
 
 
+def write_json(path: Path, value) -> None:
+    """Derived analysis output: rewritten on every analysis (the evidence it reads is never touched)."""
+    path.write_text(json.dumps(value, indent=2, allow_nan=False, default=float) + "\n")
+
+
 def analyse(root: Path) -> None:
-    from trueskate_ai.model1.curved.contract import save_json
     rows = []
     for out in sorted((root/"recordings").glob("m[0-9][0-9][0-9][0-9]")):
         report = analyse_minute(out)
-        save_json(out/"live-frames.json", report)
+        write_json(out/"live-frames.json", report)
         rows.append(report)
         if report["error"]:
             print(out.name, report["config"], "ERROR", report["error"])
@@ -450,13 +541,19 @@ def analyse(root: Path) -> None:
         print(f"{out.name} {report['config']:>8} {s['resolution_hw']} stream {s['fps']:.1f} fps "
               f"gap p50/p90/max {s['gap_ms']['median']:.0f}/{s['gap_ms']['p90']:.0f}/{s['gap_ms']['max']:.0f} ms "
               f"repeats {s['repeated_share']:.2f} jpeg {s['jpeg_kb_median']:.0f} KB | recording {r['fps']:.2f} fps "
-              f"| gate {report['gate']}")
-        for key in ("call_to_stream_ms", "submit_to_recording_ms", "submit_to_stream_ms_two_sided",
-                    "stream_minus_recording_ms_two_sided", "stream_minus_recording_ms_one_sided"):
+              f"| video clock {report['video_rate_ppm']} ppm")
+        print(f"    freshness: {s['freshness']}")
+        print(f"    stream fit residuals ms: {s['fit_residual_ms']}")
+        print(f"    gate: {report['gate']}")
+        print(f"    offsets: {report['rig_to_wda_offset_s']} phone-rig {report['phone_rig_ppm']} ppm; "
+              f"stream delay growth {report['stream_delay_growth_ms_per_min']} ms/min")
+        for key in ("call_to_stream_ms", "submit_to_recording_ms", "submit_to_stream_ms_low",
+                    "stream_minus_recording_ms_low", "stream_minus_recording_ms_high",
+                    "stream_minus_recording_ms_one_sided"):
             print(f"    {key}: {m.get(key)}")
         for row in report["markers"]:
             print("    ", json.dumps(row))
-    save_json(root/"summary.json", dict(experiment=EXPERIMENT, minutes=rows))
+    write_json(root/"summary.json", dict(experiment=EXPERIMENT, minutes=rows))
 
 
 def stream_check(seconds: float, port: int) -> None:

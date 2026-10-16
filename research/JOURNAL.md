@@ -6,6 +6,15 @@ them. Link a record only when one exists. Current state lives in
 [SYSTEM_MAP.md](SYSTEM_MAP.md).
 
 
+## 2026-10-16 — Live frames: WDA's MJPEG stream gives Model 2 about 28 frames a second at half size
+
+- **Ran:** XR1 Workshop, no gameplay touches: the stream read through 60 fps recorded minutes with die-five markers,
+  at 10 fps full size and 30 fps half size (LIVE-FRAMES-20261016). The 60 fps minute never started.
+- **Result:** 9.6 and 27.9 frames/s, none stale: repeats came only while the recording showed a still screen (0 of 128
+  moving spans). Recording held 59.9 fps. Frames show the screen ~0–45 ms late plus the wait for the next capture;
+  at 30 fps that delay grew ~60 ms over the minute `[unsure]`.
+- **Decision:** train Model 2 on 30 fps frames at half size or less; play live at 30 fps, 50%. No 60 fps retry.
+
 ## 2026-10-15 — Trick-stroke labels re-timed to the visible trail
 
 - **Ran:** XR2 and XR1 trick-speed trials (TRICK-SPEED-20261015: 125 clips each, 277 direct strokes each, all
@@ -382,77 +391,3 @@ them. Link a record only when one exists. Current state lives in
   collectors resumed with prior seeds and targets, and release `13554c9` was
   retained for rollback. Their first production segments admitted 11 XR1 and
   10 XR2 strict clips without batch fallback. [Experiment](experiments/M1-BATCH-EXTRACT-20260923.md).
-
-## 2026-09-22 — Exact-PTS tranche passed audit and preserves label controls
-
-- The operator marked 17/17 inspected exact-PTS clips `good`; the review export
-  is preserved with the timing evidence.
-- Metadata comparison against all 13,100 historical samples found that both
-  corpora use 32-frame clips, the same nominal gesture-onset slot, and varied
-  0.30–1.20 second command durations. The new clips retain exact source PTS;
-  their small timing variation reflects real frame phase rather than a changed
-  label policy. [Comparison](experiments/M1-LABEL-CONTROL-20260922.md).
-- Basic-linear sampling now rejects the entire path if it touches an expanded
-  control rectangle. A 100,000-command offline stress run had no retry
-  exhaustion, and one bounded XR2 segment admitted 11/11 strict, 32-frame,
-  exact-PTS clips with zero path intersections or detected UI transitions.
-  [Control experiment](experiments/M1-CONTROL-20260917.md).
-- A surviving 304-second June XCTest attachment exposed a false-success path in
-  Appium's cleanup command. After preserving it, removing its directory and
-  restarting XR2 testmanagerd, two consecutive short recordings completed and
-  self-cleaned. The wrapper now verifies deletion by relisting.
-  [Recovery record](experiments/XCTEST-ATTACHMENT-20260922.md).
-- XR1 recovered after the operator refreshed Xcode signing and trusted the new
-  runner. Its exact WDA timing build, Appium endpoint and RemoteXPC tunnel passed;
-  two consecutive recordings self-cleaned and both XRs ended with zero
-  attachments. The WDA fork and rig checkout now use `master` at `b5ace217`.
-  Collection remains off.
-- The 13,100-sample replacement plan preserves the historical device/park mix.
-  Its 310 accepted XR2 Skateboard GB 2024 clips leave 12,790 new clips; XR1's
-  loaded park is confirmed as SLS 2015 Los Angeles.
-  [Plan](experiments/M1-RECOLLECT-20260922.md).
-- The operator authorized a bounded first tranche to 2,000 strict clips per
-  device. A simultaneous exact-PTS smoke admitted 11/11 clips on each XR with
-  32 source-timed frames per clip. Release `13554c9` now collects XR1 to 2,000
-  new clips and XR2 to 1,690 new clips plus its 310-clip baseline. Persisted NTFY
-  monitors announce each new ten-percent milestone. XR1's first 598 records were
-  corrected from the explicit park placeholder without changing strict count or
-  command fingerprint; collection resumed while XR2 continued uninterrupted.
-
-## 2026-09-21 — Compact-video onset phase corrected
-
-- The operator marked the first visible trace as frame 7 in 35/35 audited clips,
-  while synthetic timing placed onset at frame 8. A surviving raw tranche video
-  showed both centre-control detections were already on their first visible
-  frames and the fitted WDA time missed a swipe onset by only 8.3 ms.
-- FFmpeg's resampling paired selected pixels with an invented output-time grid.
-  Upward rounding fixed the preserved example but did not give a reliable timing
-  contract on a new clean segment. Compact extraction now selects exact source
-  frame numbers and stores their actual source PTS relative to gesture onset.
-  The operator chose recollection over repair of the 1,109-clip tranche.
-- Two bounded validation attempts started underneath an already-open iOS Control
-  Center panel. The existing app-state check incorrectly called True Skate
-  foreground; raw frame zero disproved any claim that a sampled swipe opened the
-  panel. WDA's frontmost-bundle endpoint identified SpringBoard, so connection
-  and per-gesture guards now use it to reject this contamination route.
-- After Control Center was closed, a third bounded segment passed two-anchor
-  calibration, strict admission (11/11 payloads), 32-frame decoding and the new
-  frontmost-app guard. A final bounded segment using the exact-PTS extractor
-  also passed two-anchor calibration (rate `0.99994441`), admitted 11/11
-  payloads, decoded every clip at 32 frames with 32 stored source-relative
-  timestamps, and left True Skate frontmost. The extractor is now validated on
-  device for this collection path.
-  An inventory then confirmed that the audited 1,109-clip tranche has only one
-  surviving original `.mov`, with no emitted clips from that interrupted
-  recording. It cannot be faithfully regenerated; the next corpus will be
-  collected with the exact extractor from the outset.
-  A direct XR2 guard test then opened Control Center after connection. WDA
-  reported SpringBoard while Appium still reported True Skate foreground;
-  `ensure_foreground()` reactivated True Skate and WDA confirmed its bundle
-  afterward. The recovery mechanism is now directly device-validated.
-  A follow-up Skateboard GB 2024 audit tranche admitted 310 strict exact-PTS
-  clips. Every clip decodes to 32 frames with 32 increasing stored timestamps.
-  The live guard also caught SpringBoard during collection, restored True Skate
-  and withheld the affected attempt; the segment then failed calibration and
-  retained its raw recording without contributing clips.
-  [Experiment record](experiments/M1-20260921-direct-video-phase.md).
