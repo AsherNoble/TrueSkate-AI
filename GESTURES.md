@@ -314,6 +314,23 @@ interval and one pointer-up. No extra subdivisions or contact gaps are inserted.
 The curved execution audit freezes 5/8/11/15-point paths and their exact payloads;
 its overlay follows those quantized positions and times, never the observed trace.
 
+### Trick-speed strokes (`model1_trick_v1`)
+
+The [trick-speed batch](research/protocols/trick_speed_batch.md) uses a separate
+schema for fast strokes like real play.
+- **Shape and timing:** 1–4 straight pieces, each at least 40 ms, 50–600 ms in
+  all. A repeated point is a hold, sent as a zero-distance move.
+- **Safety:** points stay inside the usable bounds, and the whole quantized path
+  avoids the expanded control map.
+- **Sending:** each stroke is one request to WDA's direct
+  `/wda/perform_trick_gestures` endpoint, as in the kickflip runs.
+  - A run of 1–4 strokes sends each as soon as the previous request returns,
+    plus 0–150 ms. Strokes are never bundled into one request.
+- **Labels and timing:** labels are the commands sent. Direct requests carry no
+  WDA timing record, so stroke times are the rig-clock call start plus the
+  recording's median rig-to-WDA offset.
+- Curved v1's contract is unchanged.
+
 ## Experimental cubic in time (`cubic_in_time_v1`)
 
 `sim/cubic_curve.py` introduces an additive nine-number description:

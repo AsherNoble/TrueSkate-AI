@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trick-speed spot check</title>
+<!-- Adapted from model1/curved/review.html (the curved audit review UI); keep the two alike. -->
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;font-size:15px;
+ --bg:#101214;--panel:#15191d;--raised:#20252a;--hover:#2a3138;--line:#30363c;--line2:#46505a;
+ --text:#edf0f2;--muted:#aeb8c2;--faint:#7d8892;--accent:#77b6f4;
+ --ok:#4cc38a;--ok-bg:#1d4a36;--fault:#f07a6e;--fault-bg:#5a2622;--unsure:#e8b14f;--unsure-bg:#544119;
+ --touch:#6fffd1}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden}
+button,select,textarea{font:inherit;color:inherit;background:var(--raised);border:1px solid var(--line2);border-radius:6px}
+button{padding:8px 12px;cursor:pointer;line-height:1.2}
+button:hover:not(:disabled){background:var(--hover)}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid #a5cfff;outline-offset:2px}
+select{padding:6px 8px}
+kbd{font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);border:1px solid var(--line2);border-bottom-width:2px;border-radius:4px;padding:1px 5px;margin-left:6px;background:#181c20}
+h1{font-size:17px;margin:0;font-weight:650}
+h2{font-size:19px;margin:2px 0 8px}
+h3{font-size:12px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:650}
+p{margin:0;line-height:1.5}
+
+/* Header */
+.top{display:flex;align-items:center;gap:22px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.hash{font:12px ui-monospace,Menlo,monospace;color:var(--faint)}
+.overall{flex:1;display:flex;align-items:center;gap:14px;min-width:0}
+.bar{flex:0 1 260px;height:8px;background:#262c32;border-radius:5px;overflow:hidden;display:flex}
+.bar span{height:100%;transition:width .2s}
+#barK{background:var(--ok)}#barF{background:var(--fault)}#barU{background:var(--unsure)}
+#progress{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+.counts{color:var(--muted);font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.counts b{font-weight:650}.c-ok{color:var(--ok)}.c-fault{color:var(--fault)}.c-unsure{color:var(--unsure)}
+#export{font-weight:600}
+#export.ready{background:var(--ok-bg);border-color:var(--ok)}
+
+/* Layout */
+.layout{flex:1;min-height:0;display:grid;grid-template-columns:236px minmax(0,1fr) 372px;grid-template-rows:minmax(0,1fr)}
+.clips{border-right:1px solid var(--line);overflow:auto;padding:14px 14px 24px}
+.group{margin-bottom:16px}
+.group-head{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-bottom:6px}
+.group-head span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--text)}
+.group-head span:last-child{font-variant-numeric:tabular-nums}
+.cells{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.cell{padding:5px 0;font-size:12px;font-variant-numeric:tabular-nums;border-radius:5px;background:#181c20;border-color:var(--line);color:var(--faint)}
+.cell.touched{border-color:var(--accent);color:var(--text)}
+.cell.K{background:var(--ok-bg);border-color:var(--ok);color:#d8f5e7}
+.cell.F{background:var(--fault-bg);border-color:var(--fault);color:#ffe0dc}
+.cell.U{background:var(--unsure-bg);border-color:var(--unsure);color:#fff0d2}
+.cell.current{outline:2px solid #fff;outline-offset:1px}
+
+.stage{display:flex;flex-direction:column;min-width:0;min-height:0;padding:14px 18px 12px}
+.screen-wrap{flex:1;min-height:0;display:flex;justify-content:center}
+.screen{position:relative;height:100%;aspect-ratio:414/896;max-width:100%;background:#050607;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.screen canvas,.screen svg{position:absolute;inset:0;width:100%;height:100%}
+.screen svg{pointer-events:none}
+.loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(5,6,7,.72);color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.spinner{width:26px;height:26px;border:3px solid #33404b;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.timeline{position:relative;height:40px;margin:12px auto 0;width:min(100%,760px);cursor:pointer;touch-action:none;user-select:none}
+.track{position:absolute;left:0;right:0;top:19px;height:8px;border-radius:4px;background:#262c32;overflow:hidden}
+.track .fill{height:100%;background:#36414b;width:0}
+.band{position:absolute;top:15px;height:16px;border-radius:3px;background:rgba(111,255,209,.22);border:1px solid rgba(111,255,209,.65);min-width:3px}
+.band::before{content:attr(data-label);position:absolute;top:-15px;left:0;font:600 10px ui-monospace,Menlo,monospace;color:var(--touch);white-space:nowrap}
+.playhead{position:absolute;top:14px;width:14px;height:18px;margin-left:-7px;border-radius:4px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6)}
+.transport{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:8px}
+.transport button{padding:7px 11px}
+#play{min-width:84px;font-weight:600}
+.stamp{display:flex;gap:12px;margin-left:10px;font:12px ui-monospace,Menlo,monospace;color:var(--muted);font-variant-numeric:tabular-nums}
+.stamp b{color:var(--text);font-weight:600}
+
+/* Panel */
+.panel{border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:14px 18px 24px;display:flex;flex-direction:column;gap:12px}
+.eyebrow{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.state{font-weight:600}.state.done{color:var(--ok)}.state.open{color:var(--faint)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:3px 8px;border-radius:20px;background:#1d2329;border:1px solid var(--line);color:var(--muted);font-variant-numeric:tabular-nums}
+.block{border-top:1px solid var(--line);padding-top:12px}
+.touches{display:flex;flex-direction:column;gap:6px}
+.touch{display:flex;justify-content:space-between;align-items:center;text-align:left;font-variant-numeric:tabular-nums;padding:8px 12px}
+.touch .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;background:var(--touch)}
+.touch small{color:var(--faint);font:12px ui-monospace,Menlo,monospace}
+.touch.here{border-color:var(--touch);box-shadow:inset 0 0 0 1px var(--touch)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg button{padding:11px 4px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.seg button[data-verdict=K][aria-checked=true]{background:var(--ok-bg);border-color:var(--ok);box-shadow:inset 0 0 0 1px var(--ok)}
+.seg button[data-verdict=F][aria-checked=true]{background:var(--fault-bg);border-color:var(--fault);box-shadow:inset 0 0 0 1px var(--fault)}
+.seg button[data-verdict=U][aria-checked=true]{background:var(--unsure-bg);border-color:var(--unsure);box-shadow:inset 0 0 0 1px var(--unsure)}
+.hint{font-size:12px;color:var(--faint);margin-top:8px}
+.switch{display:flex;align-items:center;gap:10px;margin:12px 0 0;cursor:pointer;font-size:14px}
+.switch input{appearance:none;flex:none;width:38px;height:22px;margin:0;background:var(--line2);border-radius:20px;position:relative;cursor:pointer;transition:background .12s}
+.switch input::before{content:'';position:absolute;width:16px;height:16px;top:3px;left:3px;background:#fff;border-radius:50%;transition:transform .12s}
+.switch input:checked{background:#318364}.switch input:checked::before{transform:translateX(16px)}
+.switch kbd{margin-left:auto}
+.field-label{display:flex;align-items:center;gap:8px;margin:14px 0 6px;font-size:14px;font-weight:600}
+.req{font-size:11px;font-weight:650;color:var(--fault);border:1px solid var(--fault);border-radius:10px;padding:0 6px}
+textarea{width:100%;min-height:72px;padding:9px;resize:vertical;line-height:1.4}
+textarea.missing{border-color:var(--fault);box-shadow:0 0 0 1px var(--fault)}
+.problems{min-height:20px;font-size:13px;color:var(--fault)}
+.problems.ok{color:var(--ok)}
+#save{width:100%;padding:13px;font-weight:650;background:#215d45;border-color:#3b946c}
+#save:hover{background:#26704f}
+.nav2{display:flex;gap:8px;margin-top:-6px}.nav2 button{flex:1;font-size:13px}
+.inline{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:14px;color:var(--muted)}
+details.keys{font-size:13px;color:var(--muted)}
+details.keys summary{cursor:pointer;color:var(--muted)}
+.keygrid{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;margin-top:10px;align-items:center}
+.keygrid kbd{margin:0;justify-self:start}
+
+.toast{position:fixed;left:50%;top:72px;transform:translate(-50%,-12px);opacity:0;pointer-events:none;background:#1f2a33;border:1px solid var(--accent);color:var(--text);padding:11px 16px;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.5);transition:opacity .15s,transform .15s;max-width:min(640px,90vw);font-size:14px}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.fatal{margin:40px auto;max-width:560px;color:var(--fault)}
+
+@media(max-width:1180px){.layout{grid-template-columns:minmax(0,1fr) 352px}.clips{grid-column:1/-1;grid-row:2;border-right:none;border-top:1px solid var(--line);display:flex;gap:18px;overflow-x:auto}.group{min-width:170px}body{overflow:auto}.layout{grid-template-rows:minmax(560px,1fr) auto}}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.panel{border-left:none}.top{flex-wrap:wrap}.screen-wrap{height:62vh}.clips{grid-row:auto}}
+</style>
+</head>
+<body>
+<header class="top">
+ <div class="brand"><h1>Trick-speed spot check</h1><span class="hash" id="hash"></span></div>
+ <div class="overall">
+  <div class="bar" aria-hidden="true"><span id="barK"></span><span id="barF"></span><span id="barU"></span></div>
+  <span id="progress">0 / 20 complete</span>
+  <span class="counts"><b class="c-ok" id="nK">0</b> OK · <b class="c-fault" id="nF">0</b> fault · <b class="c-unsure" id="nU">0</b> unsure</span>
+ </div>
+ <button id="export">Export review</button>
+</header>
+
+<main class="layout">
+ <nav class="clips" id="clips" aria-label="Clips by recording"></nav>
+
+ <section class="stage" aria-label="Native frames">
+  <div class="screen-wrap">
+   <div class="screen">
+    <canvas id="canvas"></canvas>
+    <svg id="overlay" viewBox="0 0 414 896" preserveAspectRatio="none" aria-hidden="true">
+     <path id="grid" fill="none" stroke="rgba(120,210,255,.12)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+     <g id="paths" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.5" stroke-linejoin="round"></g>
+     <g id="rings" fill="none" stroke="#6fffd1" stroke-width="2"></g>
+    </svg>
+    <div class="loading" id="loading"><div class="spinner"></div><span id="loadText">Loading native frames…</span></div>
+   </div>
+  </div>
+  <div class="timeline" id="timeline" role="slider" aria-label="Native frame" aria-valuemin="0" aria-valuemax="119" tabindex="0">
+   <div class="track"><div class="fill" id="fill"></div></div>
+   <div id="bands"></div>
+   <div class="playhead" id="playhead"></div>
+  </div>
+  <div class="transport">
+   <button id="first" title="First frame (Home)">⏮</button>
+   <button id="back" title="Previous frame (←, Shift ← for 10)">◀ Frame</button>
+   <button id="play" title="Play / pause (Space)">Play</button>
+   <button id="forward" title="Next frame (→, Shift → for 10)">Frame ▶</button>
+   <button id="replay" title="Replay from the start (R)">↺ Replay</button>
+   <select id="speed" aria-label="Playback speed"><option value=".1">0.1×</option><option value=".25">0.25×</option><option value=".5" selected>0.5×</option><option value="1">1×</option></select>
+   <div class="stamp"><span>Frame <b id="frameNo">0</b> / 119</span><span>PTS <b id="pts">–</b> s</span><span id="dt"></span></div>
+  </div>
+ </section>
+
+ <aside class="panel">
+  <div>
+   <div class="eyebrow"><span id="clipNo">Clip – of 20</span><span class="state" id="clipState"></span></div>
+   <h2 id="title">–</h2>
+   <div class="chips" id="chips"></div>
+  </div>
+
+  <section class="block">
+   <h3>Touches, in order</h3>
+   <div class="touches" id="touches"></div>
+   <p class="hint">Click a touch, or press T, to jump to its commanded start.</p>
+  </section>
+
+  <section class="block">
+   <h3>Judgement</h3>
+   <div class="seg" role="radiogroup" aria-label="Judgement">
+    <button data-verdict="K" role="radio" aria-checked="false">OK<kbd>1</kbd></button>
+    <button data-verdict="F" role="radio" aria-checked="false">Fault<kbd>2</kbd></button>
+    <button data-verdict="U" role="radio" aria-checked="false">Unsure<kbd>3</kbd></button>
+   </div>
+   <p class="hint">OK: every touch leaves its trail along its ring, and nothing else touches the screen. Fault: a missing or extra touch, a trail far from its ring, or a menu. Can't tell? Unsure.</p>
+   <label class="field-label" for="reason">What you saw <span class="req" id="reasonReq" hidden>required</span></label>
+   <textarea id="reason" placeholder="Required for Fault or Unsure. Esc leaves the box."></textarea>
+  </section>
+
+  <p class="problems" id="problems" role="status" aria-live="polite"></p>
+  <button id="save">Save &amp; next<kbd>↵</kbd></button>
+  <div class="nav2"><button id="prevClip">← Previous<kbd>[</kbd></button><button id="nextClip">Next<kbd>]</kbd> →</button></div>
+
+  <section class="block">
+   <h3>View</h3>
+   <label class="switch"><input type="checkbox" id="showRings" checked>Rings at commanded positions<kbd>O</kbd></label>
+   <label class="switch"><input type="checkbox" id="showPaths" checked>Full commanded paths<kbd>P</kbd></label>
+   <label class="switch"><input type="checkbox" id="showGrid">Translucent logical grid<kbd>G</kbd></label>
+   <label class="inline">Grid spacing <select id="spacing"><option>1</option><option>5</option><option selected>10</option><option>25</option></select> logical points</label>
+   <label class="switch"><input type="checkbox" id="autoplay" checked>Play once when a clip opens</label>
+  </section>
+
+  <details class="keys" id="keys">
+   <summary>Keyboard shortcuts (?)</summary>
+   <div class="keygrid">
+    <kbd>Space</kbd><span>Play / pause</span>
+    <kbd>← →</kbd><span>Previous / next native frame (Shift: 10)</span>
+    <kbd>Home End</kbd><span>First / last frame</span>
+    <kbd>R</kbd><span>Replay from the start</span>
+    <kbd>T</kbd><span>Jump to the next touch's start</span>
+    <kbd>1 2 3</kbd><span>OK / Fault / Unsure</span>
+    <kbd>↵</kbd><span>Save &amp; next incomplete clip (⌘↵ in the text box)</span>
+    <kbd>[ ]</kbd><span>Previous / next clip</span>
+    <kbd>O P G</kbd><span>Toggle rings / paths / grid</span>
+    <kbd>Esc</kbd><span>Leave the text box</span>
+   </div>
+  </details>
+ </aside>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const SVG='http://www.w3.org/2000/svg';
+const FRAMES=120,KEEP_BEHIND=1,KEEP_AHEAD=2,W=414,H=896;
+const NAMES={K:'OK',F:'Fault',U:'Unsure'};
+let manifest,rows={},key,uiKey='trick-speed-review-ui',readOnly=false;
+let current=0,frame=0,playing=false,playToken=0,clipToken=0;
+const clips=new Map();  // sample index -> {images, loaded, ready}
+
+function storeGet(k,fallback){try{return JSON.parse(localStorage.getItem(k)||'null')??fallback}catch{return fallback}}
+function storeSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+const ui=Object.assign({rings:true,paths:true,grid:false,spacing:'10',speed:'.5',autoplay:true},storeGet(uiKey,{}));
+
+const sample=(i=current)=>manifest.samples[i];
+function row(i=current){const code=sample(i).code;return rows[code]??={code,verdict:'',reason:''}}
+function persist(){if(!readOnly)storeSet(key,rows)}
+
+// Mirrors review.import_report so an export never fails import on completeness.
+function problems(r){
+ const out=[];
+ if(!r.verdict)out.push('Choose OK, Fault or Unsure.');
+ if(r.verdict&&r.verdict!=='K'&&!r.reason.trim())out.push('Say what you saw.');
+ return out;
+}
+const complete=i=>{const r=rows[sample(i).code];return !!r&&problems(r).length===0};
+const touched=r=>!!r&&(r.verdict||r.reason.trim());
+
+// Commanded contact point of one stroke at a native frame time (as curved/review.html, per stroke).
+function point(s,t,rate){
+ const elapsed=(t-s.onset_s)/rate*1000,ms=s.times_ms;
+ if(elapsed<0||t>s.release_s)return null;
+ let k=1;while(k<ms.length-1&&ms[k]<elapsed)k++;
+ const span=ms[k]-ms[k-1],u=span>0?Math.max(0,Math.min(1,(elapsed-ms[k-1])/span)):1;
+ return s.command_points[k-1].map((x,a)=>x+u*(s.command_points[k][a]-x));
+}
+const frameAt=t=>{const times=sample().frame_times_s;let n=0;while(n<FRAMES-1&&times[n]<t)n++;return n};
+
+// ---------- frames ----------
+function loadClip(i){
+ if(clips.has(i))return clips.get(i);
+ const s=sample(i),entry={images:new Array(FRAMES),loaded:0};
+ entry.ready=new Promise((resolve,reject)=>{
+  for(let n=0;n<FRAMES;n++){
+   const im=new Image();im.decoding='async';
+   im.onload=()=>{entry.loaded++;if(i===current)loadingProgress(entry);if(entry.loaded===FRAMES)resolve(entry)};
+   im.onerror=()=>reject(new Error('Native frame '+n+' of clip '+s.code+' failed to load'));
+   im.src=`/frame/${s.id}/${n}?m=${manifest.sha256.slice(0,16)}`;
+   entry.images[n]=im;
+  }
+ });
+ entry.ready.catch(()=>{});
+ clips.set(i,entry);return entry;
+}
+function evict(){for(const i of [...clips.keys()])if(i<current-KEEP_BEHIND||i>current+KEEP_AHEAD){for(const im of clips.get(i).images)if(im)im.src='';clips.delete(i)}}
+function loadingProgress(entry){$('loadText').textContent=`Loading native frames… ${entry.loaded} / ${FRAMES}`;$('fill').style.width=(100*entry.loaded/FRAMES)+'%'}
+
+// ---------- drawing ----------
+function buildOverlay(){
+ const s=sample(),rings=[],paths=[],bands=[];
+ s.strokes.forEach((st,k)=>{
+  const ring=document.createElementNS(SVG,'circle');ring.setAttribute('r',manifest.ring_pt);ring.setAttribute('visibility','hidden');rings.push(ring);
+  const path=document.createElementNS(SVG,'polyline');path.setAttribute('vector-effect','non-scaling-stroke');
+  path.setAttribute('points',st.command_points.map(p=>`${p[0]*W},${p[1]*H}`).join(' '));paths.push(path);
+  const band=document.createElement('div');band.className='band';band.dataset.label=String(k+1);
+  const a=frameAt(st.onset_s),b=Math.max(a,frameAt(st.release_s));
+  band.style.left=(100*a/FRAMES)+'%';band.style.width=(100*(b-a+1)/FRAMES)+'%';
+  band.title=`Touch ${k+1}: ${st.family}, ${st.times_ms[st.times_ms.length-1]} ms`;bands.push(band);
+ });
+ $('rings').replaceChildren(...rings);$('paths').replaceChildren(...paths);$('bands').replaceChildren(...bands);
+}
+function draw(){
+ const entry=clips.get(current),im=entry?.images[frame];
+ const canvas=$('canvas');
+ if(im&&im.complete&&im.naturalWidth){
+  if(canvas.width!==im.naturalWidth||canvas.height!==im.naturalHeight){canvas.width=im.naturalWidth;canvas.height=im.naturalHeight}
+  canvas.getContext('2d').drawImage(im,0,0);
+ }
+ const s=sample(),t=s.frame_times_s[frame],rings=$('rings').children;
+ let active=-1;
+ s.strokes.forEach((st,k)=>{
+  const p=point(st,t,s.clock_rate),ring=rings[k];if(!ring)return;
+  if(p){active=k;ring.setAttribute('cx',p[0]*W);ring.setAttribute('cy',p[1]*H)}
+  ring.setAttribute('visibility',p&&ui.rings?'visible':'hidden');
+ });
+ $('paths').style.display=ui.paths?'':'none';
+ for(const [k,b] of [...document.querySelectorAll('.touch')].entries())b.classList.toggle('here',k===active);
+ $('frameNo').textContent=frame;$('pts').textContent=t.toFixed(6);
+ $('dt').textContent=frame?`Δ ${((t-s.frame_times_s[frame-1])*1000).toFixed(2)} ms`:'';
+ $('playhead').style.left=(100*(frame+.5)/FRAMES)+'%';$('timeline').setAttribute('aria-valuenow',frame);
+}
+function drawGrid(){
+ const step=Number(ui.spacing);let d='';
+ if(ui.grid){for(let x=step;x<W;x+=step)d+=`M${x} 0V${H}`;for(let y=step;y<H;y+=step)d+=`M0 ${y}H${W}`}
+ $('grid').setAttribute('d',d);
+}
+function setFrame(n){frame=Math.max(0,Math.min(FRAMES-1,n));draw()}
+function nextTouch(){
+ const starts=sample().strokes.map(st=>frameAt(st.onset_s));
+ const next=starts.find(n=>n>frame);stop();setFrame(next??starts[0]);
+}
+
+// ---------- playback (native PTS, scaled) ----------
+function stop(){playing=false;playToken++;$('play').textContent='Play'}
+function play(from){
+ const entry=clips.get(current);if(!entry||entry.loaded!==FRAMES)return;
+ if(playing){stop();return}
+ if(from!=null)frame=from;else if(frame===FRAMES-1)frame=0;
+ playing=true;$('play').textContent='Pause';
+ const token=++playToken,times=sample().frame_times_s,start=performance.now(),base=times[frame],speed=Number(ui.speed);
+ draw();
+ (function tick(now){
+  if(token!==playToken)return;
+  const t=base+(now-start)/1000*speed;
+  while(frame<FRAMES-1&&times[frame+1]<=t)frame++;
+  draw();
+  if(frame===FRAMES-1){stop();return}
+  requestAnimationFrame(tick);
+ })(start);
+}
+
+// ---------- clip panel ----------
+function renderPanel(){
+ const s=sample(),r=row();
+ $('clipNo').textContent=`Clip ${s.code} of ${String(manifest.samples.length).padStart(2,'0')}`;
+ const done=complete(current);$('clipState').textContent=done?'Complete ✓':'Incomplete';$('clipState').className='state '+(done?'done':'open');
+ $('title').textContent=`${s.recording} · run ${s.run}`;
+ const n=s.strokes.length;
+ $('chips').replaceChildren(...[s.run_kind==='kickflip_shaped'?'Kickflip-shaped':s.run_kind==='mixed'?'Mixed':s.run_kind,
+  `${n} touch${n===1?'':'es'}`,s.park,s.device].filter(Boolean).map(text=>{const c=document.createElement('span');c.className='chip';c.textContent=text;return c}));
+ $('touches').replaceChildren(...s.strokes.map((st,k)=>{
+  const b=document.createElement('button');b.className='touch';
+  const name=document.createElement('span');const dot=document.createElement('span');dot.className='dot';
+  name.append(dot,`${k+1} · ${st.family}`);
+  const detail=document.createElement('small');detail.textContent=`${st.times_ms[st.times_ms.length-1]} ms · frame ${frameAt(st.onset_s)}`;
+  b.append(name,detail);b.onclick=()=>{stop();setFrame(frameAt(st.onset_s))};return b}));
+ for(const b of document.querySelectorAll('.seg button'))b.setAttribute('aria-checked',String(b.dataset.verdict===r.verdict));
+ if(document.activeElement!==$('reason'))$('reason').value=r.reason;
+ const needsReason=r.verdict&&r.verdict!=='K';
+ $('reasonReq').hidden=!needsReason;$('reason').classList.toggle('missing',!!needsReason&&!r.reason.trim());
+ const list=problems(r);
+ $('problems').className='problems'+(list.length?'':' ok');
+ $('problems').textContent=list.length?(touched(r)?list.join(' '):''):'Ready. Save & next moves to the next incomplete clip.';
+}
+function renderProgress(){
+ const n=manifest.samples.length,c={K:0,F:0,U:0};let doneCount=0;
+ manifest.samples.forEach((s,i)=>{if(complete(i)){doneCount++;c[rows[s.code].verdict]++}});
+ $('progress').textContent=`${doneCount} / ${n} complete`;
+ for(const v of ['K','F','U']){$('n'+v).textContent=c[v];$('bar'+v).style.width=(100*c[v]/n)+'%'}
+ $('export').classList.toggle('ready',doneCount===n);
+ if(!$('export').disabled)$('export').textContent=doneCount===n?'Export review ✓':`Export review (${n-doneCount} left)`;
+ for(const cell of document.querySelectorAll('.cell')){
+  const i=Number(cell.dataset.index),r=rows[sample(i).code];
+  cell.className='cell'+(complete(i)?' '+r.verdict:touched(r)?' touched':'')+(i===current?' current':'');
+ }
+ for(const el of document.querySelectorAll('.group-count')){const idx=JSON.parse(el.dataset.indices);el.textContent=`${idx.filter(complete).length} / ${idx.length}`}
+}
+function buildClipList(){
+ const groups=new Map();
+ manifest.samples.forEach((s,i)=>{if(!groups.has(s.recording))groups.set(s.recording,[]);groups.get(s.recording).push(i)});
+ const nodes=[];
+ for(const [recording,indices] of groups){
+  const box=document.createElement('div');box.className='group';
+  const head=document.createElement('div');head.className='group-head';
+  const name=document.createElement('span');name.textContent='Recording '+recording;
+  const count=document.createElement('span');count.className='group-count';count.dataset.indices=JSON.stringify(indices);
+  head.append(name,count);
+  const cells=document.createElement('div');cells.className='cells';
+  for(const i of indices){const s=sample(i),b=document.createElement('button');b.className='cell';b.dataset.index=i;b.textContent=s.code;b.title=`Clip ${s.code} · ${s.recording} run ${s.run} · ${s.strokes.length} touch(es)`;b.onclick=()=>openClip(i);cells.append(b)}
+  box.append(head,cells);nodes.push(box);
+ }
+ $('clips').replaceChildren(...nodes);
+}
+
+// ---------- navigation ----------
+async function openClip(i){
+ stop();current=(i+manifest.samples.length)%manifest.samples.length;frame=0;
+ const token=++clipToken;
+ storeSet(uiKey,Object.assign(ui,{last:current}));
+ const entry=loadClip(current);evict();
+ buildOverlay();renderPanel();renderProgress();
+ $('canvas').getContext('2d').clearRect(0,0,$('canvas').width,$('canvas').height);
+ $('loading').hidden=entry.loaded===FRAMES;loadingProgress(entry);draw();
+ try{await entry.ready}catch(e){if(token===clipToken){$('loadText').textContent=e.message+'. Reload the page to retry.';}return}
+ if(token!==clipToken)return;
+ $('loading').hidden=true;$('fill').style.width='100%';draw();
+ for(let k=1;k<=KEEP_AHEAD;k++)if(current+k<manifest.samples.length)loadClip(current+k);
+ if(ui.autoplay)play(0);
+}
+function nextIncomplete(from){
+ const n=manifest.samples.length;
+ for(let k=1;k<=n;k++){const i=(from+k)%n;if(!complete(i))return i}
+ return -1;
+}
+function saveAndNext(){
+ const r=row(),list=problems(r);
+ if(list.length){
+  $('problems').className='problems';$('problems').textContent=list.join(' ');
+  if(list.includes('Say what you saw.')){$('reason').classList.add('missing');$('reason').focus()}
+  return;
+ }
+ persist();
+ const next=nextIncomplete(current);
+ if(next<0){renderProgress();renderPanel();toast('All clips are complete. Export the review when you are ready.');return}
+ openClip(next);
+}
+
+// ---------- edits ----------
+function edit(change){change(row());persist();renderPanel();renderProgress();draw()}
+function setVerdict(value){
+ edit(r=>{r.verdict=value});
+ if(value!=='K'&&!row().reason.trim()){stop();$('reason').focus()}
+}
+
+// ---------- export ----------
+// The server checks the report, saves it in the run's review folder and stops, which tells the
+// agent running it where the report is. A download remains the fallback when the server is gone.
+async function exportReview(){
+ const missing=manifest.samples.map((_,i)=>i).filter(i=>!complete(i));
+ if(missing.length){toast(`${missing.length} clip${missing.length===1?' is':'s are'} incomplete. Showing clip ${sample(missing[0]).code}.`);if(missing[0]!==current)openClip(missing[0]);else saveAndNext();return}
+ const report={experiment:manifest.experiment,selection_sha256:manifest.sha256,clips:manifest.samples.map(s=>{
+  const r=rows[s.code];return {code:s.code,verdict:r.verdict,reason:r.reason.trim()}})};
+ $('export').disabled=true;
+ let reply=null;
+ try{reply=await fetch('/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(report)})}catch{}
+ if(reply?.ok){
+  const {path}=await reply.json();stop();
+  $('export').textContent='Exported ✓';
+  toast(`Saved to ${path}. Claude has been told; you can close this tab.`,600000);
+  return;
+ }
+ $('export').disabled=false;
+ if(reply?.status===400){
+  const {error}=await reply.json().catch(()=>({error:'unreadable reply'}));
+  toast(`The server refused the review: ${error}. Tell Claude.`,15000);return;
+ }
+ const name='trick-speed-spot-check-'+manifest.sha256.slice(0,12)+'.json';
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));
+ a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+ toast(`The review server is gone, so ${name} was downloaded instead. Send Claude its path (usually ~/Downloads/${name}).`,15000);
+}
+let toastTimer;
+function toast(text,ms=4500){const t=$('toast');t.textContent=text;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),ms)}
+
+// ---------- wiring ----------
+function bind(){
+ $('first').onclick=()=>{stop();setFrame(0)};
+ $('back').onclick=()=>{stop();setFrame(frame-1)};
+ $('forward').onclick=()=>{stop();setFrame(frame+1)};
+ $('play').onclick=()=>play();
+ $('replay').onclick=()=>{stop();play(0)};
+ $('speed').value=ui.speed;$('speed').onchange=()=>{ui.speed=$('speed').value;storeSet(uiKey,ui);if(playing){stop();play()}};
+ const scrub=e=>{const box=$('timeline').getBoundingClientRect();stop();setFrame(Math.floor((e.clientX-box.left)/box.width*FRAMES))};
+ $('timeline').onpointerdown=e=>{$('timeline').setPointerCapture(e.pointerId);scrub(e);$('timeline').onpointermove=scrub};
+ $('timeline').onpointerup=()=>{$('timeline').onpointermove=null};
+ for(const b of document.querySelectorAll('.seg button'))b.onclick=()=>setVerdict(b.dataset.verdict);
+ $('reason').oninput=()=>{row().reason=$('reason').value;persist();renderPanel();renderProgress()};
+ $('save').onclick=saveAndNext;
+ $('prevClip').onclick=()=>openClip(current-1);$('nextClip').onclick=()=>openClip(current+1);
+ $('export').onclick=exportReview;
+ $('showRings').checked=ui.rings;$('showRings').onchange=()=>{ui.rings=$('showRings').checked;storeSet(uiKey,ui);draw()};
+ $('showPaths').checked=ui.paths;$('showPaths').onchange=()=>{ui.paths=$('showPaths').checked;storeSet(uiKey,ui);draw()};
+ $('showGrid').checked=ui.grid;$('showGrid').onchange=()=>{ui.grid=$('showGrid').checked;storeSet(uiKey,ui);drawGrid()};
+ $('spacing').value=ui.spacing;$('spacing').onchange=()=>{ui.spacing=$('spacing').value;storeSet(uiKey,ui);drawGrid()};
+ $('autoplay').checked=ui.autoplay;$('autoplay').onchange=()=>{ui.autoplay=$('autoplay').checked;storeSet(uiKey,ui)};
+ document.addEventListener('keydown',e=>{
+  const typing=['TEXTAREA','INPUT','SELECT'].includes(e.target.tagName)&&e.target.type!=='checkbox';
+  if(e.key==='Escape'){e.target.blur?.();return}
+  if(typing){if(e.target.id==='reason'&&e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();$('reason').blur();saveAndNext()}return}
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  const k=e.key,step=e.shiftKey?10:1;
+  if(k===' ')play();
+  else if(k==='ArrowLeft'){stop();setFrame(frame-step)}
+  else if(k==='ArrowRight'){stop();setFrame(frame+step)}
+  else if(k==='Home'){stop();setFrame(0)}
+  else if(k==='End'){stop();setFrame(FRAMES-1)}
+  else if(k==='r'||k==='R'){stop();play(0)}
+  else if(k==='t'||k==='T')nextTouch();
+  else if(k==='1')setVerdict('K');
+  else if(k==='2')setVerdict('F');
+  else if(k==='3')setVerdict('U');
+  else if(k==='Enter')saveAndNext();
+  else if(k==='[')openClip(current-1);
+  else if(k===']')openClip(current+1);
+  else if(k==='o'||k==='O'){$('showRings').checked=!$('showRings').checked;$('showRings').onchange()}
+  else if(k==='p'||k==='P'){$('showPaths').checked=!$('showPaths').checked;$('showPaths').onchange()}
+  else if(k==='g'||k==='G'){$('showGrid').checked=!$('showGrid').checked;$('showGrid').onchange()}
+  else if(k==='?'){$('keys').open=!$('keys').open}
+  else return;
+  e.preventDefault();
+ });
+}
+
+async function start(){
+ try{manifest=await fetch('/manifest').then(r=>{if(!r.ok)throw Error('manifest '+r.status);return r.json()})}
+ catch(e){document.body.innerHTML='<p class="fatal">The review server is unavailable: '+e.message+'</p>';return}
+ key='trick-speed-review-'+manifest.sha256;
+ try{rows=JSON.parse(localStorage.getItem(key)||'{}')}
+ catch(e){readOnly=true;rows={};toast('Saved review could not be read; edits will not be saved. Reload or tell Claude.',60000)}
+ $('hash').textContent='pick '+manifest.sha256.slice(0,12);
+ document.title=`Trick-speed spot check · ${manifest.samples.length} clips`;
+ buildClipList();drawGrid();bind();
+ const first=nextIncomplete(manifest.samples.length-1);
+ openClip(first<0?(ui.last??0):first);
+}
+start();
+</script>
+</body>
+</html>

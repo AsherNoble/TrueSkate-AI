@@ -6,6 +6,15 @@ them. Link a record only when one exists. Current state lives in
 [SYSTEM_MAP.md](SYSTEM_MAP.md).
 
 
+## 2026-10-15 — Trick-stroke labels re-timed to the visible trail
+
+- **Ran:** XR2 and XR1 trick-speed trials (TRICK-SPEED-20261015: 125 clips each, 277 direct strokes each, all
+  admitted); operator spot check of 20; trail-vs-label timing every 8 ms along each path; 205 pilot touches.
+- **Result:** rig-clock labels sat −23 to +25 ms off the trail (10–90%), mostly per recording; no clear speed
+  error once the trail's glow is allowed for. Pilot (phone-timestamped) labels: −16 to +4 ms. Spot check: 9/20 OK.
+- **Decision:** admission re-times each stroke to its own trail (misreads take the recording's median). Re-check:
+  12/20 OK; the rest are speed-ups seen after kinks and pops whose trail stops 10–20 pt short (24% of pops).
+
 ## 2026-10-14 — Model 1's 32-frame sampling is too sparse for trick strokes
 
 - **Ran:** filmed kickflip (60 fps) through linear Model 1's frame picks
