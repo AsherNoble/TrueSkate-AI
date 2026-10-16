@@ -7,10 +7,15 @@ directly; `.github/copilot-instructions.md` forwards here. Do not add a
 ## Current direction
 
 Behavioural cloning is authoritative. Read `research/SYSTEM_MAP.md` first, then
-the short `research/JOURNAL.md`. Near-term target: a rough curved Model 1 MVP
-and the first end-to-end kickflip in Workshop. Linear Model 1 is the current
-trained model; hold, heatmap and temporal variants remain runnable experiments.
-Model 2 is unfinished. PPO/CMA-ES implementations are retired in tagged history.
+the short `research/JOURNAL.md`. Deadline: by 2026-11-20, a working version of
+the whole project, even a crap one. Model 1 labels expert play offline, Model 2
+plays live from screen frames, and its gestures run through WDA or the robotic
+hand. The hand is built in the hardware repo and takes the same gestures through
+a WDA-shaped API. Near-term target: a rough curved Model 1 MVP and the first
+end-to-end kickflip in Workshop. Linear Model 1 is the current trained model;
+hold, heatmap and temporal variants remain runnable experiments. Model 2 is
+unfinished and on the critical path. PPO/CMA-ES implementations are retired in
+tagged history.
 
 ## How research runs here
 
@@ -24,10 +29,11 @@ the arXiv preprint or another public claim.
 - **Certify:** the existing rigour (frozen protocol, blinded human judgement,
   untouched test data, pass rule stated in advance, red-team review, retained
   evidence). If you think something needs it, ask. Never escalate on your own.
-- **North star:** the intended trick lands when a predicted gesture or policy
-  runs on the phone. Model 1 recovery % is a proxy. Every proposal names the
-  link in the SYSTEM_MAP chain it unblocks and how that moves toward the north
-  star. Near-term target: a rough curved Model 1 MVP, even a bad one, because
+- **North star:** the intended trick lands when a predicted gesture or Model 2
+  runs on the phone, through WDA or the robotic hand, with the whole project
+  working, even roughly, by 2026-11-20. Model 1 recovery % is a proxy. Every
+  proposal names the link in the SYSTEM_MAP chain it unblocks and how that
+  moves toward the north star. Near-term target: a rough curved Model 1 MVP, even a bad one, because
   the end-to-end loop is blocked on it.
 - **Thin slice:** one trick (kickflip), one park (Workshop), end to end, before
   widening. Don't polish a component past what the next link needs.
