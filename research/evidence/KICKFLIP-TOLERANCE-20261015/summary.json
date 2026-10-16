@@ -1,0 +1,292 @@
+{
+  "experiment": "KICKFLIP-TOLERANCE-20261015",
+  "metric": "Euclidean distance in normalized screen coordinates (x/414, y/896), as Model 1 recovery",
+  "levels": {
+    "0": {
+      "planned": 10,
+      "run": 10,
+      "technical_failures": 0,
+      "admitted": 10,
+      "L": 10,
+      "F": 0,
+      "U": 0,
+      "unjudged": 0,
+      "landing_rate": 1.0
+    },
+    "0.02": {
+      "planned": 10,
+      "run": 10,
+      "technical_failures": 0,
+      "admitted": 10,
+      "L": 8,
+      "F": 2,
+      "U": 0,
+      "unjudged": 0,
+      "landing_rate": 0.8
+    },
+    "0.05": {
+      "planned": 10,
+      "run": 10,
+      "technical_failures": 1,
+      "admitted": 9,
+      "L": 1,
+      "F": 8,
+      "U": 0,
+      "unjudged": 0,
+      "landing_rate": 0.1111111111111111
+    },
+    "0.1": {
+      "planned": 10,
+      "run": 10,
+      "technical_failures": 0,
+      "admitted": 10,
+      "L": 0,
+      "F": 10,
+      "U": 0,
+      "unjudged": 0,
+      "landing_rate": 0.0
+    }
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "level": 0.1,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 2,
+      "level": 0.05,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 3,
+      "level": 0.0,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 4,
+      "level": 0.02,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 5,
+      "level": 0.05,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 6,
+      "level": 0.0,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 7,
+      "level": 0.02,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 8,
+      "level": 0.1,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 9,
+      "level": 0.0,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 10,
+      "level": 0.1,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 11,
+      "level": 0.05,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 12,
+      "level": 0.02,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 13,
+      "level": 0.0,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 14,
+      "level": 0.1,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 15,
+      "level": 0.05,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 16,
+      "level": 0.02,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 17,
+      "level": 0.1,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 18,
+      "level": 0.05,
+      "state": "technical failure",
+      "verdict": null
+    },
+    {
+      "attempt": 19,
+      "level": 0.02,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 20,
+      "level": 0.0,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 21,
+      "level": 0.05,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 22,
+      "level": 0.0,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 23,
+      "level": 0.1,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 24,
+      "level": 0.02,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 25,
+      "level": 0.02,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 26,
+      "level": 0.0,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 27,
+      "level": 0.05,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 28,
+      "level": 0.1,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 29,
+      "level": 0.02,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 30,
+      "level": 0.0,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 31,
+      "level": 0.1,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 32,
+      "level": 0.05,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 33,
+      "level": 0.02,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 34,
+      "level": 0.0,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 35,
+      "level": 0.1,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 36,
+      "level": 0.05,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 37,
+      "level": 0.02,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 38,
+      "level": 0.1,
+      "state": "admitted",
+      "verdict": "F"
+    },
+    {
+      "attempt": 39,
+      "level": 0.0,
+      "state": "admitted",
+      "verdict": "L"
+    },
+    {
+      "attempt": 40,
+      "level": 0.05,
+      "state": "admitted",
+      "verdict": "F"
+    }
+  ]
+}

@@ -6,6 +6,15 @@ them. Link a record only when one exists. Current state lives in
 [SYSTEM_MAP.md](SYSTEM_MAP.md).
 
 
+## 2026-10-16 — The kickflip lands with 2% position error, not 5%
+
+- **Ran:** your approved kickflip (19/19) on XR1 in Workshop with its pop and flick moved a fixed distance in a random
+  direction: 0, 2, 5 and 10% of the screen, 10 attempts each (KICKFLIP-TOLERANCE-20261015); your blinded review.
+- **Result:** landed 10/10 at 0, 8/10 at 2%, 1/9 at 5% (one technical failure), 0/10 at 10%. Both misses at 2% were
+  caught a quarter turn late; at 5% half the misses were near misses; at 10% the pop or flick failed (3 pop shove-its).
+- **Decision:** labels, Model 1 and the hand need positions within ~2% of the screen; MVP v0 (37% of test strokes at
+  2%) misses it, so the pops' end (item 10) comes before the 1,000 clips ([record](experiments/KICKFLIP-TOLERANCE-20261015.md)).
+
 ## 2026-10-16 — Live frames: WDA's MJPEG stream tops out at ~28 frames a second; Model 2 takes 30 fps at 207×448
 
 - **Ran:** XR1 Workshop, no gameplay touches: the stream read through 60 fps recorded minutes with die-five markers
@@ -358,27 +367,3 @@ them. Link a record only when one exists. Current state lives in
   calibration fits were near 1.0; XR2 segment 3 was 1.001788 with a weak start
   detection (score 10.82). The severe >1.004 case did not recur. All collectors
   stopped at their bounds. [Record](experiments/M1-LA-ORIGINALS-20260924.md).
-
-## 2026-09-24 — Balanced audit exposed calibration outliers
-
-- Both finite Super Crown runs stopped at their bounds, bringing the five-park
-  replacement pool to 13,902 strict clips. The operator reviewed 28 random
-  clips per park: 124 good, 9 mild, 7 critical. Six critical Los Angeles clips
-  have anomalously high two-anchor calibration rates that predict their late
-  visible traces; the seventh Super Crown clip has a low-rate anomaly. A
-  corpus-wide rate screen flags 1,063 clips for investigation, not automatic
-  exclusion. Human marks and selection are preserved in
-  [M1-AUDIT-20260924](experiments/M1-AUDIT-20260924.md). Training selection is
-  paused pending independent timing validation.
-- A blinded, held-out 24-clip onset check is prepared from twelve previously
-  unseen recordings, pairing early and late gestures in high-rate Los Angeles,
-  ordinary-rate Los Angeles and low-rate other-park segments. The selection is
-  frozen before human labels; no collection was started.
-  [Protocol](experiments/M1-ONSET-VALIDATION-20260924.md).
-- The operator labelled all 24 onsets without uncertainty. High-rate Los
-  Angeles pairs had late early-gesture traces that returned to frames 8–9 near
-  the end; low-rate other-park pairs showed the reverse; ordinary-rate Los
-  Angeles pairs stayed at frame 8. An anchor-error timing model predicted
-  22/24 exact onset frames and the other two within one frame. This validates
-  the extreme-rate risk signal, not a cutoff for automatic exclusion.
-  [Labels and analysis](experiments/M1-ONSET-VALIDATION-20260924.md).

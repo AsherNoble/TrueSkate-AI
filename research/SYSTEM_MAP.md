@@ -36,7 +36,7 @@ phone records the video, and the known gesture becomes the label.
 | What linear Model 1 sees | 32 frames over 2.3 s: one frame every ~73 ms | Too sparse for trick strokes ([check](JOURNAL.md)); tricks use every 60 Hz frame, as curved v1 does |
 | Shortest gesture the game counts | the board moves at ≥15 ms, not at 10 ms ([length](experiments/LINEAR-LENGTH-20261003.md)) | Known |
 | Finger trail on screen | fades to half in ~92 ms, gone by ~194 ms (branch record EXEC-TRANSFER-20261013); on your filmed kickflip, visible by eye for ~130–150 ms | Known, rough |
-| **Kickflip outcome tolerance** | landed 19/19 with pop→flick starts 322–429 ms apart (you: ~205 ms) and ~100 ms jitter ([kickflip](experiments/KICKFLIP-REPEATABILITY-20261009.md)) | Timing tolerance is wide. **Position tolerance is unknown; measure it next** |
+| **Kickflip outcome tolerance** | timing: landed 19/19 with pop→flick starts 322–429 ms apart (you: ~205 ms) and ~100 ms jitter ([kickflip](experiments/KICKFLIP-REPEATABILITY-20261009.md)). Position, with the pop and flick moved a fixed distance: landed 10/10 at 0, 8/10 at 2% of the screen, 1/9 at 5%, 0/10 at 10% ([tolerance](experiments/KICKFLIP-TOLERANCE-20261015.md)) | Timing tolerance is wide. **Position must be within ~2% of the screen**: the bar for labels, Model 1 and the hand |
 
 ## Models: what goes in, what comes out
 
@@ -49,14 +49,14 @@ phone records the video, and the known gesture becomes the label.
     ([HALFRES](experiments/M1-HALFRES-20260928.md)); 87.32% in unseen parks
     ([EXPAND](experiments/M1-EXPAND-20260929.md)). Misses are mostly short end
     points on fast swipes ([DIAG](experiments/M1-DIAG-20260928.md)).
-- **Curved Model 1 v1** (built, never trained; branch `codex/curved-model1-v1`):
-  120 frames at 60 Hz in, up to 10 straight pieces over 0.3–1.2 s out. Its data
-  check scored 83/100 against a 95/100 gate, so no training data was collected.
-- **Trick Model 1 MVP v0** (trained 2026-10-16, rough; branch
-  `research/model1-mvp-v0`): curved v1's network, 120 frames at 128×288 in, up
-  to 4 strokes of 50–600 ms out, each 1–4 straight pieces of at least 40 ms.
-  On 78 test strokes: 99% on time at both ends; 90% also within 5% of the
-  screen everywhere, 37% within 2% ([record](experiments/MODEL1-TRICK-MVP-20261016.md)).
+- **Curved Model 1 v1** (built, never trained): 120 frames at 60 Hz in, up to
+  10 straight pieces over 0.3–1.2 s out. Its data check scored 83/100 against a
+  95/100 gate, so no training data was collected.
+- **Trick Model 1 MVP v0** (trained 2026-10-16, rough): curved v1's network,
+  120 frames at 128×288 in, up to 4 strokes of 50–600 ms out, each 1–4 straight
+  pieces of at least 40 ms. On 78 test strokes: 99% on time at both ends; 90%
+  also within 5% of the screen everywhere, but only 37% within the kickflip's
+  2% ([record](experiments/MODEL1-TRICK-MVP-20261016.md)).
 - **Model 2** (September code, untrained; critical path for 2026-11-20).
   - In: recent frames at 30 fps, quarter size (207×448), plus your last strokes.
     Out: the next strokes.
@@ -74,7 +74,7 @@ phone records the video, and the known gesture becomes the label.
   ([HID-USB](experiments/HID-USB-20261006.md)).
 - **Robotic hand** (in parallel, in the hardware repo): it takes the same
   gestures through a WDA-shaped API, so Model 2 never knows which executor
-  played. Its accuracy spec is the outcome tolerance above.
+  played. Its accuracy spec is ~2% of the screen (the outcome tolerance above).
 
 ## Data and rig
 
@@ -98,7 +98,7 @@ phone records the video, and the known gesture becomes the label.
    Model 1 training sets start at 0.30 s. Trick models read every 60 Hz
    frame. The two 125-clip trials are in; the 1,000-clip batch is next.
 2. **Trick Model 1 is rough.** MVP v0 finds the strokes and times them, but
-   places them within 2% of the screen only 37% of the time (90% at 5%).
+   places them within the kickflip's 2% only 37% of the time (90% at 5%).
 3. **Model 2 is untrained.** Its live feed is measured: ~28 fps at quarter size.
 4. **Ground truth from your own play (parked).** A stock iPhone can't log
    touches; an Android phone is a last resort (2026-10-15).
@@ -113,17 +113,17 @@ phone records the video, and the known gesture becomes the label.
 Add or reorder items at any time; each comes to you as a short proposal first.
 Rough calendar: 1–3 by about Oct 24, 4–5 by Oct 31, 7 by Nov 10, 8 by Nov 17.
 
-1. **Kickflip position tolerance:** review the 39 recorded attempts. Landings
-   hold at 5% noise → the current labels are good enough; else → item 10 first.
-2. **Trick-speed 1,000 clips on XR1 + XR2** ([protocol](protocols/trick_speed_batch.md)).
-   The XR1 trial's trail check finds nothing new and you call the remaining
-   faults minor → record; else → fix the cause and rerun a 100-clip trial.
+1. **Kickflip position tolerance: done 2026-10-16** ([record](experiments/KICKFLIP-TOLERANCE-20261015.md)):
+   lands 8/10 at 2%, 1/9 at 5%, so the bar is ~2% and item 10 comes first.
+2. **Trick-speed 1,000 clips on XR1 + XR2** ([protocol](protocols/trick_speed_batch.md)),
+   after item 10 and with its pop fix. You call the remaining faults minor →
+   record; else → fix the cause and rerun a 100-clip trial.
 3. **Record your own play** in Workshop (30–60 min, the rig's 60 fps
    recorder) as Model 2's data. The trail shows clearly → keep it; else →
    change the settings and record again.
 4. **Rough curved Model 1 MVP v0: done 2026-10-16** ([record](experiments/MODEL1-TRICK-MVP-20261016.md)):
-   90% of test strokes pass at 5%, 37% at 2%. Item 1 picks: ≥5% → items 5 and 7;
-   2% → fix the stroke ends (pops' fall ~13 pt short), then retrain on the 1,000.
+   90% of test strokes pass at 5%, 37% at 2%. Item 1 says 2%, so fix the stroke
+   ends first (pops' fall ~13 pt short; item 10), then retrain on the 1,000.
 5. **Replay check of Model 1's labels:** your filmed kickflip, replayed by
    WDA, 20 times. Lands in at least half → Model 1 can label Model 2's data;
    else → fix the weakest link.
@@ -135,7 +135,8 @@ Rough calendar: 1–3 by about Oct 24, 4–5 by Oct 31, 7 by Nov 10, 8 by Nov 17
 8. **Model 2 plays live** through WDA, with a hand-ready interface. It lands a
    kickflip → north star met; else → fix the failing link.
 9. Speed after a kink, only if items 1, 5 or 8 point to it: re-time each piece.
-10. Pops' missing end, only if item 1 says it matters: test a 16–33 ms end hold.
+10. **Pops' missing end (next):** a 16–33 ms end hold, ~15 min of XR1. The trail
+    shows the whole pop → add the hold; else → label pops' ends from the trail.
 11. Timing tolerance inside a stroke, only if item 5 fails with good positions.
 
 ## Parked
@@ -144,7 +145,6 @@ Rough calendar: 1–3 by about Oct 24, 4–5 by Oct 31, 7 by Nov 10, 8 by Nov 17
   ([HID-POINTER](experiments/HID-POINTER-20261004.md)).
 - Multi-finger and spin gestures.
 - More linear scaling: data still helps, but the kickflip slice doesn't need it.
-- Replay fine-tuning ([note](protocols/model1_replay_finetuning.md)), which
-  comes after the MVP.
+- Replay fine-tuning, after the MVP ([note](protocols/model1_replay_finetuning.md)).
 - WDA-side timestamps for direct strokes (needs a WDA rebuild); Pico contact
   accuracy; other parks, until the Workshop kickflip works.
