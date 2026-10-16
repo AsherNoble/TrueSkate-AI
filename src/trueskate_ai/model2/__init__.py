@@ -1,8 +1,8 @@
 """Behavioral-cloning (sequence-leap) package.
 
 The VPT-style second stage: Model 2, a vision-grounded gesture-sequence policy
-(n frames + m past strokes -> next strokes), trained on Asher's expert play
-auto-labeled by Model 1 (the trace extractor). See
+(n frames + m past gestures -> next gestures), trained on Asher's expert play
+auto-labeled by Model 1 (the trail extractor). See
 `research/ARCHIVE.md (ARCH-001)` and the plan at
 `research/SYSTEM_MAP.md`.
 

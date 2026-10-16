@@ -1,6 +1,6 @@
 """Single source of truth for frame preprocessing across the BC pipeline.
 
-Model 1 (trace extractor) and Model 2 (sequence policy) both consume frames as
+Model 1 (trail extractor) and Model 2 (sequence policy) both consume frames as
 resize -> BGR2RGB -> normalise -> CHW. Train and inference MUST transform
 frames identically or the model sees a distribution shift it was never trained
 on; this used to be reimplemented independently at each call site.

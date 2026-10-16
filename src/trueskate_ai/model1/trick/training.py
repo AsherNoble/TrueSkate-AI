@@ -63,15 +63,15 @@ def rate(items, key) -> float:
 def summarize(rows) -> dict:
     if not rows:
         raise ValueError("empty evaluation")
-    strokes = [dict(s, device=row["device"]) for row in rows for s in row["strokes"]]
-    matched = [s for s in strokes if s["matched"]]
+    gestures = [dict(s, device=row["device"]) for row in rows for s in row["strokes"]]
+    matched = [s for s in gestures if s["matched"]]
     passes = [f"pass_{level:g}" for level in LEVELS]
-    result = dict(clips=len(rows), strokes=len(strokes), predicted=sum(r["predicted_strokes"] for r in rows),
-                  count_accuracy=rate(rows, "count_ok"), matched_rate=rate(strokes, "matched"),
+    result = dict(clips=len(rows), strokes=len(gestures), predicted=sum(r["predicted_strokes"] for r in rows),
+                  count_accuracy=rate(rows, "count_ok"), matched_rate=rate(gestures, "matched"),
                   extra_per_clip=float(np.mean([r["extra_strokes"] for r in rows])),
-                  timing_pass=rate(strokes, "timing_ok"),
+                  timing_pass=rate(gestures, "timing_ok"),
                   mean_path_error=float(np.mean([s["path_mean"] for s in matched])) if matched else 1.,
-                  **{f"stroke_{key}": rate(strokes, key) for key in passes},
+                  **{f"gesture_{key}": rate(gestures, key) for key in passes},
                   **{f"clip_{key}": rate(rows, f"clip_{key}") for key in passes},
                   errors={key: spread([s[key] for s in matched]) for key in (
                       "onset_error_ms", "release_error_ms", "duration_error_ms",
@@ -79,7 +79,7 @@ def summarize(rows) -> dict:
                   strata={})
     for field in ("family", "pieces", "duration_bin", "device"):
         groups = {}
-        for s in strokes:
+        for s in gestures:
             groups.setdefault(str(s[field]), []).append(s)
         result["strata"][field] = {
             name: dict(count=len(items), matched=rate(items, "matched"), timing_pass=rate(items, "timing_ok"),
@@ -90,12 +90,12 @@ def summarize(rows) -> dict:
 
 
 def selection_key(summary) -> tuple:
-    return (summary["stroke_pass_0.05"], summary["timing_pass"], -summary["mean_path_error"])
+    return (summary["gesture_pass_0.05"], summary["timing_pass"], -summary["mean_path_error"])
 
 
 @torch.no_grad()
 def predict(model, video, times, *, device) -> list[list[dict]]:
-    """Decoded strokes for a batch of 120-frame clips (uint8 video, clip times in seconds)."""
+    """Decoded gestures for a batch of 120-frame clips (uint8 video, clip times in seconds)."""
     model.eval()
     pred = model(video.to(device), times.to(device))
     values = {k: v.float().cpu().numpy() for k, v in pred.items() if k != "heatmap"}
@@ -106,12 +106,12 @@ def predict(model, video, times, *, device) -> list[list[dict]]:
 def evaluate(model, dataset, *, device, batch_size=8) -> dict:
     rows = []
     for batch in DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0):
-        for index, strokes in zip(batch["index"].tolist(), predict(model, batch["video"], batch["times"], device=device)):
-            row, score = dataset.rows[index], score_clip(strokes, dataset.meta[index])
+        for index, gestures in zip(batch["index"].tolist(), predict(model, batch["video"], batch["times"], device=device)):
+            row, score = dataset.rows[index], score_clip(gestures, dataset.meta[index])
             for s in score["strokes"]:
                 s["duration_bin"] = duration_bin(s["duration_ms"])
             rows.append(dict(id=row["id"], device=row["device"], recording=row["recording"], run=row["run"],
-                             prediction=strokes, **score))
+                             prediction=gestures, **score))
     return dict(summary=summarize(rows), samples=rows)
 
 
@@ -196,7 +196,7 @@ def fit(train, validation, out: Path, *, recipe=Recipe(), identity, device="cpu"
         print(json.dumps(dict(epoch=epoch, loss=round(history[-1]["loss"], 4), elapsed_s=round(history[-1]["elapsed_s"], 1),
                               count=round(summary["count_accuracy"], 3), timing=round(summary["timing_pass"], 3),
                               path=round(summary["mean_path_error"], 4),
-                              **{k: round(summary[f"stroke_pass_{k}"], 3) for k in ("0.02", "0.05")})), flush=True)
+                              **{k: round(summary[f"gesture_pass_{k}"], 3) for k in ("0.02", "0.05")})), flush=True)
     return json.loads(latest.read_text())
 
 

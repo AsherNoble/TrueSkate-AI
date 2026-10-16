@@ -1,7 +1,7 @@
 # Private XR menu control
 
-This standalone service mirrors XR1 and XR2 and sends a single touch gesture
-on release. Tap, hold (up to five seconds), or draw a curved drag with the laptop
+This standalone service mirrors XR1 and XR2 and sends a single gesture when you
+let go of the trackpad. Tap, hold (up to five seconds), or draw a curved gesture with the laptop
 trackpad. It does not record, calibrate, launch collection, or share dashboard
 port 8400. Full normalized screen coordinates map through `scale_to_device()`
 to 414×896 logical points; gameplay sampling exclusions do not apply to menus.
@@ -57,11 +57,11 @@ Click **Connect** separately for each device, then **Open True Skate** if needed
 Connect attaches to running WDA with app launch, reset, force launch and app
 termination disabled ([WDA attach guide](https://appium.github.io/appium-xcuitest-driver/latest/guides/attach-to-running-wda/)).
 Only Open True Skate activates the game. **Home** presses the native home button
-(exits the current app). **App Switcher** swipes up from the home indicator and
-pauses; drag a card up on the screen to close that app. **Control Centre** swipes
+(exits the current app). **App Switcher** sends a gesture up from the home indicator that
+ends in a pause; then draw a gesture up a card to close that app. **Control Centre** sends a gesture
 down from the top-right edge. These are fixed system gestures with the same
 fresh-video, ownership and no-retry guards as drawn gestures. Enlarge is
-optional. Drag paths appear before release. Escape, blur, resizing, pointer cancellation, leaving the screen,
+optional. Drawn paths appear before you let go. Escape, blur, resizing, pointer cancellation, leaving the screen,
 or exceeding five seconds discards a captured path. Multitouch is unsupported.
 
 One upstream reader feeds authenticated latest-frame responses to all browser
@@ -97,7 +97,7 @@ renewing the session; a command racing expiry is rejected; Connect creates a new
   Inspect Appium/WDA and the device; a timed-out gesture may have executed.
   Resolve only this service's orphan session after confirming command completion,
   or wait for its idle timeout. Restart the control service only after resolving
-  that uncertainty. It intentionally sends no touch release/replay on timeout.
+  that uncertainty. It intentionally sends no lift or replay on timeout.
 - **Wrong geometry:** turn off Display Zoom and use portrait XR geometry;
   connection rejects other dimensions without applying offsets.
 - **Tailscale “Failed to load preferences”:** in the agent sandbox this was an
@@ -126,7 +126,7 @@ service or gesture was deployed during that first verification pass. See the
 subsequent authorized launch below.
 
 For a complete navigation check on each XR: Connect,
-Open True Skate, open the park menu, drag its list once, select a named installed
+Open True Skate, open the park menu, scroll its list once with one gesture, select a named installed
 park, visually confirm its loaded scene, and Disconnect. Record the actual park
 and results separately; never claim this checklist has run from offline tests.
 

@@ -21,7 +21,7 @@ to test a refactor. `--help` on each entrypoint describes its existing flags.
 | Kickflip repeatability | Bounded diagnostic; operator review before 20 repeats | `scripts/collection/probe_kickflip_repeatability.py` ([procedure](../research/experiments/KICKFLIP-REPEATABILITY-20261009.md)) |
 | Kickflip position tolerance | Explore diagnostic; 40 jittered attempts on XR1, operator verdicts | `scripts/collection/probe_kickflip_tolerance.py` (`prepare`, `run` on the rig, then `admit`, `review`, `verdicts`, `report` on the laptop) |
 | Trick-speed batch (XR1, Workshop) | Explore; each rig run needs operator authorization | `scripts/collection/trick_speed_batch.py` ([protocol](../research/protocols/trick_speed_batch.md)) |
-| Trick Model 1 MVP v0 (1–4 fast strokes per clip) | Explore; each Modal run needs an approved budget | `scripts/model1/train_trick_modal.py` (freeze, pack, upload, train, test once) |
+| Trick Model 1 MVP v0 (1–4 fast gestures per clip) | Explore; each Modal run needs an approved budget | `scripts/model1/train_trick_modal.py` (freeze, pack, upload, train, test once) |
 | Corpus preview/progress | Supported | `scripts/train_dashboard.py` |
 
 ## Offline verification
@@ -45,7 +45,7 @@ jobs is a separate paid action, not an installation or smoke requirement.
 On the rig, the bounded linear wrapper remains
 `bash scripts/ops/mvp_collect_linear.sh iPhone_XR /absolute/output/path 1`.
 Set `BASIC_LINEAR_PARK` to the actual loaded park; the label does not navigate.
-It uses one-minute segments, an exact centre-screen control at the start and
+It uses one-minute recordings, an exact centre-screen control at the start and
 end, instrumented WDA `submitted_to_ios` timestamps, a two-anchor video-time
 fit, a reset before recording, and strict aligned video. Set
 `BASIC_LINEAR_WDA_TIMING_REVISION` only when deliberately deploying a compatible
@@ -101,14 +101,14 @@ Neither this tool nor the overlay contacts the rig or updates training labels.
 See [timing findings](../research/experiments/M1-TIMING-20260912.md), including
 the human-confirmed training exclusion that must be enforced before the next run.
 
-For last-visible trace frames, run `python scripts/inspect/build_trace_end_viewer.py
+For last-visible trail frames, run `python scripts/inspect/build_trace_end_viewer.py
 --viewer-dir /absolute/existing-viewer --starts /absolute/human-onsets.json` as one
 command. This adds `trace-ends.html` beside the original viewer, reuses its frames,
 and embeds the original starts unchanged. Select a gesture, mark its last visible
 frame with M, then use Next unmarked gesture. End labels are paired by start frame
 and exported separately. Ambiguous or recording-truncated endings can be marked
 uncertain. Browser storage is separate from onset labels. This measures visible
-trace lifetime, not actual contact duration or finger-up.
+trail lifetime, not the actual gesture duration or lift.
 
 ## Cubic execution fidelity diagnostic
 
@@ -127,7 +127,7 @@ or confirmation run is authorized by its stop gate. Do not rerun/replace failed
 attempts or route these artifacts into training corpora. The executed manifest
 and corrected implementation manifest are separate, preserved versions.
 
-## Linear drag speed diagnostic
+## Linear gesture speed diagnostic
 
 `scripts/collection/probe_linear_speed.py --freeze --manifest /absolute/new.json`
 freezes the XR1/Inbound duration-only sweep. Execution on training-server takes

@@ -51,16 +51,16 @@ def test_follow_does_not_accumulate_error():
     assert len(reports) == len(targets)
 
 
-def _strokes():
-    flick = hp.Stroke('flick', [(2.30, 206.0, 622.0), (2.3167, 248.0, 667.0), (2.3333, 302.0, 708.0), (2.35, 330.0, 730.0)])
-    push = hp.Stroke('push', [(0.485, 314.0, 231.0), (0.5, 304.0, 257.0), (0.5167, 294.0, 285.0), (0.60, 280.0, 400.0)])
-    late = hp.Stroke('late', [(2.468, 279.0, 484.0), (2.485, 299.0, 444.0), (2.518, 336.0, 383.0)])
+def _gestures():
+    flick = hp.Gesture('flick', [(2.30, 206.0, 622.0), (2.3167, 248.0, 667.0), (2.3333, 302.0, 708.0), (2.35, 330.0, 730.0)])
+    push = hp.Gesture('push', [(0.485, 314.0, 231.0), (0.5, 304.0, 257.0), (0.5167, 294.0, 285.0), (0.60, 280.0, 400.0)])
+    late = hp.Gesture('late', [(2.468, 279.0, 484.0), (2.485, 299.0, 444.0), (2.518, 336.0, 383.0)])
     return [flick, push, late]
 
 
 @pytest.mark.parametrize('lift', hp.LIFT_MODES)
 def test_schedule_shape(lift):
-    events, info = hp.build_schedule(_strokes(), lift=lift)
+    events, info = hp.build_schedule(_gestures(), lift=lift)
     times = [e[0] for e in events]
     assert times == sorted(times) and len(set(times)) == len(times)
     lifts_at = {s['release_us'] for s in info['strokes']}
@@ -70,7 +70,7 @@ def test_schedule_shape(lift):
     presses = sum(1 for a, b in zip([0] + buttons, buttons) if a == 0 and b == 1)
     lifts = sum(1 for a, b in zip(buttons, buttons[1:]) if a == 1 and b == 0)
     assert presses == 3 and lifts == 3 and buttons[-1] == 0
-    # strokes come out in time order; press and lift reports never move the cursor
+    # gestures come out in time order; press and lift reports never move the cursor
     names = [s['name'] for s in info['strokes']]
     assert names == ['push', 'flick', 'late']
     by_time = {t: (dx, dy, b) for t, dx, dy, b in events}
@@ -85,19 +85,19 @@ def test_schedule_shape(lift):
 
 def test_unknown_lift_mode_is_refused():
     with pytest.raises(ValueError, match='lift must be one of'):
-        hp.build_schedule(_strokes(), lift='with-move')
+        hp.build_schedule(_gestures(), lift='with-move')
 
 
 def test_schedule_keeps_gaps_between_presses():
-    events, info = hp.build_schedule(_strokes())
+    events, info = hp.build_schedule(_gestures())
     slots = {s['name']: s['press_slot'] for s in info['strokes']}
     step = hp.STEP_US / 1e6
     for a, b, gap in (('push', 'flick', 2.30 - 0.485), ('flick', 'late', 2.468 - 2.30)):
         assert abs((slots[b] - slots[a]) * step - gap) <= step / 2 + 1e-9
 
 
-def test_schedule_refuses_strokes_too_close_to_hover_between():
-    a = hp.Stroke('a', [(0.0, 50.0, 300.0), (0.03, 60.0, 300.0)])
-    b = hp.Stroke('b', [(0.06, 400.0, 800.0), (0.09, 390.0, 800.0)])  # 0 free slots, ~560 pt away
+def test_schedule_refuses_gestures_too_close_to_hover_between():
+    a = hp.Gesture('a', [(0.0, 50.0, 300.0), (0.03, 60.0, 300.0)])
+    b = hp.Gesture('b', [(0.06, 400.0, 800.0), (0.09, 390.0, 800.0)])  # 0 free slots, ~560 pt away
     with pytest.raises(ValueError, match='slots to reach the start'):
         hp.build_schedule([a, b])

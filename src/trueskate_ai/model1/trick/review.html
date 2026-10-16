@@ -171,9 +171,9 @@ details.keys summary{cursor:pointer;color:var(--muted)}
   </div>
 
   <section class="block">
-   <h3>Touches, in order</h3>
+   <h3>Gestures, in order</h3>
    <div class="touches" id="touches"></div>
-   <p class="hint">Click a touch, or press T, to jump to its commanded start.</p>
+   <p class="hint">Click a gesture, or press T, to jump to its commanded touch-down.</p>
   </section>
 
   <section class="block">
@@ -183,7 +183,7 @@ details.keys summary{cursor:pointer;color:var(--muted)}
     <button data-verdict="F" role="radio" aria-checked="false">Fault<kbd>2</kbd></button>
     <button data-verdict="U" role="radio" aria-checked="false">Unsure<kbd>3</kbd></button>
    </div>
-   <p class="hint">OK: every touch leaves its trail along its ring, and nothing else touches the screen. Fault: a missing or extra touch, a trail far from its ring, or a menu. Can't tell? Unsure.</p>
+   <p class="hint">OK: every gesture leaves its trail along its ring, and nothing else touches the screen. Fault: a missing or extra gesture, a trail far from its ring, or a menu. Can't tell? Unsure.</p>
    <label class="field-label" for="reason">What you saw <span class="req" id="reasonReq" hidden>required</span></label>
    <textarea id="reason" placeholder="Required for Fault or Unsure. Esc leaves the box."></textarea>
   </section>
@@ -208,7 +208,7 @@ details.keys summary{cursor:pointer;color:var(--muted)}
     <kbd>← →</kbd><span>Previous / next native frame (Shift: 10)</span>
     <kbd>Home End</kbd><span>First / last frame</span>
     <kbd>R</kbd><span>Replay from the start</span>
-    <kbd>T</kbd><span>Jump to the next touch's start</span>
+    <kbd>T</kbd><span>Jump to the next gesture's touch-down</span>
     <kbd>1 2 3</kbd><span>OK / Fault / Unsure</span>
     <kbd>↵</kbd><span>Save &amp; next incomplete clip (⌘↵ in the text box)</span>
     <kbd>[ ]</kbd><span>Previous / next clip</span>
@@ -248,7 +248,7 @@ function problems(r){
 const complete=i=>{const r=rows[sample(i).code];return !!r&&problems(r).length===0};
 const touched=r=>!!r&&(r.verdict||r.reason.trim());
 
-// Commanded contact point of one stroke at a native frame time (as curved/review.html, per stroke).
+// Commanded touch point of one gesture at a native frame time (as curved/review.html, per gesture).
 function point(s,t,rate){
  const elapsed=(t-s.onset_s)/rate*1000,ms=s.times_ms;
  if(elapsed<0||t>s.release_s)return null;
@@ -287,7 +287,7 @@ function buildOverlay(){
   const band=document.createElement('div');band.className='band';band.dataset.label=String(k+1);
   const a=frameAt(st.onset_s),b=Math.max(a,frameAt(st.release_s));
   band.style.left=(100*a/FRAMES)+'%';band.style.width=(100*(b-a+1)/FRAMES)+'%';
-  band.title=`Touch ${k+1}: ${st.family}, ${st.times_ms[st.times_ms.length-1]} ms`;bands.push(band);
+  band.title=`Gesture ${k+1}: ${st.family}, ${st.times_ms[st.times_ms.length-1]} ms`;bands.push(band);
  });
  $('rings').replaceChildren(...rings);$('paths').replaceChildren(...paths);$('bands').replaceChildren(...bands);
 }
@@ -349,7 +349,7 @@ function renderPanel(){
  $('title').textContent=`${s.recording} · run ${s.run}`;
  const n=s.strokes.length;
  $('chips').replaceChildren(...[s.run_kind==='kickflip_shaped'?'Kickflip-shaped':s.run_kind==='mixed'?'Mixed':s.run_kind,
-  `${n} touch${n===1?'':'es'}`,s.park,s.device].filter(Boolean).map(text=>{const c=document.createElement('span');c.className='chip';c.textContent=text;return c}));
+  `${n} gesture${n===1?'':'s'}`,s.park,s.device].filter(Boolean).map(text=>{const c=document.createElement('span');c.className='chip';c.textContent=text;return c}));
  $('touches').replaceChildren(...s.strokes.map((st,k)=>{
   const b=document.createElement('button');b.className='touch';
   const name=document.createElement('span');const dot=document.createElement('span');dot.className='dot';
@@ -388,7 +388,7 @@ function buildClipList(){
   const count=document.createElement('span');count.className='group-count';count.dataset.indices=JSON.stringify(indices);
   head.append(name,count);
   const cells=document.createElement('div');cells.className='cells';
-  for(const i of indices){const s=sample(i),b=document.createElement('button');b.className='cell';b.dataset.index=i;b.textContent=s.code;b.title=`Clip ${s.code} · ${s.recording} run ${s.run} · ${s.strokes.length} touch(es)`;b.onclick=()=>openClip(i);cells.append(b)}
+  for(const i of indices){const s=sample(i),b=document.createElement('button');b.className='cell';b.dataset.index=i;b.textContent=s.code;b.title=`Clip ${s.code} · ${s.recording} run ${s.run} · ${s.strokes.length} gesture(s)`;b.onclick=()=>openClip(i);cells.append(b)}
   box.append(head,cells);nodes.push(box);
  }
  $('clips').replaceChildren(...nodes);

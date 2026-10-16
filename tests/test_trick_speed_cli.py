@@ -12,15 +12,15 @@ import pytest
 from trueskate_ai.model1.curved.capture import file_sha256
 from trueskate_ai.model1.curved.contract import save_json
 from trueskate_ai.model1.trick import live, review
-from trueskate_ai.model1.trick.contract import Stroke
+from trueskate_ai.model1.trick.contract import Gesture
 
 REPO = Path(__file__).resolve().parents[1]
 SCRIPT = REPO/"scripts/collection/trick_speed_batch.py"
-POP = Stroke(((.505, .56), (.555, .8)), (0, 75), "pop")
-FLICK = Stroke(((.537, .51), (.537, .51), (.57, .54), (.715, .56)), (0, 70, 130, 170), "flick")
+POP = Gesture(((.505, .56), (.555, .8)), (0, 75), "pop")
+FLICK = Gesture(((.537, .51), (.537, .51), (.57, .54), (.715, .56)), (0, 70, 130, 170), "flick")
 
 
-def strokes_for(number):
+def gestures_for(number):
     return [dict(POP.to_dict(), onset_s=.4, release_s=.475),
             dict(FLICK.to_dict(), onset_s=.85, release_s=1.02)][:1 + number % 2]
 
@@ -35,7 +35,7 @@ def recording(root, name, *, runs=(), admitted=(), rejected=None, error=None, sh
         run = folder/f"run-{number:05d}"
         run.mkdir()
         (run/"clip.mp4").write_bytes(f"clip {name} {number}".encode())
-        save_json(run/"meta.json", dict(recording=name, run=number, strokes=strokes_for(number), clock_rate=1.,
+        save_json(run/"meta.json", dict(recording=name, run=number, strokes=gestures_for(number), clock_rate=1.,
                                         frame_times_s=[i/60 for i in range(120)],
                                         clip_sha256=file_sha256(run/"clip.mp4")))
     if rejected is not None:
@@ -215,7 +215,7 @@ def test_verdicts_are_checked_before_writing_and_never_silently_replaced(root):
         review.review_manifest(root, reselect=True)
 
 
-def test_summary_counts_states_rejections_strokes_and_spot_check(root):
+def test_summary_counts_states_rejections_gestures_and_spot_check(root):
     review.review_manifest(root, count=3)
     review.record_verdicts(root, "01K 02F")
     summary = review.summarize(root)
@@ -233,7 +233,7 @@ def test_summary_counts_states_rejections_strokes_and_spot_check(root):
     assert retiming["trail_shift_s"]["median"] == .04
     markdown = review.summary_markdown(summary)
     assert "Clips admitted: 3" in markdown and "1 OK, 1 fault" in markdown
-    assert "3 of 4 strokes read from their own trail (moved +40 ms median" in markdown
+    assert "3 of 4 gestures read from their own trail (moved +40 ms median" in markdown
 
 
 def test_busy_lock_is_exclusive_and_only_releases_its_own_stamp(tmp_path):

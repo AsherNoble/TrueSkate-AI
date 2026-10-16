@@ -1,17 +1,17 @@
 # Curved Model 1 — bounded collection, audit and training
 
 Agreed 2026-10-11. Implementation is additive and awaiting live qualification.
-This supersedes the provisional sampling, duration and 15-waypoint choices in
+This supersedes the provisional sampling, duration and 15-point choices in
 [the October 3 design record](model1_curved_mvp2.md). Existing linear results
 remain the supported baseline. No curved recovery result is claimed yet.
 
 ## Frozen scope
 
-One continuous contact, represented by 2–11 normalized timed waypoints:
-1–10 straight movements or pauses, each at least 100 ms, with total duration
+One gesture, represented by 2–11 normalized timed points:
+1–10 segments (moving or pauses), each at least 100 ms, with total duration
 sampled uniformly from integer 300–1200 ms. Duration limits the feasible segment
-count. One W3C request contains one down/up pair. There is no extra subdivision.
-Repeated adjacent positions are pauses. Segment lengths and durations vary.
+count. One W3C request contains one touch-down and one lift. There is no extra subdivision.
+Repeated adjacent points are pauses. Segment lengths and durations vary.
 
 Half the samples are random chains. Half come from a straight-to-single-arc
 family, up to a half-circle, using the fewest segments whose geometric sagitta
@@ -84,8 +84,8 @@ frames; its largest gap may not exceed 50 ms. Encoded clip PTS must agree with
 the source PTS to within 1 ms.
 
 Choose uniformly among valid source-frame crop starts, preserving at least five
-real frames before contact and five after release. Exclude every other sample,
-reset and calibration contact. This spreads onset across the feasible clip
+real frames before touch-down and five after lift. Exclude every other sample,
+reset and calibration gesture. This spreads touch-down across the feasible clip
 timeline. Use all 120 frames at 64×144 initially. Variable clip lengths and faster
 expert gestures remain later extensions.
 
@@ -146,7 +146,7 @@ timeline, including nearest-frame endpoint supervision. Loss is onset and
 release cross entropy, masked Smooth-L1 position error scaled by 0.03, plus
 0.1 times spatial heatmap cross entropy (Gaussian sigma 0.035 normalized).
 
-The decoder jointly chooses a 300–1200 ms contact interval. A deterministic
+The decoder jointly chooses a 300–1200 ms touch-down-to-lift span. A deterministic
 minimax dynamic program selects freely placed timed breakpoints, 1–10 segments
 of at least 100 ms. Choose the smallest segment count within 0.01 of the dense
 prediction; otherwise report the best feasible fit and its residual. This is

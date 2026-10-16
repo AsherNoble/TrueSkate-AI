@@ -1,4 +1,4 @@
-"""Synthetic stroke-contract, sampler, minute-plan, recorder and admission tests (trick-speed batch)."""
+"""Synthetic gesture-contract, sampler, minute-plan, recorder and admission tests (trick-speed batch)."""
 import copy
 from dataclasses import dataclass
 import json
@@ -14,23 +14,23 @@ from trueskate_ai.data.control_hitboxes import segment_is_safe
 from trueskate_ai.model1.curved.capture import probe_pts
 from trueskate_ai.model1.curved.contract import save_json
 from trueskate_ai.model1.trick import admission, recording, schedule
-from trueskate_ai.model1.trick.contract import FAMILIES, MAX_STROKES, MIN_PIECE_MS, Stroke
+from trueskate_ai.model1.trick.contract import FAMILIES, MAX_GESTURES, MIN_SEGMENT_MS, Gesture
 from trueskate_ai.model1.trick.sampling import KICKFLIP_RUNS, MAX_GAP_MS, _split, sample_run
 from trueskate_ai.research.curved_audit import marker_payload, reset_payload
 
 # The approved candidate_19 pop and flick (KICKFLIP-REPEATABILITY-20261009).
-POP = Stroke(((.505, .56), (.555, .815)), (0, 75), "pop")
-FLICK = Stroke(((.537, .51), (.57, .54), (.715, .56)), (0, 60, 100), "flick")
+POP = Gesture(((.505, .56), (.555, .815)), (0, 75), "pop")
+FLICK = Gesture(((.537, .51), (.57, .54), (.715, .56)), (0, 60, 100), "flick")
 
 
-def test_kickflip_strokes_match_the_kickflip_runners_direct_payload():
-    from trueskate_ai.research.kickflip_repeatability import direct_stroke
-    assert POP.payload() == direct_stroke("pop", [[.505, .56], [.555, .815]], [.075])["payload"]
-    assert FLICK.payload() == direct_stroke("flick", [[.537, .51], [.57, .54], [.715, .56]], [.06, .04])["payload"]
-    held = Stroke(((.537, .51), (.537, .51), (.715, .56)), (0, 70, 130), "flick")
+def test_kickflip_gestures_match_the_kickflip_runners_direct_payload():
+    from trueskate_ai.research.kickflip_repeatability import direct_gesture
+    assert POP.payload() == direct_gesture("pop", [[.505, .56], [.555, .815]], [.075])["payload"]
+    assert FLICK.payload() == direct_gesture("flick", [[.537, .51], [.57, .54], [.715, .56]], [.06, .04])["payload"]
+    held = Gesture(((.537, .51), (.537, .51), (.715, .56)), (0, 70, 130), "flick")
     assert held.payload()["gestures"][0]["waypoints"][:2] == [dict(x=222, y=456), dict(x=222, y=456, duration_ms=70)]
-    catch = Stroke(((.5, .505), (.5, .505)), (0, 520), "catch")
-    assert catch.payload() == direct_stroke("catch", [[.5, .505]] * 2, [.52])["payload"]
+    catch = Gesture(((.5, .505), (.5, .505)), (0, 520), "catch")
+    assert catch.payload() == direct_gesture("catch", [[.5, .505]] * 2, [.52])["payload"]
 
 
 def test_spin_crossing_path_has_safe_endpoints():
@@ -52,22 +52,22 @@ def test_spin_crossing_path_has_safe_endpoints():
     (((.5, .5), (.6, .6)), (0, 75.), "pop", "integer millisecond"),
     (((.5, .5), (.6, .6)), (0, np.int64(75)), "pop", "integer millisecond"),
     (((.5, .5), (.6, .6)), (5, 80), "pop", "integer millisecond"),
-    (((.5, .5), (.6, .6)), (0, 75), "kick", "unknown stroke family"),
-    (((.5, .5), (.6, .6)), (0, 40, 80), "pop", "1–4 pieces"),
-    (tuple((.5 + .01 * i, .5) for i in range(6)), tuple(range(0, 241, 48)), "random", "1–4 pieces"),
+    (((.5, .5), (.6, .6)), (0, 75), "kick", "unknown gesture family"),
+    (((.5, .5), (.6, .6)), (0, 40, 80), "pop", "1–4 segments"),
+    (tuple((.5 + .01 * i, .5) for i in range(6)), tuple(range(0, 241, 48)), "random", "1–4 segments"),
 ])
-def test_stroke_contract_rejections(points, times, family, message):
+def test_gesture_contract_rejections(points, times, family, message):
     with pytest.raises(ValueError, match=message):
-        Stroke(points, times, family)
+        Gesture(points, times, family)
 
 
-def test_stroke_round_trip_fingerprint_and_positions():
+def test_gesture_round_trip_fingerprint_and_positions():
     value = json.loads(json.dumps(POP.to_dict()))
-    assert Stroke.from_dict(value) == POP and value["command_points"] == POP.command_points().tolist()
+    assert Gesture.from_dict(value) == POP and value["command_points"] == POP.command_points().tolist()
     with pytest.raises(ValueError, match="fingerprint"):
-        Stroke.from_dict(dict(value, points=[[.505, .56], [.556, .815]]))
+        Gesture.from_dict(dict(value, points=[[.505, .56], [.556, .815]]))
     with pytest.raises(ValueError, match="schema"):
-        Stroke.from_dict(dict(value, schema="model1_curved_v1"))
+        Gesture.from_dict(dict(value, schema="model1_curved_v1"))
     start, end = POP.command_points()
     assert np.allclose(POP.positions(0.), start) and np.allclose(POP.positions(.075), end)
     assert np.allclose(POP.positions(.0375), (start + end) / 2)
@@ -76,12 +76,12 @@ def test_stroke_round_trip_fingerprint_and_positions():
         POP.positions(0., rate=0.)
 
 
-def test_split_is_exact_and_respects_the_piece_minimum():
+def test_split_is_exact_and_respects_the_segment_minimum():
     rng = np.random.default_rng(0)
     for count in range(1, 5):
-        for total in (MIN_PIECE_MS * count, MIN_PIECE_MS * count + 1, 333, 600):
-            pieces = _split(rng, total, count)
-            assert len(pieces) == count and sum(pieces) == total and min(pieces) >= MIN_PIECE_MS
+        for total in (MIN_SEGMENT_MS * count, MIN_SEGMENT_MS * count + 1, 333, 600):
+            segments = _split(rng, total, count)
+            assert len(segments) == count and sum(segments) == total and min(segments) >= MIN_SEGMENT_MS
 
 
 def test_runs_are_reproducible_feasible_and_mostly_fast():
@@ -91,13 +91,13 @@ def test_runs_are_reproducible_feasible_and_mostly_fast():
     durations, families, kinds = [], set(), set()
     for number in range(2000):
         run = sample_run(number)
-        strokes = [Stroke.from_dict(s) for s in run["strokes"]]
-        assert run["number"] == number and 1 <= len(strokes) <= MAX_STROKES
-        assert len(run["gaps_ms"]) == len(strokes) - 1 and all(0 <= g <= MAX_GAP_MS for g in run["gaps_ms"])
-        names = tuple(s.family for s in strokes)
+        gestures = [Gesture.from_dict(s) for s in run["strokes"]]
+        assert run["number"] == number and 1 <= len(gestures) <= MAX_GESTURES
+        assert len(run["gaps_ms"]) == len(gestures) - 1 and all(0 <= g <= MAX_GAP_MS for g in run["gaps_ms"])
+        names = tuple(s.family for s in gestures)
         if run["kind"] == "kickflip_shaped":
             assert names in shapes and list(names) == sorted(names, key=order.index)
-        durations += [s.times_ms[-1] for s in strokes]
+        durations += [s.times_ms[-1] for s in gestures]
         families.update(names)
         kinds.add(run["kind"])
     assert families == set(FAMILIES) and kinds == {"kickflip_shaped", "mixed"}
@@ -187,7 +187,7 @@ class Rig:
     def __init__(self, *, command_s=.5, direct_return_s=.3, guard_s=.1, start_s=.2, start_error=None,
                  direct_response=None):
         self.t = 100.
-        self.records, self.commands, self.strokes = [], [], []
+        self.records, self.commands, self.gestures = [], [], []
         self.command_s, self.direct_return_s, self.guard_s = command_s, direct_return_s, guard_s
         self.start_s, self.start_error = start_s, start_error
         self.direct_response = direct_response or {"value": {}}
@@ -215,7 +215,7 @@ class Rig:
         return {"value": None}
 
     def perform_direct(self, payload):
-        self.strokes.append(payload)
+        self.gestures.append(payload)
         self.t += sum(w.get("duration_ms", 0) for w in payload["gestures"][0]["waypoints"]) / 1000
         self.t += self.direct_return_s
         return self.direct_response
@@ -229,16 +229,16 @@ def run_minute(tmp_path, rig, plan):
         clock=rig.clock, sleep=rig.sleep, epoch=rig.epoch)
 
 
-def test_record_minute_sends_strokes_direct_and_markers_instrumented(tmp_path):
+def test_record_minute_sends_gestures_direct_and_markers_instrumented(tmp_path):
     rig, plan = Rig(), schedule.plan_minute(0)
     events = run_minute(tmp_path, rig, plan)
     execution = json.loads((tmp_path/"m0001"/"execution.json").read_text())
     assert execution["error"] is None and execution["failures"] == []
-    assert rig.strokes == [Stroke.from_dict(s).payload() for r in plan["runs"] for s in r["strokes"]]
+    assert rig.gestures == [Gesture.from_dict(s).payload() for r in plan["runs"] for s in r["strokes"]]
     assert rig.commands == [c["payload"] for c in plan["commands"]]
-    strokes = [e for e in events if e["kind"] == "stroke"]
-    assert all(not e["instrumented"] and e["success"] for e in strokes)
-    assert [(e["run"], e["stroke"]) for e in strokes] == [
+    gestures = [e for e in events if e["kind"] == "stroke"]
+    assert all(not e["instrumented"] and e["success"] for e in gestures)
+    assert [(e["run"], e["stroke"]) for e in gestures] == [
         (r["number"], j) for r in plan["runs"] for j in range(len(r["strokes"]))]
     assert sum(e["instrumented"] for e in events) == len(rig.records) == 5
     assert all(e["lateness_s"] <= recording.LATE_S for e in events if e.get("lateness_s") is not None)
@@ -253,7 +253,7 @@ def test_record_minute_sends_strokes_direct_and_markers_instrumented(tmp_path):
     (dict(command_s=30.), "overran the next slot", True),  # the start marker returns after the first run's slot
     (dict(guard_s=.6), "schedule overrun", True),          # the foreground check outlasts its lead
     (dict(start_s=1.5), "recorder start exceeded", True),
-    (dict(direct_response={"value": {"error": "boom"}}), "stroke response reports an error", True),
+    (dict(direct_response={"value": {"error": "boom"}}), "gesture response reports an error", True),
     (dict(start_error=RuntimeError("Already recording")), "Already recording", False),
 ])
 def test_failed_minute_keeps_evidence_and_stops_the_recorder(tmp_path, rig_options, message, recorded):
@@ -268,13 +268,13 @@ def test_failed_minute_keeps_evidence_and_stops_the_recorder(tmp_path, rig_optio
 
 
 def fixed_run(number, slot_s, durations_ms=(100, 100, 100), gaps_ms=None):
-    strokes = [Stroke(((.5, .5), (.6, .6)), (0, d), "random").to_dict() for d in durations_ms]
-    run = dict(number=number, seed=[0, number], kind="mixed", strokes=strokes,
-               gaps_ms=list(gaps_ms if gaps_ms is not None else [0] * (len(strokes) - 1)), redraws=0)
+    gestures = [Gesture(((.5, .5), (.6, .6)), (0, d), "random").to_dict() for d in durations_ms]
+    run = dict(number=number, seed=[0, number], kind="mixed", strokes=gestures,
+               gaps_ms=list(gaps_ms if gaps_ms is not None else [0] * (len(gestures) - 1)), redraws=0)
     return dict(run, slot_s=slot_s, budget_s=round(schedule.run_budget_s(run), 3))
 
 
-def test_slow_returns_drop_a_runs_remaining_strokes(tmp_path):
+def test_slow_returns_drop_a_runs_remaining_gestures(tmp_path):
     first = fixed_run(1, 4.4)
     second = fixed_run(2, round(4.4 + first["budget_s"], 3))
     plan = dict(schedule.plan_minute(0), runs=[first, second], skipped_runs=[])
@@ -286,12 +286,12 @@ def test_slow_returns_drop_a_runs_remaining_strokes(tmp_path):
     assert json.loads((tmp_path/"m0001"/"execution.json").read_text())["error"] is None
 
 
-def test_tampered_stroke_is_refused_before_any_touch(tmp_path):
+def test_tampered_gesture_is_refused_before_any_touch(tmp_path):
     rig, plan = Rig(), copy.deepcopy(schedule.plan_minute(0))
     plan["runs"][0]["strokes"][0]["payload_sha256"] = "0" * 64
     with pytest.raises(ValueError, match="fingerprint"):
         run_minute(tmp_path, rig, plan)
-    assert not (tmp_path/"m0001").exists() and rig.recorder.started == 0 and not rig.strokes
+    assert not (tmp_path/"m0001").exists() and rig.recorder.started == 0 and not rig.gestures
 
 
 def test_window_start_keeps_buffers_and_excludes_other_contacts():
@@ -319,7 +319,7 @@ def phone_record(sequence, rig_s):
     return dict(sequence=sequence, outcome="success", ios_callback_result=True, session_id="session", **stamps)
 
 
-def test_calibrate_maps_markers_and_direct_strokes_onto_the_video_clock(tmp_path, monkeypatch):
+def test_calibrate_maps_markers_and_direct_gestures_onto_the_video_clock(tmp_path, monkeypatch):
     from trueskate_ai.collection.die_five_calibration import DieFiveOnset
     out = synthetic_recording(tmp_path)
     run = fixed_run(7, 5., (100, 120))
@@ -327,10 +327,10 @@ def test_calibrate_maps_markers_and_direct_strokes_onto_the_video_clock(tmp_path
                     dict(kind="control", role="middle", rig=38.), dict(kind="control", role="end", rig=66.)]
     events = [dict(kind=e["kind"], role=e["role"], instrumented=True, call_start_monotonic_s=e["rig"],
                    call_end_monotonic_s=e["rig"] + .6) for e in instrumented]
-    stroke = dict(kind="stroke", instrumented=False, run=7, stroke=0, call_start_monotonic_s=14.,
+    gesture = dict(kind="stroke", instrumented=False, run=7, stroke=0, call_start_monotonic_s=14.,
                   call_end_monotonic_s=14.45)
     skipped = dict(kind="stroke", run=7, stroke=1, skipped=True, reason="would overrun the next slot")
-    events = events[:1] + [stroke, skipped] + events[1:]
+    events = events[:1] + [gesture, skipped] + events[1:]
     # The recording starts at rig 9.0 s; the phone reports epoch = 1.7e9 + its monotonic clock.
     execution = dict(events=events, error=None, video=dict(started_at_epoch_s=1.7e9 + 9. + PHONE_OFFSET_S))
     planned = dict(wda_revision="rev", runs=[run])
@@ -385,8 +385,8 @@ def test_probe_geometry_matches_the_tap_detector_and_clips_at_edges():
     assert edge is not None and edge[0][0].start == 0 and edge[0][1].start == 0
 
 
-def test_path_samples_give_each_pieces_speed_in_points_per_ms():
-    hold = Stroke(((.5, .5), (.5, .5), (.6, .5)), (0, 50, 100), "random").to_dict()
+def test_path_samples_give_each_segments_speed_in_points_per_ms():
+    hold = Gesture(((.5, .5), (.5, .5), (.6, .5)), (0, 50, 100), "random").to_dict()
     ms, xy, speed = admission.path_samples(hold)
     assert ms[0] == 0 and ms[-1] == 96 and np.allclose(xy[0], [.5, .5])
     moved = np.hypot(*((np.asarray(hold["command_points"][2]) - hold["command_points"][1])*[414, 896]))
@@ -400,20 +400,20 @@ def test_trail_shift_corrects_the_glow_and_drops_misreads():
     assert admission.trail_shift(rows[:2]) is None
 
 
-def test_settle_shifts_sends_a_misread_stroke_to_its_recordings_median():
+def test_settle_shifts_sends_a_misread_gesture_to_its_recordings_median():
     kept, median = admission.settle_shifts({"1:0": (.02, 5), "2:0": (.03, 5), "3:0": (-.15, 4)})
     assert kept == {"1:0": (.02, 5), "2:0": (.03, 5)} and np.isclose(median, .025)
     assert admission.settle_shifts({}) == ({}, None)
 
 
-def trail_video(path, strokes, size=(208, 448), seconds=10.):
+def trail_video(path, gestures, size=(208, 448), seconds=10.):
     """Grey 60 fps video; each (points, duration_s, visible_from_s) draws a white trail along its path."""
     import cv2
     width, height = size
     frames = []
     for i in range(int(seconds*60)):
         frame = np.full((height, width), 100, np.uint8)
-        for points, duration, start in strokes:
+        for points, duration, start in gestures:
             u = min(1., (i/60 - start)/duration)
             if u < 0:
                 continue
@@ -427,13 +427,13 @@ def trail_video(path, strokes, size=(208, 448), seconds=10.):
                    input=b"".join(f.tobytes() for f in frames), check=True)
 
 
-def test_calibrate_moves_strokes_onto_their_visible_trail(tmp_path, monkeypatch):
+def test_calibrate_moves_gestures_onto_their_visible_trail(tmp_path, monkeypatch):
     from trueskate_ai.collection.die_five_calibration import DieFiveOnset
     out = tmp_path/"recordings"/"m0001"
     out.mkdir(parents=True)
     path = ((.2, .3), (.8, .7))
-    shown = Stroke(path, (0, 300), "random").to_dict()
-    unseen = Stroke(((.7, .2), (.85, .3)), (0, 200), "random").to_dict()
+    shown = Gesture(path, (0, 300), "random").to_dict()
+    unseen = Gesture(((.7, .2), (.85, .3)), (0, 200), "random").to_dict()
     runs = [dict(number=7, strokes=[shown]), dict(number=8, strokes=[unseen])]
     # Estimates: 14 + 0.005 - 9 + 0.15 = 5.155 s and 7.155 s. Run 7's trail shows 60 ms late;
     # run 8 draws nothing, so it takes the recording's median shift.
@@ -512,7 +512,7 @@ def test_admission_cuts_one_native_clip_per_run_and_explains_rejections(tmp_path
         assert all(s["retimed_by_s"] == 0 and np.isclose(s["estimated_onset_s"], s["onset_s"]) for s in meta["strokes"])
         assert all(s["timing_source"] == admission.TIMING_SOURCE and abs(s["call_s"] - .4) < 1e-9
                    for s in meta["strokes"])
-        assert Stroke.from_dict({k: v for k, v in meta["strokes"][0].items()
+        assert Gesture.from_dict({k: v for k, v in meta["strokes"][0].items()
                                  if k not in ("onset_s", "release_s", "timing_source", "call_s")})
         first, last = meta["source_frame_pts_s"][0], meta["source_frame_pts_s"][-1]
         assert not any(b <= last and e >= first for b, e, run, _ in contacts if run != number)

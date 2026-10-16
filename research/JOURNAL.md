@@ -12,7 +12,7 @@ them. Link a record only when one exists. Current state lives in
   direction: 0, 2, 5 and 10% of the screen, 10 attempts each (KICKFLIP-TOLERANCE-20261015); your blinded review.
 - **Result:** landed 10/10 at 0, 8/10 at 2%, 1/9 at 5% (one technical failure), 0/10 at 10%. Both misses at 2% were
   caught a quarter turn late; at 5% half the misses were near misses; at 10% the pop or flick failed (3 pop shove-its).
-- **Decision:** labels, Model 1 and the hand need positions within ~2% of the screen; MVP v0 (37% of test strokes at
+- **Decision:** labels, Model 1 and the hand need positions within ~2% of the screen; MVP v0 (37% of test gestures at
   2%) misses it, so the pops' end (item 10) comes before the 1,000 clips ([record](experiments/KICKFLIP-TOLERANCE-20261015.md)).
 
 ## 2026-10-16 — Live frames: WDA's MJPEG stream tops out at ~28 frames a second; Model 2 takes 30 fps at 207×448
@@ -24,30 +24,30 @@ them. Link a record only when one exists. Current state lives in
   stream about as soon as in the recording (0.11–0.16 s); run2's delay creep didn't repeat (−52 to +24 ms/min).
 - **Decision:** Model 2 trains on 30 fps frames at 207×448; live play asks for 30 fps at 25%, taking the newest frame.
 
-## 2026-10-16 — Trick Model 1 MVP v0 finds and times fast strokes; placing them is the weak part
+## 2026-10-16 — Trick Model 1 MVP v0 finds and times fast gestures; placing them is the weak part
 
-- **Ran:** curved v1's network with per-frame contact, touch-down and lift signals and a stroke decoder; trained
+- **Ran:** curved v1's network with per-frame touching, touch-down and lift signals and a gesture decoder; trained
   on the 182 trial clips of minutes 1–5 at 64×144 and 128×288 (Modal, US$1.28 in all); minute 6 chose 128×288.
-- **Result:** test (minute 7, 78 strokes, scored once): 99% on time at both ends (touch-down −8 to +7 ms, 10–90%);
+- **Result:** test (minute 7, 78 gestures, scored once): 99% on time at both ends (touch-down −8 to +7 ms, 10–90%);
   worst path point within 5% of the screen for 90%, within 2% for 37%. Predicted ends fall short, pops most.
-- **Decision:** clears the "half the strokes" bar at 5%, not at 2%; item 1's tolerance picks the next step
+- **Decision:** clears the "half the gestures" bar at 5%, not at 2%; item 1's tolerance picks the next step
   ([record](experiments/MODEL1-TRICK-MVP-20261016.md)).
 
-## 2026-10-15 — Trick-stroke labels re-timed to the visible trail
+## 2026-10-15 — Trick-gesture labels re-timed to the visible trail
 
-- **Ran:** XR2 and XR1 trick-speed trials (TRICK-SPEED-20261015: 125 clips each, 277 direct strokes each, all
-  admitted); operator spot check of 20; trail-vs-label timing every 8 ms along each path; 205 pilot touches.
+- **Ran:** XR2 and XR1 trick-speed trials (TRICK-SPEED-20261015: 125 clips each, 277 direct gestures each, all
+  admitted); operator spot check of 20; trail-vs-label timing every 8 ms along each path; 205 pilot gestures.
 - **Result:** rig-clock labels sat −23 to +25 ms off the trail (10–90%), mostly per recording; no clear speed
   error once the trail's glow is allowed for. Pilot (phone-timestamped) labels: −16 to +4 ms. Spot check: 9/20 OK.
-- **Decision:** admission re-times each stroke to its own trail (misreads take the recording's median). Re-check:
-  12/20 OK; the rest are speed-ups seen after kinks and pops whose trail stops 10–20 pt short (24% of pops).
+- **Decision:** admission re-times each gesture to its own trail (misreads take the recording's median). Re-check:
+  12/20 OK; the rest are speed-ups seen after bends and pops whose trail stops 10–20 pt short (24% of pops).
 
-## 2026-10-14 — Model 1's 32-frame sampling is too sparse for trick strokes
+## 2026-10-14 — Model 1's 32-frame sampling is too sparse for trick gestures
 
 - **Ran:** filmed kickflip (60 fps) through linear Model 1's frame picks
   (~73 ms apart) at five phases; about an hour, laptop only.
-- **Result:** each stroke's motion lands in ~1 picked frame and its trail in
-  1–2 (rule: ≥2); at 60 Hz, 3 (pop) and 5 (flick). The flick holds ~70 ms first.
+- **Result:** each gesture's motion lands in ~1 picked frame and its trail in
+  1–2 (rule: ≥2); at 60 Hz, 3 (pop) and 5 (flick). The flick pauses ~70 ms first.
 - **Decision:** trick models read every 60 Hz frame, as curved v1 does.
   [Contact sheet](evidence/SAMPLING-CHECK-20261014/contact-sheet.jpg).
 

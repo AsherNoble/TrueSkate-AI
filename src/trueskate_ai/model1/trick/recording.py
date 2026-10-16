@@ -1,8 +1,8 @@
 """Run one planned minute on XR1; stop on the first failure and keep the evidence.
 
-Markers and resets go through Appium's W3C actions (timing-instrumented). Each stroke
+Markers and resets go through Appium's W3C actions (timing-instrumented). Each gesture
 goes to WDA's direct endpoint, sent as soon as the previous request returns plus the
-run's small extra gap, with no guard between strokes (as in the kickflip runs).
+run's small extra gap, with no guard between gestures (as in the kickflip runs).
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ import time
 from trueskate_ai.collection.wda_action_timing import validate_action_timing_report
 from trueskate_ai.model1.curved.contract import digest, save_json
 from trueskate_ai.research.audit_execution import deadline_sleep
-from .contract import Stroke
+from .contract import GESTURE_EVENT, Gesture
 from .schedule import GUARD_S, RETURN_BUDGET_S, STOP_S
 
 LATE_S = .1
@@ -28,8 +28,8 @@ def _response_error(response) -> bool:
 def record_minute(*, out, plan, recorder, timing, perform, perform_direct, guard, revision, metadata,
                   clock=time.monotonic, sleep=deadline_sleep, epoch=time.time):
     out = Path(out)
-    payloads = {(run["number"], j): Stroke.from_dict(stroke).payload()
-                for run in plan["runs"] for j, stroke in enumerate(run["strokes"])}
+    payloads = {(run["number"], j): Gesture.from_dict(gesture).payload()
+                for run in plan["runs"] for j, gesture in enumerate(run["strokes"])}
     items = sorted([("command", c) for c in plan["commands"]] + [("run", r) for r in plan["runs"]],
                    key=lambda item: item[1]["slot_s"])
     out.mkdir(parents=True, exist_ok=False)
@@ -46,7 +46,7 @@ def record_minute(*, out, plan, recorder, timing, perform, perform_direct, guard
         response = (perform_direct if direct else perform)(payload)
         event.update(response=response, call_end_monotonic_s=clock(), call_end_epoch_s=epoch())
         if _response_error(response):
-            raise RuntimeError(f"{kind} response reports an error")
+            raise RuntimeError(f"{'gesture' if kind == GESTURE_EVENT else kind} response reports an error")
         event["success"] = True
 
     try:
@@ -71,15 +71,15 @@ def record_minute(*, out, plan, recorder, timing, perform, perform_direct, guard
                 call(spec["kind"], spec["payload"], direct=False, role=spec.get("role"),
                      slot_s=spec["slot_s"], lateness_s=lateness)
             else:
-                for j, stroke in enumerate(spec["strokes"]):
+                for j, gesture in enumerate(spec["strokes"]):
                     if j:
                         sleep(spec["gaps_ms"][j-1] / 1000)
-                        # Never run into the next slot: drop the run's remaining strokes instead.
-                        if clock() + stroke["times_ms"][-1] / 1000 + RETURN_BUDGET_S + GUARD_S > following:
-                            events.append(dict(kind="stroke", run=spec["number"], stroke=j, skipped=True,
+                        # Never run into the next slot: drop the run's remaining gestures instead.
+                        if clock() + gesture["times_ms"][-1] / 1000 + RETURN_BUDGET_S + GUARD_S > following:
+                            events.append(dict(kind=GESTURE_EVENT, run=spec["number"], stroke=j, skipped=True,
                                                reason="would overrun the next slot"))
                             break
-                    call("stroke", payloads[spec["number"], j], direct=True, run=spec["number"], stroke=j,
+                    call(GESTURE_EVENT, payloads[spec["number"], j], direct=True, run=spec["number"], stroke=j,
                          slot_s=spec["slot_s"], lateness_s=lateness if j == 0 else None)
             if clock() >= following:
                 raise RuntimeError("execution overran the next slot")

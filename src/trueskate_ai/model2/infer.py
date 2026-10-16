@@ -7,20 +7,20 @@ reused verbatim by the on-device deploy loop
 Per decision:
 
     runner.replace_window(recent_frames)      # deployment: genuine recent video window
-    strokes = runner.act()                    # -> active NATIVE stroke prefix
-    vec, n, pre_delay_s = runner.to_param_vector(strokes)
+    gestures = runner.act()                    # -> active NATIVE gesture prefix
+    vec, n, pre_delay_s = runner.to_param_vector(gestures)
     #   execute vec via action_param.execute_gesture_params after waiting pre_delay_s
-    runner.commit(strokes)                    # next decision follows group completion
+    runner.commit(gestures)                    # next decision follows group completion
 
 Frame convention matches training exactly — both go through `bc.frame_prep.
 prep_frame_rgb`: `observe` takes a **BGR uint8 H×W×3** array (as cv2 returns),
 resizes to (img_w, img_h), converts to RGB, scales to [0, 1], and stores CHW.
 
-delay-timing note: `strokes_to_param_vector` packs only the N-1 delays *between*
-strokes (each stroke's `delay_before`, skipping the first), so the first stroke's
+delay-timing note: `gestures_to_param_vector` packs only the N-1 delays *between*
+gestures (each gesture's `delay_before`, skipping the first), so the first gesture's
 own `delay_before` — which the policy does predict — would otherwise be dropped.
 `to_param_vector` returns it as `pre_delay_s` so the caller can honour it as a
-wait before firing, keeping predicted inter-stroke timing intact end to end.
+wait before firing, keeping predicted inter-gesture timing intact end to end.
 """
 from __future__ import annotations
 
@@ -31,8 +31,23 @@ import time
 import numpy as np
 
 from trueskate_ai.model2.frame_prep import prep_frame_rgb
-from trueskate_ai.model2.tokens import STROKE_DIM, decode, encode, strokes_to_param_vector
+from trueskate_ai.model2.tokens import GESTURE_DIM, decode, encode, gestures_to_param_vector
 from trueskate_ai.model2.policy import SequencePolicy, SequencePolicyConfig
+
+
+# Checkpoints saved before 2026-10-16 call a gesture a "stroke" (GESTURES.md, "Legacy names").
+LEGACY_CONFIG_KEYS = {"stroke_dim": "gesture_dim"}
+LEGACY_MODULES = {"stroke_embed": "gesture_embed", "stroke_pos": "gesture_pos", "stroke_head": "gesture_head"}
+
+
+def upgrade_legacy_checkpoint(config: dict, state: dict) -> tuple[dict, dict]:
+    """Rename a pre-2026-10-16 checkpoint's config keys and module weights to today's names."""
+    config = {LEGACY_CONFIG_KEYS.get(key, key): value for key, value in config.items()}
+    renamed = {}
+    for key, value in state.items():
+        module, _, rest = key.partition(".")
+        renamed[f"{LEGACY_MODULES.get(module, module)}.{rest}" if rest else key] = value
+    return config, renamed
 
 
 def load_policy(model_path, device):
@@ -42,9 +57,10 @@ def load_policy(model_path, device):
     ckpt = torch.load(model_path, map_location=device)
     if ckpt.get("checkpoint_version") != 2:
         raise RuntimeError("Incompatible Model 2 checkpoint: retrain for causal action groups and slot activity (v2)")
-    cfg = SequencePolicyConfig(**ckpt["config"])
+    config, state = upgrade_legacy_checkpoint(ckpt["config"], ckpt["model_state"])
+    cfg = SequencePolicyConfig(**config)
     model = SequencePolicy(cfg)
-    model.load_state_dict(ckpt["model_state"])
+    model.load_state_dict(state)
     model.to(device).eval()
     return model, cfg
 
@@ -57,7 +73,7 @@ class SequencePolicyRunner:
         self.cfg = cfg
         self.device = device
         self._frames: deque[np.ndarray] = deque(maxlen=cfg.n_frames)   # each (C,H,W) float32 RGB
-        self._past: deque[np.ndarray] = deque(maxlen=cfg.m_past)       # each (9,) NATIVE stroke
+        self._past: deque[np.ndarray] = deque(maxlen=cfg.m_past)       # each (9,) NATIVE gesture
 
     def reset(self) -> None:
         self._frames.clear()
@@ -91,7 +107,7 @@ class SequencePolicyRunner:
         import torch
 
         m = self.cfg.m_past
-        past = np.zeros((m, STROKE_DIM), dtype=np.float32)
+        past = np.zeros((m, GESTURE_DIM), dtype=np.float32)
         mask = np.zeros((m,), dtype=bool)
         hist = list(self._past)
         if hist:
@@ -102,7 +118,7 @@ class SequencePolicyRunner:
                 torch.from_numpy(mask[None]).to(self.device))
 
     def act(self) -> np.ndarray:
-        """Predict the next active action-group prefix (at least one stroke)."""
+        """Predict the next active action-group prefix (at least one gesture)."""
         import torch
 
         frames = self._frames_tensor()
@@ -111,26 +127,26 @@ class SequencePolicyRunner:
             pred, activity = self.model(frames, past, past_mask=mask)
         native = decode(pred[0].cpu().numpy())
         active = activity[0].cpu().numpy() >= 0
-        # Activity is defined as a prefix.  A hole terminates it; one stroke is mandatory.
+        # Activity is defined as a prefix.  A hole terminates it; one gesture is mandatory.
         n = 1
         while active[0] and n < self.cfg.m_out and active[n]:
             n += 1
         return native[:n]
 
-    def to_param_vector(self, strokes: np.ndarray) -> tuple[list[float], int, float]:
-        """NATIVE strokes -> (CMA-ES 9N-1 vector, N, pre_delay_s).
+    def to_param_vector(self, gestures: np.ndarray) -> tuple[list[float], int, float]:
+        """NATIVE gestures -> (CMA-ES 9N-1 vector, N, pre_delay_s).
 
-        `pre_delay_s` is the first stroke's `delay_before` (not carried by the
+        `pre_delay_s` is the first gesture's `delay_before` (not carried by the
         vector); honour it as a wait before executing so predicted timing holds.
         """
-        strokes = np.asarray(strokes, dtype=np.float64).reshape(-1, STROKE_DIM)
-        vec, n = strokes_to_param_vector(strokes)
-        pre_delay_s = float(strokes[0, STROKE_DIM - 1]) if n else 0.0
+        gestures = np.asarray(gestures, dtype=np.float64).reshape(-1, GESTURE_DIM)
+        vec, n = gestures_to_param_vector(gestures)
+        pre_delay_s = float(gestures[0, GESTURE_DIM - 1]) if n else 0.0
         return vec, n, pre_delay_s
 
-    def commit(self, strokes: np.ndarray) -> None:
-        """Record executed NATIVE strokes into history for the next decision."""
-        for s in np.asarray(strokes, dtype=np.float64).reshape(-1, STROKE_DIM):
+    def commit(self, gestures: np.ndarray) -> None:
+        """Record executed NATIVE gestures into history for the next decision."""
+        for s in np.asarray(gestures, dtype=np.float64).reshape(-1, GESTURE_DIM):
             self._past.append(s)
 
 

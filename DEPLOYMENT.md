@@ -81,7 +81,7 @@ changing historical corpus labels requires a separate validated review.
   - the park editor;
   - the Bolt Challenges pop-up.
 - **Why they are no longer needed:** every one of those menus opens from a
-  button inside the protected control map. Since straight swipes started
+  button inside the protected control map. Since linear gestures started
   avoiding the whole map on 2026-09-22, every recorded rejection has been a
   false alarm: the sliver sliding away, a red ledge, or the red progress strip.
 - **What the trick-speed batch keeps instead:**

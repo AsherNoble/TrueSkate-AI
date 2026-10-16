@@ -3,14 +3,14 @@
 Kept from curved v1: native 60 fps PTS and decoded frame counts, three die-five markers
 with the held-out middle within two frames, exact source frames with no padding, and
 clip PTS within 1 ms of the source. No menu or editor checks (operator decision
-2026-10-15; see schedule.py). A clip holds exactly one run's strokes and no other
-contact, with five frames either side.
+2026-10-15; see schedule.py). A clip holds exactly one run's gestures (its gesture
+sequence) and no other touch, with five frames either side.
 
-Stroke labels are re-timed to the visible trail. A direct stroke has no WDA timing record,
+Gesture labels are re-timed to the visible trail. A direct gesture has no WDA timing record,
 so its first estimate is the rig clock plus an Appium-measured offset; that sat 2-3 frames
 off the trail on the XR2 trial's faulted clips (TRICK-SPEED-20261015 spot check). The same
-decode now times when the trail reaches points along each commanded path, and each stroke
-moves by the median glow-corrected offset; a stroke too faint to read takes its recording's
+decode now times when the trail reaches points along each commanded path, and each gesture
+moves by the median glow-corrected offset; a gesture too faint to read takes its recording's
 median shift.
 """
 from __future__ import annotations
@@ -42,7 +42,7 @@ TIMING_SOURCES = dict(
 # of the finger, so a probe reads GLOW_PT/speed early; fitted 2026-10-15 from how that lead
 # grows on slower stretches (6 pt on the XR2 trick trial, 11 pt on the learn-replay pilot).
 # Touch-down shows at the finger, so the start probe needs no correction. Probes the path,
-# or an earlier stroke of the run, already passed within REACH_PT of are skipped.
+# or an earlier gesture of the run, already passed within REACH_PT of are skipped.
 PROBE_HALF_WINDOW_S = .35
 PROBE_LEAD_S = .3
 PATH_STEP_MS = 8.
@@ -50,7 +50,7 @@ GLOW_PT = 8.
 MIN_SPEED_PT_MS = .5
 REACH_PT = 20.
 MIN_PROBES = 3
-PROBE_SPREAD_S = .06  # probes further than this from a stroke's median are misreads
+PROBE_SPREAD_S = .06  # probes further than this from a gesture's median are misreads
 
 
 def probe_geometry(width: int, height: int, point):
@@ -82,19 +82,19 @@ def first_brightening(contrast, times, start_s: float, *, immediate=4., confirma
     return None
 
 
-def path_samples(stroke: dict, step_ms: float = PATH_STEP_MS):
-    """Commanded time (ms), normalized point and speed (points per ms) every step_ms along a stroke."""
-    times = np.asarray(stroke["times_ms"], dtype=float)
-    points = np.asarray(stroke["command_points"], dtype=float)
+def path_samples(gesture: dict, step_ms: float = PATH_STEP_MS):
+    """Commanded time (ms), normalized point and speed (points per ms) every step_ms along a gesture."""
+    times = np.asarray(gesture["times_ms"], dtype=float)
+    points = np.asarray(gesture["command_points"], dtype=float)
     ms = np.arange(0., times[-1] + 1e-9, step_ms)
     xy = np.stack([np.interp(ms, times, points[:, 0]), np.interp(ms, times, points[:, 1])], axis=1)
-    piece = np.clip(np.searchsorted(times, ms, side="right") - 1, 0, len(times) - 2)
-    lengths = np.hypot(*((points[piece+1] - points[piece])*[WIDTH, HEIGHT]).T)
-    return ms, xy, lengths/np.maximum(times[piece+1] - times[piece], 1e-9)
+    segment = np.clip(np.searchsorted(times, ms, side="right") - 1, 0, len(times) - 2)
+    lengths = np.hypot(*((points[segment+1] - points[segment])*[WIDTH, HEIGHT]).T)
+    return ms, xy, lengths/np.maximum(times[segment+1] - times[segment], 1e-9)
 
 
 def trail_shift(rows) -> tuple[float, int] | None:
-    """Median glow-corrected offset (s) of a stroke's probes, given (ms, seen - estimate, speed) rows."""
+    """Median glow-corrected offset (s) of a gesture's probes, given (ms, seen - estimate, speed) rows."""
     lags = [lag if ms == 0 else lag + GLOW_PT/speed/1000
             for ms, lag, speed in rows if ms == 0 or speed >= MIN_SPEED_PT_MS]
     if len(lags) < MIN_PROBES:
@@ -105,11 +105,11 @@ def trail_shift(rows) -> tuple[float, int] | None:
 
 
 def settle_shifts(shifts: dict) -> tuple[dict, float | None]:
-    """Strokes read from their own trail, less misreads, and the recording's median shift.
+    """Gestures read from their own trail, less misreads, and the recording's median shift.
 
-    A stroke whose reading sits more than PROBE_SPREAD_S from its recording's median read
-    something else (one XR2 trial stroke read -158 ms against a +13 ms median); it takes the
-    median instead, like a stroke too faint to read.
+    A gesture whose reading sits more than PROBE_SPREAD_S from its recording's median read
+    something else (one XR2 trial gesture read -158 ms against a +13 ms median); it takes the
+    median instead, like a gesture too faint to read.
     """
     if not shifts:
         return {}, None
@@ -140,7 +140,7 @@ def calibrate(out: Path, planned: dict, execution: dict):
             raise ValueError("die-five calibration failed: " + event["role"])
         stamps[event["role"]], onsets[event["role"]] = record["submitted_to_ios"]["monotonic_s"], detection.onset_s
     fit, middle_error = fit_markers(stamps, onsets, float(np.median(np.diff(pts))))
-    # Direct strokes have no WDA timing record: map their rig-clock call starts with the
+    # Direct gestures have no WDA timing record: map their rig-clock call starts with the
     # median rig-to-WDA offset of the instrumented requests (the kickflip runs' estimate).
     offset = float(np.median([r["request_entered"]["monotonic_s"] - e["call_start_monotonic_s"]
                               for e, r in zip(instrumented, records)]))
@@ -154,20 +154,20 @@ def calibrate(out: Path, planned: dict, execution: dict):
             begin = fit.video_time_s(next(instrumented_records)["submitted_to_ios"]["monotonic_s"])
             contacts.append((begin, begin + fit.rate*TAP_S, None, event))
         else:
-            stroke = next(r for r in planned["runs"] if r["number"] == event["run"])["strokes"][event["stroke"]]
+            gesture = next(r for r in planned["runs"] if r["number"] == event["run"])["strokes"][event["stroke"]]
             begin = fit.video_time_s(event["call_start_monotonic_s"] + offset)
-            contacts.append((begin, begin + fit.rate*stroke["times_ms"][-1]/1000, event["run"], event))
+            contacts.append((begin, begin + fit.rate*gesture["times_ms"][-1]/1000, event["run"], event))
     # One full decode checks that every frame decodes and that counts agree, and times when
-    # each stroke's trail reaches points along its commanded path.
+    # each gesture's trail reaches points along its commanded path.
     probes, by_frame, run_paths, run_release = [], {}, {}, {}
     for begin, end, run, event in contacts:
         if run is None:
             continue
-        stroke = next(r for r in planned["runs"] if r["number"] == run)["strokes"][event["stroke"]]
+        gesture = next(r for r in planned["runs"] if r["number"] == run)["strokes"][event["stroke"]]
         key = f"{run}:{event['stroke']}"
-        dense = path_samples(stroke, 2.)[1]*[WIDTH, HEIGHT]
+        dense = path_samples(gesture, 2.)[1]*[WIDTH, HEIGHT]
         earlier = run_paths.setdefault(run, [])
-        for ms, point, speed in zip(*path_samples(stroke)):
+        for ms, point, speed in zip(*path_samples(gesture)):
             at = point*[WIDTH, HEIGHT]
             passed = dense[:max(0, int((ms - 30)/2))]
             if (len(passed) and np.hypot(*(passed - at).T).min() < REACH_PT) or any(
@@ -175,7 +175,7 @@ def calibrate(out: Path, planned: dict, execution: dict):
                 continue
             estimate = begin + ms/1000*fit.rate
             lo, hi = (int(np.searchsorted(pts, estimate + d)) for d in (-PROBE_HALF_WINDOW_S, PROBE_HALF_WINDOW_S))
-            # The run's previous stroke still draws until its release, so search after it.
+            # The run's previous gesture still draws until its lift, so search after it.
             probe = dict(key=key, ms=float(ms), speed=float(speed), point=point.tolist(), estimate=estimate,
                          search=max(estimate - PROBE_LEAD_S, run_release.get(run, -np.inf)),
                          lo=lo, hi=hi, values=[], geometry=False)
@@ -294,22 +294,22 @@ def admit_recording(out: Path) -> dict:
                 raise ValueError("clip must decode to 120 native frames")
             if not np.allclose(clip_pts-clip_pts[0], selected-selected[0], atol=.001):
                 raise ValueError("encoded clip changed native timestamps")
-            strokes = []
+            gestures = []
             visible = evidence.get("stroke_visible_onsets_s", {})
             for begin, end, _, event in own:
-                stroke = {k: v for k, v in run["strokes"][event["stroke"]].items()}
+                gesture = {k: v for k, v in run["strokes"][event["stroke"]].items()}
                 key = f"{run['number']}:{event['stroke']}"
                 seen = visible.get(key)
                 timing = evidence.get("stroke_timing", {}).get(key) or dict(
                     estimated_onset_s=begin, shift_s=0., probes=0, source="estimate")
-                strokes.append(dict(stroke, onset_s=begin-selected[0], release_s=end-selected[0],
+                gestures.append(dict(gesture, onset_s=begin-selected[0], release_s=end-selected[0],
                                     timing_source=TIMING_SOURCES[timing["source"]],
                                     estimated_onset_s=timing["estimated_onset_s"]-selected[0],
                                     retimed_by_s=timing["shift_s"], trail_probes=timing["probes"],
                                     visible_onset_s=None if seen is None else seen-selected[0],
                                     call_s=event["call_end_monotonic_s"]-event["call_start_monotonic_s"]))
             meta = dict(schema=SCHEMA, experiment=EXPERIMENT, recording=out.name, run=run["number"],
-                        run_kind=run["kind"], strokes=strokes, sent_strokes=len(own),
+                        run_kind=run["kind"], strokes=gestures, sent_strokes=len(own),
                         planned_strokes=len(run["strokes"]), device=planned["device"], park=planned["park"],
                         settings_note=planned["settings_note"], clock_rate=fit.rate,
                         frame_times_s=(selected-selected[0]).tolist(),
