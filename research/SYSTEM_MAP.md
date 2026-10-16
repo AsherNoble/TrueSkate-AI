@@ -1,10 +1,8 @@
 # System map
 
-Updated 2026-10-16. Read this page first. It covers what we're building, how the
-pieces connect, what's blocking, and the decision in front of you. Numbers link
-to their records, and `[unsure]` marks anything not yet checked. Work that
-exists only on an unmerged branch is named in plain text. This page replaced
-`STATUS.md`; its history lives in the records and the journal.
+Updated 2026-10-16. Read this page first: what we're building, how the pieces
+connect, what's blocking and the decision in front of you. Numbers link to their
+records; `[unsure]` marks the unchecked; unmerged work is named in plain text.
 
 **North star: by 2026-11-20, a working version of the whole project, even a
 crap one** (set by you on 2026-10-16). Model 2 plays True Skate live, and the
@@ -34,6 +32,7 @@ phone records the video, and the known gesture becomes the label.
 | Back-to-back WDA gestures | the next starts at least ~0.25–0.3 s after the last ends, with ~100 ms jitter ([kickflip](experiments/KICKFLIP-REPEATABILITY-20261009.md)) | No, it's an XCTest limit. The Pico avoids it, and the kickflip lands anyway |
 | Pico USB mouse → touch | ≤32 µs board lateness at 3 ms reports; 1 ms unvalidated ([HID-USB](experiments/HID-USB-20261006.md)) | Timing yes; visible contact accuracy unproven |
 | Video capture | 30 fps for collection (33 ms per frame); 60 fps for diagnostics and curved v1 | Choice made |
+| Live frames for Model 2 (WDA's MJPEG stream) | tops out at 27–29 new frames a second whether asked for 30 or 60 fps, at half (414×896) or quarter (207×448) size; none stale (0 of 374 spans where the screen moved), and the 60 fps recording runs unaffected. A tap shows in the stream about as soon as in the recording, 0.11–0.16 s after WDA sends it ([journal](JOURNAL.md)) | Yes: ask for 30 fps at 25%; the live reader always takes the newest frame and drops any backlog |
 | What linear Model 1 sees | 32 frames over 2.3 s: one frame every ~73 ms | Too sparse for trick strokes ([check](JOURNAL.md)); tricks use every 60 Hz frame, as curved v1 does |
 | Shortest gesture the game counts | the board moves at ≥15 ms, not at 10 ms ([length](experiments/LINEAR-LENGTH-20261003.md)) | Known |
 | Finger trail on screen | fades to half in ~92 ms, gone by ~194 ms (branch record EXEC-TRANSFER-20261013); on your filmed kickflip, visible by eye for ~130–150 ms | Known, rough |
@@ -58,9 +57,9 @@ phone records the video, and the known gesture becomes the label.
   to 4 strokes of 50–600 ms out, each 1–4 straight pieces of at least 40 ms.
   On 78 test strokes: 99% on time at both ends; 90% also within 5% of the
   screen everywhere, 37% within 2% ([record](experiments/MODEL1-TRICK-MVP-20261016.md)).
-- **Model 2** (code from September, untrained; on the critical path for
-  2026-11-20).
-  - In: recent frames plus your last strokes. Out: the next strokes.
+- **Model 2** (September code, untrained; critical path for 2026-11-20).
+  - In: recent frames at 30 fps, quarter size (207×448), plus your last strokes.
+    Out: the next strokes.
   - Trained on your play, labelled by Model 1 (`scripts/model2/`). The code
     still uses the old 9-number stroke and a retired executor path, so it
     needs adapting to timed multi-piece strokes and today's WDA path.
@@ -100,7 +99,7 @@ phone records the video, and the known gesture becomes the label.
    frame. The two 125-clip trials are in; the 1,000-clip batch is next.
 2. **Trick Model 1 is rough.** MVP v0 finds the strokes and times them, but
    places them within 2% of the screen only 37% of the time (90% at 5%).
-3. **Model 2 is untrained**, and its live frame feed is unmeasured.
+3. **Model 2 is untrained.** Its live feed is measured: ~28 fps at quarter size.
 4. **Ground truth from your own play (parked).** A stock iPhone can't log
    touches; an Android phone is a last resort (2026-10-15).
 
@@ -111,9 +110,8 @@ phone records the video, and the known gesture becomes the label.
 
 ## Next experiments, ranked (approved 2026-10-16; a living list)
 
-Add items or reorder at any time. Each still comes to you as a short proposal
-before it runs. Rough calendar: items 1–3 and 6 by about Oct 24, 4–5 by Oct 31,
-7 by Nov 10, 8 by Nov 17.
+Add or reorder items at any time; each comes to you as a short proposal first.
+Rough calendar: 1–3 by about Oct 24, 4–5 by Oct 31, 7 by Nov 10, 8 by Nov 17.
 
 1. **Kickflip position tolerance:** review the 39 recorded attempts. Landings
    hold at 5% noise → the current labels are good enough; else → item 10 first.
@@ -129,9 +127,8 @@ before it runs. Rough calendar: items 1–3 and 6 by about Oct 24, 4–5 by Oct 
 5. **Replay check of Model 1's labels:** your filmed kickflip, replayed by
    WDA, 20 times. Lands in at least half → Model 1 can label Model 2's data;
    else → fix the weakest link.
-6. **Live frames for Model 2:** frame rate and latency of WDA's MJPEG stream.
-   ≥20 fps with stable latency → Model 2 trains at that rate; else → another
-   capture route.
+6. **Live frames for Model 2: done.** WDA tops out at ~28 fps; live play asks
+   for 30 fps at 25% size, and Model 2 trains on 30 fps frames at 207×448.
 7. **Model 2 v0 on your labelled play** (Modal under $10). Sensible offline
    predictions → item 8; else → more play, or a simpler "kickflip now / wait"
    target.

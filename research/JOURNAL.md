@@ -6,6 +6,15 @@ them. Link a record only when one exists. Current state lives in
 [SYSTEM_MAP.md](SYSTEM_MAP.md).
 
 
+## 2026-10-16 — Live frames: WDA's MJPEG stream tops out at ~28 frames a second; Model 2 takes 30 fps at 207×448
+
+- **Ran:** XR1 Workshop, no gameplay touches: the stream read through 60 fps recorded minutes with die-five markers
+  (LIVE-FRAMES-20261016): 10 fps full size, then 30 and 60 fps at 50% and 25% size (six minutes; one never started).
+- **Result:** 9.6 fps at the 10 fps setting; 27.4–28.8 at every 30 or 60 fps setting and both sizes, so ~28 is WDA's
+  capture ceiling. None stale (0 of 374 spans where the screen moved); the recording held 59.9 fps. A tap shows in the
+  stream about as soon as in the recording (0.11–0.16 s); run2's delay creep didn't repeat (−52 to +24 ms/min).
+- **Decision:** Model 2 trains on 30 fps frames at 207×448; live play asks for 30 fps at 25%, taking the newest frame.
+
 ## 2026-10-16 — Trick Model 1 MVP v0 finds and times fast strokes; placing them is the weak part
 
 - **Ran:** curved v1's network with per-frame contact, touch-down and lift signals and a stroke decoder; trained
@@ -373,21 +382,3 @@ them. Link a record only when one exists. Current state lives in
   22/24 exact onset frames and the other two within one frame. This validates
   the extreme-rate risk signal, not a cutoff for automatic exclusion.
   [Labels and analysis](experiments/M1-ONSET-VALIDATION-20260924.md).
-
-## 2026-09-23 — Replacement collection rotated into two new parks
-
-- The first bounded tranche finished with 2,003 XR1/Los Angeles clips and 2,008
-  XR2/Skateboard GB clips including its 310-clip baseline. The operator moved
-  XR1 to The Workshop and XR2 to SLS 2013 Kansas City and authorized new bounds
-  of 4,050 and 3,800 clips. Their persisted seeds continue across the park
-  boundary. Initial audits admitted 10 and 11 clips with correct exact-PTS
-  metadata and found no duplicate commands across the replacement directory.
-  [Plan and evidence](experiments/M1-RECOLLECT-20260922.md).
-- The opt-in one-decode exact-PTS extractor matched all 32 decoded pixels and
-  source timestamps in ten retained phone clips. Isolated XR1/XR2 segments then
-  admitted 10/10 and 9/9 strict clips with accepted calibration, and aligned
-  in about 169 seconds versus old-release medians of about 304 seconds. Clean
-  release `1b8497e` was promoted between production segments; both bounded
-  collectors resumed with prior seeds and targets, and release `13554c9` was
-  retained for rollback. Their first production segments admitted 11 XR1 and
-  10 XR2 strict clips without batch fallback. [Experiment](experiments/M1-BATCH-EXTRACT-20260923.md).
