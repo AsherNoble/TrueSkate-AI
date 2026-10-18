@@ -1,0 +1,25 @@
+{
+  "schema": "trueskate.assure-requirements/v1",
+  "source": "https://api.symbolia.ai/v1/profiles",
+  "engine_commit": "89b2b26679cc56a67bc2c818b69c619e2554a72c",
+  "profile": "python-auth-declared-model",
+  "profile_sha256": "9e570aa5f9bbca4c4bcf6d504f281bf23082836e22891355951e2fdb9b4abece",
+  "requirements_sha256": "b86224b75886f2d6e9d2bd9101eee7598f4a906cfc6c73172f4a25af57a9fb06",
+  "status": "catalogue-derived draft; not inferred from or verified against project source",
+  "requirements": [
+    {
+      "requirement_id": "R1",
+      "id": "AUTH-1",
+      "machine": "M1",
+      "source_sha256": "ae1c10155ae6c0968b3048b8f710cc1bced7f2a3c2a16e994f5ce955ae8f0a1d",
+      "statement": "No route outside the declared public routes is reachable without signing in."
+    },
+    {
+      "requirement_id": "R2",
+      "id": "AUTH-6",
+      "machine": "M1",
+      "source_sha256": "ae1c10155ae6c0968b3048b8f710cc1bced7f2a3c2a16e994f5ce955ae8f0a1d",
+      "statement": "Bearer-token routes check the caller."
+    }
+  ]
+}

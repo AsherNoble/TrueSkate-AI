@@ -1,0 +1,24 @@
+{
+  "schema": "assure.python-auth.declaration/v1",
+  "id": "xr-control-unmodelled-catalogue",
+  "language": "python",
+  "idiom": "flask-session-decorator",
+  "app_roots": ["src/trueskate_ai/control"],
+  "elevation_writers": [],
+  "signout_views": [],
+  "libraries": [],
+  "public_routes": [
+    {"method": "GET", "path": "/"},
+    {"method": "GET", "path": "/ui.js"},
+    {"method": "GET", "path": "/pointer.js"},
+    {"method": "GET", "path": "/style.css"}
+  ],
+  "registrations_complete": false,
+  "execution_authorized": false,
+  "hardware_authorized": false,
+  "industrial_release_authorized": false,
+  "release_allowed": false,
+  "physical_validation": false,
+  "simulation": true,
+  "self_approved": false
+}

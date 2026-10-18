@@ -1,0 +1,27 @@
+{
+  "schema": "assure.identity.declaration/v1",
+  "stack": "python/stdlib-http",
+  "id": "xr-control-auth-trial",
+  "app_roots": ["src/trueskate_ai/control"],
+  "credentials": [
+    {"id": "launch-token", "kind": "api_key"}
+  ],
+  "adapter": {
+    "id": "codeauth.python.stdlib-http-identity",
+    "version": "1"
+  },
+  "public_routes": [
+    {"method": "GET", "path": "/"},
+    {"method": "GET", "path": "/ui.js"},
+    {"method": "GET", "path": "/pointer.js"},
+    {"method": "GET", "path": "/style.css"}
+  ],
+  "registrations_complete": false,
+  "execution_authorized": false,
+  "hardware_authorized": false,
+  "industrial_release_authorized": false,
+  "release_allowed": false,
+  "physical_validation": false,
+  "simulation": true,
+  "self_approved": false
+}

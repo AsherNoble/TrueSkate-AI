@@ -1,0 +1,73 @@
+name: Assure trial
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/assure.yml'
+      - 'scripts/ops/assure_trial.py'
+      - 'src/trueskate_ai/control/**'
+      - '.assure/**'
+      - 'requirements.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  control-auth:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.14'
+      - name: Get the pinned Assure API client
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: Symbolia-Assurance/assure-action
+          ref: 69f3d485f01cb41cace7b9cd57f4503c378fa1b3
+          path: tmp/assure-action
+          persist-credentials: false
+      - name: Prepare the bounded control-service check
+        run: python scripts/ops/assure_trial.py
+      - name: Check the explicit declaration
+        id: assure
+        uses: Symbolia-Assurance/assure-action@69f3d485f01cb41cace7b9cd57f4503c378fa1b3
+        with:
+          api-key: ${{ env.ASSURE_TRIAL_API_KEY }}
+          profile: python-auth-declared-model
+          artefacts: tmp/assure/bundle
+          requirements: requirements.md
+          compile-requirements: 'false'
+          report: 'false'
+          allow-overage: 'false'
+          output: tmp/assure/verdict.json
+      - name: Report unmodelled catalogue gaps (no controller coverage claim)
+        if: ${{ !cancelled() && env.ASSURE_TRIAL_API_KEY != '' }}
+        id: catalogue
+        uses: Symbolia-Assurance/assure-action@69f3d485f01cb41cace7b9cd57f4503c378fa1b3
+        with:
+          api-key: ${{ env.ASSURE_TRIAL_API_KEY }}
+          profile: python-auth-declared-model
+          artefacts: tmp/assure/catalogue
+          requirements: requirements.md
+          compile-requirements: 'false'
+          report: 'false'
+          allow-overage: 'false'
+          output: tmp/assure/catalogue-verdict.json
+      - name: Keep the API responses and verdict
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: assure-control-auth
+          path: tmp/assure/
+          if-no-files-found: error
+          retention-days: 7
