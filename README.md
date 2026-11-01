@@ -19,7 +19,7 @@ useful results remain accessible.
 - [Workflow commands](docs/WORKFLOWS.md)
 - [Gesture and coordinate contract](GESTURES.md)
 - [Rig deployment and rollback](DEPLOYMENT.md)
-- [Private XR remote-control UI](docs/XR_CONTROL.md)
+- [XR remote control: launch, diagnose and recover](docs/XR_CONTROL.md)
 - [Research archive and recovery](research/ARCHIVE.md)
 - [Rig reconciliation](research/history/RIG_RECONCILIATION.md)
 

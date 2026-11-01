@@ -5,6 +5,12 @@ six lines. Keep 30 entries and drop the oldest freely; main's history keeps
 them. Link a record only when one exists. Current state lives in
 [SYSTEM_MAP.md](SYSTEM_MAP.md).
 
+## 2026-11-01 — XR remote control recovered; instrumented XR1 retained
+
+- **Ran:** restored the stopped control service, reconnected XRs, enabled private Appium discovery; bounded Connect/Disconnect on both, no gestures or recordings.
+- **Result:** both available with fresh video; XR1 kept its October 26 instrumented runner. Duplicate standard XR1 supervision was removed; 45 synthetic tests and archive/public-safety checks passed.
+- **Decision:** managed control/Appium jobs; standard WDA supervisor selects XR2 only. Launcher source and [startup/ownership recovery](../docs/XR_CONTROL.md) now live in Git. Collection stays off.
+
 
 ## 2026-10-16 — The kickflip lands with 2% position error, not 5%
 
@@ -359,11 +365,3 @@ them. Link a record only when one exists. Current state lives in
   two finite collectors started with separate targets of 1,150 and 860. Their
   first segments passed strict audits with 10 and 12 accepted clips.
   [Counts and audit](experiments/M1-RECOLLECT-20260922.md).
-
-## 2026-09-24 — Los Angeles originals retained on both XRs
-
-- A bounded four-attempt run per XR preserved seven original one-minute videos
-  with WDA reports and strict alignment. XR2 lost one attempt during save. Six
-  calibration fits were near 1.0; XR2 segment 3 was 1.001788 with a weak start
-  detection (score 10.82). The severe >1.004 case did not recur. All collectors
-  stopped at their bounds. [Record](experiments/M1-LA-ORIGINALS-20260924.md).

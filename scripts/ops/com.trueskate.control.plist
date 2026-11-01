@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.trueskate.control</string>
+  <key>ProgramArguments</key><array>
+    <string>/Users/training-server/trueskate-ai/.venv/bin/python</string>
+    <string>/Users/training-server/trueskate-ai-runtime/tmp/xr-control-4e6a130b/source/scripts/control/serve.py</string>
+    <string>--env-file</string><string>/Users/training-server/trueskate-ai-runtime/.env</string>
+  </array>
+  <key>EnvironmentVariables</key><dict>
+    <key>PATH</key><string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>StandardOutPath</key><string>/Users/training-server/trueskate-ai-runtime/tmp/xr-control-4e6a130b/control.log</string>
+  <key>StandardErrorPath</key><string>/Users/training-server/trueskate-ai-runtime/tmp/xr-control-4e6a130b/control.stderr.log</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>30</integer>
+</dict></plist>

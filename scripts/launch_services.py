@@ -246,7 +246,8 @@ def _start_appium(device: dict) -> bool:
 
     try:
         proc = subprocess.Popen(
-            ["appium", "--port", str(port), "--allow-insecure", "xcuitest:xctest_screen_record"],
+            ["appium", "--port", str(port), "--address", "127.0.0.1",
+             "--allow-insecure", "xcuitest:xctest_screen_record,*:session_discovery"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,

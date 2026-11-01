@@ -25,6 +25,8 @@ See [autostart investigation](research/history/COLLECTION_AUTOSTART_20260909.md)
 | Service | Purpose |
 |---|---|
 | `com.trueskate.services` | Appium/WDA/iproxy health monitoring |
+| `com.trueskate.appium.xr1`, `.xr2` | Private Appium with XR control ownership discovery |
+| `com.trueskate.control` | Private XR control web service on loopback 8401 |
 | `com.trueskate.dashboard` | Corpus preview and progress on port 8400 |
 | `com.trueskate.collect.xr1`, `.xr2` | Experimental mixed SLS collection, when enabled |
 | `com.trueskate.watchdog.xr1`, `.xr2` | Fleet incident/recovery monitoring |
@@ -35,6 +37,11 @@ XR1 uses WDA 8100/Appium 4723; XR2 uses 8103/4726. Confirm USB and WDA health
 before collecting. The tunnel daemon must be reachable before recording.
 Keep segments at one minute. Service templates live in `scripts/ops`;
 the pre-migration installed definitions are preserved in ARCH-004.
+
+**Current XR1 exception (2026-11-01):** its instrumented WDA remains owned by
+the existing single-device supervisor; `com.trueskate.services` selects XR2
+only. See [XR control startup, ownership and recovery](docs/XR_CONTROL.md#phone-service-ownership-2026-11-01)
+before restarting either. Duplicate XR1 supervisors compete and must not be enabled.
 
 ## Deploy a committed revision
 
