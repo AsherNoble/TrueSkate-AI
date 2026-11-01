@@ -38,8 +38,8 @@ git config core.hooksPath .githooks   # refuse commits on main
 For offline training/tests only: `python -m pip install -e '.[training,test]'`.
 The `device` extra adds macOS Apple Vision bindings; `cloud` adds Modal.
 Physical collection also needs Appium, WebDriverAgent, ffmpeg and
-libimobiledevice. Copy `.env.example` to `.env` and configure device UDIDs;
-never commit credentials. XR phones normally live on `training-server`.
+libimobiledevice. Device UDIDs and credentials live in the private, gitignored
+`.env`. XR phones normally live on `training-server`.
 
 ## Layout
 
