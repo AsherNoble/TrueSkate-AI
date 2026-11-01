@@ -6,6 +6,92 @@ trackpad. It does not record, calibrate, launch collection, or share dashboard
 port 8400. Full normalized screen coordinates map through `scale_to_device()`
 to 414×896 logical points; gameplay sampling exclusions do not apply to menus.
 
+## Menu-bar launcher: start here
+
+Choose **XR Remote Control** in the installed TrueSkate-AI-Dashboard menu app.
+Its Python helper is tracked at `scripts/control/menu_open.py` and installed as
+`Contents/Resources/open_xr_control.py` inside that app. It reads the private
+laptop file `~/.trueskate_control.json`:
+
+```json
+{
+  "ssh_host": "training-server@training-server",
+  "launch_log": "/Users/training-server/trueskate-ai-runtime/tmp/xr-control-4e6a130b/control.log"
+}
+```
+
+The helper reads the **last** launch URL in that log (launchd appends after a
+restart), opens a loopback SSH forward and checks authentication before handing
+the private URL to the menu app. Never print or commit the token. For a diagnostic
+that prints no token, run with this checkout's Python:
+
+```bash
+.venv/bin/python scripts/control/menu_open.py --check
+```
+
+`connected=False` is normal before clicking Connect. `fresh=False` means the
+phone's video feed is unavailable; a working web page alone does not prove touch
+control works.
+
+### “Could not open XR Remote Control”
+
+Check these links in order:
+
+1. **SSH:** `tailscale ssh training-server@training-server`. If this fails,
+   resolve Tailscale/host access first.
+2. **Web service:** on the rig, `launchctl print gui/$(id -u)/com.trueskate.control`
+   and `lsof -nP -iTCP:8401 -sTCP:LISTEN`. To start a registered, stopped job:
+   `launchctl kickstart gui/$(id -u)/com.trueskate.control` (no `-k`).
+   Do not restart a running service with an uncertain gesture; follow recovery below.
+3. **Phones:** both XRs must be powered, connected to training-server over USB,
+   and unlocked. `idevice_id -l` should detect them. Keep identifiers private.
+   Check WDA 8100/8103, Appium 4723/4726 and video 9100/9103. Do not restart
+   healthy WDA to repair a stopped web service.
+4. **Ownership discovery:** on the rig,
+   `curl -s http://127.0.0.1:4723/appium/sessions` (4726 for XR2) must return a
+   session list. A `session_discovery` error requires Appium maintenance with
+   the flags in Prerequisites; never bypass the ownership guard.
+5. **Stale token:** verify `launch_log` matches the running control service,
+   then run `--check` again. A listener on laptop port 8401 alone proves nothing
+   about the remote service or authentication.
+
+The web service now runs as `com.trueskate.control`, independent of phone
+services and collection. Its pinned source and private logs are under
+`/Users/training-server/trueskate-ai-runtime/tmp/xr-control-4e6a130b/`.
+The installed definition comes from `scripts/ops/com.trueskate.control.plist`;
+copy it to the rig's `~/Library/LaunchAgents/` and register once with
+`launchctl bootstrap gui/$(id -u) /Users/training-server/Library/LaunchAgents/com.trueskate.control.plist`.
+It returns after login or process exit. Protect its log: it contains the launch
+token. When changing staged source, update the plist and laptop `launch_log`
+together. Stop the managed service with
+`launchctl bootout gui/$(id -u)/com.trueskate.control`; killing it alone restarts it.
+This job starts no WDA, Appium, collection, recording or gestures.
+
+### Phone-service ownership (2026-11-01)
+
+Appium now has separate jobs `com.trueskate.appium.xr1` and `.xr2`, from the
+matching templates in `scripts/ops/`. They bind **127.0.0.1 only**, enable
+recording and session discovery, and write private runtime logs to
+`/Users/training-server/trueskate-ai-runtime/logs/appium-xr1.log` and `appium-xr2.log`.
+Do not publish these logs: Appium includes device identifiers. The old service
+launcher now uses the same flags when it must start Appium itself.
+
+**XR1 keeps the instrumented October 26 WDA setup**, owned by its existing
+single-device supervisor. Its prebuilt output is under
+`/Users/training-server/trueskate-evidence/SCENE-PLAYER-20261018/timed-20261026/wda-instrumented/DerivedData`.
+The standard `com.trueskate.services` job is deliberately restricted to
+`iPhone_XR2`: letting both supervisors own XR1 caused competing restarts during
+recovery. Do not restore `iPhone_XR,iPhone_XR2` while that instrumented supervisor
+is in use. Its in-memory launch settings differ from the stable source on disk;
+restarting it from the generic source does **not** preserve instrumentation.
+The instrumented supervisor itself is not registered for autostart by this fix.
+
+The previous standard job definition is saved privately as
+`/Users/training-server/trueskate-ai-runtime/tmp/xr-control-4e6a130b/services.before-xr-control.plist`.
+Rollback needs an idle maintenance window: stop the two managed Appium jobs,
+resolve single ownership of XR1 first, then restore that definition if returning
+to the standard build. Never run two WDA supervisors for the same phone.
+
 ## Prerequisites
 
 - Existing healthy WDA/Appium and MJPEG forwarding on training-server:
@@ -22,6 +108,9 @@ to 414×896 logical points; gameplay sampling exclusions do not apply to menus.
   Keep Appium private. See the [Appium API](https://appium.io/docs/en/latest/reference/api/appium/).
 
 ## Launch
+
+The manual launch below is an alternative to the managed service. Do not run
+both on port 8401. The menu-bar launcher above needs no token pasting.
 
 Use a separate committed checkout on the rig. Do not change its stable release
 symlink. From the laptop:
